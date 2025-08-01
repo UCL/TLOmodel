@@ -82,16 +82,26 @@ Test (.csv)
   73  Rti\_ShockTreatment                                                             0                  -1                  -1                     -1                      -1
   74  Rti\_Suture                                                                     0                  -1                  -1                     -1                      -1
   75  Rti\_TetanusVaccine                                                             0                  -1                  -1                     -1                      -1
-  76  Schisto\_MDA                                                                    0                  -1                  -1                     -1                      -1
-  77  Schisto\_Treatment                                                              0                  -1                  -1                     -1                      -1
-  78  Undernutrition\_Feeding                                                         0                  -1                  -1                     -1                      -1
-  79  Tb\_Prevention\_Ipt                                                             0                  -1                  -1                     -1                      -1
-  80  Tb\_Test\_Clinical                                                              0                  -1                  -1                     -1                      -1
-  81  Tb\_Test\_Culture                                                               0                  -1                  -1                     -1                      -1
-  82  Tb\_Test\_FollowUp                                                              0                  -1                  -1                     -1                      -1
-  83  Tb\_Test\_Screening                                                             0                  -1                  -1                     -1                      -1
-  84  Tb\_Test\_Xray                                                                  0                  -1                  -1                     -1                      -1
-  85  Tb\_Treatment                                                                   0                  -1                  -1                     -1                      -1
-  86  Tb\_PalliativeCare                                                              0                  -1                  -1                     -1                      -1
-  87  lowest\_priority\_considered                                                    3                  -1                  -1                     -1                      -1
+  76  Schisto\_Test                                                                   0                  -1                  -1                     -1                      -1
+  77  Schisto\_MDA                                                                    0                  -1                  -1                     -1                      -1
+  78  Schisto\_Treatment                                                              0                  -1                  -1                     -1                      -1
+  79  Undernutrition\_Feeding                                                         0                  -1                  -1                     -1                      -1
+  80  Tb\_Prevention\_Ipt                                                             0                  -1                  -1                     -1                      -1
+  81  Tb\_Test\_Clinical                                                              0                  -1                  -1                     -1                      -1
+  82  Tb\_Test\_Culture                                                               0                  -1                  -1                     -1                      -1
+  83  Tb\_Test\_FollowUp                                                              0                  -1                  -1                     -1                      -1
+  84  Tb\_Test\_Screening                                                             0                  -1                  -1                     -1                      -1
+  85  Tb\_Test\_Xray                                                                  0                  -1                  -1                     -1                      -1
+  86  Tb\_Treatment                                                                   0                  -1                  -1                     -1                      -1
+  87  Tb\_PalliativeCare                                                              0                  -1                  -1                     -1                      -1
+  88  CervicalCancer\_Screening\_VIA                                                  0                  -1                  -1                     -1                      -1
+  89  CervicalCancer\_Screening\_Xpert                                                0                  -1                  -1                     -1                      -1
+  90  CervicalCancer\_Presentation                                                    0                  -1                  -1                     -1                      -1
+  91  CervicalCancer\_CINRemoval\_Cryotherapy                                         0                  -1                  -1                     -1                      -1
+  92  CervicalCancer\_CINRemoval\_Thermoablation                                      0                  -1                  -1                     -1                      -1
+  93  CervicalCancer\_Biopsy                                                          0                  -1                  -1                     -1                      -1
+  94  CervicalCancer\_Treatment\_Start                                                0                  -1                  -1                     -1                      -1
+  95  CervicalCancer\_Treatment\_PostTreatmentCheck                                   0                  -1                  -1                     -1                      -1
+  96  CervicalCancer\_PalliativeCare                                                  0                  -1                  -1                     -1                      -1
+  97  lowest\_priority\_considered                                                    3                  -1                  -1                     -1                      -1
 ====  =====================================================================  ==========  ==================  ==================  =====================  ======================

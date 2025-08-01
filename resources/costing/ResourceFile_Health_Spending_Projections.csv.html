@@ -1,0 +1,962 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Health Spending Projections (.csv) &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=9c477e70"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Resource Mapping (.csv)" href="ResourceFile_Resource_Mapping.csv.html" />
+    <link rel="prev" title="Exchange Rates and Inflation (.csv)" href="ResourceFile_Exchange_Rates_and_Inflation.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri/index.html">ResourceFile_Alri</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Cervical_Cancer/index.html">ResourceFile_Cervical_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea/index.html">ResourceFile_Diarrhoea</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/index.html">ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced/index.html">ResourceFile_Lifestyle_Enhanced</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer/index.html">ResourceFile_Oesophageal_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers/index.html">ResourceFile_Other_Adult_Cancers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer/index.html">ResourceFile_Prostate_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI/index.html">ResourceFile_RTI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting/index.html">ResourceFile_Stunting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">costing</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Consumables_Inflow_Outflow_Ratio.csv.html">Consumables Inflow Outflow Ratio (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Costing_Consumables.csv.html">Costing Consumables (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Costing_Equipment.csv.html">Costing Equipment (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Costing_Facility_Operations.csv.html">Costing Facility Operations (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Costing_HR.csv.html">Costing HR (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Exchange_Rates_and_Inflation.csv.html">Exchange Rates and Inflation (.csv)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Health Spending Projections (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Resource_Mapping.csv.html">Resource Mapping (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../case-studies/index.html">Case studies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">costing</a></li>
+      <li class="breadcrumb-item active">Health Spending Projections (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/costing/ResourceFile_Health_Spending_Projections.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="health-spending-projections-csv">
+<h1>Health Spending Projections (.csv)<a class="headerlink" href="#health-spending-projections-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/costing/ResourceFile_Health_Spending_Projections.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Unnamed: 0</p></th>
+<th class="head"><p>Health spending per capita (measured in 2017 USD)</p></th>
+<th class="head"><p>Unnamed: 2</p></th>
+<th class="head"><p>Unnamed: 3</p></th>
+<th class="head"><p>Government</p></th>
+<th class="head"><p>Unnamed: 5</p></th>
+<th class="head"><p>Unnamed: 6</p></th>
+<th class="head"><p>Pre-paid private</p></th>
+<th class="head"><p>Unnamed: 8</p></th>
+<th class="head"><p>Unnamed: 9</p></th>
+<th class="head"><p>Out-of-pocket</p></th>
+<th class="head"><p>Unnamed: 11</p></th>
+<th class="head"><p>Unnamed: 12</p></th>
+<th class="head"><p>Development assistance for health</p></th>
+<th class="head"><p>Unnamed: 14</p></th>
+<th class="head"><p>Unnamed: 15</p></th>
+<th class="head"><p>Unnamed: 16</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>Annualised growth rate</p></td>
+<td><p>-0.5</p></td>
+<td><p>1</p></td>
+<td><p>2.9</p></td>
+<td><p>-4</p></td>
+<td><p>0.1</p></td>
+<td><p>3.8</p></td>
+<td><p>-2.9</p></td>
+<td><p>1.8</p></td>
+<td><p>6.6</p></td>
+<td><p>-3.2</p></td>
+<td><p>0.3</p></td>
+<td><p>3.8</p></td>
+<td><p>-0.9</p></td>
+<td><p>1.1</p></td>
+<td><p>3.5</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>year</p></td>
+<td><p>total_lower</p></td>
+<td><p>total_mean</p></td>
+<td><p>total_upper</p></td>
+<td><p>govt_lower</p></td>
+<td><p>govt_mean</p></td>
+<td><p>govt_upper</p></td>
+<td><p>pvt_insurance_lower</p></td>
+<td><p>pvt_insurance_mean</p></td>
+<td><p>pvt_insurance_upper</p></td>
+<td><p>oop_lower</p></td>
+<td><p>oop_mean</p></td>
+<td><p>oop_upper</p></td>
+<td><p>donor_lower</p></td>
+<td><p>donor_mean</p></td>
+<td><p>donor_upper</p></td>
+<td><p>source</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>2015</p></td>
+<td><p>58.93492476</p></td>
+<td><p>60.27435487</p></td>
+<td><p>61.61378498</p></td>
+<td><p>4.83266383</p></td>
+<td><p>9.523348069</p></td>
+<td><p>14.23278433</p></td>
+<td><p>1.591242969</p></td>
+<td><p>3.616461292</p></td>
+<td><p>6.161378498</p></td>
+<td><p>2.47526684</p></td>
+<td><p>4.219204841</p></td>
+<td><p>6.284606068</p></td>
+<td><p>36.48071843</p></td>
+<td><p>41.34820744</p></td>
+<td><p>47.81229714</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>2016</p></td>
+<td><p>58.64025014</p></td>
+<td><p>60.87709842</p></td>
+<td><p>63.40058474</p></td>
+<td><p>4.639357277</p></td>
+<td><p>9.532871417</p></td>
+<td><p>14.77363013</p></td>
+<td><p>1.545096922</p></td>
+<td><p>3.681557595</p></td>
+<td><p>6.568029479</p></td>
+<td><p>2.396058301</p></td>
+<td><p>4.231862455</p></td>
+<td><p>6.523421098</p></td>
+<td><p>36.15239196</p></td>
+<td><p>41.80303772</p></td>
+<td><p>49.48572754</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>2017</p></td>
+<td><p>58.34704889</p></td>
+<td><p>61.4858694</p></td>
+<td><p>65.2392017</p></td>
+<td><p>4.453782986</p></td>
+<td><p>9.542404289</p></td>
+<td><p>15.33502808</p></td>
+<td><p>1.500289112</p></td>
+<td><p>3.747825632</p></td>
+<td><p>7.001519424</p></td>
+<td><p>2.319384435</p></td>
+<td><p>4.244558043</p></td>
+<td><p>6.7713111</p></td>
+<td><p>35.82702043</p></td>
+<td><p>42.26287114</p></td>
+<td><p>51.21772801</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>2018</p></td>
+<td><p>58.05531364</p></td>
+<td><p>62.1007281</p></td>
+<td><p>67.13113855</p></td>
+<td><p>4.275631667</p></td>
+<td><p>9.551946693</p></td>
+<td><p>15.91775915</p></td>
+<td><p>1.456780727</p></td>
+<td><p>3.815286494</p></td>
+<td><p>7.463619706</p></td>
+<td><p>2.245164134</p></td>
+<td><p>4.257291717</p></td>
+<td><p>7.028620922</p></td>
+<td><p>35.50457725</p></td>
+<td><p>42.72776272</p></td>
+<td><p>53.01034849</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>2019</p></td>
+<td><p>57.76503707</p></td>
+<td><p>62.72173538</p></td>
+<td><p>69.07794157</p></td>
+<td><p>4.1046064</p></td>
+<td><p>9.56149864</p></td>
+<td><p>16.52263399</p></td>
+<td><p>1.414534086</p></td>
+<td><p>3.88396165</p></td>
+<td><p>7.956218607</p></td>
+<td><p>2.173318881</p></td>
+<td><p>4.270063592</p></td>
+<td><p>7.295708517</p></td>
+<td><p>35.18503605</p></td>
+<td><p>43.19776811</p></td>
+<td><p>54.86571068</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>2020</p></td>
+<td><p>57.47621189</p></td>
+<td><p>63.34895273</p></td>
+<td><p>71.08120187</p></td>
+<td><p>3.940422144</p></td>
+<td><p>9.571060138</p></td>
+<td><p>17.15049409</p></td>
+<td><p>1.373512598</p></td>
+<td><p>3.95387296</p></td>
+<td><p>8.481329035</p></td>
+<td><p>2.103772677</p></td>
+<td><p>4.282873783</p></td>
+<td><p>7.57294544</p></td>
+<td><p>34.86837073</p></td>
+<td><p>43.67294356</p></td>
+<td><p>56.78601056</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>2021</p></td>
+<td><p>57.18883083</p></td>
+<td><p>63.98244226</p></td>
+<td><p>73.14255673</p></td>
+<td><p>3.782805258</p></td>
+<td><p>9.580631199</p></td>
+<td><p>17.80221286</p></td>
+<td><p>1.333680733</p></td>
+<td><p>4.025042673</p></td>
+<td><p>9.041096751</p></td>
+<td><p>2.036451951</p></td>
+<td><p>4.295722404</p></td>
+<td><p>7.860717367</p></td>
+<td><p>34.55455539</p></td>
+<td><p>44.15334594</p></td>
+<td><p>58.77352093</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>2022</p></td>
+<td><p>56.90288668</p></td>
+<td><p>64.62226668</p></td>
+<td><p>75.26369087</p></td>
+<td><p>3.631493048</p></td>
+<td><p>9.59021183</p></td>
+<td><p>18.47869695</p></td>
+<td><p>1.295003991</p></td>
+<td><p>4.097493442</p></td>
+<td><p>9.637809137</p></td>
+<td><p>1.971285489</p></td>
+<td><p>4.308609571</p></td>
+<td><p>8.159424627</p></td>
+<td><p>34.24356439</p></td>
+<td><p>44.63903274</p></td>
+<td><p>60.83059416</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>2023</p></td>
+<td><p>56.61837224</p></td>
+<td><p>65.26848935</p></td>
+<td><p>77.44633791</p></td>
+<td><p>3.486233326</p></td>
+<td><p>9.599802042</p></td>
+<td><p>19.18088743</p></td>
+<td><p>1.257448876</p></td>
+<td><p>4.171248323</p></td>
+<td><p>10.27390454</p></td>
+<td><p>1.908204353</p></td>
+<td><p>4.3215354</p></td>
+<td><p>8.469482763</p></td>
+<td><p>33.93537232</p></td>
+<td><p>45.1300621</p></td>
+<td><p>62.95966496</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>2024</p></td>
+<td><p>56.33528038</p></td>
+<td><p>65.92117424</p></td>
+<td><p>79.69228171</p></td>
+<td><p>3.346783993</p></td>
+<td><p>9.609401844</p></td>
+<td><p>19.90976116</p></td>
+<td><p>1.220982858</p></td>
+<td><p>4.246330793</p></td>
+<td><p>10.95198224</p></td>
+<td><p>1.847141814</p></td>
+<td><p>4.334500006</p></td>
+<td><p>8.791323108</p></td>
+<td><p>33.62995396</p></td>
+<td><p>45.62649279</p></td>
+<td><p>65.16325323</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>2025</p></td>
+<td><p>56.05360398</p></td>
+<td><p>66.58038598</p></td>
+<td><p>82.00335788</p></td>
+<td><p>3.212912633</p></td>
+<td><p>9.619011246</p></td>
+<td><p>20.66633208</p></td>
+<td><p>1.185574355</p></td>
+<td><p>4.322764748</p></td>
+<td><p>11.67481307</p></td>
+<td><p>1.788033276</p></td>
+<td><p>4.347503506</p></td>
+<td><p>9.125393386</p></td>
+<td><p>33.32728438</p></td>
+<td><p>46.12838421</p></td>
+<td><p>67.44396709</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>2026</p></td>
+<td><p>55.77333596</p></td>
+<td><p>67.24618984</p></td>
+<td><p>84.38145525</p></td>
+<td><p>3.084396128</p></td>
+<td><p>9.628630257</p></td>
+<td><p>21.4516527</p></td>
+<td><p>1.151192699</p></td>
+<td><p>4.400574513</p></td>
+<td><p>12.44535073</p></td>
+<td><p>1.730816211</p></td>
+<td><p>4.360546017</p></td>
+<td><p>9.472158335</p></td>
+<td><p>33.02733882</p></td>
+<td><p>46.63579643</p></td>
+<td><p>69.80450594</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>2027</p></td>
+<td><p>55.49446928</p></td>
+<td><p>67.91865174</p></td>
+<td><p>86.82851746</p></td>
+<td><p>2.961020283</p></td>
+<td><p>9.638258887</p></td>
+<td><p>22.2668155</p></td>
+<td><p>1.117808111</p></td>
+<td><p>4.479784854</p></td>
+<td><p>13.26674388</p></td>
+<td><p>1.675430092</p></td>
+<td><p>4.373627655</p></td>
+<td><p>9.832100352</p></td>
+<td><p>32.73009277</p></td>
+<td><p>47.14879019</p></td>
+<td><p>72.24766365</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>2028</p></td>
+<td><p>55.21699693</p></td>
+<td><p>68.59783826</p></td>
+<td><p>89.34654446</p></td>
+<td><p>2.842579471</p></td>
+<td><p>9.647897146</p></td>
+<td><p>23.11295449</p></td>
+<td><p>1.085391675</p></td>
+<td><p>4.560420982</p></td>
+<td><p>14.14234897</p></td>
+<td><p>1.621816329</p></td>
+<td><p>4.386748538</p></td>
+<td><p>10.20572016</p></td>
+<td><p>32.43552194</p></td>
+<td><p>47.66742689</p></td>
+<td><p>74.77633188</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>2029</p></td>
+<td><p>54.94091195</p></td>
+<td><p>69.28381664</p></td>
+<td><p>91.93759425</p></td>
+<td><p>2.728876293</p></td>
+<td><p>9.657545043</p></td>
+<td><p>23.99124676</p></td>
+<td><p>1.053915317</p></td>
+<td><p>4.642508559</p></td>
+<td><p>15.07574401</p></td>
+<td><p>1.569918207</p></td>
+<td><p>4.399908783</p></td>
+<td><p>10.59353753</p></td>
+<td><p>32.14360224</p></td>
+<td><p>48.19176858</p></td>
+<td><p>77.39350349</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>2030</p></td>
+<td><p>54.66620739</p></td>
+<td><p>69.97665481</p></td>
+<td><p>94.60378449</p></td>
+<td><p>2.619721241</p></td>
+<td><p>9.667202588</p></td>
+<td><p>24.90291414</p></td>
+<td><p>1.023351773</p></td>
+<td><p>4.726073713</p></td>
+<td><p>16.07074311</p></td>
+<td><p>1.519680824</p></td>
+<td><p>4.41310851</p></td>
+<td><p>10.99609196</p></td>
+<td><p>31.85430982</p></td>
+<td><p>48.72187804</p></td>
+<td><p>80.10227611</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>2031</p></td>
+<td><p>54.39287635</p></td>
+<td><p>70.67642136</p></td>
+<td><p>97.34729424</p></td>
+<td><p>2.514932391</p></td>
+<td><p>9.676869791</p></td>
+<td><p>25.84922488</p></td>
+<td><p>0.993674571</p></td>
+<td><p>4.81114304</p></td>
+<td><p>17.13141216</p></td>
+<td><p>1.471051038</p></td>
+<td><p>4.426347835</p></td>
+<td><p>11.41394345</p></td>
+<td><p>31.56762103</p></td>
+<td><p>49.25781869</p></td>
+<td><p>82.90585578</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>2032</p></td>
+<td><p>54.12091197</p></td>
+<td><p>71.38318557</p></td>
+<td><p>100.1703658</p></td>
+<td><p>2.414335096</p></td>
+<td><p>9.68654666</p></td>
+<td><p>26.83149542</p></td>
+<td><p>0.964858009</p></td>
+<td><p>4.897743615</p></td>
+<td><p>18.26208536</p></td>
+<td><p>1.423977405</p></td>
+<td><p>4.439626879</p></td>
+<td><p>11.8476733</p></td>
+<td><p>31.28351244</p></td>
+<td><p>49.7996547</p></td>
+<td><p>85.80756073</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>2033</p></td>
+<td><p>53.85030741</p></td>
+<td><p>72.09701743</p></td>
+<td><p>103.0753064</p></td>
+<td><p>2.317761692</p></td>
+<td><p>9.696233207</p></td>
+<td><p>27.85109225</p></td>
+<td><p>0.936877126</p></td>
+<td><p>4.985903</p></td>
+<td><p>19.46738299</p></td>
+<td><p>1.378410128</p></td>
+<td><p>4.452945759</p></td>
+<td><p>12.29788489</p></td>
+<td><p>31.00196083</p></td>
+<td><p>50.3474509</p></td>
+<td><p>88.81082536</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>2034</p></td>
+<td><p>53.58105587</p></td>
+<td><p>72.8179876</p></td>
+<td><p>106.0644903</p></td>
+<td><p>2.225051224</p></td>
+<td><p>9.70592944</p></td>
+<td><p>28.90943375</p></td>
+<td><p>0.90970769</p></td>
+<td><p>5.075649254</p></td>
+<td><p>20.75223027</p></td>
+<td><p>1.334301004</p></td>
+<td><p>4.466304597</p></td>
+<td><p>12.76520451</p></td>
+<td><p>30.72294318</p></td>
+<td><p>50.90127286</p></td>
+<td><p>91.91920424</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>2035</p></td>
+<td><p>53.31315059</p></td>
+<td><p>73.54616748</p></td>
+<td><p>109.1403605</p></td>
+<td><p>2.136049175</p></td>
+<td><p>9.71563537</p></td>
+<td><p>30.00799224</p></td>
+<td><p>0.883326167</p></td>
+<td><p>5.167010941</p></td>
+<td><p>22.12187747</p></td>
+<td><p>1.291603371</p></td>
+<td><p>4.479703511</p></td>
+<td><p>13.25028229</p></td>
+<td><p>30.44643669</p></td>
+<td><p>51.46118686</p></td>
+<td><p>95.13637639</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>2036</p></td>
+<td><p>53.04658484</p></td>
+<td><p>74.28162915</p></td>
+<td><p>112.3054309</p></td>
+<td><p>2.050607208</p></td>
+<td><p>9.725351005</p></td>
+<td><p>31.14829594</p></td>
+<td><p>0.857709708</p></td>
+<td><p>5.260017137</p></td>
+<td><p>23.58192138</p></td>
+<td><p>1.250272064</p></td>
+<td><p>4.493142621</p></td>
+<td><p>13.75379301</p></td>
+<td><p>30.17241876</p></td>
+<td><p>52.02725992</p></td>
+<td><p>98.46614956</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>2037</p></td>
+<td><p>52.78135192</p></td>
+<td><p>75.02444544</p></td>
+<td><p>115.5622884</p></td>
+<td><p>1.96858292</p></td>
+<td><p>9.735076356</p></td>
+<td><p>32.33193119</p></td>
+<td><p>0.832836126</p></td>
+<td><p>5.354697446</p></td>
+<td><p>25.13832819</p></td>
+<td><p>1.210263358</p></td>
+<td><p>4.506622049</p></td>
+<td><p>14.27643715</p></td>
+<td><p>29.90086699</p></td>
+<td><p>52.59955978</p></td>
+<td><p>101.9124648</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>2038</p></td>
+<td><p>52.51744516</p></td>
+<td><p>75.7746899</p></td>
+<td><p>118.9135948</p></td>
+<td><p>1.889839603</p></td>
+<td><p>9.744811433</p></td>
+<td><p>33.56054457</p></td>
+<td><p>0.808683879</p></td>
+<td><p>5.451082</p></td>
+<td><p>26.79745785</p></td>
+<td><p>1.17153493</p></td>
+<td><p>4.520141915</p></td>
+<td><p>14.81894176</p></td>
+<td><p>29.63175919</p></td>
+<td><p>53.17815494</p></td>
+<td><p>105.4794011</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>2039</p></td>
+<td><p>52.25485793</p></td>
+<td><p>76.5324368</p></td>
+<td><p>122.362089</p></td>
+<td><p>1.814246019</p></td>
+<td><p>9.754556244</p></td>
+<td><p>34.83584526</p></td>
+<td><p>0.785232046</p></td>
+<td><p>5.549201476</p></td>
+<td><p>28.56609007</p></td>
+<td><p>1.134045812</p></td>
+<td><p>4.533702341</p></td>
+<td><p>15.38206155</p></td>
+<td><p>29.36507336</p></td>
+<td><p>53.76311464</p></td>
+<td><p>109.1711801</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>2040</p></td>
+<td><p>51.99358364</p></td>
+<td><p>77.29776116</p></td>
+<td><p>125.9105896</p></td>
+<td><p>1.741676178</p></td>
+<td><p>9.7643108</p></td>
+<td><p>36.15960738</p></td>
+<td><p>0.762460317</p></td>
+<td><p>5.649087103</p></td>
+<td><p>30.45145201</p></td>
+<td><p>1.097756346</p></td>
+<td><p>4.547303448</p></td>
+<td><p>15.96657988</p></td>
+<td><p>29.1007877</p></td>
+<td><p>54.3545089</p></td>
+<td><p>112.9921714</p></td>
+<td><p>Dieleman (2018)</p></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>Source:  Dieleman (2018) - <a class="reference external" href="https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(18)30697-4/fulltext#app-1">https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(18)30697-4/fulltext#app-1</a></p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>World Development Indicators</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>Malawi GDP PPP (2021 constant International $)</p></td>
+<td><p>30159697748</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>Malawi GDP PPP (2017 International $)</p></td>
+<td><p>24899003067</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>Malawi GDP PPP (2017 $)</p></td>
+<td><p>8943543677</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>Conversion factor (Purchasing power parity $ to $)</p></td>
+<td><p>2.784019843</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>Conversion factor (2017 Purchasing power parity $ to 2023 $)</p></td>
+<td><p>2.239758522</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>Exchange rate (2017 USD to 2023 USD)</p></td>
+<td><p>1.243</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ResourceFile_Exchange_Rates_and_Inflation.csv.html" class="btn btn-neutral float-left" title="Exchange Rates and Inflation (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ResourceFile_Resource_Mapping.csv.html" class="btn btn-neutral float-right" title="Resource Mapping (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

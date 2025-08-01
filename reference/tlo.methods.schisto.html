@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.schisto module &mdash; TLOmodel 0.1.dev2530+geb94b70 documentation</title>
+  <title>tlo.methods.schisto module &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=298b4bb7"></script>
+      <script src="../_static/documentation_options.js?v=9c477e70"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -93,12 +93,12 @@
 <span id="tlo-methods-schisto-module"></span><h1>tlo.methods.schisto module<a class="headerlink" href="#module-tlo.methods.schisto" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.schisto.Schisto">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Schisto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mda_execute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.Schisto" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Schisto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mda_execute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">single_district</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.Schisto" title="Link to this definition"></a></dt>
 <dd><p>Schistosomiasis module.
 Two species of worm that cause Schistosomiasis are modelled independently. Worms are acquired by persons via the</p>
 <blockquote>
 <div><p>environment. There is a delay between the acquisition of worms and the maturation to ‘adults’ worms; and a long
-period before the adult worms die. The number of worms in a person (whether a high-intensity infection or not)
+period before the adult worms die. The number of worms in a person (whether a heavy-intensity infection or not)
 determines the symptoms they experience. These symptoms are associated with disability weights. There is no risk
 of death. Treatment can be provided to persons who present following the onset of symptoms. Mass Drug
 Administrations also give treatment to the general population, which clears any worm burden they have.</p>
@@ -128,14 +128,6 @@ generator.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>prob_sent_to_lab_test_children</p></td>
-<td><p>REAL</p></td>
-<td><p>Probability that infected child gets sent to lab test</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_sent_to_lab_test_adults</p></td>
-<td><p>REAL</p></td>
-<td><p>Probability that an infected adults gets sent to lab test</p></td>
-</tr>
 <tr class="row-even"><td><p>delay_till_hsi_a_repeated</p></td>
 <td><p>REAL</p></td>
 <td><p>Time till seeking healthcare again after not being sent to schisto test: start</p></td>
@@ -144,17 +136,85 @@ generator.</p>
 <td><p>REAL</p></td>
 <td><p>Time till seeking healthcare again after not being sent to schisto test: end</p></td>
 </tr>
-<tr class="row-even"><td><p>PZQ_efficacy</p></td>
+<tr class="row-even"><td><p>rr_WASH</p></td>
 <td><p>REAL</p></td>
-<td><p>The efficacy of Praziquantel in clearing burden of any Schistosomiasis worm species</p></td>
+<td><p>proportional reduction in population susceptible to schistosoma infection with improved WASH</p></td>
+</tr>
+<tr class="row-odd"><td><p>calibration_scenario</p></td>
+<td><p>REAL</p></td>
+<td><p>Scenario used to reset parameters to run calibration sims</p></td>
+</tr>
+<tr class="row-even"><td><p>urine_filtration_sensitivity_lowWB</p></td>
+<td><p>REAL</p></td>
+<td><p>Sensitivity of UF in detecting low WB</p></td>
+</tr>
+<tr class="row-odd"><td><p>urine_filtration_sensitivity_moderateWB</p></td>
+<td><p>REAL</p></td>
+<td><p>Sensitivity of UF in detecting moderate WB</p></td>
+</tr>
+<tr class="row-even"><td><p>urine_filtration_sensitivity_heavyWB</p></td>
+<td><p>REAL</p></td>
+<td><p>Sensitivity of UF in detecting heavy WB</p></td>
+</tr>
+<tr class="row-odd"><td><p>kato_katz_sensitivity_moderateWB</p></td>
+<td><p>REAL</p></td>
+<td><p>Sensitivity of KK in detecting moderate WB</p></td>
+</tr>
+<tr class="row-even"><td><p>kato_katz_sensitivity_heavyWB</p></td>
+<td><p>REAL</p></td>
+<td><p>Sensitivity of KK in detecting heavy WB</p></td>
+</tr>
+<tr class="row-odd"><td><p>scaleup_WASH</p></td>
+<td><p>STRING</p></td>
+<td><p>Whether to scale-up WASH during simulation, pause fixes values at 2024 levels with no further improvement, continue allows historical trends to continue, scaleup switches everyone to having access to WASH</p></td>
+</tr>
+<tr class="row-even"><td><p>scaleup_WASH_start_year</p></td>
+<td><p>INT</p></td>
+<td><p>Start date to scale-up WASH, years after sim start date</p></td>
+</tr>
+<tr class="row-odd"><td><p>mda_coverage</p></td>
+<td><p>REAL</p></td>
+<td><p>Coverage of future MDA activities, consistent across alltarget groups</p></td>
+</tr>
+<tr class="row-even"><td><p>mda_target_group</p></td>
+<td><p>STRING</p></td>
+<td><p>Target group for future MDA activities, one of [PSAC_SAC, SAC, ALL]</p></td>
+</tr>
+<tr class="row-odd"><td><p>mda_frequency_months</p></td>
+<td><p>REAL</p></td>
+<td><p>Number of months between MDA activities</p></td>
+</tr>
+<tr class="row-even"><td><p>scaling_factor_baseline_risk</p></td>
+<td><p>REAL</p></td>
+<td><p>scaling factor controls how the background risk of infection is adjusted based on the deviation of current prevalence from baseline prevalence</p></td>
+</tr>
+<tr class="row-odd"><td><p>baseline_risk</p></td>
+<td><p>REAL</p></td>
+<td><p>number of worms applied as a baseline risk across districts to prevent fadeout, number is scaled by scaling_factor_baseline_risk</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_weight_mild_schistosomiasis</p></td>
+<td><p>REAL</p></td>
+<td><p>daly weight assigned to mild schistosomiasis, both species</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_weight_moderate_s_mansoni</p></td>
+<td><p>REAL</p></td>
+<td><p>daly weight assigned to moderate S. mansoni</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_weight_heavy_s_mansoni</p></td>
+<td><p>REAL</p></td>
+<td><p>daly weight assigned to heavy S. mansoni</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_weight_moderate_s_haematobium</p></td>
+<td><p>REAL</p></td>
+<td><p>daly weight assigned to moderate S. haematobium</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_weight_heavy_s_haematobium</p></td>
+<td><p>REAL</p></td>
+<td><p>daly weight assigned to heavy S. haematobium</p></td>
 </tr>
 <tr class="row-odd"><td><p>MDA_coverage_historical</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Probability of getting PZQ in the MDA for PSAC, SAC and Adults in historic rounds</p></td>
-</tr>
-<tr class="row-even"><td><p>MDA_coverage_prognosed</p></td>
-<td><p>DATA_FRAME</p></td>
-<td><p>Probability of getting PZQ in the MDA for PSAC, SAC and Adults in future rounds, with the frequency given in months</p></td>
 </tr>
 </tbody>
 </table>
@@ -172,24 +232,24 @@ generator.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>ss_last_PZQ_date</p></td>
-<td><p>DATE</p></td>
-<td><p>Day of the most recent treatment with PZQ</p></td>
+<tr class="row-even"><td><p>ss_MDA_treatment_counter</p></td>
+<td><p>INT</p></td>
+<td><p>Counter for number of MDA treatments received in logging interval</p></td>
 </tr>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>CAUSES_OF_DEATH : {}</p>
-<p>CAUSES_OF_DISABILITY : {‘Schistosomiasis’: &lt;tlo.methods.causes.Cause object at 0x16a814490&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Schistosomiasis’: &lt;tlo.methods.causes.Cause object at 0x1440e35d0&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
-<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthSystem’, ‘HealthBurden’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘HealthSystem’}</p>
 <p>__annotations__ : {}</p>
 <p>module_prefix : ss</p>
 <p><strong>Functions (defined or overridden in class Schisto):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.schisto.Schisto.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mda_execute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.Schisto.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mda_execute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">single_district</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.Schisto.__init__" title="Link to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -202,7 +262,7 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.schisto.Schisto.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.Schisto.read_parameters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.Schisto.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Read parameters and register symptoms.</p>
 </dd></dl>
 
@@ -248,7 +308,7 @@ module.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.schisto.Schisto.do_effect_of_treatment">
-<span class="sig-name descname"><span class="pre">do_effect_of_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.schisto.Schisto.do_effect_of_treatment" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_effect_of_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mda</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.schisto.Schisto.do_effect_of_treatment" title="Link to this definition"></a></dt>
 <dd><p>Do the effects of a treatment administered to a person or persons. This can be called for a person who is
 infected and receiving treatment following a diagnosis, or for a person who is receiving treatment as part of a</p>
 <blockquote>
@@ -264,11 +324,20 @@ specific to a particular species).</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.schisto.Schisto._create_mda_strategy">
+<span class="sig-name descname"><span class="pre">_create_mda_strategy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#tlo.methods.schisto.Schisto._create_mda_strategy" title="Link to this definition"></a></dt>
+<dd><p>this uses the parameters set in the module to create a pd.DataFrame that contains the MDA strategy for
+future MDA activities. This will take effect the year after the last entry in
+parameters[‘MDA_coverage_historical’]</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.schisto.Schisto._register_symptoms">
-<span class="sig-name descname"><span class="pre">_register_symptoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.schisto.Schisto._register_symptoms" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_register_symptoms</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.schisto.Schisto._register_symptoms" title="Link to this definition"></a></dt>
 <dd><p>Register the symptoms with the <cite>SymptomManager</cite>.
 :params symptoms: The symptoms that are used by this module in a dictionary of the form, {&lt;symptom&gt;:
-&lt;generic_symptom_similar&gt;}. Each symptom is associated with the average healthcare seeking behaviour.</p>
+&lt;generic_symptom_similar&gt;}. Each symptom is associated with the average healthcare seeking behaviour
+unless otherwise specified.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -279,15 +348,36 @@ specific to a particular species).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.schisto.Schisto._get_item_code_for_praziquantel">
-<span class="sig-name descname"><span class="pre">_get_item_code_for_praziquantel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#tlo.methods.schisto.Schisto._get_item_code_for_praziquantel" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_get_item_code_for_praziquantel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">MDA</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#tlo.methods.schisto.Schisto._get_item_code_for_praziquantel" title="Link to this definition"></a></dt>
 <dd><p>Look-up the item code for Praziquantel</p>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.schisto.Schisto.calculate_praziquantel_dosage">
+<span class="sig-name descname"><span class="pre">calculate_praziquantel_dosage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.Schisto.calculate_praziquantel_dosage" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.schisto.Schisto._get_consumables_for_dx">
+<span class="sig-name descname"><span class="pre">_get_consumables_for_dx</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.Schisto._get_consumables_for_dx" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.schisto.Schisto._schedule_mda_events">
 <span class="sig-name descname"><span class="pre">_schedule_mda_events</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.schisto.Schisto._schedule_mda_events" title="Link to this definition"></a></dt>
 <dd><p>Schedule MDA events, historical and prognosed.</p>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.schisto.Schisto.get_infection_status">
+<span class="sig-name descname"><span class="pre">get_infection_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">age</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggregate_worm_burden</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_prefix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.Schisto.get_infection_status" title="Link to this definition"></a></dt>
+<dd><p>Find the correct infection intensity status given the age and aggregate worm burden</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.schisto.Schisto.update_infection_symptoms">
+<span class="sig-name descname"><span class="pre">update_infection_symptoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_column_aggregate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.schisto.Schisto.update_infection_symptoms" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.schisto.Schisto.do_at_generic_first_appt">
@@ -328,14 +418,29 @@ appointment.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.schisto.Schisto.select_test">
+<span class="sig-name descname"><span class="pre">select_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.Schisto.select_test" title="Link to this definition"></a></dt>
+<dd><p>choose the most likely test administered given the prevalent symptoms
+of this person</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.schisto.Schisto.reduce_susceptibility">
+<span class="sig-name descname"><span class="pre">reduce_susceptibility</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_column</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.Schisto.reduce_susceptibility" title="Link to this definition"></a></dt>
+<dd><p>Updates individual susceptibility to Schistosoma species following changes in WASH-related attributes,
+either through enhanced lifestyle interventions or WASH scale-up in the schisto module.</p>
+<p>Individuals newly gaining access to WASH experience a 40% reduction in susceptibility,
+such that 40% of them are no longer considered susceptible to schistosomiasis.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.schisto.SchistoInfectionWormBurdenEvent">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SchistoInfectionWormBurdenEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SchistoSpecies</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoInfectionWormBurdenEvent" title="Link to this definition"></a></dt>
 <dd><p>A recurring event that causes infection of people with this species.
-* Determines who becomes infected (using worm burden and reservoir of infectious material.
-* Schedules <cite>SchistoMatureWorms</cite> for when the worms mature to adult worms.</p>
+* Determines who becomes infected using worm burden and reservoir of infectious material.</p>
 <p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -380,50 +485,44 @@ appointment.</p></li>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoMatureWorms">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SchistoMatureWorms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SchistoSpecies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_worms_that_mature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoMatureWorms" title="Link to this definition"></a></dt>
-<dd><p>Represents the maturation of worms to adult worms.
-* Increases the aggregate worm burden of an individual upon maturation of the worms
-* Schedules the natural death of worms and symptoms development if High-infection
-* Updates the infection status and symptoms of the person accordingly.</p>
-<p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoMatureJuvenileWormsEvent">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SchistoMatureJuvenileWormsEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoMatureJuvenileWormsEvent" title="Link to this definition"></a></dt>
+<dd><p>A recurring event that:
+* Matures the juvenile worms into adult worms</p>
+<p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p></li>
-<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
 </ul>
 </dd>
 </dl>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class SchistoMatureWorms):</strong></p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class SchistoMatureJuvenileWormsEvent):</strong></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoMatureWorms.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SchistoSpecies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_worms_that_mature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoMatureWorms.__init__" title="Link to this definition"></a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoMatureJuvenileWormsEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoMatureJuvenileWormsEvent.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p></li>
-<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoMatureWorms.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoMatureWorms.apply" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoMatureJuvenileWormsEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoMatureJuvenileWormsEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
-<p>Must be implemented by subclasses.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
@@ -434,55 +533,44 @@ constructor, but may also take further keyword arguments.</p></li>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoWormsNatDeath">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SchistoWormsNatDeath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SchistoSpecies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_worms_that_die</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoWormsNatDeath" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Represents the death of adult worms.</dt><dd><ul class="simple">
-<li><p>Decreases the aggregate worm burden of an individual upon natural death of the adult worm.</p></li>
-<li><p>Updates the infection status and the symtoms of the person accordingly.</p></li>
-</ul>
-</dd>
-</dl>
-<p>Nb. This event checks the last day of PZQ treatment and if has been less than the lifespan of the worm it doesn’t
-do anything (because the worms for which this event was raised will since have been killed by the PZQ).</p>
-<p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoWormDeathEvent">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SchistoWormDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoWormDeathEvent" title="Link to this definition"></a></dt>
+<dd><p>A recurring event that:
+* Kills any adult worms according to species-specific lifespan</p>
+<p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p></li>
-<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
 </ul>
 </dd>
 </dl>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class SchistoWormsNatDeath):</strong></p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class SchistoWormDeathEvent):</strong></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoWormsNatDeath.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SchistoSpecies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_worms_that_die</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoWormsNatDeath.__init__" title="Link to this definition"></a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoWormDeathEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoWormDeathEvent.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p></li>
-<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoWormsNatDeath.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoWormsNatDeath.apply" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoWormDeathEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoWormDeathEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
-<p>Must be implemented by subclasses.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
@@ -556,6 +644,61 @@ constructor, but may also take further keyword arguments.</p></li>
 <dt class="sig sig-object py" id="tlo.methods.schisto.SchistoMDAEvent._select_recipients">
 <span class="sig-name descname"><span class="pre">_select_recipients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">district</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coverage</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#tlo.methods.schisto.SchistoMDAEvent._select_recipients" title="Link to this definition"></a></dt>
 <dd><p>Determine persons to receive MDA, based on a specified target age-group and coverage.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoWashScaleUp">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SchistoWashScaleUp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoWashScaleUp" title="Link to this definition"></a></dt>
+<dd><p>This has two functions:
+<a href="#id1"><span class="problematic" id="id2">*</span></a>1 update the susceptibility of individuals if their WASH properties have changed
+<a href="#id3"><span class="problematic" id="id4">*</span></a>2 change WASH properties if scale-up WASH scenario is implemented</p>
+<p>When WASH is implemented, two processes will occur:
+<a href="#id5"><span class="problematic" id="id6">*</span></a>1 scale the proportion of the population susceptible to schisto infection
+assuming that WASH reduces individual risk of infection by 0.6
+<a href="#id7"><span class="problematic" id="id8">*</span></a>2 increase the proportion of the population who have access to
+sanitation and clean drinking water</p>
+<p>Event is initially scheduled by initialise_simulation on specified date</p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class SchistoWashScaleUp):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoWashScaleUp.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoWashScaleUp.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoWashScaleUp.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoWashScaleUp.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -647,11 +790,12 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.schisto.HSI_Schisto_MDA">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Schisto_MDA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beneficiaries_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.HSI_Schisto_MDA" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Schisto_MDA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beneficiaries_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_group_included</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.HSI_Schisto_MDA" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event for providing one or more persons with PZQ as part of a Mass Drug
 Administration (MDA). Note that the <cite>person_id</cite> declared as the <cite>target</cite> of this <cite>HSI_Event</cite> is only one of the
 beneficiaries. This is in, effect, a “batch job” of individual HSI being handled within one HSI, for the sake of
 computational efficiency.</p>
+<p>This is repeated for each district every time MDA is scheduled, allowing variable coverage by district each year</p>
 <p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -668,7 +812,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Schisto_MDA):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.schisto.HSI_Schisto_MDA.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beneficiaries_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.HSI_Schisto_MDA.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beneficiaries_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_group_included</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.HSI_Schisto_MDA.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -690,9 +834,32 @@ constructor, but may also take further keyword arguments.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoPersonDaysLoggingEvent">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SchistoPersonDaysLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoPersonDaysLoggingEvent" title="Link to this definition"></a></dt>
+<dd><p>This is a regular event (every day) that logs the person-days infected</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class SchistoPersonDaysLoggingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoPersonDaysLoggingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoPersonDaysLoggingEvent.__init__" title="Link to this definition"></a></dt>
+<dd><p>This is a regular event (every day) that logs the person-days infected</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.schisto.SchistoPersonDaysLoggingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoPersonDaysLoggingEvent.apply" title="Link to this definition"></a></dt>
+<dd><p>Log the numbers of people infected with any species of schisto and heavy-burden infections
+sum these in SchistoLoggingEvent each year to get person-years infected</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.schisto.SchistoLoggingEvent">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SchistoLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoLoggingEvent" title="Link to this definition"></a></dt>
-<dd><p>This is a regular event (every month) that causes the logging for each species.</p>
+<dd><p>This is a regular event (every year) that causes the logging for each species.</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -700,13 +867,13 @@ constructor, but may also take further keyword arguments.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.schisto.SchistoLoggingEvent.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoLoggingEvent.__init__" title="Link to this definition"></a></dt>
-<dd><p>This is a regular event (every month) that causes the logging for each species.</p>
+<dd><p>This is a regular event (every year) that causes the logging for each species.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.schisto.SchistoLoggingEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.schisto.SchistoLoggingEvent.apply" title="Link to this definition"></a></dt>
-<dd><p>Call <cite>log_infection_status</cite> for each species.</p>
+<dd><p>Call <cite>log_infection_status</cite> and ‘log_mean_worm_burden’ for each species</p>
 </dd></dl>
 
 </dd></dl>

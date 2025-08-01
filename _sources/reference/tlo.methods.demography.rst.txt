@@ -133,6 +133,8 @@ tlo.methods.demography module
 
      .. automethod:: compute_initial_model_to_data_popsize_ratio
 
+     .. automethod:: compute_initial_model_to_data_popsize_ratio_by_district
+
 
 
 

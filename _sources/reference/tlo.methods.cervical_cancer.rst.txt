@@ -1,0 +1,547 @@
+tlo.methods.cervical_cancer module
+==================================
+
+.. automodule:: tlo.methods.cervical_cancer
+
+
+.. autoclass:: CervicalCancer
+
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - init_prev_cin_hpv_cc_stage_hiv
+          - LIST
+          - initial proportions in hpv cancer categories in women with hiv
+        * - init_prev_cin_hpv_cc_stage_nhiv
+          - LIST
+          - initial proportions in hpv cancer categories in women without hiv
+        * - r_hpv
+          - REAL
+          - probability per month of oncogenic hpv infection
+        * - r_cin1_hpv
+          - REAL
+          - probability per month of incident cin1 amongst people with hpv
+        * - prob_revert_from_cin1
+          - REAL
+          - probability of reverting from cin1 to none
+        * - r_cin2_cin1
+          - REAL
+          - probability per month of incident cin2 amongst people with cin1
+        * - r_cin3_cin2
+          - REAL
+          - probability per month of incident cin3 amongst people with cin2
+        * - r_stage1_cin3
+          - REAL
+          - probability per month of incident stage1 cervical cancer amongst people with cin3
+        * - r_stage2a_stage1
+          - REAL
+          - probability per month of incident stage2a cervical cancer amongst people with stage1
+        * - r_stage2b_stage2a
+          - REAL
+          - probability per month of incident stage2b cervical cancer amongst people with stage2a
+        * - r_stage3_stage2b
+          - REAL
+          - probability per month of incident stage3 cervical cancer amongst people with stage2b
+        * - r_stage4_stage3
+          - REAL
+          - probability per month of incident stage4 cervical cancer amongst people with stage3
+        * - rr_progress_cc_hiv
+          - REAL
+          - risk ratio for progressing through cin and cervical cancer stages if have unsuppressed hiv
+        * - rr_hpv_vaccinated
+          - REAL
+          - risk ratio for hpv if vaccinated - this is combined effect of probability the hpv is vaccine-preventable and vaccine efficacy against vaccine-preventable hpv 
+        * - rr_hpv_age50plus
+          - REAL
+          - risk ratio for hpv if age 50 plus
+        * - prob_cure_stage1
+          - REAL
+          - probability of cure if treated in stage 1 cervical cancer
+        * - prob_cure_stage2a
+          - REAL
+          - probability of cure if treated in stage 2a cervical cancer
+        * - prob_cure_stage2b
+          - REAL
+          - probability of cure if treated in stage 2b cervical cancer
+        * - prob_cure_stage3
+          - REAL
+          - probability of cure if treated in stage 3 cervical cancer
+        * - r_death_cervical_cancer
+          - REAL
+          - probability per month of death from cervical cancer amongst people with stage 4 cervical cancer
+        * - p_vaginal_bleeding_if_no_cc
+          - REAL
+          - Probability of vaginal bleeding onset if not in stage 1/2/3/4
+        * - r_vaginal_bleeding_cc_stage1
+          - REAL
+          - probability of vaginal bleeding if have stage 1 cervical cancer
+        * - rr_vaginal_bleeding_cc_stage2a
+          - REAL
+          - risk ratio for vaginal bleeding if have stage 2a cervical cancer
+        * - rr_vaginal_bleeding_cc_stage2b
+          - REAL
+          - risk ratio for vaginal bleeding if have stage 2b cervical cancer
+        * - rr_vaginal_bleeding_cc_stage3
+          - REAL
+          - risk ratio for vaginal bleeding if have stage 3 cervical cancer
+        * - rr_vaginal_bleeding_cc_stage4
+          - REAL
+          - risk ratio for vaginal bleeding if have stage 4 cervical cancer
+        * - prob_referral_biopsy_given_vaginal_bleeding
+          - REAL
+          - probability of being referred for a biopsy if presenting with vaginal bleeding
+        * - sensitivity_of_biopsy_for_cervical_cancer
+          - REAL
+          - sensitivity of biopsy for diagnosis of cervical cancer
+        * - sensitivity_of_xpert_for_hpv_cin_cc
+          - REAL
+          - sensitivity of xpert for presence of hpv, cin or cervical cancer
+        * - sensitivity_of_via_for_cin_cc
+          - REAL
+          - sensitivity of via for cin and cervical cancer
+        * - prob_xpert_screen
+          - REAL
+          - probability of xpert screening
+        * - prob_via_screen
+          - REAL
+          - probability of via screening
+        * - prob_thermoabl_successful
+          - REAL
+          - probability of thermoablation treatment successful in removing CIN (ce_hpv_cc_status set to none)
+        * - prob_cryotherapy_successful
+          - REAL
+          - probability of cryotherapy treatment successful in removing CIN (ce_hpv_cc_status set to none)
+        * - transition_screening_method_year
+          - REAL
+          - year screening method switches from VIA to Xpert
+        * - transition_to_thermo_year
+          - REAL
+          - year CIN removal method switches from Cryo to Thermo
+        * - screening_min_age_hv_neg
+          - REAL
+          - minimum age individual to be screened if HIV negative
+        * - screening_max_age_hv_neg
+          - REAL
+          - maximum age individual to be screened if HIV negative
+        * - screening_min_age_hv_pos
+          - REAL
+          - minimum age individual to be screened if HIV positive
+        * - screening_max_age_hv_pos
+          - REAL
+          - maximum age individual to be screened if HIV positive
+        * - yrs_between_screen_hv_pos
+          - REAL
+          - minimum years between screening if HIV positive
+        * - yrs_between_screen_hv_neg
+          - REAL
+          - minimum years between screening if HIV negative
+        * - palliative_care_bed_days
+          - REAL
+          - palliative_care_bed_days
+        * - stage_1_3_daly_wt
+          - REAL
+          - GBD sequalae code corresponding to stage_1_3_daly_wt
+        * - stage_1_3_treated_daly_wt
+          - REAL
+          - GBD sequalae code corresponding to stage_1_3_treated_daly_wt
+        * - stage4_daly_wt
+          - REAL
+          - GBD sequalae code corresponding tostage4_daly_wt
+        * - min_yrs_between_screening_if_cin_treated
+          - REAL
+          - minimum years between screening if individual has been treated for CIN previously
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - ce_hpv_cc_status
+          - CATEGORICAL
+          - Current hpv / cervical cancer status - note that hpv means persistent hpv.  Possible values are: [none, hpv, cin1, cin2, cin3, stage1, stage2a, stage2b, stage3, stage4, ]
+        * - ce_date_diagnosis
+          - DATE
+          - the date of diagnosis of cervical cancer stage (pd.NaT if never diagnosed)
+        * - ce_stage_at_diagnosis
+          - CATEGORICAL
+          - the cancer stage at which cancer diagnosis was made.  Possible values are: [none, stage1, stage2a, stage2b, stage3, stage4, ]
+        * - ce_date_cin_removal
+          - DATE
+          - the date of last cin removal (pd.NaT if never had cin removal)
+        * - ce_date_treatment
+          - DATE
+          - date of first receiving attempted curative treatment (pd.NaT if never started treatment)
+        * - ce_ever_screened
+          - BOOL
+          - whether ever been screened
+        * - ce_ever_treated
+          - BOOL
+          - ever been treated for cc
+        * - ce_cured_date_cc
+          - DATE
+          - ever cured of cervical cancer date
+        * - ce_cc_ever
+          - BOOL
+          - ever had cc
+        * - ce_stage_at_which_treatment_given
+          - CATEGORICAL
+          - the cancer stage at which treatment was given (because the treatment only has an effect during the stageat which it is given). (Note treatment only initiated in stage1/2a/2b/3.  Possible values are: [none, hpv, cin1, cin2, cin3, stage1, stage2a, stage2b, stage3, stage4, ]
+        * - ce_date_palliative_care
+          - DATE
+          - date of first receiving palliative care (pd.NaT is never had palliative care)
+        * - ce_ever_diagnosed
+          - BOOL
+          - ever diagnosed with cervical cancer (even if now cured)
+        * - ce_xpert_hpv_ever_pos
+          - BOOL
+          - hpv positive on xpert test ever
+        * - ce_via_cin_ever_detected
+          - BOOL
+          - cin ever_detected on via
+        * - ce_date_last_screened
+          - DATE
+          - date of last screening
+        * - ce_date_thermoabl
+          - DATE
+          - date of thermoablation for CIN
+        * - ce_date_cryotherapy
+          - DATE
+          - date of cryotherapy for CIN
+        * - ce_date_via
+          - DATE
+          - date of VIA screening
+        * - ce_date_xpert
+          - DATE
+          - date of XPERT screening
+        * - ce_current_cc_diagnosed
+          - BOOL
+          - currently has diagnosed cervical cancer (which until now has not been cured)
+        * - ce_biopsy
+          - BOOL
+          - ce biopsy done ever
+
+
+
+     **Class attributes:**
+
+     CAUSES_OF_DEATH : {'CervicalCancer': <tlo.methods.causes.Cause object at 0x137699f90>}
+
+     CAUSES_OF_DISABILITY : {'CervicalCancer': <tlo.methods.causes.Cause object at 0x13769ba90>}
+
+     INIT_DEPENDENCIES : {'Hiv', 'Lifestyle', 'SymptomManager', 'Demography', 'HealthSystem'}
+
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthSeekingBehaviour', 'HealthBurden'}
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class CervicalCancer):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: build_linear_models
+
+     .. automethod:: on_birth
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: do_at_generic_first_appt
+
+     .. automethod:: choose_cin_procedure_and_schedule_it
+
+
+
+
+
+
+
+
+.. autoclass:: CervicalCancerMainPollingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class CervicalCancerMainPollingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: CervicalCancer_DeathInStage4
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class CervicalCancer_DeathInStage4):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CervicalCancer_Screening_VIA
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_CervicalCancer_Screening_VIA):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CervicalCancer_Screening_Xpert
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_CervicalCancer_Screening_Xpert):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CervicalCancer_Presentation_WithVaginalBleeding
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_CervicalCancer_Presentation_WithVaginalBleeding):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CervicalCancer_CINRemoval_Cryotherapy
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_CervicalCancer_CINRemoval_Cryotherapy):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CervicalCancer_CINRemoval_Thermoablation
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_CervicalCancer_CINRemoval_Thermoablation):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CervicalCancer_Biopsy
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_CervicalCancer_Biopsy):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CervicalCancer_Treatment_Start
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_CervicalCancer_Treatment_Start):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CervicalCancer_Treatment_PostTreatmentCheck
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_CervicalCancer_Treatment_PostTreatmentCheck):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CervicalCancer_PalliativeCare
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_CervicalCancer_PalliativeCare):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: CervicalCancerLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class CervicalCancerLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

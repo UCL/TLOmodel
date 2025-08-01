@@ -57,6 +57,12 @@ tlo.methods.healthsystem module
         * - cons_availability
           - STRING
           - Availability of consumables. If 'default' then use the availability specified in the ResourceFile; if 'none', then let no consumable be  ever be available; if 'all', then all consumables are always available. When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-riddenif an argument is provided to the module initialiser.Note that other options are also available: see the `Consumables` class.
+        * - cons_override_treatment_ids
+          - LIST
+          - Consumable availability within any treatment ids listed in this parameter will be set at to a given probabilty stored in override_treatment_ids_avail. By default this list is empty
+        * - cons_override_treatment_ids_prob_avail
+          - REAL
+          - Probability that consumables for treatment ids listed in cons_override_treatment_ids will be available
         * - BedCapacity
           - DATA_FRAME
           - Data on the number of beds available of each type by facility_id
@@ -164,13 +170,13 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     capabilities_today : <property object at 0x16a4bc7c0>
+     capabilities_today : <property object at 0x1372cd210>
 
-     hsi_event_counts : <property object at 0x16a4bc9a0>
+     hsi_event_counts : <property object at 0x1372cd3f0>
 
-     never_ran_hsi_event_counts : <property object at 0x16a4bc9f0>
+     never_ran_hsi_event_counts : <property object at 0x1372cd440>
 
-     use_funded_or_actual_staffing : <property object at 0x16a4bc8b0>
+     use_funded_or_actual_staffing : <property object at 0x1372cd300>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -260,6 +266,8 @@ tlo.methods.healthsystem module
 
      .. automethod:: override_availability_of_consumables
 
+     .. automethod:: override_cons_availability_for_treatment_ids
+
      .. automethod:: _write_hsi_event_counts_to_log_and_reset
 
      .. automethod:: _write_never_ran_hsi_event_counts_to_log_and_reset
@@ -345,7 +353,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x16a4bccc0>
+     current_pop_size : <property object at 0x1372cd710>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 

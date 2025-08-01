@@ -4,5 +4,12 @@ costing
 .. toctree::
     :maxdepth: 1
 
-    ResourceFile_Costing.xlsx
+    ResourceFile_Consumables_Inflow_Outflow_Ratio.csv
+    ResourceFile_Costing_Consumables.csv
+    ResourceFile_Costing_Equipment.csv
+    ResourceFile_Costing_Facility_Operations.csv
+    ResourceFile_Costing_HR.csv
+    ResourceFile_Exchange_Rates_and_Inflation.csv
+    ResourceFile_Health_Spending_Projections.csv
+    ResourceFile_Resource_Mapping.csv
 

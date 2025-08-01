@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.pregnancy_supervisor module &mdash; TLOmodel 0.1.dev2530+geb94b70 documentation</title>
+  <title>tlo.methods.pregnancy_supervisor module &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=298b4bb7"></script>
+      <script src="../_static/documentation_options.js?v=9c477e70"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -93,7 +93,7 @@
 <span id="tlo-methods-pregnancy-supervisor-module"></span><h1>tlo.methods.pregnancy_supervisor module<a class="headerlink" href="#module-tlo.methods.pregnancy_supervisor" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PregnancySupervisor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PregnancySupervisor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor" title="Link to this definition"></a></dt>
 <dd><p>This module is responsible for simulating the antenatal period of pregnancy (the period from conception until
 the termination of pregnancy). A number of outcomes are managed by this module including early pregnancy loss
 (induced/spontaneous abortion, ectopic pregnancy and antenatal stillbirth) and pregnancy complications of the
@@ -580,6 +580,22 @@ generator.</p>
 <td><p>BOOL</p></td>
 <td><p>Signals within the analysis event and code that sensitivity analysis is being undertaken in which the maximum coverage of ANC is enforced</p></td>
 </tr>
+<tr class="row-even"><td><p>interventions_analysis</p></td>
+<td><p>BOOL</p></td>
+<td><p>Signals within the analysis event and code that intervention-based analysis is being undertaken in which the maximum coverage of ANC is enforced</p></td>
+</tr>
+<tr class="row-odd"><td><p>interventions_under_analysis</p></td>
+<td><p>LIST</p></td>
+<td><p>Intervention for which their availability is being changed during analysis</p></td>
+</tr>
+<tr class="row-even"><td><p>all_interventions</p></td>
+<td><p>LIST</p></td>
+<td><p>Names of all maternal and newborn health interventions</p></td>
+</tr>
+<tr class="row-odd"><td><p>intervention_analysis_availability</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability an intervention which is included in “interventions_under_analysis” will beavailable</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -679,17 +695,17 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘CareOfWomenDuringPregnancy’, ‘Labour’, ‘Contraception’, ‘HealthSystem’, ‘Lifestyle’}</p>
-<p>CAUSES_OF_DEATH : {‘ectopic_pregnancy’: &lt;tlo.methods.causes.Cause object at 0x3385fc190&gt;, ‘spontaneous_abortion’: &lt;tlo.methods.causes.Cause object at 0x338483090&gt;, ‘induced_abortion’: &lt;tlo.methods.causes.Cause object at 0x338481a90&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x338482f90&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x338037390&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x338034850&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x3380372d0&gt;, ‘antenatal_sepsis’: &lt;tlo.methods.causes.Cause object at 0x338036110&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x3380360d0&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘HealthSystem’, ‘CareOfWomenDuringPregnancy’, ‘Lifestyle’, ‘Labour’, ‘Contraception’}</p>
+<p>CAUSES_OF_DEATH : {‘ectopic_pregnancy’: &lt;tlo.methods.causes.Cause object at 0x13761e650&gt;, ‘spontaneous_abortion’: &lt;tlo.methods.causes.Cause object at 0x1443cd350&gt;, ‘induced_abortion’: &lt;tlo.methods.causes.Cause object at 0x1443ce910&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1443cfe90&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x14438a310&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x14438b410&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x144388b50&gt;, ‘antenatal_sepsis’: &lt;tlo.methods.causes.Cause object at 0x14438a090&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x14438a610&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
-<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘Hiv’, ‘CardioMetabolicDisorders’, ‘Malaria’}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘Hiv’, ‘CardioMetabolicDisorders’, ‘Malaria’, ‘HealthBurden’}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class PregnancySupervisor):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.__init__" title="Link to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -702,7 +718,7 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.read_parameters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisor.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Read parameter values from file, if required.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">

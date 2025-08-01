@@ -5,7 +5,6 @@ ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking
     :maxdepth: 1
 
     MDA_historical_Coverage.csv
-    MDA_prognosed_Coverage.csv
     MoH_numbers_tests.csv
     NTP2019.csv
     WHO_TestData2023.csv

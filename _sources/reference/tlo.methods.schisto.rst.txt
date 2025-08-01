@@ -18,27 +18,72 @@ tlo.methods.schisto module
         * - Item
           - Type
           - Description
-        * - prob_sent_to_lab_test_children
-          - REAL
-          - Probability that infected child gets sent to lab test
-        * - prob_sent_to_lab_test_adults
-          - REAL
-          - Probability that an infected adults gets sent to lab test
         * - delay_till_hsi_a_repeated
           - REAL
           - Time till seeking healthcare again after not being sent to schisto test: start
         * - delay_till_hsi_b_repeated
           - REAL
           - Time till seeking healthcare again after not being sent to schisto test: end
-        * - PZQ_efficacy
+        * - rr_WASH
           - REAL
-          - The efficacy of Praziquantel in clearing burden of any Schistosomiasis worm species
+          - proportional reduction in population susceptible to schistosoma infection with improved WASH
+        * - calibration_scenario
+          - REAL
+          - Scenario used to reset parameters to run calibration sims
+        * - urine_filtration_sensitivity_lowWB
+          - REAL
+          - Sensitivity of UF in detecting low WB
+        * - urine_filtration_sensitivity_moderateWB
+          - REAL
+          - Sensitivity of UF in detecting moderate WB
+        * - urine_filtration_sensitivity_heavyWB
+          - REAL
+          - Sensitivity of UF in detecting heavy WB
+        * - kato_katz_sensitivity_moderateWB
+          - REAL
+          - Sensitivity of KK in detecting moderate WB
+        * - kato_katz_sensitivity_heavyWB
+          - REAL
+          - Sensitivity of KK in detecting heavy WB
+        * - scaleup_WASH
+          - STRING
+          - Whether to scale-up WASH during simulation, pause fixes values at 2024 levels with no further improvement, continue allows historical trends to continue, scaleup switches everyone to having access to WASH
+        * - scaleup_WASH_start_year
+          - INT
+          - Start date to scale-up WASH, years after sim start date
+        * - mda_coverage
+          - REAL
+          - Coverage of future MDA activities, consistent across alltarget groups
+        * - mda_target_group
+          - STRING
+          - Target group for future MDA activities, one of [PSAC_SAC, SAC, ALL]
+        * - mda_frequency_months
+          - REAL
+          - Number of months between MDA activities
+        * - scaling_factor_baseline_risk
+          - REAL
+          - scaling factor controls how the background risk of infection is adjusted based on the deviation of current prevalence from baseline prevalence
+        * - baseline_risk
+          - REAL
+          - number of worms applied as a baseline risk across districts to prevent fadeout, number is scaled by scaling_factor_baseline_risk
+        * - daly_weight_mild_schistosomiasis
+          - REAL
+          - daly weight assigned to mild schistosomiasis, both species
+        * - daly_weight_moderate_s_mansoni
+          - REAL
+          - daly weight assigned to moderate S. mansoni
+        * - daly_weight_heavy_s_mansoni
+          - REAL
+          - daly weight assigned to heavy S. mansoni
+        * - daly_weight_moderate_s_haematobium
+          - REAL
+          - daly weight assigned to moderate S. haematobium
+        * - daly_weight_heavy_s_haematobium
+          - REAL
+          - daly weight assigned to heavy S. haematobium
         * - MDA_coverage_historical
           - DATA_FRAME
           - Probability of getting PZQ in the MDA for PSAC, SAC and Adults in historic rounds
-        * - MDA_coverage_prognosed
-          - DATA_FRAME
-          - Probability of getting PZQ in the MDA for PSAC, SAC and Adults in future rounds, with the frequency given in months
 
 
      **PROPERTIES:**
@@ -50,9 +95,9 @@ tlo.methods.schisto module
         * - Item
           - Type
           - Description
-        * - ss_last_PZQ_date
-          - DATE
-          - Day of the most recent treatment with PZQ
+        * - ss_MDA_treatment_counter
+          - INT
+          - Counter for number of MDA treatments received in logging interval
 
 
 
@@ -60,13 +105,13 @@ tlo.methods.schisto module
 
      CAUSES_OF_DEATH : {}
 
-     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x16a814490>}
+     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x1440e35d0>}
 
      INIT_DEPENDENCIES : {'SymptomManager', 'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'HealthSystem'}
 
      __annotations__ : {}
 
@@ -92,15 +137,29 @@ tlo.methods.schisto module
 
      .. automethod:: _load_parameters_from_workbook
 
+     .. automethod:: _create_mda_strategy
+
      .. automethod:: _register_symptoms
 
      .. automethod:: _get_disability_weight
 
      .. automethod:: _get_item_code_for_praziquantel
 
+     .. automethod:: calculate_praziquantel_dosage
+
+     .. automethod:: _get_consumables_for_dx
+
      .. automethod:: _schedule_mda_events
 
+     .. automethod:: get_infection_status
+
+     .. automethod:: update_infection_symptoms
+
      .. automethod:: do_at_generic_first_appt
+
+     .. automethod:: select_test
+
+     .. automethod:: reduce_susceptibility
 
 
 
@@ -132,12 +191,17 @@ tlo.methods.schisto module
 
 
 
-.. autoclass:: SchistoMatureWorms
+.. autoclass:: SchistoMatureJuvenileWormsEvent
 
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
-     **Functions (defined or overridden in class SchistoMatureWorms):**
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class SchistoMatureJuvenileWormsEvent):**
 
      .. automethod:: __init__
 
@@ -150,12 +214,17 @@ tlo.methods.schisto module
 
 
 
-.. autoclass:: SchistoWormsNatDeath
+.. autoclass:: SchistoWormDeathEvent
 
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
-     **Functions (defined or overridden in class SchistoWormsNatDeath):**
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class SchistoWormDeathEvent):**
 
      .. automethod:: __init__
 
@@ -185,6 +254,29 @@ tlo.methods.schisto module
      .. automethod:: apply
 
      .. automethod:: _select_recipients
+
+
+
+
+
+
+
+
+.. autoclass:: SchistoWashScaleUp
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class SchistoWashScaleUp):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
 
 
 
@@ -250,6 +342,29 @@ tlo.methods.schisto module
      __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Schisto_MDA):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: SchistoPersonDaysLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class SchistoPersonDaysLoggingEvent):**
 
      .. automethod:: __init__
 

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Symptoms (.csv) &mdash; TLOmodel 0.1.dev2530+geb94b70 documentation</title>
+  <title>Symptoms (.csv) &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=298b4bb7"></script>
+      <script src="../../_static/documentation_options.js?v=9c477e70"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -57,6 +57,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Cervical_Cancer/index.html">ResourceFile_Cervical_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea/index.html">ResourceFile_Diarrhoea</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
@@ -76,8 +77,14 @@
 <li class="toctree-l3"><a class="reference internal" href="DALYs.csv.html">DALYs (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="District_Params_haematobium.csv.html">District Params haematobium (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="District_Params_mansoni.csv.html">District Params mansoni (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ESPEN.csv.html">ESPEN (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ESPEN_MDA.csv.html">ESPEN MDA (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ESPEN_codebook.csv.html">ESPEN codebook (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InitialData_haematobium.csv.html">InitialData haematobium (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InitialData_mansoni.csv.html">InitialData mansoni (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LatestData_haematobium.csv.html">LatestData haematobium (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LatestData_mansoni.csv.html">LatestData mansoni (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="MDA_historical_Coverage.csv.html">MDA historical Coverage (.csv)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="MDA_prognosed_Coverage.csv.html">MDA prognosed Coverage (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Parameters.csv.html">Parameters (.csv)</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Symptoms (.csv)</a></li>
 </ul>
@@ -145,6 +152,10 @@
 <th class="head"><p>Symptom</p></th>
 <th class="head"><p>HSB_mapped_symptom</p></th>
 <th class="head"><p>Prevalence</p></th>
+<th class="head"><p>odds_ratio_health_seeking_in_children</p></th>
+<th class="head"><p>odds_ratio_health_seeking_in_adults</p></th>
+<th class="head"><p>prob_seeks_emergency_appt_in_children</p></th>
+<th class="head"><p>prob_seeks_emergency_appt_in_adults</p></th>
 <th class="head"><p>Reference</p></th>
 <th class="head"><p>Infection_type</p></th>
 </tr>
@@ -154,6 +165,10 @@
 <td><p>anemia</p></td>
 <td><p>other</p></td>
 <td><p>0.9</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 <td><p>assumption</p></td>
 <td><p>both</p></td>
 </tr>
@@ -161,6 +176,10 @@
 <td><p>fever</p></td>
 <td><p>fever</p></td>
 <td><p>0.3</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 <td><p>assumption</p></td>
 <td><p>both</p></td>
 </tr>
@@ -168,34 +187,54 @@
 <td><p>haematuria</p></td>
 <td><p>other</p></td>
 <td><p>0.625</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 <td><p>van der Werf et al., 2003</p></td>
 <td><p>haematobium</p></td>
 </tr>
 <tr class="row-odd"><td><p>3</p></td>
 <td><p>hydronephrosis</p></td>
-<td><p>stomach_ache</p></td>
+<td><p>backache</p></td>
 <td><p>0.083</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 <td><p>van der Werf et al., 2003</p></td>
 <td><p>haematobium</p></td>
 </tr>
 <tr class="row-even"><td><p>4</p></td>
 <td><p>dysuria</p></td>
-<td><p>stomach_ache</p></td>
+<td><p>other</p></td>
 <td><p>0.2857</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 <td><p>van der Werf et al., 2003</p></td>
 <td><p>haematobium</p></td>
 </tr>
 <tr class="row-odd"><td><p>5</p></td>
 <td><p>bladder_pathology</p></td>
-<td><p>stomach_ache</p></td>
+<td><p>stomachache</p></td>
 <td><p>0.7857</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 <td><p>van der Werf et al., 2003</p></td>
 <td><p>haematobium</p></td>
 </tr>
 <tr class="row-even"><td><p>6</p></td>
 <td><p>ascites</p></td>
-<td><p>stomach_ache</p></td>
+<td><p>stomachache</p></td>
 <td><p>0.0054</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 <td><p>van der Werf et al., 2003</p></td>
 <td><p>mansoni</p></td>
 </tr>
@@ -203,20 +242,32 @@
 <td><p>diarrhoea</p></td>
 <td><p>diarrhoea</p></td>
 <td><p>0.0144</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 <td><p>van der Werf et al., 2003</p></td>
 <td><p>mansoni</p></td>
 </tr>
 <tr class="row-even"><td><p>8</p></td>
 <td><p>vomiting</p></td>
-<td><p>vomit</p></td>
+<td><p>vomiting</p></td>
 <td><p>0.0172</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 <td><p>van der Werf et al., 2003</p></td>
 <td><p>mansoni</p></td>
 </tr>
 <tr class="row-odd"><td><p>9</p></td>
 <td><p>hepatomegaly</p></td>
-<td><p>stomach_ache</p></td>
+<td><p>stomachache</p></td>
 <td><p>0.1574</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 <td><p>van der Werf et al., 2003</p></td>
 <td><p>mansoni</p></td>
 </tr>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>District Params haematobium (.csv) &mdash; TLOmodel 0.1.dev2530+geb94b70 documentation</title>
+  <title>District Params haematobium (.csv) &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=298b4bb7"></script>
+      <script src="../../_static/documentation_options.js?v=9c477e70"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -57,6 +57,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Cervical_Cancer/index.html">ResourceFile_Cervical_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea/index.html">ResourceFile_Diarrhoea</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
@@ -76,8 +77,14 @@
 <li class="toctree-l3"><a class="reference internal" href="DALYs.csv.html">DALYs (.csv)</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">District Params haematobium (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="District_Params_mansoni.csv.html">District Params mansoni (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ESPEN.csv.html">ESPEN (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ESPEN_MDA.csv.html">ESPEN MDA (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ESPEN_codebook.csv.html">ESPEN codebook (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InitialData_haematobium.csv.html">InitialData haematobium (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InitialData_mansoni.csv.html">InitialData mansoni (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LatestData_haematobium.csv.html">LatestData haematobium (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LatestData_mansoni.csv.html">LatestData mansoni (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="MDA_historical_Coverage.csv.html">MDA historical Coverage (.csv)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="MDA_prognosed_Coverage.csv.html">MDA prognosed Coverage (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Parameters.csv.html">Parameters (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Symptoms.csv.html">Symptoms (.csv)</a></li>
 </ul>
@@ -145,9 +152,10 @@
 <th class="head"><p>District</p></th>
 <th class="head"><p>Region</p></th>
 <th class="head"><p>Reservoir</p></th>
-<th class="head"><p>R0_value</p></th>
-<th class="head"><p>alpha_value</p></th>
-<th class="head"><p>Reference</p></th>
+<th class="head"><p>Mean_worm_burden</p></th>
+<th class="head"><p>R0</p></th>
+<th class="head"><p>gamma_alpha</p></th>
+<th class="head"><p>prop_susceptible</p></th>
 <th class="head"><p>Prevalence</p></th>
 <th class="head"><p>Reference_prevalence</p></th>
 </tr>
@@ -157,9 +165,10 @@
 <td><p>Balaka</p></td>
 <td><p>Southern</p></td>
 <td><p>0</p></td>
-<td><p>1.12425</p></td>
-<td><p>0.061841</p></td>
-<td><p>fitted</p></td>
+<td><p>0.243196</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.154602</p></td>
 <td><p>2011 SCI / MoH, ESPEN</p></td>
 </tr>
@@ -167,9 +176,10 @@
 <td><p>Blantyre</p></td>
 <td><p>Southern</p></td>
 <td><p>1.87216</p></td>
-<td><p>1.12956</p></td>
-<td><p>0.107616</p></td>
-<td><p>fitted</p></td>
+<td><p>0.645768</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.26904</p></td>
 <td><p>rural, 2011 SCI / MoH. ESPEN</p></td>
 </tr>
@@ -177,9 +187,10 @@
 <td><p>Blantyre City</p></td>
 <td><p>Southern</p></td>
 <td><p>0</p></td>
-<td><p>1.1253</p></td>
-<td><p>0.04664</p></td>
-<td><p>fitted</p></td>
+<td><p>0.162305</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.1166</p></td>
 <td><p>2011 SCI / MoH</p></td>
 </tr>
@@ -187,9 +198,10 @@
 <td><p>Chikwawa</p></td>
 <td><p>Southern</p></td>
 <td><p>0</p></td>
-<td><p>1.1248</p></td>
-<td><p>0.0805</p></td>
-<td><p>fitted</p></td>
+<td><p>0.372114</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.20125</p></td>
 <td><p>2008 WFP / MoH, ESPEN</p></td>
 </tr>
@@ -197,9 +209,10 @@
 <td><p>Chiradzulu</p></td>
 <td><p>Southern</p></td>
 <td><p>2.81222</p></td>
-<td><p>1.14141</p></td>
-<td><p>0.1377</p></td>
-<td><p>fitted</p></td>
+<td><p>1.15252</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.34425</p></td>
 <td><p>2010 MoH, ESPEN</p></td>
 </tr>
@@ -207,9 +220,10 @@
 <td><p>Chitipa</p></td>
 <td><p>Northern</p></td>
 <td><p>0</p></td>
-<td><p>1.12577</p></td>
-<td><p>0.08905</p></td>
-<td><p>fitted</p></td>
+<td><p>0.445358</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.222625</p></td>
 <td><p>2010 MoH, ESPEN</p></td>
 </tr>
@@ -217,9 +231,10 @@
 <td><p>Dedza</p></td>
 <td><p>Central</p></td>
 <td><p>0</p></td>
-<td><p>1.12423</p></td>
-<td><p>0.0698</p></td>
-<td><p>fitted</p></td>
+<td><p>0.293609</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.1745</p></td>
 <td><p>2010 MoH, ESPEN</p></td>
 </tr>
@@ -228,8 +243,9 @@
 <td><p>Central</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>fitted</p></td>
+<td><p>1.6</p></td>
+<td><p>0.0689</p></td>
+<td><p>1</p></td>
 <td><p>0</p></td>
 <td><p>ESPEN</p></td>
 </tr>
@@ -237,9 +253,10 @@
 <td><p>Karonga</p></td>
 <td><p>Northern</p></td>
 <td><p>0</p></td>
-<td><p>1.12421</p></td>
-<td><p>0.0643</p></td>
-<td><p>fitted</p></td>
+<td><p>0.258116</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.16075</p></td>
 <td><p>2010 COM</p></td>
 </tr>
@@ -247,9 +264,10 @@
 <td><p>Kasungu</p></td>
 <td><p>Central</p></td>
 <td><p>0</p></td>
-<td><p>1.12471</p></td>
-<td><p>0.0793714</p></td>
-<td><p>fitted</p></td>
+<td><p>0.363187</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.198429</p></td>
 <td><p>2008 WFP/MoH, 2010 MoH, ESPEN</p></td>
 </tr>
@@ -257,9 +275,10 @@
 <td><p>Likoma</p></td>
 <td><p>Northern</p></td>
 <td><p>0</p></td>
-<td><p>1.13144</p></td>
-<td><p>0.114</p></td>
-<td><p>fitted</p></td>
+<td><p>0.731112</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.285</p></td>
 <td><p>ESPEN</p></td>
 </tr>
@@ -267,9 +286,10 @@
 <td><p>Lilongwe</p></td>
 <td><p>Central</p></td>
 <td><p>0</p></td>
-<td><p>1.12704</p></td>
-<td><p>0.0967167</p></td>
-<td><p>fitted</p></td>
+<td><p>0.520488</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.241792</p></td>
 <td><p>2008 WFP / MoH, Jemu SK et al, 2011 SCI/MoH, , ESPEN</p></td>
 </tr>
@@ -277,9 +297,10 @@
 <td><p>Lilongwe City</p></td>
 <td><p>Central</p></td>
 <td><p>0</p></td>
-<td><p>1.12437</p></td>
-<td><p>0.05852</p></td>
-<td><p>fitted</p></td>
+<td><p>0.223916</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.1463</p></td>
 <td><p>2011 SCI / MoH</p></td>
 </tr>
@@ -287,9 +308,10 @@
 <td><p>Machinga</p></td>
 <td><p>Southern</p></td>
 <td><p>0</p></td>
-<td><p>1.12429</p></td>
-<td><p>0.0718</p></td>
-<td><p>fitted</p></td>
+<td><p>0.30729</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.1795</p></td>
 <td><p>2010 MoH, ESPEN</p></td>
 </tr>
@@ -297,9 +319,10 @@
 <td><p>Mangochi</p></td>
 <td><p>Southern</p></td>
 <td><p>0</p></td>
-<td><p>1.12421</p></td>
-<td><p>0.0643333</p></td>
-<td><p>fitted</p></td>
+<td><p>0.258322</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.160833</p></td>
 <td><p>ESPEN</p></td>
 </tr>
@@ -307,9 +330,10 @@
 <td><p>Mchinji</p></td>
 <td><p>Central</p></td>
 <td><p>0</p></td>
-<td><p>1.12448</p></td>
-<td><p>0.076</p></td>
-<td><p>fitted</p></td>
+<td><p>0.337462</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.19</p></td>
 <td><p>2010 MoH, ESPEN</p></td>
 </tr>
@@ -317,9 +341,10 @@
 <td><p>Mulanje</p></td>
 <td><p>Southern</p></td>
 <td><p>3.05</p></td>
-<td><p>1.14496</p></td>
-<td><p>0.144</p></td>
-<td><p>fitted</p></td>
+<td><p>1.30097</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.36</p></td>
 <td><p>2010 MoH, ESPEN</p></td>
 </tr>
@@ -327,9 +352,10 @@
 <td><p>Mwanza</p></td>
 <td><p>Southern</p></td>
 <td><p>0</p></td>
-<td><p>1.12506</p></td>
-<td><p>0.0832457</p></td>
-<td><p>fitted</p></td>
+<td><p>0.394528</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.208114</p></td>
 <td><p>2011 SCI / MoH, ESPEN</p></td>
 </tr>
@@ -337,9 +363,10 @@
 <td><p>Mzimba</p></td>
 <td><p>Northern</p></td>
 <td><p>0</p></td>
-<td><p>1.12536</p></td>
-<td><p>0.046129</p></td>
-<td><p>fitted</p></td>
+<td><p>0.15989</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.115323</p></td>
 <td><p>2010 MoH, ESPEN</p></td>
 </tr>
@@ -347,9 +374,10 @@
 <td><p>Mzuzu City</p></td>
 <td><p>Northern</p></td>
 <td><p>0</p></td>
-<td><p>1.13018</p></td>
-<td><p>0.02004</p></td>
-<td><p>fitted</p></td>
+<td><p>0.0763773</p></td>
+<td><p>1.6</p></td>
+<td><p>0.0689</p></td>
+<td><p>1</p></td>
 <td><p>0.0501</p></td>
 <td><p>2011 SCI / MoH</p></td>
 </tr>
@@ -357,9 +385,10 @@
 <td><p>Neno</p></td>
 <td><p>Southern</p></td>
 <td><p>0</p></td>
-<td><p>1.12631</p></td>
-<td><p>0.03896</p></td>
-<td><p>fitted</p></td>
+<td><p>0.235995</p></td>
+<td><p>1.6</p></td>
+<td><p>0.0689</p></td>
+<td><p>1</p></td>
 <td><p>0.0974</p></td>
 <td><p>2011 SCI / MoH, ESPEN</p></td>
 </tr>
@@ -367,9 +396,10 @@
 <td><p>Nkhata Bay</p></td>
 <td><p>Northern</p></td>
 <td><p>0</p></td>
-<td><p>1.13233</p></td>
-<td><p>0.01225</p></td>
-<td><p>fitted</p></td>
+<td><p>0.0393117</p></td>
+<td><p>1.6</p></td>
+<td><p>0.0689</p></td>
+<td><p>1</p></td>
 <td><p>0.030625</p></td>
 <td><p>ESPEN</p></td>
 </tr>
@@ -377,9 +407,10 @@
 <td><p>Nkhotakota</p></td>
 <td><p>Central</p></td>
 <td><p>2.19995</p></td>
-<td><p>1.13321</p></td>
-<td><p>0.119188</p></td>
-<td><p>fitted</p></td>
+<td><p>0.808087</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.297971</p></td>
 <td><p>2010 MoH, ESPEN</p></td>
 </tr>
@@ -387,9 +418,10 @@
 <td><p>Nsanje</p></td>
 <td><p>Southern</p></td>
 <td><p>2.39017</p></td>
-<td><p>1.13559</p></td>
-<td><p>0.125333</p></td>
-<td><p>fitted</p></td>
+<td><p>0.909308</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.313333</p></td>
 <td><p>2008 WFP / MoH, ESPEN</p></td>
 </tr>
@@ -397,9 +429,10 @@
 <td><p>Ntcheu</p></td>
 <td><p>Central</p></td>
 <td><p>0</p></td>
-<td><p>1.12421</p></td>
-<td><p>0.0684143</p></td>
-<td><p>fitted</p></td>
+<td><p>0.284379</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.171036</p></td>
 <td><p>2008 WFP/MoH, 2010 MoH, ESPEN</p></td>
 </tr>
@@ -407,9 +440,10 @@
 <td><p>Ntchisi</p></td>
 <td><p>Central</p></td>
 <td><p>0</p></td>
-<td><p>1.12433</p></td>
-<td><p>0.073</p></td>
-<td><p>fitted</p></td>
+<td><p>0.315707</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.1825</p></td>
 <td><p>ESPEN</p></td>
 </tr>
@@ -417,9 +451,10 @@
 <td><p>Phalombe</p></td>
 <td><p>Southern</p></td>
 <td><p>5.31723</p></td>
-<td><p>1.1841</p></td>
-<td><p>0.188</p></td>
-<td><p>fitted</p></td>
+<td><p>3.14113</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.47</p></td>
 <td><p>ESPEN</p></td>
 </tr>
@@ -428,8 +463,9 @@
 <td><p>Northern</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>fitted</p></td>
+<td><p>1.6</p></td>
+<td><p>0.0689</p></td>
+<td><p>1</p></td>
 <td><p>0</p></td>
 <td><p>ESPEN</p></td>
 </tr>
@@ -437,9 +473,10 @@
 <td><p>Salima</p></td>
 <td><p>Central</p></td>
 <td><p>0</p></td>
-<td><p>1.12873</p></td>
-<td><p>0.0261176</p></td>
-<td><p>fitted</p></td>
+<td><p>0.114685</p></td>
+<td><p>1.6</p></td>
+<td><p>0.0689</p></td>
+<td><p>1</p></td>
 <td><p>0.0652941</p></td>
 <td><p>ESPEN</p></td>
 </tr>
@@ -447,9 +484,10 @@
 <td><p>Thyolo</p></td>
 <td><p>Southern</p></td>
 <td><p>0</p></td>
-<td><p>1.12421</p></td>
-<td><p>0.06865</p></td>
-<td><p>fitted</p></td>
+<td><p>0.285935</p></td>
+<td><p>1.6</p></td>
+<td><p>0.24</p></td>
+<td><p>1</p></td>
 <td><p>0.171625</p></td>
 <td><p>2010 MoH, ESPEN</p></td>
 </tr>
@@ -457,9 +495,10 @@
 <td><p>Zomba</p></td>
 <td><p>Southern</p></td>
 <td><p>0</p></td>
-<td><p>1.1262</p></td>
-<td><p>0.0397333</p></td>
-<td><p>fitted</p></td>
+<td><p>0.245633</p></td>
+<td><p>1.6</p></td>
+<td><p>0.0689</p></td>
+<td><p>1</p></td>
 <td><p>0.0993333</p></td>
 <td><p>ESPEN</p></td>
 </tr>
@@ -467,9 +506,10 @@
 <td><p>Zomba City</p></td>
 <td><p>Southern</p></td>
 <td><p>0</p></td>
-<td><p>1.1262</p></td>
-<td><p>0.0397333</p></td>
-<td><p>fitted</p></td>
+<td><p>0.245633</p></td>
+<td><p>1.6</p></td>
+<td><p>0.0689</p></td>
+<td><p>1</p></td>
 <td><p>0.0993333</p></td>
 <td><p>ESPEN copy from Zomba</p></td>
 </tr>

@@ -1,0 +1,41 @@
+InitialData mansoni (.csv)
+==========================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Schisto/InitialData_mansoni.csv>`
+
+====  =============  ========  ====  ==============  ===================  ====================  ==================  =================  =================  ================  ========================================  =============
+  ..  District       Region      R0    gamma\_alpha    prop\_susceptible    Mean\_worm\_burden    mean\_prevalence    min\_prevalence    max\_prevalence  classification    notes                                     equilibrium
+====  =============  ========  ====  ==============  ===================  ====================  ==================  =================  =================  ================  ========================================  =============
+   0  Balaka         Southern  1.66            0.24           0.0146391              0.0101739            1.11111                   0          10         low                                                         75.9
+   1  Blantyre       Southern  1.66            0.24           0.0526021              0.0777104            3.9925                    0          63.3333    low
+   2  Blantyre City  Southern  1.66            0.24           0.0526021              0.0777104            3.9925                    0          63.3333    low               same as Blantyre
+   3  Chikwawa       Southern  1.66            0.24           0.0284848              0.0234766            2.162                     0           4.324     low
+   4  Chiradzulu     Southern  1.66            0.24           0.103125               0.167736             7.82722                   0          86.6667    low
+   5  Chitipa        Northern  1.66            0.24           0                      0                    0                         0           0         zero
+   6  Dedza          Central   1.66            0.24           0                      0                    0                         0           0         zero
+   7  Dowa           Central   1.66            0.24           0.0585566              0                    4.44444                   0           6.66667   low
+   8  Karonga        Northern  1.66            0.24           0                      0.0877018            0                         0           0         zero              no data
+   9  Kasungu        Central   1.66            0.24           0                      0                    0                         0           0         zero
+  10  Likoma         Northern  1.66            0.24           0                      0.555773             0                         0           0         zero
+  11  Lilongwe       Central   1.66            0.24           0.108258               0.205487             8.21675                   0          83.3333    low
+  12  Lilongwe City  Central   1.66            0.24           0.108258               0.205487             8.21675                   0          83.3333    low               same as Lilongwe
+  13  Machinga       Southern  1.66            0.24           0                      0                    0                         0           0         zero
+  14  Mangochi       Southern  1.66            0.24           0.0998906              0.114685             7.5817                    0          50         low
+  15  Mchinji        Central   1.66            0.24           0                      0                    0                         0           0         zero
+  16  Mulanje        Southern  1.66            0.24           0                      0                    0                         0           0         zero
+  17  Mwanza         Southern  1.66            0.24           0.0790514              0.0395456            6                         0          30         low
+  18  Mzimba         Northern  1.66            0.24           0.0163753              0.0228172            1.24289                   0           3.33      low               average of Mzimba North and Mzimba South
+  19  Mzuzu City     Northern  1.66            0.24           0                      0.0877018            0                         0           0         zero              no data
+  20  Neno           Southern  1.66            0.24           0.0439174              0                    3.33333                   0          26.6667    low
+  21  Nkhata Bay     Northern  1.66            0.24           0.0409896              0.0363189            3.11111                   0          16.6667    low
+  22  Nkhotakota     Central   1.66            0.24           0.0266907              0.185219             2.02583                   0          13.3333    low
+  23  Nsanje         Southern  1.66            0.24           0                      0                    0                         0           0         zero
+  24  Ntcheu         Central   1.66            0.24           0.022339               0.0188184            1.69553                   0          33.3333    low
+  25  Ntchisi        Central   1.66            0.24           0.102128               0.22683              7.75153                   0          30         low
+  26  Phalombe       Southern  1.66            0.24           0                      0                    0                         0           0         zero
+  27  Rumphi         Northern  1.66            0.24           0                      0                    0                         0           0         zero
+  28  Salima         Central   1.66            0.24           0.123518               0.20966              9.375                     0          63.3333    low
+  29  Thyolo         Southern  1.66            0.24           0.00470544             0                    0.357143                  0           0.714286  low
+  30  Zomba          Southern  1.66            0.24           0.120808               0.185219             9.16934                   0          70         low
+  31  Zomba City     Southern  1.66            0.24           0.120808               0.185219             9.16934                   0          70         low               same as Zomba
+====  =============  ========  ====  ==============  ===================  ====================  ==================  =================  =================  ================  ========================================  =============

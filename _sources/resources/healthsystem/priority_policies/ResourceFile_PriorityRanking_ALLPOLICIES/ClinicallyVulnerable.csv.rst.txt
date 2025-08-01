@@ -82,16 +82,26 @@ ClinicallyVulnerable (.csv)
   73  Rti\_ShockTreatment                                                             3                   2                   2                      2                       2
   74  Rti\_Suture                                                                     3                   2                   2                      2                       2
   75  Rti\_TetanusVaccine                                                             3                   2                   2                      2                       2
-  76  Schisto\_MDA                                                                    3                   2                   2                      2                       2
-  77  Schisto\_Treatment                                                              3                   2                   2                      2                       2
-  78  Undernutrition\_Feeding                                                         3                   2                   2                      2                       2
-  79  Tb\_Prevention\_Ipt                                                             3                   2                   2                      2                       2
-  80  Tb\_Test\_Clinical                                                              3                   2                   2                      2                       2
-  81  Tb\_Test\_Culture                                                               3                   2                   2                      2                       2
-  82  Tb\_Test\_FollowUp                                                              3                   2                   2                      2                       2
-  83  Tb\_Test\_Screening                                                             3                   2                   2                      2                       2
-  84  Tb\_Test\_Xray                                                                  3                   2                   2                      2                       2
-  85  Tb\_Treatment                                                                   3                   2                   2                      2                       2
-  86  Tb\_PalliativeCare                                                              3                   2                   2                      2                       2
-  87  lowest\_priority\_considered                                                    3                  -1                  -1                     -1                      -1
+  76  Schisto\_Test                                                                   3                   2                   2                      2                       2
+  77  Schisto\_MDA                                                                    3                   2                   2                      2                       2
+  78  Schisto\_Treatment                                                              3                   2                   2                      2                       2
+  79  Undernutrition\_Feeding                                                         3                   2                   2                      2                       2
+  80  Tb\_Prevention\_Ipt                                                             3                   2                   2                      2                       2
+  81  Tb\_Test\_Clinical                                                              3                   2                   2                      2                       2
+  82  Tb\_Test\_Culture                                                               3                   2                   2                      2                       2
+  83  Tb\_Test\_FollowUp                                                              3                   2                   2                      2                       2
+  84  Tb\_Test\_Screening                                                             3                   2                   2                      2                       2
+  85  Tb\_Test\_Xray                                                                  3                   2                   2                      2                       2
+  86  Tb\_Treatment                                                                   3                   2                   2                      2                       2
+  87  Tb\_PalliativeCare                                                              3                   2                   2                      2                       2
+  88  CervicalCancer\_Screening\_VIA                                                  3                   2                   2                      2                       2
+  89  CervicalCancer\_Screening\_Xpert                                                3                   2                   2                      2                       2
+  90  CervicalCancer\_Presentation                                                    3                   2                   2                      2                       2
+  91  CervicalCancer\_CINRemoval\_Cryotherapy                                         3                   2                   2                      2                       2
+  92  CervicalCancer\_CINRemoval\_Thermoablation                                      3                   2                   2                      2                       2
+  93  CervicalCancer\_Biopsy                                                          3                   2                   2                      2                       2
+  94  CervicalCancer\_Treatment\_Start                                                3                   2                   2                      2                       2
+  95  CervicalCancer\_Treatment\_PostTreatmentCheck                                   3                   2                   2                      2                       2
+  96  CervicalCancer\_PalliativeCare                                                  3                   2                   2                      2                       2
+  97  lowest\_priority\_considered                                                    3                  -1                  -1                     -1                      -1
 ====  =====================================================================  ==========  ==================  ==================  =====================  ======================

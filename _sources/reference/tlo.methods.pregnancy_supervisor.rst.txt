@@ -360,6 +360,18 @@ tlo.methods.pregnancy_supervisor module
         * - sens_analysis_max
           - BOOL
           - Signals within the analysis event and code that sensitivity analysis is being undertaken in which the maximum coverage of ANC is enforced
+        * - interventions_analysis
+          - BOOL
+          - Signals within the analysis event and code that intervention-based analysis is being undertaken in which the maximum coverage of ANC is enforced
+        * - interventions_under_analysis
+          - LIST
+          - Intervention for which their availability is being changed during analysis
+        * - all_interventions
+          - LIST
+          - Names of all maternal and newborn health interventions
+        * - intervention_analysis_availability
+          - REAL
+          - Probability an intervention which is included in "interventions_under_analysis" will beavailable
 
 
      **PROPERTIES:**
@@ -436,17 +448,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'Labour', 'Contraception', 'HealthSystem', 'Lifestyle'}
+     ADDITIONAL_DEPENDENCIES : {'HealthSystem', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'Labour', 'Contraception'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x3385fc190>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x338483090>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x338481a90>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x338482f90>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x338037390>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x338034850>, 'eclampsia': <tlo.methods.causes.Cause object at 0x3380372d0>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x338036110>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x13761e650>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x1443cd350>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x1443ce910>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1443cfe90>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x14438a310>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x14438b410>, 'eclampsia': <tlo.methods.causes.Cause object at 0x144388b50>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x14438a090>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x3380360d0>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x14438a610>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
      METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv', 'CardioMetabolicDisorders', 'Malaria'}
+     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'CardioMetabolicDisorders', 'Malaria', 'HealthBurden'}
 
      __annotations__ : {}
 

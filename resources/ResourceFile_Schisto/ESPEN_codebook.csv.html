@@ -1,0 +1,340 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ESPEN codebook (.csv) &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=9c477e70"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="InitialData haematobium (.csv)" href="InitialData_haematobium.csv.html" />
+    <link rel="prev" title="ESPEN MDA (.csv)" href="ESPEN_MDA.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri/index.html">ResourceFile_Alri</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Cervical_Cancer/index.html">ResourceFile_Cervical_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea/index.html">ResourceFile_Diarrhoea</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/index.html">ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced/index.html">ResourceFile_Lifestyle_Enhanced</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer/index.html">ResourceFile_Oesophageal_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers/index.html">ResourceFile_Other_Adult_Cancers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer/index.html">ResourceFile_Prostate_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI/index.html">ResourceFile_RTI</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">ResourceFile_Schisto</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="DALYs.csv.html">DALYs (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="District_Params_haematobium.csv.html">District Params haematobium (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="District_Params_mansoni.csv.html">District Params mansoni (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ESPEN.csv.html">ESPEN (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ESPEN_MDA.csv.html">ESPEN MDA (.csv)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ESPEN codebook (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InitialData_haematobium.csv.html">InitialData haematobium (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InitialData_mansoni.csv.html">InitialData mansoni (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LatestData_haematobium.csv.html">LatestData haematobium (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LatestData_mansoni.csv.html">LatestData mansoni (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MDA_historical_Coverage.csv.html">MDA historical Coverage (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Parameters.csv.html">Parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Symptoms.csv.html">Symptoms (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting/index.html">ResourceFile_Stunting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../case-studies/index.html">Case studies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">ResourceFile_Schisto</a></li>
+      <li class="breadcrumb-item active">ESPEN codebook (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/ResourceFile_Schisto/ESPEN_codebook.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="espen-codebook-csv">
+<h1>ESPEN codebook (.csv)<a class="headerlink" href="#espen-codebook-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Schisto/ESPEN_codebook.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Fields</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>CONTINENT</p></td>
+<td><p>Continent name (Africa, Asia)</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>REGION</p></td>
+<td><p>African/Asia sub-region</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>WHO_REGION</p></td>
+<td><p>WHO AFRO region (AFRO/EMRO)</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>ADMIN0</p></td>
+<td><p>Country name</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>ADMIN0ID</p></td>
+<td><p>Country ID</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>ADMIN0_FIP</p></td>
+<td><p>Country FIP Code</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>ADMIN0ISO2</p></td>
+<td><p>Country ISO2 Code</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>ADMIN0ISO3</p></td>
+<td><p>Country ISO3 Code</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>ADMIN1</p></td>
+<td><p>Name ADMIN1 level</p></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>ADMIN1ID</p></td>
+<td><p>ID ADMIN1 level</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>ADMIN2</p></td>
+<td><p>Name ADMIN2 level</p></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>ADMIN2ID</p></td>
+<td><p>ID ADMIN2 level</p></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>Alt_ADMIN2</p></td>
+<td><p>Alternative Name ADMIN2 level</p></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>ADMIN3</p></td>
+<td><p>Name ADMIN3 level</p></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>ADMIN3ID</p></td>
+<td><p>ID ADMIN3 level</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>IUs_ADM</p></td>
+<td><p>Administrative level at which implementation units have been defined</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>IUs_NAME</p></td>
+<td><p>Name of Implementation Unit</p></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>IU_ID</p></td>
+<td><p>ESPEN IU ID</p></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>IU_CODE</p></td>
+<td><p>ESPEN IU alphanumeric code (ISO3Code+ADMIN1+IU_ID)</p></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>Year</p></td>
+<td><p>Year</p></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>Endemicity</p></td>
+<td><p>Reported Schistosomiasis Endemicity status through JRF after final correction</p></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>TargetPop</p></td>
+<td><p>Target population (Adults, SAC or Total)</p></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>PopReq</p></td>
+<td><p>Reported population requiring treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>PopTrg</p></td>
+<td><p>Reported population targeted (eligible) for treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>PopTreat</p></td>
+<td><p>Reported population treated</p></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>Cov</p></td>
+<td><p>Programme coverage for a specific group population as given by TargetPop field (Total Treated/Total pop targeted for treatment)</p></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>EpiCov</p></td>
+<td><p>Epidemiological coverage for a specific group population as given by TargetPop field (Total Treated/Total pop requiring treatment)</p></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>MDA_scheme</p></td>
+<td><p>MDA scheme implemented (which provides maximum coverage figure across different schemes)</p></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>PC</p></td>
+<td><p>PC implemented (0. No, 1. Yes) based on Programme coverage</p></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>EffPC</p></td>
+<td><p>Effective (&gt;=75%) PC implemented (0. No, 1. Yes) based on Programme coverage</p></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>PC_n</p></td>
+<td><p>Cumulative PC implemented since 2013 based on Programme coverage</p></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>EffPC_n</p></td>
+<td><p>Cumulative Effective PC implemented since 2013 based on Programme coverage</p></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>EpiPC</p></td>
+<td><p>PC implemented (0. No, 1. Yes) based on epidemiological coverage</p></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>EpiEffPC</p></td>
+<td><p>Effective (&gt;=75%) PC implemented (0. No, 1. Yes)  based on epidemiological coverage</p></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>EpiPC_n</p></td>
+<td><p>Cumulative PC implemented since 2013  based on epidemiological coverage</p></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>EpiEffPC_n</p></td>
+<td><p>Cumulative Effective PC implemented since 2013  based on epidemiological coverage</p></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>Endemicity_ID</p></td>
+<td><p>Assigned ID to schistosomiasis endemicity category</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ESPEN_MDA.csv.html" class="btn btn-neutral float-left" title="ESPEN MDA (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="InitialData_haematobium.csv.html" class="btn btn-neutral float-right" title="InitialData haematobium (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

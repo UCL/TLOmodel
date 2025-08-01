@@ -1,0 +1,1044 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resource Mapping (.csv) &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=9c477e70"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="demography" href="../demography/index.html" />
+    <link rel="prev" title="Health Spending Projections (.csv)" href="ResourceFile_Health_Spending_Projections.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri/index.html">ResourceFile_Alri</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Cervical_Cancer/index.html">ResourceFile_Cervical_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea/index.html">ResourceFile_Diarrhoea</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/index.html">ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced/index.html">ResourceFile_Lifestyle_Enhanced</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer/index.html">ResourceFile_Oesophageal_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers/index.html">ResourceFile_Other_Adult_Cancers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer/index.html">ResourceFile_Prostate_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI/index.html">ResourceFile_RTI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting/index.html">ResourceFile_Stunting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">costing</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Consumables_Inflow_Outflow_Ratio.csv.html">Consumables Inflow Outflow Ratio (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Costing_Consumables.csv.html">Costing Consumables (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Costing_Equipment.csv.html">Costing Equipment (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Costing_Facility_Operations.csv.html">Costing Facility Operations (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Costing_HR.csv.html">Costing HR (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Exchange_Rates_and_Inflation.csv.html">Exchange Rates and Inflation (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Health_Spending_Projections.csv.html">Health Spending Projections (.csv)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Resource Mapping (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../case-studies/index.html">Case studies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">costing</a></li>
+      <li class="breadcrumb-item active">Resource Mapping (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/costing/ResourceFile_Resource_Mapping.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="resource-mapping-csv">
+<h1>Resource Mapping (.csv)<a class="headerlink" href="#resource-mapping-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/costing/ResourceFile_Resource_Mapping.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Cost Type</p></th>
+<th class="head"><p>Cost Sub-Type</p></th>
+<th class="head"><p>Programmatic Intervention Level 2 [NEW]
+(when the disaggregated data had to rely upon intervention rather than cost sub-type)</p></th>
+<th class="head"><p>Calibration_category</p></th>
+<th class="head"><p>EXPENDITURE (USD) (Jul 2018 - Jun 2019)</p></th>
+<th class="head"><p>BUDGETS (USD) (Jul 2019 - Jun 2020)</p></th>
+<th class="head"><p>BUDGETS (USD) (Jul 2020 - Jun 2021)</p></th>
+<th class="head"><p>BUDGETS (USD) (Jul 2021 - Jun 2022)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>Drugs, medical supplies, and commodities</p></td>
+<td></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>37735051.33</p></td>
+<td><p>33585891.65</p></td>
+<td><p>69727962.89</p></td>
+<td><p>4373929.058</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>Exclude from calibration</p></td>
+<td><p>All</p></td>
+<td><p>Items recategorised as non-consumable costs even though the cost type was drugs and commodities</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>16649853.76</p></td>
+<td><p>6001427.872</p></td>
+<td><p>3562765.51</p></td>
+<td><p>3542670.515</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Beyond EHP</p></td>
+<td><p>Non-EHP consumables</p></td>
+<td><p>25178739.81</p></td>
+<td><p>18706715.51</p></td>
+<td><p>957210.23</p></td>
+<td><p>851070.13</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Voluntary Male Medical Circumcision (VMMC)</p></td>
+<td><p>Voluntary Male Medical Circumcision</p></td>
+<td><p>2891681</p></td>
+<td><p>1730270.55</p></td>
+<td><p>1801078.6</p></td>
+<td><p>1832645.01</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Indoor Residual Spray (IRS)</p></td>
+<td><p>Indoor Residual Spray</p></td>
+<td><p>7272001.18</p></td>
+<td><p>12766844.17</p></td>
+<td><p>13187549.04</p></td>
+<td><p>13155261.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>ITNs/LLIN (Bednets)</p></td>
+<td><p>Bednets</p></td>
+<td><p>3552600</p></td>
+<td><p>2807700</p></td>
+<td><p>28061308.64</p></td>
+<td><p>8002242.375</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>ACTs (LA and ASAQ)</p></td>
+<td><p>Antimalarials</p></td>
+<td><p>681848.59</p></td>
+<td><p>201412.87</p></td>
+<td><p>4001222.91</p></td>
+<td><p>2338244.615</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Micro-nutrient Powder - Under 5s</p></td>
+<td><p>Undernutrition commodities</p></td>
+<td><p>527728.2</p></td>
+<td><p>1241436.84</p></td>
+<td><p>934561.73</p></td>
+<td><p>600000</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Plumpy Peanut - Under 5s</p></td>
+<td><p>Undernutrition commodities</p></td>
+<td><p>120469</p></td>
+<td><p>211117.57</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>School Feeding Programs</p></td>
+<td><p>Undernutrition commodities</p></td>
+<td><p>87503.8</p></td>
+<td><p>65312.75</p></td>
+<td><p>57794.08</p></td>
+<td><p>68513.69</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Vitamin A - Pregnant Women</p></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>1356.72</p></td>
+<td><p>191010.31</p></td>
+<td><p>93975.37</p></td>
+<td><p>93975.37</p></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Treatment of Undernutrition</p></td>
+<td><p>Undernutrition commodities</p></td>
+<td><p>177513.58</p></td>
+<td><p>159150.6705</p></td>
+<td><p>173928.6313</p></td>
+<td><p>199995.5039</p></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Cervical Cancer Screening</p></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>520131.97</p></td>
+<td><p>851350.84</p></td>
+<td><p>1384482.72</p></td>
+<td><p>428059.72</p></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Cervical Cancer Treatment</p></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>14740.35</p></td>
+<td><p>197495.02</p></td>
+<td><p>71332.69</p></td>
+<td><p>7258.92</p></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Barrier Methods (e.g. condoms)</p></td>
+<td><p>Condoms and Lubricants</p></td>
+<td><p>112375.97</p></td>
+<td><p>6640083.82</p></td>
+<td><p>1558317.15</p></td>
+<td><p>1558317.15</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Hormonal Methods (e.g. implants, injectables, IUD, the pill)</p></td>
+<td><p>Other family planning commodities</p></td>
+<td><p>12190873.76</p></td>
+<td><p>15538449.2</p></td>
+<td><p>4922990.5</p></td>
+<td><p>5064869.02</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Screening and Diagnosis</p></td>
+<td><p>TB Tests (including RDTs)</p></td>
+<td><p>599011.62</p></td>
+<td><p>886710.81</p></td>
+<td><p>2706005.42</p></td>
+<td><p>2230863.7</p></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>First Line Treatment</p></td>
+<td><p>TB Treatment</p></td>
+<td><p>1068701</p></td>
+<td><p>2717468</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>MDR-TB</p></td>
+<td><p>TB Treatment</p></td>
+<td><p>1269835.34</p></td>
+<td><p>1691496</p></td>
+<td><p>475056.42</p></td>
+<td><p>368603.07</p></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Polio, Rotavirus, Measles Rubella, Pentavalent, BCG, Tetatanus Toxoid, and Pneumoccal Vaccines</p></td>
+<td><p>Vaccines</p></td>
+<td><p>4200418.52</p></td>
+<td><p>13209399.57</p></td>
+<td><p>1112804.105</p></td>
+<td><p>1214369.197</p></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Rapid Diagnostic Test (RDT)</p></td>
+<td><p>Malaria RDTs</p></td>
+<td><p>1719000</p></td>
+<td><p>2334561.125</p></td>
+<td><p>3728967.96</p></td>
+<td><p>2173892.617</p></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Community-Based Testing</p></td>
+<td><p>HIV Screening/Diagnostic Tests</p></td>
+<td><p>405156.32</p></td>
+<td><p>337854.83</p></td>
+<td><p>175603.95</p></td>
+<td><p>975783.08</p></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Early Infant Diagnosis</p></td>
+<td><p>HIV Screening/Diagnostic Tests</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>2713.41</p></td>
+<td><p>2984.75</p></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Facility-Based Testing</p></td>
+<td><p>HIV Screening/Diagnostic Tests</p></td>
+<td><p>17101787.53</p></td>
+<td><p>43055908.24</p></td>
+<td><p>968741.85</p></td>
+<td><p>40063479.18</p></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Index Testing including Voluntary Assisted Partner Notification</p></td>
+<td><p>HIV Screening/Diagnostic Tests</p></td>
+<td><p>0</p></td>
+<td><p>5150.01</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>All</p></td>
+<td><p>Self-Testing</p></td>
+<td><p>HIV Screening/Diagnostic Tests</p></td>
+<td><p>5425</p></td>
+<td><p>5336.82</p></td>
+<td><p>58749.99</p></td>
+<td><p>4492067.47</p></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>Program Management &amp; Administration not disaggregated</p></td>
+<td><p>Items recategorised as non-consumable costs even though the cost type was drugs and commodities</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>5743.325949</p></td>
+<td><p>4677.920585</p></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>Travel and Transporation</p></td>
+<td><p>Items recategorised as non-consumable costs even though the cost type was drugs and commodities</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>0</p></td>
+<td><p>0.000509095</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>Family Planning</p></td>
+<td></td>
+<td><p>Other family planning commodities</p></td>
+<td><p>132269.6</p></td>
+<td><p>5514241.99</p></td>
+<td><p>3350000.01</p></td>
+<td><p>3350000.01</p></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>IRS (in one district - Ntcheu)</p></td>
+<td></td>
+<td><p>Indoor Residual Spray</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>6948.786211</p></td>
+<td><p>5677.98822</p></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>TB Treatment</p></td>
+<td></td>
+<td><p>TB Treatment</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>217362</p></td>
+<td><p>276992</p></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>Antimalarials (ACTs-LA)</p></td>
+<td></td>
+<td><p>Antimalarials</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>2013142.07</p></td>
+<td><p>320675.5249</p></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>Antimalarials (ASAQ)</p></td>
+<td></td>
+<td><p>Antimalarials</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>34093.29</p></td>
+<td><p>5430.76</p></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>Antimalarials (Injectable artesunate)</p></td>
+<td></td>
+<td><p>Antimalarials</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>2045598.38</p></td>
+<td><p>325845.5357</p></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>Malaria RDTs</p></td>
+<td></td>
+<td><p>Malaria RDTs</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>1914467.96</p></td>
+<td><p>304957.6172</p></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>BCG Vaccine</p></td>
+<td></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>290782.19</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>Td vaccine</p></td>
+<td></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>264785.1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>Drugs and Commodities</p></td>
+<td><p>AD syringes</p></td>
+<td></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>174838.04</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>HIV Drugs and Commodities</p></td>
+<td><p>Antiretrovirals</p></td>
+<td></td>
+<td><p>Antiretrovirals</p></td>
+<td><p>53796360.12</p></td>
+<td><p>77506903.49</p></td>
+<td><p>17561508.19</p></td>
+<td><p>70061133.79</p></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>HIV Drugs and Commodities</p></td>
+<td><p>CD4 Tests</p></td>
+<td></td>
+<td><p>HIV Screening/Diagnostic Tests</p></td>
+<td><p>296760</p></td>
+<td><p>277000</p></td>
+<td><p>9635</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>HIV Drugs and Commodities</p></td>
+<td><p>Condoms and Lubricants</p></td>
+<td></td>
+<td><p>Condoms and Lubricants</p></td>
+<td><p>97937.86801</p></td>
+<td><p>54904.84746</p></td>
+<td><p>76848.98347</p></td>
+<td><p>4571127.903</p></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>HIV Drugs and Commodities</p></td>
+<td><p>Diagnostic Tests for STI (including rapid testing)</p></td>
+<td></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>78542.52</p></td>
+<td><p>93131.57977</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>HIV Drugs and Commodities</p></td>
+<td><p>Diagnostic Tests for TB (including rapid testing)</p></td>
+<td></td>
+<td><p>TB Tests (including RDTs)</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>1419632.13</p></td>
+<td><p>3989558.35</p></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>HIV Drugs and Commodities</p></td>
+<td><p>Drugs, medical supplies, and commodities</p></td>
+<td></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>5014531.74</p></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>HIV Drugs and Commodities</p></td>
+<td><p>Food and nutrients</p></td>
+<td></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>393900.24</p></td>
+<td><p>224721.6904</p></td>
+<td><p>308179.2506</p></td>
+<td><p>306105.3169</p></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>HIV Drugs and Commodities</p></td>
+<td><p>HIV Screening/Diagnostic Tests</p></td>
+<td></td>
+<td><p>HIV Screening/Diagnostic Tests</p></td>
+<td><p>6591239.4</p></td>
+<td><p>9505086.21</p></td>
+<td><p>69891.2</p></td>
+<td><p>9334673.76</p></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>HIV Drugs and Commodities</p></td>
+<td><p>Other Reagents and Testing materials</p></td>
+<td></td>
+<td><p>HIV Screening/Diagnostic Tests</p></td>
+<td><p>10068675.88</p></td>
+<td><p>33148137.61</p></td>
+<td><p>273365.04</p></td>
+<td><p>36031379.04</p></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>HIV Drugs and Commodities</p></td>
+<td><p>STI Drugs</p></td>
+<td></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>203612.41</p></td>
+<td><p>5002265.29</p></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>HIV Drugs and Commodities</p></td>
+<td><p>??</p></td>
+<td></td>
+<td><p>Other Drugs, medical supplies, and commodities</p></td>
+<td><p>497757</p></td>
+<td><p>464611</p></td>
+<td><p>16160</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td><p>Human Resources for Health</p></td>
+<td><p>Health Worker Salaries</p></td>
+<td></td>
+<td><p>Health Worker Salaries</p></td>
+<td><p>114418952.8</p></td>
+<td><p>96289447.6</p></td>
+<td><p>121614819.8</p></td>
+<td><p>133228884.3</p></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>Human Resources for Health</p></td>
+<td><p>Health Worker Training - In-Service</p></td>
+<td></td>
+<td><p>Health Worker Training - In-Service</p></td>
+<td><p>12897136.55</p></td>
+<td><p>13526727.32</p></td>
+<td><p>17743710.12</p></td>
+<td><p>13005517.82</p></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>Human Resources for Health</p></td>
+<td><p>Health Worker Training - Pre-Service</p></td>
+<td></td>
+<td><p>Health Worker Training - Pre-Service</p></td>
+<td><p>1277697.67</p></td>
+<td><p>1443446.66</p></td>
+<td><p>2665199.15</p></td>
+<td><p>1441745.28</p></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>Human Resources for Health</p></td>
+<td><p>Mentorships &amp; Supportive Supervision</p></td>
+<td></td>
+<td><p>Mentorships &amp; Supportive Supervision</p></td>
+<td><p>55553332.8</p></td>
+<td><p>66652165.02</p></td>
+<td><p>40094104.47</p></td>
+<td><p>18212349.51</p></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>ICT Equipment and Connectivity</p></td>
+<td></td>
+<td><p>Facility utility bills</p></td>
+<td><p>5180629.881</p></td>
+<td><p>4314681.338</p></td>
+<td><p>2702409.349</p></td>
+<td><p>2762060.733</p></td>
+</tr>
+<tr class="row-even"><td><p>54</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>Infrastructure - New Builds</p></td>
+<td></td>
+<td><p>Infrastructure - New Builds</p></td>
+<td><p>29663284.53</p></td>
+<td><p>4496146.709</p></td>
+<td><p>6768215.83</p></td>
+<td><p>5158459.586</p></td>
+</tr>
+<tr class="row-odd"><td><p>55</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>Infrastructure - Power &amp; Water for Health Facilities</p></td>
+<td></td>
+<td><p>Facility utility bills</p></td>
+<td><p>556017.55</p></td>
+<td><p>826846.2157</p></td>
+<td><p>3464467.611</p></td>
+<td><p>2617045.413</p></td>
+</tr>
+<tr class="row-even"><td><p>56</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>Infrastructure - Rehabilitation</p></td>
+<td></td>
+<td><p>Infrastructure - Rehabilitation</p></td>
+<td><p>3586443.584</p></td>
+<td><p>6782715.623</p></td>
+<td><p>10177394.16</p></td>
+<td><p>6833923.22</p></td>
+</tr>
+<tr class="row-odd"><td><p>57</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>Infrastructure - Rehabilitation</p></td>
+<td><p>Of the ‘Infrastructure - Rehab’ for Govt and CHAM, assume that 12.9% of govt exp and 7.3% of CHAM exp goes towards higher level local and central government admin rather than for health facilities. Source of admin %: <a class="reference external" href="https://gh.bmj.com/content/7/Suppl_1/e008317">https://gh.bmj.com/content/7/Suppl_1/e008317</a> (See table 2 - Administrative and Support Staff)</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>531172.4711</p></td>
+<td><p>1004558.341</p></td>
+<td><p>1507329.33</p></td>
+<td><p>1012142.475</p></td>
+</tr>
+<tr class="row-even"><td><p>58</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>Infrastructure - Upgrades</p></td>
+<td></td>
+<td><p>Infrastructure - Upgrades</p></td>
+<td><p>8782296.75</p></td>
+<td><p>7556835.828</p></td>
+<td><p>8832821.371</p></td>
+<td><p>1721579.063</p></td>
+</tr>
+<tr class="row-odd"><td><p>59</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>Medical Equipment - Maintenance</p></td>
+<td></td>
+<td><p>Medical Equipment - Maintenance</p></td>
+<td><p>2294331.38</p></td>
+<td><p>16010435.79</p></td>
+<td><p>16468941.94</p></td>
+<td><p>729799.7752</p></td>
+</tr>
+<tr class="row-even"><td><p>60</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>Medical Equipment - Purchase</p></td>
+<td></td>
+<td><p>Medical Equipment - Purchase</p></td>
+<td><p>3754149.89</p></td>
+<td><p>6897681.165</p></td>
+<td><p>19024579.29</p></td>
+<td><p>2560323.293</p></td>
+</tr>
+<tr class="row-odd"><td><p>61</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>Vehicles - Purchase and Maintenance</p></td>
+<td></td>
+<td><p>Vehicles - Fuel and Maintenance</p></td>
+<td><p>1161704.41</p></td>
+<td><p>1009615.048</p></td>
+<td><p>746055.1</p></td>
+<td><p>1418265.41</p></td>
+</tr>
+<tr class="row-even"><td><p>62</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>Vehicles - Purchase and Maintenance</p></td>
+<td></td>
+<td><p>Vehicles - Purchase</p></td>
+<td><p>7744266.84</p></td>
+<td><p>4606784.203</p></td>
+<td><p>4535752.158</p></td>
+<td><p>3253115.205</p></td>
+</tr>
+<tr class="row-odd"><td><p>63</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>Vehicles - Purchase and Maintenance</p></td>
+<td></td>
+<td><p>Vehicles - Fuel and Maintenance</p></td>
+<td><p>1590013.852</p></td>
+<td><p>1377846.048</p></td>
+<td><p>2227956.224</p></td>
+<td><p>1437580.491</p></td>
+</tr>
+<tr class="row-even"><td><p>64</p></td>
+<td><p>Infrastructure and Equipment</p></td>
+<td><p>Vehicles - Purchase and Maintenance</p></td>
+<td></td>
+<td><p>Vehicles - Purchase</p></td>
+<td><p>647931.648</p></td>
+<td><p>471838.8702</p></td>
+<td><p>539095.8541</p></td>
+<td><p>336204.143</p></td>
+</tr>
+<tr class="row-odd"><td><p>65</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>Administrative/Support Staff Salaries</p></td>
+<td></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>24192554.5</p></td>
+<td><p>24037791.15</p></td>
+<td><p>26523690.62</p></td>
+<td><p>19765382.08</p></td>
+</tr>
+<tr class="row-even"><td><p>66</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>Health Worker Salaries</p></td>
+<td></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>1109191</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>67</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>Meeting Costs</p></td>
+<td></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>4432881.163</p></td>
+<td><p>6746368.804</p></td>
+<td><p>8331545.052</p></td>
+<td><p>4184240.754</p></td>
+</tr>
+<tr class="row-even"><td><p>68</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>Office Rents</p></td>
+<td></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>233229.3842</p></td>
+<td><p>180375.503</p></td>
+<td><p>20586.6663</p></td>
+<td><p>33273.39701</p></td>
+</tr>
+<tr class="row-odd"><td><p>69</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>Office Supplies</p></td>
+<td></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>6533157.844</p></td>
+<td><p>2437965.433</p></td>
+<td><p>1789616.249</p></td>
+<td><p>1283029.631</p></td>
+</tr>
+<tr class="row-even"><td><p>70</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>Office Utilities (electricity, water, heating, etc.)</p></td>
+<td></td>
+<td><p>Facility utility bills</p></td>
+<td><p>6406060.55</p></td>
+<td><p>8508379.558</p></td>
+<td><p>7459340.455</p></td>
+<td><p>23815959.6</p></td>
+</tr>
+<tr class="row-odd"><td><p>71</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>Program Management &amp; Administration not disaggregated</p></td>
+<td></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>76286561.89</p></td>
+<td><p>80112918.41</p></td>
+<td><p>88020806.59</p></td>
+<td><p>79180165.51</p></td>
+</tr>
+<tr class="row-even"><td><p>72</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>Promotional/Information Materials and Printing</p></td>
+<td></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>5470061.04</p></td>
+<td><p>6574128.75</p></td>
+<td><p>6477016.358</p></td>
+<td><p>1981892.293</p></td>
+</tr>
+<tr class="row-odd"><td><p>73</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>Travel and Transporation</p></td>
+<td><p>This is the ‘Travel and Transport’ for all financing sources Government and CHAM</p></td>
+<td><p>Vehicles - Fuel and Maintenance</p></td>
+<td><p>11618372.36</p></td>
+<td><p>3920058.128</p></td>
+<td><p>6219018.901</p></td>
+<td><p>5235795.126</p></td>
+</tr>
+<tr class="row-even"><td><p>74</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>Travel and Transporation</p></td>
+<td><p>Of the ‘Vehicle-Fuel and Maintenance’ for Govt and CHAM, assume that 12.9% of govt exp and 7.3% of CHAM exp goes towards higher level local and central government admin rather than for health facilities. Source of admin %: <a class="reference external" href="https://gh.bmj.com/content/7/Suppl_1/e008317">https://gh.bmj.com/content/7/Suppl_1/e008317</a> (See table 2 - Administrative and Support Staff)</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>1714561.441</p></td>
+<td><p>573369.0917</p></td>
+<td><p>916384.9305</p></td>
+<td><p>775232.6424</p></td>
+</tr>
+<tr class="row-odd"><td><p>75</p></td>
+<td><p>Program Management &amp; Administration</p></td>
+<td><p>Travel and Transporation</p></td>
+<td><p>This is the ‘Travel and Transport’ for all financing sources other than Government and CHAM</p></td>
+<td><p>Vehicles - Fuel and Maintenance (Beyond Government and CHAM)</p></td>
+<td><p>8309105.9</p></td>
+<td><p>8334574.65</p></td>
+<td><p>21629947.92</p></td>
+<td><p>3526722.085</p></td>
+</tr>
+<tr class="row-even"><td><p>76</p></td>
+<td><p>Supply Chain</p></td>
+<td><p>Procurement (excluding Drug/Commodity Costs)</p></td>
+<td></td>
+<td><p>Supply Chain</p></td>
+<td><p>9918093.144</p></td>
+<td><p>9261444.666</p></td>
+<td><p>10137233.97</p></td>
+<td><p>14287066.31</p></td>
+</tr>
+<tr class="row-odd"><td><p>77</p></td>
+<td><p>Supply Chain</p></td>
+<td><p>Warehousing &amp; Distribution</p></td>
+<td></td>
+<td><p>Supply Chain</p></td>
+<td><p>8824388.095</p></td>
+<td><p>7931021.788</p></td>
+<td><p>8012147.355</p></td>
+<td><p>18794789.71</p></td>
+</tr>
+<tr class="row-even"><td><p>78</p></td>
+<td><p>Supply Chain</p></td>
+<td><p>Procurement (excluding Drug/Commodity Costs) - non EHP consumables</p></td>
+<td><p>We estimate this as the percentage of drug exp composed of non-EHP consumables multiplied by total Procurement expenditure as per RM -  ($11,293,315.25      $10,545,617.26          $11,542,841.69          $16,268,081.12 )</p></td>
+<td><p>Supply Chain - non-EHP consumables</p></td>
+<td><p>1375222.106</p></td>
+<td><p>1284172.598</p></td>
+<td><p>1405607.716</p></td>
+<td><p>1981014.811</p></td>
+</tr>
+<tr class="row-odd"><td><p>79</p></td>
+<td><p>Supply Chain</p></td>
+<td><p>Warehousing &amp; Distribution - non EHP consumables</p></td>
+<td><p>We estimate this as the percentage of drug exp composed of non-EHP consumables multiplied by total warehousing and distribution expenditure as per RM -  ( $10,047,959.34    $9,030,720.73   $9,123,094.99   $21,400,836.05  )</p></td>
+<td><p>Supply Chain - non-EHP consumables</p></td>
+<td><p>1223571.245</p></td>
+<td><p>1099698.937</p></td>
+<td><p>1110947.639</p></td>
+<td><p>2606046.336</p></td>
+</tr>
+<tr class="row-even"><td><p>80</p></td>
+<td><p>(blank)</p></td>
+<td><p>(blank)</p></td>
+<td></td>
+<td><p>Unclassified</p></td>
+<td><p>0</p></td>
+<td><p>3622078.57</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>81</p></td>
+<td><p>Grand Total</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>624054026.6</p></td>
+<td><p>689820411.3</p></td>
+<td><p>616418054</p></td>
+<td><p>605723734.1</p></td>
+</tr>
+<tr class="row-even"><td><p>82</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>83</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>84</p></td>
+<td><p>Categories from Resource Mapping Round 7</p></td>
+<td><p>Categories from Resource Mapping Round 7</p></td>
+<td><p>Categories from Resource Mapping Round 7</p></td>
+<td><p>Categories defined for model</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ResourceFile_Health_Spending_Projections.csv.html" class="btn btn-neutral float-left" title="Health Spending Projections (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../demography/index.html" class="btn btn-neutral float-right" title="demography" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

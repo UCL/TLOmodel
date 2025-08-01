@@ -1,0 +1,2032 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Costing Consumables (.csv) &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=9c477e70"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Costing Equipment (.csv)" href="ResourceFile_Costing_Equipment.csv.html" />
+    <link rel="prev" title="Consumables Inflow Outflow Ratio (.csv)" href="ResourceFile_Consumables_Inflow_Outflow_Ratio.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri/index.html">ResourceFile_Alri</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Cervical_Cancer/index.html">ResourceFile_Cervical_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea/index.html">ResourceFile_Diarrhoea</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/index.html">ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced/index.html">ResourceFile_Lifestyle_Enhanced</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer/index.html">ResourceFile_Oesophageal_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers/index.html">ResourceFile_Other_Adult_Cancers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer/index.html">ResourceFile_Prostate_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI/index.html">ResourceFile_RTI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting/index.html">ResourceFile_Stunting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">costing</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Consumables_Inflow_Outflow_Ratio.csv.html">Consumables Inflow Outflow Ratio (.csv)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Costing Consumables (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Costing_Equipment.csv.html">Costing Equipment (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Costing_Facility_Operations.csv.html">Costing Facility Operations (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Costing_HR.csv.html">Costing HR (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Exchange_Rates_and_Inflation.csv.html">Exchange Rates and Inflation (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Health_Spending_Projections.csv.html">Health Spending Projections (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_Resource_Mapping.csv.html">Resource Mapping (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../case-studies/index.html">Case studies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">costing</a></li>
+      <li class="breadcrumb-item active">Costing Consumables (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/costing/ResourceFile_Costing_Consumables.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="costing-consumables-csv">
+<h1>Costing Consumables (.csv)<a class="headerlink" href="#costing-consumables-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/costing/ResourceFile_Costing_Consumables.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Item_Code</p></th>
+<th class="head"><p>Items</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Price_per_unit</p></th>
+<th class="head"><p>Data_source</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>Levonorgestrel 0.0375 mg, cycle</p></td>
+<td><p>Tablet (Levonorgestrel 0.0375 mg/~30 micrograms)</p></td>
+<td><p>0.0439099</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle</p></td>
+<td><p>Tablet (Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg)</p></td>
+<td><p>0.0519511</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>Condom, male</p></td>
+<td><p>Single condom</p></td>
+<td><p>0.0294804</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>3</p></td>
+<td><p>Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly</p></td>
+<td><p>1 ml vial</p></td>
+<td><p>0.612486</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>5</p></td>
+<td><p>Povidone iodine, solution, 10 %, 5 ml per injection</p></td>
+<td><p>1 ml</p></td>
+<td><p>0.000634745</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>6</p></td>
+<td><p>Syringe, Autodisable SoloShot IX</p></td>
+<td><p>1 syringe</p></td>
+<td><p>0.0849517</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>7</p></td>
+<td><p>IUD, Copper T-380A</p></td>
+<td><p>1 IUD</p></td>
+<td><p>0.474075</p></td>
+<td><p>MSH International Medical Products Price Guide (2015) UNFPA price <a class="reference external" href="https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf">https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf</a></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>8</p></td>
+<td><p>Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml</p></td>
+<td><p>2 ml ampoule</p></td>
+<td><p>0.435373</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>9</p></td>
+<td><p>Syringe, needle + swab</p></td>
+<td><p>1 syringe</p></td>
+<td><p>0.00273779</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>11</p></td>
+<td><p>Needle suture intestinal round bodied ¬Ω circle trocar_6_CMST</p></td>
+<td><p>1 needle suture</p></td>
+<td><p>0.237409</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>12</p></td>
+<td><p>Jadelle (implant), box of 2_CMST</p></td>
+<td><p>1 implant (2 rods)</p></td>
+<td><p>23.0394</p></td>
+<td><p>MSH International Medical Products Price Guide (2015) UNFPA price <a class="reference external" href="https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf">https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf</a></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>13</p></td>
+<td><p>Implanon (Etonogestrel 68 mg)</p></td>
+<td><p>1 implant</p></td>
+<td><p>23.0394</p></td>
+<td><p>MSH International Medical Products Price Guide (2015) UNFPA price <a class="reference external" href="https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf">https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf</a></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>14</p></td>
+<td><p>Atropine sulphate, injection, 1 mg in 1 ml ampoule</p></td>
+<td><p>1 ml ampoule (1 mg/ml)</p></td>
+<td><p>0.183265</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>15</p></td>
+<td><p>Diazepam, injection, 5 mg/ml, in 2 ml ampoule</p></td>
+<td><p>2 ml ampoule (5 mg/ml)</p></td>
+<td><p>0.106674</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>16</p></td>
+<td><p>Lidocaine, injection, 1 % in 20 ml vial</p></td>
+<td><p>1 ml (1%)</p></td>
+<td><p>0.0108984</p></td>
+<td><p>CMST 2023</p></td>
+<td><p>assumed that 25ml comes in a multi-use bottle rather than a single-use ampoule</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>17</p></td>
+<td><p>Lidocaine, spray, 10%, 500 ml bottle</p></td>
+<td><p>1 ml (10%)</p></td>
+<td><p>0.0134855</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>19</p></td>
+<td><p>Needle, suture, assorted sizes, round body</p></td>
+<td><p>1 needle</p></td>
+<td><p>0.237391</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>20</p></td>
+<td><p>Suture, catgut, chromic, 0, 150 cm</p></td>
+<td><p>1 suture pack</p></td>
+<td><p>0.44271</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>21</p></td>
+<td><p>Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll</p></td>
+<td><p>1 cm long (2.5 cm wide)</p></td>
+<td><p>0.00438058</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>23</p></td>
+<td><p>Paracetamol, tablet, 500 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>7.62032e-07</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>24</p></td>
+<td><p>Cotton swab</p></td>
+<td><p>1 g</p></td>
+<td><p>0.00488571</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>25</p></td>
+<td><p>Female Condom_Each_CMST</p></td>
+<td><p>1 condom</p></td>
+<td><p>0.019496</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>26</p></td>
+<td><p>Misoprostol, tablet, 200 mcg</p></td>
+<td><p>1 mcg</p></td>
+<td><p>0.000371553</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>27</p></td>
+<td><p>Ampicillin, powder for injection, 500 mg, vial</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.000245987</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>28</p></td>
+<td><p>Gentamycin, injection, 40 mg/ml in 2 ml vial</p></td>
+<td><p>2 ml vial (40 mg/ml)</p></td>
+<td><p>0.0536931</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>29</p></td>
+<td><p>Metronidazole, injection, 500 mg in 100 ml vial</p></td>
+<td><p>100 ml vial for IV (5 mg/ml)</p></td>
+<td><p>0.234629</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>30</p></td>
+<td><p>Tetracycline, tablet, 500 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>3.53616e-06</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p>One Health Tool gives cost per tablet</p></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>33</p></td>
+<td><p>Sodium chloride, injectable solution, 0,9 %, 500 ml</p></td>
+<td><p>1 ml (0.9%)</p></td>
+<td><p>0.00106591</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>39</p></td>
+<td><p>Tetanus toxoid, injection</p></td>
+<td><p>5 ml injection</p></td>
+<td><p>0.00914973</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>40</p></td>
+<td><p>Blood collecting tube, 5 ml</p></td>
+<td><p>5 ml tube</p></td>
+<td><p>0.0868407</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>41</p></td>
+<td><p>Test, Rapid plasma reagin (RPR)</p></td>
+<td><p>1 test</p></td>
+<td><p>0.260657</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>42</p></td>
+<td><p>Benzathine benzylpenicillin, powder for injection, 2.4 million IU</p></td>
+<td><p>1 injection (1.44g)</p></td>
+<td><p>0.389303</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>44</p></td>
+<td><p>Ferrous sulphate 200mg _1000_CMST</p></td>
+<td><p>1 tablet (Ferrous sulphate 200mg/Folic acid 25mg)</p></td>
+<td><p>0.00198215</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>47</p></td>
+<td><p>Urine analysis</p></td>
+<td><p>1 bottle</p></td>
+<td><p>0.235377</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>49</p></td>
+<td><p>Cotton wool, 500g_1_CMST</p></td>
+<td><p>1 g</p></td>
+<td><p>0.00756286</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>50</p></td>
+<td><p>Haemoglobin test (HB)</p></td>
+<td><p>1 test</p></td>
+<td><p>0.829442</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td><p>CMST consumable was $359 each which probably refers to the equipment</p></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>52</p></td>
+<td><p>Albendazole, tablet, 400 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>5.98196e-06</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>56</p></td>
+<td><p>Oxytocin, injection, 10 IU in 1 ml ampoule</p></td>
+<td><p>1 ml ampoule (10 IU/ml)</p></td>
+<td><p>0.0397485</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>57</p></td>
+<td><p>Bag, urine, collecting, 2000 ml</p></td>
+<td><p>1 2000ml bag</p></td>
+<td><p>0.254943</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>58</p></td>
+<td><p>Foley catheter</p></td>
+<td><p>1 catheter</p></td>
+<td><p>0.0690892</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>60</p></td>
+<td><p>Hydralazine, powder for injection, 20 mg ampoule</p></td>
+<td><p>1 ml (20 mg/ml)</p></td>
+<td><p>0.773548</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>61</p></td>
+<td><p>Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule</p></td>
+<td><p>10 ml ampoule (500 mg/ml)</p></td>
+<td><p>0.124416</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>64</p></td>
+<td><p>Infant resuscitator, clear plastic + mask + bag_each_CMST</p></td>
+<td><p>1 resuscitator</p></td>
+<td><p>8.28394</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>65</p></td>
+<td><p>Ketamine, 10 ml vial, 50 mg/ml</p></td>
+<td><p>10 ml vial (50 mg/ml)</p></td>
+<td><p>1.55276</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>66</p></td>
+<td><p>Cefazolin, ampoule, 500 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.00124028</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>67</p></td>
+<td><p>Blade, surgical, no. 22, sterile, disposable</p></td>
+<td><p>1 blade</p></td>
+<td><p>0.0358897</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>68</p></td>
+<td><p>Tetracycline eye ointment, 1 %, tube 5 mg</p></td>
+<td><p>1 g</p></td>
+<td><p>0.0929225</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>70</p></td>
+<td><p>Amoxicillin, powder/oral suspension, 125 mg/5 ml</p></td>
+<td><p>1 ml (125mg/5ml)</p></td>
+<td><p>0.00605237</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>71</p></td>
+<td><p>Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST</p></td>
+<td><p>1 ml (120mg/5ml)</p></td>
+<td><p>0.00833989</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td><p>73</p></td>
+<td><p>Iodine strong 10% solution_500ml_CMST</p></td>
+<td><p>1 ml (10%)</p></td>
+<td><p>0.00592529</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>74</p></td>
+<td><p>Chlorhexidine 1.5% solution_5_CMST</p></td>
+<td><p>1 ml (1.5%)</p></td>
+<td><p>0.0061256</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s1531510.html">https://supply.unicef.org/s1531510.html</a> [Chlorhexidine conc. sol. 5%/BOT-100ml]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>75</p></td>
+<td><p>Gauze, swabs 8-ply 10cm x 10cm_100_CMST</p></td>
+<td><p>1 swab (10cm X 10cm)</p></td>
+<td><p>0.0152094</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>76</p></td>
+<td><p>Scalpel blade size 22 (individually wrapped)_100_CMST</p></td>
+<td><p>1 blade</p></td>
+<td><p>0.0358897</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td><p>80</p></td>
+<td><p>Giving set iv administration + needle 15 drops/ml_each_CMST</p></td>
+<td><p>1 IV set</p></td>
+<td><p>0.0934328</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>54</p></td>
+<td><p>81</p></td>
+<td><p>Ceftriaxone 1g, PFR_each_CMST</p></td>
+<td><p>1 g</p></td>
+<td><p>0.219444</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>55</p></td>
+<td><p>82</p></td>
+<td><p>Catheter Foley’s + urine bag (2000ml) 14g_each_CMST</p></td>
+<td><p>1 catheter</p></td>
+<td><p>0.0690892</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>56</p></td>
+<td><p>84</p></td>
+<td><p>Declofenac injection_each_CMST</p></td>
+<td><p>3 ml ampoule (75 mg/ml)</p></td>
+<td><p>0.0437515</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>57</p></td>
+<td><p>86</p></td>
+<td><p>Ampicillin injection 500mg, PFR_each_CMST</p></td>
+<td><p>1 injection (500 mg)</p></td>
+<td><p>0.122993</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>58</p></td>
+<td><p>88</p></td>
+<td><p>surgical face mask, disp., with metal nose piece_50_IDA</p></td>
+<td><p>1 mask</p></td>
+<td><p>0.00384113</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>59</p></td>
+<td><p>90</p></td>
+<td><p>Halothane (fluothane)_250ml_CMST</p></td>
+<td><p>1 ml</p></td>
+<td><p>0.0727853</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>60</p></td>
+<td><p>92</p></td>
+<td><p>Metronidazole 200mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>4.50281e-06</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>61</p></td>
+<td><p>93</p></td>
+<td><p>Saline solution</p></td>
+<td><p>1 ml (0.9%)</p></td>
+<td><p>0.00154229</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>62</p></td>
+<td><p>98</p></td>
+<td><p>Water for injection, 10ml_Each_CMST</p></td>
+<td><p>10 ml ampoule</p></td>
+<td><p>0.0491974</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>63</p></td>
+<td><p>99</p></td>
+<td><p>Benzylpenicillin 3g (5MU), PFR_each_CMST</p></td>
+<td><p>1 g</p></td>
+<td><p>0.0457164</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>64</p></td>
+<td><p>101</p></td>
+<td><p>Gauze, absorbent 90cm x 40m_each_CMST</p></td>
+<td><p>1 cm long (84 cm wide)</p></td>
+<td><p>0.0105467</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>65</p></td>
+<td><p>102</p></td>
+<td><p>Oxytocin 10 IU/ml, 1ml_each_CMST</p></td>
+<td><p>1 ml (10 IU/ml)</p></td>
+<td><p>0.0397485</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>66</p></td>
+<td><p>103</p></td>
+<td><p>Bandage, plaster of paris 15cm_12_CMST</p></td>
+<td><p>1 bandage (15cm)</p></td>
+<td><p>0.258255</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>67</p></td>
+<td><p>105</p></td>
+<td><p>Metronidazole 5mg/ml, 100ml_each_CMST</p></td>
+<td><p>1 ml (5 mg/ml)</p></td>
+<td><p>0.00234629</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>68</p></td>
+<td><p>106</p></td>
+<td><p>Gentamicin Sulphate 40mg/ml, 2ml_each_CMST</p></td>
+<td><p>2 ml vial (40 mg/ml)</p></td>
+<td><p>0.0536931</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>69</p></td>
+<td><p>112</p></td>
+<td><p>Glove surgeon’s size 7 sterile_2_CMST</p></td>
+<td><p>1 pair of gloves</p></td>
+<td><p>0.0656581</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>70</p></td>
+<td><p>113</p></td>
+<td><p>Paracetamol 500mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>7.62032e-07</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>71</p></td>
+<td><p>117</p></td>
+<td><p>Clean delivery kit</p></td>
+<td><p>1 kit</p></td>
+<td><p>5.67785</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>72</p></td>
+<td><p>120</p></td>
+<td><p>Cannula iv  (winged with injection pot) 16_each_CMST</p></td>
+<td><p>1 cannula</p></td>
+<td><p>0.138706</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>73</p></td>
+<td><p>123</p></td>
+<td><p>Erythromycin, tablet, 250 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.000192367</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>74</p></td>
+<td><p>125</p></td>
+<td><p>Amoxycillin 250mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>6.11621e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>75</p></td>
+<td><p>126</p></td>
+<td><p>Lancet, blood, disposable</p></td>
+<td><p>1 lancet</p></td>
+<td><p>0.0546397</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>76</p></td>
+<td><p>127</p></td>
+<td><p>Oxygen, 1000 liters, primarily with oxygen cylinders</p></td>
+<td><p>1 litre</p></td>
+<td><p>0.000571318</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p>In the One Health Tool, the treatment specified is “Shock: Oxygen 3 hours at 6-8 liters/min (1500 liters)” which requires 1.5 cylinders for 25% of the cases for materna case sepsis management</p></td>
+</tr>
+<tr class="row-odd"><td><p>77</p></td>
+<td><p>128</p></td>
+<td><p>Complete blood count</p></td>
+<td><p>1 bottle (5ml)</p></td>
+<td><p>1.54642</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td><p>Verified by SM, Emi - “Estimated from “Mindray FBC” and Bottle, Blood Collecting Plain Plastic Vacutainer, 5ml”</p></td>
+</tr>
+<tr class="row-even"><td><p>78</p></td>
+<td><p>130</p></td>
+<td><p>Gentamicin 40mg/ml, 2ml_each_CMST</p></td>
+<td><p>2 ml vial (40 mg/ml)</p></td>
+<td><p>0.0536931</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>79</p></td>
+<td><p>134</p></td>
+<td><p>Tube, feeding CH 8_each_CMST</p></td>
+<td><p>1 tube</p></td>
+<td><p>0.206045</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>80</p></td>
+<td><p>135</p></td>
+<td><p>Disposables gloves, powder free, 100 pieces per box</p></td>
+<td><p>1 pair of gloves</p></td>
+<td><p>0.082564</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>81</p></td>
+<td><p>141</p></td>
+<td><p>Blood, one unit</p></td>
+<td><p>1 unit/1 pint</p></td>
+<td><p>155.13</p></td>
+<td><p>[Costs in USD 2013] Mafirakureva et al (2016) - This cost includes - recruitment, collection, testing, processing, and storage plus distribution.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>82</p></td>
+<td><p>144</p></td>
+<td><p>Hand washing with soap - cost per client</p></td>
+<td><p>1ml</p></td>
+<td><p>0.0065065</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>83</p></td>
+<td><p>146</p></td>
+<td><p>ORS, sachet</p></td>
+<td><p>1 sachet</p></td>
+<td><p>0.0835441</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>84</p></td>
+<td><p>147</p></td>
+<td><p>Zinc, tablet, 20 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>5.88662e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>85</p></td>
+<td><p>148</p></td>
+<td><p>Ciprofloxacin 250mg_100_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>5.87008e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>86</p></td>
+<td><p>149</p></td>
+<td><p>ringer’s lactate (Hartmann’s solution), 1000 ml_12_IDA</p></td>
+<td><p>1 ml</p></td>
+<td><p>0.00122587</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>87</p></td>
+<td><p>153</p></td>
+<td><p>Syringe, autodisposable, BCG, 0.1 ml, with needle</p></td>
+<td><p>1 dose</p></td>
+<td><p>0.195624</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s359114.html">https://supply.unicef.org/s359114.html</a> [BCG vaccine,vial of 20 doses]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>88</p></td>
+<td><p>154</p></td>
+<td><p>Safety box for used syringes/needles, 5 liter</p></td>
+<td><p>1 box</p></td>
+<td><p>0.114424</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>89</p></td>
+<td><p>155</p></td>
+<td><p>Pneumococcal vaccine</p></td>
+<td><p>1 dose</p></td>
+<td><p>0.909948</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s359330.html">https://supply.unicef.org/s359330.html</a>  [Meningococcal A Conj 10mcg vac,10ds vial]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>90</p></td>
+<td><p>157</p></td>
+<td><p>HPV vaccine</p></td>
+<td><p>1 dose</p></td>
+<td><p>5.11784</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s359601.html">https://supply.unicef.org/s359601.html</a>  [HPV vaccine 2-valent, 2 doses]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>91</p></td>
+<td><p>162</p></td>
+<td><p>Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg</p></td>
+<td><p>1 ml (2.4 mg/ml)</p></td>
+<td><p>0.00365264</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>92</p></td>
+<td><p>163</p></td>
+<td><p>Malaria test kit (RDT)</p></td>
+<td><p>1 test</p></td>
+<td><p>0.0259412</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>93</p></td>
+<td><p>164</p></td>
+<td><p>Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST</p></td>
+<td><p>1 tablet (Lumefantrine 120mg/Artemether 20mg)</p></td>
+<td><p>0.00168346</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>94</p></td>
+<td><p>170</p></td>
+<td><p>Injectable artesunate</p></td>
+<td><p>1 ampoule (60 mg artesunate)</p></td>
+<td><p>0.109718</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>95</p></td>
+<td><p>171</p></td>
+<td><p>Cannula iv  (winged with injection pot) 18_each_CMST</p></td>
+<td><p>1 cannula</p></td>
+<td><p>0.148331</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>96</p></td>
+<td><p>175</p></td>
+<td><p>X-ray</p></td>
+<td><p>1 film (35cm  X 43cm)</p></td>
+<td><p>1.88587</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>97</p></td>
+<td><p>178</p></td>
+<td><p>Cat. I &amp; III Patient Kit B</p></td>
+<td><p>1 kit (6 blisters (168) 4-FDCs (R150/H75/Z400/E275); 18 blisters (504) 2-FDC tablets (E400/H150))</p></td>
+<td><p>31.8828</p></td>
+<td><p>Global Drug Facility Product Catalogue 2024 <a class="reference external" href="https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf">https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf</a>  [Stop TB Cat. I+III Patient Kit B: 6 blisters (168) 4-FDCs (R150/H75/Z400/E275); 18 blisters (504) 2-FDC tablets (E400/H150)]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>98</p></td>
+<td><p>184</p></td>
+<td><p>Solid culture and DST</p></td>
+<td><p>1 culture tube</p></td>
+<td><p>0.0564292</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>99</p></td>
+<td><p>187</p></td>
+<td><p>Xpert</p></td>
+<td><p>1 cartridge</p></td>
+<td><p>0.687267</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>100</p></td>
+<td><p>188</p></td>
+<td><p>MGIT960 Culture and DST</p></td>
+<td><p>1 test</p></td>
+<td><p>0.351092</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>101</p></td>
+<td><p>190</p></td>
+<td><p>VL Test</p></td>
+<td><p>1 test</p></td>
+<td><p>14.7212</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s0002143.html">https://supply.unicef.org/s0002143.html</a> [GeneXpert IV, HIV1 VL cartridge kit/10]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>102</p></td>
+<td><p>191</p></td>
+<td><p>CD4 test</p></td>
+<td><p>1 test</p></td>
+<td><p>3.41631</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s0001241.html">https://supply.unicef.org/s0001241.html</a> [CyFlow,Easycount,CD4[abs,%],100 tests]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>103</p></td>
+<td><p>192</p></td>
+<td><p>Isoniazid/Pyridoxine, tablet 300 mg</p></td>
+<td><p>1 tablet (Isoniazid 300mg/Pyridoxine 25mg)</p></td>
+<td><p>0.00380955</p></td>
+<td><p>CMST Catalogue 2023 (Price of two consumables combined)</p></td>
+<td><p>The cost should be for both isoniazid and pyridoxine, and not matched to one drug from CMST</p></td>
+</tr>
+<tr class="row-even"><td><p>104</p></td>
+<td><p>196</p></td>
+<td><p>Test, HIV EIA Elisa</p></td>
+<td><p>1 test</p></td>
+<td><p>2.5305</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>105</p></td>
+<td><p>197</p></td>
+<td><p>male circumcision kit, consumables (10 procedures)_1_IDA</p></td>
+<td><p>1 kit</p></td>
+<td><p>13.3578</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s0002707.html">https://supply.unicef.org/s0002707.html</a> [ircumcision device,ster,s.u.20mm,PAC-50]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>106</p></td>
+<td><p>198</p></td>
+<td><p>Nevirapine, oral solution, 10 mg/ml</p></td>
+<td><p>1 ml (10 mg/ml)</p></td>
+<td><p>0.142833</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>107</p></td>
+<td><p>199</p></td>
+<td><p>Nevirapine, tablet, 200 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.000242164</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p>Another option would be to use the cost of “Nevirapine 10mg/mL oral suspension, 100mL bottle” -  <a class="reference external" href="https://www.theglobalfund.org/media/5813/ppm_arvreferencepricing_table_en.pdf">https://www.theglobalfund.org/media/5813/ppm_arvreferencepricing_table_en.pdf</a></p></td>
+</tr>
+<tr class="row-even"><td><p>108</p></td>
+<td><p>202</p></td>
+<td><p>Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml</p></td>
+<td><p>1 ml</p></td>
+<td><p>0.00365264</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>109</p></td>
+<td><p>203</p></td>
+<td><p>Cotrimoxazole 120mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>1.12264e-06</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>110</p></td>
+<td><p>204</p></td>
+<td><p>Cotrimoxizole, 960mg pppy</p></td>
+<td><p>1 mg</p></td>
+<td><p>1.10339e-06</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>111</p></td>
+<td><p>206</p></td>
+<td><p>Culture test</p></td>
+<td><p>1 test kit</p></td>
+<td><p>17.4891</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p>One Health Tool gives cost per client</p></td>
+</tr>
+<tr class="row-even"><td><p>112</p></td>
+<td><p>209</p></td>
+<td><p>Vitamin A, caplet, 100,000 IU</p></td>
+<td><p>1 capsule (100,000 IU, 30mg)</p></td>
+<td><p>0.023736</p></td>
+<td><p>MSH International Medical Products Price Guide (2015) UNFPA price <a class="reference external" href="https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf">https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf</a></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>113</p></td>
+<td><p>212</p></td>
+<td><p>Vitamin A, caplet, 200,000 IU</p></td>
+<td><p>1 capsule (200,000 IU, 60mg)</p></td>
+<td><p>0.030057</p></td>
+<td><p>MSH International Medical Products Price Guide (2015) UNFPA price <a class="reference external" href="https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf">https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf</a></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>114</p></td>
+<td><p>213</p></td>
+<td><p>SAM theraputic foods</p></td>
+<td><p>1 g (Therapeutic complex of vitamins and minerals (CMV))</p></td>
+<td><p>0.0212173</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/all-materials/nutrition.html">https://supply.unicef.org/all-materials/nutrition.html</a> [Therapeutic CMV,tin 800g/CAR-6] - 6 tins of 800g each</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>115</p></td>
+<td><p>216</p></td>
+<td><p>Blood glucose level test</p></td>
+<td><p>1 test strip</p></td>
+<td><p>0.0829442</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>116</p></td>
+<td><p>221</p></td>
+<td><p>Hydrochlorothiazide 25mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>6.27692e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>117</p></td>
+<td><p>222</p></td>
+<td><p>Methyldopa 250mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>9.45114e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>118</p></td>
+<td><p>225</p></td>
+<td><p>Frusemide 40mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>7.13958e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>119</p></td>
+<td><p>226</p></td>
+<td><p>Aspirin 300mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>9.03855e-06</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>120</p></td>
+<td><p>227</p></td>
+<td><p>Insulin soluble 100 IU/ml, 10ml_each_CMST</p></td>
+<td><p>10 ml vial (100 IU/ml)</p></td>
+<td><p>2.45168</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>121</p></td>
+<td><p>232</p></td>
+<td><p>Glibenclamide 5mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.0003584</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>122</p></td>
+<td><p>233</p></td>
+<td><p>Metformin hydrochloride 500mg_100_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>8.48046e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>123</p></td>
+<td><p>234</p></td>
+<td><p>Simvastatin, 15 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.00205844</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>124</p></td>
+<td><p>238</p></td>
+<td><p>Doxorubicin, 50 mg vial</p></td>
+<td><p>1 vial (50 mg)</p></td>
+<td><p>19.3082</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>125</p></td>
+<td><p>239</p></td>
+<td><p>Cisplatin 50mg Injection</p></td>
+<td><p>1 vial (50 mg)</p></td>
+<td><p>4.42861</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>126</p></td>
+<td><p>240</p></td>
+<td><p>5-Fluorouracil 500mg injection</p></td>
+<td><p>1 shot (500mg)</p></td>
+<td><p>1.10642</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>127</p></td>
+<td><p>242</p></td>
+<td><p>diclofenac sodium 25 mg, enteric coated_1000_IDA</p></td>
+<td><p>1 mg</p></td>
+<td><p>1.31629e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>128</p></td>
+<td><p>243</p></td>
+<td><p>morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA</p></td>
+<td><p>1 ml (10 mg/ml)</p></td>
+<td><p>0.699664</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>129</p></td>
+<td><p>244</p></td>
+<td><p>Bandage, crepe 7.5cm x 1.4m long , when stretched</p></td>
+<td><p>1 cm long (7.5 cm wide)</p></td>
+<td><p>0.00271664</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>130</p></td>
+<td><p>247</p></td>
+<td><p>Suture pack</p></td>
+<td><p>1 suture pack</p></td>
+<td><p>0.157274</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>131</p></td>
+<td><p>248</p></td>
+<td><p>Flucloxacillin 250mg_100_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>9.89983e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>132</p></td>
+<td><p>249</p></td>
+<td><p>Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST</p></td>
+<td><p>1 slab (10cm x 7.5cm)</p></td>
+<td><p>0.250807</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>133</p></td>
+<td><p>259</p></td>
+<td><p>Vincristin 1mg Injection</p></td>
+<td><p>1 ml (1 mg/ml)</p></td>
+<td><p>0.0800038</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>134</p></td>
+<td><p>260</p></td>
+<td><p>Paclitaxel 100mg Injection</p></td>
+<td><p>1 ml (6 mg/ml)</p></td>
+<td><p>0.570502</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>135</p></td>
+<td><p>261</p></td>
+<td><p>Cyclophosphamide, 1 g</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.00191346</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>136</p></td>
+<td><p>262</p></td>
+<td><p>Methylprednisolone acetate sub-conj. 40mg/ml,2ml_each_CMST</p></td>
+<td><p>2 ml vial (40 mg/ml)</p></td>
+<td><p>3.06156</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>137</p></td>
+<td><p>263</p></td>
+<td><p>bleomycin powder 15 mg (15,000 IU)   (**)_1_IDA</p></td>
+<td><p>1 mg (1000 IU/mg)</p></td>
+<td><p>0.437975</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>138</p></td>
+<td><p>264</p></td>
+<td><p>Vinblastin 10mg injection</p></td>
+<td><p>10 ml vial (1 mg/ml)</p></td>
+<td><p>4.97491</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>139</p></td>
+<td><p>265</p></td>
+<td><p>Dacarbazine 500mg injection</p></td>
+<td><p>1 vial (500 mg)</p></td>
+<td><p>8.07302</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>140</p></td>
+<td><p>267</p></td>
+<td><p>Amitriptyline 25mg_100_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>2.75995e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>141</p></td>
+<td><p>268</p></td>
+<td><p>Fluoxetine 20mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.0001016</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>142</p></td>
+<td><p>275</p></td>
+<td><p>Sodium valproate 200mg_100_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.000169259</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>143</p></td>
+<td><p>276</p></td>
+<td><p>Carbamazepine 200mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>5.10651e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>144</p></td>
+<td><p>278</p></td>
+<td><p>Phenobarbital, 100 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.00013377</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>145</p></td>
+<td><p>279</p></td>
+<td><p>Phenytoin sodium 100mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>2.97266e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>146</p></td>
+<td><p>280</p></td>
+<td><p>Diazepam 5mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.00382132</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>147</p></td>
+<td><p>284</p></td>
+<td><p>Clonidine, .1 mg</p></td>
+<td><p>1 mcg</p></td>
+<td><p>0.00377751</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p>(Rasmussen, 2014) - “Clonidine, in doses of 40 or 80 μg/kg BW, significantly reduced alcohol intake on both days of treatment (p&lt;0.001)”</p></td>
+</tr>
+<tr class="row-even"><td><p>148</p></td>
+<td><p>286</p></td>
+<td><p>Praziquantel 600mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>4.06606e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>149</p></td>
+<td><p>288</p></td>
+<td><p>Diclofenac sodium 100mg _100_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>8.49561e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>150</p></td>
+<td><p>289</p></td>
+<td><p>Catheter Foley’s + urine bag (2000ml) 10g_each_CMST</p></td>
+<td><p>1 urine bag (2L)</p></td>
+<td><p>0.698547</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>151</p></td>
+<td><p>291</p></td>
+<td><p>Prednisolone 5mg_100_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.0014067</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>152</p></td>
+<td><p>292</p></td>
+<td><p>Aminophylline 100mg, tablets</p></td>
+<td><p>1 mg</p></td>
+<td><p>3.19421e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>153</p></td>
+<td><p>293</p></td>
+<td><p>Salbutamol Inhaler 100mcg/dose - 200 doses</p></td>
+<td><p>1 dose (100 mcg)</p></td>
+<td><p>0.0052695</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>154</p></td>
+<td><p>295</p></td>
+<td><p>Paracetamol, tablet, 100 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.000368023</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>155</p></td>
+<td><p>296</p></td>
+<td><p>Salbutamol, tablet, 4 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.000637213</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>156</p></td>
+<td><p>297</p></td>
+<td><p>Salbutamol, syrup, 2 mg/5 ml</p></td>
+<td><p>1 ml (2 mg/5 ml)</p></td>
+<td><p>0.00128259</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>157</p></td>
+<td><p>298</p></td>
+<td><p>Salbutamol sulphate 1mg/ml, 5ml_each_CMST</p></td>
+<td><p>5 ml vial (1 mg/ml)</p></td>
+<td><p>0.0500477</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>158</p></td>
+<td><p>299</p></td>
+<td><p>Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST</p></td>
+<td><p>1 ml (125 mg/5 ml)</p></td>
+<td><p>0.00605237</p></td>
+<td><p>CMST 2023</p></td>
+<td><p>Atropine sulphate 600 micrograms/ml, 1ml</p></td>
+</tr>
+<tr class="row-odd"><td><p>159</p></td>
+<td><p>300</p></td>
+<td><p>Tube, nasogastric CH 8_each_CMST</p></td>
+<td><p>1 tube</p></td>
+<td><p>0.13392</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>160</p></td>
+<td><p>307</p></td>
+<td><p>Atropine sulphate  600 micrograms/ml, 1ml_each_CMST</p></td>
+<td><p>1 ml (600 mcg/ml)</p></td>
+<td><p>0.138064</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>161</p></td>
+<td><p>1007</p></td>
+<td><p>Calcium, tablet, 600 mg</p></td>
+<td><p>1 mg</p></td>
+<td><p>4.55096e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>162</p></td>
+<td><p>1191</p></td>
+<td><p>Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg</p></td>
+<td><p>1 tablet (TDF 300mg/ FTC 200 mg)</p></td>
+<td><p>0.1687</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>163</p></td>
+<td><p>1220</p></td>
+<td><p>F-75 therapeutic milk, 102.5 g</p></td>
+<td><p>1g</p></td>
+<td><p>0.00869749</p></td>
+<td><p>UNICEF Supply Catalogue 2024 hhttps://supply.unicef.org/s0000236.html [F-75 Therap.milk CAN 400g/CAR-24]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>164</p></td>
+<td><p>1223</p></td>
+<td><p>F-100 therapeutic diet, sach., 114g/CAR-90</p></td>
+<td><p>1g</p></td>
+<td><p>0.00986147</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s0000237.html">https://supply.unicef.org/s0000237.html</a> [F-100 Therap.milk CAN 400g/CAR-24]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>165</p></td>
+<td><p>1227</p></td>
+<td><p>Therapeutic spread, sachet 92g/CAR-150</p></td>
+<td><p>1 sachet</p></td>
+<td><p>0.324064</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/all-materials/nutrition.html">https://supply.unicef.org/all-materials/nutrition.html</a> [Therapeutic spread,sachet 92g/CAR-150]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>166</p></td>
+<td><p>1827</p></td>
+<td><p>Dexamethasone 5mg/ml, 5ml_each_CMST</p></td>
+<td><p>1 ml (4 mg/ml)</p></td>
+<td><p>0.231699</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>167</p></td>
+<td><p>1831</p></td>
+<td><p>Flucloxacillin 250mg, vial, PFR_each_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>9.89983e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>168</p></td>
+<td><p>1871</p></td>
+<td><p>Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST</p></td>
+<td><p>1 ml (Cetrimide 15% + chlorhexidine 1.5%)</p></td>
+<td><p>0.00271332</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>169</p></td>
+<td><p>1933</p></td>
+<td><p>Glove disposable powdered latex medium_100_CMST</p></td>
+<td><p>1 pair of gloves</p></td>
+<td><p>0.0656581</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>170</p></td>
+<td><p>1960</p></td>
+<td><p>Syringe, autodestruct, 5ml, disposable, hypoluer with 21g needle_each_CMST</p></td>
+<td><p>1 syringe (5 ml) + alcohol swab</p></td>
+<td><p>0.135761</p></td>
+<td><p>CMST Catalogue 2023 (Price of two consumables combined)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>171</p></td>
+<td><p>2008</p></td>
+<td><p>Hepatitis B test kit-Dertemine_100 tests_CMST</p></td>
+<td><p>1 test</p></td>
+<td><p>0.384594</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>172</p></td>
+<td><p>2019</p></td>
+<td><p>Pregnancy slide test kit_100_CMST</p></td>
+<td><p>1 test</p></td>
+<td><p>0.0333805</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>173</p></td>
+<td><p>2064</p></td>
+<td><p>Dianeal + Dextrose 1.5% intraperitoneal dialysis soln. with minicap_2L_CMST</p></td>
+<td><p>1 dialysis</p></td>
+<td><p>16.5033</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p>Assumed that One Health Tool gives cost per client</p></td>
+</tr>
+<tr class="row-even"><td><p>174</p></td>
+<td><p>2338</p></td>
+<td><p>ceftriaxon 500 mg, powder for injection_10_IDA</p></td>
+<td><p>1 g</p></td>
+<td><p>0.219444</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>175</p></td>
+<td><p>2564</p></td>
+<td><p>tramadol HCl 100 mg/2 ml, for injection_100_IDA</p></td>
+<td><p>1 vial (100mg)</p></td>
+<td><p>0.268351</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>176</p></td>
+<td><p>2578</p></td>
+<td><p>vitamin B12 (cyanocobalamine) 1 mg/ml, 1 ml, inj._100_IDA</p></td>
+<td><p>1 vial</p></td>
+<td><p>0.37544</p></td>
+<td><p>Trade India 2024 [Rngrow B12] <a class="reference external" href="https://www.tradeindia.com/products/methylcobalamin-pyridoxine-hydrochloride-niacinamide-lnjection-c7650596.html">https://www.tradeindia.com/products/methylcobalamin-pyridoxine-hydrochloride-niacinamide-lnjection-c7650596.html</a></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>177</p></td>
+<td><p>2606</p></td>
+<td><p>Benzylpenicillin 1g (1MU), PFR_Each_CMST</p></td>
+<td><p>1 vial (1.44g/2.4 MU)</p></td>
+<td><p>0.389303</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>178</p></td>
+<td><p>2669</p></td>
+<td><p>Forceps, obstetric</p></td>
+<td><p>1 pair of forceps</p></td>
+<td><p>23.3582</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>179</p></td>
+<td><p>2670</p></td>
+<td><p>Vacuum, obstetric</p></td>
+<td><p>1 delivery (assuming 1 vaccum extractor for every 100 deliveries)</p></td>
+<td><p>2.11215</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s0791501.html">https://supply.unicef.org/s0791501.html</a> [Vacuum extractor,Bird(ant&amp;post),manu,set]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>180</p></td>
+<td><p>2676</p></td>
+<td><p>Polyamide monofilament suture sterile 1, on 40mm 3/8 circle reverse cutting needle_12_GG005100_CMST</p></td>
+<td><p>1 suture pack</p></td>
+<td><p>0.157274</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>181</p></td>
+<td><p>2677</p></td>
+<td><p>Catgut chromic suture sterile 0, 75cm, round bodied ¬Ω circle 40mm needle_12_GG000600_CMST</p></td>
+<td><p>1 suture pack</p></td>
+<td><p>0.269995</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>182</p></td>
+<td><p>10</p></td>
+<td><p>Trocar</p></td>
+<td><p>1 use of reuseable trocar (assuming 100 uses per trocar)</p></td>
+<td><p>1.51665</p></td>
+<td><p>UNICEF 2019 <a class="reference external" href="https://www.unicef.org/sop/media/1351/file/MNCH%20Gaza%20Mapping%20report.pdf">https://www.unicef.org/sop/media/1351/file/MNCH%20Gaza%20Mapping%20report.pdf</a>; assume 100 uses per piece based on ‘Reuseable Trocar 5mm with stopcock’ from this paper - <a class="reference external" href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0271601#pone-0271601-t001">https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0271601#pone-0271601-t001</a>;
+Exchange rate taken as 0.89 2019 euros/$ from <a class="reference external" href="https://databank.worldbank.org/source/world-development-indicators/preview/">https://databank.worldbank.org/source/world-development-indicators/preview/</a></p></td>
+<td><p>One Health Tool note “For insertion, 1 trocar per 10 insertions” for Implant</p></td>
+</tr>
+<tr class="row-odd"><td><p>183</p></td>
+<td><p>31</p></td>
+<td><p>Methylergometrine, Injection  0.2 mg/ml, 1 ml amp</p></td>
+<td><p>1 ml ampoule</p></td>
+<td><p>0.0247658</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p>One Health tool gives cost per injection (3 units per case needed for “Post-abortion case management”)</p></td>
+</tr>
+<tr class="row-even"><td><p>184</p></td>
+<td><p>32</p></td>
+<td><p>Pethidine, 50 mg/ml, 2 ml ampoule</p></td>
+<td><p>1 ampoule of 2ml (50 mg/ml)</p></td>
+<td><p>0.327613</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>185</p></td>
+<td><p>36</p></td>
+<td><p>Epinephrine, ampoule, 1 mg/ml</p></td>
+<td><p>1 ampoule of 4ml (1 mg/ml)</p></td>
+<td><p>0.176484</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>186</p></td>
+<td><p>45</p></td>
+<td><p>Albendazole 200mg_1000_CMST</p></td>
+<td><p>1 mg</p></td>
+<td><p>4.8309e-05</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>187</p></td>
+<td><p>131</p></td>
+<td><p>Cephalotin, 100 ml vial</p></td>
+<td><p>1 vial of 1g</p></td>
+<td><p>0.741154</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>188</p></td>
+<td><p>132</p></td>
+<td><p>Ampicillin injection 250mg, PFR_each_CMST</p></td>
+<td><p>1 vial of 500mg</p></td>
+<td><p>0.122993</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>189</p></td>
+<td><p>133</p></td>
+<td><p>Dextrose (glucose) 5%, 1000ml_each_CMST</p></td>
+<td><p>1 ml (5%)</p></td>
+<td><p>0.00108089</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>190</p></td>
+<td><p>140</p></td>
+<td><p>Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg</p></td>
+<td><p>1 tablet (Ferrous sulphate 200mg/Folic acid 25mg)</p></td>
+<td><p>0.00198215</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>191</p></td>
+<td><p>145</p></td>
+<td><p>Hygienic disposal of children’s stools - cost per client</p></td>
+<td><p>Consumables needed for one client</p></td>
+<td><p>6.77586</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p>One Health Tool gives cost per client but the consumables are not specified</p></td>
+</tr>
+<tr class="row-even"><td><p>192</p></td>
+<td><p>150</p></td>
+<td><p>Rotavirus vaccine</p></td>
+<td><p>1 dose</p></td>
+<td><p>2.3218</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s359500.html">https://supply.unicef.org/s359500.html</a> [Rotavirus vac.,mono,tube of 1 dose]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>193</p></td>
+<td><p>151</p></td>
+<td><p>Polio vaccine</p></td>
+<td><p>1 dose</p></td>
+<td><p>0.139308</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s359190.html">https://supply.unicef.org/s359190.html</a> [bOPV,bivalent type 1+3,vial of 20 doses]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>194</p></td>
+<td><p>158</p></td>
+<td><p>Measles vaccine</p></td>
+<td><p>1 dose</p></td>
+<td><p>0.45448</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s359163.html">https://supply.unicef.org/s359163.html</a>  [Measles vaccine,vial of 10 doses]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>195</p></td>
+<td><p>160</p></td>
+<td><p>Insecticide-treated net</p></td>
+<td><p>1 net</p></td>
+<td><p>0.95175</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>196</p></td>
+<td><p>161</p></td>
+<td><p>Indoor residual spraying drugs/supplies to service a client</p></td>
+<td><p>IRS for one client</p></td>
+<td><p>3.483</p></td>
+<td><p>Stelmach et al Tanzania <a class="reference external" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6169190/#_ad93_">https://pmc.ncbi.nlm.nih.gov/articles/PMC6169190/#_ad93_</a> (Price in 2011 USD) - This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping, PPE. The cost is measured per person protected</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>197</p></td>
+<td><p>176</p></td>
+<td><p>Cat. I &amp; III Patient Kit A</p></td>
+<td><p>1 kit (6 blisters (168) 4-FDC tablets (R150/H75/Z400/E275); 12 blisters (336) 2-FDC tablets (R150/H75))</p></td>
+<td><p>22.0324</p></td>
+<td><p>Global Drug Facility Product Catalogue 2024 <a class="reference external" href="https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf">https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf</a>  [Stop TB Cat. I+III Patient Kit A: 6 blisters (168) 4-FDC tablets (R150/H75/Z400/E275); 12 blisters (336) 2-FDC tablets (R150/H75)]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>198</p></td>
+<td><p>177</p></td>
+<td><p>Cat. II Patient Kit A1</p></td>
+<td><p>1 full treatment (“First line treatment for retreatment TB cases for adults”)</p></td>
+<td><p>110.104</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p><a class="reference external" href="https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf">https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf</a> - One Health Tool gives cost per client but the consumables are not specified</p></td>
+</tr>
+<tr class="row-odd"><td><p>199</p></td>
+<td><p>179</p></td>
+<td><p>Cat. II Patient Kit A2</p></td>
+<td><p>1 full treatment (“First line treatment for retreatment TB cases for children”)</p></td>
+<td><p>96.218</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p><a class="reference external" href="https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf">https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf</a> - One Health Tool gives cost per client so we can use this 2016 cost for now</p></td>
+</tr>
+<tr class="row-even"><td><p>200</p></td>
+<td><p>181</p></td>
+<td><p>Treatment: second-line drugs</p></td>
+<td><p>1 full treatment (“Case management of MDR cases”)</p></td>
+<td><p>612.056</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p><a class="reference external" href="https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf">https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf</a> - One Health Tool gives cost per client so we can use this 2016 cost for now</p></td>
+</tr>
+<tr class="row-odd"><td><p>201</p></td>
+<td><p>182</p></td>
+<td><p>MDR Fuel</p></td>
+<td><p>1 assay kit</p></td>
+<td><p>8.49433</p></td>
+<td><p>Global Drug Facility Product Catalogue 2024 <a class="reference external" href="https://www.stoptb.org/sites/default/files/gdf_diagnostics_medical_devices_other_health_products_catalog_0.pdf">https://www.stoptb.org/sites/default/files/gdf_diagnostics_medical_devices_other_health_products_catalog_0.pdf</a>  [BD MAX MDR TB Assay kit, 2 x 24 tests (443878)]</p></td>
+<td><p><a class="reference external" href="https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf">https://stoptb.org/assets/documents/gdf/who_stoptb_gdf_prod_a4.pdf</a></p></td>
+</tr>
+<tr class="row-even"><td><p>202</p></td>
+<td><p>200</p></td>
+<td><p>DNA PCR for infant after birth</p></td>
+<td><p>1 test</p></td>
+<td><p>2.10875</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>203</p></td>
+<td><p>205</p></td>
+<td><p>Nutrition supplements in first six months drugs/supplies to service a client</p></td>
+<td><p>1 sachet (multiple micronutrient)</p></td>
+<td><p>0.018772</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/all-materials/nutrition.html">https://supply.unicef.org/all-materials/nutrition.html</a> [Multiple micrn. pdr,custom sach./PAC-30] - box of 30 sachets</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>204</p></td>
+<td><p>207</p></td>
+<td><p>Smear test</p></td>
+<td><p>1 test</p></td>
+<td><p>2.5305</p></td>
+<td><p>Malawi EHP 2021</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>205</p></td>
+<td><p>208</p></td>
+<td><p>Corn Soya Blend (or Supercereal - CSB++)</p></td>
+<td><p>1 g</p></td>
+<td><p>0.00477039</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/all-materials/nutrition.html">https://supply.unicef.org/all-materials/nutrition.html</a> [Emergency food ration,500g/CAR-24] - 24 packsof 500g each (9 bars per 500 gram pack)</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>206</p></td>
+<td><p>214</p></td>
+<td><p>SAM medicines</p></td>
+<td><p>1 full treatment (“Management of severe malnutrition (children)”)</p></td>
+<td><p>28.2809</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>207</p></td>
+<td><p>266</p></td>
+<td><p>Leucovorin 50mg injection</p></td>
+<td><p>1 vial (5 mg)</p></td>
+<td><p>2.47145</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>208</p></td>
+<td><p>281</p></td>
+<td><p>Thiamine (vitamin B1), 100 mg</p></td>
+<td></td>
+<td><p>0.054834</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s0000203.html">https://supply.unicef.org/s0000203.html</a> [Thiamine 50mg tabs/PAC-100] Thiamine 50mg tablets in a bottle containing 100 tablets.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>209</p></td>
+<td><p>283</p></td>
+<td><p>Methadone, 5 mg</p></td>
+<td><p>1 ml</p></td>
+<td><p>0.0174349</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s0003033.html">https://supply.unicef.org/s0003033.html</a> [Methadone HCl 5mg/ml or.sol 1000ml/PAC-6] 6 bottles of 1000ml each</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>210</p></td>
+<td><p>285</p></td>
+<td><p>Mectizan</p></td>
+<td><p>1 full treatment (“Onchocerciasis mass drug administration”)</p></td>
+<td><p>3.78875</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p>One Health Tool gives cost per client</p></td>
+</tr>
+<tr class="row-odd"><td><p>211</p></td>
+<td><p>287</p></td>
+<td><p>I/V R/lactate 3Lts</p></td>
+<td><p>1 full treatment (“LF hydrocele surgery”)</p></td>
+<td><p>6.94618</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p>One Health Tool gives cost per client (3 units are needed per client)</p></td>
+</tr>
+<tr class="row-even"><td><p>212</p></td>
+<td><p>290</p></td>
+<td><p>Underpants</p></td>
+<td><p>1 underpant</p></td>
+<td><p>4.29391</p></td>
+<td><p>One Health Tool 2016</p></td>
+<td><p>One Health Tool gives cost per client (1 unit needed per client)</p></td>
+</tr>
+<tr class="row-odd"><td><p>213</p></td>
+<td><p>1015</p></td>
+<td><p>Dietary supplements (country-specific)</p></td>
+<td><p>1 sachet</p></td>
+<td><p>0.018772</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/all-materials/nutrition.html">https://supply.unicef.org/all-materials/nutrition.html</a> [Multiple micrn. pdr,custom sach./PAC-30] - box of 30 sachets</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>214</p></td>
+<td><p>1197</p></td>
+<td><p>Pentavalent vaccine (DPT, Hep B, Hib)</p></td>
+<td><p>1 dose</p></td>
+<td><p>0.84474</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s359129.html">https://supply.unicef.org/s359129.html</a>  [DTP-HepB-Hib vac.,liquid,vial of 10 dose]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>215</p></td>
+<td><p>1221</p></td>
+<td><p>Supplementary spread, sachet 92g/CAR-150</p></td>
+<td><p>1 sachet (92g)</p></td>
+<td><p>0.324064</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/all-materials/nutrition.html">https://supply.unicef.org/all-materials/nutrition.html</a> [Therapeutic spread,sachet 92g/CAR-150]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>216</p></td>
+<td><p>2580</p></td>
+<td><p>vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA</p></td>
+<td><p>1 ml (2 mg/ml)</p></td>
+<td><p>0.582435</p></td>
+<td><p>MSH International Medical Products Price Guide (2015)  price <a class="reference external" href="https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf">https://msh.org/wp-content/uploads/2020/03/msh-2015-international-medical-products-price-guide.pdf</a></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>217</p></td>
+<td><p>2671</p></td>
+<td><p>First-line ART regimen: adult</p></td>
+<td><p>1 tablet (Tenofovir/Lamivudine/Dolutegravir 300mg/300mg/50mg)</p></td>
+<td><p>0.103</p></td>
+<td><p>MSF Access ARV Prices 2023 - TDF/3TC/DTG - <a class="reference external" href="https://www.msfaccess.org/antiretroviral-prices-2023">https://www.msfaccess.org/antiretroviral-prices-2023</a></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>218</p></td>
+<td><p>2672</p></td>
+<td><p>First line ART regimen: older child</p></td>
+<td><p>1 tablet (Abacavir/Dolutegravir/Lamivudine 60/5/30mg)</p></td>
+<td><p>0.0823333</p></td>
+<td><p>Global Fund ARV Reference Prices 2024 - <a class="reference external" href="https://www.theglobalfund.org/media/5813/ppm_arvreferencepricing_table_en.pdf">https://www.theglobalfund.org/media/5813/ppm_arvreferencepricing_table_en.pdf</a> Abacavir/Dolutegravir/Lamivudine 60/5/30mg dispersible tablet, container of 90 tablets</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>219</p></td>
+<td><p>2673</p></td>
+<td><p>First line ART regimen: young child</p></td>
+<td><p>1 tablet (Abacavir/Dolutegravir/Lamivudine 60/5/30mg)</p></td>
+<td><p>0.0823333</p></td>
+<td><p>Global Fund ARV Reference Prices 2024 - <a class="reference external" href="https://www.theglobalfund.org/media/5813/ppm_arvreferencepricing_table_en.pdf">https://www.theglobalfund.org/media/5813/ppm_arvreferencepricing_table_en.pdf</a> Abacavir/Dolutegravir/Lamivudine 60/5/30mg dispersible tablet, container of 90 tablets</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>220</p></td>
+<td><p>2678</p></td>
+<td><p>Isoniazid/Rifapentine</p></td>
+<td><p>1 tablet (3HP - Isoniazid 300mg/Rifapentine 300mg)</p></td>
+<td><p>0.490417</p></td>
+<td><p>Frick (2020) - An activist’s guide to Rifapentine for the treatment of TB infection; <a class="reference external" href="https://www.treatmentactiongroup.org/wp-content/uploads/2020/04/rifapentine_guide_2020.pdf">https://www.treatmentactiongroup.org/wp-content/uploads/2020/04/rifapentine_guide_2020.pdf</a></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>221</p></td>
+<td><p>1735</p></td>
+<td><p>Praziquantel, 600 mg (donated)</p></td>
+<td><p>1 mg</p></td>
+<td><p>0.000109866</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>222</p></td>
+<td><p>1171</p></td>
+<td><p>Complementary feeding–education only drugs/supplies to service a client</p></td>
+<td><p>NA</p></td>
+<td><p>0</p></td>
+<td><p>Education only and no drugs</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>223</p></td>
+<td><p>1237</p></td>
+<td><p>Specimen container</p></td>
+<td><p>1 container</p></td>
+<td><p>0.0406899</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>224</p></td>
+<td><p>1239</p></td>
+<td><p>Biopsy needle</p></td>
+<td><p>1 needle</p></td>
+<td><p>8.77219</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>225</p></td>
+<td><p>1124</p></td>
+<td><p>Fansidar (sulphadoxine / pyrimethamine tab)</p></td>
+<td><p>1 tablet</p></td>
+<td><p>0.099788</p></td>
+<td><p>UNICEF Supply Catalogue 2024 <a class="reference external" href="https://supply.unicef.org/s1568040.html">https://supply.unicef.org/s1568040.html</a> [Sulfadox+Pyrimeth 500+25mg tabs/PAC-100]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>226</p></td>
+<td><p>186</p></td>
+<td><p>ZN Stain</p></td>
+<td><p>1 slide read</p></td>
+<td><p>0.351</p></td>
+<td><p>Whitelaw et al (2011) <a class="reference external" href="https://publications.ersnet.org/content/erj/38/6/1393?t=">https://publications.ersnet.org/content/erj/38/6/1393?t=</a></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>227</p></td>
+<td><p>1071</p></td>
+<td><p>Sputum container</p></td>
+<td><p>1 container</p></td>
+<td><p>1.28338</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>228</p></td>
+<td><p>1272</p></td>
+<td><p>Microscope slides, lime-soda-glass, pack of 50</p></td>
+<td><p>1 slide</p></td>
+<td><p>0.00308563</p></td>
+<td><p>CMST 2023</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>229</p></td>
+<td><p>2026</p></td>
+<td><p>Lead rubber x-ray protective aprons up to 150kVp 0.50mm_each_CMST</p></td>
+<td><p>1 use</p></td>
+<td><p>0.87814</p></td>
+<td><p>CMST 2023</p></td>
+<td><p>Assume 55,667 tests divided by 700 facilities -  X-rays per year per facility - <a class="reference external" href="https://researchonline.lshtm.ac.uk/id/eprint/8880/1/Resources%20for%20controlling%20tuberculosis%20in%20Malawi.pdf?t">https://researchonline.lshtm.ac.uk/id/eprint/8880/1/Resources%20for%20controlling%20tuberculosis%20in%20Malawi.pdf?t</a></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ResourceFile_Consumables_Inflow_Outflow_Ratio.csv.html" class="btn btn-neutral float-left" title="Consumables Inflow Outflow Ratio (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ResourceFile_Costing_Equipment.csv.html" class="btn btn-neutral float-right" title="Costing Equipment (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

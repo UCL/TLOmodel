@@ -1,0 +1,45 @@
+InitialData haematobium (.csv)
+==============================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Schisto/InitialData_haematobium.csv>`
+
+====  =============  ========  ====  ==============  ===================  ====================  ==================  =================  =================  ================  =======================================================  =============
+  ..  District       Region    R0    gamma\_alpha    prop\_susceptible    Mean\_worm\_burden    mean\_prevalence    min\_prevalence    max\_prevalence    classification    notes                                                    equilibrium
+====  =============  ========  ====  ==============  ===================  ====================  ==================  =================  =================  ================  =======================================================  =============
+   0  Balaka         Southern  1.6   0.24            0.263074274          0.243196363           16.23168271153846   0                  33.333332          moderate                                                                   61.7
+   1  Blantyre       Southern  1.6   0.24            0.287869219          0.64576811            17.76153078478261   0                  59.375             moderate
+   2  Blantyre City  Southern  1.6   0.24            0.287869219          0.162304999           17.76153078478261   0                  59.375             moderate          same as Blantyre
+   3  Chikwawa       Southern  1.6   0.24            0.163420453          0.372114422           10.083041966666666  5.7142859          14.190012          moderate
+   4  Chiradzulu     Southern  1.6   0.24            0.539629302          1.152520705           33.29512790909091   10                 80                 moderate
+   5  Chitipa        Northern  1.6   0.24            0.476689854          0.445357549           29.411764           29.411764          29.411764          moderate
+   6  Dedza          Central   1.6   0.24            0                    0.293609335           0                   0                  0                  zero
+   7  Dowa           Central   1.6   0.24            0.074517034          0                     4.597701            0                  13.793103          low
+   8  Karonga        Northern  1.6   0.24            0                    0.258116143           0                   0                  0                  zero              no data
+   9  Kasungu        Central   1.6   0.24            0                    0.363186976           0                   0                  0                  zero              no data
+  10  Likoma         Northern  1.6   0.24            0.463694846          0.731112179           28.609972           27.138643          30.081301          moderate
+  11  Lilongwe       Central   1.6   0.24            0.181845957          0.520488402           11.219895524657534  0                  53.333332          moderate
+  12  Lilongwe City  Central   1.6   0.24            0.181845957          0.223915877           11.219895524657534  0                  53.333332          moderate          same as Lilongwe
+  13  Machinga       Southern  1.6   0.24            0.032414911          0.307289525           2                   2                  2                  low
+  14  Mangochi       Southern  1.6   0.24            0.335157815          0.258322282           20.67923721111111   0                  75.862068          moderate
+  15  Mchinji        Central   1.6   0.24            0.031779324          0.337462336           1.9607843           1.9607843          1.9607843          low
+  16  Mulanje        Southern  1.6   0.24            0.189086985          1.300971773           11.666667           11.666667          11.666667          moderate
+  17  Mwanza         Southern  1.6   0.24            0.303963878          0.394527999           18.75457126         0                  73.333336          moderate
+  18  Mzimba         Northern  1.6   0.24            0.134059643          0.159890096           8.27148             0                  56.666             moderate          mean of Mzimba North and Mzimba South
+  19  Mzuzu City     Northern  1.6   0.24            0                    0.076377257           0                   0                  0                  zero              no data
+  20  Neno           Southern  1.6   0.24            0.267623752          0.235995197           16.512385492307693  0                  46.666668          moderate
+  21  Nkhata Bay     Northern  1.6   0.24            0.050423194          0.039311684           3.11111106          0                  26.666666          low
+  22  Nkhotakota     Central   1.6   0.24            0.272931118          0.808087305           16.83985            0                  43.33              moderate          mean of Nkhota kota and Nkhotakota
+  23  Nsanje         Southern  1.6   0.24            0.189086985          0.909307881           11.666667           11.666667          11.666667          moderate
+  24  Ntcheu         Central   1.6   0.24            0.223400142          0.28437904            13.783788737857142  0                  94.871796          moderate
+  25  Ntchisi        Central   1.6   0.24            0.278038314          0.315706619           17.154963952173915  0                  72.727272          moderate
+  26  Phalombe       Southern  1.6   0.24            0.372771475          3.141129345           23                  46.666668          46.666668          moderate          edited mean as later surveys show much lower prevalence
+  27  Rumphi         Northern  1.6   0.24            0                    0                     0                   0                  0                  zero
+  28  Salima         Central   1.6   0.24            0.097188236          0.114684668           5.996514144         0                  18.181818          low
+  29  Thyolo         Southern  1.6   0.24            0                    0.285935085           0                   0                  0                  zero
+  30  Zomba          Southern  1.6   0.24            0.164159254          0.245633127           10.128625957142857  3.3333333          16.666666          moderate
+  31  Zomba City     Southern  1.6   0.24            0.164159254          0.245633127           10.128625957142857  3.3333333          16.666666          moderate          same as Zomba
+  32
+  33
+  34
+  35
+====  =============  ========  ====  ==============  ===================  ====================  ==================  =================  =================  ================  =======================================================  =============

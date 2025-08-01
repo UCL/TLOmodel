@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parameters (.csv) &mdash; TLOmodel 0.1.dev2530+geb94b70 documentation</title>
+  <title>Parameters (.csv) &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,14 +15,14 @@
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=298b4bb7"></script>
+      <script src="../../_static/documentation_options.js?v=9c477e70"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Symptoms (.csv)" href="Symptoms.csv.html" />
-    <link rel="prev" title="MDA prognosed Coverage (.csv)" href="MDA_prognosed_Coverage.csv.html" /> 
+    <link rel="prev" title="MDA historical Coverage (.csv)" href="MDA_historical_Coverage.csv.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -57,6 +57,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Cervical_Cancer/index.html">ResourceFile_Cervical_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea/index.html">ResourceFile_Diarrhoea</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
@@ -76,8 +77,14 @@
 <li class="toctree-l3"><a class="reference internal" href="DALYs.csv.html">DALYs (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="District_Params_haematobium.csv.html">District Params haematobium (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="District_Params_mansoni.csv.html">District Params mansoni (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ESPEN.csv.html">ESPEN (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ESPEN_MDA.csv.html">ESPEN MDA (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ESPEN_codebook.csv.html">ESPEN codebook (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InitialData_haematobium.csv.html">InitialData haematobium (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InitialData_mansoni.csv.html">InitialData mansoni (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LatestData_haematobium.csv.html">LatestData haematobium (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LatestData_mansoni.csv.html">LatestData mansoni (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="MDA_historical_Coverage.csv.html">MDA historical Coverage (.csv)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="MDA_prognosed_Coverage.csv.html">MDA prognosed Coverage (.csv)</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Parameters (.csv)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="Symptoms.csv.html">Symptoms (.csv)</a></li>
 </ul>
@@ -145,7 +152,6 @@
 <th class="head"><p>Parameter</p></th>
 <th class="head"><p>Value</p></th>
 <th class="head"><p>Reference</p></th>
-<th class="head"><p>Area</p></th>
 </tr>
 </thead>
 <tbody>
@@ -153,127 +159,216 @@
 <td><p>delay_till_hsi_a_repeated</p></td>
 <td><p>5</p></td>
 <td><p>assumption</p></td>
-<td><p>HSI</p></td>
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
 <td><p>delay_till_hsi_b_repeated</p></td>
 <td><p>20</p></td>
 <td><p>assumption</p></td>
-<td><p>HSI</p></td>
 </tr>
 <tr class="row-even"><td><p>2</p></td>
-<td><p>prob_sent_to_lab_test_children</p></td>
-<td><p>0.9</p></td>
-<td><p>assumption</p></td>
-<td><p>HSI</p></td>
+<td><p>rr_WASH</p></td>
+<td><p>0.6</p></td>
+<td><p>Grimes 2014</p></td>
 </tr>
 <tr class="row-odd"><td><p>3</p></td>
-<td><p>prob_sent_to_lab_test_adults</p></td>
-<td><p>0.6</p></td>
-<td><p>assumption</p></td>
-<td><p>HSI</p></td>
+<td><p>calibration_scenario</p></td>
+<td><p>0</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>4</p></td>
-<td><p>PZQ_efficacy</p></td>
-<td><p>1</p></td>
-<td><p>assumption</p></td>
-<td><p>HSI</p></td>
+<td><p>urine_filtration_sensitivity_lowWB</p></td>
+<td><p>0.6</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>5</p></td>
-<td><p>high_intensity_threshold_haematobium</p></td>
-<td><p>20</p></td>
-<td><p>WHO</p></td>
-<td><p>transmission model</p></td>
+<td><p>urine_filtration_sensitivity_moderateWB</p></td>
+<td><p>0.68</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>6</p></td>
-<td><p>high_intensity_threshold_PSAC_haematobium</p></td>
-<td><p>5</p></td>
-<td><p>assumption</p></td>
-<td><p>transmission model</p></td>
+<td><p>urine_filtration_sensitivity_heavyWB</p></td>
+<td><p>0.75</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>7</p></td>
-<td><p>low_intensity_threshold_haematobium</p></td>
-<td><p>2</p></td>
-<td><p>assumption</p></td>
-<td><p>transmission model</p></td>
+<td><p>kato_katz_sensitivity_moderateWB</p></td>
+<td><p>0.5</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>8</p></td>
+<td><p>kato_katz_sensitivity_heavyWB</p></td>
+<td><p>0.62</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>scaleup_WASH</p></td>
+<td><p>continue</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>scaleup_WASH_start_year</p></td>
+<td><p>2024</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>mda_coverage</p></td>
+<td><p>0.7</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>mda_target_group</p></td>
+<td><p>SAC</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>mda_frequency_months</p></td>
+<td><p>12</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>scaling_factor_baseline_risk</p></td>
+<td><p>0.2</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>baseline_risk</p></td>
+<td><p>5</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>daly_weight_mild_schistosomiasis</p></td>
+<td><p>0.006</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>daly_weight_moderate_s_mansoni</p></td>
+<td><p>0.089</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>daly_weight_heavy_s_mansoni</p></td>
+<td><p>0.599</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>daly_weight_moderate_s_haematobium</p></td>
+<td><p>0.089</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>daly_weight_heavy_s_haematobium</p></td>
+<td><p>0.496</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>R0_haematobium</p></td>
+<td><p>1.6</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>heavy_intensity_threshold_haematobium</p></td>
+<td><p>20</p></td>
+<td><p>WHO</p></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>heavy_intensity_threshold_PSAC_haematobium</p></td>
+<td><p>5</p></td>
+<td><p>assumption</p></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>low_intensity_threshold_haematobium</p></td>
+<td><p>10</p></td>
+<td><p>assumption</p></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
 <td><p>worms_fecundity_haematobium</p></td>
 <td><p>0.005</p></td>
 <td><p>Truscott et al</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-odd"><td><p>9</p></td>
+<tr class="row-even"><td><p>26</p></td>
 <td><p>worm_lifespan_haematobium</p></td>
 <td><p>6</p></td>
 <td><p>Anderson et al 2016</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-even"><td><p>10</p></td>
+<tr class="row-odd"><td><p>27</p></td>
 <td><p>beta_PSAC_haematobium</p></td>
 <td><p>0.3</p></td>
 <td><p>Truscott et al</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-odd"><td><p>11</p></td>
+<tr class="row-even"><td><p>28</p></td>
 <td><p>beta_SAC_haematobium</p></td>
 <td><p>1</p></td>
 <td><p>Truscott et al</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-even"><td><p>12</p></td>
+<tr class="row-odd"><td><p>29</p></td>
 <td><p>beta_Adults_haematobium</p></td>
 <td><p>0.05</p></td>
 <td><p>Truscott et al</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-odd"><td><p>13</p></td>
-<td><p>high_intensity_threshold_mansoni</p></td>
-<td><p>46</p></td>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>PZQ_efficacy_haematobium</p></td>
+<td><p>0.941</p></td>
+<td><p>Zwang 2014</p></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>baseline_mean_worm_burden_haematobium</p></td>
+<td><p>0.465</p></td>
+<td><p>average from InitialData</p></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>R0_mansoni</p></td>
+<td><p>1.66</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>heavy_intensity_threshold_mansoni</p></td>
+<td><p>28</p></td>
 <td><p>WHO</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-even"><td><p>14</p></td>
-<td><p>high_intensity_threshold_PSAC_mansoni</p></td>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>heavy_intensity_threshold_PSAC_mansoni</p></td>
 <td><p>20</p></td>
 <td><p>assumption</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-odd"><td><p>15</p></td>
+<tr class="row-odd"><td><p>35</p></td>
 <td><p>low_intensity_threshold_mansoni</p></td>
-<td><p>2</p></td>
+<td><p>7</p></td>
 <td><p>assumption</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-even"><td><p>16</p></td>
+<tr class="row-even"><td><p>36</p></td>
 <td><p>worms_fecundity_mansoni</p></td>
 <td><p>0.0006</p></td>
 <td><p>Chan et al</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-odd"><td><p>17</p></td>
+<tr class="row-odd"><td><p>37</p></td>
 <td><p>worm_lifespan_mansoni</p></td>
 <td><p>4</p></td>
 <td><p>Anderson et al 2017</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-even"><td><p>18</p></td>
+<tr class="row-even"><td><p>38</p></td>
 <td><p>beta_PSAC_mansoni</p></td>
 <td><p>0.3</p></td>
 <td><p>Truscott et al</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-odd"><td><p>19</p></td>
+<tr class="row-odd"><td><p>39</p></td>
 <td><p>beta_SAC_mansoni</p></td>
 <td><p>1</p></td>
 <td><p>Truscott et al</p></td>
-<td><p>transmission model</p></td>
 </tr>
-<tr class="row-even"><td><p>20</p></td>
+<tr class="row-even"><td><p>40</p></td>
 <td><p>beta_Adults_mansoni</p></td>
 <td><p>0.05</p></td>
 <td><p>Truscott et al</p></td>
-<td><p>transmission model</p></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>PZQ_efficacy_mansoni</p></td>
+<td><p>0.863</p></td>
+<td><p>Zwang 2014</p></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>baseline_mean_worm_burden_mansoni</p></td>
+<td><p>0.085</p></td>
+<td><p>average from InitialData</p></td>
 </tr>
 </tbody>
 </table>
@@ -283,7 +378,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="MDA_prognosed_Coverage.csv.html" class="btn btn-neutral float-left" title="MDA prognosed Coverage (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="MDA_historical_Coverage.csv.html" class="btn btn-neutral float-left" title="MDA historical Coverage (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="Symptoms.csv.html" class="btn btn-neutral float-right" title="Symptoms (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

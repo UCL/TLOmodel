@@ -1,5 +1,0 @@
-Improved Healthsystem And Healthcare Seeking (.xlsx)
-====================================================
-
-:download:`Download original .xlsx file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx>`
-

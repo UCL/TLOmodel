@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.analysis.performance module &mdash; TLOmodel 0.1.dev2530+geb94b70 documentation</title>
+  <title>tlo.analysis.performance module &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=298b4bb7"></script>
+      <script src="../_static/documentation_options.js?v=9c477e70"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -89,169 +89,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-tlo.analysis.performance">
-<span id="tlo-analysis-performance-module"></span><h1>tlo.analysis.performance module<a class="headerlink" href="#module-tlo.analysis.performance" title="Link to this heading"></a></h1>
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.analysis.performance.PerformanceMonitor">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PerformanceMonitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.analysis.performance.PerformanceMonitor" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
-<dl class="simple">
-<dt>Register in simulation:</dt><dd><dl class="simple">
-<dt>PerformanceMonitor(log_perf=True,</dt><dd><p>log_perf_freq=2,
-log_pop_hash=True,
-save_sim=True,
-save_sim_freq=3,
-save_sim_on_end=True)</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p>Construct a new disease module ready to be included in a simulation.</p>
-<p>Initialises an empty parameters dictionary and module-specific random number
-generator.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.analysis.performance.PerformanceMonitor.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.analysis.performance.PerformanceMonitor.read_parameters" title="Link to this definition"></a></dt>
-<dd><p>Read parameter values from file, if required.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
-Typically, modules would read a particular file within here.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.analysis.performance.PerformanceMonitor.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.simulation.html#tlo.simulation.Simulation" title="tlo.simulation.Simulation"><span class="pre">Simulation</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.analysis.performance.PerformanceMonitor.initialise_simulation" title="Link to this definition"></a></dt>
-<dd><p>Get ready for simulation start.</p>
-<p>Must be implemented by subclasses.</p>
-<p>This method is called just before the main simulation loop begins, and after all
-modules have read their parameters and the initial population has been created.
-It is a good place to add initial events to the event queue.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.analysis.performance.PerformanceMonitor.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.analysis.performance.PerformanceMonitor.on_birth" title="Link to this definition"></a></dt>
-<dd><p>Initialise our properties for a newborn individual.</p>
-<p>Must be implemented by subclasses.</p>
-<p>This is called by the simulation whenever a new person is born.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>mother_id</strong> – the person id for the mother of this child (can be -1 if the mother is not identified).</p></li>
-<li><p><strong>child_id</strong> – the person id of new child</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.analysis.performance.PerformanceMonitor.on_simulation_end">
-<span class="sig-name descname"><span class="pre">on_simulation_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.analysis.performance.PerformanceMonitor.on_simulation_end" title="Link to this definition"></a></dt>
-<dd><p>This is called after the simulation has ended.
-Modules do not need to declare this.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="tlo.analysis.performance.PerformanceMonitor.parameters">
-<span class="sig-name descname"><span class="pre">parameters</span></span><a class="headerlink" href="#tlo.analysis.performance.PerformanceMonitor.parameters" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.analysis.performance.SaveSimulation">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SaveSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency_months</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.analysis.performance.SaveSimulation" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">PopulationScopeEventMixin</span></code></a></p>
-<p>Create a new regular event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>module</strong> – the module that created this event</p></li>
-<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
-(must be supplied as a keyword argument)</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.analysis.performance.SaveSimulation.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.analysis.performance.SaveSimulation.apply" title="Link to this definition"></a></dt>
-<dd><p>Apply this event to the given target.</p>
-<p>This is a no-op; subclasses should override this method.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.analysis.performance.LogPerfProfile">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LogPerfProfile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency_months</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_hash</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.analysis.performance.LogPerfProfile" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">PopulationScopeEventMixin</span></code></a></p>
-<p>Create a new regular event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>module</strong> – the module that created this event</p></li>
-<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
-(must be supplied as a keyword argument)</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.analysis.performance.LogPerfProfile.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.analysis.performance.LogPerfProfile.apply" title="Link to this definition"></a></dt>
-<dd><p>Apply this event to the given target.</p>
-<p>This is a no-op; subclasses should override this method.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="tlo.analysis.performance.make_pickle_filename">
-<span class="sig-name descname"><span class="pre">make_pickle_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.analysis.performance.make_pickle_filename" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="tlo.analysis.performance.profile_statistics">
-<span class="sig-name descname"><span class="pre">profile_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_hash</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.analysis.performance.profile_statistics" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="tlo.analysis.performance.memory_statistics">
-<span class="sig-name descname"><span class="pre">memory_statistics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#tlo.analysis.performance.memory_statistics" title="Link to this definition"></a></dt>
-<dd><p>Extract memory usage statistics in current process using <cite>psutil</cite> if available.
-Statistics are returned as a dictionary. If <cite>psutil</cite> not installed an empty dict is returned.</p>
-<p>Key / value pairs are:
-memory_rss_MiB: float</p>
-<blockquote>
-<div><p>Resident set size in mebibytes. The non-swapped physical memory the process has used.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>memory_vms_MiB: float</dt><dd><p>Virtual memory size in mebibytes. The total amount of virtual memory used by the process.</p>
-</dd>
-<dt>memory_uss_MiB: float</dt><dd><p>Unique set size in mebibytes. The memory which is unique to a process and which would be freed if the process
-was terminated right now</p>
-</dd>
-</dl>
-</dd></dl>
-
+  <section id="tlo-analysis-performance-module">
+<h1>tlo.analysis.performance module<a class="headerlink" href="#tlo-analysis-performance-module" title="Link to this heading"></a></h1>
 </section>
 
 

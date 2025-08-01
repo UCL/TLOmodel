@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods package &mdash; TLOmodel 0.1.dev2530+geb94b70 documentation</title>
+  <title>tlo.methods package &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=298b4bb7"></script>
+      <script src="../_static/documentation_options.js?v=9c477e70"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -716,6 +716,7 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.demography.html#tlo.methods.demography.Demography.create_mappers_from_causes_of_death_to_label"><code class="docutils literal notranslate"><span class="pre">Demography.create_mappers_from_causes_of_death_to_label()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.demography.html#tlo.methods.demography.Demography.calc_py_lived_in_last_year"><code class="docutils literal notranslate"><span class="pre">Demography.calc_py_lived_in_last_year()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.demography.html#tlo.methods.demography.Demography.compute_initial_model_to_data_popsize_ratio"><code class="docutils literal notranslate"><span class="pre">Demography.compute_initial_model_to_data_popsize_ratio()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.demography.html#tlo.methods.demography.Demography.compute_initial_model_to_data_popsize_ratio_by_district"><code class="docutils literal notranslate"><span class="pre">Demography.compute_initial_model_to_data_popsize_ratio_by_district()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.demography.html#tlo.methods.demography.AgeUpdateEvent"><code class="docutils literal notranslate"><span class="pre">AgeUpdateEvent</span></code></a><ul>
@@ -1092,6 +1093,7 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_item_codes_from_package_name"><code class="docutils literal notranslate"><span class="pre">HealthSystem.get_item_codes_from_package_name()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_item_code_from_item_name"><code class="docutils literal notranslate"><span class="pre">HealthSystem.get_item_code_from_item_name()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.override_availability_of_consumables"><code class="docutils literal notranslate"><span class="pre">HealthSystem.override_availability_of_consumables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.override_cons_availability_for_treatment_ids"><code class="docutils literal notranslate"><span class="pre">HealthSystem.override_cons_availability_for_treatment_ids()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._write_hsi_event_counts_to_log_and_reset"><code class="docutils literal notranslate"><span class="pre">HealthSystem._write_hsi_event_counts_to_log_and_reset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._write_never_ran_hsi_event_counts_to_log_and_reset"><code class="docutils literal notranslate"><span class="pre">HealthSystem._write_never_ran_hsi_event_counts_to_log_and_reset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_end_of_day"><code class="docutils literal notranslate"><span class="pre">HealthSystem.on_end_of_day()</span></code></a></li>
@@ -2152,11 +2154,18 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto.report_daly_values"><code class="docutils literal notranslate"><span class="pre">Schisto.report_daly_values()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto.do_effect_of_treatment"><code class="docutils literal notranslate"><span class="pre">Schisto.do_effect_of_treatment()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto._load_parameters_from_workbook"><code class="docutils literal notranslate"><span class="pre">Schisto._load_parameters_from_workbook()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto._create_mda_strategy"><code class="docutils literal notranslate"><span class="pre">Schisto._create_mda_strategy()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto._register_symptoms"><code class="docutils literal notranslate"><span class="pre">Schisto._register_symptoms()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto._get_disability_weight"><code class="docutils literal notranslate"><span class="pre">Schisto._get_disability_weight()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto._get_item_code_for_praziquantel"><code class="docutils literal notranslate"><span class="pre">Schisto._get_item_code_for_praziquantel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto.calculate_praziquantel_dosage"><code class="docutils literal notranslate"><span class="pre">Schisto.calculate_praziquantel_dosage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto._get_consumables_for_dx"><code class="docutils literal notranslate"><span class="pre">Schisto._get_consumables_for_dx()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto._schedule_mda_events"><code class="docutils literal notranslate"><span class="pre">Schisto._schedule_mda_events()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto.get_infection_status"><code class="docutils literal notranslate"><span class="pre">Schisto.get_infection_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto.update_infection_symptoms"><code class="docutils literal notranslate"><span class="pre">Schisto.update_infection_symptoms()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto.do_at_generic_first_appt"><code class="docutils literal notranslate"><span class="pre">Schisto.do_at_generic_first_appt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto.select_test"><code class="docutils literal notranslate"><span class="pre">Schisto.select_test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.Schisto.reduce_susceptibility"><code class="docutils literal notranslate"><span class="pre">Schisto.reduce_susceptibility()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoInfectionWormBurdenEvent"><code class="docutils literal notranslate"><span class="pre">SchistoInfectionWormBurdenEvent</span></code></a><ul>
@@ -2164,20 +2173,25 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoInfectionWormBurdenEvent.apply"><code class="docutils literal notranslate"><span class="pre">SchistoInfectionWormBurdenEvent.apply()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoMatureWorms"><code class="docutils literal notranslate"><span class="pre">SchistoMatureWorms</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoMatureWorms.__init__"><code class="docutils literal notranslate"><span class="pre">SchistoMatureWorms.__init__()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoMatureWorms.apply"><code class="docutils literal notranslate"><span class="pre">SchistoMatureWorms.apply()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoMatureJuvenileWormsEvent"><code class="docutils literal notranslate"><span class="pre">SchistoMatureJuvenileWormsEvent</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoMatureJuvenileWormsEvent.__init__"><code class="docutils literal notranslate"><span class="pre">SchistoMatureJuvenileWormsEvent.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoMatureJuvenileWormsEvent.apply"><code class="docutils literal notranslate"><span class="pre">SchistoMatureJuvenileWormsEvent.apply()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoWormsNatDeath"><code class="docutils literal notranslate"><span class="pre">SchistoWormsNatDeath</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoWormsNatDeath.__init__"><code class="docutils literal notranslate"><span class="pre">SchistoWormsNatDeath.__init__()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoWormsNatDeath.apply"><code class="docutils literal notranslate"><span class="pre">SchistoWormsNatDeath.apply()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoWormDeathEvent"><code class="docutils literal notranslate"><span class="pre">SchistoWormDeathEvent</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoWormDeathEvent.__init__"><code class="docutils literal notranslate"><span class="pre">SchistoWormDeathEvent.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoWormDeathEvent.apply"><code class="docutils literal notranslate"><span class="pre">SchistoWormDeathEvent.apply()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoMDAEvent"><code class="docutils literal notranslate"><span class="pre">SchistoMDAEvent</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoMDAEvent.__init__"><code class="docutils literal notranslate"><span class="pre">SchistoMDAEvent.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoMDAEvent.apply"><code class="docutils literal notranslate"><span class="pre">SchistoMDAEvent.apply()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoMDAEvent._select_recipients"><code class="docutils literal notranslate"><span class="pre">SchistoMDAEvent._select_recipients()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoWashScaleUp"><code class="docutils literal notranslate"><span class="pre">SchistoWashScaleUp</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoWashScaleUp.__init__"><code class="docutils literal notranslate"><span class="pre">SchistoWashScaleUp.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoWashScaleUp.apply"><code class="docutils literal notranslate"><span class="pre">SchistoWashScaleUp.apply()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.HSI_Schisto_TestingFollowingSymptoms"><code class="docutils literal notranslate"><span class="pre">HSI_Schisto_TestingFollowingSymptoms</span></code></a><ul>
@@ -2193,6 +2207,11 @@
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.HSI_Schisto_MDA"><code class="docutils literal notranslate"><span class="pre">HSI_Schisto_MDA</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.HSI_Schisto_MDA.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_Schisto_MDA.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.HSI_Schisto_MDA.apply"><code class="docutils literal notranslate"><span class="pre">HSI_Schisto_MDA.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoPersonDaysLoggingEvent"><code class="docutils literal notranslate"><span class="pre">SchistoPersonDaysLoggingEvent</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoPersonDaysLoggingEvent.__init__"><code class="docutils literal notranslate"><span class="pre">SchistoPersonDaysLoggingEvent.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoPersonDaysLoggingEvent.apply"><code class="docutils literal notranslate"><span class="pre">SchistoPersonDaysLoggingEvent.apply()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html#tlo.methods.schisto.SchistoLoggingEvent"><code class="docutils literal notranslate"><span class="pre">SchistoLoggingEvent</span></code></a><ul>

@@ -122,9 +122,9 @@ tlo.methods.contraception module
 
      __annotations__ : {}
 
-     all_contraception_states : {'withdrawal', 'other_modern', 'not_using', 'pill', 'male_condom', 'other_traditional', 'periodic_abstinence', 'female_sterilization', 'IUD', 'injections', 'implant'}
+     all_contraception_states : {'other_modern', 'not_using', 'implant', 'IUD', 'female_sterilization', 'male_condom', 'pill', 'periodic_abstinence', 'injections', 'other_traditional', 'withdrawal'}
 
-     contraceptives_initiated_with_additional_items : {'female_sterilization', 'injections', 'IUD', 'pill', 'implant'}
+     contraceptives_initiated_with_additional_items : {'pill', 'injections', 'implant', 'IUD', 'female_sterilization'}
 
      **Functions (defined or overridden in class Contraception):**
 

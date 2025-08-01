@@ -1,0 +1,46 @@
+ESPEN codebook (.csv)
+=====================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Schisto/ESPEN_codebook.csv>`
+
+====  ==============  ==================================================================================================================================
+  ..  Fields          Description
+====  ==============  ==================================================================================================================================
+   0  CONTINENT       Continent name (Africa, Asia)
+   1  REGION          African/Asia sub-region
+   2  WHO\_REGION     WHO AFRO region (AFRO/EMRO)
+   3  ADMIN0          Country name
+   4  ADMIN0ID        Country ID
+   5  ADMIN0\_FIP     Country FIP Code
+   6  ADMIN0ISO2      Country ISO2 Code
+   7  ADMIN0ISO3      Country ISO3 Code
+   8  ADMIN1          Name ADMIN1 level
+   9  ADMIN1ID        ID ADMIN1 level
+  10  ADMIN2          Name ADMIN2 level
+  11  ADMIN2ID        ID ADMIN2 level
+  12  Alt\_ADMIN2     Alternative Name ADMIN2 level
+  13  ADMIN3          Name ADMIN3 level
+  14  ADMIN3ID        ID ADMIN3 level
+  15  IUs\_ADM        Administrative level at which implementation units have been defined
+  16  IUs\_NAME       Name of Implementation Unit
+  17  IU\_ID          ESPEN IU ID
+  18  IU\_CODE        ESPEN IU alphanumeric code (ISO3Code+ADMIN1+IU\_ID)
+  19  Year            Year
+  20  Endemicity      Reported Schistosomiasis Endemicity status through JRF after final correction
+  21  TargetPop       Target population (Adults, SAC or Total)
+  22  PopReq          Reported population requiring treatment
+  23  PopTrg          Reported population targeted (eligible) for treatment
+  24  PopTreat        Reported population treated
+  25  Cov             Programme coverage for a specific group population as given by TargetPop field (Total Treated/Total pop targeted for treatment)
+  26  EpiCov          Epidemiological coverage for a specific group population as given by TargetPop field (Total Treated/Total pop requiring treatment)
+  27  MDA\_scheme     MDA scheme implemented (which provides maximum coverage figure across different schemes)
+  28  PC              PC implemented (0. No, 1. Yes) based on Programme coverage
+  29  EffPC           Effective (>=75%) PC implemented (0. No, 1. Yes) based on Programme coverage
+  30  PC\_n           Cumulative PC implemented since 2013 based on Programme coverage
+  31  EffPC\_n        Cumulative Effective PC implemented since 2013 based on Programme coverage
+  32  EpiPC           PC implemented (0. No, 1. Yes) based on epidemiological coverage
+  33  EpiEffPC        Effective (>=75%) PC implemented (0. No, 1. Yes)  based on epidemiological coverage
+  34  EpiPC\_n        Cumulative PC implemented since 2013  based on epidemiological coverage
+  35  EpiEffPC\_n     Cumulative Effective PC implemented since 2013  based on epidemiological coverage
+  36  Endemicity\_ID  Assigned ID to schistosomiasis endemicity category
+====  ==============  ==================================================================================================================================

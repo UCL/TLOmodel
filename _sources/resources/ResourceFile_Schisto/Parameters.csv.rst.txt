@@ -3,28 +3,50 @@ Parameters (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Schisto/Parameters.csv>`
 
-====  =============================================  =======  ===================  ==================
-  ..  Parameter                                        Value  Reference            Area
-====  =============================================  =======  ===================  ==================
-   0  delay\_till\_hsi\_a\_repeated                   5       assumption           HSI
-   1  delay\_till\_hsi\_b\_repeated                  20       assumption           HSI
-   2  prob\_sent\_to\_lab\_test\_children             0.9     assumption           HSI
-   3  prob\_sent\_to\_lab\_test\_adults               0.6     assumption           HSI
-   4  PZQ\_efficacy                                   1       assumption           HSI
-   5  high\_intensity\_threshold\_haematobium        20       WHO                  transmission model
-   6  high\_intensity\_threshold\_PSAC\_haematobium   5       assumption           transmission model
-   7  low\_intensity\_threshold\_haematobium          2       assumption           transmission model
-   8  worms\_fecundity\_haematobium                   0.005   Truscott et al       transmission model
-   9  worm\_lifespan\_haematobium                     6       Anderson et al 2016  transmission model
-  10  beta\_PSAC\_haematobium                         0.3     Truscott et al       transmission model
-  11  beta\_SAC\_haematobium                          1       Truscott et al       transmission model
-  12  beta\_Adults\_haematobium                       0.05    Truscott et al       transmission model
-  13  high\_intensity\_threshold\_mansoni            46       WHO                  transmission model
-  14  high\_intensity\_threshold\_PSAC\_mansoni      20       assumption           transmission model
-  15  low\_intensity\_threshold\_mansoni              2       assumption           transmission model
-  16  worms\_fecundity\_mansoni                       0.0006  Chan et al           transmission model
-  17  worm\_lifespan\_mansoni                         4       Anderson et al 2017  transmission model
-  18  beta\_PSAC\_mansoni                             0.3     Truscott et al       transmission model
-  19  beta\_SAC\_mansoni                              1       Truscott et al       transmission model
-  20  beta\_Adults\_mansoni                           0.05    Truscott et al       transmission model
-====  =============================================  =======  ===================  ==================
+====  ==============================================  ========  ========================
+  ..  Parameter                                       Value     Reference
+====  ==============================================  ========  ========================
+   0  delay\_till\_hsi\_a\_repeated                   5         assumption
+   1  delay\_till\_hsi\_b\_repeated                   20        assumption
+   2  rr\_WASH                                        0.6       Grimes 2014
+   3  calibration\_scenario                           0
+   4  urine\_filtration\_sensitivity\_lowWB           0.6
+   5  urine\_filtration\_sensitivity\_moderateWB      0.68
+   6  urine\_filtration\_sensitivity\_heavyWB         0.75
+   7  kato\_katz\_sensitivity\_moderateWB             0.5
+   8  kato\_katz\_sensitivity\_heavyWB                0.62
+   9  scaleup\_WASH                                   continue
+  10  scaleup\_WASH\_start\_year                      2024
+  11  mda\_coverage                                   0.7
+  12  mda\_target\_group                              SAC
+  13  mda\_frequency\_months                          12
+  14  scaling\_factor\_baseline\_risk                 0.2
+  15  baseline\_risk                                  5
+  16  daly\_weight\_mild\_schistosomiasis             0.006
+  17  daly\_weight\_moderate\_s\_mansoni              0.089
+  18  daly\_weight\_heavy\_s\_mansoni                 0.599
+  19  daly\_weight\_moderate\_s\_haematobium          0.089
+  20  daly\_weight\_heavy\_s\_haematobium             0.496
+  21  R0\_haematobium                                 1.6
+  22  heavy\_intensity\_threshold\_haematobium        20        WHO
+  23  heavy\_intensity\_threshold\_PSAC\_haematobium  5         assumption
+  24  low\_intensity\_threshold\_haematobium          10        assumption
+  25  worms\_fecundity\_haematobium                   0.005     Truscott et al
+  26  worm\_lifespan\_haematobium                     6         Anderson et al 2016
+  27  beta\_PSAC\_haematobium                         0.3       Truscott et al
+  28  beta\_SAC\_haematobium                          1         Truscott et al
+  29  beta\_Adults\_haematobium                       0.05      Truscott et al
+  30  PZQ\_efficacy\_haematobium                      0.941     Zwang 2014
+  31  baseline\_mean\_worm\_burden\_haematobium       0.465     average from InitialData
+  32  R0\_mansoni                                     1.66
+  33  heavy\_intensity\_threshold\_mansoni            28        WHO
+  34  heavy\_intensity\_threshold\_PSAC\_mansoni      20        assumption
+  35  low\_intensity\_threshold\_mansoni              7         assumption
+  36  worms\_fecundity\_mansoni                       0.0006    Chan et al
+  37  worm\_lifespan\_mansoni                         4         Anderson et al 2017
+  38  beta\_PSAC\_mansoni                             0.3       Truscott et al
+  39  beta\_SAC\_mansoni                              1         Truscott et al
+  40  beta\_Adults\_mansoni                           0.05      Truscott et al
+  41  PZQ\_efficacy\_mansoni                          0.863     Zwang 2014
+  42  baseline\_mean\_worm\_burden\_mansoni           0.085     average from InitialData
+====  ==============================================  ========  ========================

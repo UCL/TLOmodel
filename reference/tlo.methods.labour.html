@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.labour module &mdash; TLOmodel 0.1.dev2530+geb94b70 documentation</title>
+  <title>tlo.methods.labour module &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=298b4bb7"></script>
+      <script src="../_static/documentation_options.js?v=9c477e70"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -93,7 +93,7 @@
 <span id="tlo-methods-labour-module"></span><h1>tlo.methods.labour module<a class="headerlink" href="#module-tlo.methods.labour" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour" title="Link to this definition"></a></dt>
 <dd><p>This is module is responsible for the process of labour, birth and the immediate postnatal period (up until
 48hrs post birth). This model has a number of core functions including; initiating the onset of labour for women on
 their pre-determined due date (or prior to this for preterm labour/admission for delivery), applying the incidence</p>
@@ -197,655 +197,651 @@ generator.</p>
 <td><p>LIST</p></td>
 <td><p>List of number of days of gestation used to define term, early preterm, late preterm and post term delivery</p></td>
 </tr>
-<tr class="row-even"><td><p>allowed_interventions</p></td>
-<td><p>LIST</p></td>
-<td><p>list of interventions allowed to run, used in analysis</p></td>
-</tr>
-<tr class="row-odd"><td><p>mean_birth_weights</p></td>
+<tr class="row-even"><td><p>mean_birth_weights</p></td>
 <td><p>LIST</p></td>
 <td><p>list of mean birth weights from gestational age at birth 24-41 weeks</p></td>
 </tr>
-<tr class="row-even"><td><p>standard_deviation_birth_weights</p></td>
+<tr class="row-odd"><td><p>standard_deviation_birth_weights</p></td>
 <td><p>LIST</p></td>
 <td><p>list of standard deviations associated with mean birth weights from gestational age at birth 24-41 weeks</p></td>
 </tr>
-<tr class="row-odd"><td><p>residual_prob_of_macrosomia</p></td>
+<tr class="row-even"><td><p>residual_prob_of_macrosomia</p></td>
 <td><p>LIST</p></td>
 <td><p>probability that those allocated to be normal birth weight and above will be macrosomic (&gt;4kg)</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_obstruction_cpd</p></td>
+<tr class="row-odd"><td><p>prob_obstruction_cpd</p></td>
 <td><p>LIST</p></td>
 <td><p>risk of a woman developing obstructed labour secondary to cephalopelvic disproportion</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_obstruction_cpd_stunted_mother</p></td>
+<tr class="row-even"><td><p>rr_obstruction_cpd_stunted_mother</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of obstruction secondary to CPD in mothers who are stunted</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_obstruction_foetal_macrosomia</p></td>
+<tr class="row-odd"><td><p>rr_obstruction_foetal_macrosomia</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of obstruction secondary to CPD in mothers who are carrying a macrosomic foetus</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_obstruction_malpos_malpres</p></td>
+<tr class="row-even"><td><p>prob_obstruction_malpos_malpres</p></td>
 <td><p>LIST</p></td>
 <td><p>risk of a woman developing obstructed labour secondary to malposition or malpresentation</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_obstruction_other</p></td>
+<tr class="row-odd"><td><p>prob_obstruction_other</p></td>
 <td><p>LIST</p></td>
 <td><p>risk of a woman developing obstructed labour secondary to other causes</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_placental_abruption_during_labour</p></td>
+<tr class="row-even"><td><p>prob_placental_abruption_during_labour</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of a woman developing placental abruption during labour</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_aph_placenta_praevia_labour</p></td>
+<tr class="row-odd"><td><p>prob_aph_placenta_praevia_labour</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of a woman with placenta praevia experiencing an APH during labour</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_aph_placental_abruption_labour</p></td>
+<tr class="row-even"><td><p>prob_aph_placental_abruption_labour</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of a woman with placental abruption experiencing an APH during labour</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_placental_abruption_hypertension</p></td>
+<tr class="row-odd"><td><p>rr_placental_abruption_hypertension</p></td>
 <td><p>LIST</p></td>
 <td><p>Relative risk of placental abruption in women with hypertension</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_placental_abruption_previous_cs</p></td>
+<tr class="row-even"><td><p>rr_placental_abruption_previous_cs</p></td>
 <td><p>LIST</p></td>
 <td><p>Relative risk of placental abruption in women who delivered previously via caesarean section</p></td>
 </tr>
-<tr class="row-even"><td><p>severity_maternal_haemorrhage</p></td>
+<tr class="row-odd"><td><p>severity_maternal_haemorrhage</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a maternal hemorrhage is non-severe (&lt;1000mls) or severe (&gt;1000mls)</p></td>
 </tr>
-<tr class="row-odd"><td><p>cfr_aph</p></td>
+<tr class="row-even"><td><p>cfr_aph</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality rate for antepartum haemorrhage during labour</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_sepsis_chorioamnionitis</p></td>
+<tr class="row-odd"><td><p>prob_sepsis_chorioamnionitis</p></td>
 <td><p>LIST</p></td>
 <td><p>risk of sepsis following chorioamnionitis infection</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_sepsis_chorio_prom</p></td>
+<tr class="row-even"><td><p>rr_sepsis_chorio_prom</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of chorioamnionitis following PROM</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_sepsis_endometritis</p></td>
+<tr class="row-odd"><td><p>prob_sepsis_endometritis</p></td>
 <td><p>LIST</p></td>
 <td><p>risk of sepsis following endometritis</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_sepsis_endometritis_post_cs</p></td>
+<tr class="row-even"><td><p>rr_sepsis_endometritis_post_cs</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of endometritis following caesarean delivery</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_sepsis_urinary_tract</p></td>
+<tr class="row-odd"><td><p>prob_sepsis_urinary_tract</p></td>
 <td><p>LIST</p></td>
 <td><p>risk of sepsis following urinary tract infection</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_sepsis_skin_soft_tissue</p></td>
+<tr class="row-even"><td><p>prob_sepsis_skin_soft_tissue</p></td>
 <td><p>LIST</p></td>
 <td><p>risk of sepsis following skin or soft tissue infection</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_sepsis_sst_post_cs</p></td>
+<tr class="row-odd"><td><p>rr_sepsis_sst_post_cs</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of skin/soft tissue sepsis following caesarean delivery</p></td>
 </tr>
-<tr class="row-odd"><td><p>cfr_sepsis</p></td>
+<tr class="row-even"><td><p>cfr_sepsis</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality rate for sepsis during labour</p></td>
 </tr>
-<tr class="row-even"><td><p>cfr_pp_sepsis</p></td>
+<tr class="row-odd"><td><p>cfr_pp_sepsis</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality rate for sepsis following delivery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_uterine_rupture</p></td>
+<tr class="row-even"><td><p>prob_uterine_rupture</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of a uterine rupture during labour</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_ur_parity_2</p></td>
+<tr class="row-odd"><td><p>rr_ur_parity_2</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of uterine rupture in women who have delivered 2 times previously</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_ur_parity_3_or_4</p></td>
+<tr class="row-even"><td><p>rr_ur_parity_3_or_4</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of uterine rupture in women who have delivered 3-4 times previously</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_ur_parity_5+</p></td>
+<tr class="row-odd"><td><p>rr_ur_parity_5+</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of uterine rupture in women who have delivered &gt; 5 times previously</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_ur_prev_cs</p></td>
+<tr class="row-even"><td><p>rr_ur_prev_cs</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of uterine rupture in women who have previously delivered via caesarean section</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_ur_obstructed_labour</p></td>
+<tr class="row-odd"><td><p>rr_ur_obstructed_labour</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of uterine rupture in women who have been in obstructed labour</p></td>
 </tr>
-<tr class="row-odd"><td><p>cfr_uterine_rupture</p></td>
+<tr class="row-even"><td><p>cfr_uterine_rupture</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality rate for uterine rupture in labour</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_progression_gest_htn</p></td>
+<tr class="row-odd"><td><p>prob_progression_gest_htn</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of gestational hypertension progressing to severe gestational hypertensionduring/after labour</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_progression_severe_gest_htn</p></td>
+<tr class="row-even"><td><p>prob_progression_severe_gest_htn</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of severe gestational hypertension progressing to severe pre-eclampsia during/after labour</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_progression_mild_pre_eclamp</p></td>
+<tr class="row-odd"><td><p>prob_progression_mild_pre_eclamp</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of mild pre-eclampsia progressing to severe pre-eclampsia during/after labour</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_progression_severe_pre_eclamp</p></td>
+<tr class="row-even"><td><p>prob_progression_severe_pre_eclamp</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of severe pre-eclampsia progressing to eclampsia during/after labour</p></td>
 </tr>
-<tr class="row-even"><td><p>cfr_eclampsia</p></td>
+<tr class="row-odd"><td><p>cfr_eclampsia</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality rate for eclampsia during labours</p></td>
 </tr>
-<tr class="row-odd"><td><p>cfr_severe_pre_eclamp</p></td>
+<tr class="row-even"><td><p>cfr_severe_pre_eclamp</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality rate for severe pre eclampsia during labour</p></td>
 </tr>
-<tr class="row-even"><td><p>cfr_pp_eclampsia</p></td>
+<tr class="row-odd"><td><p>cfr_pp_eclampsia</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality rate for eclampsia following delivery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_ip_still_birth</p></td>
+<tr class="row-even"><td><p>prob_ip_still_birth</p></td>
 <td><p>LIST</p></td>
 <td><p>baseline probability of intrapartum still birth</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_still_birth_maternal_death</p></td>
+<tr class="row-odd"><td><p>rr_still_birth_maternal_death</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of still birth in mothers who have died during labour</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_still_birth_ur</p></td>
+<tr class="row-even"><td><p>rr_still_birth_ur</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of still birth in mothers experiencing uterine rupture</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_still_birth_ol</p></td>
+<tr class="row-odd"><td><p>rr_still_birth_ol</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of still birth in mothers experiencing obstructed labour</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_still_birth_aph</p></td>
+<tr class="row-even"><td><p>rr_still_birth_aph</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of still birth in mothers experiencing antepartum haemorrhage</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_still_birth_hypertension</p></td>
+<tr class="row-odd"><td><p>rr_still_birth_hypertension</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of still birth in mothers experiencing hypertension</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_still_birth_sepsis</p></td>
+<tr class="row-even"><td><p>rr_still_birth_sepsis</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of still birth in mothers experiencing intrapartum sepsis</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_still_birth_multiple_pregnancy</p></td>
+<tr class="row-odd"><td><p>rr_still_birth_multiple_pregnancy</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of still birth in mothers pregnant with twins</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_both_twins_ip_still_birth</p></td>
+<tr class="row-even"><td><p>prob_both_twins_ip_still_birth</p></td>
 <td><p>LIST</p></td>
 <td><p>probability that if this mother will experience still birth, and she is pregnant with twins, that neither baby will survive</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_pph_uterine_atony</p></td>
+<tr class="row-odd"><td><p>prob_pph_uterine_atony</p></td>
 <td><p>LIST</p></td>
 <td><p>risk of pph after experiencing uterine atony</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_pph_ua_hypertension</p></td>
+<tr class="row-even"><td><p>rr_pph_ua_hypertension</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk risk of pph after secondary to uterine atony in hypertensive women</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_pph_ua_multiple_pregnancy</p></td>
+<tr class="row-odd"><td><p>rr_pph_ua_multiple_pregnancy</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk risk of pph after secondary to uterine atony in women pregnant with twins</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_pph_ua_placental_abruption</p></td>
+<tr class="row-even"><td><p>rr_pph_ua_placental_abruption</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk risk of pph after secondary to uterine atony in women with placental abruption</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_pph_ua_macrosomia</p></td>
+<tr class="row-odd"><td><p>rr_pph_ua_macrosomia</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk risk of pph after secondary to uterine atony in women with macrosomic foetus</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_pph_ua_diabetes</p></td>
+<tr class="row-even"><td><p>rr_pph_ua_diabetes</p></td>
 <td><p>LIST</p></td>
 <td><p>risk of pph after experiencing uterine atony</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_pph_retained_placenta</p></td>
+<tr class="row-odd"><td><p>prob_pph_retained_placenta</p></td>
 <td><p>LIST</p></td>
 <td><p>risk of pph after experiencing retained placenta</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_pph_other_causes</p></td>
+<tr class="row-even"><td><p>prob_pph_other_causes</p></td>
 <td><p>LIST</p></td>
 <td><p>risk of pph after experiencing other pph causes</p></td>
 </tr>
-<tr class="row-even"><td><p>cfr_pp_pph</p></td>
+<tr class="row-odd"><td><p>cfr_pp_pph</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality rate for postpartum haemorrhage</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_death_from_haem_with_anaemia</p></td>
+<tr class="row-even"><td><p>rr_death_from_haem_with_anaemia</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk increase of death in women who are anaemic at time of PPH</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_deliver_in_health_centre</p></td>
+<tr class="row-odd"><td><p>odds_deliver_in_health_centre</p></td>
 <td><p>LIST</p></td>
 <td><p>odds of a woman delivering in a health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hc_delivery_age_20_24</p></td>
+<tr class="row-even"><td><p>rrr_hc_delivery_age_20_24</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 20-24 delivering in a health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hc_delivery_age_25_29</p></td>
+<tr class="row-odd"><td><p>rrr_hc_delivery_age_25_29</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 25-29 delivering in a health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hc_delivery_age_30_34</p></td>
+<tr class="row-even"><td><p>rrr_hc_delivery_age_30_34</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 30-34 delivering in a health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hc_delivery_age_35_39</p></td>
+<tr class="row-odd"><td><p>rrr_hc_delivery_age_35_39</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 35-39 delivering in a health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hc_delivery_age_40_44</p></td>
+<tr class="row-even"><td><p>rrr_hc_delivery_age_40_44</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 40-44 delivering in a health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hc_delivery_age_45_49</p></td>
+<tr class="row-odd"><td><p>rrr_hc_delivery_age_45_49</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 45-49 delivering in a health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hc_delivery_wealth_4</p></td>
+<tr class="row-even"><td><p>rrr_hc_delivery_wealth_4</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman at wealth level 4 delivering at health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hc_delivery_wealth_3</p></td>
+<tr class="row-odd"><td><p>rrr_hc_delivery_wealth_3</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman at wealth level 3 delivering at health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hc_delivery_wealth_2</p></td>
+<tr class="row-even"><td><p>rrr_hc_delivery_wealth_2</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman at wealth level 2 delivering at health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hc_delivery_wealth_1</p></td>
+<tr class="row-odd"><td><p>rrr_hc_delivery_wealth_1</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman at wealth level 1 delivering at health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hc_delivery_parity_3_to_4</p></td>
+<tr class="row-even"><td><p>rrr_hc_delivery_parity_3_to_4</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman with a parity of 3-4 delivering in a health centre compared toa hospital</p></td>
 </tr>
-<tr class="row-even"><td><p><a href="#id1"><span class="problematic" id="id2">rrr_hc_delivery_parity_</span></a>&gt;4</p></td>
+<tr class="row-odd"><td><p><a href="#id1"><span class="problematic" id="id2">rrr_hc_delivery_parity_</span></a>&gt;4</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman with a parity &gt;4 delivering in health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hc_delivery_rural</p></td>
+<tr class="row-even"><td><p>rrr_hc_delivery_rural</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a married woman delivering in a health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hc_delivery_married</p></td>
+<tr class="row-odd"><td><p>rrr_hc_delivery_married</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a married woman delivering in a health centre compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_deliver_at_home</p></td>
+<tr class="row-even"><td><p>odds_deliver_at_home</p></td>
 <td><p>LIST</p></td>
 <td><p>odds of a woman delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hb_delivery_age_20_24</p></td>
+<tr class="row-odd"><td><p>rrr_hb_delivery_age_20_24</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 20-24 delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hb_delivery_age_25_29</p></td>
+<tr class="row-even"><td><p>rrr_hb_delivery_age_25_29</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 25-29 delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hb_delivery_age_30_34</p></td>
+<tr class="row-odd"><td><p>rrr_hb_delivery_age_30_34</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 30-34 delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hb_delivery_age_35_39</p></td>
+<tr class="row-even"><td><p>rrr_hb_delivery_age_35_39</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 35-39 delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hb_delivery_age_40_44</p></td>
+<tr class="row-odd"><td><p>rrr_hb_delivery_age_40_44</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 40-44 delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hb_delivery_age_45_49</p></td>
+<tr class="row-even"><td><p>rrr_hb_delivery_age_45_49</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman aged 45-49 delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hb_delivery_rural</p></td>
+<tr class="row-odd"><td><p>rrr_hb_delivery_rural</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a rural delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hb_delivery_primary_education</p></td>
+<tr class="row-even"><td><p>rrr_hb_delivery_primary_education</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman with a primary education delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hb_delivery_secondary_education</p></td>
+<tr class="row-odd"><td><p>rrr_hb_delivery_secondary_education</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman with a secondary education delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hb_delivery_wealth_4</p></td>
+<tr class="row-even"><td><p>rrr_hb_delivery_wealth_4</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman at wealth level 4 delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hb_delivery_wealth_3</p></td>
+<tr class="row-odd"><td><p>rrr_hb_delivery_wealth_3</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman at wealth level 3 delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hb_delivery_wealth_2</p></td>
+<tr class="row-even"><td><p>rrr_hb_delivery_wealth_2</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman at wealth level 2 delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>rrr_hb_delivery_wealth_1</p></td>
+<tr class="row-odd"><td><p>rrr_hb_delivery_wealth_1</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman at wealth level 1 delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hb_delivery_parity_3_to_4</p></td>
+<tr class="row-even"><td><p>rrr_hb_delivery_parity_3_to_4</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio for a woman with a parity of 3-4 delivering at home compared toa hospital</p></td>
 </tr>
-<tr class="row-even"><td><p><a href="#id3"><span class="problematic" id="id4">rrr_hb_delivery_parity_</span></a>&gt;4</p></td>
+<tr class="row-odd"><td><p><a href="#id3"><span class="problematic" id="id4">rrr_hb_delivery_parity_</span></a>&gt;4</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a woman with a parity &gt;4 delivering at home compared to a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>rrr_hb_delivery_married</p></td>
+<tr class="row-even"><td><p>rrr_hb_delivery_married</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk ratio of a married woman delivering in a home compared to a hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>probability_delivery_hospital</p></td>
+<tr class="row-odd"><td><p>probability_delivery_hospital</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of delivering in a hospital</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_timings_pnc</p></td>
+<tr class="row-even"><td><p>prob_timings_pnc</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities that a woman who will receive a PNC check will receive care &lt;48hrs post birth or &gt; 48hrs post birth</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_will_attend_pnc</p></td>
+<tr class="row-odd"><td><p>odds_will_attend_pnc</p></td>
 <td><p>LIST</p></td>
 <td><p>baseline odss a woman will seek PNC for her and her newborn following delivery</p></td>
 </tr>
-<tr class="row-odd"><td><p>or_pnc_age_30_35</p></td>
+<tr class="row-even"><td><p>or_pnc_age_30_35</p></td>
 <td><p>LIST</p></td>
 <td><p>odds ratio for women aged 30-35 attending PNC</p></td>
 </tr>
-<tr class="row-even"><td><p><a href="#id5"><span class="problematic" id="id6">or_pnc_age_</span></a>&gt;35</p></td>
+<tr class="row-odd"><td><p><a href="#id5"><span class="problematic" id="id6">or_pnc_age_</span></a>&gt;35</p></td>
 <td><p>LIST</p></td>
 <td><p>odds ratio for women aged &gt; 35 attending PNC</p></td>
 </tr>
-<tr class="row-odd"><td><p>or_pnc_rural</p></td>
+<tr class="row-even"><td><p>or_pnc_rural</p></td>
 <td><p>LIST</p></td>
 <td><p>odds ratio for women who live rurally attending PNC</p></td>
 </tr>
-<tr class="row-even"><td><p>or_pnc_wealth_level_1</p></td>
+<tr class="row-odd"><td><p>or_pnc_wealth_level_1</p></td>
 <td><p>LIST</p></td>
 <td><p>odds ratio for women from the highest wealth level attending PNC</p></td>
 </tr>
-<tr class="row-odd"><td><p>or_pnc_anc4+</p></td>
+<tr class="row-even"><td><p>or_pnc_anc4+</p></td>
 <td><p>LIST</p></td>
 <td><p>odds ratio for women who attended ANC4+ attending PNC</p></td>
 </tr>
-<tr class="row-even"><td><p>or_pnc_caesarean_delivery</p></td>
+<tr class="row-odd"><td><p>or_pnc_caesarean_delivery</p></td>
 <td><p>LIST</p></td>
 <td><p>odds ratio for women who delivered by caesarean attending PNC</p></td>
 </tr>
-<tr class="row-odd"><td><p>or_pnc_facility_delivery</p></td>
+<tr class="row-even"><td><p>or_pnc_facility_delivery</p></td>
 <td><p>LIST</p></td>
 <td><p>odds ratio for women who delivered in a health facility attending PNC</p></td>
 </tr>
-<tr class="row-even"><td><p><a href="#id7"><span class="problematic" id="id8">or_pnc_parity_</span></a>&gt;4</p></td>
+<tr class="row-odd"><td><p><a href="#id7"><span class="problematic" id="id8">or_pnc_parity_</span></a>&gt;4</p></td>
 <td><p>LIST</p></td>
 <td><p>odds ratio for women with a parity of &gt;4 attending PNC</p></td>
 </tr>
-<tr class="row-odd"><td><p>probs_of_attending_pn_event_by_day</p></td>
+<tr class="row-even"><td><p>probs_of_attending_pn_event_by_day</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities used in a weighted random draw to determine when a woman will attend the postnatal event</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_careseeking_for_complication</p></td>
+<tr class="row-odd"><td><p>prob_careseeking_for_complication</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of a woman seeking skilled assistance after developing a complication at a home birth</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_careseeking_for_complication_pn</p></td>
+<tr class="row-even"><td><p>prob_careseeking_for_complication_pn</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of a woman seeking skilled assistance after developing a postnatal complication following a home birth</p></td>
 </tr>
-<tr class="row-even"><td><p>test_care_seeking_probs</p></td>
+<tr class="row-odd"><td><p>test_care_seeking_probs</p></td>
 <td><p>LIST</p></td>
 <td><p>dummy probabilities of delivery care seeking used in testing</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_delivery_modes_ec</p></td>
+<tr class="row-even"><td><p>prob_delivery_modes_ec</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities that a woman admitted with eclampsia will deliver normally, via caesarean or via assisted vaginal delivery</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_delivery_modes_spe</p></td>
+<tr class="row-odd"><td><p>prob_delivery_modes_spe</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities that a woman admitted with severe pre-eclampsia will deliver normally, via caesarean or via assisted vaginal delivery</p></td>
 </tr>
-<tr class="row-odd"><td><p>residual_prob_avd</p></td>
+<tr class="row-even"><td><p>residual_prob_avd</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities that a woman will deliver via assisted vaginal delivery for an indication not explicitly modelled</p></td>
 </tr>
-<tr class="row-even"><td><p>residual_prob_caesarean</p></td>
+<tr class="row-odd"><td><p>residual_prob_caesarean</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities that a woman will deliver via caesarean section for an indication not explicitly modelled</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_adherent_ifa</p></td>
+<tr class="row-even"><td><p>prob_adherent_ifa</p></td>
 <td><p>LIST</p></td>
 <td><p>probability that a woman started on postnatal IFA will be adherent</p></td>
 </tr>
-<tr class="row-even"><td><p>effect_of_ifa_for_resolving_anaemia</p></td>
+<tr class="row-odd"><td><p>effect_of_ifa_for_resolving_anaemia</p></td>
 <td><p>LIST</p></td>
 <td><p>relative effect of iron and folic acid on anaemia status</p></td>
 </tr>
-<tr class="row-odd"><td><p>number_ifa_tablets_required_postnatally</p></td>
+<tr class="row-even"><td><p>number_ifa_tablets_required_postnatally</p></td>
 <td><p>LIST</p></td>
 <td><p>total number of iron and folic acid tablets required during postnatal period</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_maternal_infection_clean_delivery</p></td>
+<tr class="row-odd"><td><p>treatment_effect_maternal_infection_clean_delivery</p></td>
 <td><p>LIST</p></td>
 <td><p>Effect of clean delivery practices on risk of maternal infection</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_maternal_chorio_abx_prom</p></td>
+<tr class="row-even"><td><p>treatment_effect_maternal_chorio_abx_prom</p></td>
 <td><p>LIST</p></td>
 <td><p>Relative effect of antibiotics for premature rupture of membranes on maternal risk of chorioamnionitis prior to birth</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_amtsl</p></td>
+<tr class="row-odd"><td><p>treatment_effect_amtsl</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of severe postpartum haemorrhage following active management of the third stage of labour</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_haemostatis_uterotonics</p></td>
+<tr class="row-even"><td><p>prob_haemostatis_uterotonics</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of uterotonics stopping a postpartum haemorrhage due to uterine atony</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_successful_manual_removal_placenta</p></td>
+<tr class="row-odd"><td><p>prob_successful_manual_removal_placenta</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of manual removal of retained products arresting a post partum haemorrhage</p></td>
 </tr>
-<tr class="row-odd"><td><p>success_rate_pph_surgery</p></td>
+<tr class="row-even"><td><p>success_rate_pph_surgery</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of surgery for postpartum haemorrhage being successful</p></td>
 </tr>
-<tr class="row-even"><td><p>pph_treatment_effect_surg_md</p></td>
+<tr class="row-odd"><td><p>pph_treatment_effect_surg_md</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of surgery on maternal death due to postpartum haemorrhage</p></td>
 </tr>
-<tr class="row-odd"><td><p>pph_treatment_effect_hyst_md</p></td>
+<tr class="row-even"><td><p>pph_treatment_effect_hyst_md</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of hysterectomy on maternal death due to postpartum haemorrhage</p></td>
 </tr>
-<tr class="row-even"><td><p>pph_bt_treatment_effect_md</p></td>
+<tr class="row-odd"><td><p>pph_bt_treatment_effect_md</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of blood transfusion treatment for postpartum haemorrhage on risk of maternal death</p></td>
 </tr>
-<tr class="row-odd"><td><p>sepsis_treatment_effect_md</p></td>
+<tr class="row-even"><td><p>sepsis_treatment_effect_md</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of treatment for sepsis on risk of maternal death</p></td>
 </tr>
-<tr class="row-even"><td><p>success_rate_uterine_repair</p></td>
+<tr class="row-odd"><td><p>success_rate_uterine_repair</p></td>
 <td><p>LIST</p></td>
 <td><p>probability repairing a ruptured uterus surgically</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_successful_assisted_vaginal_delivery</p></td>
+<tr class="row-even"><td><p>prob_successful_assisted_vaginal_delivery</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of successful assisted vaginal delivery</p></td>
 </tr>
-<tr class="row-even"><td><p>ur_repair_treatment_effect_md</p></td>
+<tr class="row-odd"><td><p>ur_repair_treatment_effect_md</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of surgical uterine repair treatment for uterine rupture on risk of maternal death</p></td>
 </tr>
-<tr class="row-odd"><td><p>ur_treatment_effect_bt_md</p></td>
+<tr class="row-even"><td><p>ur_treatment_effect_bt_md</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of blood transfusion treatment for uterine rupture on risk of maternal death</p></td>
 </tr>
-<tr class="row-even"><td><p>ur_hysterectomy_treatment_effect_md</p></td>
+<tr class="row-odd"><td><p>ur_hysterectomy_treatment_effect_md</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of blood hysterectomy for uterine rupture on risk of maternal death</p></td>
 </tr>
-<tr class="row-odd"><td><p>eclampsia_treatment_effect_severe_pe</p></td>
+<tr class="row-even"><td><p>eclampsia_treatment_effect_severe_pe</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of treatment for severe pre eclampsia on risk of eclampsia</p></td>
 </tr>
-<tr class="row-even"><td><p>eclampsia_treatment_effect_md</p></td>
+<tr class="row-odd"><td><p>eclampsia_treatment_effect_md</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of treatment for eclampsia on risk of maternal death</p></td>
 </tr>
-<tr class="row-odd"><td><p>anti_htns_treatment_effect_md</p></td>
+<tr class="row-even"><td><p>anti_htns_treatment_effect_md</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of IV anti hypertensive treatment on risk of death secondary to severe pre-eclampsia/eclampsia stillbirth</p></td>
 </tr>
-<tr class="row-even"><td><p>anti_htns_treatment_effect_progression</p></td>
+<tr class="row-odd"><td><p>anti_htns_treatment_effect_progression</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of IV anti hypertensive treatment on risk of progression from mild to severe gestational hypertension</p></td>
 </tr>
-<tr class="row-odd"><td><p>aph_bt_treatment_effect_md</p></td>
+<tr class="row-even"><td><p>aph_bt_treatment_effect_md</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of blood transfusion treatment for antepartum haemorrhage on risk of maternal death</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_blood_transfusion_anaemia</p></td>
+<tr class="row-odd"><td><p>treatment_effect_blood_transfusion_anaemia</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of blood transfusion treatment for severe anaemia</p></td>
 </tr>
-<tr class="row-odd"><td><p>aph_cs_treatment_effect_md</p></td>
+<tr class="row-even"><td><p>aph_cs_treatment_effect_md</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of caesarean section for antepartum haemorrhage on risk of maternal death</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_avd_still_birth</p></td>
+<tr class="row-odd"><td><p>treatment_effect_avd_still_birth</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of assisted vaginal delivery on risk of intrapartum still birth</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_cs_still_birth</p></td>
+<tr class="row-even"><td><p>treatment_effect_cs_still_birth</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of caesarean section delivery on risk of intrapartum still birth</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_hcw_avail_iv_abx</p></td>
+<tr class="row-odd"><td><p>prob_hcw_avail_iv_abx</p></td>
 <td><p>LIST</p></td>
 <td><p>average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - parenteral antibiotics</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_hcw_avail_uterotonic</p></td>
+<tr class="row-even"><td><p>prob_hcw_avail_uterotonic</p></td>
 <td><p>LIST</p></td>
 <td><p>average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - parenteral uterotonics</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_hcw_avail_anticonvulsant</p></td>
+<tr class="row-odd"><td><p>prob_hcw_avail_anticonvulsant</p></td>
 <td><p>LIST</p></td>
 <td><p>average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - parenteral anticonvulsants</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_hcw_avail_man_r_placenta</p></td>
+<tr class="row-even"><td><p>prob_hcw_avail_man_r_placenta</p></td>
 <td><p>LIST</p></td>
 <td><p>average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - manual removal of retained placenta</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_hcw_avail_avd</p></td>
+<tr class="row-odd"><td><p>prob_hcw_avail_avd</p></td>
 <td><p>LIST</p></td>
 <td><p>average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - assisted vaginal delivery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_hcw_avail_blood_tran</p></td>
+<tr class="row-even"><td><p>prob_hcw_avail_blood_tran</p></td>
 <td><p>LIST</p></td>
 <td><p>average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - blood transfusion</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_hcw_avail_surg</p></td>
+<tr class="row-odd"><td><p>prob_hcw_avail_surg</p></td>
 <td><p>LIST</p></td>
 <td><p>average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - obstetric surgery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_hcw_avail_retained_prod</p></td>
+<tr class="row-even"><td><p>prob_hcw_avail_retained_prod</p></td>
 <td><p>LIST</p></td>
 <td><p>average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - removal of retained products of conception</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_hcw_avail_neo_resus</p></td>
+<tr class="row-odd"><td><p>prob_hcw_avail_neo_resus</p></td>
 <td><p>LIST</p></td>
 <td><p>average probability that a health facility providing EmONC care has a HCW available that can delivery signal function - neonatal resuscitation</p></td>
 </tr>
-<tr class="row-odd"><td><p>mean_hcw_competence_hc</p></td>
+<tr class="row-even"><td><p>mean_hcw_competence_hc</p></td>
 <td><p>LIST</p></td>
 <td><p>mean competence of HCW at delivering EmONC care at a health centre. A draw below this level prevents intervention delivery</p></td>
 </tr>
-<tr class="row-even"><td><p>mean_hcw_competence_hp</p></td>
+<tr class="row-odd"><td><p>mean_hcw_competence_hp</p></td>
 <td><p>LIST</p></td>
 <td><p>mean competence of HCW at delivering EmONC care at a hospital. A draw below this level prevents intervention delivery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_intervention_delivered_anaemia_assessment_pnc</p></td>
+<tr class="row-even"><td><p>prob_intervention_delivered_anaemia_assessment_pnc</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman will have their Hb levels checked during PNC given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
 </tr>
-<tr class="row-even"><td><p>analysis_year</p></td>
+<tr class="row-odd"><td><p>analysis_year</p></td>
 <td><p>INT</p></td>
 <td><p>Year on which changes in parameters as part of analysis should be enacted (1st day, 1st month)</p></td>
 </tr>
-<tr class="row-odd"><td><p>la_analysis_in_progress</p></td>
+<tr class="row-even"><td><p>la_analysis_in_progress</p></td>
 <td><p>BOOL</p></td>
 <td><p>Used within the pregnancy_helper_function to signify that labour/postnatal analysis is currently being conducted</p></td>
 </tr>
-<tr class="row-even"><td><p>alternative_bemonc_availability</p></td>
+<tr class="row-odd"><td><p>alternative_bemonc_availability</p></td>
 <td><p>BOOL</p></td>
 <td><p>parameter used in analysis to allow manipulation of coverage of BEmONC interventions</p></td>
 </tr>
-<tr class="row-odd"><td><p>alternative_cemonc_availability</p></td>
+<tr class="row-even"><td><p>alternative_cemonc_availability</p></td>
 <td><p>BOOL</p></td>
 <td><p>parameter used in analysis to allow manipulation of coverage of CEmONC interventions</p></td>
 </tr>
-<tr class="row-even"><td><p>bemonc_availability</p></td>
+<tr class="row-odd"><td><p>bemonc_availability</p></td>
 <td><p>REAL</p></td>
 <td><p>set probability of BEmONC intervention being delivered during analysis</p></td>
 </tr>
-<tr class="row-odd"><td><p>cemonc_availability</p></td>
+<tr class="row-even"><td><p>cemonc_availability</p></td>
 <td><p>REAL</p></td>
 <td><p>set probability of CEmONC intervention being delivered during analysis</p></td>
 </tr>
-<tr class="row-even"><td><p>bemonc_cons_availability</p></td>
+<tr class="row-odd"><td><p>bemonc_cons_availability</p></td>
 <td><p>REAL</p></td>
 <td><p>set probability of BEmONC consumables being available</p></td>
 </tr>
-<tr class="row-odd"><td><p>cemonc_cons_availability</p></td>
+<tr class="row-even"><td><p>cemonc_cons_availability</p></td>
 <td><p>REAL</p></td>
 <td><p>set probability of CEmONC consumables being available</p></td>
 </tr>
-<tr class="row-even"><td><p>alternative_pnc_coverage</p></td>
+<tr class="row-odd"><td><p>alternative_pnc_coverage</p></td>
 <td><p>BOOL</p></td>
 <td><p>Signals within the analysis event that an alternative level of PNC coverage has been determined following the events run</p></td>
 </tr>
-<tr class="row-odd"><td><p>alternative_pnc_quality</p></td>
+<tr class="row-even"><td><p>alternative_pnc_quality</p></td>
 <td><p>BOOL</p></td>
 <td><p>Signals within the analysis event that an alternative level of PNC quality has been determined following the events run</p></td>
 </tr>
-<tr class="row-even"><td><p>pnc_availability_odds</p></td>
+<tr class="row-odd"><td><p>pnc_availability_odds</p></td>
 <td><p>REAL</p></td>
 <td><p>Target odds of maternal PNC coverage when analysis is being conducted - only applied ifalternative_pnc_coverage is true</p></td>
 </tr>
-<tr class="row-odd"><td><p>pnc_availability_probability</p></td>
+<tr class="row-even"><td><p>pnc_availability_probability</p></td>
 <td><p>REAL</p></td>
 <td><p>Target probability of quality/consumables when analysis is being conducted - only applied if alternative_pnc_coverage is true</p></td>
 </tr>
-<tr class="row-even"><td><p>sba_sens_analysis_max</p></td>
+<tr class="row-odd"><td><p>sba_sens_analysis_max</p></td>
 <td><p>BOOL</p></td>
 <td><p>Signals that max coverage of SBA is being forced for sensitivity analysis</p></td>
 </tr>
-<tr class="row-odd"><td><p>pnc_sens_analysis_max</p></td>
+<tr class="row-even"><td><p>pnc_sens_analysis_max</p></td>
 <td><p>BOOL</p></td>
 <td><p>Signals that max coverage of PNC is being forced for sensitivity analysis</p></td>
 </tr>
-<tr class="row-even"><td><p>pnc_sens_analysis_min</p></td>
+<tr class="row-odd"><td><p>pnc_sens_analysis_min</p></td>
 <td><p>BOOL</p></td>
 <td><p>Signals that min coverage of SBA is being forced for sensitivity analysis</p></td>
 </tr>
@@ -964,9 +960,9 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘PostnatalSupervisor’, ‘CareOfWomenDuringPregnancy’, ‘NewbornOutcomes’, ‘PregnancySupervisor’, ‘Contraception’, ‘HealthSystem’, ‘Lifestyle’}</p>
-<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x338410890&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x338413e50&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x338410650&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x338411050&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x338410510&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x338412c90&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x338411810&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x338413650&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x338410a90&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘PregnancySupervisor’, ‘PostnatalSupervisor’, ‘CareOfWomenDuringPregnancy’, ‘Lifestyle’, ‘NewbornOutcomes’, ‘Contraception’, ‘HealthSystem’}</p>
+<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x1442ff9d0&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x137528b10&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x137529010&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x13752ba50&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x137529c90&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x13752bb10&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x137528310&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x13752abd0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x13752b9d0&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘Stunting’}</p>
@@ -974,7 +970,7 @@ generator.</p>
 <p><strong>Functions (defined or overridden in class Labour):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.__init__" title="Link to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -987,7 +983,7 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.read_parameters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Read parameter values from file, if required.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">

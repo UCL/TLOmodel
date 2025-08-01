@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>parameter values (.csv) &mdash; TLOmodel 0.1.dev2530+geb94b70 documentation</title>
+  <title>parameter values (.csv) &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=298b4bb7"></script>
+      <script src="../../_static/documentation_options.js?v=9c477e70"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -57,6 +57,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Cervical_Cancer/index.html">ResourceFile_Cervical_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea/index.html">ResourceFile_Diarrhoea</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
@@ -1385,14 +1386,14 @@
 </tr>
 <tr class="row-odd"><td><p>177</p></td>
 <td><p>mean_hcw_competence_hc</p></td>
-<td><p>[[0.602, 0.602], [0.602, 0.602]]</p></td>
+<td><p>[0.602, 0.602]</p></td>
 <td><p>Arsenault, C. et al. (2020) ‘Variation in competent and respectful delivery care in Kenya and Malawi: a retrospective analysis of national facility surveys’, Tropical medicine &amp; international health : TM &amp; IH. Trop Med Int Health, 25(4), pp. 442–453. doi: 10.1111/TMI.13361.</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>178</p></td>
 <td><p>mean_hcw_competence_hp</p></td>
-<td><p>[[0.662, 0.662], [0.662, 0.662]]</p></td>
+<td><p>[0.662, 0.662]</p></td>
 <td><p>Arsenault, C. et al. (2020) ‘Variation in competent and respectful delivery care in Kenya and Malawi: a retrospective analysis of national facility surveys’, Tropical medicine &amp; international health : TM &amp; IH. Trop Med Int Health, 25(4), pp. 442–453. doi: 10.1111/TMI.13361.</p></td>
 <td></td>
 <td></td>
@@ -1405,8 +1406,8 @@
 <td></td>
 </tr>
 <tr class="row-even"><td><p>180</p></td>
-<td><p>allowed_interventions</p></td>
-<td><p>[[“prophylactic_labour_interventions”, “assessment_and_treatment_of_severe_pre_eclampsia”, “assessment_and_treatment_of_obstructed_labour”, “assessment_and_treatment_of_maternal_sepsis”, “assessment_and_treatment_of_hypertension”, “assessment_and_treatment_of_eclampsia”, “assessment_and_plan_for_referral_antepartum_haemorrhage”, “assessment_and_plan_for_referral_uterine_rupture”, “active_management_of_the_third_stage_of_labour”, “assessment_and_treatment_of_pph_retained_placenta”, “assessment_and_treatment_of_pph_uterine_atony”],  [“prophylactic_labour_interventions”, “assessment_and_treatment_of_severe_pre_eclampsia”, “assessment_and_treatment_of_obstructed_labour”, “assessment_and_treatment_of_maternal_sepsis”, “assessment_and_treatment_of_hypertension”, “assessment_and_treatment_of_eclampsia”, “assessment_and_plan_for_referral_antepartum_haemorrhage”, “assessment_and_plan_for_referral_uterine_rupture”, “active_management_of_the_third_stage_of_labour”, “assessment_and_treatment_of_pph_retained_placenta”, “assessment_and_treatment_of_pph_uterine_atony”]]</p></td>
+<td><p>prob_intervention_delivered_anaemia_assessment_pnc</p></td>
+<td><p>[0.14, 0.18]</p></td>
 <td></td>
 <td></td>
 <td></td>
@@ -1419,118 +1420,104 @@
 <td></td>
 </tr>
 <tr class="row-even"><td><p>182</p></td>
-<td><p>prob_intervention_delivered_anaemia_assessment_pnc</p></td>
-<td><p>[0.14, 0.18]</p></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p>183</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p>184</p></td>
 <td><p>analysis_year</p></td>
 <td><p>2023</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>185</p></td>
+<tr class="row-odd"><td><p>183</p></td>
 <td><p>la_analysis_in_progress</p></td>
 <td><p>False</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>186</p></td>
+<tr class="row-even"><td><p>184</p></td>
 <td><p>alternative_bemonc_availability</p></td>
 <td><p>False</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>187</p></td>
+<tr class="row-odd"><td><p>185</p></td>
 <td><p>alternative_cemonc_availability</p></td>
 <td><p>False</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>188</p></td>
+<tr class="row-even"><td><p>186</p></td>
 <td><p>bemonc_availability</p></td>
 <td><p>1</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>189</p></td>
+<tr class="row-odd"><td><p>187</p></td>
 <td><p>cemonc_availability</p></td>
 <td><p>1</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>190</p></td>
+<tr class="row-even"><td><p>188</p></td>
 <td><p>bemonc_cons_availability</p></td>
 <td><p>1</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>191</p></td>
+<tr class="row-odd"><td><p>189</p></td>
 <td><p>cemonc_cons_availability</p></td>
 <td><p>1</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>192</p></td>
+<tr class="row-even"><td><p>190</p></td>
 <td><p>alternative_pnc_coverage</p></td>
 <td><p>False</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>193</p></td>
+<tr class="row-odd"><td><p>191</p></td>
 <td><p>alternative_pnc_quality</p></td>
 <td><p>False</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>194</p></td>
+<tr class="row-even"><td><p>192</p></td>
 <td><p>pnc_availability_odds</p></td>
 <td><p>3</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>195</p></td>
+<tr class="row-odd"><td><p>193</p></td>
 <td><p>pnc_availability_probability</p></td>
 <td><p>1</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>196</p></td>
+<tr class="row-even"><td><p>194</p></td>
 <td><p>sba_sens_analysis_max</p></td>
 <td><p>False</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><p>197</p></td>
+<tr class="row-odd"><td><p>195</p></td>
 <td><p>pnc_sens_analysis_max</p></td>
 <td><p>False</p></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p>198</p></td>
+<tr class="row-even"><td><p>196</p></td>
 <td><p>pnc_sens_analysis_min</p></td>
 <td><p>False</p></td>
 <td></td>

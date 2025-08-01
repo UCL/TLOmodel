@@ -10,6 +10,7 @@ Resource  files used in ``TLOmodel`` simulations
     ResourceFile_AntenatalCare/index.rst
     ResourceFile_Bladder_Cancer/index.rst
     ResourceFile_Breast_Cancer/index.rst
+    ResourceFile_Cervical_Cancer/index.rst
     ResourceFile_Depression/index.rst
     ResourceFile_Diarrhoea/index.rst
     ResourceFile_EPI_WHO_estimates/index.rst
