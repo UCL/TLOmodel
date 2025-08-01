@@ -70,20 +70,6 @@ class Measles(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "Risk of scheduled death occurring if on treatment for measles complications"),
         "symptom_prob": Parameter(
             Types.DATA_FRAME, "Probability of each symptom with measles infection"),
-        "sequlae_code_rash": Parameter(
-            Types.REAL, "SEQULAE code rash"),
-        "sequlae_code_fever": Parameter(
-            Types.REAL, "SEQULAE code fever"),
-        "sequlae_code_encephalitis": Parameter(
-            Types.REAL, "SEQULAE code encephalitis"),
-        "sequlae_code_diarrhoea": Parameter(
-            Types.REAL, "SEQULAE code diarrhoea"),
-        "sequlae_code_otitis_media": Parameter(
-            Types.REAL, "SEQULAE code otitis_media"),
-        "sequlae_code_respiratory_symptoms": Parameter(
-            Types.REAL, "SEQULAE code respiratory symptoms"),
-        "sequlae_code_eye_complaint": Parameter(
-            Types.REAL, "SEQULAE code eye complaint"),
         "odds_ratio_health_seeking_in_children_rash": Parameter(
             Types.REAL, "Odds ratio seeking care in children rash"),
         "odds_ratio_health_seeking_in_adults_rash": Parameter(
@@ -135,13 +121,13 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
         if "HealthBurden" in self.sim.modules.keys():
             self.parameters["daly_wts"] = {
-                "rash": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_rash']),
-                "fever": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_fever']),
-                "diarrhoea": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_diarrhoea']),
-                "encephalitis": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_encephalitis']),
-                "otitis_media": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_otitis_media']),
-                "respiratory_symptoms": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_respiratory_symptoms']),
-                "eye_complaint": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_eye_complaint']),
+                "rash": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
+                "fever": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
+                "diarrhoea": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
+                "encephalitis": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=206),
+                "otitis_media": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
+                "respiratory_symptoms": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=206),
+                "eye_complaint": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
             }
 
         # Declare symptoms that this module will cause and which are not included in the generic symptoms:
