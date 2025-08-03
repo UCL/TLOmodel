@@ -84,7 +84,7 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         "maternal_immunity_age_threshold": Parameter(
             Types.REAL, "Age threshold below which children are protected by maternal immunity"
         ),
-        "max_age_measles": Parameter(
+        "age_min_symptoms_constant_rate": Parameter(
             Types.REAL, "Maximum age for measles symptom probability lookup"
         ),
         "death_timing_min_days": Parameter(
@@ -243,7 +243,7 @@ class Measles(Module, GenericFirstAppointmentsMixin):
 
         # Check that a sensible value for a probability of symptom onset is declared for each symptom and for each age
         # up to and including max age for symptom probabilities
-        for _age in range(int(p["max_age_measles"]) + 1):
+        for _age in range(int(p["age_min_symptoms_constant_rate"]) + 1):
             assert set(self.symptoms) == set(self.symptom_probs.get(_age).keys())
             assert all([0.0 <= x <= 1.0 for x in self.symptom_probs.get(_age).values()])
 
@@ -321,7 +321,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
-        ref_age = df.at[person_id, "age_years"].clip(max=p["max_age_measles"])  # (For purpose of look-up age limit)
+        ref_age = df.at[person_id, "age_years"].clip(max=p["age_min_symptoms_constant_rate"])  # (For purpose of look-up age limit)
 
         # Determine if the person has "untreated HIV", which is defined as a person in any stage of HIV but not on
         # successful treatment currently.
