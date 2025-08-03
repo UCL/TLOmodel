@@ -220,6 +220,24 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "min_yrs_between_screening_if_cin_treated": Parameter(
             Types.REAL, "minimum years between screening if individual has been treated for CIN previously"
+        ),
+        "death_timing_spread_days": Parameter(
+            Types.REAL, "Spread of death timing for stage 4 cancer"
+        ),
+        "initial_post_treatment_check_months": Parameter(
+            Types.REAL, "Months to first post-treatment check"
+        ),
+        "months_to_next_appt_treated_less_than_12_mo_ago": Parameter(
+            Types.REAL, "Follow-up interval for <12 months post-treatment"
+        ),
+        "months_to_next_appt_treated_12_to_36_mo_ago": Parameter(
+            Types.REAL, "Follow-up interval for 12-36 months post-treatment"
+        ),
+        "months_to_next_appt_treated_36_to_60_mo_ago": Parameter(
+            Types.REAL, "Follow-up interval for 36-60 months post-treatment"
+        ),
+        "palliative_care_interval_months": Parameter(
+            Types.REAL, "Interval between palliative care appointments"
         )
     }
 
@@ -1408,6 +1426,7 @@ class HSI_CervicalCancer_Treatment_PostTreatmentCheck(HSI_Event, IndividualScope
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if df.at[person_id, 'ce_hpv_cc_status'] == 'stage4':
             # If person has progressed to stage4, then start Palliative Care immediately:
