@@ -72,7 +72,6 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         'Multiple myeloma',
         'Leukemia',
         'Other neoplasms',
-        'Cervical cancer',
         'Uterine cancer',
         'Colon and rectum cancer',
         'Lip and oral cavity cancer',
