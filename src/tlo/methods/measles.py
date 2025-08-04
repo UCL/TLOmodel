@@ -242,7 +242,7 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         self.symptom_probs = {level: probs.loc[(level, slice(None))].to_dict() for level in probs.index.levels[0]}
 
         # Check that a sensible value for a probability of symptom onset is declared for each symptom and for each age
-        # up to and including max age for symptom probabilities
+        # up to and including age for which symptom probabilities stabilizes
         for _age in range(int(p["age_min_symptoms_constant_rate"]) + 1):
             assert set(self.symptoms) == set(self.symptom_probs.get(_age).keys())
             assert all([0.0 <= x <= 1.0 for x in self.symptom_probs.get(_age).values()])
