@@ -69,9 +69,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Filter the DataFrame based on the target period
         filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
         numeric_df = filtered_df.drop(columns=['female', 'male'], errors='ignore')
-        population_sum = numeric_df.sum(numeric_only=True)
+        district_population = filtered_df.groupby('district_of_residence').sum()
 
-        return population_sum
+        return district_population
 
 
     target_year_sequence = range(min_year, max_year, spacing_of_years)
