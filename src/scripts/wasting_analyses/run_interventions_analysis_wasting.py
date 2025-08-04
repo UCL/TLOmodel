@@ -52,7 +52,7 @@ outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
 cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
 # force_calculation of [births_data, deaths_data, dalys_data],
 #   if True, enables to force recalculation of the corresponding data
-force_calculation = [False, False, False]
+force_calculation = [False, False, False]  # [True, True, True]  #
 ########################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")
@@ -172,7 +172,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     else:
         print("\ndalys outcomes calculation ...")
         dalys_outcomes_dict = {
-            interv: analysis_utility_functions_wast.extract_daly_data_frames_and_outcomes(
+            interv: analysis_utility_functions_wast.extract_interv_daly_data_frames_and_outcomes(
                 iterv_folders_dict[interv], plotyears, interventionyears, interv
             ) for interv in scenario_folders
         }
@@ -550,7 +550,6 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             img = plt.imread(cost_effectiveness_png_path)
             ax_ce.imshow(img)
             ax_ce.axis('off')
-            ax_ce.set_title("Cost-effectiveness: DALYs Averted vs Incremental Costs", fontsize=14)
             pdf.savefig(fig_ce)
             fig_ce_png_file_path = outputs_path / (
                 f"{cohort_prefix}_cost_effectiveness_scatter_DALYsAverted_vs_IncrementalCosts__"
