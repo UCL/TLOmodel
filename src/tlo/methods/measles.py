@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
-
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
@@ -161,13 +160,13 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='rash',
                     odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_in_children_rash'],
-                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_in_adults_rash'])  # non-emergencies
+                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_in_adults_rash'])
         )
 
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='otitis_media',
                     odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_in_children_otitis_media'],
-                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_in_adults_otitis_media'])  # non-emergencies
+                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_in_adults_otitis_media'])
         )
 
         self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('encephalitis'))
@@ -289,7 +288,7 @@ class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
             protected_by_vaccine.loc[(df.va_measles == 1)] *= (1 - p["vaccine_efficacy_1"])  # partially susceptible
             protected_by_vaccine.loc[(df.va_measles > 1)] *= (1 - p["vaccine_efficacy_2"])  # partially susceptible
 
-        # Find persons to be newly infected (no risk to children under maternal immunity threshold as protected by maternal immunity)
+        # Find persons to be newly infected (no risk to children under maternal immunity threshold )
         new_inf = df.index[~df.me_has_measles & (df.age_exact_years >= p["maternal_immunity_age_threshold"]) &
                            (rng.random_sample(size=len(df)) < (trans_prob * protected_by_vaccine))]
 
@@ -320,7 +319,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
-        ref_age = df.at[person_id, "age_years"].clip(max=p["age_min_symptoms_constant_rate"])  # (For purpose of look-up age limit)
+        ref_age = df.at[person_id, "age_years"].clip(max=p["age_min_symptoms_constant_rate"])
 
         # Determine if the person has "untreated HIV", which is defined as a person in any stage of HIV but not on
         # successful treatment currently.
@@ -345,11 +344,14 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
 
             # schedule the death
             self.sim.schedule_event(
-                death_event, symp_onset + DateOffset(days=rng.randint(p["death_timing_min_days"], p["death_timing_max_days"])))
+                death_event, symp_onset +
+                             DateOffset(days=rng.randint(p["death_timing_min_days"], p["death_timing_max_days"])))
 
         else:
             # schedule symptom resolution without treatment - this only occurs if death doesn't happen first
-            symp_resolve = symp_onset + DateOffset(days=rng.randint(p["natural_resolution_min_days"], p["natural_resolution_max_days"]))
+            symp_resolve = (symp_onset +
+                            DateOffset(days=rng.randint(p["natural_resolution_min_days"],
+                                                        p["natural_resolution_max_days"])))
             self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id), symp_resolve)
 
     def assign_symptoms(self, _age):
@@ -360,7 +362,8 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         p = self.module.parameters
         person_id = self.target
         symptom_probs_for_this_person = self.module.symptom_probs.get(_age)
-        date_of_symp_onset = self.sim.date + DateOffset(days=rng.randint(p["symptom_onset_min_days"], p["symptom_onset_max_days"]))
+        date_of_symp_onset = self.sim.date + DateOffset(days=rng.randint(p["symptom_onset_min_days"],
+                                                                         p["symptom_onset_max_days"]))
 
         symptoms_to_onset = [
             _symp for (_symp, _prob), _rand in zip(
