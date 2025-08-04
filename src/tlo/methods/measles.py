@@ -187,7 +187,6 @@ class Measles(Module, GenericFirstAppointmentsMixin):
 
     def initialise_simulation(self, sim):
         """Schedule measles event to start straight away. Each month it will assign new infections"""
-        p = self.parameters
 
         sim.schedule_event(MeaslesEvent(self), sim.date)
         sim.schedule_event(MeaslesLoggingEvent(self), sim.date)
