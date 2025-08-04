@@ -13,6 +13,7 @@ import scipy.stats as st
 import seaborn as sns
 from matplotlib import pyplot as plt
 
+from src.scripts.costing.cost_estimation import apply_discounting_to_cost_data
 from tlo.analysis.utils import extract_results
 
 plt.style.use('seaborn-darkgrid')
@@ -324,7 +325,7 @@ def extract_death_data_frames_and_outcomes(
     # print(f"{no_under5_deaths}")
     # #
 
-def extract_daly_data_frames_and_outcomes(
+def extract_interv_daly_data_frames_and_outcomes(
     folder,
     years_of_interest,
     intervention_years,
@@ -344,7 +345,7 @@ def extract_daly_data_frames_and_outcomes(
     # Extract all DALYs assigned to children under 5 --- dalys_stacked_by_age_and_time, i.e. all the year of life lost
     # are ascribed to the age of the death and the year of the death differentiated by cause of death / disability
 
-    def extrapolate_dalys_data_from_logs(df: pd.DataFrame) -> pd.Series:
+    def extrapolate_interv_dalys_data_from_logs(df: pd.DataFrame) -> pd.Series:
         # Melt the DataFrame to have 'cause_of_dalys' as a variable
         df_with_cause_of_dalys = df.melt(
             id_vars=['age_range', 'sex', 'year'],
@@ -360,59 +361,74 @@ def extract_daly_data_frames_and_outcomes(
         )
 
         # Keep only dalys for children under-5 by year and cause_of_dalys
-        under5_dalys_by_year_cause = \
-            df_with_cause_of_dalys[df_with_cause_of_dalys['age_range'] == '0-4']\
-                .groupby(['year', 'cause_of_dalys'],as_index=True)['dalys'].sum()
+        under5_interv_dalys_by_year_cause = \
+            df_with_cause_of_dalys[
+                (df_with_cause_of_dalys['year'].isin(intervention_years)) &
+                (df_with_cause_of_dalys['age_range'] == '0-4')
+            ].groupby(['year', 'cause_of_dalys'],as_index=True)['dalys'].sum()
 
-        return under5_dalys_by_year_cause
+        return under5_interv_dalys_by_year_cause
 
-    under5_dalys_by_cause_df = extract_results(
+    under5_interv_dalys_by_cause_df = extract_results(
         folder,
         module="tlo.methods.healthburden",
         key="dalys_stacked_by_age_and_time",
-        custom_generate_series=lambda df: extrapolate_dalys_data_from_logs(df),
+        custom_generate_series=lambda df: extrapolate_interv_dalys_data_from_logs(df),
         do_scaling=True
     ).fillna(0)
-    under5_dalys_by_cause_df = under5_dalys_by_cause_df.loc[years_of_interest]
+
+    # Apply 3% discount rate to DALYs. Re-indexing is required to use the discounting function,
+    # so the MultiIndexes must be restored afterward.
+    under5_dalys_by_cause_df__reset_index = under5_interv_dalys_by_cause_df.reset_index()
+    under5_dalys_by_cause_df__reset_index.columns = [
+        f"{col[0]}_{col[1]}" if col[1] != "" else f"{col[0]}"
+        for col in under5_dalys_by_cause_df__reset_index.columns.values
+    ]
+    for col in under5_dalys_by_cause_df__reset_index.columns:
+        if col.count('_') == 1 and all(part.isdigit() for part in col.split('_')):
+            print(f"updating {col=}")
+            under5_dalys_by_cause_df__reset_index[col] = apply_discounting_to_cost_data(
+                _df=under5_dalys_by_cause_df__reset_index, _discount_rate=0.03, _column_for_discounting=col
+            )[col]
+    # set MultiIndex for rows
+    under5_interv_dalys_by_cause_df = under5_dalys_by_cause_df__reset_index.set_index(['year', 'cause_of_dalys'])
+    # create MultiIndex for columns
+    new_col_tuples = [tuple(map(int, col.split('_'))) for col in under5_interv_dalys_by_cause_df.columns if '_' in col]
+    new_col_index = pd.MultiIndex.from_tuples(new_col_tuples, names=['draw', 'run'])
+    under5_interv_dalys_by_cause_df = under5_interv_dalys_by_cause_df[[f"{d}_{r}" for d, r in new_col_tuples]]
+    under5_interv_dalys_by_cause_df.columns = new_col_index
 
     # number of dalys by any cause
-    under5_dalys_df = under5_dalys_by_cause_df.groupby(['year']).sum()
+    interv_under5_dalys_df = under5_interv_dalys_by_cause_df.groupby(['year']).sum()
     # number of dalys by specific causes
-    under5_SAM_dalys_df = under5_dalys_by_cause_df.xs("Childhood Undernutrition", level=1)
-    under5_ALRI_dalys_df = under5_dalys_by_cause_df.xs("Lower respiratory infections", level=1)
-    under5_Diarrhoea_dalys_df = under5_dalys_by_cause_df.xs("Childhood Diarrhoea", level=1)
+    interv_under5_SAM_dalys_df = under5_interv_dalys_by_cause_df.xs("Childhood Undernutrition", level=1)
+    interv_under5_ALRI_dalys_df = under5_interv_dalys_by_cause_df.xs("Lower respiratory infections", level=1)
+    interv_under5_Diarrhoea_dalys_df = under5_interv_dalys_by_cause_df.xs("Childhood Diarrhoea", level=1)
 
-    under5_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_dalys_df)
-    under5_SAM_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_SAM_dalys_df)
-    under5_ALRI_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_ALRI_dalys_df)
-    under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_Diarrhoea_dalys_df)
+    interv_under5_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_under5_dalys_df)
+    interv_under5_SAM_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_under5_SAM_dalys_df)
+    interv_under5_ALRI_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_under5_ALRI_dalys_df)
+    interv_under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df = \
+        return_mean_95_CI_across_runs(interv_under5_Diarrhoea_dalys_df)
 
-    interv_under5_dalys_df = under5_dalys_df.loc[intervention_years]
     interv_under5_dalys_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_dalys_df)
-    interv_under5_SAM_dalys_df = under5_SAM_dalys_df.loc[intervention_years]
     interv_under5_SAM_dalys_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_SAM_dalys_df)
-    interv_under5_ALRI_dalys_df = under5_ALRI_dalys_df.loc[intervention_years]
     interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_under5_ALRI_dalys_df)
-    interv_under5_Diarrhoea_dalys_df = under5_Diarrhoea_dalys_df.loc[intervention_years]
     interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_under5_Diarrhoea_dalys_df)
 
-    return {'under5_dalys_df': under5_dalys_df,
-            'under5_SAM_dalys_df': under5_SAM_dalys_df,
-            'under5_ALRI_dalys_df': under5_ALRI_dalys_df,
-            'under5_Diarrhoea_dalys_df': under5_Diarrhoea_dalys_df,
-            'under5_dalys_mean_ci_df': under5_dalys_mean_ci_per_year_per_draw_df,
-            'under5_SAM_dalys_mean_ci_df': under5_SAM_dalys_mean_ci_per_year_per_draw_df,
-            'under5_ALRI_dalys_mean_ci_df': under5_ALRI_dalys_mean_ci_per_year_per_draw_df,
-            'under5_Diarrhoea_dalys_mean_ci_df': under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df,
-            'interv_under5_dalys_df': interv_under5_dalys_df,
-            'interv_under5_dalys_sum_ci_df': interv_under5_dalys_sum_per_draw_CI_across_runs_df,
+    return {'interv_under5_dalys_df': interv_under5_dalys_df,
             'interv_under5_SAM_dalys_df': interv_under5_SAM_dalys_df,
-            'interv_under5_SAM_dalys_sum_ci_df': interv_under5_SAM_dalys_sum_per_draw_CI_across_runs_df,
             'interv_under5_ALRI_dalys_df': interv_under5_ALRI_dalys_df,
-            'interv_under5_ALRI_dalys_sum_ci_df': interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df,
             'interv_under5_Diarrhoea_dalys_df': interv_under5_Diarrhoea_dalys_df,
+            'interv_under5_dalys_mean_ci_df': interv_under5_dalys_mean_ci_per_year_per_draw_df,
+            'interv_under5_SAM_dalys_mean_ci_df': interv_under5_SAM_dalys_mean_ci_per_year_per_draw_df,
+            'interv_under5_ALRI_dalys_mean_ci_df': interv_under5_ALRI_dalys_mean_ci_per_year_per_draw_df,
+            'interv_under5_Diarrhoea_dalys_mean_ci_df': interv_under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df,
+            'interv_under5_dalys_sum_ci_df': interv_under5_dalys_sum_per_draw_CI_across_runs_df,
+            'interv_under5_SAM_dalys_sum_ci_df': interv_under5_SAM_dalys_sum_per_draw_CI_across_runs_df,
+            'interv_under5_ALRI_dalys_sum_ci_df': interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df,
             'interv_under5_Diarrhoea_dalys_sum_ci_df': interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df,
             'interv_years': intervention_years}
 
@@ -637,8 +653,8 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
                                'under5_ALRI_deaths_with_SAM_mean_ci_df', 'under5_Diarrhoea_deaths_with_SAM_mean_ci_df']
         else:  # outcome_type == "DALYs":
             neonatal_outcomes = [None, None, None, None]  # No data on DALYs for neonatal
-            under5_outcomes = ['under5_dalys_mean_ci_df', 'under5_SAM_dalys_mean_ci_df',
-                               'under5_ALRI_dalys_mean_ci_df', 'under5_Diarrhoea_dalys_mean_ci_df']
+            under5_outcomes = ['interv_under5_dalys_mean_ci_df', 'interv_under5_SAM_dalys_mean_ci_df',
+                               'interv_under5_ALRI_dalys_mean_ci_df', 'interv_under5_Diarrhoea_dalys_mean_ci_df']
         outcome = neonatal_outcomes[i] if cohort == 'Neonatal' else under5_outcomes[i]
 
         if outcome:
@@ -663,15 +679,16 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
                 means, ci_lower, ci_upper = zip(*scen_data.values.flatten())
 
                 # Plot the data
-                ax.plot(plot_years, means, label=scenario, color=get_scen_colour(scenario))
-                ax.fill_between(plot_years, ci_lower, ci_upper, color=get_scen_colour(scenario), alpha=0.2)
+                years_to_plot = [year for year in plot_years if year in scen_data.index]
+                ax.plot(years_to_plot, means, label=scenario, color=get_scen_colour(scenario))
+                ax.fill_between(years_to_plot, ci_lower, ci_upper, color=get_scen_colour(scenario), alpha=0.2)
 
             # Add labels, title, and legend
             plt.ylabel(f'{cohort} {outcome_type}')
             plt.xlabel('Year')
             plt.title(f'{cohort} Mean {outcome_type.replace("_", " ")} due to {cause} and 95% CI over time')
             plt.legend()
-            plt.xticks(plot_years, labels=plot_years, rotation=45, fontsize=8)
+            plt.xticks(years_to_plot, labels=years_to_plot, rotation=45, fontsize=8)
 
             plt.savefig(
                 outputs_path / (
@@ -773,11 +790,13 @@ def plot_sum_outcome_and_CIs__intervention_period(
                 scen_data = outcomes_dict[interv][outcome][draw]
 
                 # Calculate sum and confidence intervals
-                sum_interv_years, ci_lower, ci_upper = zip(*scen_data.values.flatten())
+                interv_sum, interv_ci_lower, interv_ci_upper = zip(*scen_data.values.flatten())
+                interv_sum, interv_ci_lower, interv_ci_upper = \
+                    interv_sum[0], interv_ci_lower[0], interv_ci_upper[0]
 
                 # Plot the data
-                ax.bar(scenario, sum_interv_years[0],
-                       yerr=[[sum_interv_years[0] - ci_lower[0]], [ci_upper[0] - sum_interv_years[0]]],
+                ax.bar(scenario, interv_sum,
+                       yerr=[[interv_sum - interv_ci_lower], [interv_ci_upper - interv_sum]],
                        label=scenario, color=get_scen_colour(scenario), capsize=5)
 
                 y_top = ax.get_ylim()[1]
@@ -785,29 +804,29 @@ def plot_sum_outcome_and_CIs__intervention_period(
                 # Add text label for the bar height (sum), above the bar
                 ax.text(
                     scenario,
-                    sum_interv_years[0] + (y_top * 0.02),  # small offset above the bar
-                    f"{sum_interv_years[0]:,.0f}",
+                    interv_sum + (y_top * 0.02),  # small offset above the bar
+                    f"{interv_sum:,.0f}",
                     color='black',
                     ha='center',
                     va='bottom',
                     fontsize=12.5
                 )
 
-                # Add text labels for ci_low and ci_upper
+                # Add text labels for ci_low and interv_ci_upper
                 text_color = 'black' if scenario in ['Status Quo'] else 'white'
                 ax.text(scenario,
-                        ci_upper[0] / 2 + ci_upper[0] / 4 if \
-                            ci_upper < y_top / 2 + y_top / 15 else y_top / 2 + y_top / 15,
-                        f"{ci_upper[0]:,.0f}", color=text_color, ha='center', va='top', fontsize=12.5)
+                        interv_ci_upper / 2 + interv_ci_upper / 4 if \
+                            interv_ci_upper < y_top / 2 + y_top / 15 else y_top / 2 + y_top / 15,
+                        f"{interv_ci_upper:,.0f}", color=text_color, ha='center', va='top', fontsize=12.5)
                 ax.text(scenario,
-                        ci_upper[0] / 2 - ci_upper[0] / 4 if \
-                            ci_upper < y_top / 2 + y_top / 15 else y_top / 2 - y_top / 15,
-                        f"{ci_lower[0]:,.0f}", color=text_color, ha='center', va='bottom', fontsize=12.5)
+                        interv_ci_upper / 2 - interv_ci_upper / 4 if \
+                            interv_ci_upper < y_top / 2 + y_top / 15 else y_top / 2 - y_top / 15,
+                        f"{interv_ci_lower:,.0f}", color=text_color, ha='center', va='bottom', fontsize=12.5)
 
                 # Add horizontal lines for Status Quo scenario
                 if scenario == 'Status Quo':
-                    ax.axhline(y=ci_lower[0], color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
-                    ax.axhline(y=ci_upper[0], color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
+                    ax.axhline(y=interv_ci_lower, color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
+                    ax.axhline(y=interv_ci_upper, color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
 
             # Add labels, title, and legend
             min_interv_year = min(outcomes_dict["SQ"]['interv_years'])
@@ -835,17 +854,12 @@ def plot_sum_outcome_and_CIs__intervention_period(
             # Get SQ values
             sq_data = outcomes_dict['SQ'][outcome][0]
             sq_sum, sq_ci_lower, sq_ci_upper = zip(*sq_data.values.flatten())
-            sq_sum = sq_sum[0]
-            sq_ci_lower = sq_ci_lower[0]
-            sq_ci_upper = sq_ci_upper[0]
+            sq_sum, sq_ci_lower, sq_ci_upper = sq_sum[0], sq_ci_lower[0], sq_ci_upper[0]
 
             for scenario in scenarios_to_compare:
                 if scenario == 'Status Quo':
                     # Only horizontal lines, no bar
-                    ax2.axhline(y=sq_sum-sq_ci_lower, color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
-                    ax2.axhline(y=sq_sum-sq_ci_upper, color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
-                    ax2.axhline(y=sq_sum-sq_sum, color=get_scen_colour('Status Quo'), linestyle='-', linewidth=2,
-                                label='SQ')
+                    ax2.axhline(y=0, color=get_scen_colour('Status Quo'), linestyle='-', linewidth=2)
                 else:
                     # Find the corresponding intervention and draw number
                     interv, draw = next(
@@ -857,10 +871,17 @@ def plot_sum_outcome_and_CIs__intervention_period(
                     )
 
                     scen_data = outcomes_dict[interv][outcome][draw]
-                    sum_interv_years, ci_lower, ci_upper = zip(*scen_data.values.flatten())
-                    averted_sum = sq_sum - sum_interv_years[0]
-                    averted_ci_lower = sq_sum - ci_upper[0]
-                    averted_ci_upper = sq_sum - ci_lower[0]
+                    interv_sum, interv_ci_lower, interv_ci_upper = zip(*scen_data.values.flatten())
+                    interv_sum, interv_ci_lower, interv_ci_upper = interv_sum[0], interv_ci_lower[0], interv_ci_upper[0]
+                    averted_sum = sq_sum - interv_sum
+                    confidence_level = 0.95
+                    z_score = st.norm.ppf(1 - (1 - confidence_level) / 2)
+                    averted_SE = (
+                        ((sq_ci_upper - sq_ci_lower)/(2*z_score))**2 +
+                        ((interv_ci_upper - interv_ci_lower)/(2*z_score))**2
+                    ) ** 0.5
+                    averted_ci_lower = averted_sum - (z_score * averted_SE)
+                    averted_ci_upper = averted_sum + (z_score * averted_SE)
                     if outcome_type == "DALYs" and cause=='any cause':
                         averted_DALYs_anycause[scenario] = [averted_sum, averted_ci_lower, averted_ci_upper]
                     ax2.bar(scenario, averted_sum,
