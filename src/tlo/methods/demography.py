@@ -915,12 +915,13 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 2) Compute Statistics for the log
         sex_count = df[df.is_alive].groupby('sex').size()
-
+        district_count = df[df.is_alive].groupby('district_of_residence').size()
         logger.info(
             key='population',
             data={'total': sum(sex_count),
                   'male': sex_count['M'],
-                  'female': sex_count['F']
+                  'female': sex_count['F'],
+                  'district_of_residence': district_count.to_dict()
                   })
 
         # (nb. if you groupby both sex and age_range, you weirdly lose categories where size==0, so
