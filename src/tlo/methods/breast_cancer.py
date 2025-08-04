@@ -89,7 +89,7 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         "rr_stage1_none_age3049": Parameter(
             Types.REAL, "rate ratio for stage1 breast cancer for age 30-49"
         ),
-        "rr_stage1_none_agege50": Parameter(
+        "rr_stage1_none_age50": Parameter(
             Types.REAL, "rate ratio for stage1 breast cancer for age 50+"
         ),
         "r_stage2_stage1": Parameter(
@@ -135,7 +135,7 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         "rp_breast_cancer_age3049": Parameter(
             Types.REAL, "relative prevalence at baseline of breast cancer if age3049"
         ),
-        "rp_breast_cancer_agege50": Parameter(
+        "rp_breast_cancer_age50": Parameter(
             Types.REAL, "relative prevalence at baseline of breast cancer if agege50"
         ),
         "sensitivity_of_biopsy_for_stage1_breast_cancer": Parameter(
@@ -255,7 +255,7 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(30,49)', p['rp_breast_cancer_age3049'])
             .when('.between(0,14)', p['rp_breast_cancer_age0014'])
-            .when('.between(50,120)', p['rp_breast_cancer_agege50']),
+            .when('.between(50,120)', p['rp_breast_cancer_age50']),
         )
 
         brc_status_any_stage = \
@@ -400,7 +400,7 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(0,14)', 0.0)
             .when('.between(30,49)', p['rr_stage1_none_age3049'])
-            .when('.between(50,120)', p['rr_stage1_none_agege50'])
+            .when('.between(50,120)', p['rr_stage1_none_age50'])
         )
 
         lm['stage2'] = LinearModel(
