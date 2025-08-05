@@ -568,8 +568,8 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
+                topen=self.sim.date + DateOffset(months=self.parameters['delay_initial_palliative_care_months']),
+                tclose=self.sim.date + DateOffset(months=self.parameters['delay_initial_palliative_care_months']) + DateOffset(weeks=self.parameters['duration_initial_palliative_care_weeks'])
             )
 
     def on_birth(self, mother_id, child_id):
@@ -635,8 +635,8 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
-        # Only investigate if the patient is not a child
-        if individual_properties["age_years"] > 5:
+        # Only investigate if the patient is above the minimum age for investigation
+        if individual_properties["age_years"] > self.parameters["min_age_investigation"]:
             # Begin investigation if symptoms are present.
             if "blood_urine" in symptoms:
                 event = HSI_BladderCancer_Investigation_Following_Blood_Urine(
@@ -668,7 +668,7 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['main_polling_frequency_months']))
         # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
@@ -893,7 +893,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "BladderCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': module.parameters['beddays_treatment']})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
