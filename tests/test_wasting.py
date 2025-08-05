@@ -73,7 +73,7 @@ def get_sim(tmpdir):
 
 
 @pytest.mark.slow
-def test_basic_run(tmpdir):
+def test_integrity_of_properties_of_wasting_module(tmpdir):
     """ Run the simulation and do some daily checks on dtypes and properties integrity. """
     class DummyModule(Module):
         """ A Dummy module that ensure wasting properties are as expected on a daily basis """
