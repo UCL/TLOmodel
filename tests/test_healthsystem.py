@@ -2071,10 +2071,9 @@ def test_mode_2_clinics(seed, tmpdir):
 
         log_config = {"filename": "log", "directory": tmpdir, "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG}}
         start_date = Date(2010, 1, 1)
-        sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                               capabilities_coefficient=1.0,
+        sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+        sim.register(demography.Demography(),
+                     healthsystem.HealthSystem(capabilities_coefficient=1.0,
                                                mode_appt_constraints=2,
                                                ignore_priority=False,
                                                randomise_queue=True,
