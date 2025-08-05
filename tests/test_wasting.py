@@ -178,14 +178,13 @@ def test_integrity_of_properties_of_wasting_module(tmpdir):
 def test_wasting_incidence(tmpdir):
     """ Check incidence of wasting is happening as expected. """
     # get simulation object:
-    dur = pd.DateOffset(days=0)
     popsize = 1000
     sim = get_sim(tmpdir)
     # get wasting module
     wmodule = sim.modules['Wasting']
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
+    sim.simulate(end_date=start_date) # zero duration
 
     # Reset properties of all individuals so that they are well-nourished
     df = sim.population.props
@@ -216,8 +215,6 @@ def test_report_daly_weights(tmpdir):
     2. For an individual with moderate wasting and oedema (expected daly weight is 0.051)
     3. For an individual with severe wasting and oedema (expected daly weight is 0.172)
     4. For an individual with severe wasting without oedema (expected daly weight is 0.128) """
-
-    dur = pd.DateOffset(days=0)
     popsize = 1
     sim = get_sim(tmpdir)
     sim.modules['Demography'].parameters['max_age_initial'] = 4.9
@@ -225,7 +222,7 @@ def test_report_daly_weights(tmpdir):
     wmodule = sim.modules['Wasting']
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
+    sim.simulate(end_date=start_date) # zero duration
 
     # Dict to hold the DALY weights
     daly_wts = dict()
@@ -311,8 +308,6 @@ def test_report_daly_weights(tmpdir):
 def test_nat_recovery_moderate_wasting(tmpdir):
     """ Check natural recovery after onset of moderate wasting with MAM diagnosis. """
     for am_state_expected in ['MAM', 'SAM']:
-
-        dur = pd.DateOffset(days=0)
         popsize = 1000
         sim = get_sim(tmpdir)
         # get wasting module
@@ -320,7 +315,7 @@ def test_nat_recovery_moderate_wasting(tmpdir):
         p = wmodule.parameters
 
         sim.make_initial_population(n=popsize)
-        sim.simulate(end_date=start_date + dur)
+        sim.simulate(end_date=start_date)  # zero duration
         sim.event_queue.queue = []  # clear the queue
 
         # Get person to use:
@@ -409,7 +404,6 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     the progression to severe wasting is certain, hence no natural recovery from moderate wasting,
     the natural death due to SAM is certain, hence no natural recovery from severe wasting,
     and check natural death canceled with tx and symptoms resolved when recovered to MAM with tx. """
-    dur = pd.DateOffset(days=0)
     popsize = 1000
     sim = get_sim(tmpdir)
     # get wasting module
@@ -421,7 +415,7 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     p['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
+    sim.simulate(end_date=start_date)  # zero duration
     sim.event_queue.queue = []  # clear the queue
 
     # Get person to use:
@@ -544,7 +538,6 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
 def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     """ Check the onset of symptoms with complicated SAM, check full recovery with treatment (tx) when the natural
     death due to SAM is certain but canceled with tx, and symptoms resolved when fully recovered with tx. """
-    dur = pd.DateOffset(days=0)
     popsize = 1000
     sim = get_sim(tmpdir)
     # get wasting module
@@ -556,7 +549,7 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     p['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
+    sim.simulate(end_date=start_date)  # zero duration
     sim.event_queue.queue = []  # clear the queue
 
     # Get person to use:
@@ -658,7 +651,6 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     """ Check if the risk of death when untreated is 100%, the person is scheduled to die due to natural history. But
      with treatment the natural death is cancelled. Check if also chance to fully recover with treatment is 0%, and
      risk of death when treated is 100%, the person will die. Test for uncomplicated SAM."""
-    dur = pd.DateOffset(days=0)
     popsize = 1000
     sim = get_sim(tmpdir)
     # get wasting module
@@ -671,7 +663,7 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     p['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
+    sim.simulate(end_date=start_date)  # zero duration
     sim.event_queue.queue = []  # clear the queue
 
     # Set full recovery with treatment at 0%
@@ -769,10 +761,7 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
     """ Show that if recovered with a tx event before the person was going to recover naturally from moderate wasting
     with moderate or severe acute malnutrition, it causes the episode to end earlier, natural recovery is cancelled.
     Test for MAM and complicated SAM. """
-
     for am_state_expected in ['MAM', 'SAM']:
-
-        dur = pd.DateOffset(days=0)
         popsize = 1000
         sim = get_sim(tmpdir)
         # get wasting module
@@ -780,7 +769,7 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
         p = wmodule.parameters
 
         sim.make_initial_population(n=popsize)
-        sim.simulate(end_date=start_date + dur)
+        sim.simulate(end_date=start_date)  # zero duration
         sim.event_queue.queue = []  # clear the queue
 
         # Set moderate wasting incidence rate at 100% and rate of progression to severe wasting at 0%.
@@ -887,8 +876,6 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
 def test_recovery_before_death_scheduled(tmpdir):
     """ Show that if a recovery event is run before when a person was going to die, it causes the episode to end without
     the person dying. """
-
-    dur = pd.DateOffset(days=0)
     popsize = 1000
     sim = get_sim(tmpdir)
     # get wasting module
@@ -900,7 +887,7 @@ def test_recovery_before_death_scheduled(tmpdir):
     p['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
+    sim.simulate(end_date=start_date)  # zero duration
     sim.event_queue.queue = []  # clear the queue
 
 
@@ -1030,13 +1017,12 @@ def test_recovery_before_death_scheduled(tmpdir):
 
 def test_no_wasting_after_recent_recovery(tmpdir):
     """ Test that a person who recovered from wasting 5 days ago does not become wasted again. """
-    dur = pd.DateOffset(days=0)
     popsize = 1000
     sim = get_sim(tmpdir)
     wmodule = sim.modules['Wasting']
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
+    sim.simulate(end_date=start_date)  # zero duration
     sim.event_queue.queue = []  # clear the queue
 
     # Get person to use:
