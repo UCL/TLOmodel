@@ -1,0 +1,109 @@
+{
+  "scenario_script_path": "src/scripts/hiv/program_simplification/analysis_hiv_program_simplification.py",
+  "scenario_seed": 0,
+  "arguments": [],
+  "runs_per_draw": 5,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "none"
+        }
+      },
+      "draw_name": "0"
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "reduce_HIV_test"
+        }
+      },
+      "draw_name": "1"
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "remove_VL"
+        }
+      },
+      "draw_name": "2"
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "replace_VL_with_TDF"
+        }
+      },
+      "draw_name": "3"
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "remove_prep_fsw"
+        }
+      },
+      "draw_name": "4"
+    },
+    {
+      "draw_number": 5,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "remove_prep_agyw"
+        }
+      },
+      "draw_name": "5"
+    },
+    {
+      "draw_number": 6,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "remove_IPT"
+        }
+      },
+      "draw_name": "6"
+    },
+    {
+      "draw_number": 7,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "target_IPT"
+        }
+      },
+      "draw_name": "7"
+    },
+    {
+      "draw_number": 8,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "remove_vmmc"
+        }
+      },
+      "draw_name": "8"
+    },
+    {
+      "draw_number": 9,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "increase_6MMD"
+        }
+      },
+      "draw_name": "9"
+    },
+    {
+      "draw_number": 10,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "remove_all"
+        }
+      },
+      "draw_name": "10"
+    }
+  ],
+  "commit": "2b05ffec1d0e6c8f73b8cb5464c189b7a50e4232",
+  "github": "https://github.com/UCL/TLOmodel/tree/2b05ffec1d0e6c8f73b8cb5464c189b7a50e4232"
+}
