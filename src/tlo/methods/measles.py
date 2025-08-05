@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
