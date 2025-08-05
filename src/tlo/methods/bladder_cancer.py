@@ -170,6 +170,39 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "sensitivity_of_cystoscopy_for_bladder_cancer_pelvic_pain": Parameter(
             Types.REAL, "sensitivity of cystoscopy_for diagnosis of bladder cancer given pelvic pain"
+        ),
+        "odds_ratio_health_seeking_blood_urine": Parameter(
+            Types.REAL, "odds ratio for health seeking behavior in adults with blood urine symptom"
+        ),
+        "odds_ratio_health_seeking_pelvic_pain": Parameter(
+            Types.REAL, "odds ratio for health seeking behavior in adults with pelvic pain symptom"
+        ),
+        "delay_initial_palliative_care_months": Parameter(
+            Types.INT, "delay in months for scheduling initial palliative care appointments"
+        ),
+        "duration_initial_palliative_care_weeks": Parameter(
+            Types.INT, "end of initial palliative care service"
+        ),
+        "post_treatment_check_interval_years": Parameter(
+            Types.INT, "interval in years for first post-treatment check"
+        ),
+        "post_treatment_followup_interval_years": Parameter(
+            Types.INT, "interval in years for subsequent post-treatment follow-up appointments"
+        ),
+        "palliative_care_repeat_interval_months": Parameter(
+            Types.INT, "interval in months for repeating palliative care appointments"
+        ),
+        "main_polling_frequency_months": Parameter(
+            Types.INT, "frequency in months for main polling event"
+        ),
+        "beddays_treatment": Parameter(
+            Types.INT, "number of bed days required for bladder cancer treatment"
+        ),
+        "beddays_palliative_care": Parameter(
+            Types.INT, "number of bed days required for palliative care"
+        ),
+        "min_age_investigation": Parameter(
+            Types.INT, "minimum age in years for bladder cancer investigation"
         )
     }
 
@@ -215,13 +248,13 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='blood_urine',
-                    odds_ratio_health_seeking_in_adults=4.00,
+                    odds_ratio_health_seeking_in_adults=self.parameters['odds_ratio_health_seeking_blood_urine'],
                     no_healthcareseeking_in_children=True)
         )
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='pelvic_pain',
-                    odds_ratio_health_seeking_in_adults=4.00,
+                    odds_ratio_health_seeking_in_adults=self.parameters['odds_ratio_health_seeking_pelvic_pain'],
                     no_healthcareseeking_in_children=True)
         )
 
@@ -903,13 +936,13 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "bc_date_treatment"] = self.sim.date
             df.at[person_id, "bc_stage_at_which_treatment_given"] = df.at[person_id, "bc_status"]
 
-            # Schedule a post-treatment check for 12 months:
+            # Schedule a post-treatment check:
             hs.schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(years=12),
+                topen=self.sim.date + DateOffset(years=self.module.parameters['post_treatment_check_interval_years']),
                 tclose=None,
                 priority=0
             )
@@ -955,13 +988,13 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
             )
 
         else:
-            # Schedule another HSI_BladderCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_BladderCancer_PostTreatmentCheck event
             hs.schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=1),
+                topen=self.sim.date + DateOffset(years=self.module.parameters['post_treatment_followup_interval_years']),
                 tclose=None,
                 priority=0
             )
@@ -984,7 +1017,7 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "BladderCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': module.parameters['beddays_palliative_care']})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1008,13 +1041,13 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             if pd.isnull(df.at[person_id, "bc_date_palliative_care"]):
                 df.at[person_id, "bc_date_palliative_care"] = self.sim.date
 
-            # Schedule another instance of the event for one month
+            # Schedule another instance of the event
             hs.schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=1),
+                topen=self.sim.date + DateOffset(months=self.module.parameters['palliative_care_repeat_interval_months']),
                 tclose=None,
                 priority=0
             )
