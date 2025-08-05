@@ -476,6 +476,43 @@ plot_with_ci(
     percent_df=pc_dalys_diff_from_statusquo
 )
 
+
+def num_dalys_by_cause(_df):
+    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
+    return _df \
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+        .drop(columns=['date', 'sex', 'age_range', 'year']) \
+        .sum()
+
+# extract dalys by cause with mean and upper/lower intervals
+# With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
+
+daly_by_cause = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True,
+    ),
+    only_mean=False,
+    collapse_columns=False,
+).pipe(set_param_names_as_column_index_level_0)
+daly_by_cause.to_excel(results_folder / "daly_by_cause.xlsx")
+
+
+dalys_labelled_diff_from_statusquo = summarize(
+    find_difference_relative_to_comparison_series_dataframe(
+        daly_by_cause,
+        comparison='Status Quo'
+    ),
+    only_mean=True
+)
+
+dalys_labelled_diff_from_statusquo.to_excel(results_folder / "dalys_labelled_diff_from_statusquo.xlsx")
+
+
+
 # DALYs by cause
 def get_total_num_dalys_by_label(_df):
     """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
@@ -586,3 +623,107 @@ plot_stacked_dalys_by_cause(
     title="Difference in DALYs Compared to Status Quo (by Cause)",
     ylabel="Difference in DALYs"
 )
+
+
+
+
+# HS use
+
+def summarise_appointments(df: pd.DataFrame) -> pd.Series:
+    """
+    Extract and sum all appointment types during the TARGET_PERIOD from the HSI_Event log.
+
+    Returns a Series indexed by appointment type.
+    """
+    df["date"] = pd.to_datetime(df["date"])
+    mask = df["date"].between(*TARGET_PERIOD)
+    filtered = df.loc[mask, "Number_By_Appt_Type_Code"]
+
+    # Expand list of counts per row into a DataFrame
+    expanded = pd.DataFrame(filtered.tolist())
+
+    # Sum across all rows (time points)
+    summed = expanded.sum()
+
+    # Return as Series with integer index
+    summed.index.name = "AppointmentTypeCode"
+    return summed
+
+appt_counts = extract_results(
+    results_folder=results_folder,
+    module="tlo.methods.healthsystem.summary",
+    key="HSI_Event",
+    custom_generate_series=summarise_appointments,
+    do_scaling=True  # to scale to national population
+).pipe(set_param_names_as_column_index_level_0)
+
+appt_counts_by_draw = appt_counts.groupby(level="draw", axis=1).mean()
+
+
+# diff_appt_counts_vs_statusquo = summarize(
+#     find_difference_relative_to_comparison_series_dataframe(
+#         appt_counts,
+#         comparison='Status Quo',
+#     ),
+#     only_mean=True
+# )
+appt_diff_from_statusquo = compute_summary_statistics(
+    find_difference_relative_to_comparison_series_dataframe(
+        appt_counts,
+        comparison="Status Quo"
+    )
+)
+appt_diff_from_statusquo.to_excel(results_folder / "appt_diff_from_statusquo.xlsx")
+
+
+pc_diff_appt_counts_vs_statusquo = 100.0 * compute_summary_statistics(
+    pd.DataFrame(
+        find_difference_relative_to_comparison_series_dataframe(
+            appt_counts,
+            comparison='Status Quo',
+        scaled=True)
+    ), only_central=True
+)
+
+
+
+
+
+
+def plot_grouped_appt_counts(appt_counts_by_draw, title="Percentage change in appt numbers", figsize=(14, 6)):
+    """
+    Plot grouped bar chart showing appointment counts per type, grouped by draw.
+    Adds vertical separators between appointment type groups.
+    """
+
+    index = appt_counts_by_draw.index.astype(str)  # appointment types as str
+    columns = appt_counts_by_draw.columns          # draw numbers
+    n_types = len(index)
+    n_draws = len(columns)
+
+    bar_width = 0.8 / n_draws
+    x = np.arange(n_types)
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Plot bars
+    for i, draw in enumerate(columns):
+        offset = (i - n_draws / 2) * bar_width + bar_width / 2
+        ax.bar(x + offset, appt_counts_by_draw[draw], width=bar_width, label=f"{draw}")
+
+    # Add vertical lines between groups
+    for i in range(1, n_types):
+        ax.axvline(x=i - 0.5, color="grey", linestyle="--", linewidth=0.5, alpha=0.6)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(index, rotation=45, ha="right")
+    ax.set_ylabel("Percentage change")
+    ax.set_title(title)
+    ax.legend(title="Scenario")
+    ax.grid(axis="y", linestyle="--", alpha=0.6)
+
+    plt.tight_layout()
+    plt.show()
+
+
+plot_grouped_appt_counts(pc_diff_appt_counts_vs_statusquo)
