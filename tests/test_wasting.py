@@ -234,30 +234,30 @@ def test_report_daly_weights(tmpdir):
 
     # 1. Check daly weight for well-nourished person (weight is 0.0)
     # Reset diagnostic properties
-    df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
-    df.loc[person_id, 'un_am_nutritional_oedema'] = False
-    df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
+    df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
+    df.at[person_id, 'un_am_nutritional_oedema'] = False
+    df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
 
     # Verify diagnosis - an individual should be well
     wmodule.clinical_acute_malnutrition_state(person_id, df)
-    assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'well'
+    assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well'
 
     # Report daly weight for this individual
     daly_weights_reported = wmodule.report_daly_values()
 
     # Verify that individual has no daly weight
-    assert daly_weights_reported.loc[person_id] == 0.0
+    assert daly_weights_reported.at[person_id] == 0.0
 
     get_daly_weights = sim.modules['HealthBurden'].get_daly_weight
 
     # 2. Check daly weight for person with moderate wasting and oedema (weight is 0.051)
     # Reset diagnostic properties
-    df.loc[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'
-    df.loc[person_id, 'un_am_nutritional_oedema'] = True
+    df.at[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'
+    df.at[person_id, 'un_am_nutritional_oedema'] = True
 
     # Verify diagnosis - an individual should have SAM
     wmodule.clinical_acute_malnutrition_state(person_id, df)
-    assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
+    assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
 
     # Report daly weight for this individual
     daly_weights_reported = wmodule.report_daly_values()
@@ -266,16 +266,16 @@ def test_report_daly_weights(tmpdir):
     daly_wts['mod_wasting_with_oedema'] = get_daly_weights(sequlae_code=461)
 
     # Compare the daly weight of this individual with the daly weight obtained from HealthBurden module
-    assert daly_wts['mod_wasting_with_oedema'] == daly_weights_reported.loc[person_id]
+    assert daly_wts['mod_wasting_with_oedema'] == daly_weights_reported.at[person_id]
 
     # 3. Check daly weight for person with severe wasting and oedema (weight is 0.172)
     # Reset diagnostic properties
-    df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
-    df.loc[person_id, 'un_am_nutritional_oedema'] = True
+    df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'
+    df.at[person_id, 'un_am_nutritional_oedema'] = True
 
     # Verify diagnosis - an individual should have SAM
     wmodule.clinical_acute_malnutrition_state(person_id, df)
-    assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
+    assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
 
     # Report daly weight for this individual
     daly_weights_reported = wmodule.report_daly_values()
@@ -284,16 +284,16 @@ def test_report_daly_weights(tmpdir):
     daly_wts['sev_wasting_with_oedema'] = get_daly_weights(sequlae_code=463)
 
     # Compare the daly weight of this individual with the daly weight obtained from HealthBurden module
-    assert daly_wts['sev_wasting_with_oedema'] == daly_weights_reported.loc[person_id]
+    assert daly_wts['sev_wasting_with_oedema'] == daly_weights_reported.at[person_id]
 
     # 4. Check daly weight for person with severe wasting without oedema (weight is 0.128)
     # Reset diagnosis
-    df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
-    df.loc[person_id, 'un_am_nutritional_oedema'] = False
+    df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'
+    df.at[person_id, 'un_am_nutritional_oedema'] = False
 
     # Verify diagnosis - an individual should have SAM
     wmodule.clinical_acute_malnutrition_state(person_id, df)
-    assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
+    assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
 
     # Report daly weight for this individual
     daly_weights_reported = wmodule.report_daly_values()
@@ -302,7 +302,7 @@ def test_report_daly_weights(tmpdir):
     daly_wts['sev_wasting_w/o_oedema'] = get_daly_weights(sequlae_code=462)
 
     # Compare the daly weight of this individual with the daly weight obtained from HealthBurden module
-    assert daly_wts['sev_wasting_w/o_oedema'] == daly_weights_reported.loc[person_id]
+    assert daly_wts['sev_wasting_w/o_oedema'] == daly_weights_reported.at[person_id]
 
 
 def test_nat_recovery_moderate_wasting(tmpdir):
@@ -323,12 +323,12 @@ def test_nat_recovery_moderate_wasting(tmpdir):
         under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
         person_id = under5s.index[0]
         # Reset properties of this individual to be well-nourished
-        df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not wasted
-        df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
-        df.loc[person_id, 'un_am_nutritional_oedema'] = False
-        df.loc[person_id, 'un_clinical_acute_malnutrition'] = 'well' # well-nourished
-        df.loc[person_id, 'un_ever_wasted'] = False
-        df.loc[person_id, 'un_last_wasting_date_of_onset'] = pd.NaT
+        df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not wasted
+        df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
+        df.at[person_id, 'un_am_nutritional_oedema'] = False
+        df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well' # well-nourished
+        df.at[person_id, 'un_ever_wasted'] = False
+        df.at[person_id, 'un_last_wasting_date_of_onset'] = pd.NaT
 
         # Set moderate wasting incidence rate at 100% and rate of progression to severe wasting at 0%.
         # (Hence, all children with normal wasting should get onset of moderate wasting and be scheduled for natural
@@ -423,10 +423,10 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
     # Manually set this individual properties to be well
-    df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
-    df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
-    df.loc[person_id, 'un_am_nutritional_oedema'] = False
-    df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
+    df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
+    df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
+    df.at[person_id, 'un_am_nutritional_oedema'] = False
+    df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
     df.at[person_id, 'un_sam_with_complications'] = False
     df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
@@ -446,7 +446,7 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     polling.apply(sim.population)
 
     # Check properties of this individual: should now be moderately wasted
-    assert df.loc[person_id]['un_WHZ_category'] == '-3<=WHZ<-2'
+    assert df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2'
 
     # Check that there is a Wasting_ProgressionToSevere_Event scheduled for this person:
     progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
@@ -504,7 +504,7 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     sam_ev.run(squeeze_factor=0.0)
 
     # Check death was canceled with tx
-    assert pd.isnull(df.loc[person_id]['un_sam_death_date'])
+    assert pd.isnull(df.at[person_id, 'un_sam_death_date'])
 
     # Check recovery to MAM due to tx is scheduled
     assert isinstance(sim.find_events_for_person(person_id)[2][1], Wasting_RecoveryToMAM_Event)
@@ -557,8 +557,8 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
     # Manually set this individual properties to have SAM
-    df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
-    df.loc[person_id, 'un_last_wasting_date_of_onset'] = sim.date
+    df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'
+    df.at[person_id, 'un_last_wasting_date_of_onset'] = sim.date
 
     # Ensure the individual has complications due to SAM
     p['prob_complications_in_SAM'] = 1.0
@@ -579,7 +579,7 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
 
     # Check death is scheduled
     assert isinstance(sim.find_events_for_person(person_id)[0][1], Wasting_SevereAcuteMalnutritionDeath_Event)
-    assert not pd.isnull(df.loc[person_id]['un_sam_death_date'])
+    assert not pd.isnull(df.at[person_id, 'un_sam_death_date'])
     # get date of death and death event
     death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
                                 isinstance(event_tuple[1], Wasting_SevereAcuteMalnutritionDeath_Event)][0]
@@ -612,7 +612,7 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     sam_ev.run(squeeze_factor=0.0)
 
     # Check scheduled death was canceled due to tx
-    assert pd.isnull(df.loc[person_id]['un_sam_death_date'])
+    assert pd.isnull(df.at[person_id, 'un_sam_death_date'])
 
     # Check full recovery due to tx is scheduled
     assert isinstance(sim.find_events_for_person(person_id)[1][1], Wasting_FullRecovery_Event)
@@ -678,8 +678,8 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
     # Manually set this individual properties to have SAM due to severe wasting, hence natural death should be applied
-    df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
-    df.loc[person_id, 'un_last_wasting_date_of_onset'] = sim.date
+    df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'
+    df.at[person_id, 'un_last_wasting_date_of_onset'] = sim.date
 
     # Assign diagnosis
     wmodule.clinical_acute_malnutrition_state(person_id, df)
@@ -724,7 +724,7 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     # Check death event is scheduled for another day than natural death was scheduled for since there is no recovery
     # with treatment
     assert isinstance(sim.find_events_for_person(person_id)[0][1], Wasting_SevereAcuteMalnutritionDeath_Event)
-    assert df.loc[person_id]['un_sam_death_date'] != nat_death_date
+    assert df.at[person_id, 'un_sam_death_date'] != nat_death_date
 
     # Load list of all death events scheduled for the person
     death_events_list = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
@@ -786,10 +786,10 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
         under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
         person_id = under5s.index[0]
         # Manually set this individual properties to be well
-        df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
-        df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
-        df.loc[person_id, 'un_am_nutritional_oedema'] = False
-        df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
+        df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
+        df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
+        df.at[person_id, 'un_am_nutritional_oedema'] = False
+        df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
         df.at[person_id, 'un_sam_with_complications'] = False
         df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
@@ -855,9 +855,9 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
 
         # Check natural recovery is going to be cancelled
         if am_state_expected == 'MAM':
-            assert date_of_scheduled_nat_recov in df.loc[person_id, 'un_full_recov_to_cancel']
+            assert date_of_scheduled_nat_recov in df.at[person_id, 'un_full_recov_to_cancel']
         else: # complicated SAM
-            assert date_of_scheduled_nat_recov in df.loc[person_id, 'un_recov_to_mam_to_cancel']
+            assert date_of_scheduled_nat_recov in df.at[person_id, 'un_recov_to_mam_to_cancel']
         # Run the natural recovery, this should have no effect
         sim.date = date_of_scheduled_nat_recov
         nat_recov_event.apply(person_id)
@@ -906,10 +906,10 @@ def test_recovery_before_death_scheduled(tmpdir):
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
     # Manually set this individual properties to be well
-    df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
-    df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
-    df.loc[person_id, 'un_am_nutritional_oedema'] = False
-    df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
+    df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
+    df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
+    df.at[person_id, 'un_am_nutritional_oedema'] = False
+    df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
     df.at[person_id, 'un_sam_with_complications'] = False
     df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
@@ -1013,7 +1013,7 @@ def test_recovery_before_death_scheduled(tmpdir):
     # Run the death event that was originally scheduled - this should have no effect and the person should not die
     sim.date = date_of_scheduled_death
     death_event.apply(person_id=person_id)
-    assert df.loc[person_id]['is_alive']
+    assert df.at[person_id, 'is_alive']
 
 def test_no_wasting_after_recent_recovery(tmpdir):
     """ Test that a person who recovered from wasting 5 days ago does not become wasted again. """
@@ -1031,11 +1031,11 @@ def test_no_wasting_after_recent_recovery(tmpdir):
     person_id = under5s.index[0]
 
     # Manually set this individual properties to be well and recovered 5 days ago
-    df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
-    df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
-    df.loc[person_id, 'un_am_nutritional_oedema'] = False
-    df.loc[person_id, 'un_clinical_acute_malnutrition'] = 'well'
-    df.loc[person_id, 'un_am_recovery_date'] = sim.date - pd.DateOffset(days=5)
+    df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
+    df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
+    df.at[person_id, 'un_am_nutritional_oedema'] = False
+    df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
+    df.at[person_id, 'un_am_recovery_date'] = sim.date - pd.DateOffset(days=5)
 
     # Set incidence of wasting at 100%
     wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
@@ -1045,4 +1045,4 @@ def test_no_wasting_after_recent_recovery(tmpdir):
     polling.apply(sim.population)
 
     # Check properties of this individual: should still be well
-    assert df.loc[person_id]['un_clinical_acute_malnutrition'] == 'well'
+    assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well'
