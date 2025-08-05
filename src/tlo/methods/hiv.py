@@ -3005,19 +3005,19 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
-        # HIV test is negative - check that PrEP is available and if it is, initiate or continue  PrEP:
+        # HIV test is negative - check that PrEP is available and if it is, initiate or continue PrEP:
         else:
-            quantity_required = self.module.parameters['initial_dispensation_period_months'] * 30
+            days_on_prep = self.module.parameters['initial_dispensation_period_months'] * 30
             if self.get_consumables(
-                item_codes={self.module.item_codes_for_consumables_required['prep']: quantity_required}
+                item_codes={self.module.item_codes_for_consumables_required['prep']: days_on_prep}
             ):
                 df.at[person_id, "hv_is_on_prep"] = True
 
                 if df.at[person_id, "li_is_sexworker"]:
-                    df.at[person_id, 'hv_days_on_prep_FSW'] += 90
+                    df.at[person_id, 'hv_days_on_prep_FSW'] += days_on_prep
 
                 elif (df.at[person_id, "sex"] == "F") and (15 <= df.at[person_id, "age_years"] <= 24):
-                    df.at[person_id, 'hv_days_on_prep_AGYW'] += 90
+                    df.at[person_id, 'hv_days_on_prep_AGYW'] += days_on_prep
 
                 # Schedule 'decision about whether to continue on PrEP' for 3 months time
                 self.sim.schedule_event(
