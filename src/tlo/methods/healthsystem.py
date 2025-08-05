@@ -2536,6 +2536,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             climate_disrupted = True
                             response_to_disruption = 'delay'
                             if response_to_disruption == 'delay':
+                                self.module.call_and_record_weather_delayed_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
                                 if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
                                     self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                         priority=item.priority,
@@ -2571,6 +2572,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         response_to_disruption = 'cancel'
                             if response_to_disruption == 'cancel':
                                 self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
+                                self.module.call_and_record_weather_cancelled_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
 
                 # If not climate disrupted, check equipment
                 if not climate_disrupted:
