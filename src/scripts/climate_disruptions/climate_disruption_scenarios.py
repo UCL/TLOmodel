@@ -14,7 +14,7 @@ class ClimateDisruptionScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2028, 1, 12)
         self.pop_size = 10000
-        self.runs_per_draw = 1
+        self.runs_per_draw = 2
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)

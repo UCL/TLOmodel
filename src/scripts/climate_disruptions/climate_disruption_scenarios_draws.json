@@ -1,0 +1,60 @@
+{
+  "scenario_script_path": "src/scripts/climate_disruptions/climate_disruption_scenarios.py",
+  "scenario_seed": 0,
+  "arguments": [],
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "funded_plus",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "default",
+          "cons_availability_postSwitch": "all",
+          "year_cons_availability_switch": 2020,
+          "equip_availability_postSwitch": "all",
+          "year_equip_availability_switch": 2020,
+          "climate_ssp": "ssp126",
+          "climate_model_ensemble_model": "highest",
+          "services_affected_precip": "all",
+          "delay_in_seeking_care_weather": 4
+        },
+        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
+          "max_healthsystem_function": [
+            false,
+            true
+          ],
+          "max_healthcare_seeking": [
+            false,
+            true
+          ],
+          "year_of_switch": 2020
+        },
+        "Malaria": {
+          "type_of_scaleup": "max",
+          "scaleup_start_year": 2020
+        },
+        "Tb": {
+          "type_of_scaleup": "max",
+          "scaleup_start_year": 2020
+        },
+        "Hiv": {
+          "type_of_scaleup": "max",
+          "scaleup_start_year": 2020
+        }
+      },
+      "draw_name": "0"
+    }
+  ],
+  "commit": "23d57d39643f3297af99e4d05d8576082a475872",
+  "github": "https://github.com/UCL/TLOmodel/tree/23d57d39643f3297af99e4d05d8576082a475872"
+}
