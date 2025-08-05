@@ -549,8 +549,15 @@ class HealthSystem(Module):
             # counts over previous log periods
             self._never_ran_hsi_event_counts_log_period = Counter()
             self._never_ran_hsi_event_counts_cumulative = Counter()
+            self._weather_cancelled_hsi_event_counts_log_period = Counter()
+            self._weather_cancelled_hsi_event_counts_cumulative = Counter()
+            self._weather_delayed_hsi_event_counts_log_period = Counter()
+            self._weather_delayed_hsi_event_counts_cumulative = Counter()
+
             # Dictionary mapping from HSI event details to unique integer keys
             self._never_ran_hsi_event_details = dict()
+            self._weather_cancelled_hsi_event_details = dict()
+            self._weather_delayed_hsi_event_details = dict()
 
         elif hsi_event_count_log_period is not None:
             raise ValueError(
@@ -838,6 +845,8 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period == "simulation":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_weather_cancelled_hsi_event_counts_to_log_and_reset()
+            self._write_weather_delayed_hsi_event_counts_to_log_and_reset()
         if self._hsi_event_count_log_period is not None:
             logger_summary.info(
                 key="hsi_event_details",
@@ -857,6 +866,25 @@ class HealthSystem(Module):
                     }
                 }
             )
+            logger_summary.info(
+                key="weather_delayed_hsi_event_details",
+                description="Map from integer keys to weather delayed hsi event detail dictionaries",
+                data={
+                    "weather_delayed_hsi_event_key_to_event_details": {
+                        k: d._asdict() for d, k in self._weather_delayed_hsi_event_details.items()
+                    }
+                }
+            )
+            logger_summary.info(
+                key="weather_cancelled_hsi_event_details",
+                description="Map from integer keys to weather cancelled hsi event detail dictionaries",
+                data={
+                    "weather_delayed_hsi_event_key_to_event_details": {
+                        k: d._asdict() for d, k in self._weather_cancelled_hsi_event_details.items()
+                    }
+                }
+            )
+
 
     def setup_priority_policy(self):
 
@@ -1817,8 +1845,6 @@ class HealthSystem(Module):
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         """
         # Invoke never ran function here
-        hsi_event.never_ran()
-
         if hsi_event.facility_info is not None:
             # Fully-defined HSI Event
             self.write_to_never_ran_hsi_log(
@@ -1835,6 +1861,55 @@ class HealthSystem(Module):
                  priority=priority,
                  )
 
+    def call_and_record_weather_cancelled_hsi_event(self, hsi_event, priority=None):
+        """
+        Record the fact that an HSI event was cancelled because of weather impacts.
+        If this is an individual-level HSI_Event, it will also record the actual appointment footprint
+        :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
+        """
+        # Invoke never ran function here
+        hsi_event.never_ran()
+
+        if hsi_event.facility_info is not None:
+            # Fully-defined HSI Event
+            self.write_to_weather_cancelled_hsi_log(
+                event_details=hsi_event.as_namedtuple(),
+                person_id=hsi_event.target,
+                facility_id=hsi_event.facility_info.id,
+                priority=priority,
+            )
+        else:
+            self.write_to_weather_cancelled_hsi_log(
+                event_details=hsi_event.as_namedtuple(),
+                person_id=-1,
+                facility_id=-1,
+                priority=priority,
+            )
+
+    def call_and_record_weather_delayed_hsi_event(self, hsi_event, priority=None):
+        """
+        Record the fact that an HSI event was DELAYED because of weather impacts.
+        If this is an individual-level HSI_Event, it will also record the actual appointment footprint
+        :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
+        """
+        # Invoke never ran function here
+        hsi_event.never_ran()
+
+        if hsi_event.facility_info is not None:
+            # Fully-defined HSI Event
+            self.write_to_weather_delayed_hsi_log(
+                event_details=hsi_event.as_namedtuple(),
+                person_id=hsi_event.target,
+                facility_id=hsi_event.facility_info.id,
+                priority=priority,
+            )
+        else:
+            self.write_to_weather_delayed_hsi_log(
+                event_details=hsi_event.as_namedtuple(),
+                person_id=-1,
+                facility_id=-1,
+                priority=priority,
+            )
     def write_to_never_ran_hsi_log(
         self,
         event_details: HSIEventDetails,
@@ -1862,6 +1937,72 @@ class HealthSystem(Module):
             )
             self._never_ran_hsi_event_counts_log_period[event_details_key] += 1
         self._summary_counter.record_never_ran_hsi_event(
+            treatment_id=event_details.treatment_id,
+            hsi_event_name=event_details.event_name,
+            appt_footprint=event_details.appt_footprint,
+            level=event_details.facility_level,
+        )
+
+    def write_to_weather_cancelled_hsi_log(
+            self,
+            event_details: HSIEventDetails,
+            person_id: int,
+            facility_id: Optional[int],
+            priority: int,
+        ):
+            """Write the log `HSI_Event` and add to the summary counter."""
+            logger.debug(
+                key="Climate_delated_HSI_Event",
+            data = {
+                'Event_Name': event_details.event_name,
+                'TREATMENT_ID': event_details.treatment_id,
+                'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
+                'Person_ID': person_id,
+                'priority': priority,
+                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else "-99",
+                'Facility_ID': facility_id if facility_id is not None else -99,
+            },
+            description = "record of each HSI event that was cancelled due to weather"
+            )
+            if self._hsi_event_count_log_period is not None:
+                event_details_key = self._weather_cancelled_hsi_event_details.setdefault(
+                    event_details, len(self._weather_cancelled_hsi_event_details)
+                )
+                self._weather_cancelled_hsi_event_counts_log_period[event_details_key] += 1
+            self._summary_counter.record_weather_cancelled_hsi_event(
+                treatment_id=event_details.treatment_id,
+                hsi_event_name=event_details.event_name,
+                appt_footprint=event_details.appt_footprint,
+                level=event_details.facility_level,
+            )
+
+    def write_to_weather_delayed_hsi_log(
+        self,
+        event_details: HSIEventDetails,
+        person_id: int,
+        facility_id: Optional[int],
+        priority: int,
+    ):
+        """Write the log `HSI_Event` and add to the summary counter."""
+        logger.debug(
+            key="Climate_delated_HSI_Event",
+        data = {
+            'Event_Name': event_details.event_name,
+            'TREATMENT_ID': event_details.treatment_id,
+            'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
+            'Person_ID': person_id,
+            'priority': priority,
+            'Facility_Level': event_details.facility_level if event_details.facility_level is not None else "-99",
+            'Facility_ID': facility_id if facility_id is not None else -99,
+        },
+        description = "record of each HSI event that was delayed due to weather"
+        )
+        if self._hsi_event_count_log_period is not None:
+            event_details_key = self._weather_delayed_hsi_event_details.setdefault(
+                event_details, len(self._weather_delayed_hsi_event_details)
+            )
+            self._weather_delayed_hsi_event_counts_log_period[event_details_key] += 1
+        self._summary_counter.record_weather_delayed_hsi_event(
             treatment_id=event_details.treatment_id,
             hsi_event_name=event_details.event_name,
             appt_footprint=event_details.appt_footprint,
@@ -1992,18 +2133,50 @@ class HealthSystem(Module):
         self._never_ran_hsi_event_counts_cumulative += self._never_ran_hsi_event_counts_log_period
         self._never_ran_hsi_event_counts_log_period.clear()
 
+    def _write_weather_cancelled_hsi_event_counts_to_log_and_reset(self):
+        logger_summary.info(
+            key="weather_cancelled_hsi_event_counts",
+            description=(
+                f"Counts of the HSI events that were cancelled due to weather ran "
+                f"{self._hsi_event_count_log_period} with keys corresponding to integer"
+                f" keys recorded in dictionary in hsi_event_details log entry."
+            ),
+            data={
+                "weather_cancelled_hsi_event_key_to_counts": dict(self._weather_cancelled_hsi_event_counts_log_period)},
+        )
+        self._weather_cancelled_hsi_event_counts_cumulative += self._weather_cancelled_hsi_event_counts_log_period
+        self._weather_cancelled_hsi_event_counts_log_period.clear()
+
+    def _write_weather_delayed_hsi_event_counts_to_log_and_reset(self):
+        logger_summary.info(
+            key="weather_delayed_hsi_event_counts",
+            description=(
+                f"Counts of the HSI events that were delayed due to weather ran "
+                f"{self._hsi_event_count_log_period} with keys corresponding to integer"
+                f" keys recorded in dictionary in hsi_event_details log entry."
+            ),
+            data={"weather_delayed_hsi_event_key_to_counts": dict(self._weather_delayed_hsi_event_counts_log_period)},
+        )
+        self._weather_delayed_hsi_event_counts_cumulative += self._weather_delayed_hsi_event_counts_log_period
+        self._weather_delayed_hsi_event_counts_log_period.clear()
+
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
         self.bed_days.on_end_of_day()
         if self._hsi_event_count_log_period == "day":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_weather_cancelled_hsi_event_counts_to_log_and_reset()
+            self._write_weather_delayed_hsi_event_counts_to_log_and_reset()
+
 
     def on_end_of_month(self) -> None:
         """Do jobs to be done at the end of the month (after all HSI run)"""
         if self._hsi_event_count_log_period == "month":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_weather_cancelled_hsi_event_counts_to_log_and_reset()
+            self._write_weather_delayed_hsi_event_counts_to_log_and_reset()
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
@@ -2021,6 +2194,8 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period == "year":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_weather_cancelled_hsi_event_counts_to_log_and_reset()
+            self._write_weather_delayed_hsi_event_counts_to_log_and_reset()
 
     def run_individual_level_events_in_mode_0_or_1(self,
                                                    _list_of_individual_hsi_event_tuples:
@@ -2205,7 +2380,51 @@ class HealthSystem(Module):
                 }
             )
 
+    def weather_cancelled_hsi_event_counts(self) -> Counter:
+        """Counts of details of HSI events which were cancelled due to weather so far in simulation.
 
+        Returns a ``Counter`` instance with keys ``HSIEventDetail`` named tuples
+        corresponding to details of HSI events that have been cancelled over simulation so far.
+        """
+        if self._hsi_event_count_log_period is None:
+            return Counter()
+        else:
+            # If in middle of log period _hsi_event_counts_log_period will not be empty
+            # and so overall total counts is sums of counts in both
+            # _hsi_event_counts_cumulative and _hsi_event_counts_log_period
+            total_weather_cancelled_hsi_event_counts = (
+                self._weather_cancelled_hsi_event_counts_cumulative + self._weather_cancelled_hsi_event_counts_log_period
+            )
+            return Counter(
+                {
+                    event_details: total_weather_cancelled_hsi_event_counts[event_details_key]
+                    for event_details, event_details_key
+                    in self._weather_cancelled_hsi_event_details.items()
+                }
+            )
+
+    def weather_delayed_hsi_event_counts(self) -> Counter:
+        """Counts of details of HSI events which were delayed due to weather so far in simulation.
+
+        Returns a ``Counter`` instance with keys ``HSIEventDetail`` named tuples
+        corresponding to details of HSI events that have been delayed over simulation so far.
+        """
+        if self._hsi_event_count_log_period is None:
+            return Counter()
+        else:
+            # If in middle of log period _hsi_event_counts_log_period will not be empty
+            # and so overall total counts is sums of counts in both
+            # _hsi_event_counts_cumulative and _hsi_event_counts_log_period
+            total_weather_delayed_hsi_event_counts = (
+                self._weather_delayed_hsi_event_counts_cumulative + self._weather_delayed_hsi_event_counts_log_period
+            )
+            return Counter(
+                {
+                    event_details: total_weather_delayed_hsi_event_counts[event_details_key]
+                    for event_details, event_details_key
+                    in self._weather_delayed_hsi_event_details.items()
+                }
+            )
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
     This is the HealthSystemScheduler. It is an event that occurs every day and must be the LAST event of the day.
