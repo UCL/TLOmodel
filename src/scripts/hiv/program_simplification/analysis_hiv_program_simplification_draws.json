@@ -2,7 +2,7 @@
   "scenario_script_path": "src/scripts/hiv/program_simplification/analysis_hiv_program_simplification.py",
   "scenario_seed": 0,
   "arguments": [],
-  "runs_per_draw": 5,
+  "runs_per_draw": 10,
   "draws": [
     {
       "draw_number": 0,
@@ -102,8 +102,17 @@
         }
       },
       "draw_name": "10"
+    },
+    {
+      "draw_number": 11,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "target"
+        }
+      },
+      "draw_name": "11"
     }
   ],
-  "commit": "2b05ffec1d0e6c8f73b8cb5464c189b7a50e4232",
-  "github": "https://github.com/UCL/TLOmodel/tree/2b05ffec1d0e6c8f73b8cb5464c189b7a50e4232"
+  "commit": "da2d1ffd24c7cbe60f32656ed28874a485faa5ac",
+  "github": "https://github.com/UCL/TLOmodel/tree/da2d1ffd24c7cbe60f32656ed28874a485faa5ac"
 }
