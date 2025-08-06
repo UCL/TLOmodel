@@ -2087,7 +2087,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         return due_today
 
-    def process_events_mode_0_and_1(self, hold_over: List[HSIEventQueueItem]) -> None:
+    def process_events_mode_0_and_1(self) -> None:
+        # Run all events due today, repeating the check for due events until none are due
+        # (this allows for HSI that are added to the queue in the course of other HSI
+        # for this today to be run this day).
+
         while True:
             # Get the events that are due today:
             list_of_individual_hsi_event_tuples_due_today = self._get_events_due_today()
@@ -2106,10 +2110,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
 
             # Try to run the list of individual-level events that have their essential equipment
-            _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(
+            self.module.run_individual_level_events_in_mode_0_or_1(
                 list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment,
             )
-            hold_over.extend(_to_be_held_over)
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
 
@@ -2414,10 +2417,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         hold_over = list()
 
         if self.module.mode_appt_constraints in (0, 1):
-            # Run all events due today, repeating the check for due events until none are due
-            # (this allows for HSI that are added to the queue in the course of other HSI
-            # for this today to be run this day).
-            self.process_events_mode_0_and_1(hold_over)
+            self.process_events_mode_0_and_1()
 
         elif self.module.mode_appt_constraints == 2:
             self.process_events_mode_2(hold_over)
