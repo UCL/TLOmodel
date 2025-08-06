@@ -25,9 +25,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     output = parse_log_file('/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/climate_scenario_runs-2025-08-01T121521Z/0/0/climate_scenario_runs__2025-08-01T121736.log')
 
     """Produce a standard set of plots describing the effect of each climate scenario.
-
-    - Estimate the epidemiological impact as the EXTRA deaths that would occur if the treatment did not occur.
-    - Estimate the draw on healthcare system resources as the FEWER appointments when the treatment does not occur.
     - Generate time trend plots of deaths and DALYs by cause and district.
     - Create a final summary plot showing total deaths and DALYs per district stacked by scenario.
     """
@@ -35,15 +32,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Definitions of general helper functions
     def get_num_deaths_by_district(_df):
-        """Return total number of Deaths by label (total by age-group within the TARGET_PERIOD)
-        """
+        """Return total number of deaths by district as a Series, within the TARGET PERIOD."""
+
         return _df \
             .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
             .groupby(_df['district_of_residence']) \
             .size()
 
     def get_num_dalys_by_district(_df):
-        """Return total number of DALYs by (district) as a Series, within the TARGET PERIOD."""
+        """Return total number of DALYs by district as a Series, within the TARGET PERIOD."""
 
         return _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
             .drop(columns=['date', 'year']) \
@@ -78,8 +75,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         for target_year in target_year_sequence:
             TARGET_PERIOD = (
                 Date(target_year, 1, 1), Date(target_year, 12, 31))
-            # Absolute Number of Deaths and DALYs
 
+            # Absolute Number of Deaths and DALYs
             result_data_deaths = summarize(extract_results(
                 results_folder,
                 module='tlo.methods.demography.detail',
@@ -131,7 +128,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_deaths_upper = pd.DataFrame(all_years_data_deaths_upper)
 
         # Plotting
-        fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
+        fig, axes = plt.subplots(1, 2, figsize=(25, 10))
 
         # Panel A: Deaths
         for (district) in df_all_years_deaths_mean.index:
@@ -142,8 +139,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 label=district
             )
         axes[0].set_xlabel('Year')
-        axes[0].set_ylabel('Number of deaths')
+        axes[0].set_ylabel('Deaths per 1,000')
         axes[0].grid(False)
+        axes[0].legend().set_visible(False)
         # Panel B: DALYs
         for (district) in df_all_years_DALYS_mean.index:
             axes[1].plot(
@@ -153,25 +151,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 label=district,
             )
         axes[1].set_xlabel('Year')
-        axes[1].set_ylabel('Number of DALYs')
+        axes[1].set_ylabel('DALYS oer 1,000')
         axes[1].legend(title='District', bbox_to_anchor=(1., 1), loc='upper left')
         axes[1].grid(False)
 
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Scatter'))
 
         # BARPLOT STACKED DEATHS AND DALYS OVER TIME
-        fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
+        fig, axes = plt.subplots(1, 2, figsize=(25, 10))
+
         df_all_years_deaths_mean.T.plot.bar(
             stacked=True,
             ax=axes[0],
         )
-
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Number of deaths')
         axes[0].spines['top'].set_visible(False)
         axes[0].spines['right'].set_visible(False)
-        axes[0].legend(title='District', bbox_to_anchor=(1.05, 1), loc='upper left')
-        axes[0].grid()
+        axes[0].legend().set_visible(False)
+        axes[0].grid(False)
 
         # Plot the stacked bar chart
         df_all_years_DALYS_mean.T.plot.bar(
@@ -192,7 +190,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             fontsize=8,
             ncol=2
         )
-        axes[1].grid()
+        axes[1].grid(False)
 
         fig.tight_layout()
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Stacked'))
@@ -212,21 +210,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Panel A: Deaths by district for each scenario
     df_deaths_by_district_all_scenarios.plot(kind='bar', ax=axes[0], color=scenario_colours[:len(scenario_names)])
-    axes[0].set_title(f'Deaths by District and Scenario ({min_year}-{max_year})')
     axes[0].set_xlabel('District')
-    axes[0].set_ylabel('Deaths per 1000 population')
-    axes[0].legend(title='Scenario', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[0].set_ylabel('Deaths per 1,000')
+    axes[0].legend().set_visible(False)
     axes[0].tick_params(axis='x', rotation=45)
-    axes[0].grid(True, alpha=0.3)
+    axes[0].grid(False)
 
     # Panel B: DALYs by district for each scenario
     df_dalys_by_district_all_scenarios.plot(kind='bar', ax=axes[1], color=scenario_colours[:len(scenario_names)])
-    axes[1].set_title(f'DALYs by District and Scenario ({min_year}-{max_year})')
     axes[1].set_xlabel('District')
-    axes[1].set_ylabel('DALYs per 1000 population')
+    axes[1].set_ylabel('DALYs per 1,000')
     axes[1].legend(title='Scenario', bbox_to_anchor=(1.05, 1), loc='upper left')
     axes[1].tick_params(axis='x', rotation=45)
-    axes[1].grid(True, alpha=0.3)
+    axes[1].grid(False)
 
     fig.tight_layout()
     fig.savefig(output_folder / "deaths_and_dalys_by_district_all_scenarios.png", dpi=300, bbox_inches='tight')
@@ -237,15 +233,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Panel A: Stacked deaths by scenario
     df_deaths_by_district_all_scenarios.T.plot(kind='bar', stacked=True, ax=axes[0])
-    axes[0].set_title(f'Total Deaths by Scenario ({min_year}-{max_year})')
     axes[0].set_xlabel('Scenario')
-    axes[0].set_ylabel('Deaths per 1000 population')
-    axes[0].legend(title='District', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
+    axes[0].set_ylabel('Deaths per 1,000')
+    axes[0].legend().set_visible(False)
     axes[0].tick_params(axis='x', rotation=45)
 
     # Panel B: Stacked DALYs by scenario
     df_dalys_by_district_all_scenarios.T.plot(kind='bar', stacked=True, ax=axes[1])
-    axes[1].set_title(f'Total DALYs by Scenario ({min_year}-{max_year})')
     axes[1].set_xlabel('Scenario')
     axes[1].set_ylabel('DALYs per 1000 population')
     axes[1].legend(title='District', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
@@ -256,8 +250,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     ## Now do mapping (using the first scenario's data for mapping)
-    malawi = gpd.read_file(
-        "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm0_nso_20181016.shp")
     malawi_admin2 = gpd.read_file(
         "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
     water_bodies = gpd.read_file(
