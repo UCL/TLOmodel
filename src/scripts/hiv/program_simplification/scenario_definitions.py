@@ -81,3 +81,10 @@ class ScenarioDefinitions:
                 'type_of_scaleup': 'remove_all',
             }
         }
+
+    def scaleup(self) -> Dict:
+        return {
+            'Hiv': {
+                'type_of_scaleup': 'target',
+            }
+        }
