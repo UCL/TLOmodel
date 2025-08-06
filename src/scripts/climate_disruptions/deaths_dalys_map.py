@@ -208,16 +208,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Plot DALYs by district for each scenario
     fig, axes = plt.subplots(1, 2, figsize=(20, 10))
 
-    # Panel A: Deaths by district for each scenario
-    df_deaths_by_district_all_scenarios.plot(kind='bar', ax=axes[0], color=scenario_colours[:len(scenario_names)])
+    # Panel A: Total for each scenario
+    df_deaths_by_district_all_scenarios.mean(axis = 0).plot(kind='bar', ax=axes[0], color=scenario_colours[:len(scenario_names)])
     axes[0].set_xlabel('District')
     axes[0].set_ylabel('Deaths per 1,000')
     axes[0].legend().set_visible(False)
     axes[0].tick_params(axis='x', rotation=45)
     axes[0].grid(False)
 
-    # Panel B: DALYs by district for each scenario
-    df_dalys_by_district_all_scenarios.plot(kind='bar', ax=axes[1], color=scenario_colours[:len(scenario_names)])
+    # Panel B: Total DALYs for each scenario
+    df_dalys_by_district_all_scenarios.mean(axis = 0).plot(kind='bar', ax=axes[1], color=scenario_colours[:len(scenario_names)])
     axes[1].set_xlabel('District')
     axes[1].set_ylabel('DALYs per 1,000')
     axes[1].legend(title='Scenario', bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -225,7 +225,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].grid(False)
 
     fig.tight_layout()
-    fig.savefig(output_folder / "deaths_and_dalys_by_district_all_scenarios.png", dpi=300, bbox_inches='tight')
+    fig.savefig(output_folder / "deaths_and_dalys_total_all_scenarios.png", dpi=300, bbox_inches='tight')
     plt.close(fig)
 
     # Additional plot: Stacked bar chart showing district contribution to total for each scenario
@@ -241,12 +241,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Panel B: Stacked DALYs by scenario
     df_dalys_by_district_all_scenarios.T.plot(kind='bar', stacked=True, ax=axes[1])
     axes[1].set_xlabel('Scenario')
-    axes[1].set_ylabel('DALYs per 1000 population')
+    axes[1].set_ylabel('DALYs per 1,000')
     axes[1].legend(title='District', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
     axes[1].tick_params(axis='x', rotation=45)
 
     fig.tight_layout()
-    fig.savefig(output_folder / "stacked_deaths_and_dalys_by_scenario.png", dpi=300, bbox_inches='tight')
+    fig.savefig(output_folder / "stacked_deaths_and_dalys_by_district_scenario.png", dpi=300, bbox_inches='tight')
     plt.close(fig)
 
     ## Now do mapping (using the first scenario's data for mapping)
