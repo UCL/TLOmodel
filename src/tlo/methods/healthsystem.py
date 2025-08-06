@@ -3000,6 +3000,39 @@ class HealthSystemSummaryCounter:
             self._never_ran_appts[appt_type] += number
             self._never_ran_appts_by_level[level][appt_type] += number
 
+
+    def record_weather_cancelled_hsi_event(self,
+                                   treatment_id: str,
+                                   hsi_event_name: str,
+                                   appt_footprint: Counter,
+                                   level: str
+                                   ) -> None:
+        """Add information about a weather-cancelled `HSI_Event` to the running summaries."""
+
+        # Count the treatment_id:
+        self._weather_cancelled_treatment_ids[treatment_id] += 1
+
+        # Count each type of appointment:
+        for appt_type, number in appt_footprint:
+            self._weather_cancelled_appts[appt_type] += number
+            self._weather_cancelled_appts_by_level[level][appt_type] += number
+
+    def record_weather_delayed_hsi_event(self,
+                                   treatment_id: str,
+                                   hsi_event_name: str,
+                                   appt_footprint: Counter,
+                                   level: str
+                                   ) -> None:
+        """Add information about a weather-delayed `HSI_Event` to the running summaries."""
+
+        # Count the treatment_id:
+        self._weather_delayed_treatment_ids[treatment_id] += 1
+
+        # Count each type of appointment:
+        for appt_type, number in appt_footprint:
+            self._weather_delayed_appts[appt_type] += number
+            self._weather_delayed_appts_by_level[level][appt_type] += number
+
     def record_hs_status(
         self,
         fraction_time_used_across_all_facilities: float,
@@ -3047,6 +3080,28 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._never_ran_treatment_ids,
                 "Number_By_Appt_Type_Code": self._never_ran_appts,
                 "Number_By_Appt_Type_Code_And_Level": self._never_ran_appts_by_level,
+            },
+        )
+
+        # Log summary of HSI_Events that were climate disrupted
+        logger_summary.info(
+            key="Weather_cancelled_HSI_Event",
+            description="Counts of the HSI_Events that were cancelled due to weather in this calendar year by TREATMENT_ID, "
+                        "and the respective 'Appt_Type's that were cancelled in this calendar year.",
+            data={
+                "TREATMENT_ID": self._weather_cancelled_treatment_ids,
+                "Number_By_Appt_Type_Code": self._weather_cancelled_appts,
+                "Number_By_Appt_Type_Code_And_Level": self._weather_cancelled_appts_by_level,
+            },
+        )
+        logger_summary.info(
+            key="Weather_delayed_HSI_Event",
+            description="Counts of the HSI_Events that were delayed due to weather in this calendar year by TREATMENT_ID, "
+                        "and the respective 'Appt_Type's that were delayed in this calendar year.",
+            data={
+                "TREATMENT_ID": self._weather_delayed_treatment_ids,
+                "Number_By_Appt_Type_Code": self._weather_delayed_appts,
+                "Number_By_Appt_Type_Code_And_Level": self._weather_delayed_appts_by_level,
             },
         )
 
