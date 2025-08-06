@@ -22,7 +22,6 @@ tlo batch-download calibration_script-2022-04-12T190518Z
 if running locally need to parse each folder
 tlo parse-log /Users/tmangal/PycharmProjects/TLOmodel/outputs/hiv_program_simplification-2025-07-24T160218Z/0/0
 
-
 """
 
 from pathlib import Path
@@ -39,7 +38,7 @@ class HIV_Progam_Elements(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2046, 1, 1)
+        self.end_date = Date(2051, 1, 1)
         self.pop_size = 120_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
