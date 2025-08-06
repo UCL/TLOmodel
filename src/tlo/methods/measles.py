@@ -426,7 +426,7 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
-        p = self.sim.parameters
+        p = self.module.parameters
 
         if not df.at[person_id, "is_alive"]:
             return
