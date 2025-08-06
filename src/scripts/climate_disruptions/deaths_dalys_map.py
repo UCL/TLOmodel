@@ -79,9 +79,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             print(target_year)
             TARGET_PERIOD = (
                 Date(target_year, 1, 1), Date(target_year, 12, 31))  # Corrected the year range to cover 5 years.
-
-            # %% Quantify the health gains associated with all interventions combined.
-
             # Absolute Number of Deaths and DALYs
 
             result_data_deaths = summarize(extract_results(
