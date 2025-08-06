@@ -78,7 +78,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         for target_year in target_year_sequence:
             print(target_year)
             TARGET_PERIOD = (
-                Date(target_year, 1, 1), Date(target_year, 12, 31))  # Corrected the year range to cover 5 years.
+                Date(target_year, 1, 1), Date(target_year, 12, 31))  
             # Absolute Number of Deaths and DALYs
 
             result_data_deaths = summarize(extract_results(
