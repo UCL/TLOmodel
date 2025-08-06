@@ -4,6 +4,7 @@ from pathlib import Path
 import datetime
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
+from matplotlib.patches import Patch
 
 import pandas as pd
 # import lacroix
@@ -60,11 +61,14 @@ def make_graph_file_name(name):
 
 # prevalence in 2040 of each species by strategy
 prev_haem_national_plot = pd.read_excel(results_folder / ('prev_haem_national_summary 2024-2040.xlsx'))
-
 prev_mansoni_national_plot = pd.read_excel(results_folder / ('prev_mansoni_national_summary 2024-2040.xlsx'))
 
+# get heavy intensity infections also
+prev_haem_national_heavy = pd.read_excel(results_folder / ('prev_haem_national_heavy_summary 2024-2040.xlsx'))
+prev_mansoni_national_heavy = pd.read_excel(results_folder / ('prev_mansoni_national_heavy_summary 2024-2040.xlsx'))
 
 
+# for the ranges plotted as error bars
 prev_haem_HML_All_district_summary = pd.read_excel(results_folder / 'prev_haem_HML_All_district_summary 2024-2040.xlsx')
 prev_mansoni_HML_All_district_summary = pd.read_excel(results_folder / 'prev_mansoni_HML_All_district_summary 2024-2040.xlsx')
 
@@ -78,23 +82,32 @@ mansoni_extrema_by_draw = df_2040.groupby('draw')['mean'].agg(['min', 'max']).re
 mansoni_extrema_by_draw.columns = ['draw', 'min_mean', 'max_mean']
 
 
-def plot_species_prevalence(df, extrema_df, species_name, ax, year=2040, show_legend=False, show_ylabel=False):
+
+
+
+def plot_species_prevalence_with_heavy(
+    df: pd.DataFrame,
+    extrema_df: pd.DataFrame,
+    heavy_df: pd.DataFrame,
+    species_name: str,
+    ax,
+    year: int = 2040,
+    show_legend: bool = False,
+    show_ylabel: bool = False
+):
     """
-    Plot barplot with min/max district-level error bars for a given species,
-    and add a horizontal line showing 2024 national mean prevalence.
+    Plot prevalence bars with hatched overlay for heavy intensity prevalence.
 
     Parameters:
     - df: national prevalence summary with ['date', 'draw', 'mean']
     - extrema_df: min/max district-level summary with ['draw', 'min_mean', 'max_mean']
+    - heavy_df: same structure as df but for heavy intensity infections
     - species_name: str for title
     - ax: matplotlib axis
-    - year: year for bar heights
+    - year: target year for bar heights
     - show_legend: whether to include legends
+    - show_ylabel: whether to include y-axis label
     """
-    import numpy as np
-    import matplotlib.lines as mlines
-
-    # Define label and colour map
     label_map = {
         'no MDA': 'no MDA',
         'MDA SAC': 'MDA SAC',
@@ -111,77 +124,111 @@ def plot_species_prevalence(df, extrema_df, species_name, ax, year=2040, show_le
     }
     order = ['no MDA', 'MDA SAC', 'MDA PSAC', 'MDA All', 'WASH only']
 
-    # Filter relevant bars
+    # Filter main data
     df_filtered = df[(df['date'] == year) & (df['draw'].str.contains('Continue WASH'))].copy()
     df_filtered['label'] = df_filtered['draw'].apply(
         lambda x: next((k for k in label_map if k in x), None)
     )
     df_filtered = df_filtered.dropna(subset=['label'])
 
-    # Add "Scale-up WASH, no MDA"
+    # Add WASH only
     df_extra = df[(df['date'] == year) & (df['draw'] == 'Scale-up WASH, no MDA')].copy()
     if not df_extra.empty:
         df_extra['label'] = 'WASH only'
         df_filtered = pd.concat([df_filtered, df_extra], ignore_index=True)
 
-    # Order bars
+    # Order
     df_filtered['label'] = pd.Categorical(df_filtered['label'], categories=order, ordered=True)
     df_filtered = df_filtered.sort_values('label')
 
-    # Get draw-to-label and lookup extrema
+    # Draw lookup
     category_to_draw = df_filtered.set_index('label')['draw'].to_dict()
     draw_extrema = extrema_df.set_index('draw').to_dict(orient='index')
 
-    # Bar heights and error bars
+    # Bar heights and positions
     means = df_filtered['mean'].values
     labels = df_filtered['label'].values
     x = np.arange(len(labels))
 
+    # Error bars
     error = np.array([
         [means[i] - draw_extrema[category_to_draw[l]]['min_mean'],
          draw_extrema[category_to_draw[l]]['max_mean'] - means[i]]
         for i, l in enumerate(labels)
     ]).T
 
+    # Main bars
     bar_colors = [colour_map[l] for l in labels]
     ax.bar(x, means, yerr=error, capsize=5, color=bar_colors, edgecolor='black')
 
-    # Add horizontal line for 2024 national prevalence of 'Continue WASH, no MDA'
-    baseline_2024 = df[
-        (df['date'] == 2024) & (df['draw'] == 'Continue WASH, no MDA')
-    ]
-    if not baseline_2024.empty:
-        yval = baseline_2024['mean'].values[0]
-        ax.axhline(yval, linestyle='--', color='grey', linewidth=1.5,
-                   label='2024 national prevalence' if show_legend else None)
+    # Overlay hatched bars for heavy prevalence
+    for i, label in enumerate(labels):
+        draw = category_to_draw[label]
+        match = heavy_df[(heavy_df['date'] == year) & (heavy_df['draw'] == draw)]
+        if not match.empty:
+            heavy_val = match['mean'].values[0]
+            ax.bar(
+                x[i],
+                heavy_val,
+                width=0.8,
+                color=bar_colors[i],
+                edgecolor='black',
+                hatch='///',
+                linewidth=0.5
+            )
 
+    # Axis formatting
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=45, ha='right')
-    ax.set_title(f'{species_name} Prevalence in 2040')
+    ax.set_title(f'{species_name}')
+    ax.set_ylim(0, 0.9)
     if show_ylabel:
         ax.set_ylabel('Mean Prevalence')
     else:
         ax.set_ylabel('')
-    ax.set_ylim(0, 0.3)
     ax.grid(axis='y', linestyle='--', alpha=0.5)
 
-    # Dummy error bar for legend
+    # Legend
     if show_legend:
         legend_elements = [
-            Line2D([0], [0], linestyle='--', color='grey', label='2024 national prevalence'),
             Line2D([0], [0], color='black', linewidth=1.5, label='min–max',
-                   marker='|', markersize=15, linestyle='None')
+                   marker='|', markersize=15, linestyle='None'),
+            Patch(facecolor='white', edgecolor='black', hatch='///', label='Heavy intensity')
         ]
         ax.legend(handles=legend_elements, loc='upper right', frameon=False)
 
 
+
+
 fig, axes = plt.subplots(1, 2, figsize=(9, 6), sharey=True)
 
-plot_species_prevalence(prev_haem_national_plot, haem_extrema_by_draw, 'Haematobium', axes[0], show_ylabel=True)
-plot_species_prevalence(prev_mansoni_national_plot, mansoni_extrema_by_draw, 'Mansoni', axes[1], show_legend=True)
+plot_species_prevalence_with_heavy(
+    df=prev_haem_national_plot,
+    extrema_df=haem_extrema_by_draw,
+    heavy_df=prev_haem_national_heavy,
+    species_name='Haematobium',
+    ax=axes[0],
+    show_ylabel=True
+)
+
+plot_species_prevalence_with_heavy(
+    df=prev_mansoni_national_plot,
+    extrema_df=mansoni_extrema_by_draw,
+    heavy_df=prev_mansoni_national_heavy,
+    species_name='Mansoni',
+    ax=axes[1],
+    show_legend=True
+)
 
 plt.tight_layout()
 plt.show()
+
+
+
+
+
+
+
 
 
 #################################################################################
@@ -189,8 +236,7 @@ plt.show()
 #################################################################################
 
 
-pc_py_averted = pd.read_excel(results_folder / "person_years_averted_summary_national.xlsx",
-                              sheet_name="Percentage PY averted",
+pc_py_averted = pd.read_excel(results_folder / "pc_py_averted_age_2024-2040.xlsx",
                               index_col=0,
                               header=[0, 1])
 
@@ -209,15 +255,21 @@ def plot_pc_py_averted_ci(df, draw_order, xlabel_labels=None, ylabel=None, ylim=
     - ylim: y-axis limit (optional).
     """
 
-    age_groups = df.index.tolist()
-    palette = sns.color_palette("Set2", len(age_groups))
-    stagger = np.linspace(-0.2, 0.2, len(age_groups))
+    # Define plotting and legend order
+    ordered_age_groups = ['Infants+PSAC', 'SAC', 'Adults']
+    legend_labels = ['PSAC', 'SAC', 'Adults']
+
+    palette = sns.color_palette("Set2", len(ordered_age_groups))
+    stagger = np.linspace(-0.2, 0.2, len(ordered_age_groups))
     x_positions = np.arange(len(draw_order))
 
     fig, ax = plt.subplots(figsize=(1.8 * len(draw_order), 4))
 
     for i, draw in enumerate(draw_order):
-        for j, age_group in enumerate(age_groups):
+        for j, age_group in enumerate(ordered_age_groups):
+            if age_group not in df.index:
+                continue
+
             central = df.loc[age_group, (draw, 'central')]
             lower = df.loc[age_group, (draw, 'lower')]
             upper = df.loc[age_group, (draw, 'upper')]
@@ -232,7 +284,7 @@ def plot_pc_py_averted_ci(df, draw_order, xlabel_labels=None, ylabel=None, ylim=
                 fmt='o',
                 color=palette[j],
                 capsize=5,
-                label=age_group if i == 0 else ""
+                label=legend_labels[j] if i == 0 else ""
             )
 
     # Vertical dashed lines between draws
@@ -249,16 +301,15 @@ def plot_pc_py_averted_ci(df, draw_order, xlabel_labels=None, ylabel=None, ylim=
         ax.set_xticklabels(draw_order, rotation=45, ha='right')
 
     ax.set_xlim(-0.5, len(draw_order) - 0.5)
-    ax.set_ylim(0, ylim if ylim is not None else ax.get_ylim()[1])
+    ax.set_ylim(-2, ylim if ylim is not None else ax.get_ylim()[1])
     ax.set_ylabel(ylabel if ylabel else "% person-years averted")
 
-    handles = [plt.Line2D([0], [0], marker='o', color=palette[i], linestyle='', label=age)
-               for i, age in enumerate(age_groups)]
+    handles = [plt.Line2D([0], [0], marker='o', color=palette[i], linestyle='', label=legend_labels[i])
+               for i in range(len(ordered_age_groups))]
     ax.legend(handles=handles, title='Age Group', loc='upper left')
 
     plt.tight_layout()
     return fig
-
 
 # Usage:
 draw_order = [
@@ -275,7 +326,7 @@ fig = plot_pc_py_averted_ci(
     draw_order=draw_order,
     xlabel_labels=x_labels,
     ylabel='% person-years averted',
-    ylim=40
+    ylim=70
 )
 
 plt.show()
@@ -526,11 +577,11 @@ def plot_prevalence_heatmap(df, year=2040, threshold=1.5, filename=None):
     plt.show()
 
 
-path = Path(results_folder / f'prev_haem_H_year_district 2024-2040')
-prev_haem_H_All_district = pd.read_csv(path, index_col=[0, 1])  # assuming first two columns are index
+path = Path(results_folder / f'prev_haem_H_year_district 2024-2040.xlsx')
+prev_haem_H_All_district = pd.read_excel(path, index_col=[0, 1])  # assuming first two columns are index
 
-path2 = Path(results_folder / f'prev_mansoni_H_year_district 2024-2040')
-prev_mansoni_H_All_district = pd.read_csv(path, index_col=[0, 1])  # assuming first two columns are index
+path2 = Path(results_folder / f'prev_mansoni_H_year_district 2024-2040.xlsx')
+prev_mansoni_H_All_district = pd.read_excel(path, index_col=[0, 1])  # assuming first two columns are index
 
 
 plot_prevalence_heatmap(prev_haem_H_All_district, year=2040, threshold=0.015, filename='prev_haem_H_district2040.png')
@@ -631,19 +682,120 @@ plot_icer_three_panels(icer_district_df, context='Scale-up WASH')
 # %% PLOTS DALYS VS COSTS
 #################################################################################
 
+#
+# def plot_dalys_vs_costs_by_district(
+#     dalys_district_df: pd.DataFrame,
+#     costs_district_df: pd.DataFrame,
+#     wash_strategy: str,
+#     comparison: str,
+#     plot_summary: bool = True,
+#     threshold: float = 500.0
+# ):
+#     """
+#     Plot DALYs averted (x-axis) vs incremental costs (y-axis) by district
+#     for a specified WASH strategy and comparison. Points are coloured by
+#     cost-effectiveness based on a threshold ICER.
+#     """
+#     try:
+#         dalys_sub = dalys_district_df.xs(wash_strategy, axis=1, level='wash_strategy')[comparison]
+#         costs_sub = costs_district_df.xs(wash_strategy, axis=1, level='wash_strategy')[comparison]
+#     except KeyError as e:
+#         raise KeyError(f"Specified key not found in DataFrame columns: {e}")
+#
+#     districts = dalys_sub.index
+#     plt.figure(figsize=(10, 8))
+#
+#     if plot_summary:
+#         mean_dalys = dalys_sub.mean(axis=1)
+#         se_dalys = dalys_sub.std(axis=1, ddof=1) / np.sqrt(dalys_sub.shape[1])
+#         ci_dalys = 1.96 * se_dalys
+#
+#         mean_costs = costs_sub.mean(axis=1)
+#         se_costs = costs_sub.std(axis=1, ddof=1) / np.sqrt(costs_sub.shape[1])
+#         ci_costs = 1.96 * se_costs
+#
+#         icers = mean_costs / mean_dalys
+#         cost_effective = icers < threshold
+#
+#         for district in districts:
+#             colour = 'blue' if cost_effective[district] else 'red'
+#             plt.errorbar(
+#                 mean_dalys[district], mean_costs[district],
+#                 xerr=ci_dalys[district], yerr=ci_costs[district],
+#                 fmt='o', capsize=5, markersize=6,
+#                 ecolor='grey', elinewidth=1.5,
+#                 markerfacecolor=colour, markeredgecolor='black'
+#             )
+#             plt.text(mean_dalys[district], mean_costs[district], district,
+#                      fontsize=9, alpha=0.8, ha='right', va='bottom')
+#
+#         # Axis range padding
+#         x_min, x_max = mean_dalys.min(), mean_dalys.max()
+#         y_min, y_max = mean_costs.min(), mean_costs.max()
+#         x_pad = 0.1 * (x_max - x_min) if x_max > x_min else 1
+#         y_pad = 0.1 * (y_max - y_min) if y_max > y_min else 1
+#         plt.xlim(x_min - x_pad, x_max + x_pad)
+#         plt.ylim(y_min - y_pad, y_max + y_pad)
+#
+#         # ICER threshold line: cost = threshold × DALY
+#         x_line = np.linspace(*plt.xlim(), 100)
+#         y_line = threshold * x_line
+#         plt.plot(x_line, y_line, linestyle='--', color='grey', label=f"ICER = ${threshold:.0f}/DALY")
+#         plt.legend(loc='best')
+#
+#     else:
+#         num_runs = dalys_sub.shape[1]
+#         colours = plt.cm.viridis(np.linspace(0, 1, num_runs))
+#
+#         for run_idx in range(num_runs):
+#             plt.scatter(
+#                 dalys_sub.iloc[:, run_idx],
+#                 costs_sub.iloc[:, run_idx],
+#                 label=f'Run {run_idx + 1}',
+#                 color=colours[run_idx],
+#                 alpha=0.7,
+#                 s=40,
+#                 edgecolors='none'
+#             )
+#
+#         mean_dalys = dalys_sub.mean(axis=1)
+#         mean_costs = costs_sub.mean(axis=1)
+#         for district, x, y in zip(districts, mean_dalys, mean_costs):
+#             plt.text(x, y, district, fontsize=9, alpha=0.8,
+#                      horizontalalignment='right', verticalalignment='bottom')
+#
+#         x_min, x_max = dalys_sub.values.min(), dalys_sub.values.max()
+#         y_min, y_max = costs_sub.values.min(), costs_sub.values.max()
+#         x_pad = 0.1 * (x_max - x_min) if x_max > x_min else 1
+#         y_pad = 0.1 * (y_max - y_min) if y_max > y_min else 1
+#         plt.xlim(x_min - x_pad, x_max + x_pad)
+#         plt.ylim(y_min - y_pad, y_max + y_pad)
+#
+#     plt.xlabel('DALYs Averted')
+#     plt.ylabel('Incremental Costs (USD)')
+#     # plt.title(f'Incremental Costs vs DALYs Averted by District\nStrategy: {wash_strategy} | Comparison: {comparison}')
+#     plt.title(f'{comparison}')
+#     plt.grid(True, linestyle='--', alpha=0.5)
+#
+#     plt.tight_layout()
+#     plt.show()
+#
 
-def plot_dalys_vs_costs_by_district(
+
+def plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df: pd.DataFrame,
     costs_district_df: pd.DataFrame,
     wash_strategy: str,
     comparison: str,
     plot_summary: bool = True,
-    threshold: float = 500.0
+    thresholds: list[float] = [500.0]
 ):
     """
     Plot DALYs averted (x-axis) vs incremental costs (y-axis) by district
     for a specified WASH strategy and comparison. Points are coloured by
-    cost-effectiveness based on a threshold ICER.
+    cost-effectiveness based on the first threshold provided.
+
+    Multiple threshold lines are plotted if specified.
     """
     try:
         dalys_sub = dalys_district_df.xs(wash_strategy, axis=1, level='wash_strategy')[comparison]
@@ -663,33 +815,55 @@ def plot_dalys_vs_costs_by_district(
         se_costs = costs_sub.std(axis=1, ddof=1) / np.sqrt(costs_sub.shape[1])
         ci_costs = 1.96 * se_costs
 
-        icers = mean_costs / mean_dalys
-        cost_effective = icers < threshold
-
+        # Plot district points with error bars
         for district in districts:
-            colour = 'blue' if cost_effective[district] else 'red'
             plt.errorbar(
-                mean_dalys[district], mean_costs[district],
-                xerr=ci_dalys[district], yerr=ci_costs[district],
-                fmt='o', capsize=5, markersize=6,
-                ecolor='grey', elinewidth=1.5,
-                markerfacecolor=colour, markeredgecolor='black'
+                mean_dalys[district],
+                mean_costs[district],
+                xerr=ci_dalys[district],
+                yerr=ci_costs[district],
+                fmt='o',
+                capsize=5,
+                markersize=6,
+                ecolor='#cccccc',  # light grey error bars
+                elinewidth=1.5,
+                markerfacecolor='white',
+                markeredgecolor='black'
             )
-            plt.text(mean_dalys[district], mean_costs[district], district,
-                     fontsize=9, alpha=0.8, ha='right', va='bottom')
+            plt.text(
+                mean_dalys[district],
+                mean_costs[district],
+                district,
+                fontsize=9,
+                color='black',  # ensure label text is black
+                alpha=0.8,
+                ha='right',
+                va='bottom'
+            )
 
-        # Axis range padding
+        # Axis limits
         x_min, x_max = mean_dalys.min(), mean_dalys.max()
         y_min, y_max = mean_costs.min(), mean_costs.max()
-        x_pad = 0.1 * (x_max - x_min) if x_max > x_min else 1
-        y_pad = 0.1 * (y_max - y_min) if y_max > y_min else 1
-        plt.xlim(x_min - x_pad, x_max + x_pad)
-        plt.ylim(y_min - y_pad, y_max + y_pad)
+        x_pad = 0.5 * (x_max - x_min) if x_max > x_min else 1
+        y_pad = 0.5 * (y_max - y_min) if y_max > y_min else 1
+        x_lims = (x_min - x_pad, x_max + x_pad)
+        y_lims = (y_min - y_pad, y_max + y_pad)
 
-        # ICER threshold line: cost = threshold × DALY
-        x_line = np.linspace(*plt.xlim(), 100)
-        y_line = threshold * x_line
-        plt.plot(x_line, y_line, linestyle='--', color='grey', label=f"ICER = ${threshold:.0f}/DALY")
+        plt.xlim(x_lims)
+        plt.ylim(y_lims)
+
+        # Plot ICER threshold lines
+        x_line = np.linspace(*x_lims, 100)
+        for threshold in thresholds:
+            y_line = threshold * x_line
+            plt.plot(
+                x_line,
+                y_line,
+                linestyle='--',
+                linewidth=1.2,
+                label=f"ICER = ${threshold:.0f}/DALY"
+            )
+
         plt.legend(loc='best')
 
     else:
@@ -710,25 +884,46 @@ def plot_dalys_vs_costs_by_district(
         mean_dalys = dalys_sub.mean(axis=1)
         mean_costs = costs_sub.mean(axis=1)
         for district, x, y in zip(districts, mean_dalys, mean_costs):
-            plt.text(x, y, district, fontsize=9, alpha=0.8,
-                     horizontalalignment='right', verticalalignment='bottom')
+            plt.text(
+                x,
+                y,
+                district,
+                fontsize=9,
+                color='black',
+                alpha=0.8,
+                ha='right',
+                va='bottom'
+            )
 
-        x_min, x_max = dalys_sub.values.min(), dalys_sub.values.max()
-        y_min, y_max = costs_sub.values.min(), costs_sub.values.max()
+        # Axis limits
+        x_min, x_max = mean_dalys.min(), mean_dalys.max()
+        y_min, y_max = mean_costs.min(), mean_costs.max()
         x_pad = 0.1 * (x_max - x_min) if x_max > x_min else 1
-        y_pad = 0.1 * (y_max - y_min) if y_max > y_min else 1
-        plt.xlim(x_min - x_pad, x_max + x_pad)
-        plt.ylim(y_min - y_pad, y_max + y_pad)
+        y_pad = 0.5 * (y_max - y_min) if y_max > y_min else 1
+        x_lims = (x_min - x_pad, x_max + x_pad)
+        y_lims = (y_min - y_pad, y_max + y_pad)
+        plt.xlim(x_lims)
+        plt.ylim(y_lims)
+
+        x_line = np.linspace(*x_lims, 100)
+        for threshold in thresholds:
+            y_line = threshold * x_line
+            plt.plot(
+                x_line,
+                y_line,
+                linestyle='--',
+                linewidth=1.2,
+                label=f"ICER = ${threshold:.0f}/DALY"
+            )
+
+        plt.legend(loc='best')
 
     plt.xlabel('DALYs Averted')
     plt.ylabel('Incremental Costs (USD)')
-    # plt.title(f'Incremental Costs vs DALYs Averted by District\nStrategy: {wash_strategy} | Comparison: {comparison}')
     plt.title(f'{comparison}')
     plt.grid(True, linestyle='--', alpha=0.5)
-
     plt.tight_layout()
     plt.show()
-
 
 
 
@@ -743,32 +938,36 @@ file_path = results_folder / f'sum_incremental_cons_costs_incurred_district2024-
 cons_costs_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
 cons_costs_district_df.columns = cons_costs_district_df.columns.droplevel(2)
 
-plot_dalys_vs_costs_by_district(
+plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
     costs_district_df=full_costs_district_df,
     wash_strategy='Continue WASH',
     comparison='MDA SAC vs no MDA',
     plot_summary=True,
-    threshold=120
+    thresholds=[4,5,6,7,8,9,10]
 )
 
-plot_dalys_vs_costs_by_district(
+
+plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
     costs_district_df=full_costs_district_df,
     wash_strategy='Continue WASH',
     comparison='MDA PSAC vs MDA SAC',
     plot_summary=True,
-    threshold=120
+    thresholds=[4,5,6,7,8,9,10]
 )
 
-plot_dalys_vs_costs_by_district(
+plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
     costs_district_df=full_costs_district_df,
     wash_strategy='Continue WASH',
     comparison='MDA All vs MDA PSAC',
     plot_summary=True,
-    threshold=120
+    thresholds=[4,5,6,7,8,9,10]
 )
+
+
+
 
 # cons only
 plot_dalys_vs_costs_by_district(
@@ -808,7 +1007,7 @@ plot_dalys_vs_costs_by_district(
 # for the main plot, Continue only and plot both species together
 def plot_ephp_km_continue(
     df: pd.DataFrame,
-    threshold: float = 0.015,
+    threshold: float = 0.05,
     year_range: tuple = (2024, 2040),
     alpha: float = 1.0,
     figsize: tuple = (10, 6),

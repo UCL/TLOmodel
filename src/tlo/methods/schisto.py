@@ -1064,21 +1064,17 @@ class SchistoSpecies:
             in_the_district = df.index[df['district_of_residence'] == district]
 
             # get reservoir in district
-            reservoir = int(len(in_the_district) * params['mean_worm_burden2010'][district])
-
-            # Determine a 'contact rate' for each person
-            # contact_rates = pd.Series(1, index=in_the_district, dtype=float)
-
-            # multiply by susceptibility (0 or 1)
-            # contact_and_susceptibility = contact_rates * df.loc[in_the_district, prop('susceptibility')]
-            contact_and_susceptibility = df.loc[in_the_district, prop('susceptibility')]
-
-
-            # get reservoir in district
             # for calibration, over-ride the default params to create multiple starting points
 
             # select starting points
             # HAEMATOBIUM CALIBRATION
+            # if global_params['calibration_scenario'] == 0:
+            #     if self.name == 'haematobium':
+            #         params['mean_worm_burden2010'][:] = 1.0
+            #     # set mansoni to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
             # if global_params['calibration_scenario'] == 1:
             #     if self.name == 'haematobium':
             #         params['mean_worm_burden2010'][:] = 2.0
@@ -1110,39 +1106,44 @@ class SchistoSpecies:
             # # MANSONI CALIBRATION
             # if global_params['calibration_scenario'] == 5:
             #     if self.name == 'mansoni':
-            #         params['mean_worm_burden2010'][:] = 2.0
+            #         params['mean_worm_burden2010'][:] = 1.0
             #     # set haematobium to 0
             #     else:
             #         params['mean_worm_burden2010'][:] = 0
             #
             # if global_params['calibration_scenario'] == 6:
             #     if self.name == 'mansoni':
-            #         params['mean_worm_burden2010'][:] = 5.0
+            #         params['mean_worm_burden2010'][:] = 2.0
             #     # set haematobium to 0
             #     else:
             #         params['mean_worm_burden2010'][:] = 0
             #
             # if global_params['calibration_scenario'] == 7:
             #     if self.name == 'mansoni':
-            #         params['mean_worm_burden2010'][:] = 10.0
+            #         params['mean_worm_burden2010'][:] = 5.0
             #     # set haematobium to 0
             #     else:
             #         params['mean_worm_burden2010'][:] = 0
             #
             # if global_params['calibration_scenario'] == 8:
             #     if self.name == 'mansoni':
+            #         params['mean_worm_burden2010'][:] = 10.0
+            #     # set haematobium to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 9:
+            #     if self.name == 'mansoni':
             #         params['mean_worm_burden2010'][:] = 25.0
             #     # set haematobium to 0
             #     else:
             #         params['mean_worm_burden2010'][:] = 0
 
-            reservoir = int(len(in_the_district) * params['mean_worm_burden2010'][district])
+            number_susceptible = len(df.loc[in_the_district].loc[
+                df.loc[in_the_district, prop('susceptibility')] == 1, prop('susceptibility')])
+            reservoir = int(number_susceptible * params['mean_worm_burden2010'][district])
 
             # Determine a 'contact rate' for each person
-            # contact_rates = pd.Series(1, index=in_the_district, dtype=float)
-
-            # multiply by susceptibility (0 or 1)
-            # contact_and_susceptibility = contact_rates * df.loc[in_the_district, prop('susceptibility')]
             contact_and_susceptibility = df.loc[in_the_district, prop('susceptibility')]
 
             for age_group in ['PSAC', 'SAC', 'Adults']:
@@ -1194,19 +1195,19 @@ class SchistoSpecies:
         #  Susceptibility
         # reinstate if wanting to check susceptibility across districts
         # Directly filter and group in one step to avoid intermediate DataFrames
-        # grouped_data = df[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
-        #     total_count='count',
-        #     susceptible_count=lambda x: (x == 1).sum()
-        # )
+        grouped_data = df[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
+            total_count='count',
+            susceptible_count=lambda x: (x == 1).sum()
+        )
 
         # Calculate the proportion of susceptible individuals in each district
-        # susceptibility_proportion = pd.Series(grouped_data['susceptible_count'] / grouped_data['total_count'])
+        susceptibility_proportion = pd.Series(grouped_data['susceptible_count'] / grouped_data['total_count'])
 
-        # logger.info(
-        #     key=f'susceptibility_{self.name}',
-        #     data=flatten_multi_index_series_into_dict_for_logging(susceptibility_proportion),
-        #     description='Proportion of people susceptible to this species in district.'
-        # )
+        logger.info(
+            key=f'susceptibility_{self.name}',
+            data=flatten_multi_index_series_into_dict_for_logging(susceptibility_proportion),
+            description='Proportion of people susceptible to this species in district.'
+        )
 
     def log_mean_worm_burden(self) -> None:
         """Log the mean worm burden across the population for this species, by age-group and district."""
@@ -1236,7 +1237,7 @@ class SchistoSpecies:
         logger.info(
             key=f'mean_worm_burden_by_district_{self.name}',
             data=flatten_multi_index_series_into_dict_for_logging(overall_mean),
-            description='Mean worm burden of this species by age-group and district.'
+            description='Mean worm burden of this species by district.'
         )
 
 

@@ -48,8 +48,8 @@ class TestScenario(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
 
-        self.end_date = Date(2023, 12, 31)
-        self.pop_size = 64_000  # if equal_allocation_by_district, 64,000=2k per district
+        self.end_date = Date(2099, 12, 31)
+        self.pop_size = 50_000  # if equal_allocation_by_district, 64,000=2k per district
         self.runs_per_draw = 3
 
         self.mda_execute = True
