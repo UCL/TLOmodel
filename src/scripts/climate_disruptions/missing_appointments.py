@@ -131,3 +131,46 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(output_folder / "delayed_and_cancelled_HSIs_all_scenarios.png", dpi=300, bbox_inches='tight')
     plt.close(fig)
+
+
+    # Compute absolute difference from baseline (first row)
+    df_cancelled_diff = df_cancelled_all_scenarios.subtract(df_cancelled_all_scenarios.iloc[0])
+    df_delayed_diff = df_delayed_all_scenarios.subtract(df_delayed_all_scenarios.iloc[0])
+
+    # Plot disrupted appointments for each scenario
+    fig, axes = plt.subplots(1, 2, figsize=(20, 10))
+
+    # Panel A: Cancelled appointments (difference from baseline)
+    df_cancelled_diff.plot(kind='bar', ax=axes[0], color=scenario_colours[:len(scenario_names)])
+    axes[0].set_xlabel('Scenario')
+    axes[0].set_ylabel('Cancelled HSIs (difference from baseline)')
+    axes[0].legend().set_visible(False)
+    axes[0].tick_params(axis='x', rotation=45)
+    axes[0].axhline(0, color='black', linewidth=1)
+    axes[0].grid(True, alpha=0.3)
+
+    # Panel B: Delayed appointments (difference from baseline)
+    df_delayed_diff.plot(kind='bar', ax=axes[1], color=scenario_colours[:len(scenario_names)])
+    axes[1].set_xlabel('Scenario')
+    axes[1].set_ylabel('Delayed HSIs (difference from baseline)')
+    axes[1].legend(title='Scenario', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[1].tick_params(axis='x', rotation=45)
+    axes[1].axhline(0, color='black', linewidth=1)
+    axes[1].grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    fig.savefig(output_folder / "delayed_and_cancelled_HSIs_all_scenarios_relative_to_baseline.png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("results_folder", type=Path)
+    args = parser.parse_args()
+
+
+    apply(
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
+        resourcefilepath=Path('./resources')
+    )
