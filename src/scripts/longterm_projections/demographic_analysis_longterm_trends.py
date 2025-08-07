@@ -61,6 +61,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # from tlo.analysis.utils import get_scenario_info
         # info = get_scenario_info(results_folder)
 
+
         # 1) Extract the parameters that have varied over the set of simulations (will report that no parameters changed)
         # from tlo.analysis.utils import extract_params
         # params = extract_params(results_folder)
@@ -111,7 +112,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_title("Population Size 2010-2060")
         ax.set_xlabel("Year")
         ax.set_ylabel("Population Size (millions)")
-        ax.set_xlim(2010, int(max_year))
+        ax.set_xlim(2020, int(max_year))
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
         ax.set_ylim(0, 40)
         ax.legend()
@@ -306,6 +307,41 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 )
                 return num_by_age[draw]
 
+            def get_median_age_for_sex_and_year(sex, year, draw):
+                if sex == 'F':
+                    key = "age_range_f"
+                else:
+                    key = "age_range_m"
+
+                num_by_age = summarize(
+                    extract_results(results_folder,
+                                    module="tlo.methods.demography",
+                                    key=key,
+                                    custom_generate_series=(
+                                        lambda df_: df_.loc[pd.to_datetime(df_.date).dt.year == year].drop(
+                                            columns=['date']
+                                        ).melt(
+                                            var_name='age_grp'
+                                        ).set_index('age_grp')['value']
+                                    ),
+                                    do_scaling=True
+                                    ),
+                    collapse_columns=True,
+                    only_mean=True
+                )
+                ages = []
+                for age_grp, pop in num_by_age[draw]['mean'].items():
+                    if '-' in str(age_grp):
+                        start_age, end_age = map(int, str(age_grp).split('-'))
+                        midpoint_age = (start_age + end_age) / 2
+                    else:
+                        # Handle cases like '80+' or single age values
+                        midpoint_age = int(str(age_grp).replace('+', ''))
+
+                    ages.extend([midpoint_age] * int(pop))
+
+                return np.median(ages)
+
             for year in range(int(min_year), int(max_year),1):
                 if year in pop_model.index:
                     # Get WPP data:
@@ -315,6 +351,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     for sex in ['M', 'F']:
                         # Import model results and scale:
                         model = get_mean_pop_by_age_for_sex_and_year(sex, year, draw)
+                        median_age = get_median_age_for_sex_and_year(sex, year, draw)
+                        print(median_age)
                         # Make into dataframes for plotting:
                         pops[sex] = {
                             'Model': model,
@@ -1084,6 +1122,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         fig, ax = plt.subplots(1, 2, figsize=(14, 6))
 
+
+        ax[0].text(-0.1, 1.05, '(A)', transform=ax[0].transAxes,
+                   fontsize=14, va='top', ha='right')
+
+        ax[1].text(-0.1, 1.05, '(B)', transform=ax[1].transAxes,
+                   fontsize=14,  va='top', ha='right')
         # --- Panel A: Population size over time (as before)
         ax[0].plot(wpp_ann_total.index, wpp_ann_total / 1e6, label='WPP', color=colors['WPP'])
         ax[0].plot(2018.5, cens_2018.sum() / 1e6, marker='o', markersize=10, linestyle='none',
@@ -1103,8 +1147,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         ax[0].set_xlabel("Year")
         ax[0].set_ylabel("Population Size (millions)")
-        ax[0].set_xlim(2010, int(max_year))
-        ax[0].axvline(x=2020, color='black', linestyle='--', linewidth=1)
+        ax[0].set_xlim(2020, int(max_year))
         ax[0].xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
         ax[0].set_ylim(0, 60)
         ax[0].legend()
@@ -1172,14 +1215,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     alpha=0.1
                 )
 
-        ax[1].axvline(x=2020, color='black', linestyle='--', linewidth=1)
         ax[1].legend(loc='lower right')
         ax[1].set_xlabel('Year')
         ax[1].set_ylabel('Life Expectancy (Years)')
         ax[1].set_ylim(50, 80)
-        ax[1].set_xlim(2010, 2070)
-
-# Save figure
+        ax[1].set_xlim(2020, 2070)
         ax[1].set_ylabel('Life Expectancy (Years)')
         fig.tight_layout()
         plt.savefig(make_graph_file_name("Pop_size_Life_expectancy_over_years_baseline"))

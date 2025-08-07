@@ -142,7 +142,16 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         df_all_years_ordered = df_normalized.loc[new_order]
         df_all_years_ordered = df_all_years_ordered.drop(index = "Schisto*")
         fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+        axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                   fontsize=14, va='top', ha='right')
 
+        axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                   fontsize=14,  va='top', ha='right')
+        axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                   fontsize=14, va='top', ha='right')
+
+        axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                   fontsize=14,  va='top', ha='right')
         # Panel A: Raw counts = stacked
         treatments = list(df_all_years_ordered.index)
 
@@ -409,7 +418,11 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         # Plotting
 
         fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+        axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                   fontsize=14, va='top', ha='right')
 
+        axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                   fontsize=14,  va='top', ha='right')
         df_all_years_cadre.T.plot.bar(stacked=True, ax=axes[0])
 
         axes[0].set_xlabel('Year', fontsize=12)
@@ -487,7 +500,11 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         plt.show()
     # Plotting - treatments
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+    axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                 fontsize=14, va='top', ha='right')
 
+    axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                 fontsize=14, va='top', ha='right')
     all_draws_treatment_per_1000 = all_draws_treatment.div(all_draws_population.loc['total'], axis=1) * 1000
 
     treatments = list(all_draws_treatment_per_1000.index)
@@ -553,7 +570,11 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
     ## cadre
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+    axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                 fontsize=14, va='top', ha='right')
 
+    axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                 fontsize=14, va='top', ha='right')
     all_draws_cadre_per_1000 = all_draws_cadre.div(all_draws_population.loc['total'], axis=1) * 1000
 
     all_draws_cadre_per_1000.T.plot.bar(stacked=True, ax=axes[0], legend=False)
@@ -785,6 +806,11 @@ def table2_description_of_coarse_hsi_events(
 
         # Panel A: Raw counts (bar plot)
         fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+        axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                   fontsize=14, va='top', ha='right')
+
+        axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                   fontsize=14,  va='top', ha='right')
         df_top_events.T.plot.bar(stacked=True, ax=axes[0])
         axes[0].set_xlabel("Year", fontsize=12)
         axes[0].set_ylabel("Number of Appointments per 1000", fontsize=12)

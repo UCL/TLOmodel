@@ -283,7 +283,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
+        axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                   fontsize=14, va='top', ha='right')
 
+        axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                   fontsize=14,  va='top', ha='right')
         # Panel A: Deaths
         for i, condition in enumerate(df_all_years_deaths_mean.index):
             axes[0].plot(df_all_years_deaths_mean.columns, df_all_years_deaths_mean.loc[condition], marker='o',
@@ -310,7 +314,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # NORMALIZED DEATHS AND DALYS - TO 2020
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
+        axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                   fontsize=14, va='top', ha='right')
 
+        axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                   fontsize=14,  va='top', ha='right')
         df_death_normalized_mean = df_all_years_deaths_mean.div(df_all_years_deaths_mean.iloc[:, 0], axis=0)
         df_DALY_normalized_mean = df_all_years_DALYS_mean.div(df_all_years_DALYS_mean.iloc[:, 0], axis=0)
 
@@ -345,7 +353,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
         # BARPLOT STACKED DEATHS AND DALYS OVER TIME
-        fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
+        fig, axes = plt.subplots(1, 2, figsize=(25, 10))
+        axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                   fontsize=14, va='top', ha='right')
+
+        axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                   fontsize=14,  va='top', ha='right')
         df_all_years_deaths_mean.T.plot.bar(stacked=True, ax=axes[1],
                                        color=[get_color_cause_of_death_or_daly_label(_label) for _label in
                                               df_all_years_deaths_mean.index])
@@ -378,7 +391,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Stacked area graph for DALYS and Deaths
         fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+        axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                   fontsize=14, va='top', ha='right')
 
+        axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                   fontsize=14,  va='top', ha='right')
         # Panel A: Deaths (Stacked area plot)
         years_deaths = df_all_years_deaths_mean.columns
         conditions_deaths = df_all_years_deaths_mean.index
@@ -412,7 +429,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         ## BARPLOTS STACKED PER 1000
         fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+        axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                   fontsize=14, va='top', ha='right')
 
+        axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                   fontsize=14,  va='top', ha='right')
         df_daly_per_1000_mean = df_all_years_DALYS_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
         # Panel A: Deaths (Stacked bar plot)
         causes = list(df_daly_per_1000_mean.index)
@@ -484,7 +505,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         ## BARPLOTS STACKED PER 1000
         fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+        axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                   fontsize=14, va='top', ha='right')
 
+        axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                   fontsize=14,  va='top', ha='right')
         df_death_per_1000_mean = df_all_years_deaths_mean.div(df_all_years_data_population_mean.iloc[0, 0],
                                                               axis=0) * 1000
         df_daly_per_1000_mean = df_all_years_DALYS_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
@@ -606,6 +631,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         dalys_totals_upper - dalys_totals_mean
     ])
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+    axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                 fontsize=14, va='top', ha='right')
+
+    axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                 fontsize=14, va='top', ha='right')
     # Panel A: Total Deaths
     axes[0].bar(deaths_totals_mean.index, deaths_totals_mean.values, color=scenario_colours, yerr = deaths_totals_err, capsize=20)
     axes[0].set_title('Total Deaths (2020-2070)')
@@ -628,7 +658,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     ## Per 1000 in 2020 and 2070
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+    axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                 fontsize=14, va='top', ha='right')
 
+    axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                 fontsize=14, va='top', ha='right')
     # # Prep Deaths Data (transpose so scenarios are rows, causes are columns, then select 2020 and 2070 columns)
     # deaths_plot_data = df_deaths_all_draws_mean_1000.loc[:, ['First','Last']].T
     # deaths_plot_data.index = ['2020', '2070']
@@ -658,7 +692,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plt.close(fig)
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+    axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                 fontsize=14, va='top', ha='right')
 
+    axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                 fontsize=14, va='top', ha='right')
     df_dalys_all_draws_mean_1000.drop(df_dalys_all_draws_mean_1000.columns[-1], axis=1, inplace=True)
     # Panel A: DALYs per 1,000 in 2070
     df_dalys_all_draws_mean_1000.T.plot.bar(
@@ -719,6 +757,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         f'dalys_by_cause_and_total_dalys_all_cause_all_draws_relative_2070_2020'))
     plt.close(fig)
     fig, axes = plt.subplots(1, 2, figsize=(18, 8))
+    axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                 fontsize=14, va='top', ha='right')
+
+    axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                 fontsize=14, va='top', ha='right')
     causes = list(df_daly_per_1000_mean.index)
     group_1 = ["AIDS", "TB (non-AIDS)", "Malaria"]
     group_2 = [cause for cause in causes if "Cancer" in cause]
@@ -821,7 +864,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Plot: Stacked bar chart of percentage DALYs for selected causes
     fig, ax = plt.subplots(figsize=(12, 8))
+    axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                 fontsize=14, va='top', ha='right')
 
+    axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                 fontsize=14, va='top', ha='right')
     df_selected_causes_pct.T.plot.bar(stacked=True,
                                       ax=ax,
                                       color=[get_color_cause_of_death_or_daly_label(cause) for cause in
@@ -842,6 +889,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ## Female vs Male deaths in 2070
 
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+    axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+                 fontsize=14, va='top', ha='right')
+
+    axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+                 fontsize=14, va='top', ha='right')
     df_deaths_all_draws_mean_1000_male.drop(df_deaths_all_draws_mean_1000_male.columns[-1], axis=1, inplace=True)
     # Panel A: Males
     df_deaths_all_draws_mean_1000_male.T.plot.bar(stacked=True, ax=axes[0],
