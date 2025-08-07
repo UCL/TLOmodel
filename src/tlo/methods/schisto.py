@@ -1169,6 +1169,7 @@ class SchistoSpecies:
         by age-group, infection level and district."""
 
         df = self.schisto_module.sim.population.props
+        prop = self.prefix_species_property
 
         # Directly filter and map values in one go without creating intermediate DataFrames
         age_grp = df.loc[df.is_alive, 'age_years'].map(self.schisto_module.age_group_mapper)
@@ -1195,19 +1196,19 @@ class SchistoSpecies:
         #  Susceptibility
         # reinstate if wanting to check susceptibility across districts
         # Directly filter and group in one step to avoid intermediate DataFrames
-        grouped_data = df[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
-            total_count='count',
-            susceptible_count=lambda x: (x == 1).sum()
-        )
-
-        # Calculate the proportion of susceptible individuals in each district
-        susceptibility_proportion = pd.Series(grouped_data['susceptible_count'] / grouped_data['total_count'])
-
-        logger.info(
-            key=f'susceptibility_{self.name}',
-            data=flatten_multi_index_series_into_dict_for_logging(susceptibility_proportion),
-            description='Proportion of people susceptible to this species in district.'
-        )
+        # grouped_data = df[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
+        #     total_count='count',
+        #     susceptible_count=lambda x: (x == 1).sum()
+        # )
+        #
+        # # Calculate the proportion of susceptible individuals in each district
+        # susceptibility_proportion = pd.Series(grouped_data['susceptible_count'] / grouped_data['total_count'])
+        #
+        # logger.info(
+        #     key=f'susceptibility_{self.name}',
+        #     data=flatten_multi_index_series_into_dict_for_logging(susceptibility_proportion),
+        #     description='Proportion of people susceptible to this species in district.'
+        # )
 
     def log_mean_worm_burden(self) -> None:
         """Log the mean worm burden across the population for this species, by age-group and district."""
