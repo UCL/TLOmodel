@@ -221,6 +221,8 @@ plot_species_prevalence_with_heavy(
 )
 
 plt.tight_layout()
+plt.savefig(results_folder / "prevalence_heavy_infection.png", dpi=300)
+
 plt.show()
 
 
@@ -328,7 +330,7 @@ fig = plot_pc_py_averted_ci(
     ylabel='% person-years averted',
     ylim=70
 )
-
+fig.savefig(results_folder / "pc_py_averted.png", dpi=300)
 plt.show()
 
 
@@ -451,6 +453,7 @@ def plot_dalys_averted_bar(summary_df):
 
 
 fig = plot_dalys_averted_bar(dalys_summary)
+plt.savefig(results_folder / f"dalys_averted.png", dpi=300)
 plt.show()
 
 
@@ -572,7 +575,7 @@ def plot_prevalence_heatmap(df, year=2040, threshold=1.5, filename=None):
             transform=ax.get_xaxis_transform()  # x: data, y: axis fraction
         )
     plt.subplots_adjust(bottom=0.2, top=0.9)  # more bottom space for two level labels
-    plt.savefig(make_graph_file_name(filename))
+    plt.savefig(results_folder / filename, dpi=300)
 
     plt.show()
 
@@ -666,6 +669,7 @@ def plot_icer_three_panels(df, context="Continue_WASH"):
         ax.set_ylabel('ICER')
 
     plt.tight_layout()
+    plt.savefig(results_folder / f"ICERs_{context}.png", dpi=300)
     plt.show()
 
 
@@ -923,6 +927,7 @@ def plot_dalys_vs_costs_by_district_with_thresholds(
     plt.title(f'{comparison}')
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
+    plt.savefig(results_folder / f"cost_v_dalys_{wash_strategy}_{comparison}.png", dpi=300)
     plt.show()
 
 
@@ -1062,7 +1067,7 @@ def plot_ephp_km_continue(
     ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
     ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
     ephp_counts.to_excel(
-        results_folder / f'ephp_counts{species}.xlsx')
+        results_folder / f'ephp_counts{species}_continue.xlsx')
 
     # Draws to plot
     draw_labels = {
@@ -1111,6 +1116,8 @@ def plot_ephp_km_continue(
     plt.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
     plt.legend(title="Strategy", loc="upper left", fontsize="small")
     plt.tight_layout()
+    plt.savefig(results_folder / f"ephp_km_plot_{species}_continue.png", dpi=300)
+
     plt.show()
 
 
@@ -1225,6 +1232,7 @@ def plot_ephp_km_pause(
     plt.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
     plt.legend(title="Strategy", loc="upper left", fontsize="small")
     plt.tight_layout()
+    plt.savefig(results_folder / f"ephp_km_plot_{species}_pause.png", dpi=300)
     plt.show()
 
 
@@ -1238,7 +1246,8 @@ def plot_ephp_km_scaleup(
     threshold: float = 0.015,
     year_range: tuple = (2024, 2040),
     alpha: float = 1.0,
-    figsize: tuple = (10, 6)
+    figsize: tuple = (10, 6),
+        species=None
 ):
     """
     Plot Kaplan-Meier style curves in a single panel showing the proportion of districts
@@ -1288,6 +1297,8 @@ def plot_ephp_km_scaleup(
     )
     ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
     ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
+    ephp_counts.to_excel(
+        results_folder / f'ephp_counts{species}_scaleup.xlsx')
 
     # Draws to plot
     draw_labels = {
@@ -1335,6 +1346,7 @@ def plot_ephp_km_scaleup(
     plt.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
     plt.legend(title="Strategy", loc="upper left", fontsize="small")
     plt.tight_layout()
+    plt.savefig(results_folder / f"ephp_km_plot_{species}_scaleup.png", dpi=300)
     plt.show()
 
 
