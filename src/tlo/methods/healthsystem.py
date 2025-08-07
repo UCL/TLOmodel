@@ -364,6 +364,7 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
+        facility_ownership_cham: bool = False,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -495,6 +496,8 @@ class HealthSystem(Module):
         # Create the pointer that will be to the instance of Consumables used to determine availability of consumables.
         self.consumables = None
 
+        self.facility_ownership_cham = facility_ownership_cham
+
         # Create pointer for the HealthSystemScheduler event
         self.healthsystemscheduler = None
 
@@ -534,7 +537,10 @@ class HealthSystem(Module):
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
-        path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
+        if self.facility_ownership_cham:
+            path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem' / 'cham'
+        else:
+            path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
 
         # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
