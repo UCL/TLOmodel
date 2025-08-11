@@ -1,31 +1,26 @@
+# === Standard Library ===
+import os
+import datetime
 from pathlib import Path
-
 from collections import Counter, defaultdict
 
-import os
+# === Third-Party Packages ===
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 import scipy.stats as st
 
-import pandas as pd
-
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from matplotlib.colors import TwoSlopeNorm
-import matplotlib.ticker as mticker
-
-import numpy as np
-import ast  # for safely parsing strings
-
-import seaborn as sns
-
+# === Local / Project-Specific Imports ===
 from tlo import Date
-from tlo.analysis.utils import (bin_hsi_event_details, extract_results, extract_params,
-                                get_scenario_outputs, compute_summary_statistics,
-                                make_age_grp_types)
-
-from src.scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
-                                                 do_stacked_bar_plot_of_cost_by_category,
-                                                 summarize_cost_data)
-
+from tlo.analysis.utils import (
+    bin_hsi_event_details, extract_results, extract_params,
+    get_scenario_outputs, compute_summary_statistics, make_age_grp_types
+)
+from tlo.analysis.life_expectancy import get_life_expectancy_estimates
+from src.scripts.costing.cost_estimation import (
+    estimate_input_cost_of_scenarios, summarize_cost_data
+)
 
 plt.style.use('seaborn-v0_8')
 
@@ -55,34 +50,33 @@ for scenario in scen_draws:
 
 # create a dict with proper labels for each scenario
 full_lab = {'htn':'Hypertension screening',
-            'htn_max': 'Hypertension screening (max.)',
+            'htn_max': 'Hypertension screening (max. cons)',
             'dm': 'Diabetes screening',
-            'dm_max': 'Diabetes screening (max.)',
+            'dm_max': 'Diabetes screening (max. cons)',
             'hiv': 'HIV screening',
-            'hiv_max': 'HIV screening (max.)',
+            'hiv_max': 'HIV screening (max. cons)',
             'tb': 'Tb screening',
-            'tb_max':'Tb screening (max.)',
+            'tb_max':'Tb screening (max. cons)',
             'mal':'Malnutrition screening',
-            'mal_max':'Malnutrition screening (max.)',
+            'mal_max':'Malnutrition screening (max. cons)',
             'fp_scr':'Family planning (WRA)',
-            'fp_scr_max':'Family planning (WRA) (max.)',
+            'fp_scr_max':'Family planning (WRA) (max. cons)',
             'anc': 'Antenatal care',
-            'anc_max': 'Antenatal care (max.)',
+            'anc_max': 'Antenatal care (max.cons)',
             'pnc':'Postnatal care',
-            'pnc_max':'Postnatal care (max.)',
+            'pnc_max':'Postnatal care (max. cons)',
             'fp_pn': 'Family planning (postnatal)',
-            'fp_pn_max':'Family planning (postnatal) (max.)',
+            'fp_pn_max':'Family planning (postnatal) (max. cons)',
             'epi': 'EPI',
-            'chronic_care': 'Chronic care clinic',
-            'chronic_care_max': 'Chronic care clinic (max.)',
-            'all_screening': 'Integrated screening',
-            'all_screening_max':'Integrated screening (max.)',
-            'all_mch': 'Maternal and child health clinic',
-            'all_mch_max': 'Maternal and child health clinic (max.)',
-            'all_int': 'All pathways',
-            'all_int_max': 'All pathways (max.)'}
+            'chronic_care': 'Chronic care services',
+            'chronic_care_max': 'Chronic care services (max.)',
+            'all_screening': 'All screening',
+            'all_screening_max':'All screening (max. cons)',
+            'all_mch': 'MCH services',
+            'all_mch_max': 'MCH services (max. cons)',
+            'all_int': 'All services',
+            'all_int_max': 'All services (max. cons)'}
 
-# define functions to be used throughout
 # -------------------------------------- HELPER FUNCTIONS ------------------------------------------------------------
 def get_dalys_by_period_sex_agegrp_label(df):
     """Sum the dalys by period, sex, age-group and label"""
@@ -109,9 +103,7 @@ def get_diff(df, pdiff):
     diff_sum = compute_summary_statistics(diff, use_standard_error=True)
     return diff_sum
 
-def age_standardize_dalys(dalys_df):
-    """Age-standardizes DALYs across draws using the population size from the Status Quo scenario"""
-
+def get_full_pop():
     def get_pop_by_agegrp_label(df):
         """Sum the dalys by period, sex, age-group and label"""
         df['year'] = df['date'].dt.year
@@ -121,7 +113,7 @@ def age_standardize_dalys(dalys_df):
 
         return series_multi
 
-    # Get the total population across the draws
+
     pop_f = extract_results(
         results_folder,
         module="tlo.methods.demography",
@@ -139,6 +131,13 @@ def age_standardize_dalys(dalys_df):
     )
 
     pop = pop_f + pop_m
+    return pop
+
+
+def age_standardize_dalys(dalys_df):
+    """Age-standardizes DALYs across draws using the population size from the Status Quo scenario"""
+
+    pop = get_full_pop()
 
     # ensure population and dalys dataframe indexes match
     if len(dalys_df.index.levels) == 3:
@@ -267,7 +266,7 @@ def reform_df_to_save(df, dp):
 # Define target period
 TARGET_PERIOD = (Date(2025, 1, 1), Date(2054, 12, 31))
 
-# =============================== TOTAL DALYS AVERTED BY SCENARIO (TIME DELINEATION) =================================
+# ========================================= TOTAL DALYS AVERTED BY SCENARIO ===========================================
 
 # get DALY df
 dalys_by_age_date_and_cause = extract_results(
@@ -284,6 +283,7 @@ dalys_by_age_date = dalys_by_age_date_and_cause.groupby(by=["year", "age_group"]
 dalys_non_standardized_year = dalys_by_age_date.groupby(by='year').sum()
 total_dalys_non_standardized = dalys_non_standardized_year.loc[
                                TARGET_PERIOD[0].year:TARGET_PERIOD[-1].year].sum().to_frame().T
+
 # Get summary statistics for total DALYs (not age adjusted)
 total_dalys_non_standardized_summ = compute_summary_statistics(total_dalys_non_standardized, use_standard_error=True)
 
@@ -320,83 +320,116 @@ p_diff_age_standardized_dalys_sum_to_save = reform_df_to_save(p_diff_age_standar
 p_diff_age_standardized_dalys_sum_to_save.to_csv(f'{g_path}/total_stnd_dalys_int_period_summ_percent_diff.csv')
 
 
-def figure_total_dalys_averted_by_scenario_with_uncertainty(data, age_standardized, drop_non_sig_results):
+def figure_total_dalys_averted_by_scenario_with_uncertainty(data, age_standardized):
     """Outputs an annotated bar graph showing the mean total DALYs averted by scenario along with 95% confidence
     intervals"""
 
-    labels = [full_lab[val] for val in scen_draws.values()]
+    """Outputs an annotated bar graph showing the mean total DALYs averted by scenario along with 95% confidence intervals"""
 
-    # extract data
-    mean = [float(data[v, 'central'].values) for v in scen_draws.keys()]
-    lower_errors = [float(data[v, 'lower'].values) for v in scen_draws.keys()]
-    upper_errors = [float(data[v, 'upper'].values) for v in scen_draws.keys()]
+    # === Define scenario group order explicitly ===
+    scenario_groups = {
+        'Integrated screening': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22, 23],
+        'MCH clinic': [13, 14, 15, 16, 17, 18, 19, 24, 25],
+        'Chronic care clinic': [20, 21],
+        'Combined': [26, 27]
+    }
 
-    # Optional - drop results from the graph if CI includes 0
-    if drop_non_sig_results:
-        ci_includes_0 = [i for i, (a, b) in enumerate(zip(lower_errors, upper_errors)) if a < 0 and b > 0]
+    # === Flatten scenarios in the order you want
+    ordered_scenario_ids = []
+    for group in ['Integrated screening', 'MCH clinic', 'Chronic care clinic', 'Combined']:
+        ordered_scenario_ids.extend(scenario_groups[group])
 
-        labels = [val for i, val in enumerate(labels) if i not in ci_includes_0]
+    # === Assign consistent color map across scenarios
+    import matplotlib.pyplot as plt
+    import seaborn as sns
 
-        mean = [val for i, val in enumerate(mean) if i not in ci_includes_0]
-        lower_errors = [val for i, val in enumerate(lower_errors) if i not in ci_includes_0]
-        upper_errors = [val for i, val in enumerate(upper_errors) if i not in ci_includes_0]
+    n_scenarios_total = len(ordered_scenario_ids)
+    palette = sns.color_palette("husl", n_colors=n_scenarios_total)
+    step = 10
+    spread_indices = [(i * step) % n_scenarios_total for i in range(n_scenarios_total)]
+    spread_palette = [palette[i] for i in spread_indices]
+    color_map = {scenario: spread_palette[i] for i, scenario in enumerate(ordered_scenario_ids)}
 
-    # Compute distances from mean to bounds (must be non-negative)
+    # === Extract data in the new order
+    labels = [full_lab[scen_draws[sc]] for sc in ordered_scenario_ids]
+    mean = [float(data[sc, 'central'].values) for sc in ordered_scenario_ids]
+    lower_errors = [float(data[sc, 'lower'].values) for sc in ordered_scenario_ids]
+    upper_errors = [float(data[sc, 'upper'].values) for sc in ordered_scenario_ids]
+
+    # === Compute error margins
     yerr_lower = [med - low for med, low in zip(mean, lower_errors)]
     yerr_upper = [up - med for med, up in zip(mean, upper_errors)]
 
-    # generate colours
-    cmap = plt.get_cmap('viridis')  # 'tab10', 'tab20', 'viridis', etc.
-    colors = [cmap(i / len(labels)) for i in range(len(labels))]
+    # === Create bar chart
+    fig, ax = plt.subplots(figsize=(12, 6))
 
-    # Create bar chart with error bars
-    fig, ax = plt.subplots()
-    bars = ax.bar(labels, mean, yerr=[yerr_lower, yerr_upper], capsize=5, alpha=0.7, ecolor='black', color=colors)
+    # === Define groupings manually (based on order in ordered_scenario_ids)
+    groupings = [
+        [1, 2],
+        [3, 4],
+        [5, 6],
+        [7, 8],
+        [9, 10],
+        [11, 12],
+        [22, 23],
+        [13, 14],
+        [15, 16],
+        [17, 18],
+        [19],
+        [24, 25],
+        [20, 21],
+        [26, 27]
+    ]
 
-    # Add horizontal line at y=0
+    # === Draw dotted lines between groups
+    index_map = {sc: i for i, sc in enumerate(ordered_scenario_ids)}
+    for g in groupings[:-1]:  # skip last group
+        last_sid = g[-1]
+        ix = index_map[last_sid]
+        ax.axvline(ix + 0.5, color='black', linestyle=':', linewidth=0.5)
+
+    # === Plot bars
+    bar_colors = [color_map[sc] for sc in ordered_scenario_ids]
+    bars = ax.bar(labels, mean, yerr=[yerr_lower, yerr_upper],
+                  capsize=5, alpha=0.7, ecolor='black', color=bar_colors)
+
+    # === Add horizontal line at zero
     ax.axhline(0, color='gray', linestyle='--', linewidth=1)
 
-    # Annotate values on top of bars
-    for bar, value, err_up in zip(bars, mean, upper_errors):
+    # === Annotate values on bars
+    offset = max(upper_errors) * 0.05  # consistent vertical offset
+    for bar, value in zip(bars, mean):
         height = bar.get_height()
-        scaled_val = value / 1e6  # convert to millions
-        offset = max(upper_errors) * 0.05  # increase vertical offset
-
+        scaled_val = value / 1e6  # display in millions
         if height >= 0:
             ax.text(bar.get_x() + bar.get_width() / 2,
                     height + offset,
                     f'{scaled_val:.1f}M',
-                    ha='center', va='bottom', fontsize=6)
+                    ha='center', va='bottom', fontsize=8)
         else:
             ax.text(bar.get_x() + bar.get_width() / 2,
                     height - offset,
                     f'{scaled_val:.1f}M',
                     ha='center', va='top', fontsize=6)
 
-    # Axis labels and title
-    ax.set_ylabel('DALYs Averted (ten millions)', fontsize=7)
-    ax.set_title('Total DALYs Averted by Scenario between 2025 and 2055 (mean and 95% CI)' if not age_standardized else
-                 'Total Age-Standardized DALYs Averted by Scenario between 2025 and 2055 (mean and 95% CI)',
-                 fontsize=8)
-
-    # Adjust label size and layout
-    plt.xticks(fontsize=7, rotation=90)
+    # === Axis and formatting
+    ax.set_ylabel('DALYs Averted', fontsize=9)
+    plt.xticks(fontsize=8, rotation=90)
     plt.tight_layout()
 
-    # Save and show
+    # === Save output
     plt.savefig(f'{g_path}/total_dalys_averted_by_scenario.png' if not age_standardized else
                 f'{g_path}/total_age_standardized_dalys_averted_by_scenario.png',
                 bbox_inches='tight')
     plt.show()
 
+
 # Output plots for non age-standardized and age-standardized DALYs
-figure_total_dalys_averted_by_scenario_with_uncertainty(data=diff_total_dalys_non_standardized,
-                                                        age_standardized=False,
-                                                        drop_non_sig_results=False)
+# figure_total_dalys_averted_by_scenario_with_uncertainty(data=diff_total_dalys_non_standardized,
+#                                                         age_standardized=False)
 
 figure_total_dalys_averted_by_scenario_with_uncertainty(data=diff_age_standardized_dalys_sum,
-                                                        age_standardized=True,
-                                                        drop_non_sig_results=False)
+                                                        age_standardized=True)
 
 def figure_total_dalys_averted_by_scenario_by_time_period(data, age_standardized):
     """Outputs plot showing total DALYs averted during three time periods across all scenarios"""
@@ -442,88 +475,93 @@ def figure_total_dalys_averted_by_scenario_by_time_period(data, age_standardized
         for i, scenario in enumerate(scenarios)
     }
 
-    # Viridis color map
-    n_scenarios = len(scenarios)
-    cmap = cm.get_cmap('viridis', n_scenarios)
-    colors = [cmap(i) for i in range(n_scenarios)]
+    # color map
+    n_scenarios = len(scenarios)  # your list of scenarios
+    palette = sns.color_palette("husl", n_colors=n_scenarios)
 
-    # Plot settings
-    n_cols = 5
-    n_rows = -(-n_scenarios // n_cols)
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 4, n_rows * 2.8), sharey=True)
-    axes = axes.flatten()
+    # Spread the colors using a step that is coprime with 27 (like 10)
+    step = 10
+    spread_indices = [(i * step) % n_scenarios for i in range(n_scenarios)]
+    spread_palette = [palette[i] for i in spread_indices]
 
-    for i, scenario in enumerate(scenarios):
-        ax = axes[i]
+    # Assign to scenarios
+    color_map = {scenario: spread_palette[i] for i, scenario in enumerate(scenarios)}
 
-        means = data_mean[scenario]
-        yerr = [
-            data_err_lower[scenario],
-            data_err_upper[scenario]
-        ]
+    # === Define scenario pairs to plot together ===
+    scenario_groups = [
+        [1, 2],
+        [3, 4],
+        [5, 6],
+        [7, 8],
+        [9, 10],
+        [11, 12],
+        [22, 23],
+        [13, 14],
+        [15, 16],
+        [17, 18],
+        [19],
+        [24, 25],
+        [20, 21],
+        [26, 27]
+    ]  # adjust as needed
 
-        # Plot with error bars
-        ax.errorbar(
-            period_labels,
-            means,
-            yerr=yerr,
-            fmt='-o',
-            color=colors[i],
-            capsize=3,
-            linewidth=1.5,
-            markersize=5
-        )
+    groups_per_figure = 8
+    group_batches = [scenario_groups[:groups_per_figure], scenario_groups[groups_per_figure:]]
 
-        # Add horizontal zero line
-        ax.axhline(0, color='gray', linewidth=0.5, linestyle='--')
+    for fig_idx, group_set in enumerate(group_batches):
+        n_cols = 2
+        n_rows = -(-len(group_set) // n_cols)
 
-        # Compute y-range for padding
-        y_vals = means
-        ymin = min([m - l for m, l in zip(means, data_err_lower[scenario])])
-        ymax = max([m + u for m, u in zip(means, data_err_upper[scenario])])
-        padding = 0.02 * (ymax - ymin)  # 2% of full range
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 5, n_rows * 3), sharey=True)
+        axes = axes.flatten()
 
-        # Annotate above upper error bar
-        for j, val in enumerate(means):
-            upper_err = data_err_upper[scenario][j]
-            label = f"{val / 1e6:.1f}M" if abs(val) > 1e6 else f"{val / 1e3:.1f}K"
-            ax.text(
-                j,  # x-position (time period index)
-                val + upper_err + padding,  # y-position above upper error bar
-                label,
-                fontsize=9,
-                ha='center',
-                va='bottom'
-            )
+        for i, group in enumerate(group_set):
+            ax = axes[i]
 
-        ax.set_title(str(full_lab[scen_draws[scenario]]), fontsize=9)
+            for scenario in group:
+                means = data_mean[scenario]
+                yerr = [data_err_lower[scenario], data_err_upper[scenario]]
 
-        # X-axis labels only on bottom row
-        if i // n_cols == n_rows - 1:
-            ax.set_xticklabels(period_labels)
-        else:
-            ax.set_xticklabels([])
+                ax.errorbar(
+                    period_labels,
+                    means,
+                    yerr=yerr,
+                    fmt='-o',
+                    color=color_map[scenario],
+                    capsize=3,
+                    linewidth=1.5,
+                    markersize=5,
+                    label=full_lab[scen_draws[scenario]]
+                )
 
-        # Y-axis ticks only on leftmost column
-        if i % n_cols == 0:
-            ax.tick_params(labelleft=True)
-        else:
-            ax.tick_params(labelleft=False)
+            ax.axhline(0, color='gray', linewidth=0.5, linestyle='--')
+            title_labels = " vs ".join([full_lab[scen_draws[sc]] for sc in group])
+            ax.set_title(title_labels, fontsize=9)
 
-    # Hide unused subplots
-    for j in range(i + 1, len(axes)):
-        fig.delaxes(axes[j])
+            row_idx = i // n_cols
+            is_bottom_row = row_idx == n_rows - 1
+            if is_bottom_row:
+                ax.set_xticklabels(period_labels)
+            else:
+                ax.set_xticklabels([])
 
-    # Layout and labels
-    fig.suptitle("Age-standardized DALYs Averted Compared to Baseline by Scenario Disaggregated by Time Period",
-                 fontsize=14)
-    fig.text(0.04, 0.5, 'DALYs averted (ten millions)', va='center', rotation='vertical', fontsize=12)
-    fig.tight_layout(rect=[0.05, 0, 1, 0.95])  # leave space for y-label and title
+            ax.legend(fontsize=8)
 
-    plt.savefig(f'{g_path}/total_dalys_averted_by_scenario_time.png' if not age_standardized else
-                f'{g_path}/total_age_standardized_dalys_averted_by_scenario_time.png',
-                bbox_inches='tight')
-    plt.show()
+        # Remove unused axes
+        for j in range(len(group_set), len(axes)):
+            fig.delaxes(axes[j])
+
+        fig.tight_layout(rect=[0.05, 0, 1, 0.95])
+        fig.text(0.04, 0.5, 'DALYs averted (millions)', va='center', rotation='vertical', fontsize=12)
+
+        # Save with figure index
+        filename = f"{g_path}/dalys_averted_scenario_groups_fig{fig_idx + 1}.png"
+        if age_standardized:
+            filename = f"{g_path}/age_standardized_dalys_averted_scenario_groups_fig{fig_idx + 1}.png"
+
+        plt.savefig(filename, bbox_inches='tight')
+        plt.show()
+
 
 # Output plots for non age-standardized and age-standardized DALYs
 # figure_total_dalys_averted_by_scenario_by_time_period(data=diff_dalys_by_year, age_standardized=False)
@@ -567,21 +605,45 @@ def figure_heatmap_cause_specific_dalys_averted(data):
     """Outputs a heatmap showing the difference in DALYs """
     data = data.drop(columns=0, level='draw')
 
+    # === Define scenario group order explicitly ===
+    scenario_groups = {
+        'Integrated screening': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22, 23],
+        'MCH clinic': [13, 14, 15, 16, 17, 18, 19, 24, 25],
+        'Chronic care clinic': [20, 21],
+        'Combined': [26, 27]
+    }
+
+    # === Flatten scenarios in the order you want
+    ordered_scenario_ids = []
+    for group in ['Integrated screening', 'MCH clinic', 'Chronic care clinic', 'Combined']:
+        ordered_scenario_ids.extend(scenario_groups[group])
+
+    # STEP 2: Extract central, lower, upper from MultiIndex or flat columns
     # STEP 2: Extract central, lower, upper from MultiIndex or flat columns
     central_df = data.loc[:, data.columns.get_level_values(1) == 'central']
     lower_df = data.loc[:, data.columns.get_level_values(1) == 'lower']
     upper_df = data.loc[:, data.columns.get_level_values(1) == 'upper']
 
     # Clean up column names
-    central_df.columns = [full_lab[scen_draws[col[0]]]  for col in central_df.columns]
-    lower_df.columns = [full_lab[scen_draws[col[0]]]  for col in lower_df.columns]
-    upper_df.columns = [full_lab[scen_draws[col[0]]]  for col in upper_df.columns]
+    scenario_labels_in_order = [full_lab[scen_draws[sc]] for sc in ordered_scenario_ids]
 
-    # STEP 3: Create a mask for where 0 is within the interval
+    # Rename columns
+    central_df.columns = [full_lab[scen_draws[col[0]]] for col in central_df.columns]
+    lower_df.columns = [full_lab[scen_draws[col[0]]] for col in lower_df.columns]
+    upper_df.columns = [full_lab[scen_draws[col[0]]] for col in upper_df.columns]
+
+    # Reindex to enforce consistent order
+    central_df = central_df[scenario_labels_in_order]
+    lower_df = lower_df[scenario_labels_in_order]
+    upper_df = upper_df[scenario_labels_in_order]
+
+    # STEP 3: Masks
     uncertainty_includes_zero = (lower_df <= 0) & (upper_df >= 0)
     significant = ~uncertainty_includes_zero
+    positive = central_df > 0
+    significant_positive = significant & positive
 
-    # Function to format numbers nicely
+    # === Format function
     def format_daly(value):
         if pd.isna(value):
             return ""
@@ -593,29 +655,28 @@ def figure_heatmap_cause_specific_dalys_averted(data):
         else:
             return f"{value / 1_000_000:.1f}M"
 
-    # Create annotation matrix with formatted numbers and asterisk for significant
+    # === Create annotation matrix
     annot = central_df.copy().astype(str)
     for i in range(central_df.shape[0]):
         for j in range(central_df.shape[1]):
-            if significant.iloc[i, j]:
+            if significant_positive.iloc[i, j]:
                 val = central_df.iloc[i, j]
-                annot.iloc[i, j] = format_daly(val) + '*'
+                annot.iloc[i, j] = format_daly(val)
             else:
                 annot.iloc[i, j] = ""
 
-    # Set color scale bounds
+    # === Plotting
     vmin = central_df.min().min()
     vmax = central_df.max().max()
     abs_max = max(abs(vmin), abs(vmax))
 
-    # Optional: emphasize values closer to zero
+    from matplotlib.colors import TwoSlopeNorm
     norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
-    # Plot
     plt.figure(figsize=(16, 10))
     sns.heatmap(
         central_df,
-        cmap="RdBu_r",
+        cmap="RdBu",  # inverted so blue = higher values
         norm=norm,
         annot=annot,
         fmt="",
@@ -623,7 +684,6 @@ def figure_heatmap_cause_specific_dalys_averted(data):
         cbar_kws={'label': 'DALY Difference from Status Quo'}
     )
 
-    plt.title("Differences in Cause-Specific Age-Standardized DALYs from Status Quo (Central Estimates, Significant Only)")
     plt.ylabel("Condition")
     plt.xlabel("Scenario")
     plt.xticks(rotation=45, ha='right')
@@ -634,301 +694,146 @@ def figure_heatmap_cause_specific_dalys_averted(data):
 figure_heatmap_cause_specific_dalys_averted(diff_dalys_by_cause_age_standardize)
 
 
-def figure_total_cause_specific_dalys_averted_by_scenario(data_no_year, data_by_years,
-                                                          int_scen, drop_non_sig_results,
-                                                          age_standardized):
+# =============================================== LIFE EXPECTANCY ===================================================
+# Get life expectancy by scenario in 2054 (last year of sim)
+le_estimates = get_life_expectancy_estimates(results_folder=results_folder,
+                                             target_period=
+                                             (datetime.date(2054, 1, 1),
+                                              datetime.date(2054, 12, 31)),
+                                             summary=False)
+le_estimate_avg = le_estimates.mean(axis=0).to_frame().T
 
-    # FIGURE WITH CIs
-    labels = data_no_year.index.values
+# calculate difference
+le_diff = le_estimate_avg.copy()
+for col in le_estimate_avg.columns:
+    if col[0] != 0:
+        base_col = (0, col[1])
 
-    mean = data_no_year[k, 'central'].values
-    lower_errors = data_no_year[k, 'lower'].values
-    upper_errors = data_no_year[k, 'upper'].values
+        le_diff[col] = le_estimate_avg[col] - le_estimate_avg[base_col]
+    else:
+        le_diff[col] = 0  # or np.nan if you prefer
 
-    if drop_non_sig_results:
-        ci_includes_0 = [i for i, (a, b) in enumerate(zip(lower_errors, upper_errors)) if a < 0 and b > 0]
+le_diff = le_diff.drop(columns=0)
+le_estimate_avg_diff_summ = compute_summary_statistics(le_diff, use_standard_error=True)
 
-        labels = [val for i, val in enumerate(labels) if i not in ci_includes_0]
-        mean = [val for i, val in enumerate(mean) if i not in ci_includes_0]
-        lower_errors = [val for i, val in enumerate(lower_errors) if i not in ci_includes_0]
-        upper_errors = [val for i, val in enumerate(upper_errors) if i not in ci_includes_0]
+#  Plot LE
+# === Extract central, lower, upper for 2055 ===
+def fig_life_expectancy_difference(data):
+    scenario_groups = {
+        'Integrated screening': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22, 23],
+        'MCH clinic': [13, 14, 15, 16, 17, 18, 19, 24, 25],
+        'Chronic care clinic': [20, 21],
+        'Combined': [26, 27]
+    }
 
-    yerr_lower = mean - lower_errors
-    yerr_upper = upper_errors - mean
+    # === Flatten scenarios in the order you want
+    ordered_scenario_ids = []
+    for group in ['Integrated screening', 'MCH clinic', 'Chronic care clinic', 'Combined']:
+        ordered_scenario_ids.extend(scenario_groups[group])
 
-    cmap = plt.get_cmap('magma')  # 'tab10', 'tab20', 'viridis', etc.
-    colors = [cmap(i / len(labels)) for i in range(len(labels))]
+    # === Extract central, lower, upper values ===
+    central = data.xs('central', level=1, axis=1).iloc[0]
+    lower = data.xs('lower', level=1, axis=1).iloc[0]
+    upper = data.xs('upper', level=1, axis=1).iloc[0]
 
-    # Create bar chart with error bars
-    fig, ax = plt.subplots()
-    bars = ax.bar(labels, mean, yerr=[yerr_lower, yerr_upper], capsize=5, alpha=0.7, ecolor='black', color=colors)
+    # === Reorder using ordered_scenario_ids ===
+    central = central.loc[ordered_scenario_ids]
+    lower = lower.loc[ordered_scenario_ids]
+    upper = upper.loc[ordered_scenario_ids]
 
-    ax.axhline(0, color='gray', linestyle='--', linewidth=1)
+    # === Significance mask
+    significant_mask = (lower > 0) | (upper < 0)
 
-    # Annotate values on top of bars
-    for bar, value, err_up in zip(bars, mean, upper_errors):
-        height = bar.get_height()
-        scaled_val = value / 1e3  # convert to millions
-        offset = max(upper_errors) * 0.01  # increase vertical offset
+    # === Replace non-significant values with 0s (for plotting)
+    central_plot = central.copy()
+    yerr_lower = (central - lower).copy()
+    yerr_upper = (upper - central).copy()
 
-        if height >= 0:
-            ax.text(bar.get_x() + bar.get_width() / 2,
-                    height + offset,
-                    f'{scaled_val:.1f}K',
-                    ha='center', va='bottom', fontsize=6)
-        else:
-            ax.text(bar.get_x() + bar.get_width() / 2,
-                    height - offset,
-                    f'{scaled_val:.1f}K',
-                    ha='center', va='top', fontsize=6)
+    central_plot[~significant_mask] = 0
+    yerr_lower[~significant_mask] = 0
+    yerr_upper[~significant_mask] = 0
+    yerr = [yerr_lower.values, yerr_upper.values]
 
-    ax.set_ylabel('DALYs Averted')
-    ax.set_title(f'Cause-specific DALYs Averted for Scenario (with uncertainty):{scen_draws[int_scen]}'
-                 if not age_standardized else f'Age Standardized Cause-specific DALYs Averted for '
-                                              f'Scenario (with uncertainty):{scen_draws[int_scen]}')
+    # === Color setup
+    scenario_ids = central.index.tolist()
+    n_scenarios = len(scenario_ids)
 
-    # Adjust label size
-    plt.xticks(fontsize=8, rotation=90)
-    plt.tight_layout()
-    plt.savefig(f'{g_path}/{scen_draws[int_scen]}/'
-                f'cause_specific_dalys_diff_with_ci_{scen_draws[int_scen]}.png' if not age_standardized
-                else f'{g_path}/{scen_draws[int_scen]}/cause_specific_dalys_diff_with_ci_stnd_'
-                     f'{scen_draws[int_scen]}.png', bbox_inches='tight')
-    plt.show()
+    palette = sns.color_palette("husl", n_colors=n_scenarios)
+    step = 10
+    spread_indices = [(i * step) % n_scenarios for i in range(n_scenarios)]
+    spread_palette = [palette[i] for i in spread_indices]
+    color_map = {s: spread_palette[i] for i, s in enumerate(scenario_ids)}
+    colors = [color_map[s] for s in scenario_ids]
 
-# for k in scen_draws:
-#     figure_total_cause_specific_dalys_averted_by_scenario(data_no_year=diff_dalys_by_cause,
-#                                                           data_by_years=diff_dalys_by_cause_year,
-#                                                           int_scen=k,
-#                                                           drop_non_sig_results=False,
-#                                                           age_standardized=False)
-#
-#
-#
-# for k in scen_draws:
-#     figure_total_cause_specific_dalys_averted_by_scenario(data_no_year=diff_dalys_by_cause_age_standardize,
-#                                                           data_by_years=diff_dalys_by_cause_year_age_standardize,
-#                                                           int_scen=k,
-#                                                           drop_non_sig_results=False,
-#                                                           age_standardized=True)
+    # === Plotting
+    x = np.arange(len(scenario_ids))
+    fig, ax = plt.subplots(figsize=(12, 5))
 
-# ===================================== DIFFERENCE IN APPOINTMENTS BY SCENARIO ========================================
-# APPOINTMENT TYPES
-counts_by_treatment_id_and_appt_type =  bin_hsi_event_details(
-            results_folder,
-            lambda event_details, count: sum(
-                [
-                    Counter({
-                        (
-                            event_details["treatment_id"],
-                            appt_type
-                        ):
-                        count * appt_number
-                    })
-                    for appt_type, appt_number in event_details["appt_footprint"]
-                ],
-                Counter()
-            ),
-            *TARGET_PERIOD,
-            True
-        )
-apt_data = compute_service_statistics(counts_by_treatment_id_and_appt_type)
-apt_type_summ = apt_data[0]
-p_diff_apt_type_sum = apt_data[1]
-
-# apt_type_summ_to_save = reform_df_to_save(apt_type_summ, 0)
-# diff_apt_typ_to_save = reform_df_to_save(apt_type_summ, 0)
-
-# def figure_diff_in_total_appointment_type_by_scenario(data, k):
-#     labels = data.index
-#
-#     mean = [data.at[appt, k]['mean'] for appt in labels]
-#     lower_errors = [data.at[appt, k]['lower'] for appt in labels]
-#     upper_errors = [data.at[appt, k]['upper'] for appt in labels]
-#
-#     yerr_lower = [med - low for med, low in zip(mean, lower_errors)]
-#     yerr_upper = [up - med for med, up in zip(mean, upper_errors)]
-#
-#     perc_95 = np.percentile(upper_errors, 95)
-#     extreme_max = max(upper_errors)
-#     should_split = extreme_max > 1.3 * perc_95  # Only break axis if top values are ~30% larger than the 95th percentile
-#
-#     if should_split:
-#         # Broken axis approach
-#         fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(10, 6), height_ratios=[1, 3])
-#         ax1.bar(labels, mean, yerr=[yerr_lower, yerr_upper], capsize=5, alpha=0.7, ecolor='black')
-#         ax2.bar(labels, mean, yerr=[yerr_lower, yerr_upper], capsize=5, alpha=0.7, ecolor='black')
-#
-#         threshold = perc_95  # You could also choose mean + 2*std for more strict cutoff
-#
-#         # Set y-limits
-#         ax1.set_ylim(threshold, extreme_max * 1.05)
-#         ax2.set_ylim(min(lower_errors) * 1.05, threshold)
-#
-#         # Hide spines and add break marks
-#         ax1.spines['bottom'].set_visible(False)
-#         ax2.spines['top'].set_visible(False)
-#         ax1.tick_params(labeltop=False)
-#         ax2.xaxis.tick_bottom()
-#
-#         d = .015
-#         kwargs = dict(transform=ax1.transAxes, color='k', clip_on=False)
-#         ax1.plot((-d, +d), (-d, +d), **kwargs)
-#         ax1.plot((1 - d, 1 + d), (-d, +d), **kwargs)
-#         kwargs.update(transform=ax2.transAxes)
-#         ax2.plot((-d, +d), (1 - d, 1 + d), **kwargs)
-#         ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)
-#
-#         fig.suptitle(f'Total Additional Appointments by Appointment Type: {scen_draws[k]}')
-#         ax2.set_ylabel('Additional Appointments')
-#
-#     else:
-#         # Simple plot with full range
-#         fig, ax = plt.subplots(figsize=(10, 6))
-#         ax.bar(labels, mean, yerr=[yerr_lower, yerr_upper], capsize=5, alpha=0.7, ecolor='black')
-#         ax.axhline(0, color='gray', linestyle='--', linewidth=1)
-#         ax.set_ylim(min(lower_errors) * 1.05, extreme_max * 1.05)
-#         ax.set_ylabel('Additional Appointments')
-#         ax.set_title(f'Total Additional Appointments by Appointment Type: {scen_draws[k]}')
-#
-#     # Shared formatting
-#     plt.xticks(fontsize=8, rotation=90)
-#     plt.tight_layout()
-#     plt.savefig(f'{g_path}/{scen_draws[k]}/add_appt_by_type_{scen_draws[k]}.png', bbox_inches='tight')
-#     plt.show()
-
-#
-# for k in scen_draws:
-#    figure_diff_in_total_appointment_type_by_scenario(p_diff_apt_type_sum, k)
-
-
-def figure_dotplot_difference_in_appointments_by_scenario(data):
-    data = data.drop(columns=0)
-
-    # Extract mean, lower, upper
-    mean_df = data.applymap(lambda x: x['mean'])
-    lower_df = data.applymap(lambda x: x['lower'])
-    upper_df = data.applymap(lambda x: x['upper'])
-
-    # === CONFIG ===
-    scenarios = list(mean_df.columns)
-    num_scenarios = len(scenarios)
-    panels_per_fig = 6
-    n_rows, n_cols = 2, 3  # 6 plots per figure
-    fig_count = (num_scenarios + panels_per_fig - 1) // panels_per_fig
-
-    top_n = 20
-    top_appointments = (
-        mean_df.abs().mean(axis=1)
-        .sort_values(ascending=False)
-        .head(top_n)
-        .index
+    bars = ax.bar(
+        x,
+        central_plot.values,
+        yerr=yerr,
+        capsize=5,
+        color=colors,
+        edgecolor='black'
     )
 
-    # Subset to top appointment types
-    mean_df_plot = mean_df.loc[top_appointments]
-    lower_df_plot = lower_df.loc[top_appointments]
-    upper_df_plot = upper_df.loc[top_appointments]
-    significant = ~((lower_df_plot <= 0) & (upper_df_plot >= 0))
+    # === Annotate only significant bars
+    offset = 0.02 * max(abs(upper.max()), 1e-6)
+    for xpos, is_sig, mean_val, hi, lo in zip(x, significant_mask, central.values, upper.values, lower.values):
+        if is_sig:
+            y = hi + offset if mean_val >= 0 else lo - offset
+            ax.text(
+                xpos,
+                y,
+                f"{mean_val:.2f}",
+                ha='center',
+                va='bottom' if mean_val >= 0 else 'top',
+                fontsize=8,
+                fontweight='bold'
+            )
+    # === Dotted lines between defined groups
+    groupings = [
+        [1, 2],
+        [3, 4],
+        [5, 6],
+        [7, 8],
+        [9, 10],
+        [11, 12],
+        [22, 23],
+        [13, 14],
+        [15, 16],
+        [17, 18],
+        [19],
+        [24, 25],
+        [20, 21],
+        [26, 27]
+    ]
+    # Map all scenario positions
+    index_map = {s: i for i, s in enumerate(scenario_ids)}
 
-    # === Format helper ===
-    # def format_number(val):
-    #     abs_val = abs(val)
-    #     if abs_val < 1_000:
-    #         return f"{int(val)}"
-    #     elif abs_val < 1_000_000:
-    #         return f"{val / 1_000:.0f}K"
-    #     elif abs_val < 10_000_000:
-    #         return f"{val / 1_000_000:.1f}M"
-    #     else:
-    #         return f"{val / 1_000_000:.0f}M"
+    # Draw line between groups only if both scenarios are present
+    for g in groupings[:-1]:
+        present = [s for s in g if s in index_map]
+        if present:
+            ix = index_map[present[-1]]
+            ax.axvline(ix + 0.5, color='black', linestyle=':', linewidth=0.5)
 
-    # === PLOTTING ===
-    for fig_idx in range(fig_count):
-        start = fig_idx * panels_per_fig
-        end = min(start + panels_per_fig, num_scenarios)
-        scenario_subset = scenarios[start:end]
+    # === Axis & aesthetics
+    ax.axhline(0, color='gray', linestyle='--', linewidth=1)
+    ax.set_xticks(x)
+    ax.set_xticklabels([full_lab[scen_draws[s]] for s in scenario_ids], rotation=90, fontsize=7)
+    ax.set_ylabel('Difference in Life Expectancy (2054, years)')
 
-        fig, axes = plt.subplots(n_rows, n_cols, figsize=(20, 10), sharey=True)
-        axes = axes.flatten()
+    plt.tight_layout()
+    plt.savefig(f'{g_path}/life_expectancy_diff_2054.png', bbox_inches='tight')
+    plt.show()
 
-        for i, scen in enumerate(scenario_subset):
-            ax = axes[i]
+fig_life_expectancy_difference(le_estimate_avg_diff_summ)
 
-            means = mean_df_plot[scen]
-            lowers = lower_df_plot[scen]
-            uppers = upper_df_plot[scen]
-            sig = significant[scen]
+# ===================================== DIFFERENCE IN HCW TIME USE BY SCENARIO ========================================
+# Output HCW time use by treatment_id
 
-            labels = means.index.tolist()
-            y_pos = np.arange(len(labels))
-
-            for j, label in enumerate(labels):
-                x = means[label]
-                y = y_pos[j]
-                low = x - lowers[label]
-                up = uppers[label] - x
-
-                # Color based on significance and direction
-                if sig[label]:
-                    color = 'blue' if x > 0 else 'red'
-                else:
-                    color = 'gray'
-
-                # Plot dot + error bar
-                ax.errorbar(
-                    x, y,
-                    xerr=[[low], [up]],
-                    fmt='o',
-                    color=color,
-                    ecolor=color,
-                    capsize=3
-                )
-
-                # Annotate if significant
-                if sig[label]:
-                    ax.text(
-                        x + np.sign(x) * 0.05 * abs(x),
-                        y,
-                        # format_number(x),
-                        round(x),
-                        va='center',
-                        ha='left' if x >= 0 else 'right',
-                        fontsize=8,
-                        color=color
-                    )
-
-            # Reference line
-            ax.axvline(0, color='black', linestyle='--', linewidth=1)
-
-            # Title from external mappings
-            ax.set_title(full_lab[scen_draws[scen]])
-
-            # Set y-ticks and y-labels
-            ax.set_yticks(y_pos)
-            if i % n_cols == 0:
-                ax.set_yticklabels(labels, fontsize=9)
-                ax.set_ylabel("Appointment Type")
-            else:
-                ax.set_yticklabels([])
-                ax.set_ylabel("")
-
-            # Format x-axis
-            ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: x))
-            ax.grid(True, axis='x', linestyle=':', alpha=0.3)
-
-        # Hide unused subplots
-        for j in range(i + 1, n_rows * n_cols):
-            fig.delaxes(axes[j])
-
-        # Title and layout
-        fig.suptitle(f"Percentage Difference in Number of Appointments from Status Quo by Scenario", fontsize=18)
-        fig.tight_layout(rect=[0, 0, 1, 0.95])
-        plt.show()
-
-figure_dotplot_difference_in_appointments_by_scenario(p_diff_apt_type_sum)
-
-# ===================================== DIFFERENCE IN HCW TIME BY SCENARIO ========================================
 appointment_time_table = pd.read_csv(
     resourcefilepath
     / 'healthsystem'
@@ -975,420 +880,934 @@ hcw_time_by_treatment_id = bin_hsi_event_details(
         True
     )
 
-hsi = {'htn':['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
-             'CardioMetabolicDisorders_Investigation_hypertension',
-             'CardioMetabolicDisorders_Investigation_hypertension_and_diabetes',
-             'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
-            'CardioMetabolicDisorders_Treatment_hypertension'],
+# To calculate the adjusted HCW capabilities using average change in population size
+pop = get_full_pop()
+pop = pop.groupby(by='year').sum()
+relative_increase_df = pop.pct_change()
+avg_rel_increase = relative_increase_df.loc[2025:2054].mean(axis=0).to_frame().T
+avg_rel_increase_summ = compute_summary_statistics(avg_rel_increase, use_standard_error=True)
 
-            'dm': [ 'CardioMetabolicDisorders_Investigation_diabetes',
-                    'CardioMetabolicDisorders_Investigation_hypertension_and_diabetes',
-                    'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
-                    'CardioMetabolicDisorders_Treatment_diabetes'],
 
-            'hiv': ['Hiv_Test', 'Hiv_Treatment'],
+# Read in capabilities data and sum across facility levels etc.
+daily_cap = pd.read_csv('./resources/healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv')
+daily_mins = daily_cap.set_index('Officer_Category')[['Total_Mins_Per_Day']]
+daily_mins = daily_mins.drop('Dental')
+daily_mins = daily_mins.drop('Nutrition')
+daily_mins = daily_mins.groupby(daily_mins.index).sum()
 
-            'tb': ['Tb_Test_Screening',
-                    'Tb_Test_Clinical',
-                    'Tb_Test_Culture',
-                    'Tb_Test_Xray',
-                    'Tb_Treatment',
-                     'Tb_Test_FollowUp'
-                     ],
+# Next we calculate the average HCW capabilities assuming capabilities increase yearly in line with population growth
+yearly_mins = daily_mins * 365.25
+yearly_mins.rename(columns={'Total_Mins_Per_Day': 'mins_per_year'}, inplace=True)
 
-            'mal':['Undernutrition_Feeding'],
+value = 1 + avg_rel_increase_summ[(0, 'central')].values      # TODO: replace with average annual pop growth (SQ?)
+n_times = 30       # number of times to multiply
+steps = [(yearly_mins * (value ** i)) for i in range(n_times + 1)]   # if you want to include original
+avg_annual_hcw_capabilities = sum(steps) / len(steps)
+avg_annual_hcw_capabilities_sum = avg_annual_hcw_capabilities.sum(axis=0).to_frame().T
 
-            'fp_scr':['Contraception_Routine'],
-
-            'anc': ['AntenatalCare_Outpatient', 'AntenatalCare_FollowUp'],
-
-            'pnc': ['PostnatalCare_Neonatal', 'PostnatalCare_Maternal'],
-
-            'fp_pn': ['Contraception_Routine_Postnatal'],
-
-            'epi': ['Epi_Childhood_Bcg',
-                    'Epi_Childhood_Opv',
-                    'Epi_Childhood_DtpHibHep',
-                    'Epi_Childhood_Rota',
-                    'Epi_Childhood_Pneumo',
-                    'Epi_Childhood_MeaslesRubella',
-                    'Epi_Pregnancy_Td'
-                    ],
-
-            'chronic_care': ['CardioMetabolicDisorders_Investigation_diabetes',
-                     'CardioMetabolicDisorders_Investigation_hypertension',
-                     'CardioMetabolicDisorders_Investigation_hypertension_and_diabetes',
-                     'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
-                     'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
-                     'CardioMetabolicDisorders_Treatment_hypertension',
-                     'CardioMetabolicDisorders_Treatment_diabetes',
-                     'Hiv_Test',
-                     'Hiv_Treatment',
-                     'Tb_Test_Screening',
-                     'Tb_Test_Clinical',
-                     'Tb_Test_Culture',
-                     'Tb_Test_Xray',
-                     'Tb_Treatment',
-                     'Tb_Test_FollowUp',
-                     'Depression_TalkingTherapy',
-                     'Depression_Treatment',
-                     'Epilepsy_Treatment_Start',
-                     'Epilepsy_Treatment_Followup'],
-
-            'all_screening': ['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
-                                        'CardioMetabolicDisorders_Investigation_hypertension',
-                                        'CardioMetabolicDisorders_Investigation_hypertension_and_diabetes',
-                                        'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
-                                        'CardioMetabolicDisorders_Treatment_hypertension',
-                                        'CardioMetabolicDisorders_Investigation_diabetes',
-                                        'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
-                                        'CardioMetabolicDisorders_Treatment_diabetes',
-                                        'Contraception_Routine',
-                                        'Undernutrition_Feeding',
-                                        'Hiv_Test',
-                                        'Hiv_Treatment',
-                                        'Tb_Test_Screening',
-                                        'Tb_Test_Clinical',
-                                        'Tb_Test_Culture',
-                                        'Tb_Test_Xray',
-                                        'Tb_Treatment',
-                                        'Tb_Test_FollowUp'
-                                        ],
-
-            'all_mch': ['Undernutrition_Feeding',
-                                        'AntenatalCare_Outpatient',
-                                        'AntenatalCare_FollowUp',
-                                        'PostnatalCare_Neonatal',
-                                        'PostnatalCare_Maternal',
-                                        'Contraception_Routine_Postnatal',
-                                        'Epi_Childhood_Bcg',
-                                        'Epi_Childhood_Opv',
-                                        'Epi_Childhood_DtpHibHep',
-                                        'Epi_Childhood_Rota',
-                                        'Epi_Childhood_Pneumo',
-                                        'Epi_Childhood_MeaslesRubella',
-                                        'Epi_Pregnancy_Td'
-                                        ],
-
-            'all_int': ['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
-                                         'CardioMetabolicDisorders_Investigation_hypertension',
-                                         'CardioMetabolicDisorders_Investigation_hypertension_and_diabetes',
-                                         'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
-                                         'CardioMetabolicDisorders_Treatment_hypertension',
-                                         'CardioMetabolicDisorders_Investigation_diabetes',
-                                         'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
-                                         'CardioMetabolicDisorders_Treatment_diabetes',
-                                         'Contraception_Routine',
-                                         'Undernutrition_Feeding',
-                                         'Hiv_Test',
-                                         'Hiv_Treatment',
-                                         'Tb_Test_Screening',
-                                         'Tb_Test_Clinical',
-                                         'Tb_Test_Culture',
-                                         'Tb_Test_Xray',
-                                         'Tb_Treatment',
-                                         'Tb_Test_FollowUp',
-                                         'AntenatalCare_Outpatient',
-                                         'AntenatalCare_FollowUp',
-                                         'PostnatalCare_Neonatal',
-                                         'PostnatalCare_Maternal',
-                                         'Contraception_Routine_Postnatal',
-                                         'Epi_Childhood_Bcg',
-                                         'Epi_Childhood_Opv',
-                                         'Epi_Childhood_DtpHibHep',
-                                         'Epi_Childhood_Rota',
-                                         'Epi_Childhood_Pneumo',
-                                         'Epi_Childhood_MeaslesRubella',
-                                         'Epi_Pregnancy_Td',
-                                         'Depression_TalkingTherapy',
-                                         'Depression_Treatment',
-                                         'Epilepsy_Treatment_Start',
-                                         'Epilepsy_Treatment_Followup']}
-
+# --------------------------------------------- PLOT TOTAL HCW TIME RATIO ------------------------------------------
+# Next we calculate the total HCW time use
 hcw_time_by_treatment_id_df = pd.DataFrame.from_dict(hcw_time_by_treatment_id)
+hcw_time_by_treatment_id_df = hcw_time_by_treatment_id_df.fillna(0)
+hcw_time_by_treatment_id_df.index.names = ['first', 'second']
 
+# calculate ratios
+def get_hcw_time_use_ratios(df):
+    def get_hcw_time_diff(df_for_diff):
+        diff = df_for_diff.copy()
+        for col in df_for_diff.columns:
+            if col[0] != 0:
+                base_col = (0, col[1])
+                diff[col] = df_for_diff[col] - df_for_diff[base_col]
+            else:
+                diff[col] = 0
+        return diff
 
-def adjust_and_plot_hcw_time_use(scen, data, hsis):
-    scenario_name = scen_draws[scen]
-    if scenario_name.endswith('_max'):
-         scenario_name = scenario_name.removesuffix('_max')
+    total_hcw_time = df.sum(axis=0).to_frame().T
+    yearly_total_hcw_time = total_hcw_time / 30
 
-    sq_data = data[0]
-    sq_data = sq_data.fillna(0)
-    sq_data.index.names = ['first', 'second']
-    sq_data_grouped = sq_data.groupby(level='first').sum()
+    total_hcw_time_ratio = yearly_total_hcw_time.div(avg_annual_hcw_capabilities_sum.iloc[:, 0], axis=0)
+    total_hcw_time_ratio.columns.names = ['draw', 'run']
 
-    scen_data = data[scen]
-    scen_data = scen_data.fillna(0)
-    scen_data.index.names = ['first', 'second']
+    diff = get_hcw_time_diff(total_hcw_time_ratio)
+    # total_hcw_time_ratio_summ = compute_summary_statistics(total_hcw_time_ratio, use_standard_error=True)
+    total_hcw_time_ratio_diff = compute_summary_statistics(diff, use_standard_error=True)
 
-    adj_scen_data_25 = scen_data.copy()
-    adj_scen_data_50 = scen_data.copy()
+    hcw_time_by_cadre = df.groupby(level='first').sum()
+    annual_hcw_time_by_cadre = hcw_time_by_cadre / 30
 
-    hsi_list = hsis[scenario_name]
+    # Now we calculate the ratio of time use to time available (by cadre) and summarise it
+    hcw_time_ratio_by_cadre = annual_hcw_time_by_cadre.div(avg_annual_hcw_capabilities.iloc[:, 0], axis=0)
+    hcw_time_ratio_by_cadre.columns.names = ['draw', 'run']
 
-    def adjust(df, factor):
-        mask = df.index.get_level_values('second').isin(hsi_list)
-        df.loc[mask] = df.loc[mask] * factor
+    # Now we get the diff from the SQ
+    diff_cadre = get_hcw_time_diff(hcw_time_ratio_by_cadre)
+    hcw_time_ratio_by_cadre_summ = compute_summary_statistics(hcw_time_ratio_by_cadre, use_standard_error=True)
+    hcw_time_ratio_by_cadre_diff = compute_summary_statistics(diff_cadre, use_standard_error=True)
 
-    adjust(adj_scen_data_25, 0.75)
-    adjust(adj_scen_data_50, 0.50)
+    return [total_hcw_time_ratio_diff, hcw_time_ratio_by_cadre_diff, hcw_time_ratio_by_cadre_summ]
 
-    def get_plot_data(df):
-        grouped = df.groupby(level='first').sum()
-        p_diff = (grouped - sq_data_grouped) / sq_data_grouped * 100
-        p_diff.columns = data.columns[k * 10: k*10 +10]
-        p_diff.columns.names = ['draw', 'run']
-        summ = compute_summary_statistics(p_diff, use_standard_error=True)
+hcw_ratios_unadjusted = get_hcw_time_use_ratios(hcw_time_by_treatment_id_df)
 
-        mean = list(summ[k, 'central'].values)
-        lower = list(summ[k, 'lower'].values)
-        upper = list(summ[k, 'upper'].values)
+# hcw_time_by_cadre = hcw_time_by_treatment_id_df.groupby(level='first').sum()
+#
+# total_hcw_time = hcw_time_by_treatment_id_df.sum(axis=0).to_frame().T
+# yearly_total_hcw_time = total_hcw_time / 30
+#
+# total_hcw_time_ratio = yearly_total_hcw_time.div(avg_annual_hcw_capabilities_sum.iloc[:, 0], axis=0)
+# total_hcw_time_ratio.columns.names = ['draw', 'run']
+#
+# diff = total_hcw_time_ratio.copy()
+# for col in total_hcw_time_ratio.columns:
+#     if col[0] != 0:
+#         base_col = (0, col[1])
+#         diff[col] = total_hcw_time_ratio[col] - total_hcw_time_ratio[base_col]
+#     else:
+#         diff[col] = 0  # or np.nan if you prefer
+#
+# total_hcw_time_ratio_diff = compute_summary_statistics(diff, use_standard_error=True)
+#
+# labels = full_lab.values()
+#
+# # Next we calculate HCW time by year
+# annual_hcw_time_by_cadre = hcw_time_by_cadre/ 30
+#
+# # Now we calculate the ratio of time use to time available (by cadre) and summarise it
+# hcw_time_ratio_by_cadre = annual_hcw_time_by_cadre.div(avg_annual_hcw_capabilities.iloc[:, 0], axis=0)
+# hcw_time_ratio_by_cadre.columns.names = ['draw', 'run']
+#
+# # Now we get the diff from the SQ
+# diff = hcw_time_ratio_by_cadre.copy()
+# for col in hcw_time_ratio_by_cadre.columns:
+#     if col[0] != 0:
+#         base_col = (0, col[1])
+#         diff[col] = hcw_time_ratio_by_cadre[col] - hcw_time_ratio_by_cadre[base_col]
+#     else:
+#         diff[col] = 0  # or np.nan if you prefer
+#
+# hcw_time_ratio_by_cadre_diff = compute_summary_statistics(diff, use_standard_error=True)
+# hcw_time_ratio_by_cadre_summ = compute_summary_statistics(hcw_time_ratio_by_cadre, use_standard_error=True)
 
-        yerr_lower = [med - low for med, low in zip(mean, lower)]
-        yerr_upper = [up - med for med, up in zip(mean, upper)]
+def figure_annual_hcw_time_use_over_annual_capabilities(data):
+    # extract data
+    scenario_groups = {
+        'Integrated screening': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22, 23],
+        'MCH clinic': [13, 14, 15, 16, 17, 18, 19, 24, 25],
+        'Chronic care clinic': [20, 21],
+        'Combined': [26, 27]
+    }
 
-        labels = summ.index.values
-        return mean, yerr_lower, yerr_upper, labels
+    # === Flatten scenarios in the order you want
+    ordered_scenario_ids = []
+    for group in ['Integrated screening', 'MCH clinic', 'Chronic care clinic', 'Combined']:
+        ordered_scenario_ids.extend(scenario_groups[group])
 
+    # === Extract values in this order
+    labels = [full_lab[scen_draws[sc]] for sc in ordered_scenario_ids]
+    mean = [float(data.loc[:, (sc, 'central')].iloc[0]) for sc in ordered_scenario_ids]
+    lower_errors = [float(data.loc[:, (sc, 'lower')].iloc[0]) for sc in ordered_scenario_ids]
+    upper_errors = [float(data.loc[:, (sc, 'upper')].iloc[0]) for sc in ordered_scenario_ids]
+    # === Compute distances from mean to bounds (must be non-negative)
+    yerr_lower = [med - low for med, low in zip(mean, lower_errors)]
+    yerr_upper = [up - med for med, up in zip(mean, upper_errors)]
 
-    scen_data_summ = get_plot_data(scen_data)
-    adj_scen_data_25_summ = get_plot_data(adj_scen_data_25)
-    adj_scen_data_50_summ = get_plot_data(adj_scen_data_50)
+    # === Color mapping
+    scenario_ids = ordered_scenario_ids  # keep as integers
+    n_scenarios = len(scenario_ids)
+    has_0 = 0 in scenario_ids
 
-    means1, yerr_low1, yerr_up1, labels = scen_data_summ
-    means2, yerr_low2, yerr_up2, _ = adj_scen_data_25_summ
-    means3, yerr_low3, yerr_up3, _ = adj_scen_data_50_summ
+    palette = sns.color_palette("husl", n_colors=n_scenarios + 1)
+    n_spread = n_scenarios - 1 if has_0 else n_scenarios
+    step = 10
+    spread_indices = [(i * step) % n_spread for i in range(n_spread)]
+    spread_palette = [palette[i] for i in spread_indices]
 
-    # Plot settings
-    bar_width = 0.25
-    x = np.arange(len(labels))
+    # Assign colors by scenario number
+    scenarios_except_0 = [s for s in scenario_ids if s != 0]
+    color_map = {s: spread_palette[i] for i, s in enumerate(scenarios_except_0)}
+    if has_0:
+        color_map[0] = palette[-1]
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    # Generate list of colors in order
+    colors = [color_map[s] for s in scenario_ids]
 
-    # Bar group 1
-    ax.bar(
-        x,
-        scen_data_summ[0],
-        width=bar_width,
-        yerr=[scen_data_summ[1], scen_data_summ[2]],
-        capsize=4,
-        label='Unadjusted P.Diff'
-    )
+    # === Plotting
+    fig, ax = plt.subplots()
+    bars = ax.bar(labels, mean, yerr=[yerr_lower, yerr_upper],
+                  capsize=5, alpha=0.7, ecolor='black', color=colors)
 
-    # Bar group 2
-    ax.bar(
-        x + bar_width,
-        adj_scen_data_25_summ[0],
-        width=bar_width,
-        yerr=[adj_scen_data_25_summ[1], adj_scen_data_25_summ[2]],
-        capsize=4,
-        label='Adjusted P.Diff (25% reduction)'
-    )
+    # === Annotate values on bars
+    offset = max(upper_errors) * 0.05
+    for bar, value, err_up in zip(bars, mean, upper_errors):
+        height = bar.get_height()
+        round_val = round(value, 2)
+        if height >= 0:
+            ax.text(bar.get_x() + bar.get_width() / 2,
+                    height + offset,
+                    round_val,
+                    ha='center', va='bottom', fontsize=7)
+        else:
+            ax.text(bar.get_x() + bar.get_width() / 2,
+                    height - offset,
+                    round_val,
+                    ha='center', va='top', fontsize=7)
 
-    # Bar group 3
-    ax.bar(
-        x + 2 * bar_width,
-        adj_scen_data_50_summ[0],
-        width=bar_width,
-        yerr=[adj_scen_data_50_summ[1], adj_scen_data_50_summ[2]],
-        capsize=4,
-        label='Adjusted P.Diff (50% reduction)'
-    )
+    # === Dotted lines between defined groups
+    groupings = [
+        [1, 2],
+        [3, 4],
+        [5, 6],
+        [7, 8],
+        [9, 10],
+        [11, 12],
+        [22, 23],
+        [13, 14],
+        [15, 16],
+        [17, 18],
+        [19],
+        [24, 25],
+        [20, 21],
+        [26, 27]
+    ]
 
-    # Format axes
-    ax.set_xticks(x + bar_width)
-    ax.set_xticklabels(labels, rotation=45, ha='right')
-    ax.set_ylabel('Percentage Difference from SQ(%)')
-    ax.set_title(f'Percentage Change in HCW Time use by Cadre for Scenario {full_lab[scen_draws[k]]}')
-    ax.legend()
+    index_map = {s: i for i, s in enumerate(scenario_ids)}
+    for g in groupings[:-1]:
+        present = [s for s in g if s in index_map]
+        if present:
+            ix = index_map[present[-1]]
+            ax.axvline(ix + 0.5, color='black', linestyle=':', linewidth=0.5)
 
+    # === Axis labels and formatting
+    ax.set_ylabel('Diff. in annual demand HCW time / human resource capabilities (compared to SQ)',
+                  fontsize=9)
+    plt.xticks(fontsize=7, rotation=90)
     plt.tight_layout()
-    plt.savefig(f'{g_path}/{scen_draws[k]}/hcw_time_by_cadre_{scen_draws[k]}.png', bbox_inches='tight')
+
+    plt.savefig(f'{g_path}/total_HCW_time_ratio_test.png', bbox_inches='tight')
     plt.show()
 
 
-for k in scen_draws:
-    adjust_and_plot_hcw_time_use(k, hcw_time_by_treatment_id_df, hsi)
+figure_annual_hcw_time_use_over_annual_capabilities(hcw_ratios_unadjusted[0])
 
+desired_order = [
+    'Clinical',
+    'Nursing_and_Midwifery',
+    'Pharmacy',
+    'Mental',
+    'Laboratory',
+    'Radiography'
+]
+
+combined_df_ordered = hcw_ratios_unadjusted[1].loc[desired_order]
+
+# === Scenario group logic
+scenario_groups = {
+    'Integrated screening': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22, 23],
+    'MCH clinic': [13, 14, 15, 16, 17, 18, 19, 24, 25],
+    'Chronic care clinic': [20, 21],
+    'Combined': [26, 27]
+}
+
+# === Flatten scenarios in the exact desired order
+ordered_scenario_ids = []
+for group in ['Integrated screening', 'MCH clinic', 'Chronic care clinic', 'Combined']:
+    ordered_scenario_ids.extend(scenario_groups[group])
+
+# === Groupings for dotted lines
+groupings = [
+    [1, 2],
+    [3, 4],
+    [5, 6],
+    [7, 8],
+    [9, 10],
+    [11, 12],
+    [22, 23],
+    [13, 14],
+    [15, 16],
+    [17, 18],
+    [19],
+    [24, 25],
+    [20, 21],
+    [26, 27]
+]
+
+def plot_all_cadre_barcharts_color_coded(df):
+    central_df = df.xs('central', axis=1, level=1)
+    lower_df = df.xs('lower', axis=1, level=1)
+    upper_df = df.xs('upper', axis=1, level=1)
+
+    # Use only the explicitly ordered scenarios
+    scenarios = ordered_scenario_ids
+    n_scenarios = len(scenarios)
+
+    # === Build color map
+    palette = sns.color_palette("husl", n_colors=n_scenarios)
+    step = 10
+    spread_indices = [(i * step) % n_scenarios for i in range(n_scenarios)]
+    spread_palette = [palette[i] for i in spread_indices]
+    color_map = {scenario: spread_palette[i] for i, scenario in enumerate(scenarios)}
+
+    # Map from scenario to x-position index
+    index_map = {s: i for i, s in enumerate(scenarios)}
+
+    cadres = central_df.index
+    fig, axes = plt.subplots(len(cadres), 1, figsize=(14, 3.5 * len(cadres)), sharex=True)
+    fig.suptitle("Cadre-specific Scenario Impact Bar Charts (Color-coded by Scenario)", fontsize=16, y=1.02)
+
+    if len(cadres) == 1:
+        axes = [axes]
+
+    for i, cadre in enumerate(cadres):
+        central = central_df.loc[cadre]
+        lower = lower_df.loc[cadre]
+        upper = upper_df.loc[cadre]
+
+        sig_mask = ~((lower <= 0) & (upper >= 0))
+        plot_vals = pd.Series(0.0, index=scenarios)
+        plot_vals[sig_mask] = central[sig_mask]
+
+        ax = axes[i]
+
+        # Plot bars with color and ordered position
+        for s in scenarios:
+            ax.bar(index_map[s], plot_vals[s], color=color_map[s])
+
+        # Annotate values
+        for s in scenarios:
+            val = plot_vals[s]
+            if val != 0:
+                offset = 0.02 * max(abs(plot_vals.max()), abs(plot_vals.min()), 1e-6)
+                va = 'bottom' if val >= 0 else 'top'
+                ax.text(
+                    index_map[s],
+                    val + offset if val >= 0 else val - offset,
+                    f"{val:.2f}",
+                    ha='center',
+                    va=va,
+                    fontsize=9,
+                    fontweight='bold'
+                )
+
+        # Dotted lines between grouped scenarios
+        for g in groupings[:-1]:
+            present = [s for s in g if s in index_map]
+            if present:
+                ix = index_map[present[-1]]
+                ax.axvline(ix + 0.5, color='black', linestyle=':', linewidth=0.5)
+
+        ax.axhline(0, color='black', linewidth=0.8, linestyle='--')
+        ax.set_title(f"{cadre}")
+        ax.set_ylabel("")
+
+        # Tick labels only on bottom plot
+        if i < len(cadres) - 1:
+            ax.set_xticks([])
+        else:
+            xtick_pos = [index_map[s] for s in scenarios]
+            xtick_labels = [full_lab[scen_draws[s]] for s in scenarios]
+            ax.set_xticks(xtick_pos)
+            ax.set_xticklabels(xtick_labels, rotation=90)
+
+    plt.tight_layout(rect=[0.05, 0, 1, 0.98])
+    fig.text(0.04, 0.5, 'Annual time use / available time', va='center', rotation='vertical', fontsize=12)
+    plt.savefig(f'{g_path}/ratio_test.png')
+    plt.show()
+
+# === Call the function ===
+plot_all_cadre_barcharts_color_coded(combined_df_ordered)
+
+# ----------------------------------------- HCW TIME ADJUSTED FOR EFFICIENCY ------------------------------------------
+hcw_time_by_treatment_id_pathways_df = hcw_time_by_treatment_id_df[[0, 20, 21, 22, 23, 24, 25, 26, 27]]
+hcw_time_by_treatment_id_pathways_df = hcw_time_by_treatment_id_pathways_df.fillna(0)
+hcw_time_by_treatment_id_pathways_df.index.names = ['first', 'second']
+
+def multiply_subset(df, col_level_0_vals, care_types_to_update, multiplier):
+    """
+    Multiply values in selected columns and rows of a multi-index DataFrame.
+
+    Parameters:
+        df: pandas DataFrame with multi-level columns and multi-level index.
+        col_level_0_vals: collection of ints. First level column values to match (e.g. [0, 1]).
+        care_types_to_update: collection. Values from the second index level to update.
+        multiplier: float. Value to multiply the selected cells by.
+    """
+    # Step 1: Select columns where first level is in the provided list
+    columns_to_update = [col for col in df.columns if col[0] in col_level_0_vals]
+
+    # Step 2: Get mask for rows to update
+    rows_to_update = df.index.get_level_values(1).isin(care_types_to_update)
+
+    # Step 3: Apply multiplication
+    df.loc[rows_to_update, columns_to_update] *= multiplier
+
+
+# Subset the DataFrame to relevant scenarios
+hcw_time_by_treatment_id_adj_25 = hcw_time_by_treatment_id_pathways_df.copy()
+hcw_time_by_treatment_id_adj_50 = hcw_time_by_treatment_id_pathways_df.copy()
+hcw_time_by_treatment_id_adj_75 = hcw_time_by_treatment_id_pathways_df.copy()
+
+# Define column-treatment groups as (columns, care_types)
+scaling_groups = [
+    ([20, 21], [
+        'CardioMetabolicDisorders_Investigation_diabetes',
+        'CardioMetabolicDisorders_Investigation_hypertension',
+        'CardioMetabolicDisorders_Investigation_hypertension_and_diabetes',
+        'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
+        'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
+        'CardioMetabolicDisorders_Treatment_hypertension',
+        'CardioMetabolicDisorders_Treatment_diabetes',
+        'Hiv_Test',
+        'Hiv_Treatment',
+        'Tb_Test_Screening',
+        'Tb_Test_Clinical',
+        'Tb_Test_Culture',
+        'Tb_Test_Xray',
+        'Tb_Treatment',
+        'Tb_Test_FollowUp',
+        'Depression_TalkingTherapy',
+        'Depression_Treatment',
+        'Epilepsy_Treatment_Start',
+        'Epilepsy_Treatment_Followup'
+    ]),
+    ([22, 23], [
+        'CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
+        'CardioMetabolicDisorders_Investigation_hypertension',
+        'CardioMetabolicDisorders_Investigation_hypertension_and_diabetes',
+        'CardioMetabolicDisorders_Investigation_diabetes',
+        'Contraception_Routine',
+        'Hiv_Test',
+        'Tb_Test_Screening',
+        'Tb_Test_Clinical',
+        'Tb_Test_Culture',
+        'Tb_Test_Xray'
+    ]),
+    ([24, 25], [
+        'AntenatalCare_Outpatient',
+        'AntenatalCare_FollowUp',
+        'PostnatalCare_Neonatal',
+        'PostnatalCare_Maternal',
+        'Contraception_Routine_Postnatal',
+        'Epi_Childhood_Bcg',
+        'Epi_Childhood_Opv',
+        'Epi_Childhood_DtpHibHep',
+        'Epi_Childhood_Rota',
+        'Epi_Childhood_Pneumo',
+        'Epi_Childhood_MeaslesRubella',
+        'Epi_Pregnancy_Td'
+    ]),
+    ([26, 27], [
+        'CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
+        'CardioMetabolicDisorders_Investigation_hypertension',
+        'CardioMetabolicDisorders_Investigation_hypertension_and_diabetes',
+        'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
+        'CardioMetabolicDisorders_Treatment_hypertension',
+        'CardioMetabolicDisorders_Investigation_diabetes',
+        'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
+        'CardioMetabolicDisorders_Treatment_diabetes',
+        'Contraception_Routine',
+        'Undernutrition_Feeding',
+        'Hiv_Test',
+        'Hiv_Treatment',
+        'Tb_Test_Screening',
+        'Tb_Test_Clinical',
+        'Tb_Test_Culture',
+        'Tb_Test_Xray',
+        'Tb_Treatment',
+        'Tb_Test_FollowUp',
+        'AntenatalCare_Outpatient',
+        'AntenatalCare_FollowUp',
+        'PostnatalCare_Neonatal',
+        'PostnatalCare_Maternal',
+        'Contraception_Routine_Postnatal',
+        'Epi_Childhood_Bcg',
+        'Epi_Childhood_Opv',
+        'Epi_Childhood_DtpHibHep',
+        'Epi_Childhood_Rota',
+        'Epi_Childhood_Pneumo',
+        'Epi_Childhood_MeaslesRubella',
+        'Epi_Pregnancy_Td',
+        'Depression_TalkingTherapy',
+        'Depression_Treatment',
+        'Epilepsy_Treatment_Start',
+        'Epilepsy_Treatment_Followup'
+    ])
+]
+
+# Apply multiplier
+for cols, care_types in scaling_groups:
+    multiply_subset(
+        df=hcw_time_by_treatment_id_adj_25,
+        col_level_0_vals=cols,
+        care_types_to_update=care_types,
+        multiplier=0.75
+    )
+
+for cols, care_types in scaling_groups:
+    multiply_subset(
+        df=hcw_time_by_treatment_id_adj_50,
+        col_level_0_vals=cols,
+        care_types_to_update=care_types,
+        multiplier=0.5
+    )
+
+for cols, care_types in scaling_groups:
+    multiply_subset(
+        df=hcw_time_by_treatment_id_adj_75,
+        col_level_0_vals=cols,
+        care_types_to_update=care_types,
+        multiplier=0.25
+    )
+
+
+total_hcw_time_ratio_diff_adj_25 =  get_hcw_time_use_ratios(hcw_time_by_treatment_id_adj_25)
+total_hcw_time_ratio_diff_adj_50 =  get_hcw_time_use_ratios(hcw_time_by_treatment_id_adj_50)
+total_hcw_time_ratio_diff_adj_75 =  get_hcw_time_use_ratios(hcw_time_by_treatment_id_adj_75)
+
+def plot_adjusted_hcw_ratios(un_adj, adj_25, adj_50, adj_75):
+    # TODO: improve visuals
+
+    # extract data
+    scenario_groups = {
+        'Integrated screening': [22, 23],
+        'MCH clinic': [24, 25],
+        'Chronic care clinic': [20, 21],
+        'Combined': [26, 27]
+    }
+
+    # === Flatten scenarios in the order you want
+    ordered_scenario_ids = []
+    for group in ['Integrated screening', 'MCH clinic', 'Chronic care clinic', 'Combined']:
+        ordered_scenario_ids.extend(scenario_groups[group])
+
+    # === Labels for x-axis
+    labels = [full_lab[scen_draws[sc]] for sc in ordered_scenario_ids]
+
+    # === Helper to extract values and error bars
+    def get_mean_and_errors(data):
+        mean = [float(data.loc[:, (sc, 'central')].iloc[0]) for sc in ordered_scenario_ids]
+        lower = [float(data.loc[:, (sc, 'lower')].iloc[0]) for sc in ordered_scenario_ids]
+        upper = [float(data.loc[:, (sc, 'upper')].iloc[0]) for sc in ordered_scenario_ids]
+        yerr_lower = [m - l for m, l in zip(mean, lower)]
+        yerr_upper = [u - m for u, m in zip(upper, mean)]
+        return np.array(mean), np.array([yerr_lower, yerr_upper])
+
+    # === Extract data
+    datasets = {
+        'Unadjusted': get_mean_and_errors(un_adj),
+        '25% adjusted': get_mean_and_errors(adj_25),
+        '50% adjusted': get_mean_and_errors(adj_50),
+        '75% adjusted': get_mean_and_errors(adj_75),
+    }
+
+    # === Plot settings
+    bar_width = 0.2
+    x = np.arange(len(ordered_scenario_ids))
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # === Color map (optional)
+    cmap = plt.get_cmap('tab10')
+    colors = [cmap(i) for i in range(len(datasets))]
+
+    # === Plot bars
+    for i, (label, (means, yerr)) in enumerate(datasets.items()):
+        offset = (i - 1.5) * bar_width  # center bars around each scenario group
+        ax.bar(x + offset, means, width=bar_width, yerr=yerr,
+               label=label, capsize=5, color=colors[i], alpha=0.9)
+
+    # === X-axis formatting
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+
+    # === Dotted lines between defined groups
+    groupings = [
+        [22, 23],
+        [24, 25],
+        [20, 21],
+        [26, 27],]
+
+    index_map = {s: i for i, s in enumerate(ordered_scenario_ids)}
+    for g in groupings[:-1]:
+        present = [s for s in g if s in index_map]
+        if present:
+            ix = index_map[present[-1]]
+            ax.axvline(ix + 0.5, color='black', linestyle=':', linewidth=0.5)
+
+    ax.set_ylabel('Diff. in annual demand HCW time / human resource capabilities (compared to SQ)')
+
+    # === Final layout
+    plt.tight_layout()
+    plt.savefig(f'{g_path}/adj_ratio_test.png')
+    plt.show()
+
+plot_adjusted_hcw_ratios(hcw_ratios_unadjusted[0],
+                         total_hcw_time_ratio_diff_adj_25[0],
+                         total_hcw_time_ratio_diff_adj_50[0],
+                         total_hcw_time_ratio_diff_adj_75[0])
 
 # ==================================== CONSUMABLE COST BY SCENARIO (AND DIFFS) ========================================
-# https://github.com/UCL/TLOmodel/blob/ec8929949c694b3a503d34051575f0dc7e7a32c3/src/scripts/comparison_of_horizontal_and_vertical_programs/economic_analysis_for_manuscript/roi_analysis_horizontal_vs_vertical.py#L45
-# 606 - 635, 1329-1348
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2054, 12, 31))
 
-list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
-
-input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-                                               _years=list_of_relevant_years_for_costing,
-                                               cost_only_used_staff=True,
-                                               _discount_rate = 0.03)
+# list_of_relevant_years_for_costing = list(range(TARGET_PERIOD[0].year, TARGET_PERIOD[-1].year + 1))
+#
+# input_costs_df = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
+#                                                _years=list_of_relevant_years_for_costing,
+#                                                cost_only_used_staff=True,
+#                                                _discount_rate = 0.03)
+# input_costs_df.to_csv(f'{g_path}/input_costs.csv')
+input_costs = pd.read_csv(f'{g_path}/input_costs.csv')
+input_costs = input_costs.set_index('Unnamed: 0')
 
 total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
 # TODO: currently this is mean and quartiles (update)
 total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'))
 
-def find_difference_relative_to_comparison(_ser: pd.Series,
-                                           comparison: str,
-                                           scaled: bool = False,
-                                           drop_comparison: bool = True,
-                                           ):
-    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
-    within the runs (level 1), relative to where draw = `comparison`.
-    The comparison is `X - COMPARISON`."""
-    return _ser \
-        .unstack(level=0) \
-        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
-        .drop(columns=([comparison] if drop_comparison else [])) \
-        .stack()
+# --------------------------- Adjust HCW costs based on average difference in HCW use ---------------------------------
+# Get ratio of time use by cadre
+adj_25_input_costs = input_costs.copy()
+adj_50_input_costs = input_costs.copy()
+adj_75_input_costs = input_costs.copy()
 
-incremental_scenario_cost = (pd.DataFrame(
-    find_difference_relative_to_comparison(
-        total_input_cost,
-        comparison=0)  # sets the comparator to 0 which is the Actual scenario
-).T.iloc[0].unstack()).T
+def return_cost_adjusted_for_hcw_growth(cost_data, hcw_ratios):
 
-# First summarize all input costs
-input_costs_for_plot_summarized = input_costs.groupby(['draw', 'year', 'cost_subcategory', 'Facility_Level',
-                                                       'cost_subgroup', 'cost_category']).agg(
-    mean=('cost', 'mean'),
-    lower=('cost', lambda x: x.quantile(0.025)),
-    upper=('cost', lambda x: x.quantile(0.975))
-).reset_index()
-input_costs_for_plot_summarized = input_costs_for_plot_summarized.melt(
-    id_vars=['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category'],
-    value_vars=['mean', 'lower', 'upper'],
-    var_name='stat',
-    value_name='cost'
-)
+    # Multiply the HCW cost estimates by ratios
+    central_df = hcw_ratios.xs('central', axis=1, level=1)
 
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all',
-_disaggregate_by_subgroup = False, _outputfilepath = Path(g_path),
-_scenario_dict = scen_draws)
+    # Function to safely get multiplier
+    def get_multiplier(row):
+        subgroup = row['cost_subgroup']
+        draw = row['draw']
+        if subgroup in central_df.index and draw in central_df.columns:
+            return central_df.loc[subgroup, draw]
+        else:
+            return 1.0  # or np.nan, or row['cost'] unmodified depending on your logic
 
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',
-_disaggregate_by_subgroup = False, _outputfilepath = Path(g_path),
-_scenario_dict = scen_draws)
+    cost_data['cost'] = cost_data.apply(lambda row: row['cost'] * get_multiplier(row), axis=1)
+    total_input_cost = cost_data.groupby(['draw', 'run'])['cost'].sum()
+    total_input_cost_annual = total_input_cost / 30
+
+    return total_input_cost, total_input_cost_annual
+
+costs_und_adj_hcw_ratio = return_cost_adjusted_for_hcw_growth(input_costs, hcw_ratios_unadjusted[2])
+costs_adj_25_hcw_ratio = return_cost_adjusted_for_hcw_growth(adj_25_input_costs, total_hcw_time_ratio_diff_adj_25[2])
+costs_adj_50_hcw_ratio = return_cost_adjusted_for_hcw_growth(adj_50_input_costs, total_hcw_time_ratio_diff_adj_50[2])
+costs_adj_75_hcw_ratio = return_cost_adjusted_for_hcw_growth(adj_75_input_costs, total_hcw_time_ratio_diff_adj_75[2])
+
+def find_cost_diff_from_sq_and_sum(data):
+
+    def find_difference_relative_to_comparison(_ser: pd.Series,
+                                               comparison: str,
+                                               scaled: bool = False,
+                                               drop_comparison: bool = True,
+                                               ):
+        """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+        within the runs (level 1), relative to where draw = `comparison`.
+        The comparison is `X - COMPARISON`."""
+        return _ser \
+            .unstack(level=0) \
+            .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+            .drop(columns=([comparison] if drop_comparison else [])) \
+            .stack()
+
+    incremental_scenario_cost_annual = (pd.DataFrame(
+        find_difference_relative_to_comparison(
+            data,
+            comparison=0)  # sets the comparator to 0 which is the Actual scenario
+    ).T.iloc[0].unstack()).T
+
+    incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost_annual)
+
+    return incremental_scenario_cost_summarized
 
 # Plot incremental costs
-incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost)
+incremental_scenario_cost_annual_summarized = find_cost_diff_from_sq_and_sum(costs_und_adj_hcw_ratio[1])
+incremental_scenario_cost_annual_adj_25  = find_cost_diff_from_sq_and_sum(costs_adj_25_hcw_ratio[1])
+incremental_scenario_cost_annual_adj_50 = find_cost_diff_from_sq_and_sum(costs_adj_50_hcw_ratio[1])
+incremental_scenario_cost_annual_adj_75 = find_cost_diff_from_sq_and_sum(costs_adj_75_hcw_ratio[1])
 
-def figure_7_difference_in_cost_from_status_quo(cost_data):
-    name_of_plot = f'Incremental scenario cost relative to baseline during intervention period'
 
+def figure_avg_difference_in_cost_from_status_quo_per_year(cost_data):
+    name_of_plot = 'Incremental scenario cost relative to baseline during intervention period'
+
+    # === Define desired scenario groupings
+    scenario_groups = {
+        'Integrated screening': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22, 23],
+        'MCH clinic': [13, 14, 15, 16, 17, 18, 19, 24, 25],
+        'Chronic care clinic': [20, 21],
+        'Combined': [26, 27]
+    }
+    ordered_scenario_ids = []
+    for group in ['Integrated screening', 'MCH clinic', 'Chronic care clinic', 'Combined']:
+        ordered_scenario_ids.extend(scenario_groups[group])
+
+    # === Reorder cost_data
+    cost_data = cost_data.loc[ordered_scenario_ids]
+
+    # === Error bars
     yerr = np.array([
-            (cost_data['mean'] - cost_data['lower']).values,
-            (cost_data['upper'] - cost_data['mean']).values,
-        ])
+        (cost_data['mean'] - cost_data['lower']).values,
+        (cost_data['upper'] - cost_data['mean']).values,
+    ])
 
-    xticks = {(i + 0.5): k for i, k in enumerate(cost_data.index)}
+    spacing = 1.55
+    xtick_positions = [(i * spacing) for i in range(len(cost_data))]
+    xticks = dict(zip(xtick_positions, cost_data.index))
+    index_map = {s: x for x, s in zip(xtick_positions, cost_data.index)}
+
     fig, ax = plt.subplots(figsize=(10, 5))
+
+    # === Color mapping
+    n_scenarios = len(ordered_scenario_ids)
+    palette = sns.color_palette("husl", n_colors=n_scenarios)
+    step = 10
+    spread_indices = [(i * step) % n_scenarios for i in range(n_scenarios)]
+    spread_palette = [palette[i] for i in spread_indices]
+    color_map = {s: spread_palette[i] for i, s in enumerate(ordered_scenario_ids)}
+    colors = [color_map[s] for s in cost_data.index]
+
+    # === Bar chart
     ax.bar(
-        xticks.keys(),
+        xtick_positions,
         cost_data['mean'].values,
         yerr=yerr,
         ecolor='black',
         capsize=10,
-        label=scen_draws.values()
+        label=[str(s) for s in cost_data.index],
+        color=colors,
     )
 
-    annotations=[
-            f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}- \n {round(row['upper'] / 1e6, 1)})"
-            for _, row in incremental_scenario_cost_summarized.iterrows()
-        ]
+    # === Format for currency annotation
+    def format_currency(val):
+        if abs(val) >= 1e9:
+            return f"${val / 1e9:.1f}B"
+        else:
+            return f"${val / 1e6:.0f}M"
 
-    for xpos, (ypos, text) in zip(xticks.keys(), zip(cost_data['upper'].values.flatten(), annotations)):
-        annotation_y = ypos + 1e6
+    # === Annotate bars
+    for xpos, mean, lower, upper in zip(
+        xtick_positions,
+        cost_data['mean'].values,
+        cost_data['lower'].values,
+        cost_data['upper'].values
+    ):
+        text = format_currency(mean)
+        if mean >= 0:
+            annotation_y = upper + 0.02 * 1e9
+            valign = 'bottom'
+        else:
+            annotation_y = lower - 0.02 * 1e9
+            valign = 'top'
 
         ax.text(
             xpos,
             annotation_y,
-            '\n'.join(text.split(' ', 1)),
-            horizontalalignment='center',
-            verticalalignment='bottom',  # Aligns text at the bottom of the annotation position
+            text,
+            ha='center',
+            va=valign,
             fontsize='x-small',
             rotation='horizontal'
         )
 
-    ax.set_xticks(list(xticks.keys()))
-    ax.set_xticklabels(scen_draws.values())
-    plt.xticks(rotation=90)
+    # === Dotted lines between grouped bars
+    groupings = [
+        [1, 2],
+        [3, 4],
+        [5, 6],
+        [7, 8],
+        [9, 10],
+        [11, 12],
+        [22, 23],
+        [13, 14],
+        [15, 16],
+        [17, 18],
+        [19],
+        [24, 25],
+        [20, 21],
+        [26, 27]
+    ]
+    for g in groupings[:-1]:
+        present = [s for s in g if s in index_map]
+        if present:
+            xpos = index_map[present[-1]]
+            ax.axvline(xpos + spacing / 2, color='black', linestyle=':', linewidth=0.5)
 
-    ax.grid(axis="y")
+    # === Axis and labels
+    ax.set_xticks(xtick_positions)
+    ax.set_xticklabels([full_lab[scen_draws[s]] for s in cost_data.index], rotation=90, fontsize=7)
+
+    ax.grid(axis='both', linestyle='--', linewidth=0.5, alpha=0.7)
+    ax.axhline(0, color='gray', linewidth=0.5, linestyle='--')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+
+    ax.set_ylabel('Difference in annual cost')
+    ax.set_ylim(bottom=-0.25 * 1e9)
+
     fig.tight_layout(pad=2.0)
     plt.subplots_adjust(left=0.15, right=0.85)
 
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('Cost \n(USD Millions)')
-    ax.set_ylim(bottom=0)
+    # === Save + Show
+    fig.savefig(Path(g_path) / name_of_plot.replace(' ', '_').replace(',', ''), bbox_inches='tight')
+    plt.show()
+
+
+figure_avg_difference_in_cost_from_status_quo_per_year(incremental_scenario_cost_annual_summarized)
+
+def plot_adjusted_avg_difference_in_cost_from_status_quo_per_year(un_adj, adj_25, adj_50, adj_75):
+    # === Scenario groups/order
+    scenario_groups = {
+        'Integrated screening': [22, 23],
+        'MCH clinic': [24, 25],
+        'Chronic care clinic': [20, 21],
+        'Combined': [26, 27],
+    }
+    ordered_scenario_ids = []
+    for group in ['Integrated screening', 'MCH clinic', 'Chronic care clinic', 'Combined']:
+        ordered_scenario_ids.extend(scenario_groups[group])
+
+    # === Labels for x-axis
+    labels = [full_lab[scen_draws[sc]] for sc in ordered_scenario_ids]
+
+    # === Helper to extract means and asymmetric errors in the right order
+    def get_mean_and_errors(df):
+        sub = df.loc[ordered_scenario_ids]  # ensure order
+        mean = sub['mean'].values.astype(float)
+        lower = (sub['mean'] - sub['lower']).values.astype(float)
+        upper = (sub['upper'] - sub['mean']).values.astype(float)
+        yerr = np.vstack([lower, upper])  # shape (2, N)
+        return mean, yerr
+
+    # === Datasets
+    datasets = {
+        'Unadjusted': get_mean_and_errors(un_adj),
+        '25% adjusted': get_mean_and_errors(adj_25),
+        '50% adjusted': get_mean_and_errors(adj_50),
+        '75% adjusted': get_mean_and_errors(adj_75),
+    }
+
+    # === Plot
+    fig, ax = plt.subplots(figsize=(12, 6))
+    x = np.arange(len(ordered_scenario_ids))
+    n_series = len(datasets)
+    width = 0.18  # bar width
+    offsets = (np.arange(n_series) - (n_series - 1) / 2) * (width + 0.02)
+
+    colors = plt.get_cmap('tab10').colors
+
+    for i, (name, (means, yerr)) in enumerate(datasets.items()):
+        ax.bar(
+            x + offsets[i],
+            means,
+            width=width,
+            yerr=yerr,
+            capsize=6,
+            ecolor='black',
+            label=name,
+            color=colors[i % len(colors)],
+            alpha=0.9,
+        )
+
+    # Cosmetics
+    ax.axhline(0, linewidth=1, linestyle='--', color='gray')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=40, ha='right')
+    ax.set_ylabel('Difference in annual cost (USD)')
+    ax.set_xlabel('Scenario')
+    ax.legend(title='Adjustment', frameon=False)
+    ax.margins(x=0.02)
+
+    # Light separators between scenario pairs
+    for idx in range(2, len(ordered_scenario_ids), 2):
+        ax.axvline(idx - 0.5, linestyle=':', linewidth=0.8, color='lightgray', zorder=0)
+
     fig.tight_layout()
-    fig.savefig(Path(g_path) / name_of_plot.replace(' ', '_').replace(',', ''))
-    plt.close(fig)
+    plt.savefig(f'{g_path}/adj_total_costs_test.png')
+    plt.show()
 
-figure_7_difference_in_cost_from_status_quo(incremental_scenario_cost_summarized)
+plot_adjusted_avg_difference_in_cost_from_status_quo_per_year(incremental_scenario_cost_annual_summarized,
+                                                              incremental_scenario_cost_annual_adj_25,
+                                                              incremental_scenario_cost_annual_adj_50,
+                                                              incremental_scenario_cost_annual_adj_75)
 
-# =============================================== OTHER FIGURES ======================================================
 
-# 'htn'
-# index = diff_dalys_by_year.index
-#
-# def get_ncd_data(index):
-#     htn_diag = extract_results(
-#                 results_folder,
-#                 module="tlo.methods.cardio_metabolic_disorders",
-#                 key="hypertension_diagnosis_prevalence",
-#                 # custom_generate_series=(
-#                 #     lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].mean()),
-#                 column='hypertension_diagnosis_prevalence',
-#                 do_scaling=False
-#             )
-#     htn_diag.index = index
-#     htn_diag_summ = compute_summary_statistics(htn_diag, use_standard_error=True)
-#
-#     htn_med = extract_results(
-#                 results_folder,
-#                 module="tlo.methods.cardio_metabolic_disorders",
-#                 key="hypertension_medication_prevalence",
-#                 column='hypertension_medication_prevalence',
-#                 do_scaling=False
-#             )
-#     htn_med_summ = compute_summary_statistics(htn_med, use_standard_error=True)
-#
-#     dm_diag = extract_results(
-#                 results_folder,
-#                 module="tlo.methods.cardio_metabolic_disorders",
-#                 key="diabetes_diagnosis_prevalence",
-#                 column='diabetes_diagnosis_prevalence',
-#                 do_scaling=False
-#             )
-#     dm_diag_summ = compute_summary_statistics(dm_diag, use_standard_error=True)
-#
-#     dm_med = extract_results(
-#                 results_folder,
-#                 module="tlo.methods.cardio_metabolic_disorders",
-#                 key="diabetes_medication_prevalence",
-#                 column='diabetes_medication_prevalence',
-#                 do_scaling=False
-#             )
-#
-#     dm_med_summ = compute_summary_statistics(dm_med, use_standard_error=True)
-#
-#
-#     return htn_diag, dm_diag, dm_med
-#
-# get_ncd_data(index)
-#
-# def additional_figs_ncd_diag_treatment_coverage(data):
-#     pass
-#
-#
-# #  'fp'
-#
-#
-#
-# # 'hiv' / 'tb'
-# # 'anc'
-# # 'pnc'
-# # 'mal'
-# # 'epi'
+#  CALCULATE AND PLOT COST PER DALY AVERTED
+def get_cost_per_daly_averted(incremental_cost):
+    columns_of_interest = [20, 21, 22, 23, 24, 25, 26, 27]
+
+    all_total_dalys_averted = diff_age_standardized_dalys_sum
+    total_dalys_averted = all_total_dalys_averted[columns_of_interest].xs('central', axis=1, level=1)
+
+    # pivot costs
+    inc_cost = incremental_cost['mean'].to_frame().T
+    final_costs = inc_cost[columns_of_interest]
+
+    final_costs.index = total_dalys_averted.index
+
+    cost_per_daly_averted = final_costs / total_dalys_averted
+
+    return cost_per_daly_averted
+
+total_inc_cost_unadj = find_cost_diff_from_sq_and_sum(costs_und_adj_hcw_ratio[0])
+inc_cost_adj_25 = find_cost_diff_from_sq_and_sum(costs_adj_25_hcw_ratio[0])
+inc_cost_adj_50 = find_cost_diff_from_sq_and_sum(costs_adj_50_hcw_ratio[0])
+inc_cost_adj_75 = find_cost_diff_from_sq_and_sum(costs_adj_75_hcw_ratio[0])
+
+
+cost_per_daly_averted = []
+for cost_data in [total_inc_cost_unadj,
+                  inc_cost_adj_25,
+                  inc_cost_adj_50,
+                  inc_cost_adj_75]:
+    cost_per_daly_averted.append(get_cost_per_daly_averted(cost_data))
+cost_per_daly_averted_df = pd.concat(cost_per_daly_averted)
+cost_per_daly_averted_df.index = ['un_adj', 'adj_25', 'adj_50', 'adj_75']
+
+def plot_cost_per_daly_averted_group_bar_chart(cost_per_daly_averted_df):
+    # TODO: THIS IS WRONG! IT SHOULD BE TOTAL DIFFERENCE IN COST
+    # === Use your given ordering and labels ===
+    scenario_groups = {
+        'Integrated screening': [22, 23],
+        'MCH clinic': [24, 25],
+        'Chronic care clinic': [20, 21],
+        'Combined': [26, 27],
+    }
+    ordered_scenario_ids = []
+    for group in ['Integrated screening', 'MCH clinic', 'Chronic care clinic', 'Combined']:
+        ordered_scenario_ids.extend(scenario_groups[group])
+
+    # Labels for x-axis (provided)
+    labels = [full_lab[scen_draws[sc]] for sc in ordered_scenario_ids]
+
+    # === Reorder columns; rows are the "assumptions" (each row becomes a bar within a group) ===
+    data = cost_per_daly_averted_df[ordered_scenario_ids]
+
+    n_groups = data.shape[1]  # number of scenarios (groups)
+    n_bars_per_group = data.shape[0]  # number of rows/assumptions (bars per group)
+
+    x = np.arange(n_groups, dtype=float)  # group centers
+    width = min(0.8 / max(n_bars_per_group, 1), 0.2)  # bar width with a cap
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # === Plot each row as a bar within each scenario group ===
+    # Center the block of bars around the group tick (x)
+    offset_start = - (n_bars_per_group - 1) * width / 2.0
+
+    # simple color palette per row
+    cmap = plt.get_cmap('tab10')
+    colors = [cmap(i % 10) for i in range(n_bars_per_group)]
+
+    for i, row_label in enumerate(data.index):
+        vals = data.iloc[i].values.astype(float)
+        ax.bar(x + offset_start + i * width, vals, width=width, label=str(row_label), color=colors[i])
+
+    # === Cosmetics ===
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=25, ha='right')
+    ax.set_ylabel("Cost per DALY averted (USD)")
+    ax.grid(axis='y', linestyle='--', linewidth=0.6, alpha=0.6)
+    ax.legend(title="Assumption (row)", ncols=2, fontsize=9, title_fontsize=10, frameon=False)
+    plt.tight_layout()
+    plt.savefig(f'{g_path}/cost_per_daly_averted.png')
+    plt.show()
+
+plot_cost_per_daly_averted_group_bar_chart(cost_per_daly_averted_df)
