@@ -277,9 +277,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_data_deaths_mean_female = pd.DataFrame(all_years_data_deaths_mean_female)
         df_all_years_data_deaths_mean_male = pd.DataFrame(all_years_data_deaths_mean_male)
 
-        df_death_per_1000_mean_female = df_all_years_data_deaths_mean_female.div(df_all_years_data_population_mean_female.iloc[0, 0], axis=0) * 1000
-        df_death_per_1000_mean_male = df_all_years_data_deaths_mean_male.div(df_all_years_data_population_mean_male.iloc[0, 0], axis=0) * 1000
-
+        df_death_per_1000_mean_female = df_all_years_data_deaths_mean_female.div(df_all_years_data_population_mean_female, axis=0) * 1000
+        df_death_per_1000_mean_male = df_all_years_data_deaths_mean_male.div(df_all_years_data_population_mean_male, axis=0) * 1000
+        df_normalized_population = df_all_years_data_population_mean.div(df_all_years_data_population_mean.iloc[:, 0],
+                                                                         axis=0)
 
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
@@ -303,6 +304,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             axes[1].plot(df_all_years_DALYS_mean.columns, df_all_years_DALYS_mean.loc[condition], marker='o', label=condition,
                          color=[get_color_cause_of_death_or_daly_label(_label) for _label in
                                 df_all_years_DALYS_mean.index][i])
+
+        axes[1].plot(
+                df_normalized_population.columns,
+                df_normalized_population.iloc[0],
+                color='black',
+                linestyle='--',
+                linewidth=4,
+            )
+
+        axes[1].text(
+                x=df_normalized_population.columns[-1] + 0.5,
+                y=df_normalized_population.iloc[0, -1],
+                s='Population',
+                color='black',
+                fontsize=8,
+                va='center'
+            )
         axes[1].set_title('Panel B: DALYs by cause')
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Number of DALYs')
@@ -434,6 +452,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
                    fontsize=14,  va='top', ha='right')
+
         df_daly_per_1000_mean = df_all_years_DALYS_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
         # Panel A: Deaths (Stacked bar plot)
         causes = list(df_daly_per_1000_mean.index)
@@ -475,7 +494,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             )
             line_handles.append((condition, line))
         label_positions = []
-        y_offset = 0.5
+        y_offset = 0.01
         # Add labels to the right of the last point of each line
         for condition in df_DALY_normalized_mean.index:
             y = df_DALY_normalized_mean.loc[condition].iloc[-1]
@@ -484,12 +503,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             while any(abs(y - existing_y) < y_offset for existing_y in label_positions):
                 y += y_offset
+                x += 10
             axes[1].text(
                 x +4,
                 y,
                 condition,
                 color=color,
                 fontsize=9,
+                va='center'
+            )
+        axes[1].text(
+                x=df_normalized_population.columns[-1] + 0.5,
+                y=df_normalized_population.iloc[0, -1],
+                s='Population',
+                color='black',
+                fontsize=0,
                 va='center'
             )
 
@@ -631,10 +659,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         dalys_totals_upper - dalys_totals_mean
     ])
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
-    axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
+    axes[0].text(-0.05, 1.05, '(A)', transform=axes[0].transAxes,
                  fontsize=14, va='top', ha='right')
 
-    axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
+    axes[1].text(-0.05, 1.05, '(B)', transform=axes[1].transAxes,
                  fontsize=14, va='top', ha='right')
     # Panel A: Total Deaths
     axes[0].bar(deaths_totals_mean.index, deaths_totals_mean.values, color=scenario_colours, yerr = deaths_totals_err, capsize=20)
@@ -663,33 +691,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
                  fontsize=14, va='top', ha='right')
-    # # Prep Deaths Data (transpose so scenarios are rows, causes are columns, then select 2020 and 2070 columns)
-    # deaths_plot_data = df_deaths_all_draws_mean_1000.loc[:, ['First','Last']].T
-    # deaths_plot_data.index = ['2020', '2070']
-    # # Plot Panel A: Total Deaths
-    # deaths_plot_data.T.plot.bar(stacked=True, ax=axes[0],
-    #                           color=[get_color_cause_of_death_or_daly_label(cause) for cause in deaths_plot_data.columns],
-    #                           width=0.8)
-    #
-    # axes[0].set_xlabel('Year')
-    # axes[0].set_ylabel('Deaths per 1,000')
-    # axes[0].legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
-    #
-    # # Prep DALYs Data
-    # dalys_plot_data = df_dalys_all_draws_mean_1000.loc[:, ['First','Last']].T
-    # dalys_plot_data.index = ['2020', '2070']
-    # # Plot Panel B: Total DALYs
-    # dalys_plot_data.plot.bar(stacked=True, ax=axes[1],
-    #                          color=[get_color_cause_of_death_or_daly_label(cause) for cause in dalys_plot_data.columns],
-    #                          width=0.8)
-    #
-    # axes[1].set_xlabel('Year')
-    # axes[1].set_ylabel('DALYs per 1,000')
-    # axes[1].legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
-    #
-    # fig.tight_layout()
-    # fig.savefig(output_folder / "deaths_and_dalys_per_1000_all_cause_all_draws_2020_vs_2070_baseline.png")
-    # plt.close(fig)
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
     axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
@@ -778,7 +779,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         legend=False)
 
     handles, labels = axes[0].get_legend_handles_labels()
-    label_to_handle = dict(zip(labels, handles))
     axes[0].legend().set_visible(False)
     axes[0].tick_params(axis='both', which='major', labelsize=12)
     axes[0].set_ylabel('DALYs per 1,000 population')

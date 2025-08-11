@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 from types import MappingProxyType
-from typing import Union
+from scipy.signal import savgol_filter
 
 import numpy as np
 import pandas as pd
@@ -317,10 +317,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         for condition in df_all_years_prevalence_normalized.index:
                 color = get_color_cause_of_prevalence_label(condition)
+                y_vals = df_all_years_prevalence_normalized.loc[condition].to_numpy()
 
                 axes.plot(
                     df_all_years_prevalence_normalized.columns,
-                    df_all_years_prevalence_normalized.loc[condition],
+                    savgol_filter(y_vals, window_length=5, polyorder=2),
                     marker='o',
                     color=color
                 )
@@ -330,6 +331,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
                 while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
                     final_y += y_offset
+                    final_x += 2.5
 
                 label_positions.append(final_y)
 
