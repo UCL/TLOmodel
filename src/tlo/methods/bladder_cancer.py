@@ -261,7 +261,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
     def initialise_population(self, population):
         """Set property values for the initial population."""
         df = population.props  # a shortcut to the data-frame
-        p = self.module.parameters
+        p = self.parameters
 
         # defaults
         df.loc[df.is_alive, "bc_status"] = "none"
@@ -434,7 +434,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         # treatment was received.
 
         df = sim.population.props
-        p = self.module.parameters
+        p = self.parameters
         lm = self.linear_models_for_progession_of_bc_status
 
         predictors = [
@@ -569,7 +569,8 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
                 hsi_event=HSI_BladderCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date + DateOffset(months=self.parameters['delay_initial_palliative_care_months']),
-                tclose=self.sim.date + DateOffset(months=self.parameters['delay_initial_palliative_care_months']) + DateOffset(weeks=self.parameters['duration_initial_palliative_care_weeks'])
+                tclose=self.sim.date + DateOffset(months=self.parameters['delay_initial_palliative_care_months'])
+                       + DateOffset(weeks=self.parameters['duration_initial_palliative_care_weeks'])
             )
 
     def on_birth(self, mother_id, child_id):
@@ -994,7 +995,8 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=self.module.parameters['post_treatment_followup_interval_years']),
+                topen=self.sim.date +
+                      DateOffset(years=self.module.parameters['post_treatment_followup_interval_years']),
                 tclose=None,
                 priority=0
             )
@@ -1017,7 +1019,8 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "BladderCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': module.parameters['beddays_palliative_care']})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'general_bed': module.parameters['beddays_palliative_care']}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1047,7 +1050,8 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=self.module.parameters['palliative_care_repeat_interval_months']),
+                topen=self.sim.date +
+                      DateOffset(months=self.module.parameters['palliative_care_repeat_interval_months']),
                 tclose=None,
                 priority=0
             )
