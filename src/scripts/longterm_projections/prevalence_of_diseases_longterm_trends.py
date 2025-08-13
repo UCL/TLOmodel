@@ -349,10 +349,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 color='black'
             )
 
-            # Extend x-axis to accommodate labels
-        current_xlim = axes.get_xlim()
-        axes.set_xlim(current_xlim[0], current_xlim[1] + 4)  # Add more space for labels
-
         axes.set_xlabel('Year', fontsize=12)
         axes.set_ylabel('Fold change in age-standardised prevalence', fontsize=12)
         axes.tick_params(axis='both', which='major', labelsize=12)
@@ -499,7 +495,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                   color=color, linestyle='--', alpha=0.8, linewidth=1.5)  # More visible
 
         axes.text(
-            x=final_x + 1.2,
+            x=final_x + 0.5,
             y=adjusted_y,
             s=condition,
             color=color,
