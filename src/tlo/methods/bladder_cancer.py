@@ -261,7 +261,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
     def initialise_population(self, population):
         """Set property values for the initial population."""
         df = population.props  # a shortcut to the data-frame
-        p = self.parameters
+        p = self.module.parameters
 
         # defaults
         df.loc[df.is_alive, "bc_status"] = "none"
@@ -434,7 +434,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         # treatment was received.
 
         df = sim.population.props
-        p = self.parameters
+        p = self.module.parameters
         lm = self.linear_models_for_progession_of_bc_status
 
         predictors = [
