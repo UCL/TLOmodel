@@ -21,7 +21,7 @@ min_year = 2020
 max_year = 2070
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
-scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Negative Lifestyle Change", "Positive Lifestyle Change"]
+scenario_names = ["Status Quo", "HTM Scale-up", "Worsening Lifestyle Factors", "Improving Lifestyle Factors", "Maximal Healthcare \nProvision",]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167', '#9A348E']
 
 CONDITION_TO_COLOR_MAP_PREVALENCE = MappingProxyType(
@@ -272,49 +272,35 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
     # Plotting
-        fig, axes = plt.subplots(1, 2, figsize=(15, 7))
-
-        df_prevalence_standard_years.T.plot.bar(stacked=True, ax=axes[0],
-                                                    color=[get_color_cause_of_prevalence_label(_label) for _label in
-                                                           df_prevalence_standard_years.index])
-
-        axes[0].set_xlabel('Year', fontsize=12)
-        axes[0].set_ylabel('Age-standardised prevalence in population (per 1,000)', fontsize=12)
-        axes[0].legend().set_visible(False)
-
-        labels = [label.get_text() for label in axes[0].get_xticklabels()]
-        new_labels = [label if i % 5 == 0 else '' for i, label in enumerate(labels)]
-        axes[0].set_xticks(range(len(new_labels)))
-        axes[0].set_xticklabels(new_labels, rotation=0)
-        axes[0].tick_params(axis='both', which='major', labelsize=12)
-
-        for condition in df_all_years_prevalence_normalized.index:
-                axes[1].plot(df_all_years_prevalence_normalized.columns,
-                             df_all_years_prevalence_normalized.loc[condition],
-                             marker='o',
-                             label=condition,
-                             color=get_color_cause_of_prevalence_label(condition))
-        # axes[1].scatter(df_normalized_population.index,
-        #                     df_normalized_population,
-        #                     color='black', marker='s', label='Population')
-        axes[1].hlines(y=df_normalized_population.loc[2020], xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()),
-                           color='black')  # just want it to be at 1
-        axes[1].set_xlabel('Year',  fontsize=12)
-        axes[1].set_ylabel('Fold change in prevalence',  fontsize=12)
-        axes[1].legend(title='Condition', bbox_to_anchor=(1, 1), loc='upper left')
-        axes[1].tick_params(axis='both', which='major', labelsize=12)
-
-        fig.tight_layout()
-        fig.savefig(make_graph_file_name(f'Trend_Prevalence_by_Condition_All_Years_Raw_and_Normalized_Panel_A_and_B_{draw}_age_standardisation'))
-        plt.close(fig)
-        df_all_years_prevalence_normalized.to_csv(output_folder/f"Prevalence_by_condition_normalized_2020_{draw}_age_standardisation.csv")
-        all_draws_prevalence_normalized[draw] = df_all_years_prevalence_normalized.iloc[:,-1]
-
         fig, axes = plt.subplots(1, 1, figsize=(10, 10))
 
-        label_positions = []
-        y_offset = 0.02
+        def create_non_overlapping_positions(y_values, min_gap_ratio=0.02):
+                """
+                Adjust y positions to prevent overlaps while minimizing displacement
+                Uses relative gap based on data range to handle large value ranges
+                """
+                # Calculate appropriate gap based on data range
+                y_range = max(y_values) - min(y_values)
+                min_gap = max(y_range * min_gap_ratio, 0.1)  # At least 0.1, or 2% of range
 
+                # Create pairs of (original_y, index)
+                indexed_values = [(y, i) for i, y in enumerate(y_values)]
+                indexed_values.sort()  # Sort by y value
+
+                adjusted_positions = [0] * len(y_values)
+
+                for i, (original_y, original_idx) in enumerate(indexed_values):
+                    if i == 0:
+                        # First label keeps its position
+                        adjusted_positions[original_idx] = original_y
+                    else:
+                        # For subsequent labels, ensure minimum gap from previous
+                        prev_y = max(adjusted_positions[indexed_values[j][1]] for j in range(i))
+                        adjusted_positions[original_idx] = max(original_y, prev_y + min_gap)
+
+                return adjusted_positions
+
+            # Plot all lines first
         for condition in df_all_years_prevalence_normalized.index:
                 color = get_color_cause_of_prevalence_label(condition)
                 y_vals = df_all_years_prevalence_normalized.loc[condition].to_numpy()
@@ -326,29 +312,46 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     color=color
                 )
 
-                final_x = df_all_years_prevalence_normalized.columns[-1] + 0.5
-                final_y = df_all_years_prevalence_normalized.loc[condition].iloc[-1]
+            # Get all final y values ONCE (outside the loop)
+        final_y_values = [df_all_years_prevalence_normalized.loc[condition].iloc[-1]
+                              for condition in df_all_years_prevalence_normalized.index]
 
-                while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
-                    final_y += y_offset
-                    final_x += 2.5
+            # Calculate non-overlapping positions ONCE
+        adjusted_y_positions = create_non_overlapping_positions(final_y_values, min_gap_ratio=0.01)
 
-                label_positions.append(final_y)
+            # Add labels with adjusted positions
+        for i, condition in enumerate(df_all_years_prevalence_normalized.index):
+                color = get_color_cause_of_prevalence_label(condition)
+                original_y = df_all_years_prevalence_normalized.loc[condition].iloc[-1]
+                adjusted_y = adjusted_y_positions[i]
+                final_x = df_all_years_prevalence_normalized.columns[-1]
 
+                # Always add connecting line from data point to label
+                axes.plot([final_x, final_x + 1.0],
+                          [original_y, adjusted_y],
+                          color=color, linestyle='--', alpha=0.6, linewidth=1.0)
+
+                # Place text to the RIGHT of the final data point
                 axes.text(
-                    x=final_x,
-                    y=final_y,
+                    x=final_x + 1.5,  # Offset to the right
+                    y=adjusted_y,
                     s=condition,
                     color=color,
                     fontsize=8,
-                    va='center')
+                    va='center'
+                )
 
+            # Add horizontal line
         axes.hlines(
                 y=df_normalized_population.loc[2020],
                 xmin=min(axes.get_xlim()),
                 xmax=max(axes.get_xlim()),
                 color='black'
             )
+
+            # Extend x-axis to accommodate labels
+        current_xlim = axes.get_xlim()
+        axes.set_xlim(current_xlim[0], current_xlim[1] + 4)  # Add more space for labels
 
         axes.set_xlabel('Year', fontsize=12)
         axes.set_ylabel('Fold change in age-standardised prevalence', fontsize=12)
@@ -357,65 +360,160 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.tight_layout()
         fig.savefig(make_graph_file_name(
                 f'Trend_Prevalence_by_Condition_All_Years_Normalized_{draw}_age_standardisation'))
-        plt.show()
-    # Plot across scenarios
+        plt.close(fig)
+        df_all_years_prevalence_normalized.to_csv(output_folder/f"Prevalence_by_condition_normalized_2020_{draw}_age_standardisation.csv")
+        all_draws_prevalence_normalized[draw] = df_all_years_prevalence_normalized.iloc[:,-1]
 
     fig, axes = plt.subplots(1, 1, figsize=(10, 10))
-    #
-    # all_draws_prevalence_standard_years.T.plot.bar(
-    #         stacked=True, ax=axes[0],
-    #         color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence_standard_years.index], legend=False
-    #     )
-    # axes[0].set_ylabel('Age-standardised prevalence',  fontsize=12)
-    # axes[0].set_xlabel('Scenario', fontsize=12)
-    # axes[0].set_xticklabels(scenario_names, rotation=45)
-    # axes[0].tick_params(axis='both', which='major', labelsize=12)
+
+    def create_non_overlapping_positions(y_values, min_gap_ratio=0.01):
+        """
+        Adjust y positions to prevent overlaps while minimizing displacement
+        Uses relative gap based on data range to handle large value ranges
+        """
+        y_range = max(y_values) - min(y_values)
+        min_gap = max(y_range * min_gap_ratio, 0.05)
+
+        indexed_values = [(y, i) for i, y in enumerate(y_values)]
+        indexed_values.sort()
+
+        adjusted_positions = [0] * len(y_values)
+
+        for i, (original_y, original_idx) in enumerate(indexed_values):
+            if i == 0:
+                adjusted_positions[original_idx] = original_y
+            else:
+                prev_y = max(adjusted_positions[indexed_values[j][1]] for j in range(i))
+                adjusted_positions[original_idx] = max(original_y, prev_y + min_gap)
+
+        return adjusted_positions
+
+    for condition in df_all_years_prevalence_normalized.index:
+        color = get_color_cause_of_prevalence_label(condition)
+        y_vals = df_all_years_prevalence_normalized.loc[condition].to_numpy()
+
+        axes.plot(
+            df_all_years_prevalence_normalized.columns,
+            savgol_filter(y_vals, window_length=5, polyorder=2),
+            marker='o',
+            color=color
+        )
+
+    final_y_values = [df_all_years_prevalence_normalized.loc[condition].iloc[-1]
+                      for condition in df_all_years_prevalence_normalized.index]
+
+    adjusted_y_positions = create_non_overlapping_positions(final_y_values, min_gap_ratio=0.01)
+
+    for i, condition in enumerate(df_all_years_prevalence_normalized.index):
+        color = get_color_cause_of_prevalence_label(condition)
+        original_y = df_all_years_prevalence_normalized.loc[condition].iloc[-1]
+        adjusted_y = adjusted_y_positions[i]
+        final_x = df_all_years_prevalence_normalized.columns[-1]
+
+        threshold = max(abs(original_y) * 0.01, 0.025)
+        if abs(adjusted_y - original_y) > threshold:
+            axes.plot([final_x, final_x + 0.5],
+                      [original_y, adjusted_y],
+                      color=color, linestyle='--', alpha=0.5, linewidth=0.8)
+
+        axes.text(
+            x=final_x + 1.0,
+            y=adjusted_y,
+            s=condition,
+            color=color,
+            fontsize=8,
+            va='center'
+        )
+    axes.hlines(
+        y=df_normalized_population.loc[2020],
+        xmin=min(axes.get_xlim()),
+        xmax=max(axes.get_xlim()),
+        color='black'
+    )
+
+    axes.set_xlabel('Year', fontsize=12)
+    axes.set_ylabel('Fold change in age-standardised prevalence', fontsize=12)
+    axes.tick_params(axis='both', which='major', labelsize=12)
+
+    plt.tight_layout()
+    fig.savefig(make_graph_file_name(
+        f'Trend_Prevalence_by_Condition_All_Years_Normalized_{draw}_age_standardisation'))
+    # Plot across scenarios
+    fig, axes = plt.subplots(1, 1, figsize=(10, 10))
+
+    orig_cols = list(all_draws_prevalence_normalized.columns)
+    cols = orig_cols[:1] + orig_cols[2:] + [orig_cols[1]]
+    all_draws_prevalence_normalized = all_draws_prevalence_normalized.loc[:, cols]
+    all_draws_prevalence_normalized.rename(
+        columns=dict(zip(all_draws_prevalence_normalized.columns, range(len(scenario_names)))),
+        inplace=True
+    )
+    def create_non_overlapping_positions_scenarios(y_values, min_gap=0.025):
+        """
+        Adjust y positions to prevent overlaps while minimizing displacement
+        """
+        # Create pairs of (original_y, index)
+        indexed_values = [(y, i) for i, y in enumerate(y_values)]
+        indexed_values.sort()  # Sort by y value
+
+        adjusted_positions = [0] * len(y_values)
+
+        for i, (original_y, original_idx) in enumerate(indexed_values):
+            if i == 0:
+                adjusted_positions[original_idx] = original_y
+            else:
+                prev_y = max(adjusted_positions[indexed_values[j][1]] for j in range(i))
+                adjusted_positions[original_idx] = max(original_y, prev_y + min_gap)
+
+        return adjusted_positions
 
     for i, condition in enumerate(all_draws_prevalence_normalized.index):
-        axes.scatter(all_draws_prevalence_normalized.columns, all_draws_prevalence_normalized.loc[condition],
+        color = get_color_cause_of_prevalence_label(condition)
+
+        axes.scatter(all_draws_prevalence_normalized.columns,
+                     all_draws_prevalence_normalized.loc[condition],
                      marker='o', s=10,
-                     label=condition, color=[get_color_cause_of_prevalence_label(_label) for _label in
-                                             all_draws_prevalence_normalized.index][i])
+                     label=condition,
+                     color=color)
+
         axes.plot(
             all_draws_prevalence_normalized.columns,
             all_draws_prevalence_normalized.loc[condition],
-            color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence_normalized.index][i],
+            color=color,
             alpha=0.5
         )
-        label_positions = []
-        y_offset = 0.02
 
+    final_y_values = [all_draws_prevalence_normalized.loc[condition].iloc[-1]
+                      for condition in all_draws_prevalence_normalized.index]
+
+    adjusted_y_positions = create_non_overlapping_positions_scenarios(final_y_values, min_gap=0.06)
+
+    for i, condition in enumerate(all_draws_prevalence_normalized.index):
         color = get_color_cause_of_prevalence_label(condition)
+        original_y = all_draws_prevalence_normalized.loc[condition].iloc[-1]
+        adjusted_y = adjusted_y_positions[i]
+        final_x = all_draws_prevalence_normalized.columns[-1]
 
-        final_x = all_draws_prevalence_normalized.columns[-1] + 0.5
-        final_y = all_draws_prevalence_normalized.loc[condition].iloc[-1]
-
-        while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
-                    final_y += y_offset
-
-        label_positions.append(final_y)
+        axes.plot([final_x, final_x + 0.5],
+                  [original_y, adjusted_y],
+                  color=color, linestyle='--', alpha=0.8, linewidth=1.5)  # More visible
 
         axes.text(
-                    x=final_x,
-                    y=final_y,
-                    s=condition,
-                    color=color,
-                    fontsize=8,
-                    va='center')
+            x=final_x + 1.2,
+            y=adjusted_y,
+            s=condition,
+            color=color,
+            fontsize=8,
+            va='center'
+        )
 
     axes.hlines(y=1, xmin=min(axes.get_xlim()), xmax=max(axes.get_xlim()), color='black')
-    # axes[1].scatter(all_draws_population.columns,
-    #                 all_draws_population,
-    #                 color='black', marker='s', label='Population')
-    #axes.legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
     axes.legend().set_visible(False)
     axes.set_ylabel('Fold change in prevalence', fontsize=12)
     axes.set_xlabel('Scenario', fontsize=12)
     axes.set_xticks(range(len(scenario_names)))
     axes.set_xticklabels(scenario_names, rotation=45)
-    axes.set_xlim(-0.5, len(scenario_names) - 0.5)
     axes.tick_params(axis='both', which='major', labelsize=12)
-
     plt.tight_layout()
     fig.savefig(output_folder / f"Prevalence_by_condition_combined_years.png")
 
