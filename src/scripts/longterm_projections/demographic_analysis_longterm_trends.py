@@ -23,13 +23,14 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '1'
 min_year = "2020"
-max_year = "2071"
+max_year = "2070"
 
-scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Negative Lifestyle Change", "Positive Lifestyle Change"]
+scenario_names = ["Status Quo", "HTM Scale-up", "Worsening Lifestyle Factors", "Improving Lifestyle Factors", "Maximal Healthcare \nProvision",]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167', '#9A348E']
-scenario_names = ["Status Quo"]
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
-    #for draw in range(5):
+
+    for draw in range(len(scenario_names)):
 
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
@@ -82,9 +83,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                               )
         pop_model.index = pop_model.index.year
         # Load Data: WPP_Annual
-        wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
+        wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_WPP_2024.csv")
+        wpp_ann["Age_Grp"] = wpp_ann["Age_Grp"].replace({ # excel
+            "9-May": "5-9",
+            "14-Oct": "10-14"
+        })
         wpp_ann['Age_Grp'] = wpp_ann['Age_Grp'].astype(make_age_grp_types())
         wpp_ann_total = wpp_ann.groupby(by=['Year'])['Count'].sum()
+
 
         # Load Data: Census
         cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
@@ -363,7 +369,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                             # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
                             pops[sex]['Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
 
-                    # # Simple plot of population pyramid
+                    # # # Simple plot of population pyramid
                     # fig = plt.figure()
                     # ax = plot_population_pyramid(data=pops, fig=fig)
                     # ax.set_title(f'Population Pyramid in {year}')
@@ -1017,17 +1023,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 
-        # 5) Pop size and Life Expectancy
-
+        #5) Pop size and Life Expectancy
         fig, ax = plt.subplots(1, 2, figsize=(14, 6))
         print(wpp_ann_total)
+
         # --- Panel A: Population size over time (as before)
         ax[0].plot(wpp_ann_total.index, wpp_ann_total / 1e6, label='WPP', color=colors['WPP'])
         ax[0].plot(2018.5, cens_2018.sum() / 1e6, marker='o', markersize=10, linestyle='none',
                    label='Census', zorder=10, color=colors['Census'])
 
         for draw in range(len(scenario_names)):
-
             ax[0].plot(pop_model.index, pop_model[draw]['mean'] / 1e6,
                        label=scenario_names[draw], color=scenario_colours[draw])
             ax[0].fill_between(
@@ -1048,7 +1053,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # --- Panel B: Final life expectancy grouped bars ---
         final_values = []
-
         for draw in range(len(scenario_names)):
             dataframes = []
             for year in range(2010, int(max_year) + 1):
@@ -1075,18 +1079,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 'Upper_F': le_all_years.iloc[1::2]['upper'].iloc[-1]
             })
 
+        # Create DataFrame with descriptive names intact
         final_df = pd.DataFrame(final_values)
+        print(final_df)
 
-        x = np.arange(len(final_df))
+        # Don't transpose - work with the original structure
+        scenario_names_list = final_df['Scenario'].values
+        x = np.arange(len(scenario_names_list))
         width = 0.35
 
         # Male bars
         ax[1].bar(
-            x - width / 2, final_df['Mean_M'],
+            x - width / 2,
+            final_df['Mean_M'].values,
             width,
             yerr=[
-                final_df['Mean_M'] - final_df['Lower_M'],
-                final_df['Upper_M'] - final_df['Mean_M']
+                final_df['Mean_M'].values - final_df['Lower_M'].values,
+                final_df['Upper_M'].values - final_df['Mean_M'].values
             ],
             capsize=5,
             label='Male',
@@ -1095,19 +1104,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Female bars
         ax[1].bar(
-            x + width / 2, final_df['Mean_F'],
+            x + width / 2,
+            final_df['Mean_F'].values,
             width,
             yerr=[
-                final_df['Mean_F'] - final_df['Lower_F'],
-                final_df['Upper_F'] - final_df['Mean_F']
+                final_df['Mean_F'].values - final_df['Lower_F'].values,
+                final_df['Upper_F'].values - final_df['Mean_F'].values
             ],
             capsize=5,
             label='Female',
             color="#8169B5"
         )
+
         # Labels + formatting
         ax[1].set_xticks(x)
-        ax[1].set_xticklabels(final_df['Scenario'], rotation=30)
+        ax[1].set_xticklabels(scenario_names_list, rotation=30)
         ax[1].set_ylabel('Life Expectancy (Years)')
         ax[1].set_ylim(50, 80)
         ax[1].legend()
