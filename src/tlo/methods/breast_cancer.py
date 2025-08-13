@@ -381,7 +381,8 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(BreastCancerMainPollingEvent(self), sim.date + DateOffset(months=p['polling_interval_months']))
+        sim.schedule_event(BreastCancerMainPollingEvent(self), sim.date +
+                           DateOffset(months=p['polling_interval_months']))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -604,7 +605,8 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         # If the patient is not a child and symptoms include breast
         # lump discernible
         p = self.parameters
-        if individual_properties["age_years"] > p['age_threshold_symptom_investigation'] and "breast_lump_discernible" in symptoms:
+        if (individual_properties["age_years"] > p['age_threshold_symptom_investigation']
+            and "breast_lump_discernible" in symptoms):
             event = HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
                 person_id=person_id,
                 module=self,
