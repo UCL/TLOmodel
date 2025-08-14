@@ -34,7 +34,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     prostate_cancer,
     symptommanager,
-    tb
+    tb,
 )
 
 # Where will outputs go
