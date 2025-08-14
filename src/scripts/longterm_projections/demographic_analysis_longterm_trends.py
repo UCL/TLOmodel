@@ -128,7 +128,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_all.png"
         plt.savefig(make_graph_file_name("Pop_Over_Time"))
         plt.close(fig)
-
+        #
         # Make a gif
         for draw in range(len(scenario_names)):
             for year in range(int(min_year), int(max_year),1):
@@ -137,23 +137,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     # Get WPP data:
                     wpp_ann_subset = wpp_ann_total.loc[wpp_ann_total.index <= year]
                     pop_model_subset = pop_model.loc[pop_model.index <= year]
-                    ax.plot(pop_model_subset.index, pop_model_subset[draw]['mean'] / 1e6,
-                            label=f'Model (mean)', color=colors['Model'])
-                    ax.plot(wpp_ann_subset.index, wpp_ann_subset / 1e6,
-                            label=f'WPP', color=colors['WPP'])
-                    if year >= 2018:
-                        ax.plot(2018.5, cens_2018.sum() / 1e6,
-                                marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
-                    ax.set_title(f"Population Size {min_year}-{max_year}")
-                    ax.set_xlabel("Year")
-                    ax.set_ylabel("Population Size (millions)")
-                    ax.set_xlim(2010, int(max_year))
-                    ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
-                    ax.set_ylim(0, 50)
-                    ax.legend()
-                    fig.tight_layout()
-                    plt.savefig(make_graph_file_name(f"Pop_Over_Time_line_{year}_{draw}"))
-                    plt.close(fig)
+                    # ax.plot(pop_model_subset.index, pop_model_subset[draw]['mean'] / 1e6,
+                    #         label=f'Model (mean)', color=colors['Model'])
+                    # ax.plot(wpp_ann_subset.index, wpp_ann_subset / 1e6,
+                    #         label=f'WPP', color=colors['WPP'])
+                    # if year >= 2018:
+                    #     ax.plot(2018.5, cens_2018.sum() / 1e6,
+                    #             marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
+                    # ax.set_title(f"Population Size {min_year}-{max_year}")
+                    # ax.set_xlabel("Year")
+                    # ax.set_ylabel("Population Size (millions)")
+                    # ax.set_xlim(2010, int(max_year))
+                    # ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+                    # ax.set_ylim(0, 50)
+                    # ax.legend()
+                    # fig.tight_layout()
+                    # plt.savefig(make_graph_file_name(f"Pop_Over_Time_line_{year}_{draw}"))
+                    # plt.close(fig)
+                    #
             #first need to make plots
             # frames = []
             # for year in range(int(min_year), int(max_year)):
@@ -1053,7 +1054,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # --- Panel B: Final life expectancy grouped bars ---
         final_values = []
-        for draw in range(len(scenario_names)):
+
+        # First all draws except the second (index 1), then index 1 at the end
+        draw_order = [i for i in range(len(scenario_names)) if i != 1] + [1]
+
+        for draw in draw_order:
             dataframes = []
             for year in range(2010, int(max_year) + 1):
                 df = get_life_expectancy_estimates(
@@ -1079,13 +1084,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 'Upper_F': le_all_years.iloc[1::2]['upper'].iloc[-1]
             })
 
-        # Create DataFrame with descriptive names intact
         final_df = pd.DataFrame(final_values)
-        print(final_df)
-
-        # Don't transpose - work with the original structure
-        scenario_names_list = final_df['Scenario'].values
-        x = np.arange(len(scenario_names_list))
+        x = np.arange(len(scenario_names))
         width = 0.35
 
         # Male bars
@@ -1118,7 +1118,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Labels + formatting
         ax[1].set_xticks(x)
-        ax[1].set_xticklabels(scenario_names_list, rotation=30)
+        ax[1].set_xticklabels(scenario_names, rotation=30)
         ax[1].set_ylabel('Life Expectancy (Years)')
         ax[1].set_ylim(50, 80)
         ax[1].legend()
