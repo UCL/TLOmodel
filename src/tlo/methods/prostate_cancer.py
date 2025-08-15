@@ -434,7 +434,8 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(ProstateCancerMainPollingEvent(self), sim.date + DateOffset(months=self.parameters['months_between_polling_events']))
+        sim.schedule_event(ProstateCancerMainPollingEvent(self), sim.date +
+                           DateOffset(months=self.parameters['months_between_polling_events']))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -572,7 +573,8 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
                 hsi_event=HSI_ProstateCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date + DateOffset(months=self.parameters['months_between_palliative_care']),
-                tclose=self.sim.date + DateOffset(months=self.parameters['months_between_palliative_care']) + DateOffset(weeks=self.parameters['weeks_palliative_care_schedule_window'])
+                tclose=self.sim.date + DateOffset(months=self.parameters['months_between_palliative_care']) +
+                       DateOffset(weeks=self.parameters['weeks_palliative_care_schedule_window'])
             )
 
     def on_birth(self, mother_id, child_id):
@@ -930,7 +932,8 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "ProstateCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": self.module.parameters['treatment_beddays']})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({"general_bed": self.module.parameters['treatment_beddays']}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1053,7 +1056,8 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "ProstateCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': self.module.parameters['palliative_care_beddays']})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'general_bed': self.module.parameters['palliative_care_beddays']}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
