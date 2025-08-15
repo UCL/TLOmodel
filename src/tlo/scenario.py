@@ -407,6 +407,9 @@ class SampleRunner:
             hasattr(self.scenario, "resume_simulation")
             and self.scenario.resume_simulation is not None
         ):
+            if "$" in self.scenario.resume_simulation:
+                self.scenario.resume_simulation = os.path.expandvars(self.scenario.resume_simulation)
+
             suspended_simulation_path = (
                 Path(self.scenario.resume_simulation)
                 / str(draw_number)
