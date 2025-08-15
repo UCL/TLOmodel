@@ -63,6 +63,7 @@ import abc
 import argparse
 import datetime
 import json
+import os
 from collections.abc import Iterable
 from itertools import product
 from pathlib import Path, PurePosixPath
@@ -445,12 +446,13 @@ class SampleRunner:
         ):
             sim.run_simulation_to(to_date=self.scenario.suspend_date)
             suspended_simulation_path = Path(log_config["directory"]) / "suspended_simulation.pickle"
-            sim.save_to_pickle(pickle_path=suspended_simulation_path)
-            sim.close_output_file()
             logger.info(
                 key="message",
-                data=f"Simulation suspended at {self.scenario.suspend_date} and saved to {suspended_simulation_path}",
+                data=f"Suspending simulation at {self.scenario.suspend_date} and saving to {suspended_simulation_path}."
+                     f"Note, output file handle will be closed first & no more output logged",
             )
+            sim.close_output_file()
+            sim.save_to_pickle(pickle_path=suspended_simulation_path)
         else:
             sim.run_simulation_to(to_date=self.scenario.end_date)
             sim.finalise()
