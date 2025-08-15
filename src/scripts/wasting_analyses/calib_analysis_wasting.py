@@ -25,7 +25,6 @@ scenario_filename = 'wasting_analysis__minimal_model'
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting")
 legend_fontsize = 12
 title_fontsize = 16
-total_draws = 1 #= len(folders)
 ########################################################################################################################
 
 def create_calib_outcome_csv(sim_results_folder_path_str):
@@ -165,6 +164,8 @@ class WastingAnalyses:
             # calculate props within the age group
             plotting = plotting.div(age_gps_total_pop_sizes_df[age], axis=0)
             plotting = plotting.rename(columns=self.__wasting_types_desc)
+            # filter data to include only years from 2015 onwards
+            plotting = plotting.loc[plotting.index >= 2015]
             # check for invalid values
             if (plotting < 0).any().any() or (plotting > 1).any().any():
                 print(f"Warning plot_wasting_incidence: Invalid values detected in plotting data for age group {age}:")
@@ -512,7 +513,7 @@ class WastingAnalyses:
         ).fillna(0)
 
         w_prev_calib_and_init_df = pd.merge(init_w_prev_df, w_prev_calib_df, on='date')
-        w_prev_plot_df = pd.merge(w_prev_df, w_prev_calib_and_init_df, on='date')
+        w_prev_plot_df = pd.merge(w_prev_df, w_prev_calib_and_init_df, on='date').loc[lambda df: df.index >= 2015]
         columns_to_plot = [
             ['total_init_sev_under5_prop', 'total_init_mod_under5_prop'],
             ['total_sev_under5_prop', 'total_mod_under5_prop'],
@@ -552,7 +553,7 @@ class WastingAnalyses:
         ax.set_title("Wasting prevalence in children 0-59 months per year", fontsize=title_fontsize-6)
         ax.set_ylabel('proportion of wasted children in the year')
         ax.set_xlabel('year')
-        ax.set_ylim([0, 0.131])
+        ax.set_ylim([0, 0.06])
         ax.legend(fontsize=legend_fontsize-4)
         plt.tight_layout()
         fig_output_name = ('wasting_prevalence_per_year__' + self.datestamp)
@@ -691,7 +692,7 @@ class WastingAnalyses:
                          fontsize=title_fontsize-1)
             ax.set_xticks([r + bar_width / 2 for r in range(len(plotting_model))])
             ax.set_xticklabels(age_groups)
-            ax.set_ylim([0, 0.16])
+            ax.set_ylim([0, 0.12])
             ax.legend(fontsize=legend_fontsize)
 
             # Adjust the layout to make space for the footnote
@@ -704,7 +705,8 @@ class WastingAnalyses:
 
             plt.tight_layout()
             fig_output_name = (f'wasting_prevalence_per_each_age_group_{year_calib}__' + self.datestamp)
-            self.save_fig__store_pdf_file(fig, fig_output_name)
+            if year_calib in [2015, 2019]:
+                self.save_fig__store_pdf_file(fig, fig_output_name)
             # plt.show()
 
     def plot_model_gbd_deaths_incl_burnin_period(self):
@@ -811,7 +813,7 @@ if __name__ == "__main__":
     datestamp = sim_results_folder_name[(len(scenario_filename) + 1):]
 
     folders = [name for name in os.listdir(sim_results_folder_path) if \
-               os.path.isdir(os.path.join(sim_results_folder_path, name))]
+    os.path.isdir(os.path.join(sim_results_folder_path, name)) and name.isdigit()]
 
     # Create a csv to write down calibration outputs
     #  as bool values indicating whether model outcomes and calibration data intersect
@@ -820,7 +822,7 @@ if __name__ == "__main__":
     # Analyse each draw
     # for now, we always have just one run, run 0
     run_nmb = 0
-    for draw_nmb in range(0, total_draws):
+    for draw_nmb in range(0, len(folders)):
         print(f"Analysing {draw_nmb=} ...")
         time_start = time.time()
 
