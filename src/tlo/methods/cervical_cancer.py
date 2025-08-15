@@ -238,6 +238,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "palliative_care_interval_months": Parameter(
             Types.REAL, "Interval between palliative care appointments"
+        ),
+        "main_polling_frequency_months": Parameter(
+            Types.REAL, "Main polling event frequency in months"
         )
     }
 
@@ -797,7 +800,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        p = module.parameters
+        super().__init__(module, frequency=DateOffset(months=p['main_polling_frequency_months']))
         # scheduled to run every 1 month: do not change as this is hard-wired into the values of all the parameters.
         self.selected_for_screening_last_month = {}  # Will store number screened for logging purposes.
 
