@@ -107,6 +107,9 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         ),
         "treatment_followup_days": Parameter(
             Types.REAL, "Days until follow-up appointment after treatment"
+        ),
+        "main_polling_event_frequency_months": Parameter(
+            Types.REAL, "Measles main polling event frequency months"
         )
     }
 
@@ -266,7 +269,8 @@ class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        p = module.parameters
+        super().__init__(module, frequency=DateOffset(months=p['main_polling_event_frequency_months']))
         assert isinstance(module, Measles)
 
     def apply(self, population):
