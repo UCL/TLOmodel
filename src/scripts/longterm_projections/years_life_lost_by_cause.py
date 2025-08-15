@@ -21,7 +21,7 @@ min_year = 2020
 max_year = 2070
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
-scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Negative Lifestyle Change", "Positive Lifestyle Change"]
+scenario_names = ["Status Quo", "HTM Scale-up", "Worsening Lifestyle Factors", "Improving Lifestyle Factors", "Maximal Healthcare \nProvision",]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167', '#9A348E']
 
 CONDITION_TO_COLOR_MAP_yll = MappingProxyType(
@@ -259,18 +259,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Plot across scenarios
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+    cols = list(all_draws_yll_standard_years.columns)
+    second_col = cols[1]
+    cols = cols[:1] + cols[2:] + [second_col]
+    all_draws_yll_standard_years = all_draws_yll_standard_years[cols]
+    all_draws_yll_standard_years.rename(
+        columns=dict(zip(all_draws_yll_standard_years.columns, range(len(scenario_names)))),
+        inplace=True)
 
     all_draws_yll_standard_years.T.plot.bar(
             stacked=True, ax=axes[0],
             color=[get_color_cause_of_death_or_daly_label(_label) for _label in all_draws_yll_standard_years.index], legend=False
         )
-    axes[0].set_ylabel('Age-standardised yll per 1,000')
+    axes[0].set_ylabel('Age-standardised years of life lost per 1,000')
     axes[0].set_xlabel('Scenario')
     axes[0].set_xticklabels(scenario_names, rotation=45)
     axes[0].tick_params(axis='both', which='major', labelsize=12)
+    axes[0].legend(title='Cancer', bbox_to_anchor=(1., 1), loc='upper left')
 
     for i, condition in enumerate(all_draws_yll_normalized.index):
-            print(all_draws_yll_normalized)
             axes[1].scatter(all_draws_yll_normalized.columns, all_draws_yll_normalized.loc[condition],
                          marker='o',s = 10,
                          label=condition, color=[get_color_cause_of_death_or_daly_label(_label) for _label in
@@ -286,7 +293,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].scatter(all_draws_population.columns,
                     all_draws_population,
                     color='black', marker='s', label='Population')
-    axes[1].legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
     axes[1].set_ylabel('Fold change in YLL', fontsize=12)
     axes[1].set_xlabel('Scenario', fontsize=12)
     axes[1].set_xticks(range(len(scenario_names)))
