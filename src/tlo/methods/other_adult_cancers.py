@@ -118,8 +118,8 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         "rr_site_confined_age5069": Parameter(
             Types.REAL, "rate ratio for site-confined other_adult cancer for age 50-69"
         ),
-        "rr_site_confined_agege70": Parameter(
-            Types.REAL, "rate ratio for site-confined other_adult cancer for age ge 70"
+        "rr_site_confined_age70": Parameter(
+            Types.REAL, "rate ratio for site-confined other_adult cancer for age 70"
         ),
         "rr_site_confined_hiv": Parameter(
             Types.REAL, "rate ratio for site-confined other_adult_cancer if infected with HIV"
@@ -161,7 +161,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         "rp_other_adult_cancer_age5069": Parameter(
             Types.REAL, "relative prevalence at baseline of bladder cancer/cancer age 50-69"
         ),
-        "rp_other_adult_cancer_agege70": Parameter(
+        "rp_other_adult_cancer_age70": Parameter(
             Types.REAL, "relative prevalence at baseline of bladder cancer/cancer age 70+"
         ),
         "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_site_confined": Parameter(
@@ -175,6 +175,27 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_metastatic": Parameter(
             Types.REAL, "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
                         "other_adult_ca metastatic"
+        ),
+        "odds_ratio_health_seeking_in_adults_early_other_adult_ca_symptom": Parameter(
+            Types.REAL, "odds ratio for health seeking in adults with early other adult cancer symptom"
+        ),
+        "post_treatment_check_months": Parameter(
+            Types.REAL, "months to first post-treatment check appointment"
+        ),
+        "follow_up_appt_months": Parameter(
+            Types.REAL, "months between follow-up appointments after treatment"
+        ),
+        "palliative_care_interval_months": Parameter(
+            Types.REAL, "months between palliative care appointments"
+        ),
+        "treatment_bed_days": Parameter(
+            Types.REAL, "number of bed days required for cancer treatment"
+        ),
+        "palliative_care_bed_days": Parameter(
+            Types.REAL, "number of bed days required for palliative care"
+        ),
+        "min_age_adult_cancer": Parameter(
+            Types.REAL, "minimum age for adult cancer"
         )
     }
 
@@ -223,7 +244,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='early_other_adult_ca_symptom',
-                    odds_ratio_health_seeking_in_adults=4.00,
+                    odds_ratio_health_seeking_in_adults=self.parameters['odds_ratio_health_seeking_in_adults_early_other_adult_ca_symptom'],
                     no_healthcareseeking_in_children=True)
         )
 
@@ -251,7 +272,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(30,49)', p['rp_other_adult_cancer_age3049'])
             .when('.between(50,69)', p['rp_other_adult_cancer_age5069'])
-            .when('.between(70,120)', p['rp_other_adult_cancer_agege70'])
+            .when('.between(70,120)', p['rp_other_adult_cancer_age70'])
             .when('.between(0,14)', 0.0)
         )
 
@@ -400,7 +421,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             .when('.between(30,49)', p['rr_site_confined_age3049'])
             .when('.between(50,69)', p['rr_site_confined_age5069'])
             .when('.between(0,14)', 0.0)
-            .when('.between(70,120)', p['rr_site_confined_agege70']),
+            .when('.between(70,120)', p['rr_site_confined_age70']),
             Predictor('oac_status').when('none', 1.0).otherwise(0.0)
         ]
 
@@ -582,7 +603,10 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         schedule_hsi_event: HSIEventScheduler,
         **kwargs
     ) -> None:
-        if individual_properties["age_years"] > 5 and "early_other_adult_ca_symptom" in symptoms:
+        p = self.parameters
+
+        if (individual_properties["age_years"] > p["min_age_adult_cancer"] and
+            "early_other_adult_ca_symptom" in symptoms):
             event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
                 person_id=person_id,
                 module=self,
@@ -754,11 +778,13 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "OtherAdultCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({"general_bed": int(self.module.parameters['treatment_bed_days'])}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -795,13 +821,13 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "oac_date_treatment"] = self.sim.date
             df.at[person_id, "oac_stage_at_which_treatment_given"] = df.at[person_id, "oac_status"]
 
-            # Schedule a post-treatment check for 12 months:
+            # Schedule a post-treatment check:
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(months=3),
+                topen=self.sim.date + DateOffset(months=p['post_treatment_check_months']),
                 tclose=None,
                 priority=0
             )
@@ -850,13 +876,13 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
             )
 
         else:
-            # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=3),
+                topen=self.sim.date + DateOffset(months=self.module.parameters['follow_up_appt_months']),
                 tclose=None,
                 priority=0
             )
@@ -883,11 +909,13 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "OtherAdultCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'general_bed': int(self.module.parameters['palliative_care_bed_days'])}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -907,13 +935,13 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             if pd.isnull(df.at[person_id, "oac_date_palliative_care"]):
                 df.at[person_id, "oac_date_palliative_care"] = self.sim.date
 
-            # Schedule another instance of the event for one month
+            # Schedule another instance of the event
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=1),
+                topen=self.sim.date + DateOffset(months=p['palliative_care_interval_months']),
                 tclose=None,
                 priority=0
             )
