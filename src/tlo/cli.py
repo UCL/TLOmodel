@@ -107,15 +107,16 @@ def parse_log(log_directory):
             with open(path / f"{key}.pickle", "wb") as f:
                 pickle.dump(output, f)
 
-@cli.command()
+@cli.command(context_settings=dict(ignore_unknown_options=True))
 @click.argument("scenario_file", type=click.Path(exists=True))
 @click.option("--asserts-on", type=bool, default=False, is_flag=True, help="Enable assertions in simulation run.")
 @click.option("--more-memory", type=bool, default=False, is_flag=True,
               help="Request machine wth more memory (for larger population sizes).")
 @click.option("--image-tag", type=str, help="Tag of the Docker image to use.")
 @click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
+@click.argument('scenario_args', nargs=-1, type=click.UNPROCESSED)
 @click.pass_context
-def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, image_tag=None):
+def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, image_tag=None, scenario_args=None):
     """Submit a scenario to the batch system.
 
     SCENARIO_FILE is path to file containing scenario class.
@@ -131,6 +132,10 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
         return
 
     scenario = load_scenario(scenario_file)
+
+    # if we have other scenario arguments, parse them
+    if scenario_args is not None:
+        scenario.parse_arguments(scenario_args)
 
     # get the commit we're going to submit to run on batch, and save the run config for that commit
     # it's the most recent commit on current branch
