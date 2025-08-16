@@ -177,11 +177,12 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         "odds_ratio_health_seeking_pelvic_pain": Parameter(
             Types.REAL, "odds ratio for health seeking behavior in adults with pelvic pain symptom"
         ),
-        "delay_initial_palliative_care_months": Parameter(
-            Types.INT, "delay in months for scheduling initial palliative care appointments"
+        "initial_polling_start_months_palliative_care": Parameter(
+            Types.INT, "time in months for scheduling initial palliative care appointments"
         ),
-        "duration_initial_palliative_care_weeks": Parameter(
-            Types.INT, "end of initial palliative care service"
+        "initial_polling_start_delay_weeks_palliative_care": Parameter(
+            Types.INT, "time after initial_polling_start_months_palliative_care in which pal. care "
+                       " can begin"
         ),
         "post_treatment_check_interval_years": Parameter(
             Types.INT, "interval in years for first post-treatment check"
@@ -568,9 +569,11 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(months=self.parameters['delay_initial_palliative_care_months']),
-                tclose=self.sim.date + DateOffset(months=self.parameters['delay_initial_palliative_care_months'])
-                       + DateOffset(weeks=self.parameters['duration_initial_palliative_care_weeks'])
+                topen=self.sim.date +
+                      DateOffset(months=self.parameters['initial_polling_start_months_palliative_care']),
+                tclose=self.sim.date +
+                       DateOffset(months=self.parameters['initial_polling_start_months_palliative_care'])
+                       + DateOffset(weeks=self.parameters['initial_polling_start_delay_weeks_palliative_care'])
             )
 
     def on_birth(self, mother_id, child_id):
