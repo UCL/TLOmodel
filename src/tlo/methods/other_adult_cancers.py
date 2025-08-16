@@ -627,7 +627,8 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        p = module.parameters
+        super().__init__(module, frequency=DateOffset(months=p['main_polling_event_frequency_months']))
         # scheduled to run every 1 month : do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
