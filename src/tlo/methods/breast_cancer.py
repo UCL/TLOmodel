@@ -165,11 +165,21 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         "rp_breast_cancer_age0014": Parameter(
             Types.REAL, "relative prevalence at baseline of breast cancer if 0-14 age group"
         ),
-        "polling_interval_months": Parameter(
-            Types.INT, "interval in months for main polling event"
+        "initial_polling_start_months": Parameter(
+            Types.INT, "months before initial polling event at initialization"
         ),
         "palliative_treatment_interval_months": Parameter(
             Types.INT, "interval between palliative treatment"
+        ),
+        "main_polling_event_frequency_months": Parameter(
+            Types.INT, "frequency between main polling events"
+        ),
+        "initial_polling_start_months_palliative_care": Parameter(
+            Types.INT, "months before palliative care for at initialization"
+        ),
+        "initial_polling_start_delay_weeks_palliative_care": Parameter(
+            Types.INT, "delay in weeks after initial_polling_start_months_palliative_care for "
+                       "palliative care at initialization"
         ),
     }
 
@@ -382,7 +392,7 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
         sim.schedule_event(BreastCancerMainPollingEvent(self), sim.date +
-                           DateOffset(months=p['polling_interval_months']))
+                           DateOffset(months=p['initial_polling_start_months']))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -528,8 +538,9 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_BreastCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
+                topen=self.sim.date + DateOffset(months=p['initial_polling_start_months_palliative_care']),
+                tclose=self.sim.date + DateOffset(months=p['initial_polling_start_months_palliative_care']) +
+                       DateOffset(weeks=p['initial_polling_start_delay_weeks_palliative_care'])
             )
 
     def on_birth(self, mother_id, child_id):
@@ -627,7 +638,8 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        p = module.parameters
+        super().__init__(module, frequency=DateOffset(months=p['main_polling_event_frequency_months']))
         # scheduled to run every month: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
