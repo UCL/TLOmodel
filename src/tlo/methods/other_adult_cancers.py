@@ -196,7 +196,19 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "min_age_adult_cancer": Parameter(
             Types.REAL, "minimum age for adult cancer"
-        )
+        ),
+        "initial_polling_start_months": Parameter(
+            Types.INT, "initial polling months delay"
+        ),
+        "initial_polling_start_months_palliative_care": Parameter(
+            Types.REAL, "initial polling months delay for pal care"
+        ),
+        "initial_polling_start_delay_weeks_palliative_care": Parameter(
+            Types.REAL, "week delay after initial_polling_start_months_palliative_care for initial pal care"
+        ),
+        "main_polling_event_frequency_months": Parameter(
+            Types.REAL, "frequency of main polling event"
+        ),
     }
 
     PROPERTIES = {
@@ -395,6 +407,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
+        p = self.parameters
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
         self.item_codes_other_can = get_consumable_item_codes_cancers(self)
@@ -405,7 +418,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(OtherAdultCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(OtherAdultCancerMainPollingEvent(self), sim.date + DateOffset(months=p['initial_polling_start_months']))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -533,8 +546,9 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
+                topen=self.sim.date + DateOffset(months=p['initial_polling_start_months_palliative_care']),
+                tclose=self.sim.date + DateOffset(months=p['initial_polling_start_months_palliative_care']) +
+                       DateOffset(weeks=p['initial_polling_start_delay_weeks_palliative_care'])
             )
 
     def on_birth(self, mother_id, child_id):
