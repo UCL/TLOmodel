@@ -181,6 +181,33 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
             Types.REAL, "sensitivity of endoscopy_for diagnosis of oesophageal cancer for those with dysphagia"
         ),
+        "odds_ratio_health_seeking_in_adults_dysphagia": Parameter(
+            Types.REAL, "odds ratio for health seeking in adults with dysphagia symptom"
+        ),
+        "main_polling_event_frequency_months": Parameter(
+            Types.INT, "frequency in months for main polling event"
+        ),
+        "post_treatment_check_years": Parameter(
+            Types.INT, "years between post-treatment check appointments"
+        ),
+        "follow_up_appt_years": Parameter(
+            Types.INT, "years between follow-up appointments"
+        ),
+        "palliative_care_interval_months": Parameter(
+            Types.INT, "months between palliative care appointments"
+        ),
+        "treatment_bed_days": Parameter(
+            Types.INT, "number of bed days required for treatment"
+        ),
+        "palliative_care_bed_days": Parameter(
+            Types.INT, "number of bed days required for palliative care"
+        ),
+        "min_age_investigation": Parameter(
+            Types.INT, "minimum age for dysphagia investigation"
+        ),
+        "reference_age_onset": Parameter(
+            Types.INT, "reference age for cancer onset calculations"
+        ),
     }
 
     PROPERTIES = {
@@ -224,7 +251,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='dysphagia',
-                    odds_ratio_health_seeking_in_adults=4.00)
+                    odds_ratio_health_seeking_in_adults=self.parameters['odds_ratio_health_seeking_in_adults_dysphagia'])
         )
 
     def initialise_population(self, population):
@@ -249,7 +276,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             sum(p['init_prop_oes_cancer_stage']),
             Predictor('li_ex_alc').when(True, p['rp_oes_cancer_ex_alc']),
             Predictor('li_tob').when(True, p['rp_oes_cancer_tobacco']),
-            Predictor('age_years').apply(lambda x: ((x - 20) ** p['rp_oes_cancer_per_year_older']) if x > 20 else 0.0)
+            Predictor('age_years').apply(lambda x: ((x - p['reference_age_onset']) ** p['rp_oes_cancer_per_year_older']) if x > p['reference_age_onset'] else 0.0)
         )
 
         oc_status_any_dysplasia_or_cancer = \
@@ -389,7 +416,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_low_grade_dysplasia_none'],
             Predictor('age_years').apply(
-                lambda x: 0 if x < 20 else (x - 20) ** p['rr_low_grade_dysplasia_none_per_year_older']
+                lambda x: 0 if x < p['reference_age_onset'] else (x - p['reference_age_onset']) ** p['rr_low_grade_dysplasia_none_per_year_older']
             ),
             Predictor('sex').when('F', p['rr_low_grade_dysplasia_none_female']),
             Predictor('li_tob').when(True, p['rr_low_grade_dysplasia_none_tobacco']),
@@ -587,7 +614,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
     ) -> None:
         # If the symptoms include dysphagia, and the patient is not a child,
         # begin investigation for Oesophageal Cancer:
-        if individual_properties["age_years"] > 5 and "dysphagia" in symptoms:
+        if individual_properties["age_years"] > self.parameters["min_age_investigation"] and "dysphagia" in symptoms:
             event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
                 person_id=person_id, module=self
             )
@@ -607,7 +634,7 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['main_polling_event_frequency_months']))
         # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
@@ -750,7 +777,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "OesophagealCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": self.module.parameters["treatment_bed_days"]})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -797,13 +824,13 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
             df.at[person_id, "oc_date_treatment"] = self.sim.date
             df.at[person_id, "oc_stage_at_which_treatment_applied"] = df.at[person_id, "oc_status"]
 
-            # Schedule a post-treatment check for 12 months:
+            # Schedule a post-treatment check:
             hs.schedule_hsi_event(
                 hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(years=12),
+                topen=self.sim.date + DateOffset(years=self.module.parameters["post_treatment_check_years"]),
                 tclose=None,
                 priority=0
             )
@@ -849,13 +876,13 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
             )
 
         else:
-            # Schedule another HSI_OesophagealCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_OesophagealCancer_PostTreatmentCheck event
             hs.schedule_hsi_event(
                 hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=1),
+                topen=self.sim.date + DateOffset(years=self.module.parameters["follow_up_appt_years"]),
                 tclose=None,
                 priority=0
             )
@@ -878,7 +905,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "OesophagealCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': self.module.parameters['palliative_care_bed_days']})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -902,13 +929,13 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
             if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):
                 df.at[person_id, "oc_date_palliative_care"] = self.sim.date
 
-            # Schedule another instance of the event for one month
+            # Schedule another instance of the event
             hs.schedule_hsi_event(
                 hsi_event=HSI_OesophagealCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=1),
+                topen=self.sim.date + DateOffset(months=self.module.parameters['palliative_care_interval_months']),
                 tclose=None,
                 priority=0
             )
