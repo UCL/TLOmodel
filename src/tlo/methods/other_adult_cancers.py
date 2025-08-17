@@ -418,7 +418,8 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(OtherAdultCancerMainPollingEvent(self), sim.date + DateOffset(months=p['initial_polling_start_months']))
+        sim.schedule_event(OtherAdultCancerMainPollingEvent(self), sim.date +
+                           DateOffset(months=p['initial_polling_start_months']))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
