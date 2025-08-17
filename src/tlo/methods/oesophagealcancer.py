@@ -187,11 +187,11 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         "main_polling_event_frequency_months": Parameter(
             Types.INT, "frequency in months for main polling event"
         ),
-        "post_treatment_check_years": Parameter(
-            Types.INT, "years between post-treatment check appointments"
+        "post_treatment_check_years_initial": Parameter(
+            Types.INT, "years between post-treatment check appointments scheduled after first treatment"
         ),
-        "follow_up_appt_years": Parameter(
-            Types.INT, "years between follow-up appointments"
+        "post_treatment_check_years_recurring": Parameter(
+            Types.INT, "years between follow-up appointments recurring"
         ),
         "palliative_care_interval_months": Parameter(
             Types.INT, "months between palliative care appointments"
@@ -276,7 +276,8 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             sum(p['init_prop_oes_cancer_stage']),
             Predictor('li_ex_alc').when(True, p['rp_oes_cancer_ex_alc']),
             Predictor('li_tob').when(True, p['rp_oes_cancer_tobacco']),
-            Predictor('age_years').apply(lambda x: ((x - p['reference_age_onset']) ** p['rp_oes_cancer_per_year_older']) if x > p['reference_age_onset'] else 0.0)
+            Predictor('age_years').apply(lambda x: ((x - p['reference_age_onset']) ** p['rp_oes_cancer_per_year_older'])
+            if x > p['reference_age_onset'] else 0.0)
         )
 
         oc_status_any_dysplasia_or_cancer = \
@@ -416,7 +417,8 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_low_grade_dysplasia_none'],
             Predictor('age_years').apply(
-                lambda x: 0 if x < p['reference_age_onset'] else (x - p['reference_age_onset']) ** p['rr_low_grade_dysplasia_none_per_year_older']
+                lambda x: 0 if x < p['reference_age_onset']
+                else (x - p['reference_age_onset']) ** p['rr_low_grade_dysplasia_none_per_year_older']
             ),
             Predictor('sex').when('F', p['rr_low_grade_dysplasia_none_female']),
             Predictor('li_tob').when(True, p['rr_low_grade_dysplasia_none_tobacco']),
@@ -639,9 +641,9 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
+        p = self.module.parameters
         m = self.module
         rng = m.rng
-
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (oc_status) -----------------------------------
 
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
@@ -671,7 +673,7 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
         stage4_idx = df.index[df.is_alive & (df.oc_status == "stage4")]
         selected_to_die = stage4_idx[
-            rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_oesoph_cancer']]
+            rng.random_sample(size=len(stage4_idx)) < p['r_death_oesoph_cancer']]
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
@@ -773,15 +775,18 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        p = module.parameters
 
         self.TREATMENT_ID = "OesophagealCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": self.module.parameters["treatment_bed_days"]})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({"general_bed": p["treatment_bed_days"]}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -830,7 +835,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(years=self.module.parameters["post_treatment_check_years"]),
+                topen=self.sim.date + DateOffset(years=p["post_treatment_check_years_initial"]),
                 tclose=None,
                 priority=0
             )
@@ -854,6 +859,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -882,7 +888,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=self.module.parameters["follow_up_appt_years"]),
+                topen=self.sim.date + DateOffset(years=p["post_treatment_check_years_recurring"]),
                 tclose=None,
                 priority=0
             )
@@ -901,15 +907,18 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        p = module.parameters
 
         self.TREATMENT_ID = "OesophagealCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': self.module.parameters['palliative_care_bed_days']})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'general_bed': p['palliative_care_bed_days']}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -935,7 +944,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=self.module.parameters['palliative_care_interval_months']),
+                topen=self.sim.date + DateOffset(months=p['palliative_care_interval_months']),
                 tclose=None,
                 priority=0
             )
