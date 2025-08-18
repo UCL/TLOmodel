@@ -355,10 +355,8 @@ def test_nat_recovery_moderate_wasting(tmpdir):
         assert person['un_last_wasting_date_of_onset'] == sim.date
         assert pd.isnull(person['un_am_tx_start_date'])
         assert pd.isnull(person['un_am_recovery_date'])
-        if am_state_expected == 'MAM':
-            assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
-        else:
-            assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
+        assert df.at[person_id, 'un_clinical_acute_malnutrition'] == am_state_expected
+
 
         # Check that there is a natural recovery event scheduled:
         #  Wasting_FullRecovery_Event if this person has MAM, Wasting_RecoveryToMAM_Event if this person has SAM
