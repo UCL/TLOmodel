@@ -1016,7 +1016,8 @@ def test_recovery_before_death_scheduled(tmpdir):
     assert df.at[person_id, 'is_alive']
 
 def test_no_wasting_after_recent_recovery(tmpdir):
-    """ Test that a person who recovered from wasting 5 days ago does not become wasted again. """
+    """ Test that a person who recovered from wasting 5 days ago does not become wasted again. (The 5-day interval is
+    used as an example within the assumed 14-day relapse-free window.) """
     popsize = 1000
     sim = get_sim(tmpdir)
     wmodule = sim.modules['Wasting']
