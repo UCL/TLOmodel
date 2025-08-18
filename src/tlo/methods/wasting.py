@@ -270,9 +270,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df = population.props
         p = self.parameters
 
-        # Adjust monthly severe wasting incidence to the duration of untreated moderate wasting
-        p['progression_severe_wasting_by_agegp'] = \
-            [s/30.4375*p['duration_of_untreated_mod_wasting'] for s in p['progression_severe_wasting_monthly_by_agegp']]
+        # As monthly incidence was calibrated, but progression from moderate to severe wasting occurs in simulations in
+        # duration_of_untreated_mod_wasting days, we need to:
+        # adjust monthly severe wasting incidence to the duration of untreated moderate wasting
+        nmb_of_days_in_avg_month = 30.4375
+        p['progression_severe_wasting_by_agegp'] = [
+            s / nmb_of_days_in_avg_month * p['duration_of_untreated_mod_wasting']
+            for s in p['progression_severe_wasting_monthly_by_agegp']
+        ]
         logger.debug(
             key="progression_severe_wasting_by_agegp",
             data="A progression_severe_wasting_monthly_by_agegp adjusted to the duration of untreated moderate wasting:"
