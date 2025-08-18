@@ -398,10 +398,10 @@ def test_nat_recovery_moderate_wasting(tmpdir):
 
 
 def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpdir):
-    """ Check the onset of symptoms with uncomplicated SAM, check recovery to MAM with treatment when the progression to
-    severe wasting is certain, hence no natural recovery from moderate wasting, the natural death due to SAM is certain
-    hence no natural recovery from severe wasting, and check natural death canceled with treatment and symptoms resolved
-    when recovered to MAM with treatment. """
+    """ Assume: untreated SAM causes certain death, no complications occur, incidence and progression to severe wasting
+    are certain, and treatment prevents death.
+    Check: child progresses to SAM without complications, death is scheduled but cancelled by treatment, and recovery to
+    MAM follows treatment. """
     popsize = 1000
     sim = get_sim(tmpdir)
     # get wasting module
