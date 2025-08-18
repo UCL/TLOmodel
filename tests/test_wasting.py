@@ -1115,8 +1115,8 @@ def test_interventions_activation(tmpdir):
          "event.")
 
 def test_symptoms_with_MAM(tmpdir):
-    """ If 0% MAM cases are seeking care, after interventions activated, a person who becomes MAM will have no symptoms
-    assigned. """
+    """ Before intervention, MAM cases do not seek care, so symptoms are not assigned. After activation, if care-seeking
+    is set to 100%, symptoms are always assigned; if set to 0%, symptoms remain unassigned. """
     dur = pd.DateOffset(days=1)
     popsize = 1000
     sim = get_sim(tmpdir)
