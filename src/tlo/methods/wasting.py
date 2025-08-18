@@ -65,9 +65,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # incidence
         'base_overall_inc_rate_wasting': Parameter(
             Types.REAL, 'base overall monthly moderate wasting incidence rate '
-                        '(ref age group <0.5 years old)'),
+                        '(probability per child aged <0.5 years per month)'),
         'rr_inc_rate_wasting_by_agegp': Parameter(
-            Types.LIST, 'relative risk of moderate wasting incidence rate by age group'),
+            Types.LIST, 'relative risk of monthly moderate wasting incidence rate by age group '
+                        '(reference age group: <0.5 years)'),
         'rr_wasting_AGA_and_preterm': Parameter(
             Types.REAL, 'relative risk of moderate wasting incidence if born adequate for gestational age '
                         'and preterm'),
