@@ -30,12 +30,19 @@ if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
-# Include emulator option
-
-# Decide whether to use emulator or not
-use_emulator = True
 include_conditionality = True
-emulator_path = '/Users/mm2908/Desktop/EmuIBM/emulators/latest_synthesizer.pkl'
+emulator_path = '/Users/mm2908/Desktop/EmuIBM/emulators/latest_CTGANSynthesizer_epochs500_dsF_batch_size500_num_k_folds10_Nsubsample10000_InAndOutC_test_k_folding_UniformEncoder_CTGANtest3_repeat_seed42_k_fold0.pkl'
+
+rti_scenario = "emulator" #standard # "emulator", "noRTIpoll"
+if rti_scenario == "emulator":
+    use_emulator = True
+elif rti_scenario == "standard" or rti_scenario == "noRTIpoll":
+    use_emulator = False
+else:
+    print("ERROR, I don't have scenario")
+    exit(-1)
+    
+#emulator_path = '/Users/mm2908/Desktop/EmuIBM/emulators/latest_synthesizer.pkl'
 #emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator_VAE.pkl'
 #emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/new_synthesizer.pkl'
 
@@ -70,7 +77,6 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     
     # ================================================================================
     # EMULATOR PARAMETERS
-    
     # Counters tracking use of HealthSystem by RTI module under use of emulator
     HS_Use_Type = [
         'Level2_AccidentsandEmerg', 'Level2_DiagRadio', 'Level2_EPI',
@@ -85,11 +91,14 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     #    filepath=emulator_path
     #)
     
-    RTI_emulator = GaussianCopulaSynthesizer.load(
-        filepath=emulator_path
-    )
+    #RTI_emulator = GaussianCopulaSynthesizer.load(
+    #    filepath=emulator_path
+    #)
+    
+    RTI_emulator = CTGANSynthesizer.load(filepath=emulator_path)
+    
     if include_conditionality:
-        Rti_Services = ['Rti_AcutePainManagement', 'Rti_BurnManagement', 'Rti_FractureCast', 'Rti_Imaging', 'Rti_MajorSurgeries', 'Rti_MedicalIntervention', 'Rti_MinorSurgeries']
+        Rti_Services = ['Rti_AcutePainManagement','Rti_BurnManagement','Rti_FractureCast','Rti_Imaging','Rti_MajorSurgeries','Rti_MedicalIntervention','Rti_MinorSurgeries','Rti_OpenFractureTreatment','Rti_ShockTreatment','Rti_Suture','Rti_TetanusVaccine']
 
         HS_conditions = {}
 
@@ -1586,30 +1595,29 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         haven't then it asks whether they should die away from their injuries
         """
         # Begin modelling road traffic injuries
-        sim.schedule_event(RTIPollingEvent(self), sim.date + DateOffset(months=0))
+        if rti_scenario == "standard" or rti_scenario == "emulator":
+            sim.schedule_event(RTIPollingEvent(self), sim.date + DateOffset(months=0))
         
-        if use_emulator is False:
-            # Begin checking whether the persons injuries are healed
-            sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
-            # Begin checking whether those with untreated injuries die
-            sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date + DateOffset(months=0))
-        
-        # Begin logging the RTI events
-       # sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
-        
-        
-
-        if use_emulator and include_conditionality:
-            # If all services are included, set everything to True
-            if sim.modules['HealthSystem'].service_availability == ['*']:
-                for i in sim.modules['RTI'].Rti_Services:
-                    sim.modules['RTI'].HS_conditions[i] = True
-            else:
-                for i in sim.modules['RTI'].Rti_Services:
-                    if (i + '_*') in sim.modules['HealthSystem'].service_availability:
+            if use_emulator is False:
+                # Begin checking whether the persons injuries are healed
+                sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
+                # Begin checking whether those with untreated injuries die
+                sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date + DateOffset(months=0))
+            
+            # Begin logging the RTI events
+           # sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
+            
+            if use_emulator and include_conditionality:
+                # If all services are included, set everything to True
+                if sim.modules['HealthSystem'].service_availability == ['*']:
+                    for i in sim.modules['RTI'].Rti_Services:
                         sim.modules['RTI'].HS_conditions[i] = True
-                    else:
-                        sim.modules['RTI'].HS_conditions[i] = False
+                else:
+                    for i in sim.modules['RTI'].Rti_Services:
+                        if (i + '_*') in sim.modules['HealthSystem'].service_availability:
+                            sim.modules['RTI'].HS_conditions[i] = True
+                        else:
+                            sim.modules['RTI'].HS_conditions[i] = False
 
         # Look-up consumable item codes
         self.look_up_consumable_item_codes()

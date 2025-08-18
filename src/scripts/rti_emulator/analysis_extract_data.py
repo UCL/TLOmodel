@@ -30,7 +30,9 @@ from tlo.analysis.utils import (
     plot_clustered_stacked,
     summarize,
 )
-tag = 'new_emulated_with_conditionality_All'
+tag = 'new_normal_All'
+
+#tag = 'new_emulated_with_conditionality_All'
 #outputs/test_rti_emulator-2025-02-20T092114Z
 
 #tag = 'new_normal_All'
