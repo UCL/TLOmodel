@@ -153,7 +153,7 @@ def test_integrity_of_properties_of_wasting_module(tmpdir):
             assert set() == set_of_person_id_in_current_episode_before_recovery.intersection(
                 set_of_person_id_in_current_episode_before_death)
 
-            # WHZ standard deviation of -3, MUAC <115mm, and oedema should cause severe acute malnutrition
+            # WHZ standard deviation of -3, MUAC < 115mm, and oedema should cause severe acute malnutrition
             whz_index = df.index[df['un_WHZ_category'] == 'WHZ<-3']
             muac_index = df.index[df['un_am_MUAC_category'] == '<115mm']
             oedema_index = df.index[df['un_am_nutritional_oedema']]
@@ -370,7 +370,7 @@ def test_nat_recovery_moderate_wasting(tmpdir):
         recov_event = recov_event_tuple[1]
         assert date_of_scheduled_recov > sim.date
 
-        # Check no progression to sev wasting is scheduled
+        # Check no progression to severe wasting is scheduled
         progress_event_tuple = next((event_tuple for event_tuple in sim.find_events_for_person(person_id)
                                      if isinstance(event_tuple[1], Wasting_ProgressionToSevere_Event)), None)
         assert not progress_event_tuple
@@ -398,10 +398,10 @@ def test_nat_recovery_moderate_wasting(tmpdir):
 
 
 def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpdir):
-    """ Check the onset of symptoms with uncomplicated SAM, check recovery to MAM with treatment (tx) when
-    the progression to severe wasting is certain, hence no natural recovery from moderate wasting,
-    the natural death due to SAM is certain, hence no natural recovery from severe wasting,
-    and check natural death canceled with tx and symptoms resolved when recovered to MAM with tx. """
+    """ Check the onset of symptoms with uncomplicated SAM, check recovery to MAM with treatment when the progression to
+    severe wasting is certain, hence no natural recovery from moderate wasting, the natural death due to SAM is certain
+    hence no natural recovery from severe wasting, and check natural death canceled with treatment and symptoms resolved
+    when recovered to MAM with treatment. """
     popsize = 1000
     sim = get_sim(tmpdir)
     # get wasting module
@@ -434,9 +434,9 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
     # Set progress to severe wasting at 100% as well, hence no natural recovery from moderate wasting
     wmodule.wasting_models.severe_wasting_progression_lm = LinearModel.multiplicative()
-    # Set complete recovery from SAM to zero. We want those with SAM to recover to MAM with tx
+    # Set complete recovery from SAM to zero. We want those with SAM to recover to MAM with treatment
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
-    # Set prob of death after tx at 0% (hence recovery to MAM w\ tx at 100%)
+    # Set probability of death after treatment at 0% (hence recovery to MAM with treatment at 100%)
     p['prob_death_after_SAMcare'] = 0.0
 
     # Run Wasting Polling event to get new incident cases:
@@ -501,10 +501,10 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
               isinstance(ev[1], HSI_Wasting_OutpatientTherapeuticProgramme_SAM)][0]
     sam_ev.run(squeeze_factor=0.0)
 
-    # Check death was canceled with tx
+    # Check death was canceled with treatment
     assert pd.isnull(df.at[person_id, 'un_sam_death_date'])
 
-    # Check recovery to MAM due to tx is scheduled
+    # Check recovery to MAM due to treatment is scheduled
     assert isinstance(sim.find_events_for_person(person_id)[2][1], Wasting_RecoveryToMAM_Event)
     # get date of recovery to MAM and the recovery event
     sam_recovery_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
@@ -534,8 +534,8 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
 
 
 def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
-    """ Check the onset of symptoms with complicated SAM, check full recovery with treatment (tx) when the natural
-    death due to SAM is certain but canceled with tx, and symptoms resolved when fully recovered with tx. """
+    """ Check the onset of symptoms with complicated SAM, check full recovery with treatment when the natural death due
+    to SAM is certain but canceled with treatment, and symptoms resolved when fully recovered with treatment. """
     popsize = 1000
     sim = get_sim(tmpdir)
     # get wasting module
@@ -560,7 +560,7 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
 
     # Ensure the individual has complications due to SAM
     p['prob_complications_in_SAM'] = 1.0
-    # Set full recovery rate to 100% so that this individual should fully recover with tx
+    # Set full recovery rate to 100% so that this individual should fully recover with treatment
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel.multiplicative()
 
     # Assign diagnosis
@@ -609,10 +609,10 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
               isinstance(ev[1], HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM)][0]
     sam_ev.run(squeeze_factor=0.0)
 
-    # Check scheduled death was canceled due to tx
+    # Check scheduled death was canceled due to treatment
     assert pd.isnull(df.at[person_id, 'un_sam_death_date'])
 
-    # Check full recovery due to tx is scheduled
+    # Check full recovery due to treatment is scheduled
     assert isinstance(sim.find_events_for_person(person_id)[1][1], Wasting_FullRecovery_Event)
     # get date of full recovery and the recovery event
     sam_recovery_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
@@ -666,7 +666,7 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
 
     # Set full recovery with treatment at 0%
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
-    # Set death rate with tx at 100%, hence all SAM cases should die with treatment
+    # Set death rate with treatment at 100%, hence all SAM cases should die with treatment
     p['prob_death_after_SAMcare'] = 1.0
     # Ensure the individual has no complications when SAM occurs
     p['prob_complications_in_SAM'] = 0.0
@@ -756,7 +756,7 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
 
 
 def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
-    """ Show that if recovered with a tx event before the person was going to recover naturally from moderate wasting
+    """ Show that if recovered with a treatment event before the person was going to recover naturally from moderate wasting
     with moderate or severe acute malnutrition, it causes the episode to end earlier, natural recovery is cancelled.
     Test for MAM and complicated SAM. """
     for am_state_expected in ['MAM', 'SAM']:
@@ -775,7 +775,7 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
         # recovery.)
         wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
         wmodule.wasting_models.severe_wasting_progression_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
-        # Set probs of full recovery from MAM and SAM at 100%, so with tx they always fully recover
+        # Set probs of full recovery from MAM and SAM at 100%, so with treatment they always fully recover
         wmodule.wasting_models.acute_malnutrition_recovery_mam_lm = LinearModel.multiplicative()
         wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel.multiplicative()
 
@@ -824,12 +824,14 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
             wmodule.do_when_am_treatment(person_id, intervention='ITC')
         assert df.at[person_id, 'un_am_tx_start_date'] == sim.date
 
-        # Check full recovery with tx is scheduled before the natural recovery
+        # Check full recovery with treatment is scheduled before the natural recovery
         full_recov_events = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
                                  if isinstance(event_tuple[1], Wasting_FullRecovery_Event)]
         assert len(full_recov_events) in [1, 2], "only 1 or 2 full recovery events should be scheduled"
-        if len(full_recov_events) == 2: # with MAM nat full recovery as well as full recovery with tx
-            nat_recov_event_tuple = full_recov_events[1] # tx recovery scheduled to happen before recovery with tx
+        # with MAM natural full recovery as well as full recovery with treatment
+        if len(full_recov_events) == 2:
+            # treatment recovery scheduled to happen before recovery with treatment
+            nat_recov_event_tuple = full_recov_events[1]
             date_of_scheduled_nat_recov_to_confirm = nat_recov_event_tuple[0]
             assert date_of_scheduled_nat_recov_to_confirm == date_of_scheduled_nat_recov
         tx_recov_event_tuple = full_recov_events[0]
@@ -838,7 +840,7 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
         assert date_of_scheduled_tx_recov > sim.date
         assert date_of_scheduled_tx_recov < date_of_scheduled_nat_recov
 
-        # Run a recovery event due to tx first
+        # Run a recovery event due to treatment first
         sim.date = date_of_scheduled_tx_recov
         tx_recov_event.apply(person_id)
         # check properties of this individual, should have recovered today, is not wasted, is well-nourished and alive
@@ -979,7 +981,7 @@ def test_recovery_before_death_scheduled(tmpdir):
     assert isinstance(sim.find_events_for_person(person_id)[2][1], Wasting_SevereAcuteMalnutritionDeath_Event)
 
     # Check a date of scheduled death
-    # we assume OTC tx to be longer than natural recovery from sev. wasting,
+    # we assume OTC treatment to be longer than natural recovery from sev. wasting,
     # (if decided in future to change this assumption, the test will need to be updated)
     assert p['tx_length_weeks_OutpatientSAM'] * 7 > p['duration_of_untreated_sev_wasting']
     # hence the death should be scheduled before the natural recovery
