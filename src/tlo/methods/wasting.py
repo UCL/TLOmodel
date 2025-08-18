@@ -169,10 +169,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'un_last_wasting_date_of_onset': Property(Types.DATE, 'date of onset of last episode of wasting'),
 
         # Properties related to clinical acute malnutrition
+        # clinical acute malnutrition states based on WHZ and/or MUAC and/or nutritional oedema:
+        # - severe acute malnutrition (SAM): severe wasting (WHZ < -3) and/or MUAC < 115 mm and/or nutritional oedema
+        # - moderate acute malnutrition (MAM): moderate wasting (-3 <= WHZ < -2) and/or 115 mm <= MUAC < 125 mm
+        # - well-nourished (well): no wasting (WHZ >= -2) and MUAC >= 125 mm
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'clinical acute malnutrition state '
                                                                       'based on WHZ and/or MUAC and/or nutritional '
                                                                       'oedema',
-                                                   categories=['MAM', 'SAM', 'well']),
+                                                   categories=['SAM', 'MAM', 'well']),
         'un_am_nutritional_oedema': Property(Types.BOOL, 'nutritional oedema present in acute malnutrition'
                                                          ' episode'),
         'un_am_MUAC_category': Property(Types.CATEGORICAL, 'MUAC measurement categories, based on WHO '
