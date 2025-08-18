@@ -756,8 +756,9 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
 
 
 def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
-    """ Show that if recovered with a treatment event before the person was going to recover naturally from moderate wasting
-    with moderate or severe acute malnutrition, it causes the episode to end earlier, natural recovery is cancelled.
+    """ Show that if recovered with a treatment event before the person was going to recover naturally from moderate
+    wasting with moderate or severe acute malnutrition, it causes the episode to end earlier, natural recovery is
+    cancelled.
     Test for MAM and complicated SAM. """
     for am_state_expected in ['MAM', 'SAM']:
         popsize = 1000
