@@ -2224,14 +2224,15 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
-        beddays = module.calculate_beddays(person_id)
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': beddays})
-
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         params = self.module.current_parameters
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+        # Define beddays, must be accessed outside of init because of parameter access
+        beddays = self.module.calculate_beddays(person_id)
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': beddays})
 
         if not mother.is_alive:
             return
