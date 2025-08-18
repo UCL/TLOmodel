@@ -2224,7 +2224,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
-        beddays = self.module.calculate_beddays(person_id)
+        beddays = module.calculate_beddays(person_id)
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': beddays})
 
     def apply(self, person_id, squeeze_factor):
