@@ -71,6 +71,8 @@ class CareOfWomenDuringPregnancy(Module):
         # n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.
 
         # CARE SEEKING...
+        'max_anc_visits': Parameter(
+            Types.INT, 'Maximum number of ANC visits'),
         'prob_seek_anc2': Parameter(
             Types.LIST, 'Probability a woman who is not predicted to attended four or more ANC visits will attend '
                         'ANC2'),
@@ -85,6 +87,11 @@ class CareOfWomenDuringPregnancy(Module):
             Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC7'),
         'prob_seek_anc8': Parameter(
             Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC8'),
+        # 'visit_appointment_window_days': Parameter(
+        #     Types.INT, 'Days window within which ANC appointment can be scheduled'),
+        'anc_consistency_threshold': Parameter(
+            Types.INT, 'Minimum ANC appts required to attend for remaining ANC appts to be automatically scheduled'
+        ),
 
         # TREATMENT EFFECTS...
         'effect_of_ifa_for_resolving_anaemia': Parameter(
@@ -191,17 +198,27 @@ class CareOfWomenDuringPregnancy(Module):
             Types.INT, 'Minimum weeks of gestation required to deliver for women with mild bleeding or '
                        'PROM without infection'),
 
-        # FOLLOW-UP TIMING ...
+        # FOLLOW-UP TIMING AND CLINICAL...
         'follow_up_days_anaemia': Parameter(
             Types.INT, 'days until follow-up for anaemia treatment'),
         'follow_up_days_gestational_diabetes': Parameter(
             Types.INT, 'days until follow-up for gestational diabetes'),
         'follow_up_days_ectopic_pregnancy': Parameter(
             Types.INT, 'days until ectopic pregnancy rupture event'),
+        'bmi_min_gdm': Parameter(
+            Types.REAL, 'Min BMI to be diagnosed with gestational diabetes'
+        ),
+        'avg_mother_weight_kg': Parameter(
+            Types.REAL, 'Average weight of mother'
+        ),
 
         # BEDDAYS ...
         'beddays_default': Parameter(
             Types.INT, 'default beddays for antenatal admission'),
+        'beddays_postabortion': Parameter(
+            Types.INT, ' beddays following abortion '),
+        'beddays_etopic_pregnancy': Parameter(
+            Types.INT, 'default following etopic pregnancy'),
     }
 
     PROPERTIES = {
@@ -543,16 +560,17 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        param = self.parameters
 
         if df.at[mother_id, 'is_alive']:
 
             anc_count = df.at[mother_id, "ac_total_anc_visits_current_pregnancy"]
 
-            #  run a check at birth to make sure no women exceed 8 visits
-            if anc_count > 9:
+            #  run a check at birth to make sure no women exceed max no. visits
+            if anc_count > param['max_anc_visits'] +1:
                 logger.info(key='error', data=f'Mother {mother_id} attended >8 ANC visits during her pregnancy')
 
-            if anc_count > 8:
+            if anc_count > param['max_anc_visits']:
                 self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['anc8+'] += 1
             else:
                 self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'anc{anc_count}'] += 1
@@ -699,10 +717,11 @@ class CareOfWomenDuringPregnancy(Module):
         # If this woman has attended less than 4 visits, and is predicted to attend > 4 (as determined via the
         # PregnancySupervisor module when ANC1 is scheduled) her subsequent ANC appointment is automatically
         # scheduled
-        if (visit_to_be_scheduled <= 4) and df.at[individual_id, 'ps_anc4']:
+        if (visit_to_be_scheduled <= params['anc_consistency_threshold']) and df.at[individual_id, 'ps_anc4']:
             calculate_visit_date_and_schedule_visit(visit)
 
-        elif ((visit_to_be_scheduled < 4) and not df.at[individual_id, 'ps_anc4']) or (visit_to_be_scheduled > 4):
+        elif (((visit_to_be_scheduled < params['anc_consistency_threshold']) and not df.at[individual_id, 'ps_anc4']) or
+              (visit_to_be_scheduled > params['anc_consistency_threshold'])):
             if self.rng.random_sample() < params[f'prob_seek_anc{visit_to_be_scheduled}']:
                 calculate_visit_date_and_schedule_visit(visit)
 
@@ -1119,8 +1138,8 @@ class CareOfWomenDuringPregnancy(Module):
             return
 
         # We check if this woman has any of the key risk factors, if so they are sent for additional blood tests
-        if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
-                                                                                             'ps_prev_stillbirth']:
+        if (df.at[person_id, 'li_bmi'] >= params['bmi_min_gdm'] or df.at[person_id, 'ps_prev_gest_diab'] or
+            df.at[person_id, 'ps_prev_stillbirth']):
 
             gdm_screening_delivered = pregnancy_helper_functions.check_int_deliverable(
                 self, int_name='gdm_test', hsi_event=hsi_event,
@@ -1477,6 +1496,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        params = self.module.current_parameters
 
         # Calculate when this woman should return for her next visit
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -1517,7 +1537,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             self.module.tetanus_vaccination(hsi_event=self)
 
             # If the woman presents after 20 weeks she is provided interventions she has missed by presenting late
-            if mother.ps_gestational_age_in_weeks > 19:
+            if mother.ps_gestational_age_in_weeks > params['anc_gestational_age_weeks_anc2']-1:
                 self.add_equipment({'Stethoscope, foetal, monaural, Pinard, plastic'})
                 self.module.point_of_care_hb_testing(hsi_event=self)
                 self.module.albendazole_administration(hsi_event=self)
@@ -1525,11 +1545,11 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
                 self.module.calcium_supplementation(hsi_event=self)
 
             # Any women presenting for ANC1 after 26 week are also required to have a GDM screen
-            if mother.ps_gestational_age_in_weeks >= 26:
+            if mother.ps_gestational_age_in_weeks >= params['anc_gestational_age_weeks_anc3']:
                 self.module.gdm_screening(hsi_event=self)
 
             # Then we determine if this woman will return for her next ANC visit
-            if mother.ps_gestational_age_in_weeks < 40:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
@@ -1571,6 +1591,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        params = self.module.current_parameters
 
         # Run the check
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -1594,35 +1615,35 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             self.module.tetanus_vaccination(hsi_event=self)
 
             # And we schedule the next ANC appointment
-            if mother.ps_gestational_age_in_weeks < 40:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
             # Then we administer interventions that are due to be delivered at this woman's gestational age, which may
             # be in addition to intervention delivered in ANC2
-            if mother.ps_gestational_age_in_weeks < 26:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc3']:
                 self.module.albendazole_administration(hsi_event=self)
                 self.module.iptp_administration(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 30:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc4']:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.gdm_screening(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 34:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc5']:
                 self.module.iptp_administration(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 36:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc6']:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.hep_b_testing(hsi_event=self)
                 self.module.syphilis_screening_and_treatment(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 38:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc7']:
                 self.module.point_of_care_hb_testing(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 40:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']:
                 self.module.iptp_administration(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks >= 40:
+            elif mother.ps_gestational_age_in_weeks >= params['anc_gestational_age_weeks_anc8']:
                 pass
 
             if df.at[person_id, 'ac_to_be_admitted']:
@@ -1662,6 +1683,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        params = self.module.current_parameters
 
         # Run the check
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -1677,26 +1699,26 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
-            if mother.ps_gestational_age_in_weeks < 40:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=4,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            if mother.ps_gestational_age_in_weeks < 30:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc4']:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.gdm_screening(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 34:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc5']:
                 self.module.iptp_administration(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 36:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc6']:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.hep_b_testing(hsi_event=self)
                 self.module.syphilis_screening_and_treatment(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 38:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc7']:
                 self.module.point_of_care_hb_testing(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 40:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']:
                 self.module.iptp_administration(hsi_event=self)
 
             if df.at[person_id, 'ac_to_be_admitted']:
@@ -1736,6 +1758,7 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        params = self.module.current_parameters
 
         # Run the check
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -1751,22 +1774,22 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
-            if mother.ps_gestational_age_in_weeks < 40:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=5,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            if mother.ps_gestational_age_in_weeks < 34:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc5']:
                 self.module.iptp_administration(hsi_event=self)
 
-            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 36:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < params['anc_gestational_age_weeks_anc6']:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.hep_b_testing(hsi_event=self)
                 self.module.syphilis_screening_and_treatment(hsi_event=self)
 
-            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < params['anc_gestational_age_weeks_anc7']:
                 self.module.point_of_care_hb_testing(hsi_event=self)
 
-            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < params['anc_gestational_age_weeks_anc8']:
                 self.module.iptp_administration(hsi_event=self)
 
             if df.at[person_id, 'ac_to_be_admitted']:
@@ -1806,6 +1829,7 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        params = self.module.current_parameters
 
         # Run the check
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -1823,19 +1847,19 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
-            if mother.ps_gestational_age_in_weeks < 40:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=6,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            if mother.ps_gestational_age_in_weeks < 36:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc6']:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.hep_b_testing(hsi_event=self)
                 self.module.syphilis_screening_and_treatment(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 38:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc7']:
                 self.module.point_of_care_hb_testing(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 40:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']:
                 self.module.iptp_administration(hsi_event=self)
 
             if df.at[person_id, 'ac_to_be_admitted']:
@@ -1875,6 +1899,8 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        params = self.module.current_parameters
+
 
         # Run the check
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -1892,14 +1918,14 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
 
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
-            if mother.ps_gestational_age_in_weeks < 40:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=7,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            if mother.ps_gestational_age_in_weeks < 38:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc7']:
                 self.module.point_of_care_hb_testing(hsi_event=self)
 
-            elif mother.ps_gestational_age_in_weeks < 40:
+            elif mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']:
                 self.module.iptp_administration(hsi_event=self)
 
             if df.at[person_id, 'ac_to_be_admitted']:
@@ -1939,6 +1965,7 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        params = self.module.current_parameters
 
         # Run the check
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -1954,7 +1981,7 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
-            if mother.ps_gestational_age_in_weeks < 40:
+            if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=8,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
@@ -2521,6 +2548,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        params = self.module.current_parameters
 
         from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
 
@@ -2531,7 +2559,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                 and (mother.ac_gest_diab_on_treatment != 'none') and (mother.ps_gestational_age_in_weeks > 21):
 
             est_length_preg = self.module.get_approx_days_of_pregnancy(person_id)
-            params = self.module.current_parameters
 
             def schedule_gdm_event_and_checkup():
                 # Schedule GestationalDiabetesGlycaemicControlEvent which determines if this new treatment will
@@ -2579,7 +2606,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                 if mother.ac_gest_diab_on_treatment == 'orals':
 
                     # Dose is (avg.) 0.8 units per KG per day. Average weight is an appoximation
-                    required_units_per_preg = 65 * (0.8 * est_length_preg)
+                    required_units_per_preg = params['avg_mother_weight_kg'] * (0.8 * est_length_preg)
                     required_vials = np.ceil(required_units_per_preg/1000)
 
                     updated_cons = {k: v * required_vials for (k, v) in
@@ -2614,11 +2641,13 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
+        params = module.parameters
 
         self.TREATMENT_ID = 'AntenatalCare_PostAbortion'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'  # any hospital?
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 3})  # todo: check with TC
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'maternity_bed': params['beddays_postabortion']}))  # todo: check with TC
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -2675,11 +2704,13 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
+        params = module.parameters
 
         self.TREATMENT_ID = 'AntenatalCare_PostEctopicPregnancy'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 5})  # todo: check with TC
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'maternity_bed': params['beddays_etopic_pregnancy']}))  # todo: check with TC
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
