@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as st
 from matplotlib import pyplot as plt
+from scipy.signal import savgol_filter
 
 from tlo import Date
 from tlo.analysis.utils import (
@@ -25,12 +26,32 @@ max_year = 2070
 spacing_of_years = 1
 number_of_runs = 10
 
-scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Negative Lifestyle Change", "Positive Lifestyle Change"]
+scenario_names = ["Status Quo", "HTM Scale-up", "Worsening Lifestyle Factors", "Improving Lifestyle Factors", "Maximal Healthcare \nProvision",]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167', '#9A348E']
 def drop_outside_period(_df, target_period):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*target_period)])
+def create_non_overlapping_positions(y_values, min_gap_ratio=0.01):
+    """
+    Adjust y positions to prevent overlaps while minimizing displacement
+    Uses relative gap based on data range to handle large value ranges
+    """
+    y_range = max(y_values) - min(y_values)
+    min_gap = max(y_range * min_gap_ratio, 0.05)
 
+    indexed_values = [(y, i) for i, y in enumerate(y_values)]
+    indexed_values.sort()
+
+    adjusted_positions = [0] * len(y_values)
+
+    for i, (original_y, original_idx) in enumerate(indexed_values):
+        if i == 0:
+            adjusted_positions[original_idx] = original_y
+        else:
+            prev_y = max(adjusted_positions[indexed_values[j][1]] for j in range(i))
+            adjusted_positions[original_idx] = max(original_y, prev_y + min_gap)
+
+    return adjusted_positions
 rename_dict = {  # For legend labels
     'ALRI': 'Lower respiratory infections',
     'Bladder Cancer': 'Cancer (Bladder)',
@@ -153,8 +174,6 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
                    fontsize=14,  va='top', ha='right')
         # Panel A: Raw counts = stacked
-        treatments = list(df_all_years_ordered.index)
-
         df_all_years_ordered.T.plot.bar(
             stacked=True,
             ax=axes[0],
@@ -174,32 +193,46 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         axes[0].set_xticks(tick_positions)
         axes[0].set_xticklabels(new_labels, rotation=0)
 
-        label_positions = []
-        y_offset = 0.05
-
-        for treatment in treatments:
+        for i, treatment in enumerate(df_all_years_ordered.index):
             color = get_color_short_treatment_id(treatment)
-            y_values = df_all_years_ordered.loc[treatment]
-            x_values = df_all_years_ordered.columns
+            print(df_all_years_ordered)
+            axes[1].plot(
+                df_all_years_ordered.columns,
+                df_all_years_ordered.loc[treatment],
+                marker='o',
+                color=color
+            )
 
-            axes[1].plot(x_values, y_values, marker='o', color=color)
+        final_y_values = [df_all_years_ordered.loc[treatment].iloc[-1]
+                          for treatment in df_all_years_ordered.index]
 
-            final_x = x_values[-1] + 0.5
-            final_y = y_values.iloc[-1]
+        adjusted_y_positions = create_non_overlapping_positions(final_y_values, min_gap_ratio=0.01)
+        for i, treatment in enumerate(df_all_years_ordered.index):
+            color = get_color_short_treatment_id(treatment)
+            original_y = df_all_years_ordered.loc[treatment].iloc[-1]
+            adjusted_y = adjusted_y_positions[i]
+            final_x = df_all_years_ordered.columns[-1]
 
-            while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
-                final_y += y_offset
-
-            label_positions.append(final_y)
+            threshold = max(abs(original_y) * 0.01, 0.025)
+            if abs(adjusted_y - original_y) > threshold:
+                axes[1].plot([final_x, final_x + 0.5],
+                             [original_y, adjusted_y],
+                             color=color, linestyle='--', alpha=0.5, linewidth=0.8)
 
             axes[1].text(
-                x=final_x,
-                y=final_y,
+                x=final_x + 1.0,
+                y=adjusted_y,
                 s=treatment,
                 color=color,
                 fontsize=8,
                 va='center'
             )
+        axes[1].hlines(
+            y=1,
+            xmin=min(axes[1].get_xlim()),
+            xmax=max(axes[1].get_xlim()),
+            color='black'
+        )
 
         axes[1].plot(
             df_normalized_population.columns,
@@ -210,7 +243,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         )
 
         axes[1].text(
-            x=df_normalized_population.columns[-1] + 0.5,
+            x=df_normalized_population.columns[-1] + 1.0,
             y=df_normalized_population.iloc[0, -1],
             s='Population',
             color='black',
@@ -417,17 +450,39 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         all_draws_population_normalised[draw] = df_normalized_population.iloc[:, -1]
         # Plotting
 
+        def create_non_overlapping_positions_cadre(y_values, min_gap=0.05):
+            indexed_values = [(y, i) for i, y in enumerate(y_values)]
+            indexed_values.sort()
+
+            adjusted_positions = [0] * len(y_values)
+
+            for i, (original_y, original_idx) in enumerate(indexed_values):
+                if i == 0:
+                    adjusted_positions[original_idx] = original_y
+                else:
+                    prev_y = max(adjusted_positions[indexed_values[j][1]] for j in range(i))
+                    adjusted_positions[original_idx] = max(original_y, prev_y + min_gap)
+
+            return adjusted_positions
+
         fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+        df_all_years_cadre = df_all_years_cadre.drop("Dental")
+        df_normalized_cadre = df_normalized_cadre.drop("Dental")
+
+        cadres = list(df_normalized_cadre.index)
+        cmap = plt.get_cmap("tab10")
+        colors = {cadre: cmap(i % cmap.N) for i, cadre in enumerate(cadres)}
+
         axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
-                   fontsize=14, va='top', ha='right')
+                     fontsize=14, va='top', ha='right')
 
         axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
-                   fontsize=14,  va='top', ha='right')
+                     fontsize=14, va='top', ha='right')
         df_all_years_cadre.T.plot.bar(stacked=True, ax=axes[0])
 
         axes[0].set_xlabel('Year', fontsize=12)
         axes[0].set_ylabel('Time Spent (Minutes)', fontsize=12)
-        axes[0].legend().set_visible(False)
+        axes[0].legend(title='Cadre', loc='upper left',fontsize='small', title_fontsize='small' )
         axes[0].grid(False)
 
         labels = [label.get_text() for label in axes[0].get_xticklabels()]
@@ -438,35 +493,17 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         axes[0].set_xticks(tick_positions)
         axes[0].set_xticklabels(new_labels, rotation=0)
         axes[0].tick_params(axis='both', which='major', labelsize=12)
-        label_positions = []
 
         for i, cadre in enumerate(df_normalized_cadre.index):
             axes[1].plot(
                 df_normalized_cadre.columns,
                 df_normalized_cadre.loc[cadre],
                 marker='o',
-                label=treatment_id,
-            )
-            # Add label at the end of the line
-            y_offset = 0.1
+                label=cadre,
+                color = colors[cadre],
 
-            final_x = df_normalized_cadre.columns[-1]
-            final_y = df_normalized_cadre.loc[cadre].iloc[-1]
-
-            while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
-                final_y += y_offset
-                final_x += 0.5
-            label_positions.append(final_y)
-
-            axes[1].text(
-                final_x + 2,
-                final_y,
-                cadre,
-                fontsize=9,
-                va='center'
             )
 
-        # Plot and label population line
         axes[1].plot(
             df_normalized_population.columns,
             df_normalized_population.iloc[0],
@@ -476,28 +513,63 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
             label='Population'
         )
 
+        final_y_values = [df_normalized_cadre.loc[cadre].iloc[-1]
+                          for cadre in df_normalized_cadre.index]
+        population_final_y = df_normalized_population.iloc[0, -1]
+        final_y_values.append(population_final_y)
+
+        adjusted_y_positions = create_non_overlapping_positions_cadre(final_y_values, min_gap=0.15)
+        cadres = list(df_normalized_cadre.index)
+        cmap = plt.get_cmap("tab10")
+        colors = {cadre: cmap(i % cmap.N) for i, cadre in enumerate(cadres)}
+
+        for i, cadre in enumerate(df_normalized_cadre.index):
+            original_y = df_normalized_cadre.loc[cadre].iloc[-1]
+            adjusted_y = adjusted_y_positions[i]
+            final_x = df_normalized_cadre.columns[-1]
+
+            axes[1].plot([final_x, final_x + 3.5],
+                         [original_y, adjusted_y],
+                         linestyle='--', alpha=0.6, linewidth=1.0, color = colors[cadre])
+
+            axes[1].text(
+                final_x + 4,
+                adjusted_y,
+                cadre,
+                color = colors[cadre],
+                fontsize=9,
+                va='center'
+            )
+
+        population_adjusted_y = adjusted_y_positions[-1]
+        population_original_y = df_normalized_population.iloc[0, -1]
         pop_final_x = df_normalized_population.columns[-1]
-        pop_final_y = df_normalized_population.iloc[0, -1]
+
+        axes[1].plot([pop_final_x, pop_final_x + 3.5],
+                     [population_original_y, population_adjusted_y],
+                     color='black', linestyle='--', alpha=0.6, linewidth=1.0)
+
         axes[1].text(
-            pop_final_x + 0.1,
-            pop_final_y,
+            pop_final_x + 4,
+            population_adjusted_y,
             "Population",
             color='black',
             fontsize=9,
             va='center'
         )
 
+        current_xlim = axes[1].get_xlim()
+        axes[1].set_xlim(current_xlim[0], current_xlim[1] + 4)
+
         axes[1].tick_params(axis='both', which='major', labelsize=12)
         axes[1].set_xlabel('Year', fontsize=12)
         axes[1].set_ylabel('Fold change in demand', fontsize=12)
-        #axes[1].legend(title='Cadre', ncol=1, bbox_to_anchor=(1.05, 1))
         axes[1].legend().set_visible(False)
         axes[1].grid(False)
         df_all_years_cadre.to_csv(output_folder / f"HSI_time_per_cadre_2020_2070_{draw}.csv")
         df_normalized_cadre.to_csv(output_folder / f"HSI_time_per_cadre_normalized_2020_2070_{draw}.csv")
         fig.tight_layout()
         fig.savefig(make_graph_file_name(f"Time_HSI_Events_by_Cadre_All_Years_Panel_A_and_B_{draw}"))
-        plt.show()
     # Plotting - treatments
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
     axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
@@ -510,7 +582,6 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     treatments = list(all_draws_treatment_per_1000.index)
     cmap = plt.get_cmap("tab20")
     colors = {treatment: cmap(i % cmap.N) for i, treatment in enumerate(treatments)}
-
     all_draws_treatment_per_1000.T.plot.bar(
         stacked=True, ax=axes[0], legend=False,
         color=[colors[treatment] for treatment in treatments]
@@ -519,9 +590,28 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     axes[0].set_xlabel('Scenario', fontsize=12)
     axes[0].set_xticklabels(scenario_names, rotation=45)
     axes[0].tick_params(axis='both', which='major', labelsize=12)
+    def create_non_overlapping_positions_treatment(y_values, min_gap=0.05):
+        """
+        Adjust y positions to prevent overlaps while minimizing displacement
+        """
+        # Create pairs of (original_y, index)
+        indexed_values = [(y, i) for i, y in enumerate(y_values)]
+        indexed_values.sort()  # Sort by y value
 
-    label_positions = []
+        adjusted_positions = [0] * len(y_values)
 
+        for i, (original_y, original_idx) in enumerate(indexed_values):
+            if i == 0:
+                # First label keeps its position
+                adjusted_positions[original_idx] = original_y
+            else:
+                # For subsequent labels, ensure minimum gap from previous
+                prev_y = max(adjusted_positions[indexed_values[j][1]] for j in range(i))
+                adjusted_positions[original_idx] = max(original_y, prev_y + min_gap)
+
+        return adjusted_positions
+
+    # Plot all lines and scatter points first
     for treatment in all_draws_treatment_normalised.index:
         color = colors[treatment]
         axes[1].scatter(all_draws_treatment_normalised.columns, all_draws_treatment_normalised.loc[treatment],
@@ -530,31 +620,58 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                      all_draws_treatment_normalised.loc[treatment],
                      color=color, alpha=0.5)
 
-        final_x = all_draws_treatment_normalised.columns[-1] + 0.2
-        final_y = all_draws_treatment_normalised.loc[treatment].iloc[-1]
+    # # Plot population line
+    # axes[1].plot(
+    #     all_draws_population_normalised.columns,
+    #     all_draws_population_normalised.iloc[0, :],
+    #     color='black',
+    #     linewidth=4,
+    #     linestyle='--',
+    #     label='Population'
+    # )
 
-        while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
-            final_y += y_offset
+    final_y_values = [all_draws_treatment_normalised.loc[treatment].iloc[-1]
+                      for treatment in all_draws_treatment_normalised.index]
+    population_final_y = all_draws_population_normalised.iloc[0, -1]
+    final_y_values.append(population_final_y)
 
-        label_positions.append(final_y)
+    adjusted_y_positions = create_non_overlapping_positions_treatment(final_y_values, min_gap=0.08)
+
+    for i, treatment in enumerate(all_draws_treatment_normalised.index):
+        color = colors[treatment]
+        original_y = all_draws_treatment_normalised.loc[treatment].iloc[-1]
+        adjusted_y = adjusted_y_positions[i]
+        final_x = all_draws_treatment_normalised.columns[-1]
+
+        axes[1].plot([final_x, final_x + 0.3],
+                     [original_y, adjusted_y],
+                     color=color, linestyle='--', alpha=0.6, linewidth=1.0)
 
         axes[1].text(
-            x=final_x,
-            y=final_y,
+            x=final_x + 0.4,
+            y=adjusted_y,
             s=treatment,
             color=color,
             fontsize=8,
             va='center'
         )
 
-    axes[1].plot(
-        all_draws_population_normalised.columns,
-        all_draws_population_normalised.iloc[0, :],
-        color='black',
-        linewidth=4,
-        linestyle='--',
-        label='Population'
-    )
+    # population_adjusted_y = adjusted_y_positions[-1]
+    # population_original_y = all_draws_population_normalised.iloc[0, -1]
+    # population_final_x = all_draws_population_normalised.columns[-1]
+    #
+    # axes[1].plot([population_final_x, population_final_x + 0.3],
+    #              [population_original_y, population_adjusted_y],
+    #              color='black', linestyle='--', alpha=0.6, linewidth=1.0)
+    #
+    # axes[1].text(
+    #     x=population_final_x + 0.4,
+    #     y=population_adjusted_y,
+    #     s='Population',
+    #     color='black',
+    #     fontsize=8,
+    #     va='center'
+    # )
 
     axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color='black')
 
@@ -566,27 +683,46 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
     fig.tight_layout()
     fig.savefig(output_folder / "Time_HSI_Events_by_Treatment_combined.png")
-    plt.show()
 
     ## cadre
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+
+    cols = list(all_draws_cadre.columns)
+    second_col = cols[1]
+    cols = cols[:1] + cols[2:] + [second_col]
+    all_draws_cadre = all_draws_cadre[cols]
+    all_draws_cadre.rename(
+        columns=dict(zip(all_draws_cadre.columns, range(len(scenario_names)))),
+        inplace=True
+    )
+
+    cols = list(all_draws_cadre_normalised.columns)
+    second_col = cols[1]
+    cols = cols[:1] + cols[2:] + [second_col]
+    all_draws_cadre_normalised = all_draws_cadre_normalised[cols]
+    all_draws_cadre_normalised.rename(
+        columns=dict(zip(all_draws_cadre_normalised.columns, range(len(scenario_names)))),
+        inplace=True
+    )
     axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
                  fontsize=14, va='top', ha='right')
 
     axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
                  fontsize=14, va='top', ha='right')
+
+
     all_draws_cadre_per_1000 = all_draws_cadre.div(all_draws_population.loc['total'], axis=1) * 1000
+    all_draws_cadre_per_1000 = all_draws_cadre_per_1000.drop("Dental")
+    all_draws_cadre_normalised = all_draws_cadre_normalised.drop("Dental")
+    cadres = list(all_draws_cadre_normalised.index)
+    cmap = plt.get_cmap("tab10")
+    colors = {cadre: cmap(i % cmap.N) for i, cadre in enumerate(cadres)}
 
     all_draws_cadre_per_1000.T.plot.bar(stacked=True, ax=axes[0], legend=False)
     axes[0].set_ylabel('Time Spent (Minutes) per 1,000 population', fontsize=12)
     axes[0].set_xlabel('Scenario', fontsize=12)
     axes[0].set_xticklabels(scenario_names, rotation=45)
-
-    cadres = list(all_draws_cadre_normalised.index)
-    cmap = plt.get_cmap("tab10")
-    colors = {cadre: cmap(i % cmap.N) for i, cadre in enumerate(cadres)}
-    label_positions = []
-    y_offset = 0.15
+    axes[0].legend(title='Cadre', loc='upper left', fontsize='small', title_fontsize='small')
 
     for cadre in cadres:
         color = colors[cadre]
@@ -595,42 +731,38 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         axes[1].plot(all_draws_cadre_normalised.columns, all_draws_cadre_normalised.loc[cadre],
                      alpha=0.5, color=color)
 
-        final_x = all_draws_cadre_normalised.columns[-1] + 0.5
-        final_y = all_draws_cadre_normalised.loc[cadre].iloc[-1]
+    final_y_values = [all_draws_cadre_normalised.loc[cadre].iloc[-1]
+                          for cadre in all_draws_cadre_normalised.index]
 
-        while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
-            final_y += y_offset
+    adjusted_y_positions = create_non_overlapping_positions(final_y_values, min_gap_ratio=0.1)
 
-        label_positions.append(final_y)
+    for i, cadre in enumerate(all_draws_cadre_normalised.index):
+        color = colors[cadre]
+        original_y = all_draws_cadre_normalised.loc[cadre].iloc[-1]
+        adjusted_y = adjusted_y_positions[i]
+        final_x = all_draws_cadre_normalised.columns[-1]
+
+        axes[1].plot([final_x, final_x + 0.3],
+                         [original_y, adjusted_y],
+                         color=color, linestyle='--', alpha=0.5, linewidth=0.8)
 
         axes[1].text(
-            x=final_x,
-            y=final_y,
+            x=final_x + 0.4,
+            y=adjusted_y,
             s=cadre,
             color=color,
             fontsize=8,
             va='center'
         )
 
-    axes[1].plot(
-        all_draws_cadre_normalised.columns,
-        all_draws_population_normalised.iloc[0, :],
-        color='black',
-        linewidth=4,
-        linestyle='--',
-        label='Population'
-    )
-
     axes[1].set_ylabel('Fold change in time spent', fontsize=12)
     axes[1].set_xlabel('Scenario', fontsize=12)
     axes[1].set_xticks(all_draws_cadre_normalised.columns)
     axes[1].set_xticklabels(scenario_names, rotation=45)
     axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color='black')
-    axes[1].legend().set_visible(False)
 
     fig.tight_layout()
     fig.savefig(output_folder / "Time_HSI_Events_by_Cadre_combined.png")
-    plt.show()
 
 
 
@@ -697,7 +829,6 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     plt.tight_layout()
     fig.savefig(output_folder / "WHO_AFRO_Relative_2070_to_2020.png")
 
-    plt.show()
 
 def table2_description_of_coarse_hsi_events(
     results_folder: Path,
@@ -797,7 +928,6 @@ def table2_description_of_coarse_hsi_events(
         all_draws_population_normalised[draw] = df_normalized_population.iloc[:, -1]
         df_event_counts = pd.DataFrame(event_counts_by_year[draw]).fillna(0)
 
-        # Save full CSV
         df_event_counts.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_EventCountsOverTime_draw{draw}.csv")
 
         # Select top 10 events in the final year
@@ -806,12 +936,19 @@ def table2_description_of_coarse_hsi_events(
 
         # Panel A: Raw counts (bar plot)
         fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+
         axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
                    fontsize=14, va='top', ha='right')
 
         axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
                    fontsize=14,  va='top', ha='right')
-        df_top_events.T.plot.bar(stacked=True, ax=axes[0])
+
+        event_list = list(df_top_events.index)
+        cmap = plt.get_cmap("tab10")
+        colors = {event: cmap(i % cmap.N) for i, event in enumerate(event_list)}
+
+
+        df_top_events.T.plot.bar(stacked=True, ax=axes[0], color=colors)
         axes[0].set_xlabel("Year", fontsize=12)
         axes[0].set_ylabel("Number of Appointments per 1000", fontsize=12)
         labels = [label.get_text() for label in axes[0].get_xticklabels()]
@@ -823,38 +960,37 @@ def table2_description_of_coarse_hsi_events(
         axes[0].set_xticklabels(new_labels, rotation=0)
 
         axes[0].tick_params(axis='both', labelsize=11)
-        axes[0].legend().set_visible(False)
+        axes[0].legend(title='Treatment ID', loc='upper left', fontsize=8, title_fontsize=9, ncol = 2)
 
         # Panel B: Normalized (line plot)
         df_top_events_normalized = df_top_events.div(df_top_events.iloc[:, 0], axis=0)
-        label_positions = []
-        y_offset = 0.01
-        event_list = list(df_top_events_normalized.index)
-        cmap = plt.get_cmap("tab10")
-        colors = {event: cmap(i % cmap.N) for i, event in enumerate(event_list)}
 
         for event in df_top_events_normalized.index:
+            savgol_filter(df_top_events_normalized.loc[event].to_numpy(), window_length=5, polyorder=2),
+
             color =colors[event]
-            axes[1].plot(df_top_events_normalized.columns, df_top_events_normalized.loc[event],
+            axes[1].plot(df_top_events_normalized.columns,  savgol_filter(df_top_events_normalized.loc[event].to_numpy(), window_length=5, polyorder=2),
                          marker='o', color=color)
+        final_y_values = [df_top_events_normalized.loc[event].iloc[-1] for event in df_top_events_normalized.index]
+        adjusted_y_positions = create_non_overlapping_positions(final_y_values, min_gap_ratio=0.1)
 
-            final_x = df_top_events_normalized.columns[-1] + 0.5
-            final_y = df_top_events_normalized.loc[event].iloc[-1]
+        for i, event in enumerate(df_top_events_normalized.index):
+                original_y = df_top_events_normalized.loc[event].iloc[-1]
+                adjusted_y = adjusted_y_positions[i]
+                final_x = df_top_events_normalized.columns[-1]
 
-            while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
-                final_y += y_offset
+                axes[1].plot([final_x, final_x + 3.5],
+                             [original_y, adjusted_y],
+                             linestyle='--', alpha=0.6, linewidth=1.0, color=colors[event])
 
-            label_positions.append(final_y)
-
-            axes[1].text(
-                x=final_x,
-                y=final_y,
-                s=event,
-                color=color,
-                fontsize=8,
-                va='center'
-            )
-
+                axes[1].text(
+                    final_x + 4,
+                    adjusted_y,
+                    event,
+                    color=colors[event],
+                    fontsize=9,
+                    va='center'
+                )
         axes[1].hlines(
             y=1,
             xmin=min(axes[1].get_xlim()),
@@ -873,20 +1009,20 @@ def table2_description_of_coarse_hsi_events(
 
 
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = '/Users/rem76/PycharmProjects/TLOmodel/resources'):
     """Description of the usage of healthcare system resources."""
 
-    figure9_distribution_of_hsi_event_all_years_line_graph(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-        min_year=min_year, max_year=max_year)
-
-    figure10_minutes_per_cadre_and_treatment(
-        results_folder=results_folder,
-        output_folder=output_folder,
-        resourcefilepath=resourcefilepath,
-        min_year=min_year,
-        max_year=max_year
-    ),
+    # figure9_distribution_of_hsi_event_all_years_line_graph(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #     min_year=min_year, max_year=max_year)
+    #
+    # figure10_minutes_per_cadre_and_treatment(
+    #     results_folder=results_folder,
+    #     output_folder=output_folder,
+    #     resourcefilepath=resourcefilepath,
+    #     min_year=min_year,
+    #     max_year=max_year
+    # ),
     # table1_description_of_hsi_events(
     #     results_folder= results_folder,
     #     output_folder= output_folder,
