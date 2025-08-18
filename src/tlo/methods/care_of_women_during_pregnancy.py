@@ -141,6 +141,67 @@ class CareOfWomenDuringPregnancy(Module):
         'specificity_blood_test_syphilis': Parameter(
             Types.LIST, 'specificity of a blood test to detect syphilis'),
 
+        # ANC GESTATIONAL AGE ...
+        'anc_gestational_age_weeks_anc2': Parameter(
+            Types.INT, 'recommended gestational age in weeks for ANC2'),
+        'anc_gestational_age_weeks_anc3': Parameter(
+            Types.INT, 'recommended gestational age in weeks for ANC3'),
+        'anc_gestational_age_weeks_anc4': Parameter(
+            Types.INT, 'recommended gestational age in weeks for ANC4'),
+        'anc_gestational_age_weeks_anc5': Parameter(
+            Types.INT, 'recommended gestational age in weeks for ANC5'),
+        'anc_gestational_age_weeks_anc6': Parameter(
+            Types.INT, 'recommended gestational age in weeks for ANC6'),
+        'anc_gestational_age_weeks_anc7': Parameter(
+            Types.INT, 'recommended gestational age in weeks for ANC7'),
+        'anc_gestational_age_weeks_anc8': Parameter(
+            Types.INT, 'recommended gestational age in weeks for ANC8'),
+        'anc_gestational_age_weeks_late_anc': Parameter(
+            Types.INT, 'gestational age in weeks for late ANC visits'),
+        'anc_gestational_age_weeks_max': Parameter(
+            Types.INT, 'maximum gestational age in weeks for ANC scheduling'),
+
+        # FOCUSED ANC GESTATIONAL AGE ...
+        'focused_anc_gestational_age_weeks_visit2': Parameter(
+            Types.INT, 'recommended gestational age in weeks for focused ANC visit 2'),
+        'focused_anc_gestational_age_weeks_visit3': Parameter(
+            Types.INT, 'recommended gestational age in weeks for focused ANC visit 3'),
+        'focused_anc_gestational_age_weeks_visit4': Parameter(
+            Types.INT, 'recommended gestational age in weeks for focused ANC visit 4'),
+        'focused_anc_gestational_age_weeks_max': Parameter(
+            Types.INT, 'maximum gestational age in weeks for focused ANC scheduling'),
+
+        # DELIVERY GESTATIONAL AGE ...
+        'delivery_weeks_placental_abruption': Parameter(
+            Types.INT, 'gestational age in weeks for delivery in placental abruption'),
+        'delivery_weeks_placenta_praevia_severe': Parameter(
+            Types.INT, 'gestational age in weeks for delivery in severe placenta praevia'),
+        'delivery_weeks_placenta_praevia_mild': Parameter(
+            Types.INT, 'gestational age in weeks for delivery in mild placenta praevia'),
+        'delivery_weeks_prom_no_infection': Parameter(
+            Types.INT, 'gestational age in weeks for delivery in PROM without infection'),
+        'delivery_weeks_chorioamnionitis': Parameter(
+            Types.INT, 'gestational age in weeks for delivery in chorioamnionitis'),
+        'delivery_weeks_gestational_diabetes': Parameter(
+            Types.INT, 'gestational age in weeks for delivery in gestational diabetes'),
+        'delivery_weeks_severe_haemorrhage': Parameter(
+            Types.INT, 'Minimum weeks of gestation required to deliver for women '
+                       'with abruption, praevia or chorioamnionitis '),
+        'delivery_weeks_mild_haemorrhage': Parameter(
+            Types.INT, 'Minimum weeks of gestation required to deliver for women with mild bleeding or '
+                       'PROM without infection'),
+
+        # FOLLOW-UP TIMING ...
+        'follow_up_days_anaemia': Parameter(
+            Types.INT, 'days until follow-up for anaemia treatment'),
+        'follow_up_days_gestational_diabetes': Parameter(
+            Types.INT, 'days until follow-up for gestational diabetes'),
+        'follow_up_days_ectopic_pregnancy': Parameter(
+            Types.INT, 'days until ectopic pregnancy rupture event'),
+
+        # BEDDAYS ...
+        'beddays_default': Parameter(
+            Types.INT, 'default beddays for antenatal admission'),
     }
 
     PROPERTIES = {
@@ -535,6 +596,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         mother = df.loc[person_id]
+        params = self.current_parameters
 
         # The recommended ANC schedule (gestational age in weeks at which it is recommended women attend) is
         # ANC1 - 12wks, ANC2 - 20wks, ANC3 - 26wks, ANC4 - 30wks, ANC5 - 34wks, ANC6 - 36wks, ANC7 - 38wks,
@@ -542,35 +604,42 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Using a woman's gestational age at the time of her current visit, we calculate how many weeks in the future
         # until she should return for her next visit in the schedule
-        if mother.ps_gestational_age_in_weeks < 20:
-            recommended_gestation_next_anc = 20
+        if mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc2']:
+            recommended_gestation_next_anc = params['anc_gestational_age_weeks_anc2']
 
-        elif 20 <= mother.ps_gestational_age_in_weeks < 26:
-            recommended_gestation_next_anc = 26
+        elif (params['anc_gestational_age_weeks_anc2'] <=
+              mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc3']):
+            recommended_gestation_next_anc = params['anc_gestational_age_weeks_anc3']
 
-        elif 26 <= mother.ps_gestational_age_in_weeks < 30:
-            recommended_gestation_next_anc = 30
+        elif (params['anc_gestational_age_weeks_anc3'] <=
+              mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc4']):
+            recommended_gestation_next_anc = params['anc_gestational_age_weeks_anc4']
 
-        elif 30 <= mother.ps_gestational_age_in_weeks < 34:
-            recommended_gestation_next_anc = 34
+        elif (params['anc_gestational_age_weeks_anc4'] <=
+              mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc5']):
+            recommended_gestation_next_anc = params['anc_gestational_age_weeks_anc5']
 
-        elif 34 <= mother.ps_gestational_age_in_weeks < 36:
-            recommended_gestation_next_anc = 36
+        elif (params['anc_gestational_age_weeks_anc5'] <=
+              mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc6']):
+            recommended_gestation_next_anc = params['anc_gestational_age_weeks_anc6']
 
-        elif 36 <= mother.ps_gestational_age_in_weeks < 38:
-            recommended_gestation_next_anc = 38
+        elif (params['anc_gestational_age_weeks_anc6'] <=
+              mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc7']):
+            recommended_gestation_next_anc = params['anc_gestational_age_weeks_anc7']
 
-        elif 38 <= mother.ps_gestational_age_in_weeks < 40:
-            recommended_gestation_next_anc = 40
+        elif (params['anc_gestational_age_weeks_anc7'] <=
+              mother.ps_gestational_age_in_weeks < params['anc_gestational_age_weeks_anc8']):
+            recommended_gestation_next_anc = params['anc_gestational_age_weeks_anc8']
 
         # We schedule women who present very late for ANC to return in two weeks
-        elif 42 > mother.ps_gestational_age_in_weeks >= 40:
-            recommended_gestation_next_anc = 42
+        elif (params['anc_gestational_age_weeks_late_anc'] >
+              mother.ps_gestational_age_in_weeks >= params['anc_gestational_age_weeks_anc8']):
+            recommended_gestation_next_anc = params['anc_gestational_age_weeks_late_anc']
 
         # Return a gestation beyond the normal length of pregnancy. This wont be used for scheduling because women
         # arent scheduled ANC past 42 weeks (see next function)
         else:
-            recommended_gestation_next_anc = 50
+            recommended_gestation_next_anc = params['anc_gestational_age_weeks_max']
 
         return recommended_gestation_next_anc
 
@@ -587,7 +656,7 @@ class CareOfWomenDuringPregnancy(Module):
         params = self.current_parameters
 
         # Prevent women returning to ANC at very late gestational age
-        if df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 42:
+        if df.at[individual_id, 'ps_gestational_age_in_weeks'] >= params['anc_gestational_age_weeks_late_anc']:
             return
 
         # We check that women will only be scheduled for the next ANC contact in the schedule
@@ -1145,7 +1214,16 @@ class CareOfWomenDuringPregnancy(Module):
 
         date_difference = self.sim.date - df.at[individual_id, 'ac_date_next_contact']
 
-        ga_for_anc_dict = {2: 20, 3: 26, 4: 30, 5: 34, 6: 36, 7: 38, 8: 40}
+        params = self.current_parameters
+        ga_for_anc_dict = {
+            2: params['anc_gestational_age_weeks_anc2'],
+            3: params['anc_gestational_age_weeks_anc3'],
+            4: params['anc_gestational_age_weeks_anc4'],
+            5: params['anc_gestational_age_weeks_anc5'],
+            6: params['anc_gestational_age_weeks_anc6'],
+            7: params['anc_gestational_age_weeks_anc7'],
+            8: params['anc_gestational_age_weeks_anc8']
+        }
 
         # If women have died, are no longer pregnant, are in labour, are postnatal, are pregnant but with a gestational
         # age lower than required for this anc visit or are 'late' to attend this visit (usually for visits scheduled in
@@ -1330,6 +1408,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
         individual_id = hsi_event.target
         df = self.sim.population.props
+        params = self.current_parameters
 
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy: did not run')
 
@@ -1337,8 +1416,12 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If this event cannot run we ensure all women will eventually experience rupture due to untreated ectopic
         if df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured':
-            self.sim.schedule_event(EctopicPregnancyRuptureEvent(
-                self.sim.modules['PregnancySupervisor'], individual_id), self.sim.date + DateOffset(days=7))
+            self.sim.schedule_event(
+                EctopicPregnancyRuptureEvent(
+                    self.sim.modules['PregnancySupervisor'], individual_id
+                ),
+                self.sim.date + DateOffset(days=params['follow_up_days_ectopic_pregnancy'])
+            )
 
     def calculate_beddays(self, individual_id):
         """
@@ -1350,23 +1433,25 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         mother = df.loc[individual_id]
+        params = self.current_parameters
 
         # Women with abruption, praevia or chorioamnionitis prior to 28 weeks will not be delivered until they have
         # reached that gestation
-        if (mother.ps_placental_abruption or
+        if ((mother.ps_placental_abruption or
             ((mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'severe')) or
-             mother.ps_chorioamnionitis)) and (mother.ps_gestational_age_in_weeks < 28):
-            beddays = int((28 * 7) - (mother.ps_gestational_age_in_weeks * 7))
+             mother.ps_chorioamnionitis)) and
+            (mother.ps_gestational_age_in_weeks < params['delivery_weeks_severe_haemorrhage'])):
+            beddays = int((params['delivery_weeks_severe_haemorrhage'] * 7) - (mother.ps_gestational_age_in_weeks * 7))
 
         # Similarly more mild bleeding or PROM without infection occuring prior to 37 weeks will not be delivered until
         # they have reached that gestation
         elif ((mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate')) or
               (mother.ps_premature_rupture_of_membranes and not mother.ps_chorioamnionitis)) and \
-             (mother.ps_gestational_age_in_weeks < 37):
-            beddays = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
+             (mother.ps_gestational_age_in_weeks < params['delivery_weeks_mild_haemorrhage']):
+            beddays = int((params['delivery_weeks_mild_haemorrhage'] * 7) - (mother.ps_gestational_age_in_weeks * 7))
 
         else:
-            beddays = 1
+            beddays = params['beddays_default']
 
         return beddays
 
@@ -1963,16 +2048,19 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         df = self.sim.population.props
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        params = self.module.parameters
 
         # First we determine at what point in this woman's pregnancy should she return for another visit
-        if mother.ps_gestational_age_in_weeks < 22:
-            recommended_gestation_next_anc = 22
-        elif 22 <= mother.ps_gestational_age_in_weeks < 30:
-            recommended_gestation_next_anc = 30
-        elif 30 <= mother.ps_gestational_age_in_weeks < 36:
-            recommended_gestation_next_anc = 36
+        if mother.ps_gestational_age_in_weeks < params['focused_anc_gestational_age_weeks_visit2']:
+            recommended_gestation_next_anc = params['focused_anc_gestational_age_weeks_visit2']
+        elif (params['focused_anc_gestational_age_weeks_visit2'] <=
+              mother.ps_gestational_age_in_weeks < params['focused_anc_gestational_age_weeks_visit3']):
+            recommended_gestation_next_anc = params['focused_anc_gestational_age_weeks_visit3']
+        elif (params['focused_anc_gestational_age_weeks_visit3'] <=
+              mother.ps_gestational_age_in_weeks < params['focused_anc_gestational_age_weeks_visit4']):
+            recommended_gestation_next_anc = params['focused_anc_gestational_age_weeks_visit4']
         else:
-            recommended_gestation_next_anc = 50
+            recommended_gestation_next_anc = params['focused_anc_gestational_age_weeks_max']
 
         # We calculate the difference between today's date and the date this event should run
         if self.visit_number == 1:
@@ -2125,7 +2213,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             return
 
         # store the GA at which CS will most likely be scheduled for in those for which it is indicated
-        assumed_weeks_till_delivery = 37
+        assumed_weeks_till_delivery = params['delivery_weeks_gestational_diabetes']
 
         # The event represents inpatient care delivered within the antenatal ward at a health facility. Therefore
         # it is assumed that women with a number of different complications could be sent to this HSI for treatment.
@@ -2162,9 +2250,10 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 # To avoid issues with scheduling of events we assume women who are not scheduled to return to
                 # routine ANC OR their next ANC appointment is more than a month away will be asked to routine for
                 # follow up
-                follow_up_date = self.sim.date + DateOffset(days=28)
-                if pd.isnull(mother.ac_date_next_contact) or ((mother.ac_date_next_contact - self.sim.date) >
-                                                              pd.to_timedelta(28, unit='D')):
+                follow_up_date = self.sim.date + DateOffset(days=params['follow_up_days_anaemia'])
+                if (pd.isnull(mother.ac_date_next_contact) or
+                    ((mother.ac_date_next_contact - self.sim.date) >
+                     pd.to_timedelta(params['follow_up_days_anaemia'], unit='D'))):
 
                     outpatient_checkup = HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(
                         self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
@@ -2187,7 +2276,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
             # We then schedule this woman to return for blood sugar testing to evaluate the effectiveness of her
             # treatment and potentially move to second line treatment
-            check_up_date = self.sim.date + DateOffset(days=28)
+            check_up_date = self.sim.date + DateOffset(days=params['follow_up_days_gestational_diabetes'])
 
             outpatient_checkup = HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
@@ -2253,37 +2342,42 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
         if mother.ps_antepartum_haemorrhage != 'none':
             # ---------------------- APH SECONDARY TO PLACENTAL ABRUPTION -----------------------------------------
-            if mother.ps_placental_abruption and mother.ps_gestational_age_in_weeks >= 28:
+            if (mother.ps_placental_abruption and
+                mother.ps_gestational_age_in_weeks >= params['delivery_weeks_placental_abruption']):
                 # Women experiencing placenta abruption at are admitted for immediate
                 # caesarean delivery due to high risk of mortality/morbidity
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                 mni[person_id]['cs_indication'] = 'an_aph_pa'
 
-            elif mother.ps_placental_abruption and mother.ps_gestational_age_in_weeks < 28:
+            elif (mother.ps_placental_abruption and
+                  mother.ps_gestational_age_in_weeks < params['delivery_weeks_placental_abruption']):
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
                 mni[person_id]['cs_indication'] = 'an_aph_pa'
-                assumed_weeks_till_delivery = 28
+                assumed_weeks_till_delivery = params['delivery_weeks_placental_abruption']
 
             # ---------------------- APH SECONDARY TO PLACENTA PRAEVIA -----------------------------------------
             if mother.ps_placenta_praevia:
                 # The treatment plan for a woman with placenta praevia is dependent on both the severity of the
                 # bleed and her current gestation at the time of bleeding
 
-                if ((mother.ps_antepartum_haemorrhage == 'severe') and mother.ps_gestational_age_in_weeks >= 28) or \
-                   (mother.ps_gestational_age_in_weeks >= 37):
+                if (((mother.ps_antepartum_haemorrhage == 'severe') and
+                     mother.ps_gestational_age_in_weeks >= params['delivery_weeks_placenta_praevia_severe']) or
+                    (mother.ps_gestational_age_in_weeks >= params['delivery_weeks_placenta_praevia_mild'])):
                     # Women experiencing severe bleeding are admitted immediately for caesarean section
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                     mni[person_id]['cs_indication'] = 'an_aph_pp'
 
-                elif (mother.ps_antepartum_haemorrhage == 'severe') and (mother.ps_gestational_age_in_weeks <= 28):
+                elif ((mother.ps_antepartum_haemorrhage == 'severe') and
+                      (mother.ps_gestational_age_in_weeks <= params['delivery_weeks_placenta_praevia_severe'])):
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
                     mni[person_id]['cs_indication'] = 'an_aph_pp'
-                    assumed_weeks_till_delivery = 28
+                    assumed_weeks_till_delivery = params['delivery_weeks_placenta_praevia_severe']
 
-                elif (mother.ps_antepartum_haemorrhage != 'severe') and (mother.ps_gestational_age_in_weeks < 37):
+                elif ((mother.ps_antepartum_haemorrhage != 'severe') and
+                      (mother.ps_gestational_age_in_weeks < params['delivery_weeks_placenta_praevia_mild'])):
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
                     mni[person_id]['cs_indication'] = 'an_aph_pp'
-                    assumed_weeks_till_delivery = 37
+                    assumed_weeks_till_delivery = params['delivery_weeks_placenta_praevia_mild']
 
             if df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none':
                 logger.info(key='error', data=f'Mother {person_id} was not admitted for delivery following APH')
@@ -2297,25 +2391,25 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             # the risk of maternal and neonatal infection
             self.module.antibiotics_for_prom(person_id, self)
 
-            # Guidelines suggest women over 34 weeks of gestation should be admitted for induction to to
+            # Guidelines suggest women over 34 weeks of gestation should be admitted for induction due to
             # increased risk of morbidity and mortality
-            if mother.ps_gestational_age_in_weeks >= 37:
+            if mother.ps_gestational_age_in_weeks >= params['delivery_weeks_prom_no_infection']:
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
 
             # Otherwise they may stay as an inpatient until their gestation as increased prior to delivery
-            elif mother.ps_gestational_age_in_weeks < 37:
+            elif mother.ps_gestational_age_in_weeks < params['delivery_weeks_prom_no_infection']:
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_future'
-                assumed_weeks_till_delivery = 37
+                assumed_weeks_till_delivery = params['delivery_weeks_prom_no_infection']
 
         # ============================== INITIATE TREATMENT FOR CHORIOAMNIONITIS ==================================
         # Women with chorioamnionitis are admitted for delivery (and will receive antibiotics in the labour module)
         if mother.ps_chorioamnionitis:
-            if mother.ps_gestational_age_in_weeks >= 28:
+            if mother.ps_gestational_age_in_weeks >= params['delivery_weeks_chorioamnionitis']:
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
 
-            elif mother.ps_gestational_age_in_weeks <= 28:
+            elif mother.ps_gestational_age_in_weeks <= params['delivery_weeks_chorioamnionitis']:
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_future'
-                assumed_weeks_till_delivery = 28
+                assumed_weeks_till_delivery = params['delivery_weeks_chorioamnionitis']
 
         # ======================== ADMISSION FOR DELIVERY (INDUCTION) ========================================
         # Women for whom immediate delivery is indicated are schedule to move straight to the labour model where
@@ -2437,6 +2531,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                 and (mother.ac_gest_diab_on_treatment != 'none') and (mother.ps_gestational_age_in_weeks > 21):
 
             est_length_preg = self.module.get_approx_days_of_pregnancy(person_id)
+            params = self.module.current_parameters
 
             def schedule_gdm_event_and_checkup():
                 # Schedule GestationalDiabetesGlycaemicControlEvent which determines if this new treatment will
@@ -2445,7 +2540,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                     self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
 
                 # Schedule follow-up
-                check_up_date = self.sim.date + DateOffset(days=28)
+                check_up_date = self.sim.date + DateOffset(days=params['follow_up_days_gestational_diabetes'])
 
                 outpatient_checkup = \
                     HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes(
