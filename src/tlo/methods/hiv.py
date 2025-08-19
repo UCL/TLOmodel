@@ -1303,46 +1303,43 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
 
         # ------------------- SCALE-UP -----------------------
-        scaled_params_workbook = p["scaleup_parameters"]
-
         if p['type_of_scaleup'] == 'target':
+            scaled_params_workbook = p["scaleup_parameters"]
             scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
-        if p['type_of_scaleup'] == 'max':
-            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
 
-        # scale-up HIV program
-        # reduce risk of HIV - applies to whole adult population
-        p["beta"] = p["beta"] * scaled_params["reduction_in_hiv_beta"]
+            # scale-up HIV program
+            # reduce risk of HIV - applies to whole adult population
+            p["beta"] = p["beta"] * scaled_params["reduction_in_hiv_beta"]
 
-        # increase PrEP coverage for FSW after HIV test
-        p["prob_prep_for_fsw_after_hiv_test"] = scaled_params["prob_prep_for_fsw_after_hiv_test"]
+            # increase PrEP coverage for FSW after HIV test
+            p["prob_prep_for_fsw_after_hiv_test"] = scaled_params["prob_prep_for_fsw_after_hiv_test"]
 
-        # prep poll for AGYW - target to the highest risk
-        # increase retention to 75% for FSW and AGYW
-        p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
-        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
-            "probability_of_being_retained_on_prep_every_3_months"
-        ]
+            # prep poll for AGYW - target to the highest risk
+            # increase retention to 75% for FSW and AGYW
+            p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
+            p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
+                "probability_of_being_retained_on_prep_every_3_months"
+            ]
 
-        # perfect retention on ART
-        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params[
-            "probability_of_being_retained_on_art_every_3_months"
-        ]
+            # perfect retention on ART
+            p["probability_of_being_retained_on_art_every_3_months"] = scaled_params[
+                "probability_of_being_retained_on_art_every_3_months"
+            ]
 
-        # increase probability of VMMC after hiv test
-        p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
+            # increase probability of VMMC after hiv test
+            p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
 
-        # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
-        p["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params["annual_testing_rate_adults"]
+            # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params["annual_testing_rate_adults"]
 
-        # ANC testing - value for mothers and infants testing
-        p["prob_hiv_test_at_anc_or_delivery"] = scaled_params["prob_hiv_test_at_anc_or_delivery"]
-        p["prob_hiv_test_for_newborn_infant"] = scaled_params["prob_hiv_test_for_newborn_infant"]
+            # ANC testing - value for mothers and infants testing
+            p["prob_hiv_test_at_anc_or_delivery"] = scaled_params["prob_hiv_test_at_anc_or_delivery"]
+            p["prob_hiv_test_for_newborn_infant"] = scaled_params["prob_hiv_test_for_newborn_infant"]
 
-        # viral suppression rates
-        # adults already at 95% by 2020
-        # change all column values
-        p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
+            # viral suppression rates
+            # adults already at 95% by 2020
+            # change all column values
+            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
 
         # update exising linear models to use new scaled-up parameters
         self._build_linear_models()

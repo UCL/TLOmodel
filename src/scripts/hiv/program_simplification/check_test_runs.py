@@ -38,7 +38,7 @@ results_folder = get_scenario_outputs("hiv_program_simplification", outputspath)
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder)
+log = load_pickled_dataframes(results_folder, draw=3, run=5)
 
 # get basic information about the results
 scenario_info = get_scenario_info(results_folder)
@@ -46,7 +46,6 @@ scenario_info = get_scenario_info(results_folder)
 # Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
 
-#             module_param                value
 # draw
 # 0     Hiv:type_of_scaleup                 none
 # 1     Hiv:type_of_scaleup      reduce_HIV_test
@@ -59,9 +58,10 @@ params = extract_params(results_folder)
 # 8     Hiv:type_of_scaleup          remove_vmmc
 # 9     Hiv:type_of_scaleup        increase_6MMD
 # 10    Hiv:type_of_scaleup           remove_all
+# 11    Hiv:type_of_scaleup               target
 
 
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2045, 1, 1))
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2050, 12, 31))
 
 
 def target_period() -> str:
