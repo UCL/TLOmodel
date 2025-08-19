@@ -277,6 +277,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].tick_params(axis='both', which='major', labelsize=12)
     axes[0].legend(title='Cancer', bbox_to_anchor=(1., 1), loc='upper left')
 
+    cols = list(all_draws_yll_normalized.columns)
+    second_col = cols[1]
+    cols = cols[:1] + cols[2:] + [second_col]
+    all_draws_yll_normalized = all_draws_yll_normalized[cols]
+    all_draws_yll_normalized.rename(
+        columns=dict(zip(all_draws_yll_normalized.columns, range(len(scenario_names)))),
+        inplace=True)
+
     for i, condition in enumerate(all_draws_yll_normalized.index):
             axes[1].scatter(all_draws_yll_normalized.columns, all_draws_yll_normalized.loc[condition],
                          marker='o',s = 10,
@@ -290,9 +298,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             )
 
     axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
-    axes[1].scatter(all_draws_population.columns,
-                    all_draws_population,
-                    color='black', marker='s', label='Population')
+    # axes[1].scatter(all_draws_population.columns,
+    #                 all_draws_population,
+    #                 color='black', marker='s', label='Population')
     axes[1].set_ylabel('Fold change in YLL', fontsize=12)
     axes[1].set_xlabel('Scenario', fontsize=12)
     axes[1].set_xticks(range(len(scenario_names)))
