@@ -437,22 +437,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         workbook = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
-        # Check if this is Rumphi district and override or_pnc_anc4+ parameter
-        if hasattr(self.sim.modules['Demography'], 'district') and \
-            self.sim.modules['Demography'].district == 'Rumphi':
-            # Get the original length of the parameter list
-            original_length = len(self.parameters['or_pnc_anc4+'].init)
-            # Override all values in the list to 0.5
-            rumphi_value = [0.5] * original_length
-            self.parameters['or_pnc_anc4+'] = Parameter(
-                Types.LIST,
-                'odds ratio for women who attended ANC4+ attending PNC (overridden for Rumphi)',
-                rumphi_value
-            )
-            # Update current_parameters if already initialized
-            if self.current_parameters:
-                self.current_parameters['or_pnc_anc4+'] = rumphi_value
-
         # preg_art_path = resourcefilepath / 'ResourceFile_HIV' / 'art_coverage_pregnant_women.csv'
         # preg_art_df = pd.read_csv(preg_art_path)
         #
