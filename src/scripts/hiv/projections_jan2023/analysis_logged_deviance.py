@@ -86,7 +86,7 @@ sim.register(
 )
 
 # set the scenario
-sim.modules["Hiv"].parameters["type_of_scaleup"] = "target"
+sim.modules["Hiv"].parameters["type_of_scaleup"] = "remove_IPT"
 sim.modules["Hiv"].parameters["scaleup_start_year"] = 2011
 # sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
