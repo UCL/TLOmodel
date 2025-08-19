@@ -437,16 +437,32 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         workbook = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
-        preg_art_path = resourcefilepath / 'ResourceFile_HIV' / 'art_coverage_pregnant_women.csv'
-        preg_art_df = pd.read_csv(preg_art_path)
+        # Check if this is Rumphi district and override or_pnc_anc4+ parameter
+        if hasattr(self.sim.modules['Demography'], 'district') and \
+            self.sim.modules['Demography'].district == 'Rumphi':
+            # Get the original length of the parameter list
+            original_length = len(self.parameters['or_pnc_anc4+'].init)
+            # Override all values in the list to 0.5
+            rumphi_value = [0.5] * original_length
+            self.parameters['or_pnc_anc4+'] = Parameter(
+                Types.LIST,
+                'odds ratio for women who attended ANC4+ attending PNC (overridden for Rumphi)',
+                rumphi_value
+            )
+            # Update current_parameters if already initialized
+            if self.current_parameters:
+                self.current_parameters['or_pnc_anc4+'] = rumphi_value
 
-        # Extract the value for 'art_coverage_pregnant_women'
-        art_cov_value = preg_art_df.loc[
-            preg_art_df['parameter_name'] == 'art_coverage_pregnant_women', 'value'
-        ].values[0]
-
-        # Assign it to the parameters dictionary
-        p['art_coverage_pregnant_women'] = float(art_cov_value)
+        # preg_art_path = resourcefilepath / 'ResourceFile_HIV' / 'art_coverage_pregnant_women.csv'
+        # preg_art_df = pd.read_csv(preg_art_path)
+        #
+        # # Extract the value for 'art_coverage_pregnant_women'
+        # art_cov_value = preg_art_df.loc[
+        #     preg_art_df['parameter_name'] == 'art_coverage_pregnant_women', 'value'
+        # ].values[0]
+        #
+        # # Assign it to the parameters dictionary
+        # p['art_coverage_pregnant_women'] = float(art_cov_value)
 
         # Load data on HIV prevalence
         p["hiv_prev"] = workbook["hiv_prevalence"]
@@ -757,18 +773,18 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             worksheet.year == 2010, ["year", "single_age", "sex", "prop_coverage"]
         ]
 
-        hiv_positive_pregnant_women = df[
-            df.is_alive &
-            (df.sex == "F") &
-            df.hv_inf &
-            (df["is_pregnant"]) &
-            (df.hv_art == "not")].index
-        # Randomly assign ART based on coverage parameter
-        n = len(hiv_positive_pregnant_women)
-        n_to_assign = int(n * params["art_coverage_pregnant_women"])
-        assigned_art_preg = self.rng.choice(hiv_positive_pregnant_women, size=n_to_assign, replace=False)
-
-        df.loc[assigned_art_preg, "hv_art"] = "on_VL_suppressed"
+        # hiv_positive_pregnant_women = df[
+        #     df.is_alive &
+        #     (df.sex == "F") &
+        #     df.hv_inf &
+        #     (df["is_pregnant"]) &
+        #     (df.hv_art == "not")].index
+        # # Randomly assign ART based on coverage parameter
+        # n = len(hiv_positive_pregnant_women)
+        # n_to_assign = int(n * params["art_coverage_pregnant_women"])
+        # assigned_art_preg = self.rng.choice(hiv_positive_pregnant_women, size=n_to_assign, replace=False)
+        #
+        # df.loc[assigned_art_preg, "hv_art"] = "on_VL_suppressed"
 
 
         # merge all susceptible individuals with their coverage probability based on sex and age
@@ -805,9 +821,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         p["overall_prob_of_art"] = p["scaled_rel_prob_by_time_infected"] * p["prob_art"]
         random_draw = self.rng.random_sample(size=len(df))
 
+        # art_idx = df.index[
+        #     (random_draw < p["overall_prob_of_art"]) & df.is_alive & df.hv_inf
+        #     ].union(assigned_art_preg)
+
         art_idx = df.index[
             (random_draw < p["overall_prob_of_art"]) & df.is_alive & df.hv_inf
-            ].union(assigned_art_preg)
+            ]
 
         # 2) Determine adherence levels for those currently on ART, for each of adult men, adult women and children
         adult_f_art_idx = df.loc[
