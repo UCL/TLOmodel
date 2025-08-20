@@ -542,7 +542,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             )
 
         # Add population line to Panel C
-        population_adjusted_y_c = adjusted_y * 1.05
+        population_adjusted_y_c = df_normalized_population.iloc[0, -1]
         axes[2].plot(
             df_normalized_population.columns,
             df_normalized_population.iloc[0, :],
