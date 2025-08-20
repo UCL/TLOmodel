@@ -1,4 +1,4 @@
-"""This Scenario file run the model under different assumptions for the HealthSystem and Vertical Program Scale-up
+"""This Scenario file runs the model under different assumptions for the HIV program simplification
 
 
 check the batch configuration gets generated without error:
