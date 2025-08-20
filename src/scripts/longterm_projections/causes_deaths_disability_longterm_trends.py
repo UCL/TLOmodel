@@ -429,8 +429,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].legend().set_visible(False)
         axes[0].tick_params(axis='both', which='major', labelsize=12)
 
-        # Panel B: Group 1 and Group 4 (Infectious diseases)
-        panel_b_groups = group_1 + group_4
+        # Panel B: NCDs
+        panel_b_groups = group_2 + group_3 + other_causes
+
         line_handles_b = []
 
         for condition in panel_b_groups:
@@ -498,8 +499,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[1].set_ylabel('Normalized DALYs', fontsize=12)
         axes[1].tick_params(axis='both', which='major', labelsize=12)
 
-        # Panel C: Group 2, Group 3, and other causes
-        panel_c_groups = group_2 + group_3 + other_causes
+        # Panel C: IDs
+        panel_c_groups = group_1 + group_4
         line_handles_c = []
 
         for condition in panel_c_groups:
