@@ -35,6 +35,19 @@ if not os.path.exists(outputfilepath):
     os.makedirs(outputfilepath)
 
 # Utility functions
+# Assign item names to item codes
+def assign_consumable_names_to_item_codes(df):
+   # Create dictionary mapping item_codes to consumables names
+    consumables_df = pd.read_csv(consumable_resourcefilepath / "ResourceFile_Consumables_Items_and_Packages.csv")[['Item_Code', 'Items']]
+    consumables_df = consumables_df[consumables_df['Item_Code'].notna()]
+    consumables_dict = dict(zip(consumables_df['Item_Code'], consumables_df['Items']))
+
+    # Add consumable_name to df
+    df = df.copy()
+    df['item_name'] = df['item_code'].map(consumables_dict)
+
+    return df
+
 # Prepare availability data
 def prepare_availability_dataset_for_plots(
     _df: pd.DataFrame,
@@ -223,6 +236,111 @@ def generate_heatmap(
     plt.close(fig)
     return fig, ax, heatmap_df
 
+# Generate LaTex-compatible detailed table of availability
+def generate_detail_availability_table_by_scenario(
+    df: pd.DataFrame,
+    groupby_var: str,
+    scenario_cols: Sequence[str],
+    include_levels: Union[str, Sequence[str]],
+    longtable: bool = False,
+    outputpath: Path = None,
+    decimals: int = 2,
+    caption: Optional[str] = None,
+    label_prefix: str = "tab:availability_by_",
+    col_width_groupbyvar: str = "4cm",
+    col_width_scenario: str = "1.8cm",
+) -> str:
+    """
+    Create a LaTeX table of average availability (as percentages) for each consumable across scenarios,
+    filtered to selected facility levels.
+
+    Returns the LaTeX string and writes it to figurespath / f"availability_by_{groupby_var}.tex"
+    """
+
+    # --- Setup ---
+    if outputpath is None:
+        outputpath = outputfilepath / "appendix"  # falls back to your existing default
+    outputpath.mkdir(parents=True, exist_ok=True)
+
+    # Accept str OR list for include_levels
+    if isinstance(include_levels, str):
+        include_levels = [include_levels]
+
+    table_df = df.copy()
+
+    # Filter by facility level if the column is present
+    if "Facility_Level" in table_df.columns:
+        table_df = table_df[table_df["Facility_Level"].isin(include_levels)]
+
+    # Aggregate means per item
+    grouped = (
+        table_df
+        .groupby([groupby_var], dropna=False)[list(scenario_cols)]
+        .mean()
+        .reset_index()
+    )
+
+    # Rename first column to "Consumable"
+    grouped.rename(columns={groupby_var: "Consumable"}, inplace=True)
+
+    # Escape LaTeX in Consumable names
+    def _latex_escape(s):
+        if pd.isna(s):
+            return ""
+        s = str(s)
+        # Order matters for backslashes; escape backslash first
+        s = s.replace("\\", r"\\")
+        s = s.replace("&", r"\&").replace("%", r"\%").replace("_", r"\_")
+        s = s.replace("#", r"\#").replace("{", r"\{").replace("}", r"\}")
+        s = s.replace("$", r"\$").replace("^", r"\^{}").replace("~", r"\~{}")
+        return s
+
+    grouped["Consumable"] = grouped["Consumable"].map(_latex_escape)
+
+    # Convert proportions -> percentage strings with escaped %
+    def pct_format(x: float) -> str:
+        if pd.isna(x):
+            return ""
+        return f"{x * 100:.{decimals}f}\\%"
+
+    for c in scenario_cols:
+        grouped[c] = grouped[c].map(pct_format)
+
+    # Build column format dynamically
+    # First col wider for names, then one col per scenario
+    column_format = (
+        f"|R{{{col_width_groupbyvar}}}|"
+        + "|".join([f"R{{{col_width_scenario}}}"] * len(scenario_cols))
+        + "|"
+    )
+
+    # Caption/label
+    if caption is None:
+        caption = "Summarized availability by consumable"
+    label = f"{label_prefix}{groupby_var}_{include_levels}"
+
+    # Export to LaTeX (escape=False since we already escaped)
+    latex_table = grouped.to_latex(
+        longtable=longtable,
+        column_format=column_format,
+        caption=caption,
+        label=label,
+        position="h",
+        index=False,
+        escape=False,
+        header=True,
+    )
+
+    # Add \hline after each row
+    latex_table = latex_table.replace("\\\\\n", "\\\\ \\hline\n")
+
+    # Save
+    outpath = outputpath / f"availability_by_{groupby_var}_{include_levels}.tex"
+    with open(outpath, "w", encoding="utf-8") as f:
+        f.write(latex_table)
+
+    return latex_table
+
 
 # Import and clean data files
 #**********************************
@@ -301,72 +419,28 @@ for level in ['1a', '1b']:
 # Health Facility Assessment, 2018-19
 
 # Table B.1: Average probability of availability for each consumable under all scenarios (Level 1a)
-def assign_consumable_names_to_item_codes(df):
-   # Create dictionary mapping item_codes to consumables names
-    consumables_df = pd.read_csv(consumable_resourcefilepath / "ResourceFile_Consumables_Items_and_Packages.csv")[['Item_Code', 'Items']]
-    consumables_df = consumables_df[consumables_df['Item_Code'].notna()]
-    consumables_dict = dict(zip(consumables_df['Item_Code'], consumables_df['Items']))
-
-    # Add consumable_name to df
-    df = df.copy()
-    df['item_name'] = df['item_code'].map(consumables_dict)
-
-    return df
 tlo_availability_df = assign_consumable_names_to_item_codes(tlo_availability_df)
 
-def generate_detail_availability_table(df,
-                               groupby_var,
-                               longtable = False,
-                               figurespath=outputfilepath / 'appendix',
-                               decimals=2
-):
-    table_df = df.copy()
-    table_df[groupby_var] = table_df[groupby_var].replace('_', ' ', regex=True)
-    table_df[groupby_var] = table_df[groupby_var].replace('%', r'\%', regex=True)
-    table_df[groupby_var] = table_df[groupby_var].replace('&', r'\&', regex=True)
-
-    table_df = table_df.groupby(['item_name'])[scenario_cols].mean()
-    # Multiply by 100 and format with escaped percent sign for LaTeX
-    table_df[scenario_cols] = table_df[scenario_cols].applymap(
-        lambda x: f"{x * 100:.{decimals}f}\\%"
-    )
-
-    # Rename columns for clarity
-    table_df = table_df.reset_index()
-    table_df.columns = ['Consumable'] + scenario_cols
-
-    # Rename columns
-    table_df.rename(columns={'item_name': 'Consumable'}, inplace=True)
-
-    # Convert to LaTeX
-    latex_table = table_df.to_latex(
-        longtable=longtable,
-        column_format='|R{4cm}|' + '|'.join(['R{1cm}'] * len(table_df.columns[1:])) + '|',
-        caption=f"Summarized availability by consumable",
-        label=f"tab:availability_by_{groupby_var}",
-        position="h",
-        index=False,
-        escape=False,  # we already escaped % and &
-        header=True
-    )
-
-    # Add \hline after each row
-    latex_table = latex_table.replace("\\\\", "\\\\ \\hline")
-
-    # Save
-    figurespath.mkdir(parents=True, exist_ok=True)
-    latex_file_path = figurespath / f'availability_by_{groupby_var}.tex'
-    with open(latex_file_path, 'w') as latex_file:
-        latex_file.write(latex_table)
-
-    # Print for reference
-    print(latex_table)
-
-# Table F1: Cost by cost subcategory
-generate_detail_availability_table(df = tlo_availability_df,
-                               groupby_var = 'item_name',
-                               longtable = True,
-                               figurespath=outputfilepath / 'appendix')
+# Table B.1: Average probability of availability for each consumable under all scenarios (Level 1a)
+availablity_by_item_1a = generate_detail_availability_table_by_scenario(
+    df=tlo_availability_df,
+    groupby_var="item_name",
+    scenario_cols=scenario_cols,
+    include_levels="1a",
+    longtable=True,
+    outputpath=outputfilepath / "appendix",
+    decimals=2,
+    caption="Average probability of availability for each consumable under all scenarios (Level 1a)",
+)
 
 # Table B.2: Average probability of availability for each consumable under all scenarios (Level 1b)
-
+availablity_by_item_1b = generate_detail_availability_table_by_scenario(
+    df=tlo_availability_df,
+    groupby_var="item_name",
+    scenario_cols=scenario_cols,
+    include_levels="1b",
+    longtable=True,
+    outputpath=outputfilepath / "appendix",
+    decimals=2,
+    caption="Average probability of availability for each consumable under all scenarios (Level 1b)",
+)
