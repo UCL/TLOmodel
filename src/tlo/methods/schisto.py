@@ -845,6 +845,8 @@ class SchistoSpecies:
                                              'Baseline mean worm burden of species across all districts in 2010'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
+            'prevalence_2010': Parameter(Types.DATA_FRAME,
+                                         'Prevalence per district in 2010'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,
                                           'Proportion of population in each district susceptible to schisto infection'),
             'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
@@ -909,6 +911,7 @@ class SchistoSpecies:
         # Baseline reservoir size and other district-related params (R0, proportion susceptible)
         schisto_initial_reservoir = workbook[f'LatestData_{self.name}'].set_index("District")
         parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
+        parameters['prevalence_2010'] = schisto_initial_reservoir['mean_prevalence2010']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
         parameters['prop_susceptible'] = schisto_initial_reservoir['prop_susceptible']
 
@@ -1139,9 +1142,9 @@ class SchistoSpecies:
             #     else:
             #         params['mean_worm_burden2010'][:] = 0
 
-            number_susceptible = len(df.loc[in_the_district].loc[
-                df.loc[in_the_district, prop('susceptibility')] == 1, prop('susceptibility')])
-            reservoir = int(number_susceptible * params['mean_worm_burden2010'][district])
+            number_infected = len(df.loc[in_the_district]) * (params['prevalence_2010'][district] / 100)
+
+            reservoir = int(number_infected * params['mean_worm_burden2010'][district])
 
             # Determine a 'contact rate' for each person
             contact_and_susceptibility = df.loc[in_the_district, prop('susceptibility')]

@@ -80,7 +80,7 @@ district_scaling_factor.columns = ['scaling_factor']
 # %% USEFUL FUNCTIONS
 #################################################################################
 
-TARGET_PERIOD = (Date(2024, 1, 1), Date(2040, 12, 31))
+TARGET_PERIOD = (Date(2024, 1, 1), Date(2050, 12, 31))
 
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
