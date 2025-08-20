@@ -202,11 +202,13 @@ def test_wasting_incidence(tmpdir):
     polling = Wasting_IncidencePoll(wmodule)
     polling.apply(sim.population)
 
-    # Check properties of individuals: should now be moderately wasted
+    # Check properties of individuals: should now be moderately wasted with onset in previous month
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     assert all(under5s['un_ever_wasted'])
     assert (under5s['un_WHZ_category'].eq('-3<=WHZ<-2')).all()
-    assert (under5s['un_last_wasting_date_of_onset'].eq(sim.date)).all()
+    days_in_month = (sim.date - pd.DateOffset(days=1)).days_in_month
+    assert (under5s['un_last_wasting_date_of_onset'] < sim.date).all() and \
+           (under5s['un_last_wasting_date_of_onset'] >= sim.date - pd.to_timedelta(days_in_month, unit='D')).all()
 
 
 def test_report_daly_weights(tmpdir):
@@ -348,15 +350,17 @@ def test_nat_recovery_moderate_wasting(tmpdir):
         polling = Wasting_IncidencePoll(module=wmodule)
         polling.apply(sim.population)
 
-        # Check properties of this individual: should now be moderately wasted with MAM or SAM respectively
+        # Check properties of this individual: should now be moderately wasted with MAM or SAM respectively and
+        # onset in previous month
         person = df.loc[person_id]
         assert person['un_ever_wasted']
         assert person['un_WHZ_category'] == '-3<=WHZ<-2'
-        assert person['un_last_wasting_date_of_onset'] == sim.date
+        days_in_month = (sim.date - pd.DateOffset(days=1)).days_in_month
+        assert (person['un_last_wasting_date_of_onset'] < sim.date) and \
+               (person['un_last_wasting_date_of_onset'] >= sim.date - pd.to_timedelta(days_in_month, unit='D'))
         assert pd.isnull(person['un_am_tx_start_date'])
         assert pd.isnull(person['un_am_recovery_date'])
         assert df.at[person_id, 'un_clinical_acute_malnutrition'] == am_state_expected
-
 
         # Check that there is a natural recovery event scheduled:
         #  Wasting_FullRecovery_Event if this person has MAM, Wasting_RecoveryToMAM_Event if this person has SAM
@@ -918,16 +922,19 @@ def test_recovery_before_death_scheduled(tmpdir):
     polling = Wasting_IncidencePoll(module=wmodule)
     polling.apply(sim.population)
 
-    # Check properties of this individual: should now be moderately wasted
+    # Check properties of this individual: should now be moderately wasted  with onset in previous month
     person = df.loc[person_id]
     assert person['un_ever_wasted']
     assert person['un_WHZ_category'] == '-3<=WHZ<-2'
     assert person['un_clinical_acute_malnutrition'] != 'well'
     assert not df.at[person_id, 'un_sam_with_complications']
-    assert person['un_last_wasting_date_of_onset'] == sim.date
+    days_in_month = (sim.date - pd.DateOffset(days=1)).days_in_month
+    assert (person['un_last_wasting_date_of_onset'] < sim.date) and \
+           (person['un_last_wasting_date_of_onset'] >= sim.date - pd.to_timedelta(days_in_month, unit='D'))
     assert pd.isnull(person['un_am_tx_start_date'])
     assert pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])  # no death due to untreated SAM
+
     # Check that there is a Wasting_ProgressionToSevere_Event scheduled for this person
     progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
                                if isinstance(event_tuple[1], Wasting_ProgressionToSevere_Event)][0]
