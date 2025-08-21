@@ -101,8 +101,8 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         "symptom_onset_max_days": Parameter(
             Types.REAL, "Maximum days from infection to symptom onset (incubation period)"
         ),
-        "treatment_followup_days": Parameter(
-            Types.REAL, "Days until follow-up appointment after treatment"
+        "sympt_resolution_after_treatment": Parameter(
+            Types.REAL, "Days until symptom resolution after treatment"
         ),
         "main_polling_event_frequency_months": Parameter(
             Types.REAL, "Measles main polling event frequency months"
@@ -510,7 +510,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             # schedule symptom resolution following treatment
             self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id),
-                                    self.sim.date + DateOffset(days=p["treatment_followup_days"]))
+                                    self.sim.date + DateOffset(days=p["sympt_resolution_after_treatment"]))
 
     def did_not_run(self):
         logger.debug(key="HSI_Measles_Treatment",
