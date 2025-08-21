@@ -108,36 +108,35 @@ def check_dtypes(sim):
 
 def zero_out_init_prev(sim):
     # Set initial prevalence to zero:
-    sim.modules['DiabeticRetinopathy'].parameters['init_prob_any_dr'] = [0.0] * 4
+    sim.modules['DiabeticRetinopathy'].parameters['init_prob_any_dr'] = [0.0] * 3
     # sim.modules['DiabeticRetinopathy'].parameters['init_prob_late_dr'] = 0.0
     return sim
 
 
 def make_high_init_prev(sim):
     # Set initial prevalence to a high value:
-    sim.modules['DiabeticRetinopathy'].parameters['init_prob_any_dr'] = [0.1] * 4
+    sim.modules['DiabeticRetinopathy'].parameters['init_prob_any_dr'] = [0.1] * 3
     # sim.modules['DiabeticRetinopathy'].parameters['init_prob_late_dr'] = 0.1
     return sim
 
 
-def incr_rate_of_onset_mild(sim):
+def incr_rate_of_onset_mild_or_moderate(sim):
     # Rate of cancer onset per # months:
-    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_dr'] = 0.05
+    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_or_moderate_dr'] = 0.05
     return sim
 
 
-def zero_rate_of_onset_mild(sim):
+def zero_rate_of_onset_mild_or_moderate(sim):
     # Rate of cancer onset per # months:
-    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_dr'] = 0.00
+    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_or_moderate_dr'] = 0.00
     return sim
 
 
 def incr_rates_of_progression(sim):
     # Rates of DR progression:
-    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_dr'] *= 5
-    sim.modules['DiabeticRetinopathy'].parameters['rate_mild_to_moderate'] *= 5
-    sim.modules['DiabeticRetinopathy'].parameters['rate_moderate_to_severe'] *= 5
-    sim.modules['DiabeticRetinopathy'].parameters['rate_severe_to_proliferative'] *= 5
+    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_or_moderate_dr'] *= 4
+    sim.modules['DiabeticRetinopathy'].parameters['rate_mild_or_moderate_to_severe'] *= 4
+    sim.modules['DiabeticRetinopathy'].parameters['rate_severe_to_proliferative'] *= 4
     return sim
 
 

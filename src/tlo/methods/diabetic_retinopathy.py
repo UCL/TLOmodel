@@ -31,15 +31,12 @@ class DiabeticRetinopathy(Module):
     }
 
     PARAMETERS = {
-        "rate_onset_to_mild_dr": Parameter(Types.REAL,
-                                           "Probability of people who get diagnosed with mild "
-                                           "diabetic retinopathy"),
-        "rate_mild_to_moderate": Parameter(Types.REAL,
-                                           "Probability of people who get diagnosed with moderate "
-                                           "diabetic retinopathy"),
-        "rate_moderate_to_severe": Parameter(Types.REAL,
-                                             "Probability of people who get diagnosed with severe "
-                                             "diabetic retinopathy"),
+        "rate_onset_to_mild_or_moderate_dr": Parameter(Types.REAL,
+                                                       "Probability of people who get diagnosed with non-proliferative "
+                                                       "mild/moderate diabetic retinopathy"),
+        "rate_mild_or_moderate_to_severe": Parameter(Types.REAL,
+                                                     "Probability of people who get diagnosed with severe "
+                                                     "diabetic retinopathy"),
         "rate_severe_to_proliferative": Parameter(Types.REAL,
                                                   "Probability of people who get diagnosed with "
                                                   "proliferative diabetic retinopathy"),
@@ -84,10 +81,9 @@ class DiabeticRetinopathy(Module):
         'effectiveness_of_laser_photocoagulation_in_severe_regression': Parameter(
             Types.REAL,
             'Probability of severe diabetic retinopathy regressing to moderate.'),
-        "probs_for_dmo_when_dr_status_mild": Parameter(
-            Types.LIST, "probability of having a DMO state when an individual has mild Diabetic Retinopathy "),
-        "probs_for_dmo_when_dr_status_moderate": Parameter(
-            Types.LIST, "probability of having a DMO state when an individual has mild Diabetic Retinopathy "),
+        "probs_for_dmo_when_dr_status_mild_or_moderate": Parameter(
+            Types.LIST, "probability of having a DMO state when an individual has non-proliferative mild/moderate "
+                        "Diabetic Retinopathy "),
         "probs_for_dmo_when_dr_status_severe": Parameter(
             Types.LIST, "probability of having a DMO state when an individual has severe Diabetic Retinopathy "),
         "probs_for_dmo_when_dr_status_proliferative": Parameter(
@@ -99,7 +95,7 @@ class DiabeticRetinopathy(Module):
         "dr_status": Property(
             Types.CATEGORICAL,
             "DR status",
-            categories=["none", "mild", "moderate", "severe", "proliferative"],
+            categories=["none", "mild_or_moderate", "severe", "proliferative"],
         ),
         "dmo_status": Property(
             Types.CATEGORICAL,
@@ -116,10 +112,11 @@ class DiabeticRetinopathy(Module):
         "dr_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
             "The DR stage at which treatment was given (used to apply stage-specific treatment effect)",
-            categories=["none", "mild", "moderate", "severe", "proliferative"]
+            categories=["none", "mild_or_moderate", "severe", "proliferative"]
         ),
         "dr_mild_diagnosed": Property(
-            Types.BOOL, "Whether this person has been diagnosed with mild diabetic retinopathy"
+            Types.BOOL, "Whether this person has been diagnosed with mild/moderate non-proliferative diabetic "
+                        "retinopathy"
         ),
         "dr_proliferative_diagnosed": Property(
             Types.BOOL, "Whether this person has been diagnosed with proliferative diabetic retinopathy"
@@ -149,19 +146,16 @@ class DiabeticRetinopathy(Module):
 
         """
         #TODO Read from resourcefile
-        self.parameters['rate_onset_to_mild_dr'] = 0.29
-
-        self.parameters['rate_mild_to_moderate'] = 0.4
-        self.parameters['rate_moderate_to_severe'] = 0.5
+        self.parameters['rate_onset_to_mild_or_moderate_dr'] = 0.29
+        self.parameters['rate_mild_or_moderate_to_severe'] = 0.5
 
         self.parameters['rate_severe_to_proliferative'] = 0.07
 
         self.parameters['prob_fast_dr'] = 0.5
-        self.parameters['init_prob_any_dr'] = [0.2, 0.3, 0.3, 0.2]
+        self.parameters['init_prob_any_dr'] = [0.4, 0.3, 0.3]
         self.parameters['prob_any_dmo'] = [0.1, 0.2, 0.3, 0.4]
 
-        self.parameters['probs_for_dmo_when_dr_status_mild'] = [0.7, 0.1, 0.2]
-        self.parameters['probs_for_dmo_when_dr_status_moderate'] = [0.5, 0.3, 0.2]
+        self.parameters['probs_for_dmo_when_dr_status_mild_or_moderate'] = [0.7, 0.1, 0.2]
         self.parameters['probs_for_dmo_when_dr_status_severe'] = [0.3, 0.5, 0.2]
         self.parameters['probs_for_dmo_when_dr_status_proliferative'] = [0.1, 0.7, 0.2]
 
@@ -329,21 +323,14 @@ class DiabeticRetinopathy(Module):
         """Make and save LinearModels that will be used when the module is running"""
         self.lm = dict()
 
-        self.lm['onset_mild_dr'] = LinearModel(
+        self.lm['onset_mild_or_moderate_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            intercept=self.parameters['rate_onset_to_mild_dr']
+            intercept=self.parameters['rate_onset_to_mild_or_moderate_dr']
         )
 
-        self.lm['mild_moderate_dr'] = LinearModel(
+        self.lm['mildmoderate_severe_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['rate_mild_to_moderate'],
-            Predictor('had_treatment_during_this_stage', external=True)
-            .when(True, 0.0).otherwise(1.0)
-        )
-
-        self.lm['moderate_severe_dr'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            self.parameters['rate_moderate_to_severe'],
+            self.parameters['rate_mild_or_moderate_to_severe'],
             Predictor('had_treatment_during_this_stage', external=True)
             .when(True, 0.0).otherwise(1.0)
         )
@@ -360,8 +347,10 @@ class DiabeticRetinopathy(Module):
         get_item_codes = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         self.cons_item_codes = dict()
-        self.cons_item_codes['laser_photocoagulation'] = {
+        self.cons_item_codes['laser_pan_retinal_photocoagulation'] = {
             get_item_codes("Anesthetic Eye drops, 15ml"): 1,
+            get_item_codes("Mydriatic/Dilation Drops, 15ml"): 1,
+            get_item_codes("Ophthalmic gel, 15ml"): 1,
             get_item_codes('Gloves, exam, latex, disposable, pair'): 4,
             get_item_codes('Contact lens'): 7
         }
@@ -396,17 +385,15 @@ class DiabeticRetinopathy(Module):
         df.loc[no_dr_mask, 'dmo_status'] = 'none'
 
         # Now only process people with valid DR status
-        valid_dr_statuses = ['mild', 'moderate', 'severe', 'proliferative']
+        valid_dr_statuses = ['mild_or_moderate', 'severe', 'proliferative']
         dr_idx = df.loc[df.is_alive & df.dr_status.isin(valid_dr_statuses)].index
 
         if not dr_idx.empty:
             for person in dr_idx:
                 dr_stage = df.at[person, 'dr_status']
 
-                if dr_stage == 'mild':
-                    probs = self.parameters['probs_for_dmo_when_dr_status_mild']
-                elif dr_stage == 'moderate':
-                    probs = self.parameters['probs_for_dmo_when_dr_status_moderate']
+                if dr_stage == 'mild_or_moderate':
+                    probs = self.parameters['probs_for_dmo_when_dr_status_mild_or_moderate']
                 elif dr_stage == 'severe':
                     probs = self.parameters['probs_for_dmo_when_dr_status_severe']
                 elif dr_stage == 'proliferative':
@@ -442,30 +429,23 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
             (df.dr_status == df.dr_stage_at_which_treatment_given)
 
         diabetes_and_alive_nodr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'none')]
-        diabetes_and_alive_milddr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'mild')]
+        diabetes_and_alive_mild_moderate_dr = df.loc[
+            df.is_alive & df.nc_diabetes & (df.dr_status == 'mild_or_moderate')]
         diabetes_and_alive_moderatedr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'moderate')]
         diabetes_and_alive_severedr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'severe')]
 
-        will_progress = self.module.lm['onset_mild_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
+        will_progress = self.module.lm['onset_mild_or_moderate_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
         # will_progress_idx = will_progress[will_progress].index
         will_progress_idx = df.index[np.where(will_progress)[0]]
-        df.loc[will_progress_idx, 'dr_status'] = 'mild'
+        df.loc[will_progress_idx, 'dr_status'] = 'mild_or_moderate'
 
-        mild_to_moderate = self.module.lm['mild_moderate_dr'].predict(
-            diabetes_and_alive_milddr,
-            self.module.rng,
-            had_treatment_during_this_stage=had_treatment_during_this_stage)
-        # mild_to_moderate_idx = mild_to_moderate[mild_to_moderate].index
-        mild_to_moderate_idx = df.index[np.where(mild_to_moderate)[0]]
-        df.loc[mild_to_moderate_idx, 'dr_status'] = 'moderate'
-
-        moderate_to_severe = self.module.lm['moderate_severe_dr'].predict(
-            diabetes_and_alive_moderatedr,
+        mildmoderate_to_severe = self.module.lm['mildmoderate_severe_dr'].predict(
+            diabetes_and_alive_mild_moderate_dr,
             self.module.rng,
             had_treatment_during_this_stage=had_treatment_during_this_stage)
         # moderate_to_severe_idx = moderate_to_severe[moderate_to_severe].index
-        moderate_to_severe_idx = df.index[np.where(moderate_to_severe)[0]]
-        df.loc[moderate_to_severe_idx, 'dr_status'] = 'severe'
+        mildmoderate_to_severe_idx = df.index[np.where(mildmoderate_to_severe)[0]]
+        df.loc[mildmoderate_to_severe_idx, 'dr_status'] = 'severe'
 
         severe_to_proliferative = self.module.lm['severe_proliferative_dr'].predict(
             diabetes_and_alive_severedr,
@@ -478,13 +458,13 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         # Update DMO status
         self.module.update_dmo_status()
 
-        mild_dr_individuals = diabetes_and_alive_milddr
+        mild_dr_individuals = diabetes_and_alive_mild_moderate_dr
         # Get those who are currently on diabetes weight loss medication from cardiometabolicdisorders
         mild_dr_individuals_eligible = mild_dr_individuals[mild_dr_individuals.nc_diabetes_on_medication]
         # Get those with controlled diabetes among those with mild dr_status
         selected_individuals_with_controlled_and_mild = (
-                self.module.rng.random_sample(len(mild_dr_individuals_eligible))
-                < self.module.parameters['prob_diabetes_controlled'])
+            self.module.rng.random_sample(len(mild_dr_individuals_eligible))
+            < self.module.parameters['prob_diabetes_controlled'])
         controlled_and_mild_idx = mild_dr_individuals_eligible.index[selected_individuals_with_controlled_and_mild]
 
         # Get those who will regress to none dr_status among those with mild dr_status and controlled diabetes
@@ -510,8 +490,8 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         if dr_stage == 'none':
             return
 
-        elif dr_stage == 'mild' or dr_stage == 'moderate':
-            # schedule HSI for mild and moderate
+        elif dr_stage == 'mild_or_moderate':
+            # schedule HSI for mild_or_moderate and moderate
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
                     person_id=person_id,
@@ -531,7 +511,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
 
 class HSI_Dr_LaserTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This is the Laser treatment of DR for dr_status mild and moderate stages. Given to individuals
+    This is the Laser treatment of DR for dr_status mild_or_moderate. Given to individuals
     who have gone through HSI_CardioMetabolicDisorders_StartWeightLossAndMedication but condition did not person.
     """
 
