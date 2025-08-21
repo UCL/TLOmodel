@@ -18,11 +18,11 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2020
-max_year = 2070
+max_year = 2022
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
-scenario_names = ["Status Quo", "HTM Scale-up", "Worsening Lifestyle Factors", "Improving Lifestyle Factors", "Maximal Healthcare \nProvision",]
+scenario_names = ["Status Quo", "HTM Scale-up", "Worsening Lifestyle \nFactors", "Improving Lifestyle \nFactors", "Maximal Healthcare \nProvision",]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167', '#9A348E']
 
 def create_non_overlapping_positions(y_values, min_gap_ratio=0.08):
@@ -767,12 +767,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
     ## Per 1000 in 2020 and 2070
-    fig, axes = plt.subplots(1, 2, figsize=(15, 7))
-    axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
-                 fontsize=18, va='top', ha='right')
-
-    axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
-                 fontsize=18, va='top', ha='right')
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
     axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
@@ -883,12 +877,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         legend=False)
 
     axes[0].tick_params(axis='both', which='major', labelsize=14)
-    axes[0].set_ylabel('DALYs per 1,000 population')
-    axes[0].set_xlabel('Scenario')
+    axes[0].set_ylabel('DALYs per 1,000 population', fontsize=14)
+    axes[0].set_xlabel('Scenario', fontsize=14)
     axes[0].set_xticks(range(len(scenario_names)))
     axes[0].set_xticklabels(scenario_names, rotation=45)
-    axes[0].legend(reversed(ordered_handles), reversed(ordered_names), title="Cause", bbox_to_anchor=(0.5, -0.5),
-                   loc="upper center", ncol=2, fontsize=10,
+    axes[0].legend(reversed(ordered_handles), reversed(ordered_names), title="Cause", bbox_to_anchor=(0.5, axes[0].get_ylim()[1]),
+                   loc="upper center", ncol=3, fontsize=10,
                    title_fontsize=10)
     subset_b = group_2 + group_3 + other_causes
     final_y_values_b = [normalized_DALYs.loc[cause].iloc[-1] for cause in subset_b if cause in normalized_DALYs.index]
@@ -916,9 +910,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xmax=max(axes[1].get_xlim()),
         color='black'
     )
-
-    axes[1].set_ylabel('Fold Change in DALYs per 1,000 Compared to 2020')
-    axes[1].set_xlabel('Scenario')
+    axes[1].tick_params(axis='both', which='major', labelsize=14)
+    axes[1].set_ylabel('Fold Change in DALYs per 1,000 Compared to 2020', fontsize=14)
+    axes[1].set_xlabel('Scenario', fontsize=14)
     axes[1].set_xticks(range(len(scenario_names)))
     axes[1].set_xticklabels(scenario_names, rotation=45)
     axes[1].legend().set_visible(False)
@@ -948,13 +942,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xmax=max(axes[1].get_xlim()),
         color='black'
     )
-    axes[2].set_ylabel('Fold Change in DALYs per 1,000 Compared to 2020')
-    axes[2].set_xlabel('Scenario')
+    axes[2].tick_params(axis='both', which='major', labelsize=14)
+    axes[2].set_xlabel('Scenario', fontsize=14)
     axes[2].set_xticks(range(len(scenario_names)))
     axes[2].set_xticklabels(scenario_names, rotation=45)
     axes[2].legend().set_visible(False)
-    fig.tight_layout(w_pad =0)
-
+    fig.tight_layout(w_pad=0.5, rect=[0, 0.05, 1, 1])
     fig.savefig(output_folder / "DALYs_combined_plot.png")
     normalized_DALYs.to_csv(output_folder / f"relative_of_dalys_normalized_2020_2070.csv")
 
