@@ -910,7 +910,7 @@ class SchistoSpecies:
 
         # Baseline reservoir size and other district-related params (R0, proportion susceptible)
         schisto_initial_reservoir = workbook[f'LatestData_{self.name}'].set_index("District")
-        parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
+        parameters['mean_worm_burden2010'] = schisto_initial_reservoir['mean_worm_burden2010']
         parameters['prevalence_2010'] = schisto_initial_reservoir['mean_prevalence2010']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
         parameters['prop_susceptible'] = schisto_initial_reservoir['prop_susceptible']
@@ -1142,9 +1142,9 @@ class SchistoSpecies:
             #     else:
             #         params['mean_worm_burden2010'][:] = 0
 
-            number_infected = len(df.loc[in_the_district]) * (params['prevalence_2010'][district] / 100)
-
-            reservoir = int(number_infected * params['mean_worm_burden2010'][district])
+            # number_infected = len(df.loc[in_the_district]) * (params['prevalence_2010'][district] / 100)
+            # todo this is changed
+            reservoir = int(len(df.loc[in_the_district]) * params['mean_worm_burden2010'][district])
 
             # Determine a 'contact rate' for each person
             contact_and_susceptibility = df.loc[in_the_district, prop('susceptibility')]
