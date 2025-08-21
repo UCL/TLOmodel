@@ -64,10 +64,6 @@ class Measles(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "Efficacy of first measles vaccine dose against measles infection"),
         "vaccine_efficacy_2": Parameter(
             Types.REAL, "Efficacy of second measles vaccine dose against measles infection"),
-        "prob_severe": Parameter(
-            Types.REAL, "Probability of severe measles infection, requiring hospitalisation"),
-        "risk_death_on_treatment": Parameter(
-            Types.REAL, "Risk of scheduled death occurring if on treatment for measles complications"),
         "symptom_prob": Parameter(
             Types.DATA_FRAME, "Probability of each symptom with measles infection"),
         "odds_ratio_health_seeking_in_children_rash": Parameter(
