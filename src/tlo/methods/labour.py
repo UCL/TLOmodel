@@ -622,6 +622,31 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                                             files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
+        if getattr(self.sim.modules['Demography'], 'district', None) == 'Rumphi':
+            self.parameters['or_pnc_anc4+'] = 0.5
+
+            if 'or_pnc_anc4+' in self.current_parameters:
+                self.current_parameters['or_pnc_anc4+'] = 0.5
+
+        else:
+            # Use default list values (e.g. [1.2, 1.2])
+            default_values = self.parameters['or_pnc_anc4+']
+            if isinstance(default_values, list):
+                print("Default or_pnc_anc4+ values =", default_values)
+            else:
+                print("Default or_pnc_anc4+ =", default_values)
+            # original_values = self.parameters['or_pnc_anc4+']
+            # original_length = len(original_values)
+            #
+            # # Override to 0.5 for all years
+            # rumphi_values = [0.5] * original_length
+            # self.parameters['or_pnc_anc4+'] = rumphi_values
+            #
+            # # If current_parameters already exists, update it
+            # if 'or_pnc_anc4+' in self.current_parameters:
+            #     self.current_parameters['or_pnc_anc4+'] = rumphi_values
+
+
     def initialise_population(self, population):
         df = population.props
 
@@ -629,6 +654,34 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         params = self.current_parameters
+
+        if getattr(self.sim.modules['Demography'], 'district', None) == 'Rumphi':
+            self.parameters['or_pnc_anc4+'] = 0.5
+
+            if 'or_pnc_anc4+' in self.current_parameters:
+                self.current_parameters['or_pnc_anc4+'] = 0.5
+
+        else:
+            # Use default list values (e.g. [1.2, 1.2])
+            default_values = self.parameters['or_pnc_anc4+']
+            if isinstance(default_values, list):
+                print("Default or_pnc_anc4+ values =", default_values)
+            else:
+                print("Default or_pnc_anc4+ =", default_values)
+            # original_values = self.parameters['or_pnc_anc4+']
+            # original_length = len(original_values)
+            #
+            # # Override to 0.5 for all years
+            # rumphi_values = [0.5] * original_length
+            # self.parameters['or_pnc_anc4+'] = rumphi_values
+            #
+            # # If current_parameters already exists, update it
+            # if 'or_pnc_anc4+' in self.current_parameters:
+            #     self.current_parameters['or_pnc_anc4+'] = rumphi_values
+
+        # if hasattr(self.sim.modules['Demography'], 'district') and \
+        #     self.sim.modules['Demography'].district == 'Rumphi':
+        #     print(f'or_pnc_anc4+ for Rumphi: {self.current_parameters["or_pnc_anc4+"]}')
 
         df.loc[df.is_alive, 'la_currently_in_labour'] = False
         df.loc[df.is_alive, 'la_intrapartum_still_birth'] = False

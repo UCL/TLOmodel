@@ -99,7 +99,17 @@ def test_run_no_constraints(tmpdir, seed):
                      resourcefilepath=resourcefilepath)
 
     register_modules(sim)
+
+    # Set district to Rumphi for testing
+    sim.modules['Demography'].district = 'Rumphi'
+    # sim.make_initial_population(n=1000)
+
+
+
     sim.make_initial_population(n=1000)
+
+    # Print the parameter after initialization
+    print(f'or_pnc_anc4+ for Rumphi: {sim.modules["Labour"].current_parameters["or_pnc_anc4+"]}')
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
