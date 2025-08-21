@@ -306,10 +306,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
         axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
-                   fontsize=14, va='top', ha='right')
+                   fontsize=18, va='top', ha='right')
 
         axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
-                   fontsize=14,  va='top', ha='right')
+                   fontsize=18,  va='top', ha='right')
         # Panel A: Deaths
         for i, condition in enumerate(df_all_years_deaths_mean.index):
             axes[0].plot(df_all_years_deaths_mean.columns, df_all_years_deaths_mean.loc[condition], marker='o',
@@ -339,7 +339,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 y=df_normalized_population.iloc[0, -1],
                 s='Population',
                 color='black',
-                fontsize=8,
+                fontsize=10,
                 va='center'
             )
         axes[1].set_title('Panel B: DALYs by cause')
@@ -354,10 +354,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # NORMALIZED DEATHS AND DALYS - TO 2020
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
         axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
-                   fontsize=14, va='top', ha='right')
+                   fontsize=18, va='top', ha='right')
 
         axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
-                   fontsize=14,  va='top', ha='right')
+                   fontsize=18,  va='top', ha='right')
         df_death_normalized_mean = df_all_years_deaths_mean.div(df_all_years_deaths_mean.iloc[:, 0], axis=0)
         df_DALY_normalized_mean = df_all_years_DALYS_mean.div(df_all_years_DALYS_mean.iloc[:, 0], axis=0)
 
@@ -392,15 +392,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
         ## BARPLOTS STACKED PER 1000
-        fig, axes = plt.subplots(1, 3, figsize=(22, 7))  # Changed to 3 subplots
+        fig, axes = plt.subplots(1, 3, figsize=(28, 12))
         axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
-                     fontsize=14, va='top', ha='right')
+                     fontsize=18, va='top', ha='right')
 
         axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
-                     fontsize=14, va='top', ha='right')
+                     fontsize=18, va='top', ha='right')
 
         axes[2].text(-0.1, 1.05, '(C)', transform=axes[2].transAxes,
-                     fontsize=14, va='top', ha='right')
+                     fontsize=18, va='top', ha='right')
 
         df_daly_per_1000_mean = df_all_years_DALYS_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
         # Panel A: Deaths (Stacked bar plot)
@@ -422,12 +422,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         handles, labels = axes[0].get_legend_handles_labels()
 
-        axes[0].set_xlabel('Year', fontsize=12)
+        axes[0].set_xlabel('Year', fontsize=15)
         axes[0].set_xticks(axes[0].get_xticks()[::10])
         axes[0].tick_params(axis='x', rotation=0)
-        axes[0].set_ylabel('Number of DALYs per 1000 people', fontsize=12)
+        axes[0].set_ylabel('Number of DALYs per 1000 people', fontsize=15)
         axes[0].legend().set_visible(False)
-        axes[0].tick_params(axis='both', which='major', labelsize=12)
+        axes[0].tick_params(axis='both', which='major', labelsize=14)
 
         # Panel B: NCDs
         panel_b_groups = group_2 + group_3 + other_causes
@@ -466,13 +466,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             axes[1].text(
                 x + 5,
                 adjusted_y,
-                condition,
+                condition.replace(' ', '\n'),
                 color=color,
-                fontsize=9,
+                fontsize=10,
                 va='center'
             )
 
-        # Add population line to Panel B
         population_adjusted_y_b = adjusted_y * 1.07
         population_original_y = df_normalized_population.iloc[0, -1]
         population_final_x = df_normalized_population.columns[-1]
@@ -491,13 +490,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             population_adjusted_y_b,
             'Population',
             color='black',
-            fontsize=9,
+            fontsize=10,
             va='center'
         )
 
-        axes[1].set_xlabel('Year', fontsize=12)
-        axes[1].set_ylabel('Normalized DALYs', fontsize=12)
-        axes[1].tick_params(axis='both', which='major', labelsize=12)
+        axes[1].set_xlabel('Year', fontsize=15)
+        axes[1].set_ylabel('Normalized DALYs', fontsize=15)
+        axes[1].tick_params(axis='both', which='major', labelsize=14)
 
         # Panel C: IDs
         panel_c_groups = group_1 + group_4
@@ -535,9 +534,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             axes[2].text(
                 x + 5,
                 adjusted_y,
-                condition,
+                condition.replace(" ", "\n"),
                 color=color,
-                fontsize=9,
+                fontsize=10,
                 va='center'
             )
 
@@ -558,30 +557,30 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             population_adjusted_y_c,
             'Population',
             color='black',
-            fontsize=9,
+            fontsize=10,
             va='center'
         )
 
-        axes[2].set_xlabel('Year', fontsize=12)
-        axes[2].set_ylabel('Normalized DALYs', fontsize=12)
-        axes[2].tick_params(axis='both', which='major', labelsize=12)
+        axes[2].set_xlabel('Year', fontsize=15)
+        axes[2].set_ylabel('Normalized DALYs', fontsize=15)
+        axes[2].tick_params(axis='both', which='major', labelsize=14)
 
         # Legend for Panel A (keeping the original legend structure)
         ordered_names = new_order
         name_to_handle = dict(line_handles_b + line_handles_c)
         ordered_handles = [name_to_handle[name] for name in ordered_names if name in name_to_handle]
-        axes[0].legend(reversed(ordered_handles), reversed(ordered_names), title="Cause", loc='upper left', fontsize=8,
-                       title_fontsize=9, ncol=2)
+        axes[0].legend(reversed(ordered_handles), reversed(ordered_names), title="Cause", bbox_to_anchor=(0.5, -0.05), loc = "upper center", ncol = 3, fontsize=10,
+                       title_fontsize=10)
 
-        fig.tight_layout()
+        fig.tight_layout(w_pad=0)
         fig.savefig(make_graph_file_name('Trend_DALYs_and_normalized_by_condition_All_Years_Panel_A_B_C_Stacked_Rate'))
         ## BARPLOTS STACKED PER 1000
         fig, axes = plt.subplots(1, 2, figsize=(15, 7))
         axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
-                   fontsize=14, va='top', ha='right')
+                   fontsize=18, va='top', ha='right')
 
         axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
-                   fontsize=14,  va='top', ha='right')
+                   fontsize=18,  va='top', ha='right')
         df_death_per_1000_mean = df_all_years_deaths_mean.div(df_all_years_data_population_mean.iloc[0, 0],
                                                               axis=0) * 1000
         df_daly_per_1000_mean = df_all_years_DALYS_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
@@ -729,10 +728,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
 
     axes[0].text(-0.05, 1.05, '(A)', transform=axes[0].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
 
     axes[1].text(-0.05, 1.05, '(B)', transform=axes[1].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
     # Panel A: Total Deaths
     axes[0].bar(
         range(len(deaths_totals_mean.columns)),
@@ -770,17 +769,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ## Per 1000 in 2020 and 2070
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
     axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
 
     axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
     axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
 
     axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
     df_dalys_all_draws_mean_1000.drop(df_dalys_all_draws_mean_1000.columns[-1], axis=1, inplace=True)
     # Panel A: DALYs per 1,000 in 2070
     df_dalys_all_draws_mean_1000.T.plot.bar(
@@ -824,7 +823,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             y=final_y,
             s=condition,
             color=color,
-            fontsize=8,
+            fontsize=10,
             va='center'
         )
 
@@ -844,7 +843,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
     #### DALYS COMBINED PLOT
-    fig, axes = plt.subplots(1, 3, figsize=(24, 8))
+    fig, axes = plt.subplots(1, 3, figsize=(28, 12))
     df_dalys_all_draws_mean_1000_2070 = df_dalys_all_draws_mean_1000[['Last']]
     df_dalys_all_draws_mean_1000_2070.columns = range(len(scenario_names))
     cols = list(df_dalys_all_draws_mean_1000_2070.columns)
@@ -854,28 +853,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_dalys_all_draws_mean_1000_2070 = df_dalys_all_draws_mean_1000_2070[cols]
     df_dalys_all_draws_mean_1000_2070.columns = range(len(scenario_names))
 
-    # df_dalys_all_draws_mean_1000_2070.rename(
-    #     columns=dict(zip(df_dalys_all_draws_mean_1000_2070.columns, range(len(scenario_names)))),
-    #     inplace=True
-    # )
-    #
 
     cols = list(normalized_DALYs.columns)
     second_col = cols[1]
     cols = cols[:1] + cols[2:] + [second_col]
     normalized_DALYs = normalized_DALYs[cols]
     normalized_DALYs.columns = range(len(scenario_names))
-    #
-    # normalized_DALYs.rename(
-    #     columns=dict(zip(normalized_DALYs.columns, range(len(scenario_names)))),
-    #     inplace=True
-    # )
+
     axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
     axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
     axes[2].text(-0.1, 1.05, '(C)', transform=axes[2].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
 
     causes = list(df_dalys_all_draws_mean_1000_2070.index)
     group_1 = ["AIDS", "TB (non-AIDS)", "Malaria"]
@@ -892,13 +882,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         color=[get_color_cause_of_death_or_daly_label(_label) for _label in new_order],
         legend=False)
 
-    axes[0].tick_params(axis='both', which='major', labelsize=12)
+    axes[0].tick_params(axis='both', which='major', labelsize=14)
     axes[0].set_ylabel('DALYs per 1,000 population')
     axes[0].set_xlabel('Scenario')
     axes[0].set_xticks(range(len(scenario_names)))
     axes[0].set_xticklabels(scenario_names, rotation=45)
-    axes[0].legend(ordered_handles, new_order, title="Cause",  bbox_to_anchor=(1.05, 1), ncol = 1, fontsize=8, title_fontsize=9)
-
+    axes[0].legend(reversed(ordered_handles), reversed(ordered_names), title="Cause", bbox_to_anchor=(0.5, -0.5),
+                   loc="upper center", ncol=2, fontsize=10,
+                   title_fontsize=10)
     subset_b = group_2 + group_3 + other_causes
     final_y_values_b = [normalized_DALYs.loc[cause].iloc[-1] for cause in subset_b if cause in normalized_DALYs.index]
     adjusted_y_positions_b = create_non_overlapping_positions(final_y_values_b, min_gap_ratio=0.05)
@@ -917,7 +908,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             axes[1].plot([final_x, final_x + 0.5], [original_y, adjusted_y],
                          color=color, linestyle='--', alpha=0.5, linewidth=0.8)
             axes[1].text(final_x + 0.75, adjusted_y, s=cause, color=color,
-                         fontsize=8, va='center')
+                         fontsize=10, va='center')
 
     axes[1].hlines(
         y=normalized_DALYs.loc['TB (non-AIDS)'][0],
@@ -942,15 +933,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             y_values = normalized_DALYs.loc[cause]
             axes[2].plot(normalized_DALYs.columns, y_values, marker='o', color=color)
 
-            # connector + adjusted label
             original_y = y_values.iloc[-1]
             adjusted_y = adjusted_y_positions_c[i]
             final_x = normalized_DALYs.columns[-1]
 
             axes[2].plot([final_x, final_x + 0.5], [original_y, adjusted_y],
                          color=color, linestyle='--', alpha=0.5, linewidth=0.8)
-            axes[2].text(final_x + 0.75, adjusted_y, s=cause, color=color,
-                         fontsize=8, va='center')
+            axes[2].text(final_x + 0.75, adjusted_y, s=cause.replace(" ", "\n"), color=color,
+                         fontsize=10, va='center')
 
     axes[2].hlines(
         y=1,
@@ -963,7 +953,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[2].set_xticks(range(len(scenario_names)))
     axes[2].set_xticklabels(scenario_names, rotation=45)
     axes[2].legend().set_visible(False)
-    fig.tight_layout()
+    fig.tight_layout(w_pad =0)
 
     fig.savefig(output_folder / "DALYs_combined_plot.png")
     normalized_DALYs.to_csv(output_folder / f"relative_of_dalys_normalized_2020_2070.csv")
@@ -998,10 +988,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Plot: Stacked bar chart of percentage DALYs for selected causes
     fig, ax = plt.subplots(figsize=(12, 8))
     axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
 
     axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
     df_selected_causes_pct.T.plot.bar(stacked=True,
                                       ax=ax,
                                       color=[get_color_cause_of_death_or_daly_label(cause) for cause in
@@ -1024,10 +1014,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
     axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
 
     axes[1].text(-0.1, 1.05, '(B)', transform=axes[1].transAxes,
-                 fontsize=14, va='top', ha='right')
+                 fontsize=18, va='top', ha='right')
     #df_deaths_all_draws_mean_1000_male.drop(df_deaths_all_draws_mean_1000_male.columns[-1], axis=1, inplace=True)
     df_deaths_all_draws_mean_1000_male = df_deaths_all_draws_mean_1000_male[['Last']]
     df_deaths_all_draws_mean_1000_male.columns = range(len(scenario_names))
