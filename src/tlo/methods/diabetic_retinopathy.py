@@ -128,10 +128,6 @@ class DiabeticRetinopathy(Module):
             Types.DATE,
             "The date of diagnosis of diabetic retinopathy (pd.NaT if never diagnosed)"
         ),
-        "dr_blindness_investigated": Property(
-            Types.BOOL,
-            "Whether blindness has been investigated, and diabetic retinopathy missed"
-        ),
     }
 
     def __init__(self):
@@ -209,7 +205,6 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "dr_date_treatment"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dr_stage_at_which_treatment_given"] = "none"
         df.loc[list(alive_diabetes_idx), "dr_date_diagnosis"] = pd.NaT
-        df.loc[list(alive_diabetes_idx), "dr_blindness_investigated"] = False
 
         # -------------------- dr_status -----------
         # Determine who has diabetic retinopathy at all stages:
@@ -314,8 +309,6 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, 'dr_stage_at_which_treatment_given'] = 'none'
         self.sim.population.props.at[child_id, 'dr_diagnosed'] = False
         self.sim.population.props.at[child_id, 'dr_date_diagnosis'] = pd.NaT
-        self.sim.population.props.at[child_id, 'dr_blindness_investigated'] = False
-
     def on_simulation_end(self) -> None:
         pass
 
@@ -351,8 +344,7 @@ class DiabeticRetinopathy(Module):
             get_item_codes("Anesthetic Eye drops, 15ml"): 1,
             get_item_codes("Mydriatic/Dilation Drops, 15ml"): 1,
             get_item_codes("Ophthalmic gel, 15ml"): 1,
-            get_item_codes('Gloves, exam, latex, disposable, pair'): 4,
-            get_item_codes('Contact lens'): 7
+            get_item_codes('Gloves, exam, latex, disposable, pair'): 4
         }
         self.cons_item_codes['anti_vegf_injection'] = {
             get_item_codes("Anesthetic Eye drops, 15ml"): 1,
@@ -545,8 +537,6 @@ class HSI_Dr_LaserTreatment(HSI_Event, IndividualScopeEventMixin):
         # randomly_sampled = self.module.rng.rand()
         # treatment_slows_progression_to_proliferative = randomly_sampled < self.module.parameters['p_medication']
 
-        df.at[person_id, 'dr_blindness_investigated'] = True
-
         is_cons_available = self.get_consumables(
             self.module.cons_item_codes['laser_photocoagulation']
         )
@@ -621,8 +611,6 @@ class HSI_Dr_Dmo_AdvancedTreatment(HSI_Event, IndividualScopeEventMixin):
         if person["dr_on_treatment"] or not person["dr_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        df.at[person_id, 'dr_blindness_investigated'] = True
-
         is_cons_available = self.get_consumables(
             self.module.cons_item_codes['anti_vegf_injection']
         )
@@ -648,6 +636,48 @@ class HSI_Dr_Dmo_AdvancedTreatment(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                     priority=0
                 )
+
+
+class HSI_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is the HSI event given to individuals with proliferative diabetic retinopathy after undergoing an eye exam/screening
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, DiabeticRetinopathy)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Dr_Laser_Pan_Retinal_Coagulation'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(key='debug',
+                     data=f'This is HSI_Laser_Pan_Retinal_Coagulation for person {person_id}')
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            # The person is not alive, the event did not happen: so return a blank footprint
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
+        # if person already on treatment or not yet diagnosed, do nothing
+        if person["dr_on_treatment"] or not person["dr_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+
+        is_cons_available = self.get_consumables(
+            self.module.cons_item_codes['laser_pan_retinal_photocoagulation']
+        )
+
+        if is_cons_available:
+            self.add_equipment({'Laser generator', 'Delivery system', 'Contact lenses', 'Patient head support'})
+            pass
+            # if person.dr_status == "proliferative":
+            #     pass
 
 
 class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
