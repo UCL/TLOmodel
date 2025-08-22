@@ -1142,9 +1142,10 @@ class SchistoSpecies:
             #     else:
             #         params['mean_worm_burden2010'][:] = 0
 
-            # number_infected = len(df.loc[in_the_district]) * (params['prevalence_2010'][district] / 100)
+            number_susceptible = int(df.loc[in_the_district, prop('susceptibility')].eq(1).sum())
+
             # todo this is changed
-            reservoir = int(len(df.loc[in_the_district]) * params['mean_worm_burden2010'][district])
+            reservoir = int(number_susceptible * params['mean_worm_burden2010'][district])
 
             # Determine a 'contact rate' for each person
             contact_and_susceptibility = df.loc[in_the_district, prop('susceptibility')]
@@ -1300,17 +1301,40 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         reservoir = age_worm_burden.groupby(['district_of_residence'], observed=False).sum()
 
         # --------------------- estimate background risk of infection ---------------------
-        current_mean_worm_burden = df[prop('aggregate_worm_burden')].mean()
+        # current_mean_worm_burden = df[prop('aggregate_worm_burden')].mean()
+        #
+        # baseline_mean_worm_burden = params['baseline_mean_worm_burden']  # baseline MWB for species in 2010
+        #
+        # # this returns positive value if current_prevalence lower than baseline_prevalence and
+        # # increases baseline_risk value
+        # # if current_prevalence > baseline_prevalence, value returned is 0 and no additional risk applied
+        # background_risk = max(0, global_params['baseline_risk'] * (
+        #     1 + global_params['scaling_factor_baseline_risk'] * (current_mean_worm_burden - baseline_mean_worm_burden)))
+        #
+        # reservoir += background_risk  # add the background reservoir to every district
 
-        baseline_mean_worm_burden = params['baseline_mean_worm_burden']  # baseline MWB for species in 2010
+        M = df[prop('aggregate_worm_burden')].mean()  # current mean worm burden
+        M0 = params['baseline_mean_worm_burden']  # baseline/reference MWB
+        baseline_risk = global_params['baseline_risk'] # constant floor risk
+        alpha = global_params['scaling_factor_baseline_risk']  # sensitivity
 
-        # this returns positive value if current_prevalence lower than baseline_prevalence and
-        # increases baseline_risk value
-        # if current_prevalence > baseline_prevalence, value returned is 0 and no additional risk applied
-        background_risk = max(0, global_params['baseline_risk'] * (
-            1 + global_params['scaling_factor_baseline_risk'] * (current_mean_worm_burden - baseline_mean_worm_burden)))
+        # Safeguards / tuning knobs
+        epsilon = 1e-9  # avoids divide-by-near-zero when M0 ~ 0
+        cap_min = 0.0  # do not allow a negative multiplier
+        cap_max = 2.0  # optional: cap excessive amplification (tune as needed)
 
-        reservoir += background_risk  # add the background reservoir to every district
+        # normalised deviation around baseline MWB
+        z = (M - M0) / (M0 + epsilon)  # >0 if M > M0, <0 if M < M0
+
+        # Factor rises when global MWB rises; falls when it falls
+        raw_factor = 1.0 + alpha * z
+
+        # Apply bounds and ensure non-negative background risk
+        factor = min(max(raw_factor, cap_min), cap_max)
+        background_risk = max(0.0, baseline_risk * factor)
+
+        # Update reservoir
+        reservoir += background_risk
 
         # --------------------- harbouring new worms ---------------------
 

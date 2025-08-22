@@ -46,7 +46,7 @@ def run_simulation(popsize,
                    mda_execute,
                    single_district):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2040, 12, 31)
+    end_date = Date(2051, 12, 31)
     # For logging
     custom_levels = {
         "*": logging.WARNING,
@@ -80,7 +80,7 @@ def run_simulation(popsize,
     # sim.modules["Schisto"].parameters["scaleup_WASH"] = 0.0  # 1.0=True
     # sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011
     sim.modules["Schisto"].parameters['mda_coverage'] = 0.8
-    sim.modules["Schisto"].parameters['mda_target_group'] = 'SAC'
+    sim.modules["Schisto"].parameters['mda_target_group'] = 'PSAC_SAC'
     sim.modules["Schisto"].parameters['mda_frequency_months'] = 12
 
     # initialise the population
@@ -94,7 +94,7 @@ def run_simulation(popsize,
     return sim, output
 
 # update these parameters
-sim, output = run_simulation(popsize=8000,
+sim, output = run_simulation(popsize=10000,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
                              mda_execute=True,
@@ -153,8 +153,10 @@ def get_model_prevalence_by_district_over_time(spec: str):
     # Aggregate the sums of infection statuses by district_of_residence and year
     district_sums = df.groupby(level='district_of_residence', axis=1).sum()
 
+    # filtered_columns = df.columns.get_level_values('infection_status').isin(
+    #     ['Heavy-infection', 'Moderate-infection', 'Low-infection'])
     filtered_columns = df.columns.get_level_values('infection_status').isin(
-        ['Heavy-infection', 'Moderate-infection', 'Low-infection'])
+        ['Heavy-infection'])
     infected = df.loc[:, filtered_columns].groupby(level='district_of_residence', axis=1).sum()
 
     prop_infected = infected.div(district_sums)
@@ -223,7 +225,7 @@ for i, _spec in enumerate(species):
     ax = axes[i]
     data = get_model_prevalence_by_district_over_time(_spec)
     data.plot(ax=ax)
-    ax.set_title(f"{_spec}")
+    ax.set_title(f"{_spec} HEAVY INFECTION")
     ax.set_xlabel('')
     ax.set_ylabel('End of year prevalence')
     ax.set_ylim(0, 1.0)
