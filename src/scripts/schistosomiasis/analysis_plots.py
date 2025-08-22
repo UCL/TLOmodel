@@ -60,24 +60,24 @@ def make_graph_file_name(name):
 #################################################################################
 
 # prevalence in 2040 of each species by strategy
-prev_haem_national_plot = pd.read_excel(results_folder / ('prev_haem_national_summary 2024-2040.xlsx'))
-prev_mansoni_national_plot = pd.read_excel(results_folder / ('prev_mansoni_national_summary 2024-2040.xlsx'))
+prev_haem_national_plot = pd.read_excel(results_folder / ('prev_haem_national_summary 2024-2050.xlsx'))
+prev_mansoni_national_plot = pd.read_excel(results_folder / ('prev_mansoni_national_summary 2024-2050.xlsx'))
 
 # get heavy intensity infections also
-prev_haem_national_heavy = pd.read_excel(results_folder / ('prev_haem_national_heavy_summary 2024-2040.xlsx'))
-prev_mansoni_national_heavy = pd.read_excel(results_folder / ('prev_mansoni_national_heavy_summary 2024-2040.xlsx'))
+prev_haem_national_heavy = pd.read_excel(results_folder / ('prev_haem_national_heavy_summary 2024-2050.xlsx'))
+prev_mansoni_national_heavy = pd.read_excel(results_folder / ('prev_mansoni_national_heavy_summary 2024-2050.xlsx'))
 
 
 # for the ranges plotted as error bars
-prev_haem_HML_All_district_summary = pd.read_excel(results_folder / 'prev_haem_HML_All_district_summary 2024-2040.xlsx')
-prev_mansoni_HML_All_district_summary = pd.read_excel(results_folder / 'prev_mansoni_HML_All_district_summary 2024-2040.xlsx')
+prev_haem_HML_All_district_summary = pd.read_excel(results_folder / 'prev_haem_HML_All_district_summary 2024-2050.xlsx')
+prev_mansoni_HML_All_district_summary = pd.read_excel(results_folder / 'prev_mansoni_HML_All_district_summary 2024-2050.xlsx')
 
 # Filter to year 2040
-df_2040 = prev_haem_HML_All_district_summary[prev_haem_HML_All_district_summary['year'] == 2040]
+df_2040 = prev_haem_HML_All_district_summary[prev_haem_HML_All_district_summary['year'] == 2050]
 haem_extrema_by_draw = df_2040.groupby('draw')['mean'].agg(['min', 'max']).reset_index()
 haem_extrema_by_draw.columns = ['draw', 'min_mean', 'max_mean']
 
-df_2040 = prev_mansoni_HML_All_district_summary[prev_mansoni_HML_All_district_summary['year'] == 2040]
+df_2040 = prev_mansoni_HML_All_district_summary[prev_mansoni_HML_All_district_summary['year'] == 2050]
 mansoni_extrema_by_draw = df_2040.groupby('draw')['mean'].agg(['min', 'max']).reset_index()
 mansoni_extrema_by_draw.columns = ['draw', 'min_mean', 'max_mean']
 
@@ -1013,7 +1013,7 @@ plot_dalys_vs_costs_by_district(
 def plot_ephp_km_continue(
     df: pd.DataFrame,
     threshold: float = 0.05,
-    year_range: tuple = (2024, 2040),
+    year_range: tuple = (2024, 2050),
     alpha: float = 1.0,
     figsize: tuple = (10, 6),
     species=None
@@ -1044,6 +1044,7 @@ def plot_ephp_km_continue(
     df = df.loc[df.index.get_level_values("year") >= year_range[0]]
 
     # Mean across runs per draw
+    # todo here change to mean with CI bands
     df_mean_runs = df.groupby(axis=1, level="draw").mean()
 
     # Identify threshold crossing
@@ -1094,8 +1095,8 @@ def plot_ephp_km_continue(
         else:
             # Offset zero-line slightly to avoid overlap
             y_offset = {
-                'no MDA': -0.001,
-                'WASH only': 0.001
+                'no MDA': -0.002,
+                'WASH only': 0.002
             }.get(label, 0)
 
             plt.step(

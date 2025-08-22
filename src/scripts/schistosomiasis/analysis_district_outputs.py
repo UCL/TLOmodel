@@ -52,7 +52,7 @@ output_folder = Path("./outputs/t.mangal@imperial.ac.uk")
 
 results_folder = get_scenario_outputs("schisto_scenarios-2025.py", output_folder)[-1]
 # results_folder = get_scenario_outputs("schisto_scenarios_SI.py", output_folder)[-1]
-
+ # todo replace all 2040 with 2050
 
 # Declare path for output graphs from this script
 def make_graph_file_name(name):

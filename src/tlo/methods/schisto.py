@@ -112,6 +112,15 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         'baseline_risk': Parameter(Types.REAL,
                                    'number of worms applied as a baseline risk across districts to prevent '
                                    'fadeout, number is scaled by scaling_factor_baseline_risk'),
+        'mating_breakpoint': Parameter(Types.REAL,'used in the mating/breakpoint function,'
+                                                            ' a distributional/clumping parameter governing how worms '
+                                                            'are distributed across hosts'),
+        'background_gamma': Parameter(Types.REAL,
+                                      'controls how fast the cushion shrinks as national prevalence falls; '
+                                      'larger values (e.g. 2.5–3.0) make it disappear sooner'),
+        'background_rel': Parameter(Types.REAL,
+                                    'a small proportional cushion (1% at baseline) applied to the human '
+                                    'reservoir; keeps early declines smooth without creating an artificial floor'),
         'daly_weight_mild_schistosomiasis': Parameter(Types.REAL, 'daly weight assigned to mild '
                                                                   'schistosomiasis, both species'),
         'daly_weight_moderate_s_mansoni': Parameter(Types.REAL, 'daly weight assigned to moderate '
@@ -379,6 +388,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             'mda_frequency_months',
             'scaling_factor_baseline_risk',
             'baseline_risk',
+            'mating_breakpoint',
+            'background_gamma',
+            'background_rel',
             'daly_weight_mild_schistosomiasis',
             'daly_weight_moderate_s_mansoni',
             'daly_weight_heavy_s_mansoni',
@@ -841,8 +853,8 @@ class SchistoSpecies:
                                                        'Worm burden threshold for heavy intensity infection in PSAC'),
             'PZQ_efficacy': Parameter(Types.REAL,
                                       'Efficacy of praziquantel in reducing worm burden'),
-            'baseline_mean_worm_burden': Parameter(Types.REAL,
-                                             'Baseline mean worm burden of species across all districts in 2010'),
+            'baseline_prevalence': Parameter(Types.REAL,
+                                             'Baseline prevalence of species across all districts in 2010'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
             'prevalence_2010': Parameter(Types.DATA_FRAME,
@@ -904,7 +916,7 @@ class SchistoSpecies:
                             'low_intensity_threshold',
                             'heavy_intensity_threshold_PSAC',
                             'PZQ_efficacy',
-                            'baseline_mean_worm_burden',
+                            'baseline_prevalence',
                             ):
             parameters[_param_name] = float(param_list[f'{_param_name}_{self.name}'])
 
@@ -1145,7 +1157,7 @@ class SchistoSpecies:
             number_susceptible = int(df.loc[in_the_district, prop('susceptibility')].eq(1).sum())
 
             # todo this is changed
-            reservoir = int(number_susceptible * params['mean_worm_burden2010'][district])
+            reservoir = int(len(df.loc[in_the_district]) * params['mean_worm_burden2010'][district])
 
             # Determine a 'contact rate' for each person
             contact_and_susceptibility = df.loc[in_the_district, prop('susceptibility')]
@@ -1297,49 +1309,44 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         # weighted mean worm burden * exposure rates -> age-specific contribution to reservoir
         age_worm_burden = beta_contribution_to_reservoir * to_get_weighted_mean
-        # sum all contributions to district reservoir of infection
+
+        # --------------------- mating/breakpoint correction  ---------------------
+        # todo added mating breakpoint
+        # k_pair = global_params['mating_breakpoint']  # interpret as NB aggregation k
+        #
+        # mbar = mean_count_burden_district_age_group['mean']  # mean worms per person in district×age group
+        #
+        # # NB/sex-aware pairing: probability host has ≥1 male AND ≥1 female
+        # pairing = 1.0 - np.power(1.0 + (mbar / (2.0 * k_pair)), -k_pair) * 2.0 \
+        #           + np.power(1.0 + (mbar / k_pair), -k_pair)
+        #
+        # # numerical guards
+        # pairing = pairing.fillna(1.0).clip(lower=0.0, upper=1.0)
+        #
+        # # apply to human contribution before summing across ages
+        # age_worm_burden = age_worm_burden * pairing
+
+        # sum to district reservoir, then add exogenous background
         reservoir = age_worm_burden.groupby(['district_of_residence'], observed=False).sum()
 
-        # --------------------- estimate background risk of infection ---------------------
-        # current_mean_worm_burden = df[prop('aggregate_worm_burden')].mean()
-        #
-        # baseline_mean_worm_burden = params['baseline_mean_worm_burden']  # baseline MWB for species in 2010
-        #
-        # # this returns positive value if current_prevalence lower than baseline_prevalence and
-        # # increases baseline_risk value
-        # # if current_prevalence > baseline_prevalence, value returned is 0 and no additional risk applied
-        # background_risk = max(0, global_params['baseline_risk'] * (
-        #     1 + global_params['scaling_factor_baseline_risk'] * (current_mean_worm_burden - baseline_mean_worm_burden)))
-        #
-        # reservoir += background_risk  # add the background reservoir to every district
+        # --------------------- reservoir-stage background (prevalence-based, fading) ---------------------
+        # todo changed
+        prevalence_now = (df.loc[where, prop('aggregate_worm_burden')] > 0).mean()  # prevalence (Bool True/# entries)
 
-        M = df[prop('aggregate_worm_burden')].mean()  # current mean worm burden
-        M0 = params['baseline_mean_worm_burden']  # baseline/reference MWB
-        baseline_risk = global_params['baseline_risk'] # constant floor risk
-        alpha = global_params['scaling_factor_baseline_risk']  # sensitivity
+        # Clamp to safe bounds
+        baseline_prevalence = max(params['baseline_prevalence'] , 1e-6)  # fixed reference prevalence
+        prevalence_now = min(max(prevalence_now, 0.0), 1.0)
 
-        # Safeguards / tuning knobs
-        epsilon = 1e-9  # avoids divide-by-near-zero when M0 ~ 0
-        cap_min = 0.0  # do not allow a negative multiplier
-        cap_max = 2.0  # optional: cap excessive amplification (tune as needed)
+        # Scale in [0,1]: 1 at baseline; → 0 as national prevalence → 0
+        scale = min(1.0, (prevalence_now / baseline_prevalence) ** global_params['background_gamma'])
 
-        # normalised deviation around baseline MWB
-        z = (M - M0) / (M0 + epsilon)  # >0 if M > M0, <0 if M < M0
-
-        # Factor rises when global MWB rises; falls when it falls
-        raw_factor = 1.0 + alpha * z
-
-        # Apply bounds and ensure non-negative background risk
-        factor = min(max(raw_factor, cap_min), cap_max)
-        background_risk = max(0.0, baseline_risk * factor)
-
-        # Update reservoir
-        reservoir += background_risk
+        # Apply proportional background; disappears as scale→0 (no hard floor)
+        reservoir *= (1.0 + global_params['background_rel'] * scale)
 
         # --------------------- harbouring new worms ---------------------
 
         # the harbouring rates are randomly assigned to each individual
-        # using a gamma distribution to reflect clustering of worms in heavy-risk people
+        # using a gamma distribution to reflect clustering of worms in high-risk people
         # this is not age-specific
         contact_rates = age_group.map(beta_by_age_group).astype(float)
         # multiply by susceptibility
