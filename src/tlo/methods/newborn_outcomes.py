@@ -253,6 +253,35 @@ class NewbornOutcomes(Module):
         'treatment_effect_kmc': Parameter(
             Types.LIST, 'treatment effect of kangaroo mother care on preterm mortality'),
 
+        # Additional parameters for previously hardcoded values
+        'prob_mild_motor_or_motor_cog_preterm_under_32weeks': Parameter(
+            Types.LIST, 'probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm <32 weeks'),
+        'prob_mild_motor_or_motor_cog_preterm_32_36_weeks': Parameter(
+            Types.LIST, 'probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm 32-36 weeks'),
+        'prob_moderate_or_severe_motor_preterm_under_32weeks': Parameter(
+            Types.LIST, 'probability distribution for moderate/severe disability types in preterm <32 weeks'),
+        'prob_moderate_or_severe_motor_preterm_32_36_weeks': Parameter(
+            Types.LIST, 'probability distribution for moderate/severe disability types in preterm 32-36 weeks'),
+        'prob_mild_motor_or_motor_cog_preterm_sepsis': Parameter(
+            Types.LIST, 'probability distribution for mild disability types following sepsis'),
+        'prob_moderate_or_severe_motor_sepsis': Parameter(
+            Types.LIST, 'probability distribution for moderate/severe disability types following sepsis'),
+        'prob_mild_motor_or_motor_cog_preterm_encephalopathy': Parameter(
+            Types.LIST, 'probability distribution for mild disability types following encephalopathy'),
+        'prob_moderate_or_severe_motor_encephalopathy': Parameter(
+            Types.LIST, 'probability distribution for moderate/severe disability types following encephalopathy'),
+        'prob_breastfeeding_status_change_6m_nonexclusive': Parameter(
+            Types.LIST, 'probability distribution for breastfeeding status changes at 6 months for non-exclusive'),
+        'prob_breastfeeding_status_change_6m_exclusive': Parameter(
+            Types.LIST, 'probability distribution for breastfeeding status changes at 6 months for exclusive'),
+        'neonatal_ward_beddays': Parameter(
+            Types.INT, 'number of beddays for neonatal ward inpatient care'),
+        'breastfeeding_update_interval_neonates': Parameter(
+            Types.INT, 'time interval for breastfeeding status update for neonates'),
+        'breastfeeding_update_interval_after_6mo': Parameter(
+            Types.INT, 'time interval for breastfeeding status update after infant is 6mo'),
+
+
     }
 
     PROPERTIES = {
@@ -756,7 +785,6 @@ class NewbornOutcomes(Module):
                                          f'complications after birth')
 
         # No available data to differentiate between probability of mild_motor_and_cog and mild_motor for any condition
-        prob_mild_disab_type = [0.5, 0.5]
 
         if individual_id not in nci:
             return
@@ -764,11 +792,11 @@ class NewbornOutcomes(Module):
         if nci[individual_id]['ga_at_birth'] < 32:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_<32weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=prob_mild_disab_type)
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_mild_motor_or_motor_cog_preterm_under_32weeks'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_<32weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=prob_mild_disab_type)
+                    ('moderate_motor', 'severe_motor'), p=params['prob_moderate_or_severe_motor_preterm_under_32weeks'])
 
             # Determine if surviving preterm neonate will develop retinopathy and its severity
             if self.rng.random_sample() < params['prob_retinopathy_preterm_early']:
@@ -779,11 +807,11 @@ class NewbornOutcomes(Module):
         elif 32 <= nci[individual_id]['ga_at_birth'] < 37:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_32_36weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=prob_mild_disab_type)
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_mild_motor_or_motor_cog_preterm_32_36_weeks'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_32_36weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=prob_mild_disab_type)
+                    ('moderate_motor', 'severe_motor'), p=params['prob_moderate_or_severe_motor_preterm_32_36_weeks'])
 
             # Determine if surviving preterm  neonate will develop retinopathy and its severity
             if self.rng.random_sample() < params['prob_retinopathy_preterm_late']:
@@ -794,20 +822,20 @@ class NewbornOutcomes(Module):
         if child.nb_encephalopathy != 'none':
             if self.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=prob_mild_disab_type)
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_mild_motor_or_motor_cog_preterm_encephalopathy'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=prob_mild_disab_type)
+                    ('moderate_motor', 'severe_motor'), p=params['prob_moderate_or_severe_motor_encephalopathy'])
 
         if child.nb_early_onset_neonatal_sepsis or nci[individual_id]['sepsis_postnatal']:
             if self.rng.random_sample() < params['prob_mild_impairment_post_sepsis']:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=prob_mild_disab_type)
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_mild_motor_or_motor_cog_preterm_sepsis'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_sepsis']:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=prob_mild_disab_type)
+                    ('moderate_motor', 'severe_motor'), p=params['prob_moderate_or_severe_motor_sepsis'])
 
         del nci[individual_id]
 
@@ -882,7 +910,7 @@ class NewbornOutcomes(Module):
         if df.at[person_id, 'nb_breastfeeding_status'] != 'none':
             # For breastfed neonates we schedule a future event where breastfeeding status is updated
             self.sim.schedule_event(BreastfeedingStatusUpdateEventSixMonths(self, person_id),
-                                    self.sim.date + DateOffset(months=6))
+                                    self.sim.date + DateOffset(months=params['breastfeeding_update_interval_neonates']))
 
     def kangaroo_mother_care(self, hsi_event):
         """
@@ -1413,12 +1441,13 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
 
     def __init__(self, module, person_id, facility_level_of_this_hsi):
         super().__init__(module, person_id=person_id)
+        params = module.current_parameters
         assert isinstance(module, NewbornOutcomes)
 
         self.TREATMENT_ID = 'PostnatalCare_Neonatal_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': params['neonatal_ward_beddays']})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1447,6 +1476,7 @@ class BreastfeedingStatusUpdateEventSixMonths(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         child = df.loc[individual_id]
+        params = self.module.current_parameters
 
         if not child.is_alive:
             return
@@ -1454,19 +1484,19 @@ class BreastfeedingStatusUpdateEventSixMonths(Event, IndividualScopeEventMixin):
         # For infants who are exclusively breastfeeding at 6 months, we determine if they will change to non-exclusive
         # feeding or no breastfeeding
         if child.nb_breastfeeding_status == 'exclusive':
-            random_draw = self.module.rng.choice(('non_exclusive', 'none'), p=[0.5, 0.5])
+            random_draw = self.module.rng.choice(('non_exclusive', 'none'), p=params['prob_breastfeeding_status_change_6m_exclusive'])
             df.at[individual_id, 'nb_breastfeeding_status'] = random_draw
 
         # Similarly, for infants who are non-exclusively breastfeeding at 6 months we determine if they will continue
         # non-exclusively breastfeeding or stop breastfeeding all together
         if child.nb_breastfeeding_status == 'non_exclusive':
-            random_draw = self.module.rng.choice(('non_exclusive', 'none'), p=[0.5, 0.5])
+            random_draw = self.module.rng.choice(('non_exclusive', 'none'), p=params['prob_breastfeeding_status_change_6m_nonexclusive'])
             df.at[individual_id, 'nb_breastfeeding_status'] = random_draw
 
         # We then schedule these breastfed newborns to return at 2 years to update breastfeeding status again
         if child.nb_breastfeeding_status != 'none':
             self.sim.schedule_event(BreastfeedingStatusUpdateEventTwoYears(self.module, individual_id),
-                                    self.sim.date + DateOffset(months=18))
+                                    self.sim.date + DateOffset(months=params['breastfeeding_update_interval_after_6mo']))
 
 
 class BreastfeedingStatusUpdateEventTwoYears(Event, IndividualScopeEventMixin):
