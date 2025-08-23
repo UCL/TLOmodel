@@ -94,11 +94,11 @@ def run_simulation(popsize,
     return sim, output
 
 # update these parameters
-sim, output = run_simulation(popsize=6000,
+sim, output = run_simulation(popsize=3000,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
                              mda_execute=True,
-                             single_district=False)
+                             single_district=True)
 
 # %% Extract and process the `pd.DataFrame`s needed
 

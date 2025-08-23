@@ -1013,7 +1013,7 @@ plot_dalys_vs_costs_by_district(
 def plot_ephp_km_continue(
     df: pd.DataFrame,
     threshold: float = 0.05,
-    year_range: tuple = (2024, 2050),
+    year_range: tuple = (2011, 2050),
     alpha: float = 1.0,
     figsize: tuple = (10, 6),
     species=None
@@ -1122,8 +1122,12 @@ def plot_ephp_km_continue(
     plt.show()
 
 
-plot_ephp_km_continue(prev_haem_H_All_district, species='haem')
-plot_ephp_km_continue(prev_mansoni_H_All_district, species='mansoni')
+plot_ephp_km_continue(prev_haem_H_All_district, species='haem', threshold=0.01)
+plot_ephp_km_continue(prev_mansoni_H_All_district, species='mansoni', threshold=0.01)
+
+plot_ephp_km_continue(prev_haem_HML_All_district, species='haem', threshold=0.01)
+plot_ephp_km_continue(prev_mansoni_HML_All_district, species='mansoni', threshold=0.01)
+
 
 
 # get the figures for the SI separately
