@@ -922,7 +922,8 @@ class SchistoSpecies:
 
         # Baseline reservoir size and other district-related params (R0, proportion susceptible)
         schisto_initial_reservoir = workbook[f'LatestData_{self.name}'].set_index("District")
-        parameters['mean_worm_burden2010'] = schisto_initial_reservoir['mean_worm_burden2010']
+        # todo changed this
+        parameters['mean_worm_burden2010'] = schisto_initial_reservoir['mean_worm_burden2022']
         parameters['prevalence_2010'] = schisto_initial_reservoir['mean_prevalence2010']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
         parameters['prop_susceptible'] = schisto_initial_reservoir['prop_susceptible']

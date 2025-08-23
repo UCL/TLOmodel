@@ -94,7 +94,7 @@ def run_simulation(popsize,
     return sim, output
 
 # update these parameters
-sim, output = run_simulation(popsize=10000,
+sim, output = run_simulation(popsize=6000,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
                              mda_execute=True,
@@ -144,7 +144,7 @@ def get_expected_prevalence_by_district(species: str):
     return expected_district_prevalence
 
 
-def get_model_prevalence_by_district_over_time(spec: str):
+def get_model_prevalence_by_district_over_time(spec: str, intensity='all'):
     """Get the prevalence every year of the simulation """
     _df = dfs[f'infection_status_{spec}']
     # select the last entry for each year
@@ -153,10 +153,12 @@ def get_model_prevalence_by_district_over_time(spec: str):
     # Aggregate the sums of infection statuses by district_of_residence and year
     district_sums = df.groupby(level='district_of_residence', axis=1).sum()
 
-    filtered_columns = df.columns.get_level_values('infection_status').isin(
-        ['Heavy-infection', 'Moderate-infection', 'Low-infection'])
-    # filtered_columns = df.columns.get_level_values('infection_status').isin(
-    #     ['Heavy-infection'])
+    if intensity == 'all':
+        filtered_columns = df.columns.get_level_values('infection_status').isin(
+            ['Heavy-infection', 'Moderate-infection', 'Low-infection'])
+    elif intensity == 'heavy':
+        filtered_columns = df.columns.get_level_values('infection_status').isin(
+            ['Heavy-infection'])
     infected = df.loc[:, filtered_columns].groupby(level='district_of_residence', axis=1).sum()
 
     prop_infected = infected.div(district_sums)
@@ -223,9 +225,9 @@ fig.show()
 fig, axes = plt.subplots(1, 2, sharey=True)
 for i, _spec in enumerate(species):
     ax = axes[i]
-    data = get_model_prevalence_by_district_over_time(_spec)
+    data = get_model_prevalence_by_district_over_time(_spec, 'heavy')
     data.plot(ax=ax)
-    ax.set_title(f"{_spec}")
+    ax.set_title(f"{_spec} HEAVY")
     ax.set_xlabel('')
     ax.set_ylabel('End of year prevalence')
     ax.set_ylim(0, 0.6)
@@ -241,5 +243,30 @@ fig.tight_layout()
 # fig.savefig(make_graph_file_name('annual_prev_in_districts'))
 fig.show()
 
-heavy_prev_haem = get_model_prevalence_by_district_over_time('haematobium')
-heavy_prev_mansoni = get_model_prevalence_by_district_over_time('mansoni')
+heavy_prev_haem = get_model_prevalence_by_district_over_time('haematobium', 'heavy')
+heavy_prev_mansoni = get_model_prevalence_by_district_over_time('mansoni', 'heavy')
+
+
+fig, axes = plt.subplots(1, 2, sharey=True)
+for i, _spec in enumerate(species):
+    ax = axes[i]
+    data = get_model_prevalence_by_district_over_time(_spec, 'all')
+    data.plot(ax=ax)
+    ax.set_title(f"{_spec} ALL")
+    ax.set_xlabel('')
+    ax.set_ylabel('End of year prevalence')
+    ax.set_ylim(0, 0.6)
+    ax.get_legend().remove()
+    # data.to_csv(outputpath / (f"{_spec}" + '.csv'))
+
+    # Plot legend only for the last subplot
+    # if i == len(species) -1:
+    #     handles, labels = ax.get_legend_handles_labels()  # Get handles and labels for legend
+    #     ax.legend(handles, labels, bbox_to_anchor =(1.44,-0.10), loc='lower right')
+
+fig.tight_layout()
+# fig.savefig(make_graph_file_name('annual_prev_in_districts'))
+fig.show()
+
+prev_haem = get_model_prevalence_by_district_over_time('haematobium', 'all')
+prev_mansoni = get_model_prevalence_by_district_over_time('mansoni', 'all')

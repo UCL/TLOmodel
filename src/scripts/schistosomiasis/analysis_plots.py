@@ -91,7 +91,7 @@ def plot_species_prevalence_with_heavy(
     heavy_df: pd.DataFrame,
     species_name: str,
     ax,
-    year: int = 2040,
+    year: int = 2050,
     show_legend: bool = False,
     show_ylabel: bool = False
 ):

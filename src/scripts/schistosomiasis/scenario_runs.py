@@ -10,7 +10,7 @@ Run locally:
 tlo scenario-run src/scripts/schistosomiasis/scenario_runs.py
 
 if running locally need to parse each folder
-tlo parse-log /Users/tmangal/PycharmProjects/TLOmodel/outputs/schisto_scenarios-2025-08-21T182606Z/0/0
+tlo parse-log /Users/tmangal/PycharmProjects/TLOmodel/outputs/schisto_scenarios-2025-08-22T213240Z/0/0
 
 or execute a single run:
 tlo scenario-run src/scripts/schistosomiasis/scenario_runs.py --draw 1 0
