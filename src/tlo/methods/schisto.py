@@ -1155,8 +1155,6 @@ class SchistoSpecies:
             #     else:
             #         params['mean_worm_burden2010'][:] = 0
 
-            number_susceptible = int(df.loc[in_the_district, prop('susceptibility')].eq(1).sum())
-
             # todo this is changed
             reservoir = int(len(df.loc[in_the_district]) * params['mean_worm_burden2010'][district])
 
