@@ -408,12 +408,13 @@ class SampleRunner:
             if "$" in self.scenario.resume_simulation:
                 self.scenario.resume_simulation = os.path.expandvars(self.scenario.resume_simulation)
 
-            suspended_simulation_path = (
-                Path(self.scenario.resume_simulation)
-                / str(draw_number)
-                / str(sample_number)
-                / "suspended_simulation.pickle"
-            )
+            suspended_simulation_path = Path(self.scenario.resume_simulation)
+
+            # if the resume_simulation doesn't end with a draw number, we are resuming all draws
+            if not self.scenario.resume_simulation.rstrip("/").split("/")[-1].isdigit():
+                suspended_simulation_path = suspended_simulation_path / str(draw_number)
+
+            suspended_simulation_path = suspended_simulation_path / str(sample_number) / "suspended_simulation.pickle"
 
             sim = Simulation.load_from_pickle(pickle_path=suspended_simulation_path, log_config=log_config)
 
