@@ -940,7 +940,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "bc_date_treatment"] = self.sim.date
             df.at[person_id, "bc_stage_at_which_treatment_given"] = df.at[person_id, "bc_status"]
 
-            # Schedule a post-treatment check:
+            # Schedule a post-treatment check for 12 months (NOTE: discrepancy between comment and value):
             hs.schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PostTreatmentCheck(
                     module=self.module,
@@ -992,7 +992,8 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
             )
 
         else:
-            # Schedule another HSI_BladderCancer_PostTreatmentCheck event
+            # Schedule another HSI_BladderCancer_PostTreatmentCheck event in one month
+            # (NOTE: discrepancy between comment and value)
             hs.schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PostTreatmentCheck(
                     module=self.module,
