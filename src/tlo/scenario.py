@@ -422,6 +422,10 @@ class SampleRunner:
                 key="message",
                 data=f"Loading suspended simulation from {suspended_simulation_path}",
             )
+
+            # if parameters are specified, we override them
+            if sample["parameters"] is not None:
+                self.override_parameters(sim, sample["parameters"])
         else:
             sim = Simulation(
                 start_date=self.scenario.start_date,
