@@ -133,8 +133,22 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
 
     scenario = load_scenario(scenario_file)
 
+    config = load_config(ctx.obj['config_file'])
+
+    # Directory where the file share will be mounted, relative to
+    # ${AZ_BATCH_NODE_MOUNTS_DIR}.
+    file_share_mount_point = "mnt"
+
     # if we have other scenario arguments, parse them
     if scenario_args is not None:
+        # we rewrite the path to the simulation to resume
+        if '--resume-simulation' in scenario_args:
+            i = scenario_args.index('--resume-simulation')
+            path_to_job = (f"${{AZ_BATCH_NODE_MOUNTS_DIR}}/"
+                           f"{file_share_mount_point}/"
+                           f"{config['DEFAULT']['USERNAME']}/"
+                           f"{scenario_args[i+1]}")
+            scenario_args = scenario_args[:i + 1] + (path_to_job, ) + scenario_args[i + 2:]
         scenario.parse_arguments(scenario_args)
 
     # get the commit we're going to submit to run on batch, and save the run config for that commit
@@ -144,8 +158,6 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
     run_json = scenario.save_draws(commit=commit.hexsha)
 
     print(">Setting up batch\r", end="")
-
-    config = load_config(ctx.obj['config_file'])
 
     # ID of the Batch job.
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
@@ -225,10 +237,6 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
 
     # Options for running the Docker container
     container_run_options = "--rm --workdir /TLOmodel"
-
-    # Directory where the file share will be mounted, relative to
-    # ${AZ_BATCH_NODE_MOUNTS_DIR}.
-    file_share_mount_point = "mnt"
 
     azure_file_share_configuration = batch_models.AzureFileShareConfiguration(
         account_name=config["STORAGE"]["NAME"],
