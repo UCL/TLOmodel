@@ -9,12 +9,8 @@ import time
 from pathlib import Path
 
 import pandas as pd
-# from matplotlib import pyplot as plt
-# import seaborn as sns
 
 from src.scripts.costing.cost_estimation import (
-    # create_summary_treemap_by_cost_subgroup,
-    # do_line_plot_of_cost,
     do_stacked_bar_plot_of_cost_by_category,
     estimate_input_cost_of_scenarios,
 )
