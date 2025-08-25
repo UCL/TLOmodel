@@ -699,8 +699,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         _cons_codes['OTP_opt'] = {get_item_code("SAM medicines"): 1}
         _cons_codes['ITC'] = {get_item_code("F-75 therapeutic milk, 102.5 g"): 102.5 * 24,
                               get_item_code("Therapeutic spread, sachet 92g/CAR-150"): 3 * 4}
-        _cons_codes['ITC_opt'] = {get_item_code("Therapeutic spread, sachet 92g/CAR-150"): 20 * 7,
-                                  get_item_code("SAM medicines"): 1}
+        _cons_codes['ITC_opt'] = {get_item_code("SAM medicines"): 1}
         return _cons_codes
 
     def length_of_untreated_wasting(self, whz_category):
@@ -902,6 +901,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
         rng = self.rng
 
+        assert treatment in ('SFP', 'OTP', 'ITC')
+
         logger.debug(key='get-tx',
                      data={
                          'treatment': treatment,
@@ -922,6 +923,20 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         # Set the date when the treatment is provided:
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
+
+        def log_tx_outcome():
+            logger.debug(
+                key="tx-outcome",
+                data={
+                    'treatment': treatment,
+                    'person_id': person_id,
+                    'age_group': self.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                    'date': self.sim.date,
+                    'tx_outcome': outcome,
+                    'outcome_date': outcome_date,
+                },
+                description="record treatment (tx) outcome"
+            )
 
         if treatment == 'SFP':
             outcome_date = self.sim.date + DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM'])
@@ -949,26 +964,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                     priority=0, topen=outcome_date)
-
-            logger.debug(
-                key="tx-outcome",
-                data={
-                    'treatment': intervention,
-                    'person_id': person_id,
-                    'age_group': self.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                    'date': self.sim.date,
-                    'tx_outcome': outcome,
-                    'outcome_date': outcome_date,
-                },
-                description="record treatment (tx) outcome"
-            )
+            log_tx_outcome()
             return
 
-        elif treatment in ['OTP', 'ITC']:
-            if treatment == 'OTP':
-                outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_OutpatientSAM']))
-            else:
-                outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_InpatientSAM']))
+        elif treatment == 'OTP':
+            outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_OutpatientSAM']))
 
             sam_full_recovery = self.wasting_models.acute_malnutrition_recovery_sam_lm.predict(
                 df.loc[[person_id]], rng
@@ -982,7 +982,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     date=outcome_date
                 )
                 df.at[person_id, "un_full_recov_date"] = outcome_date
-                # send for follow-up treatment for MAM
+                # send for follow-up SFP
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                     priority=0, topen=outcome_date
@@ -1009,18 +1009,49 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                         priority=0, topen=outcome_date)
 
-            logger.debug(
-                key="tx-outcome",
-                data={
-                    'treatment': intervention,
-                    'person_id': person_id,
-                    'age_group': self.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                    'date': self.sim.date,
-                    'tx_outcome': outcome,
-                    'outcome_date': outcome_date,
-                },
-                description="record treatment (tx) outcome"
+            log_tx_outcome()
+            return
+
+        else:  # treatment == 'ITC'
+            outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_InpatientSAM']))
+
+            sam_complications_recovery = self.wasting_models.acute_malnutrition_recovery_sam_lm.predict(
+                df.loc[[person_id]], rng
             )
+
+            if sam_complications_recovery:
+                outcome = 'complications_recovery'
+                df.at[person_id, 'un_am_discharge_date'] = outcome_date
+                # schedule complications recovery
+                self.sim.schedule_event(
+                    event=Wasting_ComplicationsRecovery_Event(module=self, person_id=person_id),
+                    date=outcome_date
+                )
+                # send for follow-up OTP
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Wasting_OutpatientTherapeuticProgramme_SAM(module=self, person_id=person_id),
+                    priority=0, topen=outcome_date
+                )
+
+            else:
+                outcome = rng.choice(['complications_persist', 'death'],
+                                     p=[
+                                         1-self.parameters['prob_death_after_SAMcare'],
+                                         self.parameters['prob_death_after_SAMcare']
+                                     ])
+                if outcome == 'death':
+                    self.sim.schedule_event(
+                        event=Wasting_SevereAcuteMalnutritionDeath_Event(module=self, person_id=person_id),
+                        date=outcome_date
+                    )
+                    df.at[person_id, 'un_sam_death_date'] = outcome_date
+                else:  # complications persist hence send for another round of ITC
+                    df.at[person_id, 'un_am_discharge_date'] = outcome_date
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event=HSI_Wasting_OutpatientTherapeuticProgramme_SAM(module=self, person_id=person_id),
+                        priority=0, topen=outcome_date)
+
+            log_tx_outcome()
 
 class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
     """
@@ -1433,6 +1464,21 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         else:
             self.sim.schedule_event(Wasting_FullRecovery_Event(self.module, person_id), outcome_date)
             df.at[person_id, "un_full_recov_date"] = outcome_date
+
+class Wasting_ComplicationsRecovery_Event(Event, IndividualScopeEventMixin):
+    """
+    This event updates complications from being to not being present for those cases that improved
+    from complicated SAM to uncomplicated SAM.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Wasting)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+
+        df.at[person_id, 'un_sam_with_complications'] = False
 
 class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
     """ Attendance is determined for the HSI. If the child attends, measurements with available equipment are performed
