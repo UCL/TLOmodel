@@ -829,7 +829,8 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
             df.at[person_id, "oc_date_treatment"] = self.sim.date
             df.at[person_id, "oc_stage_at_which_treatment_applied"] = df.at[person_id, "oc_status"]
 
-            # Schedule a post-treatment check:
+            # Schedule a post-treatment check for 12 months:
+            # (NOTE: discrepancy between comment and value)
             hs.schedule_hsi_event(
                 hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
                     module=self.module,
