@@ -339,6 +339,12 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
+        'facility_type': Parameter(
+            Types.CATEGORICAL,
+            "Option for facility types to include: `government`, `cham`, or `both`. "
+            "If not specified, defaults to `government`.",
+            categories=['government', 'cham', 'both']
+        ),
     }
 
     PROPERTIES = {
@@ -364,7 +370,7 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
-        facility_ownership_cham: bool = False,
+        facility_type: Optional[str] = None,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -496,7 +502,7 @@ class HealthSystem(Module):
         # Create the pointer that will be to the instance of Consumables used to determine availability of consumables.
         self.consumables = None
 
-        self.facility_ownership_cham = facility_ownership_cham
+        self.arg_facility_type = facility_type
 
         # Create pointer for the HealthSystemScheduler event
         self.healthsystemscheduler = None
@@ -537,10 +543,15 @@ class HealthSystem(Module):
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
-        if self.facility_ownership_cham:
-            path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem' / 'cham'
-        else:
+        # Determine which facility type to use
+        facility_type = self.parameters['facility_type'] if self.arg_facility_type is None else self.arg_facility_type
+        assert facility_type in ('government', 'cham'), "facility_type must be 'government' or 'cham'"
+
+        # Set base path based on facility type
+        if facility_type == 'government':
             path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
+        else:  # CHAM
+            path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem' / 'cham'
 
         # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
