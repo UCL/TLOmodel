@@ -254,21 +254,21 @@ class NewbornOutcomes(Module):
             Types.LIST, 'treatment effect of kangaroo mother care on preterm mortality'),
 
         # Additional parameters for previously hardcoded values
-        'prob_mild_motor_or_motor_cog_preterm_under_32weeks': Parameter(
+        'prob_dist_mild_disability_preterm_<32weeks': Parameter(
             Types.LIST, 'probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm <32 weeks'),
-        'prob_mild_motor_or_motor_cog_preterm_32_36_weeks': Parameter(
+        'prob_dist_mild_disability_preterm_32_36weeks': Parameter(
             Types.LIST, 'probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm 32-36 weeks'),
-        'prob_moderate_or_severe_motor_preterm_under_32weeks': Parameter(
+        'prob_dist_mod_severe_disability_preterm_<32weeks': Parameter(
             Types.LIST, 'probability distribution for moderate/severe disability types in preterm <32 weeks'),
-        'prob_moderate_or_severe_motor_preterm_32_36_weeks': Parameter(
+        'prob_dist_mod_severe_disability_preterm_32_36weeks': Parameter(
             Types.LIST, 'probability distribution for moderate/severe disability types in preterm 32-36 weeks'),
-        'prob_mild_motor_or_motor_cog_preterm_sepsis': Parameter(
+        'prob_dist_mild_impairment_post_sepsis': Parameter(
             Types.LIST, 'probability distribution for mild disability types following sepsis'),
-        'prob_moderate_or_severe_motor_sepsis': Parameter(
+        'prob_dist_mod_severe_impairment_post_sepsis': Parameter(
             Types.LIST, 'probability distribution for moderate/severe disability types following sepsis'),
-        'prob_mild_motor_or_motor_cog_preterm_encephalopathy': Parameter(
+        'prob_dist_mild_impairment_post_enceph': Parameter(
             Types.LIST, 'probability distribution for mild disability types following encephalopathy'),
-        'prob_moderate_or_severe_motor_encephalopathy': Parameter(
+        'prob_dist_mod_severe_impairment_post_enceph': Parameter(
             Types.LIST, 'probability distribution for moderate/severe disability types following encephalopathy'),
         'prob_breastfeeding_status_change_6m_nonexclusive': Parameter(
             Types.LIST, 'probability distribution for breastfeeding status changes at 6 months for non-exclusive'),
@@ -792,11 +792,11 @@ class NewbornOutcomes(Module):
         if nci[individual_id]['ga_at_birth'] < 32:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_<32weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_mild_motor_or_motor_cog_preterm_under_32weeks'])
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_disability_preterm_<32weeks'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_<32weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=params['prob_moderate_or_severe_motor_preterm_under_32weeks'])
+                    ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_disability_preterm_<32weeks'])
 
             # Determine if surviving preterm neonate will develop retinopathy and its severity
             if self.rng.random_sample() < params['prob_retinopathy_preterm_early']:
@@ -807,11 +807,11 @@ class NewbornOutcomes(Module):
         elif 32 <= nci[individual_id]['ga_at_birth'] < 37:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_32_36weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_mild_motor_or_motor_cog_preterm_32_36_weeks'])
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_disability_preterm_32_36weeks'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_32_36weeks']:
                 df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=params['prob_moderate_or_severe_motor_preterm_32_36_weeks'])
+                    ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_disability_preterm_32_36weeks'])
 
             # Determine if surviving preterm  neonate will develop retinopathy and its severity
             if self.rng.random_sample() < params['prob_retinopathy_preterm_late']:
@@ -822,20 +822,20 @@ class NewbornOutcomes(Module):
         if child.nb_encephalopathy != 'none':
             if self.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_mild_motor_or_motor_cog_preterm_encephalopathy'])
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_impairment_post_enceph'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
                 df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=params['prob_moderate_or_severe_motor_encephalopathy'])
+                    ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_impairment_post_enceph'])
 
         if child.nb_early_onset_neonatal_sepsis or nci[individual_id]['sepsis_postnatal']:
             if self.rng.random_sample() < params['prob_mild_impairment_post_sepsis']:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
-                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_mild_motor_or_motor_cog_preterm_sepsis'])
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['prob_dist_mild_impairment_post_sepsis'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_sepsis']:
                 df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
-                    ('moderate_motor', 'severe_motor'), p=params['prob_moderate_or_severe_motor_sepsis'])
+                    ('moderate_motor', 'severe_motor'), p=params['prob_dist_mod_severe_impairment_post_sepsis'])
 
         del nci[individual_id]
 
