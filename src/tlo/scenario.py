@@ -419,7 +419,7 @@ class SampleRunner:
 
             logger.info(
                 key="message",
-                data=f"Loading pickled suspended simulation from {suspended_simulation_path}",
+                data=f"Loading suspended simulation from {suspended_simulation_path}",
             )
         else:
             sim = Simulation(
