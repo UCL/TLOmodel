@@ -161,7 +161,7 @@ class BaseScenario(abc.ABC):
         for key, value in vars(arguments).items():
             if value is not None:
                 if hasattr(self, key):
-                    logger.info(key="message", data=f"Overriding attribute: {key}: {getattr(self, key)} -> {value}")
+                    print(f"Overriding attribute with argument value: {key}: {getattr(self, key)} -> {value}")
                 setattr(self, key, value)
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -360,8 +360,8 @@ class SampleRunner:
         self.scenario = ScenarioLoader(self.run_config["scenario_script_path"]).get_scenario()
         if self.run_config["arguments"] is not None:
             self.scenario.parse_arguments(self.run_config["arguments"])
-        logger.info(key="message", data=f"Loaded scenario using {run_configuration_path}")
-        logger.info(key="message", data=f"Found {self.number_of_draws} draws; {self.runs_per_draw} runs/draw")
+        print(f"Loaded scenario from config at {run_configuration_path}")
+        print(f"Found {self.number_of_draws} draws with {self.runs_per_draw} runs-per-draw.")
 
     @property
     def number_of_draws(self):
@@ -398,10 +398,7 @@ class SampleRunner:
         sample = self.get_sample(draw, sample_number)
         log_config = self.scenario.get_log_config(output_directory)
 
-        logger.info(
-            key="message",
-            data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}",
-        )
+        print(f"Running draw {sample['draw_number']}, run {sample['sample_number']}.")
 
         # if user has specified a restore simulation, we load it from a pickle file
         if (
@@ -417,11 +414,13 @@ class SampleRunner:
                 / str(sample_number)
                 / "suspended_simulation.pickle"
             )
+
+            sim = Simulation.load_from_pickle(pickle_path=suspended_simulation_path, log_config=log_config)
+
             logger.info(
                 key="message",
                 data=f"Loading pickled suspended simulation from {suspended_simulation_path}",
             )
-            sim = Simulation.load_from_pickle(pickle_path=suspended_simulation_path, log_config=log_config)
         else:
             sim = Simulation(
                 start_date=self.scenario.start_date,
