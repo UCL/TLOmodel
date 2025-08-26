@@ -1,6 +1,6 @@
 {
   "scenario_script_path": "src/scripts/schistosomiasis/scenario_runs.py",
-  "scenario_seed": 10,
+  "scenario_seed": 32,
   "arguments": [],
   "runs_per_draw": 10,
   "draws": [
@@ -300,6 +300,6 @@
       "draw_name": "11"
     }
   ],
-  "commit": "84bf7734892fae9d73bc4a364907dee01f448b31",
-  "github": "https://github.com/UCL/TLOmodel/tree/84bf7734892fae9d73bc4a364907dee01f448b31"
+  "commit": "43e304e12c0b4ca00378f59bd03f3405cdadc353",
+  "github": "https://github.com/UCL/TLOmodel/tree/43e304e12c0b4ca00378f59bd03f3405cdadc353"
 }
