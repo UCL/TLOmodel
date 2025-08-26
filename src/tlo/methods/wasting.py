@@ -141,7 +141,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'growth_monitoring_frequency_days_agecat': Parameter(
             Types.LIST, 'growth monitoring frequency (days) for age categories '),
         'growth_monitoring_attendance_prob_agecat': Parameter(
-            Types.LIST, 'probability to attend the growth monitoring for age categories'),
+            Types.LIST, 'probability to attend the growth monitoring for age categories <1, [1; 2], (2; 5) '
+                        'years old'),
         'seeking_care_MAM_prob': Parameter(
             Types.REAL, 'probability of recognising symptoms and seeking care in MAM cases'),
         # treatment
