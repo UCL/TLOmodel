@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2020
-max_year = 2022
+max_year = 2070
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
@@ -881,7 +881,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].set_xlabel('Scenario', fontsize=14)
     axes[0].set_xticks(range(len(scenario_names)))
     axes[0].set_xticklabels(scenario_names, rotation=45)
-    axes[0].legend(reversed(ordered_handles), reversed(ordered_names), title="Cause", bbox_to_anchor=(0.5, axes[0].get_ylim()[1]),
+    axes[0].legend(reversed(ordered_handles), reversed(ordered_names), title="Cause", bbox_to_anchor=(0.5, 1.4),
                    loc="upper center", ncol=3, fontsize=10,
                    title_fontsize=10)
     subset_b = group_2 + group_3 + other_causes
@@ -947,7 +947,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[2].set_xticks(range(len(scenario_names)))
     axes[2].set_xticklabels(scenario_names, rotation=45)
     axes[2].legend().set_visible(False)
-    fig.tight_layout(w_pad=0.5, rect=[0, 0.05, 1, 1])
+    plt.subplots_adjust(bottom=0.2)
+    plt.tight_layout()
     fig.savefig(output_folder / "DALYs_combined_plot.png")
     normalized_DALYs.to_csv(output_folder / f"relative_of_dalys_normalized_2020_2070.csv")
 
