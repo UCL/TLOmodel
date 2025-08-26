@@ -1628,6 +1628,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         self.TREATMENT_ID = 'Undernutrition_Feeding_Supplementary'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.person_id = person_id
 
     def apply(self, person_id, squeeze_factor):
         assert isinstance(self.module, Wasting)
@@ -1674,8 +1675,8 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
                                'date': self.sim.date},
                          description='essential consumables availability recorded')
 
-    def did_not_run(self, person_id):
-        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {person_id}')
+    def did_not_run(self):
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {self.person_id}')
 
 
 class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeEventMixin):
@@ -1690,6 +1691,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         self.TREATMENT_ID = 'Undernutrition_Feeding_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"U5Malnutr": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.person_id = person_id
 
     def apply(self, person_id, squeeze_factor):
         assert isinstance(self.module, Wasting)
@@ -1739,8 +1741,8 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
                                'date': self.sim.date},
                          description='essential consumables availability recorded')
 
-    def did_not_run(self, person_id):
-        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {person_id}')
+    def did_not_run(self):
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {self.person_id}')
 
 
 class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMixin):
@@ -1756,6 +1758,7 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"U5Malnutr": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
+        self.person_id = person_id
 
     def apply(self, person_id, squeeze_factor):
         assert isinstance(self.module, Wasting)
@@ -1805,7 +1808,7 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
                          description='essential consumables availability recorded')
 
     def did_not_run(self):
-        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {self.person_id}')
 
 
 class WastingModels:
