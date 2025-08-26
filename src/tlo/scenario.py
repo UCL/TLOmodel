@@ -405,13 +405,17 @@ class SampleRunner:
             hasattr(self.scenario, "resume_simulation")
             and self.scenario.resume_simulation is not None
         ):
+            # expand any environment variables in the path
             if "$" in self.scenario.resume_simulation:
                 self.scenario.resume_simulation = os.path.expandvars(self.scenario.resume_simulation)
 
             suspended_simulation_path = Path(self.scenario.resume_simulation)
 
             # if the resume_simulation doesn't end with a draw number, we are resuming all draws
-            if not self.scenario.resume_simulation.rstrip("/").split("/")[-1].isdigit():
+            last_component = self.scenario.resume_simulation.rstrip("/").split("/")[-1]
+            try:
+                int(last_component)
+            except ValueError:
                 suspended_simulation_path = suspended_simulation_path / str(draw_number)
 
             suspended_simulation_path = suspended_simulation_path / str(sample_number) / "suspended_simulation.pickle"
@@ -453,7 +457,7 @@ class SampleRunner:
             logger.info(
                 key="message",
                 data=f"Suspending simulation at {self.scenario.suspend_date} and saving to {suspended_simulation_path}."
-                     f"Note, output file handle will be closed first & no more output logged",
+                     f" Note, output file handle will be closed first and no more output logged",
             )
             sim.close_output_file()
             sim.save_to_pickle(pickle_path=suspended_simulation_path)
