@@ -46,7 +46,7 @@ def run_simulation(popsize,
                    mda_execute,
                    single_district):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2040, 12, 31)
+    end_date = Date(2024, 12, 31)
     # For logging
     custom_levels = {
         "*": logging.WARNING,
@@ -82,6 +82,7 @@ def run_simulation(popsize,
     sim.modules["Schisto"].parameters['mda_coverage'] = 0.7
     sim.modules["Schisto"].parameters['mda_target_group'] = 'SAC'
     sim.modules["Schisto"].parameters['mda_frequency_months'] = 12
+    sim.modules["Schisto"].parameters["daly_weight_mild_schistosomiasis"] = 0.0
 
     # initialise the population
     sim.make_initial_population(n=popsize)

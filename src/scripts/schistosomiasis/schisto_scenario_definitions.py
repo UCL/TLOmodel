@@ -73,9 +73,9 @@ class ScenarioDefinitions:
             }
         }
 
-    def no_DALYs_light_infection(self) -> Dict:
+    def DALYs_light_infection(self) -> Dict:
         return {
             "Schisto": {
-                "daly_weight_mild_schistosomiasis": 0.0,  # default is 0.006
+                "daly_weight_mild_schistosomiasis": 0.006,  # default is 0
             }
         }
