@@ -121,7 +121,7 @@ class DiabeticRetinopathy(Module):
         "dr_proliferative_diagnosed": Property(
             Types.BOOL, "Whether this person has been diagnosed with proliferative diabetic retinopathy"
         ),
-        "dr_diagnosed": Property(
+        "dr_dmo_diagnosed": Property(
             Types.BOOL, "Whether this person has been diagnosed with any diabetic retinopathy or diabetic macular "
                         "oedema"
         ),
@@ -486,6 +486,18 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[regress_to_none_idx, "dr_status"] = "none"
         # df.loc[regress_to_none_idx, "dmo_status"] = "none"
+
+        # ------------------------SELECTING INDIVIDUALS FOR FOR DR OR DMO EYE EXAM/SCREENING---------------------
+        df.selected_for_eye_exam = False
+
+        eligible_population_for_eye_exam = (
+            (df.is_alive & df.nc_diabetes) &
+            (df.dr_status == 'none') &
+            (df.dmo_status == 'none') &
+            (df.age_years >= 20) &
+            (pd.isna(df.dr_date_diagnosis))
+        )
+
 
     def do_at_generic_first_appt(
         self,
