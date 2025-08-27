@@ -122,11 +122,15 @@ class DiabeticRetinopathy(Module):
             Types.BOOL, "Whether this person has been diagnosed with proliferative diabetic retinopathy"
         ),
         "dr_diagnosed": Property(
-            Types.BOOL, "Whether this person has been diagnosed with any diabetic retinopathy"
+            Types.BOOL, "Whether this person has been diagnosed with any diabetic retinopathy or diabetic macular "
+                        "oedema"
         ),
         "dr_date_diagnosis": Property(
             Types.DATE,
             "The date of diagnosis of diabetic retinopathy (pd.NaT if never diagnosed)"
+        ),
+        "selected_for_eye_exam": Property(
+            Types.BOOL,"selected for via this period"
         ),
     }
 
@@ -202,6 +206,7 @@ class DiabeticRetinopathy(Module):
 
         df.loc[list(alive_diabetes_idx), "dr_on_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dr_diagnosed"] = False
+        df.loc[list(alive_diabetes_idx), "selected_for_eye_exam"] = False
         df.loc[list(alive_diabetes_idx), "dr_date_treatment"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dr_stage_at_which_treatment_given"] = "none"
         df.loc[list(alive_diabetes_idx), "dr_date_diagnosis"] = pd.NaT
@@ -308,6 +313,7 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, 'dr_date_treatment'] = pd.NaT
         self.sim.population.props.at[child_id, 'dr_stage_at_which_treatment_given'] = 'none'
         self.sim.population.props.at[child_id, 'dr_diagnosed'] = False
+        self.sim.population.props.at[child_id, 'selected_for_eye_exam'] = False
         self.sim.population.props.at[child_id, 'dr_date_diagnosis'] = pd.NaT
     def on_simulation_end(self) -> None:
         pass
@@ -348,7 +354,21 @@ class DiabeticRetinopathy(Module):
         }
         self.cons_item_codes['anti_vegf_injection'] = {
             get_item_codes("Anesthetic Eye drops, 15ml"): 1,
-            get_item_codes('Aflibercept, 2mg'): 3
+            get_item_codes('Aflibercept, 2mg'): 3,
+            get_item_codes("Antiseptic solution, 15ml"): 1,
+            get_item_codes("Sterile syringe"): 1
+        }
+
+        self.cons_item_codes['focal_laser'] = {
+            get_item_codes("Anesthetic Eye drops, 15ml"): 1,
+            get_item_codes('Aflibercept, 2mg'): 3,
+            get_item_codes('Sterile drapes and supplies'): 3,
+            get_item_codes('Diagnostic dye'): 1
+        }
+
+        self.cons_item_codes['eye_examination'] = {
+            get_item_codes("Mydriatic/Dilation Drops, 15ml"): 1,
+            get_item_codes('Fluorescin dye'): 1
         }
 
     def do_recovery(self, idx: Union[list, pd.Index]):
@@ -497,29 +517,26 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         elif dr_stage == 'severe' or dr_stage == 'proliferative':
             # Intervention for severe and proliferative
             schedule_hsi_event(
-                hsi_event=HSI_Dr_Dmo_AdvancedTreatment(module=self, person_id=person_id),
+                hsi_event=HSI_Dr_AntiVEGF(module=self, person_id=person_id),
                 priority=0, topen=self.sim.date)
 
 
-class HSI_Dr_LaserTreatment(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is the Laser treatment of DR for dr_status mild_or_moderate. Given to individuals
-    who have gone through HSI_CardioMetabolicDisorders_StartWeightLossAndMedication but condition did not person.
-    """
+class HSI_Dr_Eye_Examination(HSI_Event, IndividualScopeEventMixin):
+    """This is the Eye examination done to individuals selected for screening for individuals with any complication"""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, DiabeticRetinopathy)
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Dr_Treatment_Initiation'
+        self.TREATMENT_ID = 'Dr_Eye_Examination'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='debug',
-                     data=f'This is HSI_Dr_StartTreatment: initiating treatment for person {person_id}')
+                     data=f'This is HSI_Dr_Eye_Examination: investigating the condition of {person_id}')
         df = self.sim.population.props
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
@@ -534,11 +551,8 @@ class HSI_Dr_LaserTreatment(HSI_Event, IndividualScopeEventMixin):
 
         assert pd.isnull(df.at[person_id, 'dr_date_treatment'])
 
-        # randomly_sampled = self.module.rng.rand()
-        # treatment_slows_progression_to_proliferative = randomly_sampled < self.module.parameters['p_medication']
-
         is_cons_available = self.get_consumables(
-            self.module.cons_item_codes['laser_photocoagulation']
+            self.module.cons_item_codes['focal_laser']
         )
 
         dx_result = hs.dx_manager.run_dx_test(
@@ -551,54 +565,77 @@ class HSI_Dr_LaserTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
             df.at[person_id, 'dr_date_treatment'] = self.sim.date
             df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
-            # If consumables are available, add equipment used and run dx_test
-            self.add_equipment({'Ophthalmoscope'})
+            # If consumables are available, add equipment used
+            self.add_equipment({'Silt lamp', 'Optical coherence tomography device',
+                                'Ophthalmoscope/Fundus camera', 'Amsler grid'})
 
             if person.dr_status == 'severe':
-                #determine_effectiveness
                 pass
-                # self.module.do_treatment(person_id, prob_success=self.module.parameters[
-                #     'effectiveness_of_laser_photocoagulation_in_severe_regression'])
-
-            # if treatment_slows_progression_to_proliferative:
-            #     df.at[person_id, 'dr_on_treatment'] = True
-            #     df.at[person_id, 'dr_date_treatment'] = self.sim.date
-            #
-            #     # Reduce probability of progression to "proliferative" DR
-            #     progression_chance = self.module.parameters['rate_severe_to_proliferative'] * (
-            #         1 - self.module.parameters['p_medication'])
-            #
-            #     # Determine if person will still progress
-            #     if self.module.rng.rand() < progression_chance:
-            #         df.at[person_id, 'dr_status'] = 'proliferative'
-            #     else:
-            #         df.at[person_id, 'dr_status'] = 'mild'  # Stays in mild stage due to medication
-            #
-            # else:
-            #     # If medication is not effective, progression happens as usual
-            #     df.at[person_id, 'dr_on_treatment'] = True
-            #     df.at[person_id, 'dr_status'] = 'proliferative'
 
 
-class HSI_Dr_Dmo_AdvancedTreatment(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is the event when a person undergoes the optical coherence topography before being given the anti-vegf
-    injection. Given to individuals with dr_status of severe and proliferative
-    """
+class HSI_Dr_Focal_Laser(HSI_Event, IndividualScopeEventMixin):
+    """This is the Laser treatment for individuals with CSMO."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, DiabeticRetinopathy)
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Dr_Advanced_Treatment'
+        self.TREATMENT_ID = 'Dr_Focal_Laser_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='debug',
-                     data=f'This is HSI_Dr_Dmo_AdvancedTreatment for person {person_id}')
+                     data=f'This is HSI_Dr_Focal_Laser: initiating laser treatment for person {person_id}')
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            # The person is not alive, the event did not happen: so return a blank footprint
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
+        # if person already on treatment or not yet diagnosed, do nothing
+        if person["dr_on_treatment"] or not person["dr_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        assert pd.isnull(df.at[person_id, 'dr_date_treatment'])
+
+        is_cons_available = self.get_consumables(
+            self.module.cons_item_codes['focal_laser']
+        )
+
+        if is_cons_available:
+            # record date of diagnosis
+            df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'dr_date_treatment'] = self.sim.date
+            df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
+            # If consumables are available, add equipment used and run dx_test
+            self.add_equipment({'Ophthalmic Laser System', 'Laser Delivery System', 'Contact lenses'})
+
+            if person.dr_status == 'severe':
+                pass
+
+
+
+class HSI_Dr_AntiVEGF(HSI_Event, IndividualScopeEventMixin):
+    """This is the Anti-VEGF treatment for individuals with CSMO."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, DiabeticRetinopathy)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Dr_AntiVEGF_Treatment'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(key='debug',
+                     data=f'This is HSI_Dr_AntiVEGF for person {person_id}')
         df = self.sim.population.props
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
@@ -615,15 +652,12 @@ class HSI_Dr_Dmo_AdvancedTreatment(HSI_Event, IndividualScopeEventMixin):
             self.module.cons_item_codes['anti_vegf_injection']
         )
 
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='optical_coherence_topography_dr_dmo',
-            hsi_event=self
-        )
-
-        if dx_result and is_cons_available:
+        if is_cons_available:
+            self.add_equipment({'Silt lamp', 'Optical coherence tomography device',
+                                'Ophthalmoscope/Fundus camera', 'Goniometre'})
             if person.dr_status == "severe":
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_Dr_Dmo_AdvancedTreatment(module=self.module, person_id=person_id),
+                    hsi_event=HSI_Dr_AntiVEGF(module=self.module, person_id=person_id),
                     topen=self.sim.date + DateOffset(months=3),
                     tclose=None,
                     priority=0
@@ -631,16 +665,17 @@ class HSI_Dr_Dmo_AdvancedTreatment(HSI_Event, IndividualScopeEventMixin):
 
             elif person.dr_status == 'proliferative':
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_Dr_Dmo_AdvancedTreatment(module=self.module, person_id=person_id),
+                    hsi_event=HSI_Dr_AntiVEGF(module=self.module, person_id=person_id),
                     topen=self.sim.date + DateOffset(months=1),
                     tclose=None,
                     priority=0
                 )
 
 
-class HSI_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin):
+class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin):
     """
-    This is the HSI event given to individuals with proliferative diabetic retinopathy after undergoing an eye exam/screening
+    This is the HSI event given to individuals with proliferative diabetic retinopathy after undergoing an eye
+    exam/screening
     """
 
     def __init__(self, module, person_id):
@@ -676,8 +711,6 @@ class HSI_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin):
         if is_cons_available:
             self.add_equipment({'Laser generator', 'Delivery system', 'Contact lenses', 'Patient head support'})
             pass
-            # if person.dr_status == "proliferative":
-            #     pass
 
 
 class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
