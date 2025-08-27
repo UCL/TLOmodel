@@ -4,6 +4,7 @@ It is not to be run by itself. Functions are called from run_interventions_analy
 heatmaps_cons_wast.py.
 """
 
+import logging
 from pathlib import Path
 from typing import Dict
 
@@ -14,7 +15,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 
 from src.scripts.costing.cost_estimation import apply_discounting_to_cost_data
-from tlo.analysis.utils import extract_results
+from tlo.analysis.utils import create_pickles_locally, extract_results
 
 plt.style.use('seaborn-darkgrid')
 
@@ -431,6 +432,81 @@ def extract_interv_daly_data_frames_and_outcomes(
             'interv_under5_ALRI_dalys_sum_ci_df': interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df,
             'interv_under5_Diarrhoea_dalys_sum_ci_df': interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df,
             'interv_years': intervention_years}
+
+def regenerate_pickles_with_debug_logs(iterv_folders_dict) -> None:
+    for interv_folder_path in iterv_folders_dict.values():
+        print(f"\n{interv_folder_path=} in regenerate_wasting_pickle_with_debug_logs")
+        log_to_pickle = 'wasting_analysis__full_model_'
+        create_pickles_locally(interv_folder_path, compressed_file_name_prefix=log_to_pickle, level=logging.DEBUG)
+
+def extract_tx_data_frames(
+    folder,
+    years_of_interest,
+    intervention_years,
+    interv
+) -> Dict[str, pd.DataFrame]:
+    """
+    Extracts and summarizes treatment data by age group and year.
+
+    :param folder: Path to the folder containing outcome data.
+    :param years_of_interest: List of years to extract data for.
+    :param intervention_years: List of years during which the intervention was implemented (if any).
+    :param interv: Name or identifier of the intervention.
+    :return: Dictionary with DataFrames:
+        (1) 'tx_by_age_group_df': Counts by year, treatment, age_group (by draw and run),
+        (2) 'tx_by_age_group_mean_ci_df': Mean and 95% CI for counts per year, treatment, age_group and draw,
+        (3) 'tx_mean_ci_df': Mean and 95% CI for total treatments per year and draw,
+        (4) 'interv_tx_by_age_group_df': Counts for intervention years,
+        (5) 'interv_tx_by_age_group_mean_ci_df': Mean and 95% CI for intervention years,
+        (6) 'interv_tx_mean_ci_df': Mean and 95% CI for total treatment in intervention years.
+    """
+    print(f"\n{interv=}")
+
+    # Extract treatment data
+    tx_by_age_group_df = extract_results(
+        folder,
+        module="tlo.methods.wasting",
+        key="get-tx",
+        custom_generate_series=(
+            lambda df: (
+                df.assign(year=df['date'].dt.year)
+                  .groupby(['year', 'treatment', 'age_group'])['year']
+                  .count()
+                  .reindex(
+                      pd.MultiIndex.from_product([
+                          df['date'].dt.year.unique(),
+                          df['treatment'].unique(),
+                          df['age_group'].unique()
+                      ], names=['year', 'treatment', 'age_group'])
+                  )
+            )
+        ),
+        do_scaling=True
+    ).fillna(0)
+    tx_by_age_group_df = tx_by_age_group_df.loc[years_of_interest]
+
+    # Mean and CI by year, treatment, age_group
+    tx_by_age_group_mean_ci_df = return_mean_95_CI_across_runs(tx_by_age_group_df)
+
+    # Mean and CI by year and treatment (sum over age_group)
+    tx_mean_df = tx_by_age_group_df.groupby(['year', 'treatment']).sum()
+    tx_mean_ci_df = return_mean_95_CI_across_runs(tx_mean_df)
+
+    # For intervention years
+    interv_tx_by_age_group_df = tx_by_age_group_df.loc[intervention_years]
+    interv_tx_by_age_group_mean_ci_df = return_mean_95_CI_across_runs(interv_tx_by_age_group_df)
+    interv_tx_mean_df = interv_tx_by_age_group_df.groupby(['year', 'treatment']).sum()
+    interv_tx_mean_ci_df = return_mean_95_CI_across_runs(interv_tx_mean_df)
+
+    return {
+        'tx_by_age_group_df': tx_by_age_group_df,
+        'tx_by_age_group_mean_ci_df': tx_by_age_group_mean_ci_df,
+        'tx_mean_ci_df': tx_mean_ci_df,
+        'interv_tx_by_age_group_df': interv_tx_by_age_group_df,
+        'interv_tx_by_age_group_mean_ci_df': interv_tx_by_age_group_mean_ci_df,
+        'interv_tx_mean_ci_df': interv_tx_mean_ci_df,
+        'interv_years': intervention_years
+    }
 
 def get_scen_colour(scen_name: str) -> str:
     return {
@@ -987,7 +1063,6 @@ def plot_sum_outcome_and_CIs__intervention_period(
 
             if outcome_type == "DALYs" and cause == 'any cause':
                 plot_cost_effectiveness(averted_DALYs_anycause)
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 def plot_availability_heatmaps(outputs_path: Path) -> None:

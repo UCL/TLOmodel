@@ -7,7 +7,7 @@ import pickle
 import time
 from pathlib import Path
 
-import analysis_utility_functions_wast
+import analysis_utility_functions_wast as util_fncs
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -50,9 +50,10 @@ scenario_filename_prefix = 'wasting_analysis__full_model'
 # Where to save the outcomes
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
 cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
-# force_calculation of [births_data, deaths_data, dalys_data],
+# force_calculation of [births_data, deaths_data, dalys_data, tx_data],
 #   if True, enables to force recalculation of the corresponding data
-force_calculation = [False, False, False]  # [True, True, True]  #
+force_calculation = [False, False, False, True]  # [True, True, True]  #
+regenare_pickles_bool = False  # True  #
 ########################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")
@@ -61,6 +62,7 @@ if 'SQ' not in intervs_of_interest:
     intervs_of_interest = intervs_of_interest + ['SQ']
 if 'Status Quo' not in scenarios_to_compare:
     scenarios_to_compare = scenarios_to_compare + ['Status Quo']
+
 def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interventionyears:list,
                                        intervs_ofinterest:list, scenarios_tocompare, intervsall) -> None:
     """
@@ -124,7 +126,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     else:
         print("\nbirth outcomes calculation ...")
         birth_outcomes_dict = {
-            interv: analysis_utility_functions_wast.extract_birth_data_frames_and_outcomes(
+            interv: util_fncs.extract_birth_data_frames_and_outcomes(
                 iterv_folders_dict[interv], plotyears, interventionyears, interv
             )
             for interv in scenario_folders
@@ -148,7 +150,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     else:
         print("\ndeath outcomes calculation ...")
         death_outcomes_dict = {
-            interv: analysis_utility_functions_wast.extract_death_data_frames_and_outcomes(
+            interv: util_fncs.extract_death_data_frames_and_outcomes(
                 iterv_folders_dict[interv], birth_outcomes_dict[interv]['births_df'], plotyears, interventionyears,
                 interv
             ) for interv in scenario_folders
@@ -172,7 +174,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     else:
         print("\ndalys outcomes calculation ...")
         dalys_outcomes_dict = {
-            interv: analysis_utility_functions_wast.extract_interv_daly_data_frames_and_outcomes(
+            interv: util_fncs.extract_interv_daly_data_frames_and_outcomes(
                 iterv_folders_dict[interv], plotyears, interventionyears, interv
             ) for interv in scenario_folders
         }
@@ -180,7 +182,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         with dalys_outcomes_path.open("wb") as f:
             pickle.dump(dalys_outcomes_dict, f)
 
-    # ---------------------------------------------------- Plots  ---------------------------------------------------- #
+    # --------------------------------------------- Main Analyses Plots  --------------------------------------------- #
     print("\n--------------")
     # Prepare scenarios_tocompare_prefix
     if 'Status Quo' in scenarios_tocompare:
@@ -209,35 +211,35 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     for cohort in cohorts_to_plot:
         print(f"plotting {cohort} outcomes ...")
         print("    plotting mortality rates ...")
-        analysis_utility_functions_wast.plot_mortality_rate__by_interv_multiple_settings(
+        util_fncs.plot_mortality_rate__by_interv_multiple_settings(
             cohort, interv_timestamps_dict, scenarios_dict, intervs_ofinterest, plotyears, death_outcomes_dict,
             outputspath
         )
         print("    plotting mean deaths ...")
-        analysis_utility_functions_wast.plot_mean_outcome_and_CIs__scenarios_comparison(
+        util_fncs.plot_mean_outcome_and_CIs__scenarios_comparison(
             cohort, scenarios_dict, scenarios_tocompare, plotyears, "deaths", death_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
-        analysis_utility_functions_wast.plot_mean_outcome_and_CIs__scenarios_comparison(
+        util_fncs.plot_mean_outcome_and_CIs__scenarios_comparison(
             cohort, scenarios_dict, scenarios_tocompare, plotyears, "deaths_with_SAM", death_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
         print("    plotting sum of deaths ...")
-        analysis_utility_functions_wast.plot_sum_outcome_and_CIs__intervention_period(
+        util_fncs.plot_sum_outcome_and_CIs__intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "deaths", death_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
-        analysis_utility_functions_wast.plot_sum_outcome_and_CIs__intervention_period(
+        util_fncs.plot_sum_outcome_and_CIs__intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "deaths_with_SAM", death_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
         print("    plotting mean DALYs ...")
-        analysis_utility_functions_wast.plot_mean_outcome_and_CIs__scenarios_comparison(
+        util_fncs.plot_mean_outcome_and_CIs__scenarios_comparison(
             cohort, scenarios_dict, scenarios_tocompare, plotyears, "DALYs", dalys_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
         print("    plotting sum of DALYs ...")
-        analysis_utility_functions_wast.plot_sum_outcome_and_CIs__intervention_period(
+        util_fncs.plot_sum_outcome_and_CIs__intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "DALYs", dalys_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
@@ -558,14 +560,83 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             fig_ce.savefig(fig_ce_png_file_path, dpi=300, bbox_inches='tight')
         plt.close('all')
 
+# --------------------------------------- Behind the scene Analyses Plots  --------------------------------------- #
+def run_behind_the_scene_analysis_wasting(
+    outputspath: Path,
+    plotyears: list,
+    interventionyears: list,
+    intervs_ofinterest: list,
+    scenariosdict
+) -> None:
+    """
+    Loads or extracts treatment outcomes for behind-the-scenes analysis.
+    """
 
+    iterv_folders_dict = {
+        interv: get_scenario_outputs(
+            scenario_filename_prefix, Path(interv_scenarios_folder_path / interv)
+        )[-1] for interv in intervs_ofinterest
+    }
+    interv_timestamps_dict = {
+        interv: get_scenario_outputs(
+            scenario_filename_prefix, Path(interv_scenarios_folder_path / interv)
+        )[-1].name.split(f"{scenario_filename_prefix}_{interv}-")[-1]
+        for interv in intervs_ofinterest
+    }
+    print(f"\n{interv_timestamps_dict=}")
+    # Define folders for each scenario
+    scenario_folders = {
+        interv: {
+            scen_name: Path(iterv_folders_dict[interv] / str(scen_draw_nmb))
+            for scen_name, scen_draw_nmb in scenariosdict[interv].items()
+        }
+        for interv in intervs_ofinterest
+    }
+    if regenare_pickles_bool:
+        print("\nRegenerating pickles with debug logs ...")
+        util_fncs.regenerate_pickles_with_debug_logs(iterv_folders_dict)
 
+    pd.set_option('display.max_columns', None)  # Show all columns
+    pd.set_option('display.max_rows', None)  # Show all rows
+    pd.set_option('display.max_colwidth', None)  # Show full content of each row
+
+    tx_outcomes_path = outputspath / f"outcomes_data/tx_outcomes_{'_'.join(iterv_folders_dict[interv].name for interv in scenario_folders)}.pkl"
+
+    # Extract or load treatment outcomes
+    if tx_outcomes_path.exists() and not force_calculation[3]:
+        print("\nloading tx outcomes from file ...")
+        with tx_outcomes_path.open("rb") as f:
+            tx_outcomes_dict = pickle.load(f)
+    else:
+        print("\ntx outcomes calculation ...")
+        tx_outcomes_dict = {
+            interv: util_fncs.extract_tx_data_frames(
+                iterv_folders_dict[interv], plotyears, interventionyears, interv
+            ) for interv in scenario_folders
+		}
+        print("saving tx outcomes to file ...")
+        with tx_outcomes_path.open("wb") as f:
+            pickle.dump(tx_outcomes_dict, f)
+
+    # Further analysis and plotting will be added here
+    # TODO: rm
+    # print("\nTX OUTCOMES")
+    # for interv in tx_outcomes_dict.keys():
+    #     print(f"### {interv=}")
+    #     for outcome in tx_outcomes_dict[interv]:
+    #         print(f"{outcome}:\n{tx_outcomes_dict[interv][outcome]}")
+
+    # print("Behind the scene Analyses\n----------")
+    # print("    plotting mean nmbs of tx...")
+    # util_fncs.plot_mean_tx_and_CIs__scenarios_comparison()
 
 # ---------------- #
 # RUN THE ANALYSIS #
 # ---------------- #
 run_interventions_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest,
                                    scenarios_to_compare, intervs_all)
+run_behind_the_scene_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest,
+                                      scenarios_dict)
 
 total_time_end = time.time()
 print(f"\ntotal running time (s): {(total_time_end - total_time_start)}")
