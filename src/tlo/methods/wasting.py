@@ -276,6 +276,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         * 1) Reads the ResourceFile
         * 2) Declares the DALY weights
         * 3) Registers the Symptom
+
+        :param resourcefilepath:
         """
 
         # 1) Read parameters from the resource file
@@ -902,8 +904,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                      data={
                          'treatment': treatment,
                          'person_id': person_id,
-                         'age_group': self.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                         'date': self.sim.date
+                         'age_group': self.age_grps.get(df.loc[person_id].age_years, '5+y')
                      },
                      description='Treatment for acute malnutrition provided.')
 
@@ -926,7 +927,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     'treatment': treatment,
                     'person_id': person_id,
                     'age_group': self.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                    'date': self.sim.date,
                     'tx_outcome': outcome,
                     'outcome_date': outcome_date,
                 },
@@ -1193,7 +1193,6 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
             data={
                 'person_id': person_id,
                 'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                'date': self.sim.date,
                 'natural history scheduled':
                     "recovery to moderate wasting" if pd.isnull(df.at[person_id, 'un_sam_death_date']) else "death",
                 'outcome_date':
@@ -1375,7 +1374,6 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
             data={
                 'person_id': person_id,
                 'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                'date': self.sim.date,
                 'recov_opt': f"{severity}_SAM_{recov_how}_recov_to_MAM"
             },
         )
@@ -1634,8 +1632,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
                      data={
                          'HSI': 'HSI_Wasting_SupplementaryFeedingProgramme_MAM',
                          'person_id': person_id,
-                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                         'date': self.sim.date
+                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
                      },
                      description='Care is sought.')
 
@@ -1654,8 +1651,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
                          data={'treatment': treatment,
                                'available': 1,
                                'person_id': person_id,
-                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                               'date': self.sim.date},
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
                          description='essential consumables availability recorded')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
@@ -1665,8 +1661,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
                          data={'treatment': treatment,
                                'available': 0,
                                'person_id': person_id,
-                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                               'date': self.sim.date},
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
                          description='essential consumables availability recorded')
 
     def did_not_run(self):
@@ -1698,8 +1693,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
                      data={
                          'HSI': 'HSI_Wasting_OutpatientTherapeuticProgramme_SAM',
                          'person_id': person_id,
-                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                         'date': self.sim.date
+                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
                      },
                      description='Care is sought.')
 
@@ -1720,8 +1714,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
                          data={'treatment': treatment,
                                'available': 1,
                                'person_id': person_id,
-                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                               'date': self.sim.date},
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
                          description='essential consumables availability recorded')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
@@ -1731,8 +1724,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
                          data={'treatment': treatment,
                                'available': 0,
                                'person_id': person_id,
-                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                               'date': self.sim.date},
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
                          description='essential consumables availability recorded')
 
     def did_not_run(self):
@@ -1764,8 +1756,7 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
                      data={
                          'HSI': 'HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM',
                          'person_id': person_id,
-                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                         'date': self.sim.date
+                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
                      },
                      description='Care is sought.')
 
@@ -1786,8 +1777,7 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
                          data={'treatment': treatment,
                                'available': 1,
                                'person_id': person_id,
-                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                               'date': self.sim.date},
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
                          description='essential consumables availability recorded')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
@@ -1797,8 +1787,7 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
                          data={'treatment': treatment,
                                'available': 0,
                                'person_id': person_id,
-                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
-                               'date': self.sim.date},
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
                          description='essential consumables availability recorded')
 
     def did_not_run(self):
@@ -2263,8 +2252,7 @@ class Wasting_ActivateInterventionsEvent(Event, PopulationScopeEventMixin):
                       p['interv_growth_monitoring_attendance_prob_agecat'],
                   'growth_monitoring_attendance_prob_agecat': p['growth_monitoring_attendance_prob_agecat'],
                   'interv_growth_monitoring_attendance_prob_agecat':
-                      p['interv_growth_monitoring_attendance_prob_agecat'],
-                  'date': self.sim.date
+                      p['interv_growth_monitoring_attendance_prob_agecat']
                   },
             description="record info about growth monitoring (GM) intervention"
         )
@@ -2279,8 +2267,7 @@ class Wasting_ActivateInterventionsEvent(Event, PopulationScopeEventMixin):
                       p['seeking_care_MAM_prob'] != p['interv_seeking_care_MAM_prob'],
                   'seeking_care_MAM_prob': p['seeking_care_MAM_prob'],
                   'interv_seeking_care_MAM_prob':
-                      p['interv_seeking_care_MAM_prob'],
-                  'date': self.sim.date
+                      p['interv_seeking_care_MAM_prob']
                   },
             description="record info abo care-seeking (CS) intervention"
         )
@@ -2294,8 +2281,7 @@ class Wasting_ActivateInterventionsEvent(Event, PopulationScopeEventMixin):
             data={'FS interv ON': p['interv_food_supplements_avail_bool'],
                   'F-75 milk availability': p['interv_avail_F75milk'],
                   'RUTF availability': p['interv_avail_RUTF'],
-                  'CSB availability': p['interv_avail_CSB++'],
-                  'date': self.sim.date
+                  'CSB availability': p['interv_avail_CSB++']
                   },
             description="record info about food supplements (FS) intervention"
         )
