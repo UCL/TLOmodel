@@ -29,7 +29,7 @@ for scenario in scenarios:
                 #projected_precip_disruptions['service'] = ['ANC'] * len(climate_file['Month'])
                 projected_precip_disruptions['service'] = ['all'] * len(climate_file['Month']) # initially assuming all are disrupted as ANC is
 
-            projected_precip_disruptions['disruption'] = climate_file['Difference_in_Expectation']/100
+            projected_precip_disruptions['disruption'] = climate_file['Difference_in_Expectation']/climate_file['Predicted_No_Weather_Model']
             projected_precip_disruptions['disruption'] = np.where(
                 projected_precip_disruptions['disruption'] < 0,
                 projected_precip_disruptions['disruption'],
