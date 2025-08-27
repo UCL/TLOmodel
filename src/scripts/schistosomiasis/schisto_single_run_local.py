@@ -46,7 +46,7 @@ def run_simulation(popsize,
                    mda_execute,
                    single_district):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2014, 12, 31)
+    end_date = Date(2024, 12, 31)
     # For logging
     custom_levels = {
         "*": logging.WARNING,
@@ -94,7 +94,7 @@ def run_simulation(popsize,
     return sim, output
 
 # update these parameters
-sim, output = run_simulation(popsize=2000,
+sim, output = run_simulation(popsize=4000,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
                              mda_execute=True,
