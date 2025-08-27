@@ -919,7 +919,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     subset_c = group_1 + group_4
     final_y_values_c = [normalized_DALYs.loc[cause].iloc[-1] for cause in subset_c if cause in normalized_DALYs.index]
-    adjusted_y_positions_c = create_non_overlapping_positions(final_y_values_c, min_gap_ratio=0.08)
+    adjusted_y_positions_c = create_non_overlapping_positions(final_y_values_c, min_gap_ratio=0.5)
 
     for i, cause in enumerate(subset_c):
         if cause in normalized_DALYs.index:
