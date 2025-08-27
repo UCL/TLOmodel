@@ -1103,7 +1103,6 @@ class SchistoSpecies:
         by age-group, infection level and district."""
 
         df = self.schisto_module.sim.population.props
-        prop = self.prefix_species_property
 
         # Directly filter and map values in one go without creating intermediate DataFrames
         age_grp = df.loc[df.is_alive, 'age_years'].map(self.schisto_module.age_group_mapper)
