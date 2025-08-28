@@ -89,7 +89,7 @@ class Demography(Module):
         self.gbd_causes_of_death = set()  # will store all the causes of death defined in the GBD data
         self.gbd_causes_of_death_not_represented_in_disease_modules = set()
         #  will store causes of death in GBD not represented in the simulation
-        self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
+        self.other_death_poll = None  # will hold pointer to the OtherDeathPoll object
         self.districts = None  # will store all the districts in a list
 
     OPTIONAL_INIT_DEPENDENCIES = {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher'}
@@ -198,14 +198,14 @@ class Demography(Module):
         # Lookup dicts to map from district_num_of_residence (in the df) and District name and Region name
         self.districts = self.parameters['pop_2010']['District'].drop_duplicates().to_list()
         self.parameters['district_num_to_district_name'] = \
-            self.parameters['pop_2010'][['District_Num', 'District']].drop_duplicates()\
-                                                                     .set_index('District_Num')['District']\
-                                                                     .to_dict()
+            self.parameters['pop_2010'][['District_Num', 'District']].drop_duplicates() \
+                .set_index('District_Num')['District'] \
+                .to_dict()
 
         self.parameters['district_num_to_region_name'] = \
-            self.parameters['pop_2010'][['District_Num', 'Region']].drop_duplicates()\
-                                                                   .set_index('District_Num')['Region']\
-                                                                   .to_dict()
+            self.parameters['pop_2010'][['District_Num', 'Region']].drop_duplicates() \
+                .set_index('District_Num')['Region'] \
+                .to_dict()
 
         districts_in_region = defaultdict(set)
         for _district in self.parameters['pop_2010'][['District', 'Region']].drop_duplicates().itertuples():
@@ -674,6 +674,10 @@ class Demography(Module):
             if person.hs_is_inpatient:
                 self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
 
+        # Clear symptoms for the deceased person
+        if 'SymptomManager' in self.sim.modules:
+            self.sim.modules['SymptomManager'].clear_symptoms_for_deceased_person(individual_id)
+
     def create_mappers_from_causes_of_death_to_label(self):
         """Use a helper function to create mappers for causes of death to label."""
         return create_mappers_from_causes_to_label(
@@ -785,6 +789,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
     It does this by computing the GBD death rates that are implied by all the causes of death other than those that are
     represented in the disease module registered in this simulation.
     """
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
         self.causes_to_represent = self.module.gbd_causes_of_death_not_represented_in_disease_modules
