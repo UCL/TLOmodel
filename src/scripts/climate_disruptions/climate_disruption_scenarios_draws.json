@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "/Users/rem76/PycharmProjects/TLOmodel/src/scripts/climate_disruptions/climate_disruption_scenarios.py",
+  "scenario_script_path": "src/scripts/climate_disruptions/climate_disruption_scenarios.py",
   "scenario_seed": 0,
   "arguments": [],
   "runs_per_draw": 10,
@@ -505,6 +505,6 @@
       "draw_name": "9"
     }
   ],
-  "commit": "87af99155925e566a69916b14b0319f64a8d7239",
-  "github": "https://github.com/UCL/TLOmodel/tree/87af99155925e566a69916b14b0319f64a8d7239"
+  "commit": "5c4bb29eb4b1cdd96f897452c50491f8c7481574",
+  "github": "https://github.com/UCL/TLOmodel/tree/5c4bb29eb4b1cdd96f897452c50491f8c7481574"
 }

@@ -489,7 +489,7 @@ class Demography(Module):
         df = self.sim.population.props.copy() # take copy of dataframe
         df["coordinate_of_residence"] = df["district_of_residence"].apply(
             assign_coordinate_by_population_weight)
-        facility_info  =pd.read_csv(Path(self.resourcefilepath) / 'climate_change_impacts' / "facilities_with_lat_long_region.csv")# these are ones that were included in the regression model
+        facility_info  =pd.read_csv(Path(self.resourcefilepath / 'climate_change_impacts' / "facilities_with_lat_long_region.csv"))# these are ones that were included in the regression model
 
         facility_levels_types = {
             "level_0": ["Health Post", "Village Health Committee", "Community Health Station", "Village Clinic", "Mobile Clinic", "Outreach Clinic"],
