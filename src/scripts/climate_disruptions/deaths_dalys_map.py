@@ -212,15 +212,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.tight_layout()
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Stacked'))
 
-        print(df_all_years_DALYS_mean)
-        district_dalys_total = df_all_years_DALYS_mean.sum(axis=0)
-        district_deaths_total = df_all_years_deaths_mean.sum(axis=0)
+        print("df_all_years_DALYS_mean", df_all_years_DALYS_mean)
+        district_dalys_total = df_all_years_DALYS_mean.sum(axis=1)
+        district_deaths_total = df_all_years_deaths_mean.sum(axis=1)
 
-        district_deaths_upper = df_all_years_deaths_upper.sum(axis=0)
-        district_deaths_lower = df_all_years_deaths_lower.sum(axis=0)
+        district_deaths_upper = df_all_years_deaths_upper.sum(axis=1)
+        district_deaths_lower = df_all_years_deaths_lower.sum(axis=1)
 
-        district_dalys_upper = df_all_years_DALYS_upper.sum(axis=0)
-        district_dalys_lower = df_all_years_DALYS_lower.sum(axis=0)
+        district_dalys_upper = df_all_years_DALYS_upper.sum(axis=1)
+        district_dalys_lower = df_all_years_DALYS_lower.sum(axis=1)
 
         all_scenarios_dalys_by_district[scenario_name] = district_dalys_total
         all_scenarios_deaths_by_district[scenario_name] = district_deaths_total
@@ -241,14 +241,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     print(df_deaths_by_district_all_scenarios)
     # Calculate means and error bars
-    deaths_means = df_deaths_by_district_all_scenarios.sum(axis=0)
-    print(deaths_means)
-    deaths_upper = df_deaths_by_district_all_scenarios_upper.sum(axis=0)
-    deaths_lower = df_deaths_by_district_all_scenarios_lower.sum(axis=0)
+    deaths_means = df_deaths_by_district_all_scenarios.sum(axis=1)
+    deaths_upper = df_deaths_by_district_all_scenarios_upper.sum(axis=1)
+    deaths_lower = df_deaths_by_district_all_scenarios_lower.sum(axis=1)
 
-    dalys_means = df_dalys_by_district_all_scenarios.sum(axis=0)
-    dalys_upper = df_dalys_by_district_all_scenarios_upper.sum(axis=0)
-    dalys_lower = df_dalys_by_district_all_scenarios_lower.sum(axis=0)
+    dalys_means = df_dalys_by_district_all_scenarios.sum(axis=1)
+    dalys_upper = df_dalys_by_district_all_scenarios_upper.sum(axis=1)
+    dalys_lower = df_dalys_by_district_all_scenarios_lower.sum(axis=1)
 
     # Calculate error bar values (difference from mean)
     deaths_yerr_upper = deaths_upper - deaths_means
@@ -325,7 +324,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
     water_bodies = gpd.read_file(
         "/Users/rem76/Desktop/Climate_change_health/Data/Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp")
-    print(malawi_admin2)
     # change names of some districts for consistency
     malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Blantyre City', 'Blantyre')
     malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Mzuzu City', 'Mzuzu')
