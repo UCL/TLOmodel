@@ -89,6 +89,9 @@ class DiabeticRetinopathy(Module):
         "probs_for_dmo_when_dr_status_proliferative": Parameter(
             Types.LIST, "probability of having a DMO state when an individual has "
                         "proliferative Diabetic Retinopathy "),
+        "prob_eye_exam": Parameter(
+            Types.REAL, "probability of going for an eye exam/screening"
+        )
     }
 
     PROPERTIES = {
@@ -164,6 +167,7 @@ class DiabeticRetinopathy(Module):
         self.parameters['p_medication'] = 0.8
         self.parameters['effectiveness_of_laser_photocoagulation_in_severe_regression'] = 0.21
         self.parameters["prob_diabetes_controlled"] = 0.5
+        self.parameters["prob_eye_exam"] = 0.07
         self.parameters["prob_mild_to_none_if_controlled_diabetes"] = 0.21
         self.parameters['prob_reg_eye_exam'] = 0.05
 
@@ -491,12 +495,24 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         df.selected_for_eye_exam = False
 
         eligible_population_for_eye_exam = (
-            (df.is_alive & df.nc_diabetes) &
+            (df.is_alive & df.nc_diabetes) & #todo add condition for people do not be selected again witin 1 year
             (df.dr_status == 'none') &
             (df.dmo_status == 'none') &
             (df.age_years >= 20) &
             (pd.isna(df.dr_date_diagnosis))
         )
+
+        df.loc[eligible_population_for_eye_exam, 'selected_for_eye_exam'] = (
+            np.random.random_sample(size=len(df[eligible_population_for_eye_exam]))
+            < self.module.parameters['prob_eye_exam']
+        )
+
+        for idx in df.index[df.selected_for_eye_exam]:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Dr_Eye_Examination(module=self.module, person_id=idx),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None)
 
 
     def do_at_generic_first_appt(
