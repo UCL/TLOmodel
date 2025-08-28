@@ -130,3 +130,6 @@ docs/parameters.rst
 docs/reference/modules.rst
 docs/reference/tlo*.rst
 docs/resources/**/*.rst
+
+# Scratch Jupyter Notebooks
+/src/scripts/climate_change_heat/calculating_relative_humidity.ipynb
