@@ -628,7 +628,7 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
     # Register the core modules
     sim.register(
         demography.Demography(),
-        healthsystem.HealthSystem(facility_type='government'),
+        healthsystem.HealthSystem(),
     )
     sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
     sim.make_initial_population(n=100)
@@ -637,24 +637,7 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
     consumables = hs.consumables
     assert consumables.availability == 'default'
 
-    # Get the actual availability data to check which scenarios are available
-    availability_data = hs.parameters['availability_estimates']
-
-    # Get available scenarios from the data columns (only test what actually exists)
-    available_scenarios = [
-        col.replace('available_prop_', '')
-        for col in availability_data.columns
-        if col.startswith('available_prop_scenario')
-    ]
-
-    # Test only the standard options and available scenarios
-    options_to_test = [
-                          'all', 'none', 'default', 'all_medicines_available',
-                          'all_diagnostics_available', 'all_medicines_and_other_available',
-                          'all_vital_available', 'all_drug_or_vaccine_available'
-                      ] + available_scenarios
-
-    # Store default probabilities for comparison
+    # store default consumables availabilieis
     default_consumables_availability = consumables._prob_item_codes_available.copy()
 
     # - Get the item_codes for each category
@@ -668,19 +651,18 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
         designations.index[designations['is_drug_or_vaccine']]
     ).intersection(consumables.item_codes)
 
-    for availability in options_to_test:
-        # Skip if this availability mode is not actually supported by the Consumables class
-        if availability not in consumables._options_for_availability:
-            continue
+    options_for_availability = sorted(consumables._options_for_availability)
+
+    for availability in options_for_availability:
 
         # Manipulate availability, as would be set from the outside following initiation
         consumables.availability = availability
 
         if availability not in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
-                                'scenario5', 'scenario6', 'scenario7', 'scenario8',
-                                'scenario9', 'scenario10', 'scenario11', 'scenario12',
-                                'scenario13', 'scenario14', 'scenario15'
-                                ):
+                                  'scenario5', 'scenario6', 'scenario7', 'scenario8',
+                                  'scenario9', 'scenario10', 'scenario11', 'scenario12',
+                                  'scenario13', 'scenario14', 'scenario15'
+                                  ):
 
             # Check that probabilities of availability are as expected:
             if availability == 'all':
@@ -716,97 +698,8 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
                 ).all()
 
         else:
-            # For the other scenarios, the availability should be different to what it was at default
+            # For the other scenarios, the availbility should be different to what it was at default
             comparison = consumables._prob_item_codes_available.equals(default_consumables_availability)
             assert isinstance(comparison, bool), 'Comparison went wrong: {availability=}'
-            assert not consumables._prob_item_codes_available.equals(default_consumables_availability), \
-                f"No change in actual availability when: {availability=}"
-
-# def test_consumables_availability_modes_that_depend_on_designations(seed):
-#     """Test that consumables availability can be manipulated in a manner than depends on the designations of
-#     consumables."""
-#
-#     sim = Simulation(
-#         start_date=Date(2010, 1, 1),
-#         seed=seed,
-#         resourcefilepath=resourcefilepath
-#     )
-#
-#     # Register the core modules
-#     sim.register(
-#         demography.Demography(),
-#         healthsystem.HealthSystem(),
-#     )
-#     sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
-#     sim.make_initial_population(n=100)
-#     sim.simulate(end_date=sim.start_date)
-#     hs = sim.modules['HealthSystem']
-#     consumables = hs.consumables
-#     assert consumables.availability == 'default'
-#
-#     # store default consumables availabilieis
-#     default_consumables_availability = consumables._prob_item_codes_available.copy()
-#
-#     # - Get the item_codes for each category
-#     designations = hs.parameters['consumables_item_designations']
-#     items_all = consumables.item_codes
-#     items_medicines = set(designations.index[designations['is_medicine']]).intersection(consumables.item_codes)
-#     items_diagnostics = set(designations.index[designations['is_diagnostic']]).intersection(consumables.item_codes)
-#     items_other = set(designations.index[designations['is_other']]).intersection(consumables.item_codes)
-#     items_vital = set(designations.index[designations['is_vital']]).intersection(consumables.item_codes)
-#     items_drug_or_vaccine = set(
-#         designations.index[designations['is_drug_or_vaccine']]
-#     ).intersection(consumables.item_codes)
-#
-#     options_for_availability = sorted(consumables._options_for_availability)
-#
-#     for availability in options_for_availability:
-#
-#         # Manipulate availability, as would be set from the outside following initiation
-#         consumables.availability = availability
-#
-#         if availability not in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
-#                                   'scenario5', 'scenario6', 'scenario7', 'scenario8',
-#                                   'scenario9', 'scenario10', 'scenario11', 'scenario12',
-#                                   'scenario13', 'scenario14', 'scenario15'
-#                                   ):
-#
-#             # Check that probabilities of availability are as expected:
-#             if availability == 'all':
-#                 target_items = items_all
-#             elif availability == 'all_medicines_available':
-#                 target_items = items_medicines
-#             elif availability == 'all_diagnostics_available':
-#                 target_items = items_diagnostics
-#             elif availability == 'all_medicines_and_other_available':
-#                 target_items = items_medicines.union(items_other)
-#             elif availability == 'all_vital_available':
-#                 target_items = items_vital
-#             elif availability == 'all_drug_or_vaccine_available':
-#                 target_items = items_drug_or_vaccine
-#             elif availability == 'none':
-#                 target_items = set()
-#             elif availability == 'default':
-#                 continue
-#             else:
-#                 raise ValueError(f'Unexpected availability: {availability}')
-#
-#             # - Check probabilities for selected items are 1.0
-#             if target_items:
-#                 assert (
-#                     consumables._prob_item_codes_available.loc[(slice(None), slice(None), list(target_items))] == 1.0
-#                 ).all()
-#
-#             # - Check that probabilities for other items are not all equal to 1.0
-#             non_target_items = list(items_all - target_items)
-#             if non_target_items:
-#                 assert not (
-#                     consumables._prob_item_codes_available.loc[(slice(None), slice(None), non_target_items)] == 1.0
-#                 ).all()
-#
-#         else:
-#             # For the other scenarios, the availbility should be different to what it was at default
-#             comparison = consumables._prob_item_codes_available.equals(default_consumables_availability)
-#             assert isinstance(comparison, bool), 'Comparison went wrong: {availability=}'
-#             assert not consumables._prob_item_codes_available.equals(default_consumables_availability),  \
-#                 f"No change in actual avaialbility when: {availability=}"
+            assert not consumables._prob_item_codes_available.equals(default_consumables_availability),  \
+                f"No change in actual avaialbility when: {availability=}"

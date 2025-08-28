@@ -370,7 +370,8 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
-        facility_type: Optional[str] = None,
+        facility_type: Optional[str] = 'government',
+        # facility_type: Optional[str] = None,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -542,6 +543,8 @@ class HealthSystem(Module):
             )
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
+
+        # path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
 
         # Determine which facility type to use
         facility_type = self.parameters['facility_type'] if self.arg_facility_type is None else self.arg_facility_type
