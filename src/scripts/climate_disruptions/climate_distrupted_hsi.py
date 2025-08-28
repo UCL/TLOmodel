@@ -33,11 +33,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
 
     def get_num_treatments_total(_df):
-        """Return total number of treatments within the TARGET_PERIOD"""
-        return _df \
-            .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
-            .drop(columns=['date'], errors='ignore') \
-            .sum(numeric_only=True)
+        """Return the number of treatments in total of all treatments (total within the TARGET_PERIOD)"""
+        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
+        _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
+        _df = _df.groupby(level=0).sum().sum()
+        return pd.Series(_df)
 
     def get_num_appts(_df):
         """Return total number of appointments (never ran) within the TARGET_PERIOD"""
@@ -94,22 +94,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # Extract healthcare system utilization data
 
             # Total treatments
-            num_treatments_total = extract_results(
+            num_treatments_total =  summarize(extract_results(
                 results_folder,
                 module='tlo.methods.healthsystem.summary',
-                key='HSI_Event_non_blank_appt_footprint',
+                key='HSI_Event',
                 custom_generate_series=get_num_treatments_total,
                 do_scaling=True
-            )
-            result_data_treatments = summarize(
-                num_treatments_total,
-                only_mean=True,
+            ),
+                only_mean=False,
                 collapse_columns=True,
             )[draw]
-
-            all_years_data_treatments_mean[target_year] = result_data_treatments['mean']
-            all_years_data_treatments_lower[target_year] = result_data_treatments['lower']
-            all_years_data_treatments_upper[target_year] = result_data_treatments['upper']
+            print(num_treatments_total)
+            all_years_data_treatments_mean[target_year] = num_treatments_total['mean']
+            all_years_data_treatments_lower[target_year] = num_treatments_total['lower']
+            all_years_data_treatments_upper[target_year] = num_treatments_total['upper']
 
             # Never ran appointments
             num_never_ran_appts = extract_results(
