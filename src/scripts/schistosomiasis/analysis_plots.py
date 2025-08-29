@@ -55,11 +55,16 @@ def make_graph_file_name(name):
 
 
 
+# todo we now have some preferred strategies for cons costs only
+#  full costs some have MDA none as preferred
+#  check time to elimination of H and HM and HML, see which figure looks best
+#  ICER plots might look weird, no ICERs for PSAC/All in some districts where eliminated
+
 #################################################################################
 # %% multi-panel epi outputs
 #################################################################################
 
-# prevalence in 2040 of each species by strategy
+# prevalence in 2050 of each species by strategy
 prev_haem_national_plot = pd.read_excel(results_folder / ('prev_haem_national_summary 2024-2050.xlsx'))
 prev_mansoni_national_plot = pd.read_excel(results_folder / ('prev_mansoni_national_summary 2024-2050.xlsx'))
 
@@ -72,13 +77,13 @@ prev_mansoni_national_heavy = pd.read_excel(results_folder / ('prev_mansoni_nati
 prev_haem_HML_All_district_summary = pd.read_excel(results_folder / 'prev_haem_HML_All_district_summary 2024-2050.xlsx')
 prev_mansoni_HML_All_district_summary = pd.read_excel(results_folder / 'prev_mansoni_HML_All_district_summary 2024-2050.xlsx')
 
-# Filter to year 2040
-df_2040 = prev_haem_HML_All_district_summary[prev_haem_HML_All_district_summary['year'] == 2050]
-haem_extrema_by_draw = df_2040.groupby('draw')['mean'].agg(['min', 'max']).reset_index()
+# Filter to year 2050
+df_2050 = prev_haem_HML_All_district_summary[prev_haem_HML_All_district_summary['year'] == 2050]
+haem_extrema_by_draw = df_2050.groupby('draw')['mean'].agg(['min', 'max']).reset_index()
 haem_extrema_by_draw.columns = ['draw', 'min_mean', 'max_mean']
 
-df_2040 = prev_mansoni_HML_All_district_summary[prev_mansoni_HML_All_district_summary['year'] == 2050]
-mansoni_extrema_by_draw = df_2040.groupby('draw')['mean'].agg(['min', 'max']).reset_index()
+df_2050 = prev_mansoni_HML_All_district_summary[prev_mansoni_HML_All_district_summary['year'] == 2050]
+mansoni_extrema_by_draw = df_2050.groupby('draw')['mean'].agg(['min', 'max']).reset_index()
 mansoni_extrema_by_draw.columns = ['draw', 'min_mean', 'max_mean']
 
 
@@ -181,7 +186,7 @@ def plot_species_prevalence_with_heavy(
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=45, ha='right')
     ax.set_title(f'{species_name}')
-    ax.set_ylim(0, 0.9)
+    ax.set_ylim(0, 0.5)
     if show_ylabel:
         ax.set_ylabel('Mean Prevalence')
     else:
@@ -238,7 +243,7 @@ plt.show()
 #################################################################################
 
 
-pc_py_averted = pd.read_excel(results_folder / "pc_py_averted_age_2024-2040.xlsx",
+pc_py_averted = pd.read_excel(results_folder / "pc_py_averted_age_2024-2050.xlsx",
                               index_col=0,
                               header=[0, 1])
 
@@ -308,7 +313,7 @@ def plot_pc_py_averted_ci(df, draw_order, xlabel_labels=None, ylabel=None, ylim=
 
     handles = [plt.Line2D([0], [0], marker='o', color=palette[i], linestyle='', label=legend_labels[i])
                for i in range(len(ordered_age_groups))]
-    ax.legend(handles=handles, title='Age Group', loc='upper left')
+    ax.legend(handles=handles, title='Age Group', loc='upper right')
 
     plt.tight_layout()
     return fig
@@ -328,7 +333,7 @@ fig = plot_pc_py_averted_ci(
     draw_order=draw_order,
     xlabel_labels=x_labels,
     ylabel='% person-years averted',
-    ylim=70
+    ylim=100
 )
 fig.savefig(results_folder / "pc_py_averted.png", dpi=300)
 plt.show()
@@ -343,7 +348,7 @@ plt.show()
 
 
 dalys_averted = pd.read_excel(
-    results_folder / 'dalys_averted_district_compared_noMDA2024-2040.xlsx',
+    results_folder / 'dalys_averted_district_compared_noMDA2024-2050.xlsx',
     index_col=[0, 1],    # First two columns as MultiIndex: year, district
     header=[0, 1]        # Two-level column MultiIndex: run/draw
 )
@@ -351,7 +356,7 @@ dalys_averted.index.set_names(['year', 'district'], inplace=True)
 
 # add in the dalys averted for Scale-up WASH, no MDA compared with Continue WASH, no MDA
 dalys_averted_compared_ContinueWASHnoMDA = pd.read_excel(
-    results_folder / 'dalys_averted_district_compared_continueWASHnoMDA2024-2040.xlsx',
+    results_folder / 'dalys_averted_district_compared_continueWASHnoMDA2024-2050.xlsx',
     index_col=[0, 1],    # First two columns as MultiIndex: year, district
     header=[0, 1]        # Two-level column MultiIndex: run/draw
 )
@@ -359,7 +364,7 @@ dalys_averted_compared_ContinueWASHnoMDA = pd.read_excel(
 
 
 
-def summarise_dalys_averted(df, start_year=2024, end_year=2040):
+def summarise_dalys_averted(df, start_year=2024, end_year=2050):
     """
     Summarise DALYs averted between `start_year` and `end_year` by draw:
     - Sum DALYs across all districts and years for each (run, draw)
@@ -395,7 +400,7 @@ def summarise_dalys_averted(df, start_year=2024, end_year=2040):
 
 dalys_summary = summarise_dalys_averted(dalys_averted)
 
-dalys_summary.to_excel(results_folder / "dalys_averted_summary_2024_2040.xlsx")
+dalys_summary.to_excel(results_folder / "dalys_averted_summary_2024_2050.xlsx")
 
 # add in the row for Scale-up WASH, no MDA
 dalys_averted_compared_ContinueWASHnoMDA_summary = summarise_dalys_averted(dalys_averted_compared_ContinueWASHnoMDA)
@@ -462,7 +467,7 @@ plt.show()
 #################################################################################
 
 
-def plot_prevalence_heatmap(df, year=2040, threshold=1.5, filename=None):
+def plot_prevalence_heatmap(df, year=2050, threshold=1.5, filename=None):
     # Extract data for the given year
     df_year = df.loc[year]
 
@@ -475,28 +480,31 @@ def plot_prevalence_heatmap(df, year=2040, threshold=1.5, filename=None):
     draw_labels = mean_df.columns.tolist()
 
     # Parse draw labels into Phase and MDA parts
-    phase_labels = []
-    mda_labels = []
-
+    phase_labels, mda_labels = [], []
     for label in draw_labels:
         try:
             phase_part, mda_part = label.split(', ')
         except Exception:
             phase_part, mda_part = label, ''
-        # Strip " WASH" suffix from phase for cleaner label
         phase_clean = phase_part.replace(' WASH', '')
         phase_labels.append(phase_clean)
         mda_labels.append(mda_part)
 
-    # Define desired orders
-    phase_order = ['Pause', 'Continue', 'Scale-up']
+    # Keep only draws where phase == 'Continue'
+    keep_mask = [p == "Continue" for p in phase_labels]
+    mean_df = mean_df.loc[:, keep_mask]
+    phase_labels = [p for p, k in zip(phase_labels, keep_mask) if k]
+    mda_labels = [m for m, k in zip(mda_labels, keep_mask) if k]
+    draw_labels = [d for d, k in zip(draw_labels, keep_mask) if k]
+
+    # Define desired orders (phases reduced to just 'Continue')
+    phase_order = ['Continue']
     mda_order = ['no MDA', 'MDA SAC', 'MDA PSAC', 'MDA All']
 
-    # Create DataFrame with these two levels to help sorting
+    # Sorting helper
     col_df = pd.DataFrame({'phase': phase_labels, 'mda': mda_labels, 'orig': draw_labels})
     col_df['phase_order'] = col_df['phase'].apply(lambda x: phase_order.index(x) if x in phase_order else 99)
     col_df['mda_order'] = col_df['mda'].apply(lambda x: mda_order.index(x) if x in mda_order else 99)
-
     col_df = col_df.sort_values(by=['phase_order', 'mda_order']).reset_index(drop=True)
 
     multi_cols = pd.MultiIndex.from_arrays(
@@ -513,16 +521,10 @@ def plot_prevalence_heatmap(df, year=2040, threshold=1.5, filename=None):
         cmap='coolwarm',
         cbar_kws={'label': 'Mean prevalence'},
         linewidths=0.5,
-        linecolor='gray'
+        linecolor='gray',
     )
 
-    # add red outline if value < threshold
-    # for y in range(mean_df.shape[0]):
-    #     for x in range(mean_df.shape[1]):
-    #         val = mean_df.iloc[y, x]
-    #         if val < threshold:
-    #             ax.add_patch(plt.Rectangle((x, y), 1, 1, fill=False, edgecolor='red', lw=2))
-
+    # Add hatch outline if below threshold
     for y in range(mean_df.shape[0]):
         for x in range(mean_df.shape[1]):
             val = mean_df.iloc[y, x]
@@ -532,7 +534,7 @@ def plot_prevalence_heatmap(df, year=2040, threshold=1.5, filename=None):
                         (x, y),
                         1, 1,
                         fill=False,
-                        edgecolor='black',
+                        edgecolor='grey',
                         lw=1.5,
                         hatch='//'
                     )
@@ -541,54 +543,59 @@ def plot_prevalence_heatmap(df, year=2040, threshold=1.5, filename=None):
     ax.set_ylabel('District')
     plt.title(f'Mean Prevalence by District, Year {year}')
 
-    # ----------- Fix x-axis labels ------------------
-
-    n_mda = len(mda_order)
-
-    # Show MDA labels for every draw
+    # ----------- X-axis labels ------------------
     tick_positions = [i + 0.5 for i in range(len(mean_df.columns))]
     tick_labels = col_df['mda'].tolist()
-
     ax.set_xticks(tick_positions)
     ax.set_xticklabels(tick_labels, rotation=45, ha='right')
-    ax.set_xlabel('')  # remove the x-axis label
+    ax.set_xlabel('')
 
-    # Add vertical lines after every 4th draw
-    for idx in range(n_mda, len(mean_df.columns), n_mda):
-        ax.axvline(idx, color='white', linestyle='-', linewidth=4)
+    # # Draw phase label (only Continue now)
+    # n_mda = len(mda_order)
+    # start, end = 0, len(mean_df.columns) - 1
+    # mid = (start + end) / 2 + 0.5
+    # ax.text(
+    #     x=mid,
+    #     y=-0.15,
+    #     s="Continue",
+    #     ha='center',
+    #     va='top',
+    #     fontsize=12,
+    #     fontweight='bold',
+    #     color='black',
+    #     transform=ax.get_xaxis_transform()
+    # )
 
-    # Add phase labels below MDA labels, centred below each group of 4 draws (each phase)
-    for i, phase in enumerate(phase_order):
-        start = i * n_mda
-        end = start + n_mda - 1
-        mid = (start + end) / 2 + 0.5
-
-        ax.text(
-            x=mid,
-            y=-0.15,  # axis fraction coordinates, slightly below the x-axis labels
-            s=phase,
-            ha='center',
-            va='top',
-            fontsize=12,
-            fontweight='bold',
-            color='black',
-            transform=ax.get_xaxis_transform()  # x: data, y: axis fraction
-        )
-    plt.subplots_adjust(bottom=0.2, top=0.9)  # more bottom space for two level labels
-    plt.savefig(results_folder / filename, dpi=300)
-
+    plt.subplots_adjust(bottom=0.2, top=0.9)
+    if filename:
+        plt.savefig(results_folder / filename, dpi=300)
     plt.show()
 
 
-path = Path(results_folder / f'prev_haem_H_year_district 2024-2040.xlsx')
+
+path = Path(results_folder / f'prev_haem_H_year_district 2024-2050.xlsx')
 prev_haem_H_All_district = pd.read_excel(path, index_col=[0, 1])  # assuming first two columns are index
 
-path2 = Path(results_folder / f'prev_mansoni_H_year_district 2024-2040.xlsx')
-prev_mansoni_H_All_district = pd.read_excel(path, index_col=[0, 1])  # assuming first two columns are index
+path2 = Path(results_folder / f'prev_mansoni_H_year_district 2024-2050.xlsx')
+prev_mansoni_H_All_district = pd.read_excel(path2, index_col=[0, 1])  # assuming first two columns are index
 
 
-plot_prevalence_heatmap(prev_haem_H_All_district, year=2040, threshold=0.015, filename='prev_haem_H_district2040.png')
-plot_prevalence_heatmap(prev_mansoni_H_All_district, year=2040, threshold=0.015, filename='prev_mansoni_H_district2040.png')
+plot_prevalence_heatmap(prev_haem_H_All_district, year=2050, threshold=0.015, filename='prev_haem_H_district2050.png')
+plot_prevalence_heatmap(prev_mansoni_H_All_district, year=2050, threshold=0.015, filename='prev_mansoni_H_district2050.png')
+
+
+# HML infections
+path = Path(results_folder / 'prev_haem_HML_All_district 2024-2050.xlsx')
+prev_haem_HML_All_district = pd.read_excel(path, index_col=[0, 1])  # assuming first two columns are index
+
+path2 = Path(results_folder / 'prev_mansoni_HML_All_district 2024-2050.xlsx')
+prev_mansoni_HML_All_district = pd.read_excel(path2, index_col=[0, 1])  # assuming first two columns are index
+
+
+plot_prevalence_heatmap(prev_haem_HML_All_district, year=2050, threshold=0.01, filename='prev_haem_HML_district2050.png')
+plot_prevalence_heatmap(prev_mansoni_HML_All_district, year=2050, threshold=0.01, filename='prev_mansoni_HML_district2050.png')
+
+
 
 
 #################################################################################

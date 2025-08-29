@@ -400,7 +400,10 @@ def compute_icer_district(
     years_dalys = dalys_averted.index.get_level_values('year')
     mask_dalys = (years_dalys >= start_year) & (years_dalys <= end_year)
     dalys_period = dalys_averted.loc[mask_dalys]
-    dalys_period = dalys_period.where(dalys_period != -0.0, 0.0)
+    # where daly values are tiny, assume 0 to avoid strange ICER values (huge and negative)
+    dalys_period = dalys_period.applymap(
+        lambda x: 0.0 if -10 <= x <= 10 else x
+    )
 
     years_costs = comparison_costs.index.get_level_values('year')
     mask_costs = (years_costs >= start_year) & (years_costs <= end_year)
@@ -424,7 +427,7 @@ def compute_icer_district(
     total_costs = costs_period.groupby(level='District').sum()
 
     # --- Compute ICERs
-    icers = total_costs / total_dalys
+    icers = total_costs.divide(total_dalys).replace([np.inf, -np.inf], np.nan)
 
     # --- Convert to long format
     icers_long = (
@@ -1993,6 +1996,8 @@ icer_district = compute_icer_district(
 icer_district["formatted"] = icer_district.apply(
     lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
 )
+
+
 icer_district.to_excel(results_folder / f'icer_district_{target_period()}.xlsx')
 
 # --- ICERS district for consumables costs only ---
@@ -2054,6 +2059,10 @@ def compute_nhb(
     years_dalys = dalys_averted.index.get_level_values(year_level)
     mask_dalys = (years_dalys >= start_year) & (years_dalys <= end_year)
     dalys_period = dalys_averted.loc[mask_dalys]
+    dalys_period = dalys_period.applymap(
+        lambda x: 0.0 if -10 <= x <= 10 else x
+    )
+
     years_since_start_dalys = years_dalys[mask_dalys] - start_year
     discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start_dalys)
     dalys_period = dalys_period.mul(discount_weights_dalys.values[:, None], axis=0)
@@ -2228,13 +2237,23 @@ def get_best_draw_per_district(df, keyword):
 pause_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Pause WASH")
 continue_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Continue WASH")
 scaleup_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Scale-up WASH")
-# todo all districts except 2 return PSAC (1 for pause WASH)
+# 10 districts showing PSAC (7) or All (3) as best strategy
 
-pause_wash_best_strategy.to_csv(results_folder / f'pause_wash_best_strategy{target_period()}.csv')
-continue_wash_best_strategy.to_csv(results_folder / f'continue_wash_best_strategy{target_period()}.csv')
-scaleup_wash_best_strategy.to_csv(results_folder / f'scaleup_wash_best_strategy{target_period()}.csv')
+
+pause_wash_best_strategy.to_csv(results_folder / f'pause_wash_nhb_vs_SAC_{target_period()}.csv')
+continue_wash_best_strategy.to_csv(results_folder / f'continue_wash_nhb_vs_SAC_{target_period()}.csv')
+scaleup_wash_best_strategy.to_csv(results_folder / f'scaleup_wash_nhb_vs_SAC_{target_period()}.csv')
 
 
 pause_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Pause WASH")
-# todo all districts return no MDA with full costs
+continue_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Continue WASH")
+scaleup_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Scale-up WASH")
+# todo this shows 14 districts with no MDA as best strategy,
+#  DALYs averted in MDA SAC probably small so nhb becomes negative
+
+
+
+
+
+
 
