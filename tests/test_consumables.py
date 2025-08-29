@@ -698,7 +698,7 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
                 ).all()
 
         else:
-            # For the other scenarios, the availbility should be different to what it was at default
+            # For the other scenarios, the availability should be different to what it was at default
             comparison = consumables._prob_item_codes_available.equals(default_consumables_availability)
             assert isinstance(comparison, bool), 'Comparison went wrong: {availability=}'
             assert not consumables._prob_item_codes_available.equals(default_consumables_availability),  \
