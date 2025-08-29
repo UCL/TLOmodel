@@ -843,7 +843,7 @@ def plot_stacked_dalys_by_cause(
     # Annotate percentage difference (above stacked bar)
     if percent_df is not None:
         for scenario in ordered_names:
-            pc = percent_df.loc[scenario, "central"]
+            pc = percent_df[(scenario, 'central')]
             total_height = cumulative_positive[scenario] if cumulative_positive[scenario] > 0 else cumulative_negative[scenario]
             offset = 0.02 * (y_max - y_min if y_max != y_min else abs(y_max) or 1)
             y_pos = total_height + offset if total_height > 0 else total_height - offset
@@ -865,7 +865,6 @@ def plot_stacked_dalys_by_cause(
 
 plot_stacked_dalys_by_cause(
     df_by_cause=diff_num_dalys_by_label_vs_statusquo,
-    percent_df=pc_dalys_diff_from_statusquo,
     param_names=param_names,
     title="Difference in DALYs Compared to Status Quo (by Cause)",
     ylabel="Difference in DALYs"
@@ -1133,12 +1132,13 @@ num_hcw_hours_diff_edit = num_hcw_hours_diff.drop(columns="Status Quo", level="d
 
 
 
-def plot_cadre_hours_vs_infections_panel(
+def plot_cadre_hours_vs_outcomes(
     num_hcw_hours_diff_edit,
-    infect_ci,
+    epi_df,
     scenario_colours: dict | None = None,
     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
     figsize=(10, 12),
+    ylabel=None,
 ):
     """
     Panel plot: scatter cadre hours (x) vs new infections (y) with asymmetric CI whiskers.
@@ -1146,9 +1146,9 @@ def plot_cadre_hours_vs_infections_panel(
     """
 
     # Extract infections (assume single row)
-    y_c = infect_ci.xs("central", axis=1, level="stat").iloc[0]
-    y_l = infect_ci.xs("lower",   axis=1, level="stat").iloc[0]
-    y_u = infect_ci.xs("upper",   axis=1, level="stat").iloc[0]
+    y_c = epi_df.xs("central", axis=1, level="stat").iloc[0]
+    y_l = epi_df.xs("lower",   axis=1, level="stat").iloc[0]
+    y_u = epi_df.xs("upper",   axis=1, level="stat").iloc[0]
 
     fig, axes = plt.subplots(len(cadres), 1, figsize=figsize, sharex=False)
 
@@ -1182,7 +1182,7 @@ def plot_cadre_hours_vs_infections_panel(
 
         ax.set_title(cadre)
         ax.set_xlabel("Hours (difference)")
-        ax.set_ylabel("New HIV infections (difference)")
+        ax.set_ylabel(ylabel)
         ax.grid(True, linestyle="--", alpha=0.4)
         ax.axhline(0, color="grey", linewidth=1, alpha=0.6)
         ax.axvline(0, color="grey", linewidth=1, alpha=0.6)
@@ -1203,14 +1203,29 @@ def plot_cadre_hours_vs_infections_panel(
     plt.show()
 
 
-plot_cadre_hours_vs_infections_panel(
+plot_cadre_hours_vs_outcomes(
     num_hcw_hours_diff_edit=num_hcw_hours_diff_edit,
-    infect_ci=infect_ci,
+    epi_df=infect_ci,
     scenario_colours=scenario_colours,
     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
     figsize=(10, 11),
+    ylabel="New HIV infections (difference)"
 )
 
+# for deaths vc HCW time
+epi_df = aids_deaths_ci.stack().to_frame().T
+epi_df.columns.names = ["draw", "stat"]
+# optional: name the single row (to be explicit)
+epi_df.index = ["n_aids_deaths"]
+
+plot_cadre_hours_vs_outcomes(
+    num_hcw_hours_diff_edit=num_hcw_hours_diff_edit,
+    epi_df=epi_df,
+    scenario_colours=scenario_colours,
+    cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
+    figsize=(10, 11),
+    ylabel="AIDS deaths"
+)
 
 
 
