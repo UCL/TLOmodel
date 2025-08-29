@@ -18,7 +18,8 @@ import statsmodels.api as sm
 import seaborn as sns
 from collections import defaultdict
 import textwrap
-from typing import Tuple
+from typing import Tuple, Union
+
 from scipy.stats import norm
 
 from tlo import Date, Simulation, logging
@@ -399,6 +400,7 @@ def compute_icer_district(
     years_dalys = dalys_averted.index.get_level_values('year')
     mask_dalys = (years_dalys >= start_year) & (years_dalys <= end_year)
     dalys_period = dalys_averted.loc[mask_dalys]
+    dalys_period = dalys_period.where(dalys_period != -0.0, 0.0)
 
     years_costs = comparison_costs.index.get_level_values('year')
     mask_costs = (years_costs >= start_year) & (years_costs <= end_year)
@@ -448,65 +450,99 @@ def compute_icer_district(
         return icers_long
 
 
+
 def compute_icer_national(
     dalys_averted: pd.DataFrame,
     comparison_costs: pd.DataFrame,
     discount_rate_dalys: float = 0.0,
     discount_rate_costs: float = 0.0,
     return_summary: bool = True
-) -> pd.DataFrame | pd.Series:
+) -> Union[pd.DataFrame, pd.Series]:
     """
     Compute ICERs comparing costs and DALYs averted over TARGET_PERIOD.
 
     Assumes:
-    - Row index: year (single-level)
+    - Row index contains a 'year' dimension (either a single-level index named 'year',
+      or a MultiIndex with a 'year' level). 'year' may be integers or datetimes.
     - Column MultiIndex: (wash_strategy, comparison, run)
-    - TARGET_PERIOD is a global tuple (start_year, end_year), with year as int or datetime
+    - TARGET_PERIOD is a global tuple (start_year, end_year), where entries can be ints or datetimes.
     """
+    # ---- Helpers
+    def _get_year_index(idx) -> pd.Index:
+        """Extract the year as an integer pd.Index from idx (Index or MultiIndex)."""
+        if isinstance(idx, pd.MultiIndex):
+            years = idx.get_level_values('year')
+        else:
+            years = idx
+        if np.issubdtype(pd.Series(years).dtype, np.datetime64):
+            years_int = pd.DatetimeIndex(years).year
+        else:
+            years_int = pd.Index(years).astype(int)
+        return pd.Index(years_int, name='year')
+
+    def _year_to_int(y):
+        """Coerce start/end year (int/Timestamp/date/np.datetime64) to int year."""
+        if isinstance(y, (pd.Timestamp, np.datetime64)):
+            return pd.to_datetime(y).year
+        # Support Python datetime.date
+        try:
+            import datetime as _dt
+            if isinstance(y, _dt.date):
+                return y.year
+        except Exception:
+            pass
+        return int(y)
+
+    # ---- Period
     global TARGET_PERIOD
-    start_year, end_year = TARGET_PERIOD
+    start_year_raw, end_year_raw = TARGET_PERIOD
+    start_year = _year_to_int(start_year_raw)
+    end_year = _year_to_int(end_year_raw)
 
-    # --- Apply year masks separately
-    years_dalys = dalys_averted.index.get_level_values('year')
+    # ---- Align year indices and subset period
+    years_dalys = _get_year_index(dalys_averted.index)
+    years_costs = _get_year_index(comparison_costs.index)
+
     mask_dalys = (years_dalys >= start_year) & (years_dalys <= end_year)
-    dalys_period = dalys_averted.loc[mask_dalys]
-
-    years_costs = comparison_costs.index.get_level_values('year')
     mask_costs = (years_costs >= start_year) & (years_costs <= end_year)
+
+    dalys_period = dalys_averted.loc[mask_dalys]
     costs_period = comparison_costs.loc[mask_costs]
 
-    # --- Discounting
-    years_since_start_dalys = years_dalys[mask_dalys] - start_year
-    years_since_start_costs = years_costs[mask_costs] - start_year
+    # ---- Ensure column alignment (intersection, ordered identically)
+    common_cols = dalys_period.columns.intersection(costs_period.columns)
+    if len(common_cols) == 0:
+        raise ValueError("No overlapping column keys between DALYs and costs.")
+    dalys_period = dalys_period[common_cols]
+    costs_period = costs_period[common_cols]
 
-    discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start_dalys)
-    discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start_costs)
+    # ---- Discounting weights (by years since start)
+    yrs_since_start_d = years_dalys[mask_dalys] - start_year
+    yrs_since_start_c = years_costs[mask_costs] - start_year
 
     if discount_rate_dalys != 0.0:
-        dalys_period = dalys_period.mul(discount_weights_dalys.values, axis=0)
+        w_d = pd.Series(1.0 / ((1 + discount_rate_dalys) ** yrs_since_start_d.values),
+                        index=dalys_period.index)
+        dalys_period = dalys_period.mul(w_d, axis=0)
 
     if discount_rate_costs != 0.0:
-        costs_period = costs_period.mul(discount_weights_costs.values, axis=0)
+        w_c = pd.Series(1.0 / ((1 + discount_rate_costs) ** yrs_since_start_c.values),
+                        index=costs_period.index)
+        costs_period = costs_period.mul(w_c, axis=0)
 
-    # Sum over years
-    total_dalys = dalys_period.sum(axis=0)
+    # ---- Aggregate over years
+    total_dalys = dalys_period.sum(axis=0)   # per (wash_strategy, comparison, run)
     total_costs = costs_period.sum(axis=0)
 
-    # ICER calculation
-    icer = total_costs / total_dalys  # Result: Series with MultiIndex (wash_strategy, comparison, run)
-
-    # Format
-    icer = icer.rename("icer").reset_index()
+    # ---- ICERs with safe divide
+    icer = (total_costs / total_dalys.replace(0, np.nan)).rename("icer").reset_index()
 
     if return_summary:
         summary = (
-            icer.groupby(["wash_strategy", "comparison"])["icer"]
-            .agg(
-                mean="mean",
-                lower=lambda x: np.quantile(x, 0.025),
-                upper=lambda x: np.quantile(x, 0.975)
-            )
-            .reset_index()
+            icer.groupby(["wash_strategy", "comparison"], as_index=False)["icer"]
+                .agg(mean="mean",
+                     lower=lambda x: np.nanquantile(x, 0.025),
+                     upper=lambda x: np.nanquantile(x, 0.975))
         )
         return summary
     else:
@@ -630,7 +666,7 @@ prev_haem_HML_All_district = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_haem_HML_All_district.to_excel(results_folder / (f'prev_haem_HML_year_summary {target_period()}.xlsx'))
+prev_haem_HML_All_district.to_excel(results_folder / (f'prev_haem_HML_All_district {target_period()}.xlsx'))
 
 prev_mansoni_HML_All_district = extract_results(
     results_folder,
@@ -642,6 +678,30 @@ prev_mansoni_HML_All_district = extract_results(
 
 prev_mansoni_HML_All_district.to_excel(results_folder / (f'prev_mansoni_HML_All_district {target_period()}.xlsx'))
 
+
+
+
+
+inf = 'HM'  # define outside function, set before calling
+prev_haem_HM_All_district = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="infection_status_haematobium",
+    custom_generate_series=get_prevalence_infection_all_ages_by_district,
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+
+prev_haem_HM_All_district.to_excel(results_folder / (f'prev_haem_HM_All_district {target_period()}.xlsx'))
+
+prev_mansoni_HM_All_district = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="infection_status_mansoni",
+    custom_generate_series=get_prevalence_infection_all_ages_by_district,
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+
+prev_mansoni_HM_All_district.to_excel(results_folder / (f'prev_mansoni_HM_All_district {target_period()}.xlsx'))
 
 
 
@@ -697,6 +757,16 @@ prev_haem_HML_All_district_summary.to_excel(results_folder / (f'prev_haem_HML_Al
 
 prev_mansoni_HML_All_district_summary = calc_mean_and_ci(prev_mansoni_HML_All_district)
 prev_mansoni_HML_All_district_summary.to_excel(results_folder / (f'prev_mansoni_HML_All_district_summary {target_period()}.xlsx'))
+
+
+prev_haem_HM_All_district_summary = calc_mean_and_ci(prev_haem_HM_All_district)
+prev_haem_HM_All_district_summary.to_excel(results_folder / (f'prev_haem_HM_All_district_summary {target_period()}.xlsx'))
+
+
+prev_mansoni_HM_All_district_summary = calc_mean_and_ci(prev_mansoni_HM_All_district)
+prev_mansoni_HM_All_district_summary.to_excel(results_folder / (f'prev_mansoni_HM_All_district_summary {target_period()}.xlsx'))
+
+
 
 
 ####################################################################################
@@ -964,8 +1034,8 @@ prev_mansoni_national_heavy_summary.to_excel(results_folder / (f'prev_mansoni_na
 
 def get_first_years_below_threshold(
     df: pd.DataFrame,
-    threshold: float = 0.015,
-    year_range: tuple = (2024, 2040)
+    threshold: float = 0.01,
+    year_range: tuple = (2024, 2050)
 ) -> pd.DataFrame:
     """Return the first year each district drops below the threshold for each strategy."""
     df = df.loc[df.index.get_level_values("year") >= year_range[0]]
@@ -979,16 +1049,138 @@ def get_first_years_below_threshold(
     return first_years
 
 
-first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_H_All_district)
-first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_ephp_df_haem {target_period()}.xlsx'))
+# prevalence <1% heavy infection
+first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_H_All_district,
+                                                           threshold=0.01)
+first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem H_1percent_{target_period()}.xlsx'))
+
+
+first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_H_All_district,
+                                                           threshold=0.01)
+first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni H_1percent {target_period()}.xlsx'))
+
+# prevalence <1% any infection
+first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_HML_All_district,
+                                                           threshold=0.01)
+first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HML_1percent_{target_period()}.xlsx'))
+
+
+first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_HML_All_district,
+                                                           threshold=0.01)
+first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HML_1percent {target_period()}.xlsx'))
+
+
+# zero moderate or heavy infection
+first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_HM_All_district,
+                                                           threshold=0.001)
+first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HM_1percent_{target_period()}.xlsx'))
+
+
+first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_HM_All_district,
+                                                           threshold=0.001)
+first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HM_1percent {target_period()}.xlsx'))
+
+
+#################################################################################
+# %% FIND FIRST YEAR REACHING MDA STOPPING RULE
+#################################################################################
+
+# for each strategy, find the first year where prevalence ~ 0 for 2 years
+# later we will remove any costs / DALYs after this point
+# if district starting at prevalence ~0 at 2024, also note this
+# have to do this per run
 
 
 
-first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_H_All_district)
-first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_ephp_df_mansoni {target_period()}.xlsx'))
+
+def first_dual_species_stop_year(
+    df_sp1: pd.DataFrame,
+    df_sp2: pd.DataFrame,
+    threshold: float = 0.01,
+    year_range: tuple | None = None,
+) -> pd.DataFrame:
+    """
+    Rows: MultiIndex ['year','district']; Cols: MultiIndex ['draw','run'].
+    Returns first 'confirming' year where BOTH species are < threshold in TWO
+    consecutive, adjacent years (e.g. 2026 & 2027) for each (district, draw).
+    """
+
+    # ---- Normalise shapes (index/columns must contain required levels)
+    def _norm_cols(df):
+        if not isinstance(df.columns, pd.MultiIndex):
+            raise ValueError("Columns must be MultiIndex ['draw','run'].")
+        need = ['draw','run']
+        if list(df.columns.names) != need:
+            df = df.copy()
+            df.columns = df.columns.reorder_levels(need).sort_index()
+        return df
+
+    def _norm_index(df):
+        if not isinstance(df.index, pd.MultiIndex):
+            raise ValueError("Index must be MultiIndex ['year','district'].")
+        need = ['year','district']
+        if list(df.index.names) != need:
+            df = df.copy()
+            df.index = df.index.reorder_levels(need)
+        return df
+
+    df_sp1 = _norm_index(_norm_cols(df_sp1))
+    df_sp2 = _norm_index(_norm_cols(df_sp2))
+
+    # ---- Optional year filter (handle Index without .between)
+    if year_range is not None:
+        y0, y1 = map(int, year_range)
+        y1_sp1 = df_sp1.index.get_level_values('year').astype(int)
+        y1_sp2 = df_sp2.index.get_level_values('year').astype(int)
+        df_sp1 = df_sp1.loc[(y1_sp1 >= y0) & (y1_sp1 <= y1)]
+        df_sp2 = df_sp2.loc[(y1_sp2 >= y0) & (y1_sp2 <= y1)]
+
+    # ---- Collapse runs: mean over 'run' per draw
+    sp1 = df_sp1.groupby(axis=1, level='draw').mean()
+    sp2 = df_sp2.groupby(axis=1, level='draw').mean()
+
+    # ---- Align on shared (year,district) and draw columns
+    common_idx = sp1.index.intersection(sp2.index)
+    common_cols = sp1.columns.intersection(sp2.columns)
+    if len(common_idx) == 0 or len(common_cols) == 0:
+        raise ValueError("No overlap in index or draw columns between species.")
+    sp1 = sp1.loc[common_idx, common_cols].sort_index()
+    sp2 = sp2.loc[common_idx, common_cols].sort_index()
+
+    # ---- Tidy for grouping: one row per (year,district,draw)
+    t1 = sp1.reset_index().melt(id_vars=['year','district'], var_name='draw', value_name='prev1')
+    t2 = sp2.reset_index().melt(id_vars=['year','district'], var_name='draw', value_name='prev2')
+    m = (t1.merge(t2, on=['year','district','draw'], how='inner')
+           .sort_values(['district','draw','year'])
+           .reset_index(drop=True))
+
+    results = []
+    for (district, draw), g in m.groupby(['district','draw'], sort=False):
+        # Ensure unique, ordered years within group
+        g = g.drop_duplicates(subset='year').sort_values('year')
+        y = g['year'].astype(int).to_numpy()
+        ok = (g['prev1'].to_numpy() < threshold) & (g['prev2'].to_numpy() < threshold)
+
+        stop_year = np.nan
+        # scan consecutive pairs; enforce adjacency by (y[i+1] == y[i] + 1)
+        for i in range(len(y) - 1):
+            if ok[i] and ok[i+1] and (y[i+1] == y[i] + 1):
+                stop_year = y[i+1]  # confirming year
+                break
+
+        results.append({'district': district, 'draw': draw, 'year_eliminated': stop_year})
+
+    return pd.DataFrame(results)
 
 
 
+
+year_eliminated = first_dual_species_stop_year(prev_haem_HML_All_district,
+                                               prev_mansoni_HML_All_district,
+                                               threshold=0.01,
+                                               year_range=(2010, 2050))
+
+year_eliminated.to_excel(results_folder / ('year_eliminated.xlsx'))
 
 
 
@@ -1066,7 +1258,7 @@ if total_number_infected.columns.equals(total_number_in_district.columns):
     # Perform element-wise division for matching columns
     result = total_number_infected / total_number_in_district
 
-result.index = pd.Index(range(2011, 2041), name="year")
+result.index = pd.Index(range(2011, 2051), name="year")
 result.to_excel(results_folder / f'prevalence_any_infection_all_ages_district{target_period()}.xlsx')
 
 # summarise the prevalence for each district by draw
@@ -1354,7 +1546,7 @@ dalys_schisto_district = num_dalys_by_year_run_district.loc[
     num_dalys_by_year_run_district.index.get_level_values(2) == 'Schistosomiasis'].droplevel(2)
 
 # remove values stored for 2041 (all zeros)
-dalys_schisto_district = dalys_schisto_district.loc[dalys_schisto_district.index.get_level_values(0) <= 2040]
+dalys_schisto_district = dalys_schisto_district.loc[dalys_schisto_district.index.get_level_values(0) <= 2050]
 
 # Extract district names from index level 1
 districts = dalys_schisto_district.index.get_level_values(1)
@@ -1508,10 +1700,99 @@ mda_episodes_per_year_district_scaled = mda_episodes_per_year_district.multiply(
 mda_episodes_per_year_district_scaled.index = mda_episodes_per_year_district_scaled.index.set_names(
     ['year' if name == 'Year' else name for name in mda_episodes_per_year_district_scaled.index.names])
 
+
+
+# adjust the counts to stop after schisto eliminated in district
+
+
+def apply_stop_year_to_mda_counts(
+    counts_df: pd.DataFrame,
+    stopping_years: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Apply stopping rules to MDA counts DataFrame.
+
+    Parameters
+    ----------
+    counts_df : DataFrame
+        MultiIndex rows with names ['year','District'] and MultiIndex columns with
+        names ['draw','run']. Cell values are MDA episode counts (ints).
+    stopping_years : DataFrame
+        Columns: 'district', 'draw', 'year_eliminated'. NaN in 'year_eliminated'
+        => no truncation for that (district, draw).
+
+    Returns
+    -------
+    DataFrame
+        Same shape and index/column structure as counts_df, with post-elimination
+        counts set to zero.
+    """
+    if not isinstance(counts_df.index, pd.MultiIndex) or counts_df.index.names != ['year', 'District']:
+        raise ValueError("counts_df must have MultiIndex rows named ['year','District'].")
+    if not isinstance(counts_df.columns, pd.MultiIndex) or counts_df.columns.names != ['draw', 'run']:
+        raise ValueError("counts_df must have MultiIndex columns named ['draw','run'].")
+
+    out = counts_df.copy()
+
+    # Harmonise draw dtype between counts and stopping table
+    draw_level = out.columns.get_level_values('draw')
+    draw_dtype = draw_level.dtype
+    if 'draw' not in stopping_years.columns or 'district' not in stopping_years.columns or 'year_eliminated' not in stopping_years.columns:
+        raise ValueError("stopping_years must have columns: 'district', 'draw', 'year_eliminated'.")
+    sy = stopping_years.copy()
+    try:
+        sy['draw'] = sy['draw'].astype(draw_dtype)
+    except Exception:
+        pass
+
+    # Build (District x draw) matrix of elimination years
+    elim = sy.set_index(['district', 'draw'])['year_eliminated'].unstack('draw')
+
+    # Align to the districts and draws present in counts_df
+    districts = out.index.get_level_values('District')
+    draws = draw_level.unique()
+    elim = elim.reindex(index=districts.unique(), columns=draws)
+
+    # Prepare broadcasted year and elimination matrices
+    years = out.index.get_level_values('year')
+    elim_by_row = elim.reindex(index=districts).to_numpy()  # (n_rows, n_draws)
+    years_vec = years.to_numpy().reshape(-1, 1)             # (n_rows, 1)
+
+    # Compute mask of cells to zero per draw: Year > year_eliminated
+    mask_per_draw = (pd.notna(elim_by_row)) & (years_vec > elim_by_row)
+
+    # Apply mask across all runs for each draw
+    for j, d in enumerate(draws):
+        cols = out.loc[:, (d, slice(None))].columns
+        if cols.size == 0:
+            continue
+        rows_to_zero = mask_per_draw[:, j]
+        if rows_to_zero.any():
+            block = out.loc[:, cols].copy()
+            block.values[rows_to_zero, :] = 0
+            out.loc[:, cols] = block
+
+    try:
+        out = out.astype('int64')
+    except Exception:
+        pass
+
+    return out
+
+
+
+
+mda_episodes_per_year_district_scaled_adj = apply_stop_year_to_mda_counts(
+    mda_episodes_per_year_district_scaled, year_eliminated)
+
+
+
+
+
 # assign costs - full including consumables
 cons_cost_per_mda = 0.05  # assuming all children
 cons_cost_per_mda_incl_adults = 0.081  # weighted mean across children and adults
-prog_delivery_cost_per_mda = 2.21 # 1.27
+prog_delivery_cost_per_mda = 2.21 # 1.27 financial costs only, 2.21 includes economic (opportunity) costs
 
 full_cost_per_mda = prog_delivery_cost_per_mda + cons_cost_per_mda  # assuming all children
 full_cost_per_mda_incl_adults = prog_delivery_cost_per_mda + cons_cost_per_mda_incl_adults
