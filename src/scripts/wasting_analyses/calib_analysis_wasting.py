@@ -21,8 +21,9 @@ from tlo.analysis.utils import compare_number_of_deaths, get_scenario_outputs, p
 total_time_start = time.time()
 
 # ####### TO SET #######################################################################################################
-scenario_filename = 'wasting_analysis__minimal_model'
-outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting")
+# scenario_filename = 'wasting_analysis__minimal_model'
+scenario_filename = 'wasting_analysis__full_model_SQ'
+outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/SQ")
 legend_fontsize = 12
 title_fontsize = 16
 ########################################################################################################################
@@ -807,6 +808,7 @@ if __name__ == "__main__":
     # Find sim_results_folder_path associated with a given batch_file (and get most recent [-1])
     sim_results_folder_path = get_scenario_outputs(scenario_filename, outputs_path)[-1]
     sim_results_folder_name = sim_results_folder_path.name
+    print(f"Calibrating {sim_results_folder_name=}")
     # Get the datestamp
     assert sim_results_folder_name.startswith(scenario_filename + '-'),\
         "The scenario output name does not correspond with the set scenario_filename."
