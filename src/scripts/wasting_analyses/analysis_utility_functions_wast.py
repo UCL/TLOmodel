@@ -13,6 +13,7 @@ import pandas as pd
 import scipy.stats as st
 import seaborn as sns
 from matplotlib import pyplot as plt
+from run_costing_analysis_wast import run_costing_analysis_wast as run_costing
 
 from src.scripts.costing.cost_estimation import apply_discounting_to_cost_data
 from tlo.analysis.utils import create_pickles_locally, extract_results
@@ -73,7 +74,7 @@ def extract_birth_data_frames_and_outcomes(
             (4) 'interv_births_mean_ci_df': Mean and 95% CI for births per year and draw for intervention years.
     """
 
-    print(f"\n{interv=}")
+    print(f"    -{interv=}")
 
     births_df = extract_results(
         folder,
@@ -116,7 +117,7 @@ def extract_death_data_frames_and_outcomes(
         for both neonatal and under-5 cohorts.
     """
 
-    print(f"\n{interv=}")
+    print(f"    -{interv=}")
     # ### NEONATAL MORTALITY
     # Extract all deaths occurring during the first 28 days of life
     # differentiated by cause of death and acute malnutrition state
@@ -341,7 +342,7 @@ def extract_interv_daly_data_frames_and_outcomes(
     :return: DataFrame with index ['year'] and columns for each cause, values are summed DALYs for both sexes
     """
 
-    print(f"\n{interv=}")
+    print(f"    -{interv=}")
     # ### UNDER-5 DALYs
     # Extract all DALYs assigned to children under 5 --- dalys_stacked_by_age_and_time, i.e. all the year of life lost
     # are ascribed to the age of the death and the year of the death differentiated by cause of death / disability
@@ -387,7 +388,6 @@ def extract_interv_daly_data_frames_and_outcomes(
     ]
     for col in under5_dalys_by_cause_df__reset_index.columns:
         if col.count('_') == 1 and all(part.isdigit() for part in col.split('_')):
-            print(f"updating {col=}")
             under5_dalys_by_cause_df__reset_index[col] = apply_discounting_to_cost_data(
                 _df=under5_dalys_by_cause_df__reset_index, _discount_rate=0.03, _column_for_discounting=col
             )[col]
@@ -460,7 +460,7 @@ def extract_tx_data_frames(
         (5) 'interv_tx_by_age_group_mean_ci_df': Mean and 95% CI for intervention years,
         (6) 'interv_tx_mean_ci_df': Mean and 95% CI for total treatment in intervention years.
     """
-    print(f"\n{interv=}")
+    print(f"    -{interv=}")
 
     # Extract treatment data
     tx_by_age_group_df = extract_results(
@@ -806,7 +806,8 @@ def plot_sum_outcome_and_CIs__intervention_period(
     outcomes_dict: dict,
     outputs_path: Path,
     scenarios_tocompare_prefix: str,
-    timestamps_suffix: str
+    timestamps_suffix: str,
+    interv_timestamps_dict: dict = None
 ) -> None:
     """
     Plots sum of deaths or DALYs and confidence intervals over the intervention period for the specified cohort for
@@ -818,7 +819,9 @@ def plot_sum_outcome_and_CIs__intervention_period(
     :param outcomes_dict: Dictionary containing data for plotting nested as outcomes_dict[interv][outcome][draw][run]
     :param outputs_path: Path to save the plot
     :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
-    :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
+    :param timestamps_suffix: Suffix with timestamps to identify the log data from which the outcomes originated
+    :param interv_timestamps_dict: Dictionary with timestamps for all the interventions
+            (default: None, as needed only for outcome_type = 'DALYs' for cost-effectiveness analysis)
     """
     assert cohort in ['Neonatal', 'Under-5'], \
         f"Invalid value for 'cohort': expected 'Neonatal' or 'Under-5'. Received {cohort} instead."
@@ -995,37 +998,35 @@ def plot_sum_outcome_and_CIs__intervention_period(
             )
 
             def plot_cost_effectiveness(averted_DALYs: dict) -> None:
-                # temporarily not from data, but using the numbers printed with run_costing_analysis_wast.py
-                # total costs over intervention period, sizes of lower bound and upper bound for the scenarios
-                # # 4K pop sim: SQ results_timestamp = '2025-07-15T223713Z'
-                # scen_cons_costs_total_ci = {
-                #     'Status Quo': [708882572, 133258484, 153507211],
-                #     'GM_FullAttend': [711099327, 123777213, 154057510],
-                #     'CS_100': [708915417, 128058833, 158695261],
-                #     'FS_Full': [730978386, 127992638, 158323175]
-                # }
-                # 30 K pop sim (after merge): SQ results_timestamp = '2025-07-15T235608Z'
-                scen_cons_costs_total_ci = {
-                    'Status Quo': [705047700, 63514713, 57951785],
-                    'GM_FullAttend': [711723711, 62674858, 56606637],
-                    'CS_100': [708560620, 63092643, 59577695],
-                    'FS_Full': [727173360, 64844879, 58676862]
-                }
+                # path to outcome calculated data
+                cost_outcome_folder_path = outputs_path / "outcomes_data"
+                # SQ timestamp associated with scenarios for which we want the costs to be calculated
+                SQ_results_timestamp = interv_timestamps_dict['SQ']
+                # -----------
+                output_costs_medical_file_path = \
+                    cost_outcome_folder_path / f"output_costs_medical_outcomes_{SQ_results_timestamp}.pkl"
+                if output_costs_medical_file_path.exists():
+                    print("\nloading output costs medical from file ...")
+                    output_costs_medical_df = pd.read_pickle(output_costs_medical_file_path)
+                else:
+                    run_costing(cost_outcome_folder_path, SQ_results_timestamp, timestamps_suffix)
+                    output_costs_medical_df = pd.read_pickle(output_costs_medical_file_path)
 
                 incremental_costs = dict()
-                for scen in scen_cons_costs_total_ci.keys():
-                    if scen != 'Status Quo':
+                for scen in output_costs_medical_df.index:
+                    if scen != 'SQ':
                         incremental_costs[scen] = \
-                            scen_cons_costs_total_ci[scen][0] - scen_cons_costs_total_ci['Status Quo'][0]
+                            output_costs_medical_df.loc[scen, 'total'] - output_costs_medical_df.loc['SQ', 'total']
                 print(f"\naverted_DALYs:\n{averted_DALYs}")
                 print(f"\nincremental_costs:\n{incremental_costs}")
 
                 # Plot cost-effectiveness scatter plot
                 fig_ce, ax_ce = plt.subplots()
-                ha_scen = ['left', 'right', 'center']
-                ha_i = -1
+                ha_scen = ['right', 'left', 'center']
+                va_scen = ['bottom', 'top', 'bottom']
+                i = -1
                 for scen in incremental_costs.keys():
-                    ha_i += 1
+                    i += 1
                     scen_cons_cost_per_DALY = incremental_costs[scen]/averted_DALYs[scen][0]
                     ax_ce.errorbar(
                         averted_DALYs[scen][0], incremental_costs[scen],
@@ -1038,9 +1039,13 @@ def plot_sum_outcome_and_CIs__intervention_period(
                     #            fontsize=12, ha='center', va='bottom', color=get_scen_colour(scen))
                     # Add a legend box with scenario labels instead of text above points
                     ax_ce.legend([scen for scen in incremental_costs.keys()], loc='best', fontsize=12)
-                    ax_ce.text(averted_DALYs[scen][0], incremental_costs[scen] + 0.5 * incremental_costs['CS_100'],
-                               f"${scen_cons_cost_per_DALY:,.2f}/DALY",
-                               fontsize=12, ha=ha_scen[ha_i % 3], va='bottom', color=get_scen_colour(scen))
+                    space = 0.15 * incremental_costs['FS_Full']
+                    ax_ce.text(averted_DALYs[scen][0],
+                               incremental_costs[scen] + space if incremental_costs[scen] > 0 else \
+                                   incremental_costs[scen] - space,
+                               f"${scen_cons_cost_per_DALY:,.2f}/DALY" if scen_cons_cost_per_DALY > 0 else\
+                               f"−${-scen_cons_cost_per_DALY:,.2f}/DALY",
+                               fontsize=12, ha=ha_scen[i % 3], va=va_scen[i % 3], color=get_scen_colour(scen))
 
                 ax_ce.set_xlabel('DALYs Averted')
                 ax_ce.set_ylabel('Incremental Costs (2023 USD)')
