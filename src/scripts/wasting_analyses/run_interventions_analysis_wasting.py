@@ -52,7 +52,7 @@ outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
 cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
 # force_calculation of [births_data, deaths_data, dalys_data, tx_data],
 #   if True, enables to force recalculation of the corresponding data
-force_calculation = [False, False, False, True]  # [True, True, True]  #
+force_calculation = [False, False, False, False]  # [True, True, True]  #
 regenare_pickles_bool = False  # True  #
 ########################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
@@ -77,7 +77,8 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     * Outcome 3:
         bars to compare sum of deaths over intervention period for scenarios_tocompare to each other
 
-    :param outputspath: Path to the directory to save output plots/tables
+    :param outputspath: Path to the directory to save output plots/tables;
+            Data calculated during analysis will be saved in outputspath/outcomes_data folder for later use
     :param plotyears: The years to be included in the plots/tables
     :param interventionyears: The years during which an intervention is implemented (if any)
     :param intervs_ofinterest: List of interventions to plot scenarios with multiple settings of those interventions;
@@ -86,6 +87,8 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     :param intervsall: List of all interventions
     """
 
+    print("\n----------------------------")
+    print("   --- MAIN ANALYSES ---")
     # Find the most recent folders containing results for each intervention
     iterv_folders_dict = {
         interv: get_scenario_outputs(
@@ -183,7 +186,6 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             pickle.dump(dalys_outcomes_dict, f)
 
     # --------------------------------------------- Main Analyses Plots  --------------------------------------------- #
-    print("\n--------------")
     # Prepare scenarios_tocompare_prefix
     if 'Status Quo' in scenarios_tocompare:
         scenarios_tocompare_sq_shorten = [
@@ -209,7 +211,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                 timestamps_scenarios_comparison_suffix + f"_{interv_timestamps_dict['SQ']}"
 
     for cohort in cohorts_to_plot:
-        print(f"plotting {cohort} outcomes ...")
+        print(f"\nplotting {cohort} outcomes ...")
         print("    plotting mortality rates ...")
         util_fncs.plot_mortality_rate__by_interv_multiple_settings(
             cohort, interv_timestamps_dict, scenarios_dict, intervs_ofinterest, plotyears, death_outcomes_dict,
@@ -241,7 +243,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         print("    plotting sum of DALYs ...")
         util_fncs.plot_sum_outcome_and_CIs__intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "DALYs", dalys_outcomes_dict,
-            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
+            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix, interv_timestamps_dict
         )
 
     # --------------------- Create a PDF to save all figures and save each page also as PNG file --------------------- #
@@ -572,6 +574,8 @@ def run_behind_the_scene_analysis_wasting(
     Loads or extracts treatment outcomes for behind-the-scenes analysis.
     """
 
+    print("\n----------------------------")
+    print("--- BEHIND-THE-SCENE ANLYSES ---")
     iterv_folders_dict = {
         interv: get_scenario_outputs(
             scenario_filename_prefix, Path(interv_scenarios_folder_path / interv)
@@ -596,11 +600,14 @@ def run_behind_the_scene_analysis_wasting(
         print("\nRegenerating pickles with debug logs ...")
         util_fncs.regenerate_pickles_with_debug_logs(iterv_folders_dict)
 
+
     pd.set_option('display.max_columns', None)  # Show all columns
     pd.set_option('display.max_rows', None)  # Show all rows
     pd.set_option('display.max_colwidth', None)  # Show full content of each row
 
-    tx_outcomes_path = outputspath / f"outcomes_data/tx_outcomes_{'_'.join(iterv_folders_dict[interv].name for interv in scenario_folders)}.pkl"
+    tx_outcomes_path = \
+        (outputspath /
+         f"outcomes_data/tx_outcomes_{'_'.join(iterv_folders_dict[interv].name for interv in scenario_folders)}.pkl")
 
     # Extract or load treatment outcomes
     if tx_outcomes_path.exists() and not force_calculation[3]:
@@ -626,7 +633,6 @@ def run_behind_the_scene_analysis_wasting(
     #     for outcome in tx_outcomes_dict[interv]:
     #         print(f"{outcome}:\n{tx_outcomes_dict[interv][outcome]}")
 
-    # print("Behind the scene Analyses\n----------")
     # print("    plotting mean nmbs of tx...")
     # util_fncs.plot_mean_tx_and_CIs__scenarios_comparison()
 
