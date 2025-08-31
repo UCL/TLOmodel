@@ -575,7 +575,7 @@ def run_behind_the_scene_analysis_wasting(
     """
 
     print("\n----------------------------")
-    print("--- BEHIND-THE-SCENE ANLYSES ---")
+    print("--- BEHIND-THE-SCENE ANALYSES ---")
     iterv_folders_dict = {
         interv: get_scenario_outputs(
             scenario_filename_prefix, Path(interv_scenarios_folder_path / interv)
