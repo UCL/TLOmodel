@@ -53,7 +53,6 @@ cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
 # force_calculation of [births_data, deaths_data, dalys_data, tx_data],
 #   if True, enables to force recalculation of the corresponding data
 force_calculation = [False, False, False, False]  # [True, True, True]  #
-regenare_pickles_bool = False  # True  #
 ########################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")
@@ -596,10 +595,36 @@ def run_behind_the_scene_analysis_wasting(
         }
         for interv in intervs_ofinterest
     }
-    if regenare_pickles_bool:
+
+    info_pickles_file_path = outputspath / "outcomes_data/pickles_regenerated.pkl"
+    regenerate_pickles_bool = False
+    if info_pickles_file_path.exists():
+        print("loading pickles_regenerated_df from file ...")
+        with info_pickles_file_path.open("rb") as f:
+            pickles_regenerated_df = pickle.load(f)
+    else:
+        pickles_regenerated_df = pd.DataFrame(columns=["interv", "timestamp"])
+    print(f"pickles_regenerated_df from loading:\n{pickles_regenerated_df}")
+    # check all are already regenerated, if any is not regenerate them all and add the timestamps to the df
+    for interv, timestamp in interv_timestamps_dict.items():
+        print(f"\n{interv=}, {timestamp=}")
+        if not (
+            (pickles_regenerated_df["interv"] == interv) & (pickles_regenerated_df["timestamp"] == timestamp)
+        ).any():
+            regenerate_pickles_bool = True
+            pickles_regenerated_df = pd.concat([
+                pickles_regenerated_df,
+                pd.DataFrame({"interv": [interv], "timestamp": [timestamp]})
+            ], ignore_index=True)
+        print(f"pickles_regenerated_df:\n{pickles_regenerated_df}")
+        print(f"{regenerate_pickles_bool=}")
+
+    if regenerate_pickles_bool:
+        print("saving pickles_regenerated_df to file ...")
+        with info_pickles_file_path.open("wb") as f:
+            pickle.dump(pickles_regenerated_df, f)
         print("\nRegenerating pickles with debug logs ...")
         util_fncs.regenerate_pickles_with_debug_logs(iterv_folders_dict)
-
 
     pd.set_option('display.max_columns', None)  # Show all columns
     pd.set_option('display.max_rows', None)  # Show all rows
