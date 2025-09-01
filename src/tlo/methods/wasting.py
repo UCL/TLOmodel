@@ -208,6 +208,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def __init__(self, name=None):
         super().__init__(name=name)
+        self.daly_wts = dict()  # dict to hold the DALY weights
         self.wasting_models = None
         # wasting states
         self.wasting_states = self.PROPERTIES["un_WHZ_category"].categories
@@ -245,7 +246,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """
         * 1) Reads the ResourceFile
-        * 2) Registers the Symptom
+        * 2) Declares the DALY weights
+        * 3) Registers the Symptom
         """
 
         # 1) Read parameters from the resource file
@@ -253,7 +255,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             read_csv_files(resourcefilepath / 'ResourceFile_Wasting', files='parameters')
         )
 
-        # 2) Register wasting symptom (weight loss) in Symptoms Manager with high odds of seeking care
+        # 2) Get the DALY weights
+        get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
+
+        self.daly_wts['mod_wasting_with_oedema'] = get_daly_weight(sequlae_code=461)
+        self.daly_wts['sev_wasting_w/o_oedema'] = get_daly_weight(sequlae_code=462)
+        self.daly_wts['sev_wasting_with_oedema'] = get_daly_weight(sequlae_code=463)
+
+        # 3) Register wasting symptom (weight loss) in Symptoms Manager with high odds of seeking care
         self.sim.modules["SymptomManager"].register_symptom(
             Symptom(
                 name=self.wasting_symptom,
@@ -688,25 +697,16 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         :return: current daly values for everyone alive
         """
-        # Dict to hold the DALY weights
-        daly_wts = dict()
-
         df = self.sim.population.props
-        # Get DALY weights
-        get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
-
-        daly_wts['mod_wasting_with_oedema'] = get_daly_weight(sequlae_code=461)
-        daly_wts['sev_wasting_w/o_oedema'] = get_daly_weight(sequlae_code=462)
-        daly_wts['sev_wasting_with_oedema'] = get_daly_weight(sequlae_code=463)
 
         total_daly_values = pd.Series(data=0.0,
                                       index=df.index[df.is_alive])
         total_daly_values.loc[df.is_alive & (df.un_WHZ_category == 'WHZ<-3') &
-                              df.un_am_nutritional_oedema] = daly_wts['sev_wasting_with_oedema']
+                              df.un_am_nutritional_oedema] = self.daly_wts['sev_wasting_with_oedema']
         total_daly_values.loc[df.is_alive & (df.un_WHZ_category == 'WHZ<-3') &
-                              (~df.un_am_nutritional_oedema)] = daly_wts['sev_wasting_w/o_oedema']
+                              (~df.un_am_nutritional_oedema)] = self.daly_wts['sev_wasting_w/o_oedema']
         total_daly_values.loc[df.is_alive & (df.un_WHZ_category == '-3<=WHZ<-2') &
-                              df.un_am_nutritional_oedema] = daly_wts['mod_wasting_with_oedema']
+                              df.un_am_nutritional_oedema] = self.daly_wts['mod_wasting_with_oedema']
         return total_daly_values
 
     def wasting_clinical_symptoms(self, person_id) -> None:
