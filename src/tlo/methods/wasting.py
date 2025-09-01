@@ -201,8 +201,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                                         'to be canceled for the person'),
         'un_progression_to_cancel': Property(Types.LIST, 'list of dates of scheduled progression to severe '
                                                          'wasting to be canceled for the person'),
-        # Property to avoid double non-emergency appt on the same date
+        # Properties to avoid double acute malnutrition assessment
         'un_last_nonemergency_appt_date': Property(Types.DATE, 'last date of generic non-emergency first '
+                                                               'appointment'),
+        'un_last_growth_monitoring_appt_date': Property(Types.DATE, 'last date of growth-monitoring '
                                                                'appointment'),
     }
 
@@ -315,6 +317,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, 'un_progression_to_cancel'] = \
             df.loc[df.is_alive, 'un_progression_to_cancel'].apply(lambda x: [])
         # df.loc[df.is_alive, 'un_last_nonemergency_appt_date']= pd.NaT
+        # df.loc[df.is_alive, 'un_last_growth_monitoring_appt_date']= pd.NaT
 
         # initialise wasting linear models.
         self.wasting_models = WastingModels(self)
@@ -413,6 +416,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, 'un_full_recov_to_cancel'] = []
         df.at[child_id, 'un_progression_to_cancel'] = []
         # df.at[child_id, 'un_last_nonemergency_appt_date']= pd.NaT
+        # df.at[child_id, 'un_last_growth_monitoring_appt_date']= pd.NaT
 
         # initiate growth monitoring from day 1
         self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -753,29 +757,19 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         """
         df = self.sim.population.props
 
-        # if person not under 5 or currently treated or non-emerg. appt went through today already, acute malnutrition
-        # will not be assessed during this appt
+        # if person not under 5, or currently treated, or acute malnutrition already assessed,
+        # it will not be assessed (again)
         if (individual_properties['age_years'] >= 5) or \
             (individual_properties['un_last_wasting_date_of_onset'] < individual_properties['un_am_tx_start_date'] <
              self.sim.date) or \
-            (self.sim.date == individual_properties['un_last_nonemergency_appt_date']):
+            (self.sim.date == individual_properties['un_last_nonemergency_appt_date']) or \
+            (self.sim.date == individual_properties['un_last_growth_monitoring_appt_date']):
             if self.sim.date == individual_properties['un_last_nonemergency_appt_date']:
                 logger.debug(
                     key="multiple non-emergency appts on same day",
                     data=f"A non-emergency appointment is scheduled again on the same date for {person_id=}. "
                          "Acute malnutrition assessment cancelled as it has already been performed."
                 )
-            return
-
-        # if HSI was already scheduled due to growth monitoring, won't be checked for acute malnutrition again
-        hsi_event_scheduled = [
-            ev
-            for ev in self.sim.modules["HealthSystem"].find_events_for_person(person_id)
-            if isinstance(ev[1], (HSI_Wasting_SupplementaryFeedingProgramme_MAM,
-                                  HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
-                                  HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM))
-        ]
-        if hsi_event_scheduled:
             return
 
         # track the date of the last non-emergency appt
@@ -1429,25 +1423,22 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         # TODO: as stated above, for now we schedule next monitoring for all children, even those sent for treatment
         schedule_next_monitoring()
 
-        # but if they are currently treated, the growth monitoring will not go through
+        # if person currently treated, or acute malnutrition already assessed,
+        # it will not be assessed (again)
         # TODO: later could be scheduled for monitoring within the tx to use the resources
         if (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
-                self.sim.date):
-            return
-        # or if HSI was already scheduled due to care-seeking, no need to attend the growth monitoring
-        hsi_event_scheduled = [
-            ev
-            for ev in self.sim.modules["HealthSystem"].find_events_for_person(person_id)
-            if isinstance(ev[1], (HSI_Wasting_SupplementaryFeedingProgramme_MAM,
-                                  HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
-                                  HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM))
-        ]
-        if hsi_event_scheduled:
+                self.sim.date) or \
+            (self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']):
             return
 
         # the person may not attend the appt
         if not self.attendance:
             return
+
+        # Acute malnutrition assessment
+        # ###
+        # track the date of the last growth-monitoring appt
+        df.at[person_id, 'un_last_growth_monitoring_appt_date'] = self.sim.date
 
         available_equipment = []
         for equip in ['Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape']:
