@@ -391,7 +391,7 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
 
 
 @pytest.mark.slow
-def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
+def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     # Capabilities should increase when a HealthSystem that has low capabilities changes mode with
     # the option `scale_to_effective_capabilities` set to `True`.
 
@@ -404,6 +404,7 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
             "directory": tmpdir,
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
+                "tlo.methods.healthsystem.summary": logging.INFO
             }
         }, resourcefilepath=resourcefilepath
     )
@@ -438,37 +439,32 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
     hs_params['scale_to_effective_capabilities'] = True
 
     # Run the simulation
-    sim.make_initial_population(n=popsize)
+    sim.make_initial_population(n=1000)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+    output = parse_log_file(sim.log_filepath, level=logging.INFO)
+    pd.set_option('display.max_columns', None)
+    capacity_by_officer_and_level = output['tlo.methods.healthsystem.summary']['Capacity_By_OfficerType_And_FacilityLevel']
+    
+    # Filter rows for the two years
+    row_2010 = capacity_by_officer_and_level.loc[capacity_by_officer_and_level["date"] == "2010-12-31"].squeeze()
+    row_2011 = capacity_by_officer_and_level.loc[capacity_by_officer_and_level["date"] == "2011-12-31"].squeeze()
 
-    # Do the checks
-    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
-    hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
-    hsi_events['date'] = pd.to_datetime(hsi_events['date']).dt.year
+    # Dictionary to store results
+    results = {}
 
-    # Check that all squeeze factors were high in 2010, but not all were high in 2011
-    # thanks to rescaling of capabilities
-    assert (
-        hsi_events.loc[
-            (hsi_events['Person_ID'] >= 0) &
-            (hsi_events['Number_By_Appt_Type_Code'] != {}) &
-            (hsi_events['date'] == 2010),
-            'Squeeze_Factor'
-        ] >= 100.0
-    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
-    assert not (
-        hsi_events.loc[
-            (hsi_events['Person_ID'] >= 0) &
-            (hsi_events['Number_By_Appt_Type_Code'] != {}) &
-            (hsi_events['date'] == 2011),
-            'Squeeze_Factor'
-        ] >= 100.0
-    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
+    for col in capacity_by_officer_and_level.columns:
+        if col == "date":
+            continue  # skip the date column
+        if not (capacity_by_officer_and_level[col] == 0).any():  # check column is not all zeros
+            ratio = row_2010[col] / row_2011[col]
+            results[col] = ratio > 100 # Check that load has significantly reduced in second year, thanks to the significant rescaling of capabilities. (There is some degeneracy here, in that load could also be reduced due to declining demand. However it is extremely unlikely that demand for care would have dropped by a factor of 100 in second year, hence this is a fair test).
 
+    assert all(results.values())
+
+  
 
 @pytest.mark.slow
 def test_run_in_mode_1_with_almost_no_capacity(tmpdir, seed):

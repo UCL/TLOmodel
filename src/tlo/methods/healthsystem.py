@@ -1606,6 +1606,66 @@ class HealthSystem(Module):
 
         return appt_footprint_times
 
+    def get_total_minutes_of_this_officer_in_this_district(self, current_capabilities, _officer):
+        """Returns the minutes of current capabilities for the officer identified (this officer type in this
+        facility_id)."""
+        return current_capabilities.get(_officer)
+
+    def get_total_minutes_of_this_officer_in_all_district(self, current_capabilities, _officer):
+        """Returns the minutes of current capabilities for the officer identified in all districts (this officer
+        type in this all facilities of the same level in all districts)."""
+
+        def split_officer_compound_string(cs) -> Tuple[int, str]:
+            """Returns (facility_id, officer_type) for the officer identified in the string of the form:
+             'FacilityID_{facility_id}_Officer_{officer_type}'."""
+            _, _facility_id, _, _officer_type = cs.split('_', 3)  # (NB. Some 'officer_type' include "_")
+            return int(_facility_id), _officer_type
+
+        def _match(_this_officer, facility_ids: List[int], officer_type: str):
+            """Returns True if the officer identified is of the identified officer_type and is in one of the
+            facility_ids."""
+            this_facility_id, this_officer_type = split_officer_compound_string(_this_officer)
+            return (this_officer_type == officer_type) and (this_facility_id in facility_ids)
+
+        facility_id, officer_type = split_officer_compound_string(_officer)
+        facility_level = self._facility_by_facility_id[int(facility_id)].level
+        facilities_of_same_level_in_all_district = [
+            _fac.id for _fac in self._facilities_for_each_district[facility_level].values()
+        ]
+
+        officers_in_the_same_level_in_all_districts = [
+            _officer for _officer in current_capabilities.keys() if
+            _match(_officer, facility_ids=facilities_of_same_level_in_all_district, officer_type=officer_type)
+        ]
+
+        return sum(current_capabilities.get(_o) for _o in officers_in_the_same_level_in_all_districts)
+
+    
+    def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests)-> bool:
+        """Check if all officers required by the appt footprint are available to perform the HSI"""
+        
+        ok_to_run = True
+
+        for officer in expected_time_requests.keys():
+            if self.compute_squeeze_factor_to_district_level:
+                availability = self.get_total_minutes_of_this_officer_in_this_district(self.capabilities_today, officer)
+            else:
+                availability = self.get_total_minutes_of_this_officer_in_all_district(self.capabilities_today, officer)
+                
+            # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
+            if availability is None:
+                logger.warning(
+                    key="message",
+                    data=(f"Requested officer {officer} is not contemplated by health system. ")
+                )
+                availability = 0.0
+
+            if availability == 0.0:
+                ok_to_run = False
+        
+        return ok_to_run
+
+
     def get_squeeze_factors(self, footprints_per_event, total_footprint, current_capabilities,
                             compute_squeeze_factor_to_district_level: bool
                             ):
@@ -1636,48 +1696,16 @@ class HealthSystem(Module):
             (position in array matches that in the all_call_today list).
         """
 
-        def get_total_minutes_of_this_officer_in_this_district(_officer):
-            """Returns the minutes of current capabilities for the officer identified (this officer type in this
-            facility_id)."""
-            return current_capabilities.get(_officer)
 
-        def get_total_minutes_of_this_officer_in_all_district(_officer):
-            """Returns the minutes of current capabilities for the officer identified in all districts (this officer
-            type in this all facilities of the same level in all districts)."""
-
-            def split_officer_compound_string(cs) -> Tuple[int, str]:
-                """Returns (facility_id, officer_type) for the officer identified in the string of the form:
-                 'FacilityID_{facility_id}_Officer_{officer_type}'."""
-                _, _facility_id, _, _officer_type = cs.split('_', 3)  # (NB. Some 'officer_type' include "_")
-                return int(_facility_id), _officer_type
-
-            def _match(_this_officer, facility_ids: List[int], officer_type: str):
-                """Returns True if the officer identified is of the identified officer_type and is in one of the
-                facility_ids."""
-                this_facility_id, this_officer_type = split_officer_compound_string(_this_officer)
-                return (this_officer_type == officer_type) and (this_facility_id in facility_ids)
-
-            facility_id, officer_type = split_officer_compound_string(_officer)
-            facility_level = self._facility_by_facility_id[int(facility_id)].level
-            facilities_of_same_level_in_all_district = [
-                _fac.id for _fac in self._facilities_for_each_district[facility_level].values()
-            ]
-
-            officers_in_the_same_level_in_all_districts = [
-                _officer for _officer in current_capabilities.keys() if
-                _match(_officer, facility_ids=facilities_of_same_level_in_all_district, officer_type=officer_type)
-            ]
-
-            return sum(current_capabilities.get(_o) for _o in officers_in_the_same_level_in_all_districts)
 
         # 1) Compute the load factors for each officer type at each facility that is
         # called-upon in this list of HSIs
         load_factor = {}
         for officer, call in total_footprint.items():
             if compute_squeeze_factor_to_district_level:
-                availability = get_total_minutes_of_this_officer_in_this_district(officer)
+                availability = self.get_total_minutes_of_this_officer_in_this_district(current_capabilities, officer)
             else:
-                availability = get_total_minutes_of_this_officer_in_all_district(officer)
+                availability = self.get_total_minutes_of_this_officer_in_all_district(current_capabilities, officer)
 
             # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
             if availability is None:
@@ -2066,11 +2094,13 @@ class HealthSystem(Module):
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
 
                 # Mode 0: All HSI Event run, with no squeeze
-                # Mode 1: All HSI Events run with squeeze provided latter is not inf
+                # Mode 1: All HSI Events run provided all required officers have non-zero capabilities
                 ok_to_run = True
 
-                if self.mode_appt_constraints == 1 and squeeze_factor == float('inf'):
-                    ok_to_run = False
+                if self.mode_appt_constraints == 1:
+                    if event.expected_time_requests:
+                        ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(event.expected_time_requests)
+
 
                 if ok_to_run:
 
