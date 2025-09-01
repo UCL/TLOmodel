@@ -407,10 +407,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, 'un_clinical_acute_malnutrition'] = 'well'
         df.at[child_id, 'un_am_nutritional_oedema'] = False
         df.at[child_id, 'un_am_MUAC_category'] = '>=125mm'
-        # df.loc[df.is_alive, 'un_sam_death_date'] = pd.NaT
-        # df.loc[df.is_alive, 'un_am_recovery_date'] = pd.NaT
-        # df.loc[df.is_alive, 'un_am_discharge_date'] = pd.NaT
-        # df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
+        # df.at[child_id, 'un_sam_death_date'] = pd.NaT
+        # df.at[child_id, 'un_am_recovery_date'] = pd.NaT
+        # df.at[child_id, 'un_am_discharge_date'] = pd.NaT
+        # df.at[child_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[child_id, 'un_am_treatment_type'] = 'not_applicable'
         df.at[child_id, 'un_recov_to_mam_to_cancel'] = []
         df.at[child_id, 'un_full_recov_to_cancel'] = []
