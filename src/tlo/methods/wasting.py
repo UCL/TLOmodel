@@ -762,8 +762,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             if self.sim.date == individual_properties['un_last_nonemergency_appt_date']:
                 logger.debug(
                     key="multiple non-emergency appts on same day",
-                    data=f"A non-emerg. appt runs again on the same date {self.sim.date=} for the {person_id=}. "
-                         "All DOs related to wasting are cancelled."
+                    data=f"A non-emergency appointment is scheduled again on the same date for {person_id=}. "
+                         "Acute malnutrition assessment cancelled as it has already been performed."
                 )
             return
 
