@@ -15,7 +15,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2026
-max_year = 2030
+max_year = 2029
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
@@ -41,7 +41,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.groupby(level=0).sum().sum()
         return pd.Series(_df)
 
-    def get_num_treatments_total_summary(_df):
+    def get_num_treatments_total_delayed(_df):
         _df['date'] = pd.to_datetime(_df['date'])
 
         # filter to target period
@@ -50,8 +50,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         for d in _df['weather_delayed_hsi_event_key_to_counts']:
             for k, v in d.items():
-                total[k] = total.get(k, 0) + v
+                total[k] = 0
+                total[k] += total.get(k, 0) + v
         return pd.Series(sum(total.values()), name="total_treatments")
+
+    def get_num_treatments_total_cancelled(_df):
+        _df['date'] = pd.to_datetime(_df['date'])
+
+        # filter to target period
+        _df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+        total = {}
+
+        for d in _df['weather_cancelled_hsi_event_key_to_counts']:
+            for k, v in d.items():
+                total[k] = 0
+                total[k] += total.get(k, 0) + v
+        return pd.Series(sum(total.values()), name="total_treatments")
+
     def get_population_for_year(_df):
         """Returns the population in the year of interest"""
         _df['date'] = pd.to_datetime(_df['date'])
@@ -89,8 +104,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_weather_delayed_mean_1000 = []
     all_draws_weather_cancelled_mean_1000 = []
 
-    for draw in range(1,len(scenario_names)):
-        print(draw)
+    for draw in range(len(scenario_names)):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
         all_years_data_treatments_mean = {}
@@ -117,90 +131,112 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             TARGET_PERIOD = (
                 Date(target_year, 1, 1), Date(target_year, 12, 31))
 
-            # Total treatments
+            if draw == 0:
+                all_years_data_treatments_mean[target_year] = pd.Series([0], name='mean')
+                all_years_data_treatments_lower[target_year] = pd.Series([0], name='lower')
+                all_years_data_treatments_upper[target_year] = pd.Series([0], name='upper')
 
-            num_treatments_total =  summarize(extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='HSI_Event',
-                custom_generate_series=get_num_treatments_total,
-                do_scaling=True
-            ),
-                only_mean=False,
-                collapse_columns=True,
-            )[draw]
-            all_years_data_treatments_mean[target_year] = num_treatments_total['mean']
-            all_years_data_treatments_lower[target_year] = num_treatments_total['lower']
-            all_years_data_treatments_upper[target_year] = num_treatments_total['upper']
+                all_years_data_never_ran_mean[target_year] = pd.Series([0], name='mean')
+                all_years_data_never_ran_lower[target_year] = pd.Series([0], name='lower')
+                all_years_data_never_ran_upper[target_year] = pd.Series([0], name='upper')
 
-            # Never ran appointments
+                all_years_data_weather_delayed_mean[target_year] = pd.Series([0], name='mean')
+                all_years_data_weather_delayed_lower[target_year] = pd.Series([0], name='lower')
+                all_years_data_weather_delayed_upper[target_year] = pd.Series([0], name='upper')
 
-            num_never_ran_appts = summarize(
-                extract_results(
+                all_years_data_weather_cancelled_mean[target_year] = pd.Series([0], name='mean')
+                all_years_data_weather_cancelled_lower[target_year] = pd.Series([0], name='lower')
+                all_years_data_weather_cancelled_upper[target_year] = pd.Series([0], name='upper')
+
+                all_years_data_population_mean[target_year] = pd.Series([0], name='mean')
+                all_years_data_population_lower[target_year] = pd.Series([0], name='lower')
+                all_years_data_population_upper[target_year] = pd.Series([0], name='upper')
+
+            else:
+                # Total treatments
+
+                num_treatments_total = summarize(extract_results(
                     results_folder,
                     module='tlo.methods.healthsystem.summary',
-                    key='Never_ran_HSI_Event',
+                    key='HSI_Event',
                     custom_generate_series=get_num_treatments_total,
                     do_scaling=True
                 ),
-                only_mean=False,
-                collapse_columns=True,
-            )[draw]
+                    only_mean=False,
+                    collapse_columns=True,
+                )[draw]
+                all_years_data_treatments_mean[target_year] = num_treatments_total['mean']
+                all_years_data_treatments_lower[target_year] = num_treatments_total['lower']
+                all_years_data_treatments_upper[target_year] = num_treatments_total['upper']
 
-            all_years_data_never_ran_mean[target_year] = num_never_ran_appts['mean']
-            all_years_data_never_ran_lower[target_year] = num_never_ran_appts['lower']
-            all_years_data_never_ran_upper[target_year] = num_never_ran_appts['upper']
+                # Never ran appointments
 
-            # Weather delayed appointments
+                num_never_ran_appts = summarize(
+                    extract_results(
+                        results_folder,
+                        module='tlo.methods.healthsystem.summary',
+                        key='Never_ran_HSI_Event',
+                        custom_generate_series=get_num_treatments_total,
+                        do_scaling=True
+                    ),
+                    only_mean=False,
+                    collapse_columns=True,
+                )[draw]
 
-            num_weather_delayed_appointments = summarize(
-                extract_results(
+                all_years_data_never_ran_mean[target_year] = num_never_ran_appts['mean']
+                all_years_data_never_ran_lower[target_year] = num_never_ran_appts['lower']
+                all_years_data_never_ran_upper[target_year] = num_never_ran_appts['upper']
+
+                # Weather delayed appointments
+
+                num_weather_delayed_appointments = summarize(
+                    extract_results(
+                        results_folder,
+                        module='tlo.methods.healthsystem.summary',
+                        key='weather_delayed_hsi_event_counts',
+                        custom_generate_series=get_num_treatments_total_delayed,
+                        do_scaling=True
+                    ),
+                    only_mean=False,
+                    collapse_columns=True,
+                )[draw]
+
+                all_years_data_weather_delayed_mean[target_year] = num_weather_delayed_appointments['mean']
+                all_years_data_weather_delayed_lower[target_year] = num_weather_delayed_appointments['lower']
+                all_years_data_weather_delayed_upper[target_year] = num_weather_delayed_appointments['upper']
+
+                # Weather cancelled appointments
+                num_weather_cancelled_appointments = summarize(
+                    extract_results(
+                        results_folder,
+                        module='tlo.methods.healthsystem.summary',
+                        key='weather_cancelled_hsi_event_counts',
+                        custom_generate_series=get_num_treatments_total_cancelled,
+                        do_scaling=True
+                    ),
+                    only_mean=False,
+                    collapse_columns=True,
+                )[draw]
+
+                all_years_data_weather_cancelled_mean[target_year] = num_weather_cancelled_appointments['mean']
+                all_years_data_weather_cancelled_lower[target_year] = num_weather_cancelled_appointments['lower']
+                all_years_data_weather_cancelled_upper[target_year] = num_weather_cancelled_appointments['upper']
+
+                # Population data for normalization
+                result_data_population = summarize(extract_results(
                     results_folder,
-                    module='tlo.methods.healthsystem.summary',
-                    key='weather_delayed_hsi_event_counts',
-                    custom_generate_series=get_num_treatments_total_summary,
+                    module='tlo.methods.demography',
+                    key='population',
+                    custom_generate_series=get_population_for_year,
                     do_scaling=True
                 ),
-                only_mean=False,
-                collapse_columns=True,
-            )[draw]
+                    only_mean=True,
+                    collapse_columns=True,
+                )[draw]
 
-            all_years_data_weather_delayed_mean[target_year] = num_weather_delayed_appointments['mean']
-            all_years_data_weather_delayed_lower[target_year] = num_weather_delayed_appointments['lower']
-            all_years_data_weather_delayed_upper[target_year] = num_weather_delayed_appointments['upper']
-
-            # Weather cancelled appointments
-            num_weather_cancelled_appointments = summarize(
-                extract_results(
-                    results_folder,
-                    module='tlo.methods.healthsystem.summary',
-                    key='weather_cancelled_hsi_event_counts',
-                    custom_generate_series=get_num_treatments_total_summary,
-                    do_scaling=True
-                ),
-                only_mean=False,
-                collapse_columns=True,
-            )[draw]
-
-            all_years_data_weather_cancelled_mean[target_year] = num_weather_cancelled_appointments['mean']
-            all_years_data_weather_cancelled_lower[target_year] = num_weather_cancelled_appointments['lower']
-            all_years_data_weather_cancelled_upper[target_year] = num_weather_cancelled_appointments['upper']
-
-            # Population data for normalization
-            result_data_population = summarize(extract_results(
-                results_folder,
-                module='tlo.methods.demography',
-                key='population',
-                custom_generate_series=get_population_for_year,
-                do_scaling=True
-            ),
-                only_mean=True,
-                collapse_columns=True,
-            )[draw]
-
-            all_years_data_population_mean[target_year] = result_data_population['mean']
-            all_years_data_population_lower[target_year] = result_data_population['lower']
-            all_years_data_population_upper[target_year] = result_data_population['upper']
+                all_years_data_population_mean[target_year] = result_data_population['mean']
+                all_years_data_population_lower[target_year] = result_data_population['lower']
+                all_years_data_population_upper[target_year] = result_data_population['upper']
 
         # Convert the accumulated data into DataFrames for plotting
         df_all_years_treatments_mean = pd.DataFrame(all_years_data_treatments_mean)
