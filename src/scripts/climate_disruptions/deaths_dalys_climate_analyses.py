@@ -16,8 +16,8 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-min_year = 2020
-max_year = 2027
+min_year = 2025
+max_year = 2030
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
@@ -428,7 +428,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Panel A: Total Deaths
     axes[0].bar(deaths_totals_mean.index, deaths_totals_mean.values, color=scenario_colours, yerr=deaths_totals_err,
                 capsize=20)
-    axes[0].set_title(f'Total Deaths (2020-{max_year})')
+    axes[0].set_title(f'Total Deaths (2025-{max_year})')
     axes[0].set_xlabel('Scenario')
     axes[0].set_ylabel('Total Deaths')
     axes[0].set_xticklabels(scenario_names, rotation=45)
@@ -438,7 +438,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     print(dalys_totals_mean)
     axes[1].bar(dalys_totals_mean.index, dalys_totals_mean.values, color=scenario_colours, yerr=dalys_totals_err,
                 capsize=20)
-    axes[1].set_title(f'Total DALYs (2020-{max_year})')
+    axes[1].set_title(f'Total DALYs (2025-{max_year})')
     axes[1].set_xlabel('Scenario')
     axes[1].set_ylabel('Total DALYs')
     axes[1].set_xticklabels(scenario_names, rotation=45)
