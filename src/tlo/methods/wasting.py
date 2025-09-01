@@ -136,7 +136,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.LIST, 'growth monitoring frequency (days) for age categories '),
         'growth_monitoring_attendance_prob_agecat': Parameter(
             Types.LIST, 'probability to attend the growth monitoring for age categories'),
-        # recovery due to treatment/interventions
+        # recovery due to treatment
         'recovery_rate_with_soy_RUSF': Parameter(
             Types.REAL, 'probability of recovery from MAM following treatment with soy RUSF'),
         'recovery_rate_with_CSB++': Parameter(
@@ -156,7 +156,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'tx_length_weeks_InpatientSAM': Parameter(
             Types.REAL, 'number of weeks the patient receives treatment in the Inpatient Care for complicated'
                         ' SAM before being discharged if they do not die beforehand'),
-        # treatment/intervention outcomes
+        # treatment impacts
         'prob_death_after_SAMcare': Parameter(
             Types.REAL, 'probability of dying from SAM after receiving care if not fully recovered'),
     }
@@ -244,14 +244,16 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """
-        :param data_folder: path to a folder supplied to the simulation containing data csv files
+        * 1) Reads the ResourceFile
+        * 2) Registers the Symptom
         """
-        # Read parameters from the resource file
+
+        # 1) Read parameters from the resource file
         self.load_parameters_from_dataframe(
             read_csv_files(resourcefilepath / 'ResourceFile_Wasting', files='parameters')
         )
 
-        # Register wasting symptom (weight loss) in Symptoms Manager with high odds of seeking care
+        # 2) Register wasting symptom (weight loss) in Symptoms Manager with high odds of seeking care
         self.sim.modules["SymptomManager"].register_symptom(
             Symptom(
                 name=self.wasting_symptom,
@@ -261,7 +263,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def initialise_population(self, population):
         """
-        Set our property values for the initial population. This method is called by the simulation when creating
+        Sets the property values for the initial population. This method is called by the simulation when creating
         the initial population, and is responsible for assigning initial values, for every individual,
         of those properties 'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
 
@@ -328,13 +330,17 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         assert wasted_severity.isin(['WHZ<-3', '-3<=WHZ<-2']).all(), \
             f"Not all wasted individuals have 'un_WHZ_category' set as 'WHZ<-3' or '-3<=WHZ<-2'. " \
             f"Invalid indices: {wasted_severity[~wasted_severity.isin(['WHZ<-3', '-3<=WHZ<-2'])].index.tolist()}"
+
         # set date of wasting onset
         def get_onset_day(whz_category: str):
-            """Returns the onset day for a wasting episode based on the WHZ category.
+            """
+            Returns the onset day for a wasting episode based on the WHZ category.
 
             For moderate wasting ('-3<=WHZ<-2'), returns a random onset day within the duration of untreated moderate
             wasting. For severe wasting ('WHZ<-3'), returns a random onset day after the moderate wasting period, within
             the duration of untreated severe wasting.
+
+            :param whz_category:
             """
             if whz_category == '-3<=WHZ<-2':
                 min_days_onset = 0
@@ -356,10 +362,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         self.clinical_signs_acute_malnutrition(under5s_index)
 
     def initialise_simulation(self, sim):
-        """Prepares for simulation. Schedules:
-        * the first growth monitoring to happen straight away, scheduled monthly to detect new cases for treatment.
-        * the main incidence polling event.
+        """
+        Prepares for simulation. Schedules:
+        * the first growth monitoring to happen straight away, scheduled monthly to detect new cases for treatment,
+        * the main incidence polling event,
         * the main logging event.
+
+        :param sim:
         """
 
         sim.schedule_event(Wasting_InitLoggingEvent(self), sim.date)
@@ -371,11 +380,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         self.cons_codes = self.get_consumables_for_each_treatment()
 
     def on_birth(self, mother_id, child_id):
-        """Initialise properties for a newborn individual.
-        :param mother_id: the mother for this child
-        :param child_id: the new child
         """
+        Initialises properties for a newborn individual.
 
+        :param mother_id: the mother's id of this child
+        :param child_id: the id of the newborn child
+        """
         df = self.sim.population.props
 
         # Set initial properties
@@ -401,13 +411,17 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             priority=2, topen=self.sim.date + pd.DateOffset(days=1)
         )
 
-    def muac_cutoff_by_WHZ(self, idx, whz):
+    def muac_cutoff_by_WHZ(self, idx, whz) -> None:
         """
-        Proportion of MUAC < 115 mm in WHZ < -3 and -3 <= WHZ < -2,
-        and proportion of wasted children with oedematous malnutrition (kwashiorkor, marasmic kwashiorkor)
+        Determines the MUAC (Mid-Upper Arm Circumference) category for each individual specified in `idx`, based on a
+        shared WHZ (Weight-for-Height Z-score) category `whz`.
+        The MUAC categories are: '<115mm', '[115–125)mm', and '>=125mm'.
 
-        :param idx: index of children ages 6-59 months or person_id
-        :param whz: weight for height category
+        Assigns the MUAC categories determined to the 'un_am_MUAC_category' property for each corresponding individual
+        in the population DataFrame.
+
+        :param idx: Indices of individuals in the population DataFrame to assess for MUAC category.
+        :param whz: WHZ category shared by the individuals ('WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2').
         """
         df = self.sim.population.props
         p = self.parameters
@@ -461,8 +475,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def nutritional_oedema_present(self, idx):
         """
-        This function applies the probability of nutritional oedema present in wasting and non-wasted cases
-        :param idx: index of children under 5, or person_id
+        Determines the presence of nutritional oedema for each individual specified in `idx`, based on their respective
+        WHZ (Weight-for-Height Z-score) category.
+
+        Assigns the result (True/False) to the `un_am_nutritional_oedema` property for each corresponding individual in
+        the population DataFrame.
+
+        :param idx: Indices of individuals in the population DataFrame to assess for nutritional oedema presence.
         """
         if len(idx) == 0:
             return
@@ -494,11 +513,33 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def clinical_acute_malnutrition_state(self, person_id, pop_dataframe):
         """
-        This function will determine the clinical acute malnutrition status (MAM, SAM) based on anthropometric indices
-        and presence of nutritional oedema (Kwashiorkor); And help determine whether the individual will have medical
-        complications, applicable to SAM cases only, requiring inpatient care.
-        :param person_id: individual id
-        :param pop_dataframe: population dataframe
+        Determines
+        * the clinical acute malnutrition status ('well', 'MAM', 'SAM') for the individual specified by
+        `person_id`, based on their anthropometric indices (WHZ and MUAC category) and presence of nutritional oedema.
+        * whether the individual has medical complications requiring inpatient care, applicable to SAM cases only.
+
+        Assigns for the corresponding individual in the population DataFrame:
+        -------
+        * 'un_clinical_acute_malnutrition': the determined clinical acute malnutrition status ('well', 'MAM', 'SAM')
+        * 'un_sam_with_complications': the determined value of presence of medical complications (True/False)
+
+        For well cases
+        * 'un_am_treatment_type': remains 'not_applicable'
+
+        For non-well cases, i.e. those who developed 'MAM' or 'SAM'
+        * 'un_am_treatment_type': 'none', i.e. they start with no treatment
+        * 'un_am_recovery_date' property is reset to NaT
+
+        For the SAM cases
+        * wasting symptom is applied
+        * it is determined whether SAM leads to death, and if it does, the Death event is scheduled and the date of
+        death is assigned to the 'un_sam_death_date' property
+
+        For non-SAM cases
+        * the wasting symptom is cleared
+
+        :param person_id: individual's id
+        :param pop_dataframe: population DataFrame
         """
         df = pop_dataframe
         p = self.parameters
@@ -557,7 +598,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     and (df.at[person_id, 'un_sam_with_complications'])), f'{person_id=} has MAM with complications.'
 
     def get_consumables_for_each_treatment(self):
-        """Get the item_code and amount administrated for all consumables for each treatment."""
+        """
+        Get the item_code and amount administrated for all consumables for each treatment.
+        """
 
         # ### Get item codes from item names and define number of units per case here
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
@@ -575,6 +618,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
     def length_of_untreated_wasting(self, whz_category):
         """
         Helper function to determine the duration of the wasting episode in days.
+
         :param whz_category: 'WHZ<-3', or '-3<=WHZ<-2'
         :return: duration (number of days) of wasting episode, until recovery to no wasting, progression to severe
             wasting, from moderate wasting; or recovery to moderate wasting or death due to SAM in cases of severe
@@ -597,6 +641,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         """
         Helper function to determine date of death, assuming it occurs earlier than the progression/recovery from any
         wasting, moderate or severe.
+
         :return: date of death
         """
         p = self.parameters
@@ -612,6 +657,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         When WHZ changed, update other anthropometric indices and clinical signs (MUAC, oedema) that determine the
         clinical state of acute malnutrition. If SAM, update medical complications. If not SAM, clear symptoms.
         This will include both wasted and non-wasted children with other signs of acute malnutrition.
+
         :param idx: index of children or person_id less than 5 years old
         """
         df = self.sim.population.props
@@ -639,6 +685,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         experienced by persons in the previous month. Only rows for alive-persons must be returned. The names of the
         series of columns is taken to be the label of the cause of this disability. It will be recorded by the
         healthburden module as <ModuleName>_<Cause>.
+
         :return: current daly values for everyone alive
         """
         # Dict to hold the DALY weights
@@ -664,7 +711,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def wasting_clinical_symptoms(self, person_id) -> None:
         """
-        assign clinical symptoms to the new acute malnutrition case
+        Assigns clinical symptoms to the new acute malnutrition case
+
         :param person_id:
         """
         df = self.sim.population.props
@@ -688,7 +736,21 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
+        """
+        Handles a generic first appointment for a child under 5 years old.
 
+        If the child is not currently being treated for wasting and has not already attended a generic first appointment
+        or growth monitoring on the same day:
+        * Performs an acute malnutrition assessment. If acute malnutrition is detected, schedules HSI for the
+        appropriate treatment enrolment.
+        * Updates the 'un_last_nonemergency_appt_date' property for the individual in the population DataFrame.
+
+        :param person_id: ID of the individual attending the appointment
+        :param symptoms: list of symptoms present for the individual
+        :param individual_properties: properties of the individual relevant to the appointment
+        :param schedule_hsi_event: scheduler for health system interaction events
+        :param kwargs: additional keyword arguments
+        """
         df = self.sim.population.props
 
         # if person not under 5 or currently treated or non-emerg. appt went through today already, acute malnutrition
@@ -705,7 +767,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 )
             return
 
-        #or if HSI was already scheduled due to growth monitoring, won't be checked for acute malnutrition again
+        # if HSI was already scheduled due to growth monitoring, won't be checked for acute malnutrition again
         hsi_event_scheduled = [
             ev
             for ev in self.sim.modules["HealthSystem"].find_events_for_person(person_id)
@@ -723,11 +785,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         clinical_am = individual_properties['un_clinical_acute_malnutrition']
         complications = individual_properties['un_sam_with_complications']
 
-        # No intervention if well
+        # No treatment if well
         if clinical_am == 'well':
             return
 
-        # SFP intervention if diagnosed as MAM
+        # SFP if diagnosed as MAM
         elif clinical_am == 'MAM':
             # schedule HSI for supplementary feeding program for MAM
             schedule_hsi_event(
@@ -736,43 +798,51 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         elif clinical_am == 'SAM':
 
-            # OTP intervention if diagnosed as uncomplicated SAM
+            # OTP if diagnosed as uncomplicated SAM
             if not complications:
                 # schedule HSI for supplementary feeding program for MAM
                 schedule_hsi_event(
                     hsi_event=HSI_Wasting_OutpatientTherapeuticProgramme_SAM(module=self, person_id=person_id),
                     priority=0, topen=self.sim.date)
 
-            # ITC intervention if diagnosed as complicated SAM
+            # ITC if diagnosed as complicated SAM
             if complications:
                 # schedule HSI for supplementary feeding program for MAM
                 schedule_hsi_event(
                     hsi_event=HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(module=self, person_id=person_id),
                     priority=0, topen=self.sim.date)
 
-    def do_when_am_treatment(self, person_id, intervention) -> None:
+    def do_when_am_treatment(self, person_id, treatment) -> None:
         """
-        This function will apply the linear model of recovery based on intervention given
-        :param person_id:
-        :param intervention:
+        Cancels any scheduled natural outcome for the individual; outcomes are now determined solely by the treatment.
+        Processes the specified treatment, determines the outcome, and if appropriate, schedules an outcome event and/or
+        an enrolment for a follow-up treatment.
+
+        Updates individual's properties in the population DataFrame:
+        * `un_am_tx_start_date`
+        * `un_am_discharge_date`
+        * `un_sam_death_date` (if applicable)
+
+        :param person_id: ID of the individual receiving treatment
+        :param treatment: type of treatment being applied ('CSB++', 'standard_RUTF', etc.)
         """
         df = self.sim.population.props
         p = self.parameters
         rng = self.rng
 
-        # natural progression or recovery is cancelled with the tx and the outcome is fully driven by tx
+        # natural progression or recovery is cancelled with the treatment and the outcome is fully driven by treatment
         self.cancel_future_event(person_id, event_type=Wasting_ProgressionToSevere_Event)
         self.cancel_future_event(person_id, event_type=Wasting_FullRecovery_Event)
         self.cancel_future_event(person_id, event_type=Wasting_RecoveryToMAM_Event)
 
         # Set the date when the treatment is provided:
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
-        # Reset tx discharge date
+        # Reset treatment discharge date
         df.at[person_id, 'un_am_discharge_date'] = pd.NaT
-        # Cancel natural death due to SAM with tx
+        # Cancel natural death due to SAM with treatment
         df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
-        if intervention == 'SFP':
+        if treatment == 'SFP':
             outcome_date = self.sim.date + DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM'])
             # follow-up SFP in a recovered person leads to discharge through "full recovery"
             if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well':
@@ -797,8 +867,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     priority=0, topen=outcome_date)
                 return
 
-        elif intervention in ['OTP', 'ITC']:
-            if intervention == 'OTP':
+        elif treatment in ['OTP', 'ITC']:
+            if treatment == 'OTP':
                 outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_OutpatientSAM']))
             else:
                 outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_InpatientSAM']))
@@ -842,6 +912,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
     def cancel_future_event(self, person_id, event_type) -> None:
         """
         This function will add dates of recovery and/or progression events that need to be canceled.
+
         :param person_id:
         :param event_type: which event type to cancel
         """
@@ -1403,17 +1474,17 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         # for now, perfect diagnosing is assumed
         diagnosis = df.at[person_id, 'un_clinical_acute_malnutrition']
 
-        # No intervention if diagnosed as well
+        # No treatment if diagnosed as well
         if diagnosis == 'well':
             return
-        # SFP intervention if diagnosed as MAM
+        # SFP if diagnosed as MAM
         elif diagnosis == 'MAM':
              schedule_tx_by_diagnosis(HSI_Wasting_SupplementaryFeedingProgramme_MAM)
         elif (diagnosis == 'SAM') and (not complications):
-            # OTP intervention if diagnosed as uncomplicated SAM
+            # OTP if diagnosed as uncomplicated SAM
             schedule_tx_by_diagnosis(HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
         else:  # (diagnosis == 'SAM') and complications:
-            # ITC intervention if diagnosed as complicated SAM
+            # ITC if diagnosed as complicated SAM
             schedule_tx_by_diagnosis(HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM)
 
     def did_not_run(self):
@@ -1461,7 +1532,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
             logger.debug(key='debug', data='consumables are available')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
-            self.module.do_when_am_treatment(person_id, intervention='SFP')
+            self.module.do_when_am_treatment(person_id, treatment='SFP')
         else:
             logger.debug(key='debug',
                          data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
@@ -1512,7 +1583,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
             logger.debug(key='debug', data='consumables are available.')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
-            self.module.do_when_am_treatment(person_id, intervention='OTP')
+            self.module.do_when_am_treatment(person_id, treatment='OTP')
         else:
             logger.debug(key='debug',
                          data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
@@ -1558,7 +1629,7 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
             logger.debug(key='debug', data='consumables available, so use it.')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
-            self.module.do_when_am_treatment(person_id, intervention='ITC')
+            self.module.do_when_am_treatment(person_id, treatment='ITC')
         else:
             logger.debug(key='debug',
                          data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
