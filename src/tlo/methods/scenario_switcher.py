@@ -1,6 +1,4 @@
 import warnings
-from pathlib import Path
-from typing import Optional
 
 from tlo import Date, Module, Parameter, Types
 from tlo.analysis.utils import get_parameters_for_improved_healthsystem_and_healthcare_seeking
@@ -20,8 +18,9 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
     a close approximation to what would happen if the parameters were being changed by the `Scenario` class.
     """
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
+        self.resourcefilepath = resourcefilepath
 
     INIT_DEPENDENCIES = set()
 
@@ -53,7 +52,7 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
 
     PROPERTIES = {}
 
-    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+    def read_parameters(self, data_folder):
         """Read-in parameters and process them into the internal storage structures required."""
 
         # Parameters are hard-coded for this module to not make any changes. (The expectation is that some of these
@@ -80,7 +79,7 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
         phase_of_simulation = 0 if self.sim.date.year < self.parameters["year_of_switch"] else 1
 
         params_to_update = get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-            resourcefilepath=self.sim.resourcefilepath,
+            resourcefilepath=self.resourcefilepath,
             max_healthsystem_function=self.parameters['max_healthsystem_function'][phase_of_simulation],
             max_healthcare_seeking=self.parameters['max_healthcare_seeking'][phase_of_simulation],
         )

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Literal, NamedTuple, Optional,
 
 import numpy as np
 
-from tlo import Date, logging
+from tlo import Date, logging, DateOffset
 from tlo.events import Event
 
 if TYPE_CHECKING:
@@ -117,6 +117,7 @@ class HSI_Event:
         #                                     run, and the `never_ran` method is called instead. This is a declaration
         #                                     of resource needs, but is private because users are expected to use
         #                                     `add_equipment` to declare equipment needs.
+        self.disrupted_by_climate = False
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -289,10 +290,10 @@ class HSI_Event:
         """Returns ``True`` if all the (currently) declared items of equipment are available. This is called by the
         ``HealthSystem`` module before the HSI is run and so is looking only at those items that are declared when this
         instance was created. The evaluation of whether equipment is available is only done *once* for this instance of
-        the event: i.e., if the equipment is not available for the instance of this ``HSI_Event``, then it will remain
-        not available if the same event is re-scheduled/re-entered into the HealthSystem queue. This is representing
-        that if the facility that a particular person attends for the ``HSI_Event`` does not have the equipment
-        available, then it will also not be available on another day."""
+        the event: i.e., if the equipment is not available for the instance of this ``HSI_Event``, then it will remain not
+        available if the same event is re-scheduled/re-entered into the HealthSystem queue. This is representing that
+        if the facility that a particular person attends for the ``HSI_Event`` does not have the equipment available, then
+        it will also not be available on another day."""
 
         if self._is_all_declared_equipment_available is None:
             # Availability has not already been evaluated: determine availability

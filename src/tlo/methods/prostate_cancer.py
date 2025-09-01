@@ -7,7 +7,7 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
@@ -35,8 +35,9 @@ logger.setLevel(logging.INFO)
 class ProstateCancer(Module, GenericFirstAppointmentsMixin):
     """Prostate Cancer Disease Module"""
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
+        self.resourcefilepath = resourcefilepath
         self.linear_models_for_progression_of_pc_status = dict()
         self.lm_prostate_ca_onset_urinary_symptoms = None
         self.lm_onset_pelvic_pain = None
@@ -196,12 +197,12 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+    def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            read_csv_files(resourcefilepath / "ResourceFile_Prostate_Cancer",
+            read_csv_files(Path(self.resourcefilepath) / "ResourceFile_Prostate_Cancer",
                            files="parameter_values")
         )
 

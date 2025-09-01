@@ -31,7 +31,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = './resources'
+resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2014, 1, 1)
@@ -51,27 +51,37 @@ log_config = {
     },
 }
 seed = 20
-sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # Register the appropriate modules
 sim.register(
-    demography.Demography(),
-    simplified_births.SimplifiedBirths(),
-    healthsystem.HealthSystem(service_availability=["*"],
+    demography.Demography(resourcefilepath=resourcefilepath),
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath,
+        service_availability=["*"],
         mode_appt_constraints=1,
         cons_availability='default',
         ignore_priority=True,
         capabilities_coefficient=1.0,
         disable=False,
     ),
-    symptommanager.SymptomManager(spurious_symptoms=True),
-    healthseekingbehaviour.HealthSeekingBehaviour(),
-    healthburden.HealthBurden(),
-    enhanced_lifestyle.Lifestyle(),
-    malaria.Malaria(),
-    tb.Tb(),
-    hiv.Hiv(),
-    epi.Epi()
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    malaria.Malaria(
+        resourcefilepath=resourcefilepath,
+    ),
+    tb.Tb(
+        resourcefilepath=resourcefilepath,
+    ),
+    hiv.Hiv(
+        resourcefilepath=resourcefilepath,
+    ),
+    epi.Epi(
+        resourcefilepath=resourcefilepath,
+    )
 )
 
 # update parameters

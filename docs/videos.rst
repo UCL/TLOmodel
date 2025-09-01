@@ -2,19 +2,19 @@
 HEPU Videos
 ===========
 
-The *Health Economics and Policy Unit* (HEPU) is a unit within the Department of Health Systems
-under the School of Global and Public Health at the Kamuzu University of Health Sciences.
-It was established in 2018 with support from the Thanzi La Onse Program with the aim of promoting demand,
+The *Health Economics and Policy Unit* (HEPU) is a unit within the Department of Health Systems 
+under the School of Global and Public Health at the Kamuzu University of Health Sciences. 
+It was established in 2018 with support from the Thanzi La Onse Program with the aim of promoting demand, 
 generation and use of health economics evidence in health policy and decision making.
 
 Background: Thanzi La Mawa Project
 ==================================
 
-A video exploring the Thanzi La Mawa project, led by Prof Tim Hallett at Imperial.
-In response to the need for more evidence to support resource allocation decision making processes in Malawi,
-researchers and modellers have partnered with Kamuzu University of Health Sciences, led by Prof Joseph Mfutso-Bengo,
-to develop a 'whole system and all-disease model' for the Malawi health system.
-Discover how their findings could potentially revolutionize healthcare practices and policies,
+A video exploring the Thanzi La Mawa project, led by Prof Tim Hallett at Imperial. 
+In response to the need for more evidence to support resource allocation decision making processes in Malawi, 
+researchers and modellers have partnered with Kamuzu University of Health Sciences, led by Prof Joseph Mfutso-Bengo, 
+to develop a 'whole system and all-disease model' for the Malawi health system. 
+Discover how their findings could potentially revolutionize healthcare practices and policies, 
 ultimately benefiting millions of Malawians.
 
 ..  youtube:: dazYfnhaNOw
@@ -23,11 +23,11 @@ ultimately benefiting millions of Malawians.
 Training and Capacity Building
 ==============================
 
-A modelling short course was held in Blantyre, Malawi, from 23-26 September 2024,
-hosted by the Health Economics and Policy Unit of Kamuzu University of Health Sciences
-in collaboration with Imperial and University College London.
-This course marks a significant milestone for health education in Malawi,
-empowering local professionals with advanced modelling skills
+A modelling short course was held in Blantyre, Malawi, from 23-26 September 2024, 
+hosted by the Health Economics and Policy Unit of Kamuzu University of Health Sciences 
+in collaboration with Imperial and University College London. 
+This course marks a significant milestone for health education in Malawi, 
+empowering local professionals with advanced modelling skills 
 to strengthen the capacity of Malawi's health systems in responding to future challenges.
 
 ..  youtube:: T5WvzDFpuF4
@@ -51,12 +51,7 @@ Policy Think Tanks
 ..  youtube:: tTp6FprPRGs
    :align: center
 
-**HEPU 15th Extraordinary Think Tank Conference, Strategies for HIV/AIDS Sustainability Post-USA Aid Freeze**
-
-..  youtube:: z85BmW1VJnE
-   :align: center
-
-Research Seminars
+Research Seminars 
 =================
 
 **86th Research Seminar, Institutionalization of Health Technology Assessment in Malawi: A Progress Update with Dr. Lucky Ngwira.**
@@ -82,9 +77,9 @@ Research Seminars
 ..  youtube:: YqbRT3CNVQY
    :align: center
 
-**Demonstrating the Use of VEDMAP Framework as a Research Tool for Value-Mapping and Value-Implementation Fidelity-Assessment:
+**Demonstrating the Use of VEDMAP Framework as a Research Tool for Value-Mapping and Value-Implementation Fidelity-Assessment: 
 A Case of Feasibility Study of Health Technology Assessment in Malawi.**
 
 ..  youtube:: u4CZcBqRRoA
    :align: center
-
+   

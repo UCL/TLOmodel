@@ -58,21 +58,21 @@ def test_using_parameter_or_argument_to_set_service_availability(seed):
     """
 
     # No specification with argument --> everything is available
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
-        demography.Demography(),
-        healthsystem.HealthSystem()
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=0))
     assert sim.modules['HealthSystem'].service_availability == ['*']
 
     # Editing parameters --> that is reflected in what is used
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
     service_availability_params = ['HSI_that_begin_with_A*', 'HSI_that_begin_with_B*']
     sim.register(
-        demography.Demography(),
-        healthsystem.HealthSystem()
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
     )
     sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability_params
     sim.make_initial_population(n=100)
@@ -80,12 +80,12 @@ def test_using_parameter_or_argument_to_set_service_availability(seed):
     assert sim.modules['HealthSystem'].service_availability == service_availability_params
 
     # Editing parameters, but with an argument provided to module --> argument over-writes parameter edits
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
     service_availability_arg = ['HSI_that_begin_with_C*']
     service_availability_params = ['HSI_that_begin_with_A*', 'HSI_that_begin_with_B*']
     sim.register(
-        demography.Demography(),
-        healthsystem.HealthSystem(service_availability=service_availability_arg)
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability_arg)
     )
     sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability_params
     sim.make_initial_population(n=100)
@@ -95,16 +95,18 @@ def test_using_parameter_or_argument_to_set_service_availability(seed):
 
 @pytest.mark.slow
 def test_run_with_healthsystem_no_disease_modules_defined(seed):
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(service_availability=['*'], capabilities_coefficient=1.0,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*'],
+                                           capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 simplified_births.SimplifiedBirths(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -121,8 +123,8 @@ def test_all_treatment_ids_defined_in_priority_policies(seed, tmpdir):
         "filename": "log",
         "directory": tmpdir,
     }
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
-    sim.register(*fullmodel())
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
     sim.make_initial_population(n=100)
 
     clean_set_of_filtered_treatment_ids = set([i.replace("_*", "") for i in get_filtered_treatment_ids()])
@@ -152,23 +154,24 @@ def test_run_no_interventions_allowed(tmpdir, seed):
             "tlo.methods.healthsystem": logging.DEBUG,
         }
     }
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # Get ready for temporary log-file
     # Define the service availability as null
     service_availability = []
 
     # Register the core modules
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(service_availability=service_availability,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 simplified_births.SimplifiedBirths(),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  )
 
     # Run the simulation
@@ -216,11 +219,12 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
                 "custom_levels": {
                     "tlo.methods.healthsystem": logging.DEBUG,
                 }
-            }, resourcefilepath=resourcefilepath
+            }
         )
 
         # Register the core modules
-        sim.register(*fullmodel(module_kwargs={'HealthSystem': {'capabilities_coefficient': 1.0,
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath,
+                                module_kwargs={'HealthSystem': {'capabilities_coefficient': 1.0,
                                                                 'mode_appt_constraints': 1,
                                                                 'policy_name': policy}}))
 
@@ -255,20 +259,22 @@ def test_run_in_mode_0_with_capacity(tmpdir, seed):
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath
+        }
     )
 
     # Define the service availability
     service_availability = ['*']
 
     # Register the core modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(service_availability=service_availability, capabilities_coefficient=1.0,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=1.0,
                                            mode_appt_constraints=0),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
                  )
@@ -305,22 +311,24 @@ def test_run_in_mode_0_no_capacity(tmpdir, seed):
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath
+        }
     )
 
     # Define the service availability
     service_availability = ['*']
 
     # Register the core modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 healthsystem.HealthSystem(service_availability=service_availability, capabilities_coefficient=0.0,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=0.0,
                                            mode_appt_constraints=0),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
-                 enhanced_lifestyle.Lifestyle()
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath)
                  )
 
     # Run the simulation
@@ -355,20 +363,22 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath
+        }
     )
 
     # Define the service availability
     service_availability = ['*']
 
     # Register the core modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(service_availability=service_availability, capabilities_coefficient=1.0,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=1.0,
                                            mode_appt_constraints=1),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -405,16 +415,16 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath
+        }
     )
 
     # Register the core modules
     # Set the year in which mode is changed to start_date + 1 year, and mode after that still 1.
     # Check that in second year, squeeze factor is smaller on average.
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=0.0000001,  # This will mean that capabilities are
                                                                                 # very close to 0 everywhere.
                                                                                 # (If the value was 0, then it would
@@ -424,8 +434,8 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
                                                                                 # run (as opposed to running with
                                                                                 # a very high squeeze factor)).
                  ),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -485,17 +495,18 @@ def test_run_in_mode_1_with_almost_no_capacity(tmpdir, seed):
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath
+        }
     )
 
     # Define the service availability
     service_availability = ['*']
 
     # Register the core modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(service_availability=service_availability,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
                                            capabilities_coefficient=0.0000001,  # This will mean that capabilities are
                                                                                 # very close to 0 everywhere.
                                                                                 # (If the value was 0, then it would
@@ -505,8 +516,8 @@ def test_run_in_mode_1_with_almost_no_capacity(tmpdir, seed):
                                                                                 # run (as opposed to running with
                                                                                 # a very high squeeze factor)).
                                            mode_appt_constraints=1),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -548,20 +559,22 @@ def test_run_in_mode_2_with_capacity(tmpdir, seed):
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath
+        }
     )
 
     # Define the service availability
     service_availability = ['*']
 
     # Register the core modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(service_availability=service_availability, capabilities_coefficient=1.0,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -600,20 +613,22 @@ def test_run_in_mode_2_with_no_capacity(tmpdir, seed):
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath
+        }
     )
 
     # Define the service availability
     service_availability = ['*']
 
     # Register the core modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(service_availability=service_availability, capabilities_coefficient=0.0,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=0.0,
                                            mode_appt_constraints=2),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -655,21 +670,23 @@ def test_run_in_with_hs_disabled(tmpdir, seed):
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath
+        }
     )
 
     # Define the service availability
     service_availability = ['*']
 
     # Register the core modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(service_availability=service_availability, capabilities_coefficient=1.0,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=1.0,
                                            mode_appt_constraints=2,
                                            disable=True),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -709,20 +726,22 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir, seed)
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath
+        }
     )
 
     # Define the service availability
     service_availability = ['*']
 
     # Register the core modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(service_availability=service_availability, capabilities_coefficient=1.0,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -776,11 +795,13 @@ def test_all_appt_types_can_run(seed):
                 # is not at all available.
                 self.this_hsi_event_ran = True
 
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules and simulate for 0 days
-    sim.register(demography.Demography(),
-                 healthsystem.HealthSystem(capabilities_coefficient=1.0, mode_appt_constraints=1,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=1,
                                            use_funded_or_actual_staffing='funded_plus'),
                  # <-- hard constraint (only HSI events with no squeeze factor can run)
                  # <-- using the 'funded_plus' number/distribution of officers
@@ -891,11 +912,12 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
             "tlo.methods.healthsystem": logging.DEBUG,
             "tlo.methods.healthsystem.summary": logging.INFO
         }
-    }, resourcefilepath=resourcefilepath)
+    })
 
     sim.register(
-        demography.Demography(),
-        healthsystem.HealthSystem(mode_appt_constraints=1,
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  mode_appt_constraints=1,
                                   capabilities_coefficient=1e-10,  # <--- to give non-trivial squeeze-factors
                                   ),
         DummyModule(),
@@ -1108,11 +1130,12 @@ def test_summary_logger_for_never_ran_hsi_event(seed, tmpdir):
             "tlo.methods.healthsystem": logging.DEBUG,
             "tlo.methods.healthsystem.summary": logging.INFO
         }
-    }, resourcefilepath=resourcefilepath)
+    })
 
     sim.register(
-        demography.Demography(),
-        healthsystem.HealthSystem(mode_appt_constraints=2,
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  mode_appt_constraints=2,
                                   capabilities_coefficient=0.0,  # <--- Ensure all events postponed
                                   ),
         DummyModule(),
@@ -1210,11 +1233,12 @@ def test_summary_logger_for_hsi_event_squeeze_factors(seed, tmpdir):
             "tlo.methods.healthsystem": logging.DEBUG,
             "tlo.methods.healthsystem.summary": logging.INFO
         }
-    }, resourcefilepath=resourcefilepath)
+    })
 
     sim.register(
-        demography.Demography(),
-        healthsystem.HealthSystem(mode_appt_constraints=1,
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  mode_appt_constraints=1,
                                   capabilities_coefficient=1e-10,  # <--- to give non-trivial squeeze-factors
                                   ),
         DummyModule(),
@@ -1296,11 +1320,11 @@ def test_summary_logger_generated_in_year_long_simulation(seed, tmpdir):
                 "tlo.methods.healthsystem": logging.DEBUG,
                 "tlo.methods.healthsystem.summary": logging.INFO
             }
-        }, resourcefilepath=resourcefilepath)
+        })
 
         sim.register(
-            demography.Demography(),
-            healthsystem.HealthSystem(),
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
             DummyModule(),
             sort_modules=False,
             check_all_dependencies=False
@@ -1397,11 +1421,11 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         'custom_levels': {
             "tlo.methods.healthsystem": logging.DEBUG,
         }
-    }, resourcefilepath=resourcefilepath)
+    })
 
     sim.register(
-        demography.Demography(),
-        healthsystem.HealthSystem(**initial_parameters),
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, **initial_parameters),
         DummyModule(),
         sort_modules=False,
         check_all_dependencies=False
@@ -1424,7 +1448,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
 
 def test_is_treatment_id_allowed():
     """Check the pattern matching in `is_treatment_id_allowed` works as expected."""
-    hs = HealthSystem()
+    hs = HealthSystem(resourcefilepath=resourcefilepath)
 
     # An empty list means nothing is allowed
     assert not hs.is_treatment_id_allowed('Hiv', [])
@@ -1488,9 +1512,9 @@ def test_manipulation_of_service_availability(seed, tmpdir):
             'custom_levels': {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath)
+        })
 
-        sim.register(*fullmodel())
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath))
         sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability  # Change parameter
         sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
         sim.make_initial_population(n=500)
@@ -1628,11 +1652,13 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
             "directory": tmpdir,
             "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
         }
-        sim = Simulation(start_date=Date(2010, 1, 1), seed=seed,
-                         log_config=log_config, resourcefilepath=resourcefilepath)
+        sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
 
-        sim.register(demography.Demography(),
-                     healthsystem.HealthSystem(mode_appt_constraints=mode, capabilities_coefficient=10000.0,
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(
+                         resourcefilepath=resourcefilepath,
+                         mode_appt_constraints=mode,
+                         capabilities_coefficient=10000.0,
                          disable=False,
                          cons_availability='all',
                      ),
@@ -1685,10 +1711,14 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
         "directory": tmpdir,
         "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
     }
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed,
-                     log_config=log_config, resourcefilepath=resourcefilepath)
-    sim.register(demography.Demography(),
-                 healthsystem.HealthSystem(randomise_queue=True, disable=False, cons_availability='all'),
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     randomise_queue=True,
+                     disable=False,
+                     cons_availability='all',
+                 ),
                  DummyModule(),
                  check_all_dependencies=False,
                  )
@@ -1713,9 +1743,7 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
             tclose=None,
             priority=sim.modules['DummyModule'].rng.randint(0, 3))
 
-    list_of_individual_hsi_event_tuples_due_today = (
-        sim.modules['HealthSystem'].healthsystemscheduler._get_events_due_today()
-    )
+    list_of_individual_hsi_event_tuples_due_today = sim.modules['HealthSystem'].healthsystemscheduler._get_events_due_today()
 
     # Check that HealthSystemScheduler is recovering the correct number of events for today
     assert len(list_of_individual_hsi_event_tuples_due_today) == Ntoday
@@ -1772,22 +1800,25 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
         "directory": tmpdir,
         "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
     }
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed,
-                     log_config=log_config, resourcefilepath=resourcefilepath)
-    sim.register(demography.Demography(),
-                 healthsystem.HealthSystem(disable=False, randomise_queue=True, ignore_priority=False,
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     randomise_queue=True,
+                     ignore_priority=False,
                      mode_appt_constraints=2,
                      policy_name="Test",  # Test policy enforcing lowest_priority_policy
                                           # assumed in this test. This allows us to check policies
                                           # are loaded correctly.
                      cons_availability='all',
                  ),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 enhanced_lifestyle.Lifestyle(),
-                 epi.Epi(),
-                 hiv.Hiv(run_with_checks=False),
-                 tb.Tb(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  DummyModule(),
                  check_all_dependencies=False,
                  )
@@ -1872,7 +1903,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     class DummyModule(Module):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
 
-        def read_parameters(self, resourcefilepath=None):
+        def read_parameters(self, data_folder):
             pass
 
         def initialise_population(self, population):
@@ -1899,11 +1930,13 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
         "directory": tmpdir,
         "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
     }
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # Register the core modules and simulate for 0 days
-    sim.register(demography.Demography(),
-                 healthsystem.HealthSystem(capabilities_coefficient=1.0, mode_appt_constraints=2,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2,
                                            ignore_priority=False,
                                            randomise_queue=True,
                                            policy_name="",
@@ -2060,12 +2093,12 @@ def test_which_hsi_can_run(seed):
     results = list()
     for mode_appt_constraints in (0, 1, 2):
         for use_funded_or_actual_staffing in ('actual', 'funded', 'funded_plus'):
-            sim = Simulation(start_date=Date(2010, 1, 1),
-                             seed=seed, resourcefilepath=resourcefilepath)
+            sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
 
             # Register the core modules and simulate for 0 days
-            sim.register(demography.Demography(),
-                         healthsystem.HealthSystem(capabilities_coefficient=1.0,
+            sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                                   capabilities_coefficient=1.0,
                                                    mode_appt_constraints=mode_appt_constraints,
                                                    use_funded_or_actual_staffing=use_funded_or_actual_staffing),
                          DummyModule(),
@@ -2229,8 +2262,8 @@ def test_determinism_of_hsi_that_run_and_consumables_availabilities(seed, tmpdir
             'custom_levels': {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath)
-        sim.register(*fullmodel())
+        })
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath))
         sim.modules['HealthSystem'].parameters['Service_Availability'] = ["*"]
         sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
         sim.make_initial_population(n=1_000)
@@ -2276,8 +2309,9 @@ def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asteris
             'custom_levels': {
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
-        }, resourcefilepath=resourcefilepath)
-        sim.register(*fullmodel(module_kwargs={'HealthSystem': {'randomise_queue': randomise_hsi_queue}}))
+        })
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath,
+                                module_kwargs={'HealthSystem': {'randomise_queue': randomise_hsi_queue}}))
         sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability
         sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
         sim.make_initial_population(n=500)
@@ -2311,10 +2345,10 @@ def test_HR_scaling_by_level_and_officer_type_assumption(seed, tmpdir):
     time available for healthcare workers."""
 
     def get_capabilities_today(HR_scaling_by_level_and_officer_type_mode: str) -> pd.Series:
-        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim = Simulation(start_date=start_date, seed=seed)
         sim.register(
-            demography.Demography(),
-            healthsystem.HealthSystem()
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
         )
         sim.modules['HealthSystem'].parameters['HR_scaling_by_level_and_officer_type_mode'] = \
             HR_scaling_by_level_and_officer_type_mode
@@ -2348,10 +2382,10 @@ def test_dynamic_HR_scaling(seed, tmpdir):
     a fixed scaling factor or population grown, or both."""
 
     def get_initial_capabilities() -> pd.Series:
-        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim = Simulation(start_date=start_date, seed=seed)
         sim.register(
-            demography.Demography(),
-            healthsystem.HealthSystem()
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
         )
         sim.make_initial_population(n=100)
         sim.simulate(end_date=start_date + pd.DateOffset(days=0))
@@ -2359,11 +2393,11 @@ def test_dynamic_HR_scaling(seed, tmpdir):
         return sim.modules['HealthSystem'].capabilities_today
 
     def get_capabilities_after_two_updates(dynamic_HR_scaling_factor: float, scale_HR_by_pop_size: bool) -> tuple:
-        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim = Simulation(start_date=start_date, seed=seed)
         sim.register(
-            demography.Demography(),
-            healthsystem.HealthSystem(),
-            simplified_births.SimplifiedBirths(),
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
 
         )
         params = sim.modules['HealthSystem'].parameters
@@ -2425,10 +2459,10 @@ def test_dynamic_HR_scaling_multiple_changes(seed, tmpdir):
     apply in different years."""
 
     def get_initial_capabilities() -> pd.Series:
-        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim = Simulation(start_date=start_date, seed=seed)
         sim.register(
-            demography.Demography(),
-            healthsystem.HealthSystem()
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
         )
         sim.make_initial_population(n=100)
         sim.simulate(end_date=start_date + pd.DateOffset(days=0))
@@ -2441,11 +2475,11 @@ def test_dynamic_HR_scaling_multiple_changes(seed, tmpdir):
         be structured.)
         Returns capabilities at the end of the 10-year simulation"""
 
-        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim = Simulation(start_date=start_date, seed=seed)
         sim.register(
-            demography.Demography(),
-            healthsystem.HealthSystem(),
-            simplified_births.SimplifiedBirths(),
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
 
         )
         params = sim.modules['HealthSystem'].parameters
@@ -2493,11 +2527,11 @@ def test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together(seed)
 
     def get_capabilities(yearly_scaling: bool, scaling_by_level: bool, rescaling: bool) -> float:
         """Return total capabilities of HRH when optionally using 'yearly scaling' and/or 'scaling_by_level'"""
-        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim = Simulation(start_date=start_date, seed=seed)
         sim.register(
-            demography.Demography(),
-            healthsystem.HealthSystem(),
-            simplified_births.SimplifiedBirths(),
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         )
         params = sim.modules['HealthSystem'].parameters
 
@@ -2532,12 +2566,8 @@ def test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together(seed)
     assert caps_scaling_by_both > caps_only_scaling_by_year
 
     # - When there is also rescaling as we go from Mode 2 into Mode 1
-    caps_only_scaling_by_level_with_rescaling = get_capabilities(
-        yearly_scaling=False, scaling_by_level=True, rescaling=True
-    )
-    caps_only_scaling_by_year_with_rescaling = get_capabilities(
-        yearly_scaling=True, scaling_by_level=False, rescaling=True
-    )
+    caps_only_scaling_by_level_with_rescaling = get_capabilities(yearly_scaling=False, scaling_by_level=True, rescaling=True)
+    caps_only_scaling_by_year_with_rescaling = get_capabilities(yearly_scaling=True, scaling_by_level=False, rescaling=True)
     caps_scaling_by_both_with_rescaling = get_capabilities(yearly_scaling=True, scaling_by_level=True, rescaling=True)
     assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_level_with_rescaling
     assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_year_with_rescaling
@@ -2551,8 +2581,8 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
 
     def run_simulation_and_return_healthsystem_summary_log(tmpdir: Path, blank_footprint: bool) -> dict:
         """Return the `healthsystem.summary` logger for a simulation. In that simulation, there is HSI_Event run on the
-        first day of the simulation and its `EXPECTED_APPT_FOOTPRINT` may or may not be blank. The simulation is run for
-        one year in order that the summary logger is active (it runs annually)."""
+        first day of the simulation and its `EXPECTED_APPT_FOOTPRINT` may or may not be blank. The simulation is run for one
+        year in order that the summary logger is active (it runs annually)."""
 
         class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
             def __init__(self, module, person_id, _is_footprint_blank):
@@ -2579,11 +2609,10 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
                 sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=hsi_event, topen=sim.date, priority=0)
 
         start_date = Date(2010, 1, 1)
-        sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'tmp', 'directory': tmpdir},
-                         resourcefilepath=resourcefilepath)
+        sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'tmp', 'directory': tmpdir})
         sim.register(
-            demography.Demography(),
-            healthsystem.HealthSystem(mode_appt_constraints=0),
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0),
             DummyModule(),
             # Disable sorting + checks to avoid error due to missing dependencies
             sort_modules=False,

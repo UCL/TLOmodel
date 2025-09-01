@@ -34,18 +34,17 @@ def check_dtypes(simulation):
 
 
 def create_basic_rti_sim(population_size, seed):
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     # create the basic outline of an rti simulation object
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
-
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthburden.HealthBurden(),
-                 symptommanager.SymptomManager(),
-                 healthsystem.HealthSystem(service_availability=['*']),
-                 rti.RTI(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 simplified_births.SimplifiedBirths()
+    sim = Simulation(start_date=start_date, seed=seed)
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
                  )
 
     sim.make_initial_population(n=population_size)
@@ -132,18 +131,17 @@ def test_all_injuries_run_no_healthsystem(seed):
     This test runs a simulation with a functioning health system with full service availability and no set
     constraints
     """
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     # create sim object
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
-
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthburden.HealthBurden(),
-                 symptommanager.SymptomManager(),
-                 healthsystem.HealthSystem(service_availability=[]),
-                 rti.RTI(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 simplified_births.SimplifiedBirths()
+    sim = Simulation(start_date=start_date, seed=seed)
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
                  )
     sim.make_initial_population(n=97)
     # create a list of injuries to assign the individuals in the population
@@ -273,21 +271,22 @@ def test_module_properties(seed):
 
 @pytest.mark.slow
 def test_with_more_modules(seed):
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     # Run the simulation with multiple modules, see if any errors or unexpected changes to the datatypes occurs
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
+
     # Register the core modules
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthburden.HealthBurden(),
-                 symptommanager.SymptomManager(),
-                 healthsystem.HealthSystem(service_availability=['*']),
-                 rti.RTI(),
-                 depression.Depression(),
-                 epi.Epi(),
-                 epilepsy.Epilepsy(),
-                 simplified_births.SimplifiedBirths(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  )
 
     # Make the population
@@ -302,18 +301,21 @@ def test_with_more_modules(seed):
 def test_run_health_system_high_squeeze(seed):
     """This test runs a simulation in which the contents of scheduled HSIs will not be performed because the squeeze
     factor is too high. Therefore it tests the logic in the did_not_run functions of the RTI HSIs"""
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
+
     # Register the modules and change healthsystem parameters
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthburden.HealthBurden(),
-                 symptommanager.SymptomManager(),
-                 healthsystem.HealthSystem(service_availability=['*'], capabilities_coefficient=0.0,
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*'],
+                                           capabilities_coefficient=0.0,
                                            mode_appt_constraints=2),
-                 rti.RTI(),
-                 simplified_births.SimplifiedBirths(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  )
     # make the initial population
     sim.make_initial_population(n=popsize)
@@ -328,19 +330,18 @@ def test_run_health_system_events_wont_run(seed):
     """
     Test the model with no service availability
     """
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules, make service availability = []
-
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthburden.HealthBurden(),
-                 symptommanager.SymptomManager(),
-                 healthsystem.HealthSystem(service_availability=[]),
-                 rti.RTI(),
-                 simplified_births.SimplifiedBirths(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  )
     # make initial population
     sim.make_initial_population(n=popsize)
@@ -389,17 +390,18 @@ def test_no_capabilities(seed):
     Run the model with a capabilities coefficient of 0.0
     :return:
     """
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     # Register the core modules, make capabilities coefficient = 0.0
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthburden.HealthBurden(),
-                 symptommanager.SymptomManager(),
-                 healthsystem.HealthSystem(capabilities_coefficient=0.0),
-                 rti.RTI(),
-                 simplified_births.SimplifiedBirths(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+    sim = Simulation(start_date=start_date, seed=seed)
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=0.0),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  )
     # make initial population
     sim.make_initial_population(n=popsize)
@@ -415,19 +417,19 @@ def test_health_system_disabled(seed):
     Test the model with the health system disabled
     :return:
     """
+    # create simulation object
+    sim = Simulation(start_date=start_date, seed=seed)
     # get resource file path
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    # create simulation object
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     # register modules, health system is disabled
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthburden.HealthBurden(),
-                 healthsystem.HealthSystem(disable=True),
-                 symptommanager.SymptomManager(),
-                 rti.RTI(),
-                 simplified_births.SimplifiedBirths(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  )
     # make the initial population
     sim.make_initial_population(n=popsize)

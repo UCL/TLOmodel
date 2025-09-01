@@ -48,17 +48,20 @@ def test_epi_scheduling_hsi_events(tmpdir, seed):
         'custom_levels': {"*": logging.FATAL, "tlo.methods.epi": logging.INFO}
     }
 
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(
-        demography.Demography(),
-        simplified_births.SimplifiedBirths(),
-        enhanced_lifestyle.Lifestyle(),
-        healthsystem.HealthSystem(disable=True),
-        healthburden.HealthBurden(),
-        symptommanager.SymptomManager(),
-        healthseekingbehaviour.HealthSeekingBehaviour(),
-        epi.Epi(),
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            disable=True
+        ),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
 
     sim.make_initial_population(n=popsize)
@@ -127,14 +130,14 @@ def test_all_doses_properties(seed):
                 assert properties_aligned, f"On {self.sim.date} and for vaccine {_vacc}, there is a mismatch between" \
                                            f" the all-doses and number-of-doses."
 
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
-        demography.Demography(),
-        simplified_births.SimplifiedBirths(),
-        enhanced_lifestyle.Lifestyle(),
-        healthsystem.HealthSystem(disable=True),
-        epi.Epi(),
-        symptommanager.SymptomManager(),
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+        epi.Epi(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         DummyModule()
     )
 
@@ -153,23 +156,25 @@ def test_facility_level_distribution(tmpdir, seed):
                           "tlo.methods.healthsystem.summary": logging.INFO}
     }
 
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(
-        demography.Demography(),
-        simplified_births.SimplifiedBirths(),
-        enhanced_lifestyle.Lifestyle(),
-        healthsystem.HealthSystem(service_availability=["*"],  # all treatment allowed
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=["*"],  # all treatment allowed
             mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
             cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
             ignore_priority=False,  # do not use the priority information in HSI event to schedule
             capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
             use_funded_or_actual_staffing="funded_plus",
         ),
-        healthburden.HealthBurden(),
-        symptommanager.SymptomManager(),
-        epi.Epi(),
-        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     )
 
     # change distribution of vaccine delivery
@@ -217,16 +222,16 @@ def test_hsi_epi_footprint(seed):
     """
 
     popsize = 10
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(cons_availability='default'),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 epi.Epi(),
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='default'),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
                  )
 
     # set up initial population

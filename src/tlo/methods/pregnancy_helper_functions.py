@@ -9,63 +9,6 @@ import pandas as pd
 from tlo import logging
 
 
-def generate_mnh_outcome_counter():
-    """
-    Returns a dictionary with relevant maternal and newborn health outcomes to be used by modules as a counter for
-    each outcome as the simulation moves forward in time.
-    """
-
-    outcome_list = [ # early/abortive outcomes
-                    'ectopic_unruptured', 'ectopic_ruptured','multiple_pregnancy', 'twin_birth', 'placenta_praevia',
-                    'spontaneous_abortion', 'induced_abortion', 'complicated_spontaneous_abortion',
-                    'complicated_induced_abortion', 'induced_abortion_injury', 'induced_abortion_sepsis',
-                    'induced_abortion_haemorrhage','induced_abortion_other_comp','spontaneous_abortion_sepsis',
-                    'spontaneous_abortion_haemorrhage', 'spontaneous_abortion_other_comp',
-
-                    # antenatal onset outcomes
-                    'an_anaemia_mild', 'an_anaemia_moderate', 'an_anaemia_severe',
-                    'gest_diab', 'mild_pre_eclamp', 'mild_gest_htn','severe_pre_eclamp', 'eclampsia','severe_gest_htn',
-                    'syphilis',  'PROM', 'clinical_chorioamnionitis', 'placental_abruption',
-                    'mild_mod_antepartum_haemorrhage','severe_antepartum_haemorrhage', 'antenatal_stillbirth',
-
-                    # intrapartum/postpartum onset outcomes
-                    'obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other','obstructed_labour',
-                    'uterine_rupture','sepsis_intrapartum','sepsis_endometritis', 'sepsis_urinary_tract',
-                    'sepsis_skin_soft_tissue', 'sepsis_postnatal', 'intrapartum_stillbirth', 'early_preterm_labour',
-                    'late_preterm_labour', 'post_term_labour', 'pph_uterine_atony', 'pph_retained_placenta',
-                    'pph_other', 'primary_postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
-                    'vesicovaginal_fistula', 'rectovaginal_fistula', 'pn_anaemia_mild', 'pn_anaemia_moderate',
-                    'pn_anaemia_severe',
-
-                    # newborn outcomes
-                    'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
-                    'digestive_anomaly', 'other_anomaly', 'mild_enceph', 'moderate_enceph',
-                    'severe_enceph', 'respiratory_distress_syndrome', 'not_breathing_at_birth', 'low_birth_weight',
-                    'macrosomia', 'small_for_gestational_age', 'early_onset_sepsis', 'late_onset_sepsis',
-
-                    # death outcomes
-                    'direct_mat_death', 'six_week_survivors','induced_abortion_m_death', 'spontaneous_abortion_m_death',
-                    'ectopic_pregnancy_m_death', 'severe_gestational_hypertension_m_death',
-                    'severe_pre_eclampsia_m_death', 'eclampsia_m_death', 'antepartum_haemorrhage_m_death',
-                    'antenatal_sepsis_m_death',
-                    'intrapartum_sepsis_m_death', 'postpartum_sepsis_m_death', 'uterine_rupture_m_death',
-                    'postpartum_haemorrhage_m_death','secondary_postpartum_haemorrhage_m_death',
-                    'early_onset_sepsis_n_death', 'late_onset_sepsis_n_death', 'encephalopathy_n_death',
-                    'neonatal_respiratory_depression_n_death', 'preterm_other_n_death',
-                    'respiratory_distress_syndrome_n_death', 'congenital_heart_anomaly_n_death',
-                    'limb_or_musculoskeletal_anomaly_n_death', 'urogenital_anomaly_n_death',
-                    'digestive_anomaly_n_death', 'other_anomaly_n_death',
-
-                    # service coverage outcomes
-                    'anc0', 'anc1', 'anc2', 'anc3', 'anc4', 'anc5', 'anc6', 'anc7', 'anc8', 'anc8+',
-                    'home_birth_delivery', 'hospital_delivery', 'health_centre_delivery',
-                    'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+']
-
-    mnh_outcome_counter = {k: 0 for k in outcome_list}
-
-    return {'counter': mnh_outcome_counter,
-            'outcomes': outcome_list}
-
 def get_list_of_items(self, item_list):
     """
     Uses get_item_code_from_item_name to return item codes for a list of named items
@@ -77,79 +20,124 @@ def get_list_of_items(self, item_list):
 
     return codes
 
-def check_int_deliverable(self, int_name, hsi_event,
-                          q_param=None, cons=None, opt_cons=None, equipment=None, dx_test=None):
+
+def return_cons_avail(self, hsi_event, cons, opt_cons):
     """
-    This function is called to determine if an intervention within the MNH modules can be delivered to an individual
-    during a given HSI. This applied to all MNH interventions. If analyses are being conducted in which the probability
-    of intervention delivery should be set explicitly, this is achieved during this function. Otherwise, probability of
-     intervention delivery is determined by any module-level quality parameters, consumable availability, and
-     (if applicable) the results of any dx_tests. Equipment is also declared.
-
-   :param self: module
-    param int_name: items for code look up
-    param hsi_event: module
-    param q_param: items for code look up
-    param cons: module
-    param opt_cons: items for code look up
-    param equipment: module
-    param dx_test: items for code look up
+    This function is called by majority of interventions across maternal and neonatal modules to return whether a
+    consumable or package of consumables are available. If analysis is not being conducted (as indicated by a series of
+    analysis boolean parameters) then the availability is determined via the health system module. Otherwise a
+    fixed probability of availability is used to force a set level of intervention coverage
+    availability
+    :param self: module
+    :param hsi_event: hsi_event calling the intervention
+    :param cons_dict: dictionary containing the consumables for that module
+    :param info: information on core, optional and number of consumables requested
+    :return: BOOL
     """
+    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+    ps_params = self.sim.modules['PregnancySupervisor'].current_parameters
+    la_params = self.sim.modules['Labour'].current_parameters
 
-    df = self.sim.population.props
-    individual_id = hsi_event.target
-    p_params = self.sim.modules['PregnancySupervisor'].current_parameters
-    l_params = self.sim.modules['Labour'].current_parameters
+    if opt_cons is None:
+        opt_cons = []
 
-    # assert int_name in p_params['all_interventions']
+    # Check if analysis is currently running, if not then availability is determined normally
+    if not ps_params['ps_analysis_in_progress'] and not la_params['la_analysis_in_progress']:
+        available = hsi_event.get_consumables(item_codes=cons,
+                                              optional_item_codes=opt_cons)
 
-    # Firstly, we determine if an analysis is currently being conducted during which the probability of intervention
-    # delivery is being overridden
-    # To do: replace this parameter
-    if (p_params['interventions_analysis'] and p_params['ps_analysis_in_progress'] and
-        (int_name in p_params['interventions_under_analysis'])):
+        if not available and (hsi_event.target in mni) and (hsi_event != 'AntenatalCare_Outpatient'):
+            mni[hsi_event.target]['cons_not_avail'] = True
 
-        # If so, we determine if this intervention will be delivered given the set probability of delivery.
-        can_int_run_analysis = self.rng.random_sample() < p_params['intervention_analysis_availability']
+        return available
 
-        # The intervention has no effect
-        if not can_int_run_analysis:
-            return False
+    else:
+        available = hsi_event.get_consumables(item_codes=cons, optional_item_codes=opt_cons)
 
-        else:
-            # The intervention will have an effect. If this is an intervention which leads to an outcome dependent on
-            # correct identification of a condition through a dx_test we account for that here.
-            if dx_test is not None:
-                test = self.sim.modules['HealthSystem'].dx_manager.dx_tests[dx_test]
-
-                if test[0].target_categories is None and (df.at[individual_id, test[0].property]):
-                    return True
-
-                elif ((test[0].target_categories is not None) and
-                      (df.at[individual_id, test[0].property] in test[0].target_categories)):
-                    return True
-
-                else:
-                    return False
-
-            else:
-                return True
-
-    elif (l_params['la_analysis_in_progress'] or
-          (p_params['ps_analysis_in_progress'] and not p_params['interventions_under_analysis'])):
-
+        # Depending on HSI calling this function a different parameter set is used to determine if analysis is being
+        # conducted
         if 'AntenatalCare' in hsi_event.TREATMENT_ID:
             params = self.sim.modules['PregnancySupervisor'].current_parameters
         else:
             params = self.sim.modules['Labour'].current_parameters
 
-        # Define HSIs and analysis parameters of interest
+        # Store the names of the parameters which indicate that analysis is being conducted against specific HSIs
         analysis_dict = {'AntenatalCare_Outpatient': ['alternative_anc_quality', 'anc_availability_probability'],
                          'AntenatalCare_Inpatient': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
                          'AntenatalCare_FollowUp': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
                          'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
                          'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
                          'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_cons_availability'],
+                         'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
+                         'PostnatalCare_Comprehensive': ['alternative_pnc_quality', 'pnc_availability_probability'],
+                         'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
+
+        # Cycle through each HSI of interest. If this HSI is requesting a consumable, analysis is being conducted and
+        # the simulation date is greater than the predetermined analysis date, then a random draw against a probability
+        # of consumable availability is used
+        for k in analysis_dict:
+            if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]]:
+                if self.rng.random_sample() < params[analysis_dict[k][1]]:
+                    available = True
+                else:
+                    available = False
+
+        # If the consumable is not available this is stored in the MNI dictionary
+        if not available and (hsi_event.target in mni) and (hsi_event != 'AntenatalCare_Outpatient'):
+            mni[hsi_event.target]['cons_not_avail'] = True
+
+        return available
+
+
+def check_emonc_signal_function_will_run(self, sf, hsi_event):
+    """
+    Called during/after labour to determine if a B/CEmONC function will run depending on the availability of HCWs
+    trained in the intervention and their competence
+    :param self: module
+    :param sf: signal function of interest
+    :param hsi_event: hsi_event calling the intervention
+    :return: BOOL
+    """
+    la_params = self.sim.modules['Labour'].current_parameters
+    ps_params = self.sim.modules['PregnancySupervisor'].current_parameters
+    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+    def see_if_sf_will_run():
+        # Determine competence parameter to use (higher presumed competence in hospitals)
+        if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a':
+            competence = la_params['mean_hcw_competence_hc'][0]
+        else:
+            competence = la_params['mean_hcw_competence_hp'][1]
+
+        comp_result = self.rng.random_sample() < competence
+        hcw_result = self.rng.random_sample() < la_params[f'prob_hcw_avail_{sf}']
+
+        # If HCW is available and staff are competent at delivering the intervention then it will be delivered
+        if comp_result and hcw_result:
+            return True
+
+        # Otherwise log within the mni
+        if not comp_result and (hsi_event.target in mni):
+            mni[hsi_event.target]['comp_not_avail'] = True
+        if not hcw_result and (hsi_event.target in mni):
+            mni[hsi_event.target]['hcw_not_avail'] = True
+
+        return False
+
+    if not la_params['la_analysis_in_progress'] and not ps_params['ps_analysis_in_progress']:
+        return see_if_sf_will_run()
+
+    else:
+        if 'AntenatalCare' in hsi_event.TREATMENT_ID:
+            params = self.sim.modules['PregnancySupervisor'].current_parameters
+        else:
+            params = self.sim.modules['Labour'].current_parameters
+
+        # Define HSIs and analysis parameters of interest
+        analysis_dict = {'AntenatalCare_Inpatient': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
+                         'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
+                         'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
+                         'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
                          'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
                          'PostnatalCare_Comprehensive': ['alternative_pnc_quality', 'pnc_availability_probability'],
                          'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
@@ -161,42 +149,69 @@ def check_int_deliverable(self, int_name, hsi_event,
                 if self.rng.random_sample() < params[analysis_dict[k][1]]:
                     return True
 
-                else:
+                # If the event wont run it is stored in the HSI for the relevant woman
+                elif hsi_event.target in mni:
+                    barrier = self.rng.choice(['comp_not_avail', 'hcw_not_avail'])
+                    mni[hsi_event.target][barrier] = True
                     return False
 
-    else:
+        return see_if_sf_will_run()
 
-        # If analysis is not being conducted, intervention delivery is dependent on quality parameters, consumable
-        # availability and dx_test results
-        quality = False
-        consumables = False
-        test = False
 
-        if ((q_param is None) or
-            all([self.rng.random_sample() < value for value in q_param])):
-            quality = True
+def log_met_need(self, intervention, hsi):
+    """
+    This function is called whenever a woman receives an intervention used as treatment for a potentially fatal
+    complication within the maternal or neonatal health modules. The intervention is logged within the labour.detail
+    logging and is used to calculate treatment coverage/met need
+    :param self: module
+    :param intervention: intervention to be logged
+    :param hsi: hsi_event calling the intervention
+    """
+    df = self.sim.population.props
+    logger = logging.getLogger("tlo.methods.labour.detail")
+    person = df.loc[hsi.target]
+    person_id = hsi.target
 
-            # todo: should this only be if qual and cons are also true?
-            if equipment is not None:
-                hsi_event.add_equipment(equipment)
+    # Interventions with single indications are simply logged
+    if intervention in ('ep_case_mang', 'pac', 'avd_other', 'avd_ol', 'avd_spe_ec', 'uterotonics', 'man_r_placenta',
+                        'pph_surg', 'ur_surg', 'neo_resus', 'neo_sep_supportive_care', 'neo_sep_abx'):
+        logger.info(key='intervention', data={'person_id': person_id, 'int': intervention})
 
-        if ((cons is None) or
-            (hsi_event.get_consumables(item_codes=cons if not None else [],
-                                       optional_item_codes=opt_cons if not None else []))):
-            consumables = True
-
-        if cons is None and opt_cons is not None:
-            hsi_event.get_consumables(item_codes=[], optional_item_codes=opt_cons)
-
-        if ((dx_test is None) or
-            (self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=dx_test, hsi_event=hsi_event))):
-            test = True
-
-        if quality and consumables and test:
-            return True
-
+    # For interventions with multiple indications the HSI and properties of the individual are used to determine the
+    # correct name for the logged intervention.
+    elif (intervention == 'mag_sulph') or (intervention == 'iv_htns'):
+        if hsi.TREATMENT_ID == 'AntenatalCare_Inpatient':
+            tp = ['an', 'ps']
+        elif hsi.TREATMENT_ID == 'DeliveryCare_Basic':
+            tp = ['la', 'ps']
         else:
-            return False
+            tp = ['pn', 'pn']
+
+        logger.info(key='intervention',
+                    data={'person_id': person_id,
+                          'int': f'{intervention}_{tp[0]}_{df.at[person_id, f"{tp[1]}_htn_disorders"]}'})
+
+    elif intervention == 'sepsis_abx':
+        if (hsi.TREATMENT_ID == 'DeliveryCare_Basic') or (hsi.TREATMENT_ID == 'AntenatalCare_Inpatient'):
+            logger.info(key='intervention', data={'person_id': person_id, 'int': 'abx_an_sepsis'})
+
+        elif hsi.TREATMENT_ID == 'PostnatalCare_Maternal':
+            logger.info(key='intervention', data={'person_id': person_id, 'int': 'abx_pn_sepsis'})
+
+    elif intervention == 'blood_tran':
+        if hsi.TREATMENT_ID == 'AntenatalCare_Inpatient':
+            logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_anaemia'})
+
+        elif hsi.TREATMENT_ID == 'DeliveryCare_Comprehensive':
+            if ((person.la_antepartum_haem != 'none') or (person.ps_antepartum_haemorrhage != 'none')) and \
+              not person.la_is_postpartum:
+                logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_aph'})
+
+            elif person.la_uterine_rupture and not person.la_is_postpartum:
+                logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_ur'})
+
+            elif (person.la_postpartum_haem or person.pn_postpartum_haem_secondary) and person.la_is_postpartum:
+                logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_pph'})
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):
@@ -268,10 +283,7 @@ def update_current_parameter_dictionary(self, list_position):
 
     for key, value in self.parameters.items():
         if isinstance(value, list):
-            if not value or (len(value)) == 1 or key in ('interventions_under_analysis', 'all_interventions'):
-                self.current_parameters[key] = self.parameters[key]
-            else:
-                self.current_parameters[key] = self.parameters[key][list_position]
+            self.current_parameters[key] = self.parameters[key][list_position]
         else:
             if list_position == 0:
                 self.current_parameters[key] = self.parameters[key]
@@ -309,7 +321,7 @@ def log_mni_for_maternal_death(self, person_id):
     logger.info(key='death_mni', data=mni_to_log)
 
 
-def calculate_risk_of_death_from_causes(self, risks, target):
+def calculate_risk_of_death_from_causes(self, risks):
     """
     This function calculates risk of death in the context of one or more 'death causing' complications in a mother of a
     newborn. In addition, it determines if the complication(s) will cause death or not. If death occurs the function
@@ -337,8 +349,7 @@ def calculate_risk_of_death_from_causes(self, risks, target):
         # Now use the list of probabilities to conduct a weighted random draw to determine primary cause of death
         cause_of_death = self.rng.choice(list(risks.keys()), p=probs)
 
-        # Return and log the primary cause of death so that it can be passed to the demography function
-        self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{cause_of_death}_{target}_death'] += 1
+        # Return the primary cause of death so that it can be passed to the demography function
         return cause_of_death
     else:
         # Return false if death will not occur
@@ -449,7 +460,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                 risks.update(risk)
 
         # Call return the result from calculate_risk_of_death_from_causes function
-        return calculate_risk_of_death_from_causes(self, risks, target='m')
+        return calculate_risk_of_death_from_causes(self, risks)
 
     # if she is not at risk of death as she has no complications we return false to the module
     return False
@@ -519,7 +530,7 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
             risks.update(risk)
 
         # Return the result from calculate_risk_of_death_from_causes function (returns primary cause of death or False)
-        return calculate_risk_of_death_from_causes(self, risks, target='n')
+        return calculate_risk_of_death_from_causes(self, risks)
 
     # if they is not at risk of death as they has no complications we return False to the module
     return False

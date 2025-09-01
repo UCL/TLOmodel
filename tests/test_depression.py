@@ -29,17 +29,17 @@ except NameError:
 def test_configuration_of_properties(seed):
     # --------------------------------------------------------------------------
     # Create and run a short but big population simulation for use in the tests
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable=True),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 depression.Depression())
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath))
 
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=Date(year=2013, month=1, day=1))
@@ -116,18 +116,20 @@ def test_hsi_functions(tmpdir, seed):
     #   --- people should have both talking therapies and antidepressants
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population.
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(mode_appt_constraints=0, cons_availability='all',
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           mode_appt_constraints=0,
+                                           cons_availability='all',
                                            hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 depression.Depression())
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care
     sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25
@@ -173,18 +175,20 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
 
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(mode_appt_constraints=0, cons_availability='none',
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           mode_appt_constraints=0,
+                                           cons_availability='none',
                                            hsi_event_count_log_period="simulation"),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 depression.Depression())
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care
     sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25
@@ -235,18 +239,18 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir, seed):
     }
 
     # Create and run a longer simulation on a small population
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed,
-                     log_config=log_config, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, log_config=log_config)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable_and_reject_all=True),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 depression.Depression())
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care
     sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25

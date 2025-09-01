@@ -44,19 +44,21 @@ def run_scenario(**kwargs):
         }
     }
 
-    sim = Simulation(start_date=start_date, log_config=log_config,
-                     show_progress_bar=True, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
 
     sim.register(
-        demography.Demography(),
-        enhanced_lifestyle.Lifestyle(),
-        simplified_births.SimplifiedBirths(),
-        symptommanager.SymptomManager(),
-        healthseekingbehaviour.HealthSeekingBehaviour(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
                                                       force_any_symptom_to_lead_to_healthcareseeking=True),
-        healthburden.HealthBurden(),
-        healthsystem.HealthSystem(disable=True, cons_availability='all'),
-        alri.Alri(),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  disable=True,
+                                  cons_availability='all',
+                                  ),
+        alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
     )
 

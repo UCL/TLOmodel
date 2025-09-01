@@ -62,33 +62,36 @@ log_config = {
     }
 }
 
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
 # Register the appropriate modules
 sim.register(
     # Standard modules:
-    demography.Demography(),
-    enhanced_lifestyle.Lifestyle(),
-    symptommanager.SymptomManager(spurious_symptoms=True),
-    healthseekingbehaviour.HealthSeekingBehaviour(force_any_symptom_to_lead_to_healthcareseeking=True),
-    healthburden.HealthBurden(),
+    demography.Demography(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
+                                  spurious_symptoms=True),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                  force_any_symptom_to_lead_to_healthcareseeking=True),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
 
     # HealthSystem
-    healthsystem.HealthSystem(mode_appt_constraints=0),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                              mode_appt_constraints=0),
 
     # Modules for birth/labour/newborns --> Simplified Births
-    simplified_births.SimplifiedBirths(),
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
 
     # Disease modules considered complete:
-    cardio_metabolic_disorders.CardioMetabolicDisorders(),
-    depression.Depression(),
-    diarrhoea.Diarrhoea(),
-    epi.Epi(),
-    epilepsy.Epilepsy(),
-    hiv.Hiv(),
-    malaria.Malaria(),
-    oesophagealcancer.OesophagealCancer(),
-    other_adult_cancers.OtherAdultCancer()
+    cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+    depression.Depression(resourcefilepath=resourcefilepath),
+    diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+    epi.Epi(resourcefilepath=resourcefilepath),
+    epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+    hiv.Hiv(resourcefilepath=resourcefilepath),
+    malaria.Malaria(resourcefilepath=resourcefilepath),
+    oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
+    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
 )
 
 # Adjust parameters so that there are lots of HSI events:

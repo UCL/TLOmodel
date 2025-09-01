@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -32,9 +34,7 @@ log_config_single = {
     }
 }
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
-# resourcefilepath = Path('./resources')
-resourcefilepath = './resources'
-
+resourcefilepath = Path('./resources')
 # Establish the simulation object
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
@@ -44,19 +44,18 @@ pop_size = 10000
 seed = 100
 
 # Create the simulation object
-sim_single_injury = Simulation(start_date=start_date, seed=seed, log_config=log_config_single,
-                               resourcefilepath=resourcefilepath)
+sim_single_injury = Simulation(start_date=start_date, seed=seed, log_config=log_config_single)
 
 # Register the modules
 sim_single_injury.register(
-    demography.Demography(),
-    enhanced_lifestyle.Lifestyle(),
-    healthsystem.HealthSystem(service_availability=['*']),
-    symptommanager.SymptomManager(),
-    healthseekingbehaviour.HealthSeekingBehaviour(),
-    healthburden.HealthBurden(),
-    rti.RTI(),
-    simplified_births.SimplifiedBirths(),
+    demography.Demography(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    rti.RTI(resourcefilepath=resourcefilepath),
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
 )
 # Get the log file
 
@@ -94,18 +93,17 @@ log_config_multiple = {
         "tlo.methods.healthburden": logging.INFO
     }
 }
-sim_multiple_injury = Simulation(start_date=start_date, seed=seed, log_config=log_config_multiple,
-                                 resourcefilepath=resourcefilepath)
+sim_multiple_injury = Simulation(start_date=start_date, seed=seed, log_config=log_config_multiple)
 # Register the modules
 sim_multiple_injury.register(
-    demography.Demography(),
-    enhanced_lifestyle.Lifestyle(),
-    healthsystem.HealthSystem(service_availability=['*']),
-    symptommanager.SymptomManager(),
-    healthseekingbehaviour.HealthSeekingBehaviour(),
-    healthburden.HealthBurden(),
-    rti.RTI(),
-    simplified_births.SimplifiedBirths(),
+    demography.Demography(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    rti.RTI(resourcefilepath=resourcefilepath),
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
 )
 
 # create and run the simulation

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd
@@ -142,14 +142,16 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
                                     categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
     }
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
+        self.resourcefilepath = resourcefilepath
         self.models = None  # (Will store the models used in the module)
         self.cons_item_codes = None  # (Will store consumable item codes)
 
-    def read_parameters(self, resourcefilepath: Optional[Path]=None):
+    def read_parameters(self, data_folder):
         self.load_parameters_from_dataframe(
-            read_csv_files(resourcefilepath / 'ResourceFile_Stunting', files='Parameter_values')
+            read_csv_files(
+                Path(self.resourcefilepath) / 'ResourceFile_Stunting', files='Parameter_values')
         )
 
     def initialise_population(self, population):

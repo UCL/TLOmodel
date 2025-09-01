@@ -197,10 +197,10 @@ def test_logs_parsing(tmpdir):
     sim = Simulation(start_date=start_date, seed=0, log_config={
         'filename': 'logs_dict_class',
         'directory': tmpdir,
-    }, resourcefilepath=resourcefilepath)
+    })
 
     sim.register(
-        demography.Demography()
+        demography.Demography(resourcefilepath=resourcefilepath)
     )
 
     # Create a simulation
@@ -338,7 +338,7 @@ def copy_files_to_temporal_directory_and_return_path(tmpdir):
 
 
 def test_pass_datatypes_to_read_csv_method(tmpdir):
-    """Test passing column datatypes to read csv method. Final column datatype should change to what has been passed."""
+    """ test passing column datatypes to read csv method. Final column datatype should change to what has been passed """
     # copy and get resource files path in the temporal directory
     path_to_tmpdir = Path(tmpdir)
     sample_data = pd.DataFrame(data={'numbers1': [5,6,8,4,9,6], 'numbers2': [19,27,53,49,75,56]}, dtype=int)

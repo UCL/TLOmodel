@@ -193,8 +193,9 @@ class SymptomManager(Module):
                         'NB. This is over-ridden if a module key-word argument is provided.'),
     }
 
-    def __init__(self, name=None, spurious_symptoms=None):
+    def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=None):
         super().__init__(name)
+        self.resourcefilepath = resourcefilepath
         self.spurious_symptoms = None
         self.arg_spurious_symptoms = spurious_symptoms
         self._persons_with_newly_onset_symptoms = set()
@@ -227,12 +228,12 @@ class SymptomManager(Module):
         """get the column name that corresponds to the symptom_name"""
         return f'sy_{symptom_name}'
 
-    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+    def read_parameters(self, data_folder):
         """Read in the generic symptoms and register them"""
         self.parameters['generic_symptoms_spurious_occurrence'] = \
-            pd.read_csv(resourcefilepath / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
         self.load_parameters_from_dataframe(
-            pd.read_csv(resourcefilepath / 'ResourceFile_SymptomManager.csv'))
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_SymptomManager.csv'))
 
     def register_symptom(self, *symptoms_to_register: Symptom):
         """
@@ -489,10 +490,10 @@ class SymptomManager(Module):
         This is a helper function that will give a list of strings for the symptoms that a _single_ person
         is currently experiencing.
 
-        If working in a `tlo.population.IndividualProperties` context, one can pass the context object instead of
-        supplying the person's DataFrame index. Note that at least one of these inputs must be passed as a keyword
-        argument however. In the event that both arguments are passed, the individual_details argument takes precedence
-        over the person_id.
+        If working in a `tlo.population.IndividualProperties` context, one can pass the context object
+        instead of supplying the person's DataFrame index.
+        Note that at least one of these inputs must be passed as a keyword argument however.
+        In the event that both arguments are passed, the individual_details argument takes precedence over the person_id.
 
         Optionally can specify disease_module_name to limit to the symptoms caused by that disease module.
 
