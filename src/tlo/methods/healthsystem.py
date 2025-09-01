@@ -2518,7 +2518,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 climate_disrupted = False
 
                 # First, check for climate disruption
-                if year > 2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] is not None:
+                if year >= 2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] is not None:
                     assert self.module.parameters['services_affected_precip'] == 'all'
                     fac_level = item.hsi_event.facility_info.level
                     facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_level}']
