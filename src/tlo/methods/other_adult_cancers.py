@@ -119,7 +119,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "rate ratio for site-confined other_adult cancer for age 50-69"
         ),
         "rr_site_confined_agege70": Parameter(
-            Types.REAL, "rate ratio for site-confined other_adult cancer for age 70"
+            Types.REAL, "rate ratio for site-confined other_adult cancer for age ge 70"
         ),
         "rr_site_confined_hiv": Parameter(
             Types.REAL, "rate ratio for site-confined other_adult_cancer if infected with HIV"
@@ -837,8 +837,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "oac_date_treatment"] = self.sim.date
             df.at[person_id, "oac_stage_at_which_treatment_given"] = df.at[person_id, "oac_status"]
 
-            # Schedule a post-treatment check for 3 months:
-            # (NOTE: discrepancy between original comment (12 mo) and current parameter value (3mo)
+            # Schedule a post-treatment check for 12 months:
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
@@ -893,8 +892,7 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
             )
 
         else:
-            # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in 3 months
-            # (NOTE: discrepancy between original comment (1 mo) and current parameter value (3mo)
+            # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in one month
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
