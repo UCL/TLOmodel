@@ -1118,7 +1118,7 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     # Generate the heatmap
     sns.set_theme(font_scale=1.5)
     plt.figure(figsize=(10, 8))
-    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn',
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', vmin=0, vmax=1,
                 cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
     plt.title('Availability of essential consumables\n for acute malnutrition treatments', fontweight='bold')
@@ -1185,7 +1185,7 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
 
     # Generate the heatmap
     plt.figure(figsize=(10, 8))
-    sns.heatmap(treatment_heatmap_data, annot=True, cmap='RdYlGn',
+    sns.heatmap(treatment_heatmap_data, annot=True, cmap='RdYlGn', vmin=0, vmax=1,
                 cbar_kws={'label': 'Proportion of days on which treatment is available'})
 
     plt.title('Availability of treatments\n for acute malnutrition', fontweight='bold')
