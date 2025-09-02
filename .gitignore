@@ -130,3 +130,7 @@ docs/parameters.rst
 docs/reference/modules.rst
 docs/reference/tlo*.rst
 docs/resources/**/*.rst
+
+# Climate files
+
+src/scripts/climate_disruptions/comparison_actual_vs_expected_disruption.ipynb
