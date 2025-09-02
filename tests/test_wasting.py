@@ -776,7 +776,7 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
         sim.event_queue.queue = []  # clear the queue
 
         # Set moderate wasting incidence rate at 100% and rate of progression to severe wasting at 0%.
-        # (Hence, all children with normal wasting should get onset of moderate wasting and be scheduled for natural
+        # (Hence, all children with no wasting should get onset of moderate wasting and be scheduled for natural
         # recovery.)
         wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
         wmodule.wasting_models.severe_wasting_progression_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
@@ -832,13 +832,18 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
         # Check full recovery with treatment is scheduled before the natural recovery
         full_recov_events = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
                                  if isinstance(event_tuple[1], Wasting_FullRecovery_Event)]
-        assert len(full_recov_events) in [1, 2], "only 1 or 2 full recovery events should be scheduled"
-        # with MAM natural full recovery as well as full recovery with treatment
-        if len(full_recov_events) == 2:
-            # treatment recovery scheduled to happen before recovery with treatment
+        if am_state_expected == 'MAM':
+            assert len(full_recov_events) == 2, (f"Two full recovery events should be scheduled (natural and following "
+                                                 f"treatment), but {len(full_recov_events)} is/are scheduled.")
+            # check the natural full recovery is at position 1;
+            # hence full recovery following treatment will always be at position 0
             nat_recov_event_tuple = full_recov_events[1]
             date_of_scheduled_nat_recov_to_confirm = nat_recov_event_tuple[0]
             assert date_of_scheduled_nat_recov_to_confirm == date_of_scheduled_nat_recov
+        else: # complicated SAM
+            assert len(full_recov_events) == 1, (f"One full recovery event should be scheduled (following treatment),"
+                                                 f"but {len(full_recov_events)} is/are scheduled.")
+        # full recovery following treatment at position 0
         tx_recov_event_tuple = full_recov_events[0]
         date_of_scheduled_tx_recov = tx_recov_event_tuple[0]
         tx_recov_event = tx_recov_event_tuple[1]
@@ -860,9 +865,9 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
 
         # Check natural recovery is going to be cancelled
         if am_state_expected == 'MAM':
-            assert date_of_scheduled_nat_recov in df.at[person_id, 'un_full_recov_to_cancel']
+            assert  pd.isnull(person['un_full_recov_date'])
         else: # complicated SAM
-            assert date_of_scheduled_nat_recov in df.at[person_id, 'un_recov_to_mam_to_cancel']
+            assert pd.isnull(person["un_recov_to_mam_date"])
         # Run the natural recovery, this should have no effect
         sim.date = date_of_scheduled_nat_recov
         nat_recov_event.apply(person_id)
@@ -879,15 +884,15 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
 
 
 def test_recovery_before_death_scheduled(tmpdir):
-    """ Show that if a recovery event is run before when a person was going to die, it causes the episode to end without
-    the person dying. """
+    """ Test that if a recovery event following a treatment occurs before a scheduled death due to untreated SAM, the
+    person recovers and does not die."""
     popsize = 1000
     sim = get_sim(tmpdir)
     # get wasting module
     wmodule = sim.modules['Wasting']
     p = wmodule.parameters
 
-    # Set death due to untreated SAM at 0% for all, hence always scheduled natural recovery from SAM
+    # Set death due to untreated SAM at 0% for all, so natural recovery from SAM is always scheduled
     p['base_death_rate_untreated_SAM'] = 0.0
     p['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
 
@@ -895,13 +900,12 @@ def test_recovery_before_death_scheduled(tmpdir):
     sim.simulate(end_date=start_date)  # zero duration
     sim.event_queue.queue = []  # clear the queue
 
-
     # Set moderate wasting incidence, progression to severe wasting, and death rate after SAM care at 100%
     wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
     wmodule.wasting_models.severe_wasting_progression_lm = LinearModel.multiplicative()
     p['prob_death_after_SAMcare'] = 1.0
-    # Set full recovery with SAM care at 0% (and as 100% death rate after SAM care, no recovery to MAM),
-    # hence they will always die with SAM care
+    # Set full recovery with SAM care at 0%. With a 100% death rate after SAM care, there will be no recovery to MAM;
+    # all individuals will die after receiving SAM care.
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
     # Ensure the individual has no complications when SAM occurs
     p['prob_complications_in_SAM'] = 0.0
@@ -962,8 +966,7 @@ def test_recovery_before_death_scheduled(tmpdir):
     # Run health seeking behavior and ensure non-emergency event is scheduled
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
     hsp.run()
-
-    # Check non-emergency care event is scheduled
+    # check non-emergency care event is scheduled
     assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
                       hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
 
@@ -1004,6 +1007,7 @@ def test_recovery_before_death_scheduled(tmpdir):
     assert date_of_scheduled_death > date_of_scheduled_nat_recov
 
     # Run a full recovery event (it is not scheduled though)
+    df.at[person_id, 'un_full_recov_date'] = sim.date
     full_recov_event = Wasting_FullRecovery_Event(person_id=person_id, module=wmodule)
     full_recov_event.apply(person_id=person_id)
 
@@ -1016,6 +1020,9 @@ def test_recovery_before_death_scheduled(tmpdir):
     assert not person['un_sam_with_complications']
     assert person['un_am_recovery_date'] == sim.date
     assert pd.isnull(person['un_sam_death_date'])
+    assert pd.isnull(person['un_recov_to_mam_date'])
+    assert pd.isnull(person['un_full_recov_date'])
+    assert pd.isnull(person['un_progression_date'])
     assert person['is_alive']
 
     # Run the death event that was originally scheduled - this should have no effect and the person should not die

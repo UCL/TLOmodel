@@ -194,13 +194,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                              'none', 'not_applicable']),
         'un_am_discharge_date': Property(Types.DATE, 'planned discharge date from current treatment '
                                                      'when recovery will happen if not yet recovered'),
-        # Properties to help cancel events
-        'un_recov_to_mam_to_cancel': Property(Types.LIST, 'list of dates of scheduled natural recovery to be '
-                                                       'canceled for the person'),
-        'un_full_recov_to_cancel': Property(Types.LIST, 'list of dates of scheduled recovery with tx '
-                                                        'to be canceled for the person'),
-        'un_progression_to_cancel': Property(Types.LIST, 'list of dates of scheduled progression to severe '
-                                                         'wasting to be canceled for the person'),
+        # Dates on which the events should occur
+        'un_recov_to_mam_date': Property(Types.DATE, 'date on which recovery from severe to moderate acute '
+                                                     'malnutrition (SAM to MAM) should occur'),
+        'un_full_recov_date': Property(Types.DATE, 'date on which the full recovery for the person should '
+                                                     'occur'),
+        'un_progression_date': Property(Types.DATE, 'date on which the progression from moderate to severe '
+                                                    'wasting for the person should occur'),
         # Properties to avoid double acute malnutrition assessment
         'un_last_nonemergency_appt_date': Property(Types.DATE, 'last date of generic non-emergency first '
                                                                'appointment'),
@@ -310,12 +310,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # df.loc[df.is_alive, 'un_am_discharge_date'] = pd.NaT
         # df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
         df.loc[df.is_alive, 'un_am_treatment_type'] = 'not_applicable'
-        df.loc[df.is_alive, 'un_recov_to_mam_to_cancel'] = \
-            df.loc[df.is_alive, 'un_recov_to_mam_to_cancel'].apply(lambda x: [])
-        df.loc[df.is_alive, 'un_full_recov_to_cancel'] = \
-            df.loc[df.is_alive, 'un_full_recov_to_cancel'].apply(lambda x: [])
-        df.loc[df.is_alive, 'un_progression_to_cancel'] = \
-            df.loc[df.is_alive, 'un_progression_to_cancel'].apply(lambda x: [])
+        # df.loc[df.is_alive, 'un_recov_to_mam_date'] = pd.NaT
+        # df.loc[df.is_alive, 'un_full_recov_date'] = pd.NaT
+        # df.loc[df.is_alive, 'un_progression_date'] = pd.NaT
         # df.loc[df.is_alive, 'un_last_nonemergency_appt_date']= pd.NaT
         # df.loc[df.is_alive, 'un_last_growth_monitoring_appt_date']= pd.NaT
 
@@ -412,9 +409,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # df.at[child_id, 'un_am_discharge_date'] = pd.NaT
         # df.at[child_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[child_id, 'un_am_treatment_type'] = 'not_applicable'
-        df.at[child_id, 'un_recov_to_mam_to_cancel'] = []
-        df.at[child_id, 'un_full_recov_to_cancel'] = []
-        df.at[child_id, 'un_progression_to_cancel'] = []
+        # df.at[child_id, 'un_recov_to_mam_date'] = pd.NaT
+        # df.at[child_id, 'un_full_recov_date'] = pd.NaT
+        # df.at[child_id, 'un_progression_date'] = pd.NaT
         # df.at[child_id, 'un_last_nonemergency_appt_date']= pd.NaT
         # df.at[child_id, 'un_last_growth_monitoring_appt_date']= pd.NaT
 
@@ -808,7 +805,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def do_when_am_treatment(self, person_id, treatment) -> None:
         """
-        Cancels any scheduled natural outcome for the individual; outcomes are now determined solely by the treatment.
+        Cancels any scheduled natural outcome for the individual; outcome is now determined solely by the treatment.
         Processes the specified treatment, determines the outcome, and if appropriate, schedules an outcome event and/or
         an enrolment for a follow-up treatment.
 
@@ -824,17 +821,17 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
         rng = self.rng
 
-        # natural progression or recovery is cancelled with the treatment and the outcome is fully driven by treatment
-        self.cancel_future_event(person_id, event_type=Wasting_ProgressionToSevere_Event)
-        self.cancel_future_event(person_id, event_type=Wasting_FullRecovery_Event)
-        self.cancel_future_event(person_id, event_type=Wasting_RecoveryToMAM_Event)
+        # Cancel any scheduled natural outcome (natural recovery, progression, or death) with treatment,
+        # the outcome will be determined by treatment
+        df.at[person_id, 'un_recov_to_mam_date'] = pd.NaT
+        df.at[person_id, 'un_full_recov_date'] = pd.NaT
+        df.at[person_id, 'un_progression_date'] = pd.NaT
+        df.at[person_id, 'un_sam_death_date'] = pd.NaT
+        # Reset treatment discharge date
+        df.at[person_id, 'un_am_discharge_date'] = pd.NaT
 
         # Set the date when the treatment is provided:
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
-        # Reset treatment discharge date
-        df.at[person_id, 'un_am_discharge_date'] = pd.NaT
-        # Cancel natural death due to SAM with treatment
-        df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
         if treatment == 'SFP':
             outcome_date = self.sim.date + DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM'])
@@ -848,12 +845,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 )
 
             if mam_full_recovery:
-                # set discharge date and schedule recovery for that day
+                # set discharge date and schedule full recovery for that day
                 df.at[person_id, 'un_am_discharge_date'] = outcome_date
                 self.sim.schedule_event(
                     event=Wasting_FullRecovery_Event(module=self, person_id=person_id),
-                    date=(df.at[person_id, 'un_am_discharge_date'])
+                    date=outcome_date
                 )
+                df.at[person_id, "un_full_recov_date"] = outcome_date
             else:
                 # remained MAM, send for another SFP
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -871,12 +869,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 df.loc[[person_id]], rng
             )
             if sam_full_recovery:
+                # set discharge date and schedule full recovery for that day
                 df.at[person_id, 'un_am_discharge_date'] = outcome_date
-                # schedule full recovery
                 self.sim.schedule_event(
                     event=Wasting_FullRecovery_Event(module=self, person_id=person_id),
                     date=outcome_date
                 )
+                df.at[person_id, "un_full_recov_date"] = outcome_date
                 # send for follow-up treatment for MAM
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
@@ -895,38 +894,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         date=outcome_date
                     )
                     df.at[person_id, 'un_sam_death_date'] = outcome_date
-                else:  # recovery to MAM and send for treatment for MAM
+                else:  # schedule recovery to MAM and send for follow-up SFP
                     df.at[person_id, 'un_am_discharge_date'] = outcome_date
                     self.sim.schedule_event(event=Wasting_RecoveryToMAM_Event(module=self, person_id=person_id),
                                             date=outcome_date)
+                    df.at[person_id, "un_recov_to_mam_date"] = outcome_date
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                         priority=0, topen=outcome_date)
-
-    def cancel_future_event(self, person_id, event_type) -> None:
-        """
-        This function will add dates of recovery and/or progression events that need to be canceled.
-
-        :param person_id:
-        :param event_type: which event type to cancel
-        """
-        df = self.sim.population.props
-
-        event_tuples = [event_tuple for event_tuple in self.sim.find_events_for_person(person_id)
-                        if isinstance(event_tuple[1], event_type)]
-        if event_tuples:
-            dates = [event_tuple[0] for event_tuple in event_tuples]
-            event_type_map = {
-                Wasting_RecoveryToMAM_Event: 'un_recov_to_mam_to_cancel',
-                Wasting_FullRecovery_Event: 'un_full_recov_to_cancel',
-                Wasting_ProgressionToSevere_Event: 'un_progression_to_cancel'
-            }
-
-            # add dates of natural history events to be cancelled due to tx, the health outcome will be driven by the tx
-            for date in dates:
-                df.at[person_id, event_type_map[event_type]].append(date)
-
-        # else: event_type not scheduled, hence no need to cancel any
 
 class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
     """
@@ -997,6 +972,7 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(
                 event=Wasting_ProgressionToSevere_Event(module=self.module, person_id=person_id), date=outcome_date
             )
+            df.at[person_id, "un_progression_date"] = outcome_date
 
         # # # MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # # # #
         # Schedule recovery for those not progressing to severe wasting ---------
@@ -1007,10 +983,12 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
                 # schedule full recovery after duration of moderate wasting
                 self.sim.schedule_event(event=Wasting_FullRecovery_Event(
                     module=self.module, person_id=person_id), date=outcome_date)
+                df.at[person_id, "un_full_recov_date"] = outcome_date
             else: # == SAM
                 # schedule recovery to MAM after duration of moderate wasting
                 self.sim.schedule_event(event=Wasting_RecoveryToMAM_Event(
                     module=self.module, person_id=person_id), date=outcome_date)
+                df.at[person_id, "un_recov_to_mam_date"] = outcome_date
 
 class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
     """
@@ -1026,21 +1004,21 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
 
-        # if person is already dead or not under 5 or not moderately wasted or is currently treated, the progression
-        # should not happen
+        # if the person is already dead, or not under 5, or not moderately wasted, or is currently treated,
+        # or progression should not occur today;
+        # the progression will NOT happen
         if (
             (not df.at[person_id, 'is_alive']) or
             (df.at[person_id, 'age_exact_years'] >= 5) or
             (df.at[person_id, 'un_WHZ_category'] != '-3<=WHZ<-2') or
             (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
-                self.sim.date)
+                self.sim.date) or
+            (df.at[person_id, "un_progression_date"] != self.sim.date)
         ):
             return
 
-        # if natural progression to severe wasting cancelled as person received tx, hence is not happening
-        if self.sim.date in df.at[person_id, 'un_progression_to_cancel']:
-            df.at[person_id, 'un_progression_to_cancel'].remove(self.sim.date)
-            return
+        # Reset the progression date
+        df.at[person_id, "un_progression_date"] = pd.NaT
 
         # # # INCIDENCE OF SEVERE WASTING # # # # # # # # # # # # # # # # # # # # #
         # Continue with progression to severe if not treated/recovered
@@ -1062,6 +1040,7 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
             outcome_date = self.sim.date + DateOffset(days=duration_of_untreated_sev_wasting)
             self.sim.schedule_event(event=Wasting_RecoveryToMAM_Event(
                 module=self.module, person_id=person_id), date=outcome_date)
+            df.at[person_id, "un_recov_to_mam_date"] = outcome_date
         # else: death due to SAM scheduled earlier, i.e. natural progression
 
 class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixin):
@@ -1097,9 +1076,9 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
                 cause='Severe Acute Malnutrition',
                 originating_module=self.module)
         # else:
-            # death is not happening as the person already recovered and didn't get wasted again since,
-            # or discharge_date is set, hence the person should recover due to tx, or the death was canceled due to tx,
-            # or the death was canceled due to tx, but scheduled for later as will die with tx anyway
+            # Death does not occur because the person has already recovered and has not become wasted again,
+            # or a discharge date is set (indicating recovery due to treatment),
+            # or the death event was canceled or rescheduled due to treatment.
 
 class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
     """
@@ -1120,16 +1099,15 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
         else:
             recov_how = 'tx'
 
-        # if already died, should not recover
-        if not df.at[person_id, 'is_alive']:
+        # if the person is already dead, or full recovery should not occur today;
+        # the recovery will NOT happen
+        if (
+            (not df.at[person_id, 'is_alive']) or
+            (df.at[person_id, "un_full_recov_date"] != self.sim.date)
+        ):
             return
 
-        # if the natural recovery was cancelled, will not recover now, the outcome will be driven by tx
-        if self.sim.date in df.at[person_id, 'un_full_recov_to_cancel']:
-            df.at[person_id, 'un_full_recov_to_cancel'].remove(self.sim.date)
-            return
-
-        # if not well (i.e. NOT already fully recovered with SAM tx, and send here from follow-up MAM tx)
+        # if not well (i.e. occurs as result of OTP/ITC, not a follow-up SFP)
         if df.at[person_id, 'un_WHZ_category'] != 'WHZ>=-2':
             if df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2':
                 recov_opt = f"mod_{df.at[person_id, 'un_clinical_acute_malnutrition']}_{recov_how}_full_recov"
@@ -1173,6 +1151,7 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_am_nutritional_oedema'] = False # no oedema
         df.at[person_id, 'un_am_MUAC_category'] = '>=125mm' # normal MUAC
         df.at[person_id, 'un_sam_with_complications'] = False
+        df.at[person_id, "un_full_recov_date"] = pd.NaT
         df.at[person_id, 'un_sam_death_date'] = pd.NaT
         df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[person_id, 'un_am_treatment_type'] = 'not_applicable'
@@ -1206,9 +1185,13 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM'):
             return
 
-        # if the natural recovery was cancelled, will not recover to MAM now, the outcome will be driven by tx
-        if self.sim.date in df.at[person_id, 'un_recov_to_mam_to_cancel']:
-            df.at[person_id, 'un_recov_to_mam_to_cancel'].remove(self.sim.date)
+        # if the person is already dead, or recovered, or recovery to MAM should not occur today;
+        # the recovery will NOT happen
+        if (
+            (not df.at[person_id, "is_alive"]) or
+            (df.at[person_id, "un_clinical_acute_malnutrition"] != "SAM") or
+            (df.at[person_id, "un_recov_to_mam_date"] != self.sim.date)
+        ):
             return
 
         # For cases with normal WHZ and other acute malnutrition signs:
@@ -1266,9 +1249,10 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
         df.at[person_id, 'un_am_nutritional_oedema'] = False
         df.at[person_id, 'un_sam_with_complications'] = False
+        df.at[person_id, "un_recov_to_mam_date"] = pd.NaT
         df.at[person_id, 'un_sam_death_date'] = pd.NaT # death is cancelled if was scheduled
-        df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         # Start without treatment, treatment will be applied with HSI if care sought
+        df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[person_id, 'un_am_treatment_type'] = 'none'
 
         # this will clear all wasting symptoms (applicable for SAM, not MAM)
@@ -1285,8 +1269,10 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         # natural history (if not treated)
         if df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2' and progression_severe_wasting_bool:
             self.sim.schedule_event(Wasting_ProgressionToSevere_Event(self.module, person_id), outcome_date)
+            df.at[person_id, "un_progression_date"] = outcome_date
         else:
             self.sim.schedule_event(Wasting_FullRecovery_Event(self.module, person_id), outcome_date)
+            df.at[person_id, "un_full_recov_date"] = outcome_date
 
 class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
     # TODO: maybe will be updated to integrate monitoring of < 1y old in epi module, and on birth schedule to be
