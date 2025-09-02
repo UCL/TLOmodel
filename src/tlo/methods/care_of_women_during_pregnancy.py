@@ -187,7 +187,7 @@ class CareOfWomenDuringPregnancy(Module):
             Types.INT, 'gestational age in weeks for delivery in PROM without infection'),
         'delivery_weeks_chorioamnionitis': Parameter(
             Types.INT, 'gestational age in weeks for delivery in chorioamnionitis'),
-        'delivery_ga_weeks_cs ': Parameter(
+        'delivery_ga_weeks_cs': Parameter(
             Types.INT, 'gestational age in weeks at which CS will most likely be scheduled for in '
                        'those for which it is indicated'),
 
