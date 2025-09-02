@@ -255,9 +255,11 @@ class NewbornOutcomes(Module):
 
         # Additional parameters for previously hardcoded values
         'prob_dist_mild_disability_preterm_<32weeks': Parameter(
-            Types.LIST, 'probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm <32 weeks'),
+            Types.LIST, 'probability distribution for mild disability '
+                        'types (mild_motor_and_cog vs mild_motor) in preterm <32 weeks'),
         'prob_dist_mild_disability_preterm_32_36weeks': Parameter(
-            Types.LIST, 'probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm 32-36 weeks'),
+            Types.LIST, 'probability distribution for mild disability '
+                        'types (mild_motor_and_cog vs mild_motor) in preterm 32-36 weeks'),
         'prob_dist_mod_severe_disability_preterm_<32weeks': Parameter(
             Types.LIST, 'probability distribution for moderate/severe disability types in preterm <32 weeks'),
         'prob_dist_mod_severe_disability_preterm_32_36weeks': Parameter(
@@ -1484,19 +1486,21 @@ class BreastfeedingStatusUpdateEventSixMonths(Event, IndividualScopeEventMixin):
         # For infants who are exclusively breastfeeding at 6 months, we determine if they will change to non-exclusive
         # feeding or no breastfeeding
         if child.nb_breastfeeding_status == 'exclusive':
-            random_draw = self.module.rng.choice(('non_exclusive', 'none'), p=params['prob_breastfeeding_status_change_6m_exclusive'])
+            random_draw = self.module.rng.choice(('non_exclusive', 'none'),
+                                                 p=params['prob_breastfeeding_status_change_6m_exclusive'])
             df.at[individual_id, 'nb_breastfeeding_status'] = random_draw
 
         # Similarly, for infants who are non-exclusively breastfeeding at 6 months we determine if they will continue
         # non-exclusively breastfeeding or stop breastfeeding all together
         if child.nb_breastfeeding_status == 'non_exclusive':
-            random_draw = self.module.rng.choice(('non_exclusive', 'none'), p=params['prob_breastfeeding_status_change_6m_nonexclusive'])
+            random_draw = self.module.rng.choice(('non_exclusive', 'none'),
+                                                 p=params['prob_breastfeeding_status_change_6m_nonexclusive'])
             df.at[individual_id, 'nb_breastfeeding_status'] = random_draw
 
         # We then schedule these breastfed newborns to return at 2 years to update breastfeeding status again
         if child.nb_breastfeeding_status != 'none':
-            self.sim.schedule_event(BreastfeedingStatusUpdateEventTwoYears(self.module, individual_id),
-                                    self.sim.date + DateOffset(months=params['breastfeeding_update_interval_after_6mo']))
+            self.sim.schedule_event(BreastfeedingStatusUpdateEventTwoYears(self.module, individual_id), self.sim.date
+                                    + DateOffset(months=params['breastfeeding_update_interval_after_6mo']))
 
 
 class BreastfeedingStatusUpdateEventTwoYears(Event, IndividualScopeEventMixin):
