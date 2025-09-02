@@ -184,11 +184,11 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
             Types.INT, "time after initial_polling_start_months_palliative_care in which pal. care "
                        " can begin"
         ),
-        "post_treatment_check_interval_years": Parameter(
-            Types.INT, "interval in years for first post-treatment check"
+        "post_treatment_check_interval_months": Parameter(
+            Types.INT, "interval in months for first post-treatment check"
         ),
-        "post_treatment_followup_interval_years": Parameter(
-            Types.INT, "interval in years for subsequent post-treatment follow-up appointments"
+        "post_treatment_followup_interval_months": Parameter(
+            Types.INT, "interval in months for subsequent post-treatment follow-up appointments"
         ),
         "palliative_care_repeat_interval_months": Parameter(
             Types.INT, "interval in months for repeating palliative care appointments"
@@ -943,14 +943,13 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "bc_date_treatment"] = self.sim.date
             df.at[person_id, "bc_stage_at_which_treatment_given"] = df.at[person_id, "bc_status"]
 
-            # Schedule a post-treatment check
-            # (NOTE: discrepancy between original comment (12 months) and parameter value (12 years):
+            # Schedule a post-treatment check for 12 months:
             hs.schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(years=p['post_treatment_check_interval_years']),
+                topen=self.sim.date + DateOffset(years=p['post_treatment_check_interval_months']),
                 tclose=None,
                 priority=0
             )
@@ -998,14 +997,13 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
 
         else:
             # Schedule another HSI_BladderCancer_PostTreatmentCheck event
-            # (NOTE: discrepancy between original comment (1 month) and parameter value (1 year):
             hs.schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
                 topen=self.sim.date +
-                      DateOffset(years=p['post_treatment_followup_interval_years']),
+                      DateOffset(years=p['post_treatment_followup_interval_months']),
                 tclose=None,
                 priority=0
             )
