@@ -639,8 +639,10 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
+
+        p = self.parameters
         # Only investigate if the patient is above the minimum age for investigation
-        if individual_properties["age_years"] > self.parameters["min_age_investigation"]:
+        if individual_properties["age_years"] > p["min_age_investigation"]:
             # Begin investigation if symptoms are present.
             if "blood_urine" in symptoms:
                 event = HSI_BladderCancer_Investigation_Following_Blood_Urine(
@@ -902,6 +904,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -940,13 +943,14 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "bc_date_treatment"] = self.sim.date
             df.at[person_id, "bc_stage_at_which_treatment_given"] = df.at[person_id, "bc_status"]
 
-            # Schedule a post-treatment check for 12 months (NOTE: discrepancy between comment and value):
+            # Schedule a post-treatment check
+            # (NOTE: discrepancy between original comment (12 months) and parameter value (12 years):
             hs.schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(years=self.module.parameters['post_treatment_check_interval_years']),
+                topen=self.sim.date + DateOffset(years=p['post_treatment_check_interval_years']),
                 tclose=None,
                 priority=0
             )
@@ -970,6 +974,7 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -992,15 +997,15 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
             )
 
         else:
-            # Schedule another HSI_BladderCancer_PostTreatmentCheck event in one month
-            # (NOTE: discrepancy between comment and value)
+            # Schedule another HSI_BladderCancer_PostTreatmentCheck event
+            # (NOTE: discrepancy between original comment (1 month) and parameter value (1 year):
             hs.schedule_hsi_event(
                 hsi_event=HSI_BladderCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
                 topen=self.sim.date +
-                      DateOffset(years=self.module.parameters['post_treatment_followup_interval_years']),
+                      DateOffset(years=p['post_treatment_followup_interval_years']),
                 tclose=None,
                 priority=0
             )
@@ -1029,6 +1034,7 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -1055,7 +1061,7 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
                     person_id=person_id
                 ),
                 topen=self.sim.date +
-                      DateOffset(months=self.module.parameters['palliative_care_repeat_interval_months']),
+                      DateOffset(months=p['palliative_care_repeat_interval_months']),
                 tclose=None,
                 priority=0
             )
