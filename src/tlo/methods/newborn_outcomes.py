@@ -1443,13 +1443,13 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
 
     def __init__(self, module, person_id, facility_level_of_this_hsi):
         super().__init__(module, person_id=person_id)
-        params = module.current_parameters
         assert isinstance(module, NewbornOutcomes)
 
         self.TREATMENT_ID = 'PostnatalCare_Neonatal_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': params['neonatal_ward_beddays']})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'general_bed': self.module.parameters['neonatal_ward_beddays']}))
 
     def apply(self, person_id, squeeze_factor):
 
