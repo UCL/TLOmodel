@@ -904,8 +904,7 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
             )
 
         else:
-            # Schedule another HSI_BreastCancer_PostTreatmentCheck event in specified months
-            # (NOTE: Discrepancy identified; Comment stated 1 month, but current parameter value 3 months)
+            # Schedule another HSI_BreastCancer_PostTreatmentCheck event in one month
             hs.schedule_hsi_event(
                 hsi_event=HSI_BreastCancer_PostTreatmentCheck(
                     module=self.module,
@@ -959,8 +958,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             if pd.isnull(df.at[person_id, "brc_date_palliative_care"]):
                 df.at[person_id, "brc_date_palliative_care"] = self.sim.date
 
-            # Schedule another instance of the event for specified months
-            # (NOTE: Discrepancy identified; Comment stated 1 month, but current parameter value 3 months)
+            # Schedule another instance of the event for one month
             hs.schedule_hsi_event(
                 hsi_event=HSI_BreastCancer_PalliativeCare(
                     module=self.module,
