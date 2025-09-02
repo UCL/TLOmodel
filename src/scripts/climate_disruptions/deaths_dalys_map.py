@@ -28,9 +28,10 @@ district_colours = [
         'coral', 'salmon', 'khaki', 'plum', 'orchid', 'tan', 'wheat', 'azure'
     ]
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
-    output = parse_log_file('/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/climate_scenario_runs-2025-08-01T121521Z/0/0/climate_scenario_runs__2025-08-01T121736.log')
+vmin = -240
+vmax = 200
 
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce a standard set of plots describing the effect of each climate scenario.
     - Generate time trend plots of deaths and DALYs by cause and district.
     - Create a final summary plot showing total deaths and DALYs per district stacked by scenario.
@@ -123,14 +124,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 only_mean=True,
                 collapse_columns=True,
             )[draw]
-            all_years_data_dalys_mean[target_year] = result_data_dalys['mean']#/result_data_population['mean'] * 1000
-            all_years_data_deaths_mean[target_year] = result_data_deaths['mean']#/result_data_population['mean'] * 1000
+            all_years_data_dalys_mean[target_year] = result_data_dalys['mean']/result_data_population['mean'] * 1000
+            all_years_data_deaths_mean[target_year] = result_data_deaths['mean']/result_data_population['mean'] * 1000
 
-            all_years_data_dalys_lower[target_year] = result_data_dalys['lower']#/result_data_population['lower'] * 1000
-            all_years_data_deaths_lower[target_year] = result_data_deaths['lower']#/result_data_population['lower'] * 1000
+            all_years_data_dalys_lower[target_year] = result_data_dalys['lower']/result_data_population['lower'] * 1000
+            all_years_data_deaths_lower[target_year] = result_data_deaths['lower']/result_data_population['lower'] * 1000
 
-            all_years_data_dalys_upper[target_year] = result_data_dalys['upper']#/result_data_population['upper'] * 1000
-            all_years_data_deaths_upper[target_year] = result_data_deaths['upper']#/result_data_population['upper'] * 1000
+            all_years_data_dalys_upper[target_year] = result_data_dalys['upper']/result_data_population['upper'] * 1000
+            all_years_data_deaths_upper[target_year] = result_data_deaths['upper']/result_data_population['upper'] * 1000
 
         # Convert the accumulated data into a DataFrame for plotting
         df_all_years_DALYS_mean = pd.DataFrame(all_years_data_dalys_mean)
@@ -169,7 +170,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[1].set_ylabel('DALYS oer 1,000')
         axes[1].legend(title='District', bbox_to_anchor=(1., 1), loc='upper left')
         axes[1].grid(False)
-
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Scatter'))
 
         # BARPLOT STACKED DEATHS AND DALYS OVER TIME
@@ -335,16 +335,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, axes = plt.subplots(4, 3, figsize=(18, 18))
     axes = axes.flatten()
     for i, scenario in enumerate(scenario_names):
-            malawi_admin2['DALY_Rate'] = malawi_admin2['ADM2_EN'].map(df_dalys_by_district_all_scenarios[scenario])
+            difference_from_baseline = df_dalys_by_district_all_scenarios[scenario] - df_dalys_by_district_all_scenarios['Baseline']
+            malawi_admin2['DALY_Rate'] = malawi_admin2['ADM2_EN'].map(difference_from_baseline)
             print(malawi_admin2['DALY_Rate'] )
-            malawi_admin2.plot(column='DALY_Rate', ax=axes[i], legend=True, cmap='RdPu',edgecolor='black',)
+            malawi_admin2.plot(column='DALY_Rate', ax=axes[i], legend=True, cmap='PiYG',edgecolor='black', vmin=vmin, vmax=vmax)
             axes[i].set_title(f'DALYs per 1000 - {scenario}')
             axes[i].axis('off')
             water_bodies.plot(ax=axes[i], facecolor="none", edgecolor="#999999", linewidth=0.5, hatch="xxx")
             water_bodies.plot(ax=axes[i], facecolor="none", edgecolor="black", linewidth=1)
 
     fig.tight_layout()
-    fig.savefig(output_folder / "dalys_maps_all_scenarios.png", dpi=300, bbox_inches='tight')
+    fig.savefig(output_folder / "dalys_maps_all_scenarios_difference.png", dpi=300, bbox_inches='tight')
     plt.close(fig)
     # Save data as CSV
 if __name__ == "__main__":
