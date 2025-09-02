@@ -144,7 +144,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         "rp_prostate_cancer_age5069": Parameter(
             Types.REAL, "stage-specific relative prevalence at baseline of prostate cancer for age 50-69"
         ),
-        "rp_prostate_cancer_age70": Parameter(
+        "rp_prostate_cancer_agege70": Parameter(
             Types.REAL, "stage-specific relative prevalence at baseline of prostate cancer for age 70+"
         ),
         "sensitivity_of_psa_test_for_prostate_ca": Parameter(
@@ -183,8 +183,8 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         "months_to_post_treatment_check": Parameter(
             Types.INT, "months from treatment to first post-treatment check"
         ),
-        "years_between_followup_appointments": Parameter(
-            Types.INT, "years between follow-up appointments after treatment"
+        "months_between_followup_appointments": Parameter(
+            Types.INT, "months between follow-up appointments after treatment"
         ),
         "months_between_palliative_care": Parameter(
             Types.INT, "months between palliative care appointments"
@@ -292,7 +292,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             .when(f'.between({p["mid_age_threshold_prostate_cancer"]},{p["high_age_threshold_prostate_cancer"]-1})',
                   p['rp_prostate_cancer_age5069'])
             .when(f'.between({p["high_age_threshold_prostate_cancer"]},{p["max_age_prostate_cancer"]})',
-                  p['rp_prostate_cancer_age70'])
+                  p['rp_prostate_cancer_agege70'])
             .when(f'.between(0,{p["min_age_prostate_cancer"]-1})', 0.0)
         )
 
@@ -1028,13 +1028,12 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
 
         else:
             # Schedule another HSI_ProstateCancer_PostTreatmentCheck event in one month
-            # (NOTE: discrepancy between comment and value)
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=self.module.parameters['years_between_followup_appointments']),
+                topen=self.sim.date + DateOffset(years=self.module.parameters['months_between_followup_appointments']),
                 tclose=None,
                 priority=0
             )
