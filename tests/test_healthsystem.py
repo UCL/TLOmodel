@@ -241,106 +241,6 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
 
 
 @pytest.mark.slow
-def test_run_in_mode_0_with_capacity(tmpdir, seed):
-    # Events should run and there be no squeeze factors
-    # (Mode 0 -> No Constraints)
-
-    # Establish the simulation object
-    sim = Simulation(
-        start_date=start_date,
-        seed=seed,
-        log_config={
-            "filename": "log",
-            "directory": tmpdir,
-            "custom_levels": {
-                "tlo.methods.healthsystem": logging.DEBUG,
-            }
-        }, resourcefilepath=resourcefilepath
-    )
-
-    # Define the service availability
-    service_availability = ['*']
-
-    # Register the core modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(service_availability=service_availability, capabilities_coefficient=1.0,
-                                           mode_appt_constraints=0),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome(),
-                 )
-
-    # Run the simulation
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-    check_dtypes(sim)
-
-    # read the results
-    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
-
-    # Do the checks for health system appts
-    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
-    assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
-    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
-
-    # Check that some Mockitis cured occurred (though health system)
-    assert any(sim.population.props['mi_status'] == 'P')
-
-
-@pytest.mark.slow
-def test_run_in_mode_0_no_capacity(tmpdir, seed):
-    # Every events should run (no did_not_run) and no squeeze factors
-    # (Mode 0 -> No Constraints)
-
-    # Establish the simulation object
-    sim = Simulation(
-        start_date=start_date,
-        seed=seed,
-        log_config={
-            "filename": "log",
-            "directory": tmpdir,
-            "custom_levels": {
-                "tlo.methods.healthsystem": logging.DEBUG,
-            }
-        }, resourcefilepath=resourcefilepath
-    )
-
-    # Define the service availability
-    service_availability = ['*']
-
-    # Register the core modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 healthsystem.HealthSystem(service_availability=service_availability, capabilities_coefficient=0.0,
-                                           mode_appt_constraints=0),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome(),
-                 enhanced_lifestyle.Lifestyle()
-                 )
-
-    # Run the simulation
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-    check_dtypes(sim)
-
-    # read the results
-    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
-
-    # Do the checks
-    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
-    assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
-    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
-
-    # Check that some mockitis cured occurred (though health system)
-    assert any(sim.population.props['mi_status'] == 'P')
-
-
-@pytest.mark.slow
 def test_run_in_mode_1_with_capacity(tmpdir, seed):
     # All events should run with some zero squeeze factors
     # (Mode 1 -> elastic constraints)
@@ -1320,8 +1220,8 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     check that this is effectual in the case of consumables."""
 
     initial_parameters = {
-        'mode_appt_constraints': 0,
-        'ignore_priority': False,
+        'mode_appt_constraints': 1,
+        'ignore_priority': True,
         'capabilities_coefficient': 0.5,
         'cons_availability': 'all',
         'beds_availability': 'default',
@@ -1330,7 +1230,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     }
     new_parameters = {
         'mode_appt_constraints': 2,
-        'ignore_priority': True,
+        'ignore_priority': False,
         'capabilities_coefficient': 1.0,
         'cons_availability': 'none',
         'beds_availability': 'none',
@@ -1621,7 +1521,7 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
             # Schedule an event that will schedule an HSI to run on the same day
             sim.schedule_event(Event_To_Run_On_First_Day_Of_Simulation(self, person_id=0), sim.date)
 
-    for mode in (0, 1, 2):
+    for mode in (1, 2):
 
         log_config = {
             "filename": "log",
@@ -2058,7 +1958,7 @@ def test_which_hsi_can_run(seed):
     # For each Mode and assumption on HR resources, test whether each type of appointment can run in each district
     # at each level for which it is defined.
     results = list()
-    for mode_appt_constraints in (0, 1, 2):
+    for mode_appt_constraints in (1, 2):
         for use_funded_or_actual_staffing in ('actual', 'funded', 'funded_plus'):
             sim = Simulation(start_date=Date(2010, 1, 1),
                              seed=seed, resourcefilepath=resourcefilepath)
@@ -2135,14 +2035,9 @@ def test_which_hsi_can_run(seed):
 
     results = pd.DataFrame(results)
 
-    # check under each mode (0, 1, 2) and each HR scenario (actual, funded, funded_plus), the hsi runs as we expect.
+    # check under each mode (1, 2) and each HR scenario (actual, funded, funded_plus), the hsi runs as we expect.
     # note that in both actual and funded scenarios, there are some required (by appt time) HCW cadres not there, i.e.,
     # those cadres with 0-minute capability.
-
-    # mode 0 - actual, funded, funded_plus -> every hsi runs, with sqz=0.0
-    # as in mode 0, we assume no constraints at all
-    assert results.loc[results['mode_appt_constraints'] == 0, 'hsi_did_run'].all()
-    assert (results.loc[results['mode_appt_constraints'] == 0, 'sqz'] == 0.0).all()
 
     # mode 1 - actual, funded, funded_plus -> every hsi that does run, has sqz in [0.0, Inf)
     res = results.loc[(results['mode_appt_constraints'] == 1) & (results['hsi_did_run'])]
@@ -2583,7 +2478,7 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
                          resourcefilepath=resourcefilepath)
         sim.register(
             demography.Demography(),
-            healthsystem.HealthSystem(mode_appt_constraints=0),
+            healthsystem.HealthSystem(mode_appt_constraints=1),
             DummyModule(),
             # Disable sorting + checks to avoid error due to missing dependencies
             sort_modules=False,
