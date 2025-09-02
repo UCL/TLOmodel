@@ -370,7 +370,7 @@ class HealthSystem(Module):
         :param service_availability: A list of treatment IDs to allow.
         :param mode_appt_constraints: Integer code in ``{1, 2}`` determining mode of
             constraints with regards to officer numbers and time - 1: elastic constraints, all HSI
-            events run with squeeze factor provided officers required have nonzero capabilities, 
+            events run with squeeze factor provided officers required have nonzero capabilities,
             2: hard constraints, only HSI events with
             no squeeze factor run.
         :param cons_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
