@@ -165,8 +165,8 @@ class CareOfWomenDuringPregnancy(Module):
             Types.INT, 'recommended gestational age in weeks for ANC8'),
         'anc_gestational_age_weeks_late_anc': Parameter(
             Types.INT, 'gestational age in weeks for late ANC visits'),
-        'anc_gestational_age_weeks_max': Parameter(
-            Types.INT, 'maximum gestational age in weeks for ANC scheduling'),
+        'gestational_age_weeks_upper_bound': Parameter(
+            Types.INT, 'gestational age beyond normal length of pregnancy'),
 
         # FOCUSED ANC GESTATIONAL AGE ...
         'focused_anc_gestational_age_weeks_visit2': Parameter(
@@ -175,8 +175,6 @@ class CareOfWomenDuringPregnancy(Module):
             Types.INT, 'recommended gestational age in weeks for focused ANC visit 3'),
         'focused_anc_gestational_age_weeks_visit4': Parameter(
             Types.INT, 'recommended gestational age in weeks for focused ANC visit 4'),
-        'focused_anc_gestational_age_weeks_max': Parameter(
-            Types.INT, 'maximum gestational age in weeks for focused ANC scheduling'),
 
         # DELIVERY GESTATIONAL AGE ...
         'delivery_weeks_placental_abruption': Parameter(
@@ -189,22 +187,16 @@ class CareOfWomenDuringPregnancy(Module):
             Types.INT, 'gestational age in weeks for delivery in PROM without infection'),
         'delivery_weeks_chorioamnionitis': Parameter(
             Types.INT, 'gestational age in weeks for delivery in chorioamnionitis'),
-        'delivery_weeks_gestational_diabetes': Parameter(
-            Types.INT, 'gestational age in weeks for delivery in gestational diabetes'),
-        'delivery_weeks_severe_haemorrhage': Parameter(
-            Types.INT, 'Minimum weeks of gestation required to deliver for women '
-                       'with abruption, praevia or chorioamnionitis '),
-        'delivery_weeks_mild_haemorrhage': Parameter(
-            Types.INT, 'Minimum weeks of gestation required to deliver for women with mild bleeding or '
-                       'PROM without infection'),
+        'delivery_ga_weeks_cs ': Parameter(
+            Types.INT, 'gestational age in weeks at which CS will most likely be scheduled for in those for which it is indicated'),
 
         # FOLLOW-UP TIMING AND CLINICAL...
         'follow_up_days_anaemia': Parameter(
             Types.INT, 'days until follow-up for anaemia treatment'),
         'follow_up_days_gestational_diabetes': Parameter(
             Types.INT, 'days until follow-up for gestational diabetes'),
-        'follow_up_days_ectopic_pregnancy': Parameter(
-            Types.INT, 'days until ectopic pregnancy rupture event'),
+        'days_to_rupture_ectopic_untreated': Parameter(
+            Types.INT, 'days until rupture event if individual has untreated ectopic pregnancy'),
         'bmi_min_gdm': Parameter(
             Types.REAL, 'Min BMI to be diagnosed with gestational diabetes'
         ),
@@ -214,9 +206,9 @@ class CareOfWomenDuringPregnancy(Module):
 
         # BEDDAYS ...
         'beddays_default': Parameter(
-            Types.INT, 'default beddays for antenatal admission'),
+            Types.INT, 'default beddays for antenatal inpatient admission'),
         'beddays_postabortion': Parameter(
-            Types.INT, ' beddays following abortion '),
+            Types.INT, ' beddays following abortion'),
         'beddays_etopic_pregnancy': Parameter(
             Types.INT, 'default following etopic pregnancy'),
     }
@@ -657,7 +649,7 @@ class CareOfWomenDuringPregnancy(Module):
         # Return a gestation beyond the normal length of pregnancy. This wont be used for scheduling because women
         # arent scheduled ANC past 42 weeks (see next function)
         else:
-            recommended_gestation_next_anc = params['anc_gestational_age_weeks_max']
+            recommended_gestation_next_anc = params['gestational_age_weeks_upper_bound']
 
         return recommended_gestation_next_anc
 
@@ -1439,7 +1431,7 @@ class CareOfWomenDuringPregnancy(Module):
                 EctopicPregnancyRuptureEvent(
                     self.sim.modules['PregnancySupervisor'], individual_id
                 ),
-                self.sim.date + DateOffset(days=params['follow_up_days_ectopic_pregnancy'])
+                self.sim.date + DateOffset(days=params['days_to_rupture_ectopic_untreated'])
             )
 
     def calculate_beddays(self, individual_id):
@@ -1459,15 +1451,15 @@ class CareOfWomenDuringPregnancy(Module):
         if ((mother.ps_placental_abruption or
             ((mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'severe')) or
              mother.ps_chorioamnionitis)) and
-            (mother.ps_gestational_age_in_weeks < params['delivery_weeks_severe_haemorrhage'])):
-            beddays = int((params['delivery_weeks_severe_haemorrhage'] * 7) - (mother.ps_gestational_age_in_weeks * 7))
+            (mother.ps_gestational_age_in_weeks < 28)):
+            beddays = int((28 * 7) - (mother.ps_gestational_age_in_weeks * 7))
 
         # Similarly more mild bleeding or PROM without infection occuring prior to 37 weeks will not be delivered until
         # they have reached that gestation
         elif ((mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate')) or
               (mother.ps_premature_rupture_of_membranes and not mother.ps_chorioamnionitis)) and \
-             (mother.ps_gestational_age_in_weeks < params['delivery_weeks_mild_haemorrhage']):
-            beddays = int((params['delivery_weeks_mild_haemorrhage'] * 7) - (mother.ps_gestational_age_in_weeks * 7))
+             (mother.ps_gestational_age_in_weeks < 37):
+            beddays = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
 
         else:
             beddays = params['beddays_default']
@@ -2087,7 +2079,7 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
               mother.ps_gestational_age_in_weeks < params['focused_anc_gestational_age_weeks_visit4']):
             recommended_gestation_next_anc = params['focused_anc_gestational_age_weeks_visit4']
         else:
-            recommended_gestation_next_anc = params['focused_anc_gestational_age_weeks_max']
+            recommended_gestation_next_anc = params['gestational_age_weeks_upper_bound']
 
         # We calculate the difference between today's date and the date this event should run
         if self.visit_number == 1:
@@ -2241,7 +2233,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             return
 
         # store the GA at which CS will most likely be scheduled for in those for which it is indicated
-        assumed_weeks_till_delivery = params['delivery_weeks_gestational_diabetes']
+        assumed_weeks_till_delivery = params['delivery_ga_weeks_cs']
 
         # The event represents inpatient care delivered within the antenatal ward at a health facility. Therefore
         # it is assumed that women with a number of different complications could be sent to this HSI for treatment.
