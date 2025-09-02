@@ -1135,7 +1135,9 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     months = range(1, 13)
     fig, axes = plt.subplots(3, 4, figsize=(24, 18))
     for i, month in enumerate(months):
-        ax = axes[i // 4, i % 4]
+        row = i // 4
+        col = i % 4
+        ax = axes[row, col]
         month_df = monthly_agg_df[monthly_agg_df["month"] == month]
         heatmap_data_month = month_df.pivot(
             columns="Facility_Level", index="item_code", values="available_prop"
@@ -1143,10 +1145,18 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
         heatmap_data_month.index = heatmap_data_month.index.map(item_names_to_map)
         sns.heatmap(heatmap_data_month, annot=True, cmap="RdYlGn", cbar=False, ax=ax, vmin=0, vmax=1)
         ax.set_title(f"Month {month}", fontweight="bold")
-        ax.set_xlabel("Facility Level")
-        ax.set_ylabel("Consumable")
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-        ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+        if row == 2:
+            ax.set_xlabel("Facility Level")
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+        else:
+            ax.set_xlabel("")
+            ax.set_xticklabels([])
+        if col == 0:
+            ax.set_ylabel("Consumable")
+            ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+        else:
+            ax.set_ylabel("")
+            ax.set_yticklabels([])
     plt.tight_layout()
     plt.savefig(outputs_path / "consumable_monthly_availability_heatmaps.png", dpi=300, bbox_inches="tight")
 
@@ -1210,12 +1220,22 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
 
     fig, axes = plt.subplots(3, 4, figsize=(24, 18))
     for i, month in enumerate(months):
-        ax = axes[i // 4, i % 4]
+        row = i // 4
+        col = i % 4
+        ax = axes[row, col]
         sns.heatmap(monthly_treatment_availability[month], annot=True, cmap="RdYlGn", cbar=False, ax=ax, vmin=0, vmax=1)
         ax.set_title(f"Month {month}", fontweight="bold")
-        ax.set_xlabel("Facility Level")
-        ax.set_ylabel("Treatment")
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-        ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+        if row == 2:
+            ax.set_xlabel("Facility Level")
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+        else:
+            ax.set_xlabel("")
+            ax.set_xticklabels([])
+        if col == 0:
+            ax.set_ylabel("Treatment")
+            ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+        else:
+            ax.set_ylabel("")
+            ax.set_yticklabels([])
     plt.tight_layout()
     plt.savefig(outputs_path / "treatment_monthly_availability_heatmaps.png", dpi=300, bbox_inches="tight")
