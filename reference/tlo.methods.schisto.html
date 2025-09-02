@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.schisto module &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
+  <title>tlo.methods.schisto module &mdash; TLOmodel 0.1.dev2548+g49029e4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=9c477e70"></script>
+      <script src="../_static/documentation_options.js?v=ef897455"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -192,6 +192,14 @@ generator.</p>
 <td><p>REAL</p></td>
 <td><p>number of worms applied as a baseline risk across districts to prevent fadeout, number is scaled by scaling_factor_baseline_risk</p></td>
 </tr>
+<tr class="row-even"><td><p>background_gamma</p></td>
+<td><p>REAL</p></td>
+<td><p>controls how fast the cushion shrinks as national prevalence falls; larger values (e.g. 2.5–3.0) make it disappear sooner</p></td>
+</tr>
+<tr class="row-odd"><td><p>background_rel</p></td>
+<td><p>REAL</p></td>
+<td><p>a small proportional cushion (1% at baseline) applied to the human reservoir; keeps early declines smooth without creating an artificial floor</p></td>
+</tr>
 <tr class="row-even"><td><p>daly_weight_mild_schistosomiasis</p></td>
 <td><p>REAL</p></td>
 <td><p>daly weight assigned to mild schistosomiasis, both species</p></td>
@@ -240,10 +248,10 @@ generator.</p>
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>CAUSES_OF_DEATH : {}</p>
-<p>CAUSES_OF_DISABILITY : {‘Schistosomiasis’: &lt;tlo.methods.causes.Cause object at 0x1440e35d0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
-<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘HealthSystem’}</p>
+<p>CAUSES_OF_DISABILITY : {‘Schistosomiasis’: &lt;tlo.methods.causes.Cause object at 0x16a651250&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘SymptomManager’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthSystem’, ‘HealthBurden’}</p>
 <p>__annotations__ : {}</p>
 <p>module_prefix : ss</p>
 <p><strong>Functions (defined or overridden in class Schisto):</strong></p>

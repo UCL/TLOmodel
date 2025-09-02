@@ -75,6 +75,10 @@ tlo.methods.symptommanager module
 
      .. automethod:: reset_persons_with_newly_onset_symptoms
 
+     .. automethod:: _get_current_symptoms_from_tracker
+
+     .. automethod:: clear_symptoms_for_deceased_person
+
 
 
 

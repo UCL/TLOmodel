@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.symptommanager module &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
+  <title>tlo.methods.symptommanager module &mdash; TLOmodel 0.1.dev2548+g49029e4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=9c477e70"></script>
+      <script src="../_static/documentation_options.js?v=ef897455"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -238,7 +238,7 @@ Check if the set is empty or not to determine if the symptom is currently presen
 <dt class="sig sig-object py" id="tlo.methods.symptommanager.SymptomManager.who_has">
 <span class="sig-name descname"><span class="pre">who_has</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_of_symptoms</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager.who_has" title="Link to this definition"></a></dt>
 <dd><p>This is a helper function to look up who has a particular symptom or set of symptoms.
-It returns a list of indicies for person that have all of the symptoms specified</p>
+It returns a list of indices for person that has all of the symptoms specified</p>
 <dl class="field-list simple">
 <dt class="field-odd">Param<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list_of_symptoms : string or list of strings for the symptoms of interest</p>
@@ -334,6 +334,18 @@ Returns a dict of the form {&lt;&lt;person_id&gt;&gt;, &lt;&lt;list_of_symptoms&
 <dt class="sig sig-object py" id="tlo.methods.symptommanager.SymptomManager.reset_persons_with_newly_onset_symptoms">
 <span class="sig-name descname"><span class="pre">reset_persons_with_newly_onset_symptoms</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager.reset_persons_with_newly_onset_symptoms" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.symptommanager.SymptomManager._get_current_symptoms_from_tracker">
+<span class="sig-name descname"><span class="pre">_get_current_symptoms_from_tracker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager._get_current_symptoms_from_tracker" title="Link to this definition"></a></dt>
+<dd><p>Get the current symptoms for a person. Works with bookkeeping dictionary</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.symptommanager.SymptomManager.clear_symptoms_for_deceased_person">
+<span class="sig-name descname"><span class="pre">clear_symptoms_for_deceased_person</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager.clear_symptoms_for_deceased_person" title="Link to this definition"></a></dt>
+<dd><p>Clears symptoms by deleting the dead person’s ID in the tracker</p>
+</dd></dl>
 
 </dd></dl>
 

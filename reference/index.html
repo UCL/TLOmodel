@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reference &mdash; TLOmodel 0.1.dev2543+gad00864.d20250801 documentation</title>
+  <title>Reference &mdash; TLOmodel 0.1.dev2548+g49029e4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=9c477e70"></script>
+      <script src="../_static/documentation_options.js?v=ef897455"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -56,7 +56,6 @@
 <li class="toctree-l2"><a class="reference internal" href="tlo.analysis.html">tlo.analysis package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.analysis.hsi_events.html">tlo.analysis.hsi_events module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.analysis.life_expectancy.html">tlo.analysis.life_expectancy module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.performance.html">tlo.analysis.performance module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.analysis.utils.html">tlo.analysis.utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.cli.html">tlo.cli module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.core.html">tlo.core module</a></li>
@@ -194,7 +193,6 @@
 <li class="toctree-l6"><a class="reference internal" href="tlo.analysis.life_expectancy.html#tlo.analysis.life_expectancy.get_probability_of_premature_death"><code class="docutils literal notranslate"><span class="pre">get_probability_of_premature_death()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l5"><a class="reference internal" href="tlo.analysis.performance.html">tlo.analysis.performance module</a></li>
 <li class="toctree-l5"><a class="reference internal" href="tlo.analysis.utils.html">tlo.analysis.utils module</a><ul>
 <li class="toctree-l6"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file"><code class="docutils literal notranslate"><span class="pre">parse_log_file()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.merge_log_files"><code class="docutils literal notranslate"><span class="pre">merge_log_files()</span></code></a></li>
@@ -757,6 +755,81 @@
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="tlo.methods.causes.html">tlo.methods.causes module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html">tlo.methods.cervical_cancer module</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer"><code class="docutils literal notranslate"><span class="pre">CervicalCancer</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.__init__"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.read_parameters"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.read_parameters()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.initialise_population"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.initialise_population()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.initialise_simulation"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.initialise_simulation()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.build_linear_models"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.build_linear_models()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.on_birth"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.on_birth()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.report_daly_values"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.report_daly_values()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.do_at_generic_first_appt"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.do_at_generic_first_appt()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.choose_cin_procedure_and_schedule_it"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.choose_cin_procedure_and_schedule_it()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerMainPollingEvent"><code class="docutils literal notranslate"><span class="pre">CervicalCancerMainPollingEvent</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerMainPollingEvent.__init__"><code class="docutils literal notranslate"><span class="pre">CervicalCancerMainPollingEvent.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerMainPollingEvent.apply"><code class="docutils literal notranslate"><span class="pre">CervicalCancerMainPollingEvent.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer_DeathInStage4"><code class="docutils literal notranslate"><span class="pre">CervicalCancer_DeathInStage4</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer_DeathInStage4.__init__"><code class="docutils literal notranslate"><span class="pre">CervicalCancer_DeathInStage4.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer_DeathInStage4.apply"><code class="docutils literal notranslate"><span class="pre">CervicalCancer_DeathInStage4.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_VIA"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_VIA</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_VIA.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_VIA.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_VIA.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_VIA.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_Xpert"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_Xpert</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_Xpert.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_Xpert.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_Xpert.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_Xpert.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Presentation_WithVaginalBleeding"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Presentation_WithVaginalBleeding</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Presentation_WithVaginalBleeding.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Presentation_WithVaginalBleeding.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Presentation_WithVaginalBleeding.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Presentation_WithVaginalBleeding.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Cryotherapy"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Cryotherapy</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Cryotherapy.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Cryotherapy.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Cryotherapy.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Cryotherapy.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Thermoablation"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Thermoablation</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Thermoablation.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Thermoablation.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Thermoablation.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Thermoablation.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Biopsy"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Biopsy</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Biopsy.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Biopsy.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Biopsy.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Biopsy.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_Start"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_Start</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_Start.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_Start.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_Start.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_Start.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_PostTreatmentCheck"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_PostTreatmentCheck</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_PostTreatmentCheck.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_PostTreatmentCheck.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_PostTreatmentCheck.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_PostTreatmentCheck.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_PalliativeCare"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_PalliativeCare</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_PalliativeCare.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_PalliativeCare.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_PalliativeCare.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_PalliativeCare.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerLoggingEvent"><code class="docutils literal notranslate"><span class="pre">CervicalCancerLoggingEvent</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerLoggingEvent.__init__"><code class="docutils literal notranslate"><span class="pre">CervicalCancerLoggingEvent.__init__()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerLoggingEvent.apply"><code class="docutils literal notranslate"><span class="pre">CervicalCancerLoggingEvent.apply()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l5"><a class="reference internal" href="tlo.methods.chronicsyndrome.html">tlo.methods.chronicsyndrome module</a><ul>
 <li class="toctree-l6"><a class="reference internal" href="tlo.methods.chronicsyndrome.html#tlo.methods.chronicsyndrome.ChronicSyndrome"><code class="docutils literal notranslate"><span class="pre">ChronicSyndrome</span></code></a><ul>
 <li class="toctree-l7"><a class="reference internal" href="tlo.methods.chronicsyndrome.html#tlo.methods.chronicsyndrome.ChronicSyndrome.__init__"><code class="docutils literal notranslate"><span class="pre">ChronicSyndrome.__init__()</span></code></a></li>
@@ -2554,6 +2627,8 @@
 <li class="toctree-l7"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.caused_by"><code class="docutils literal notranslate"><span class="pre">SymptomManager.caused_by()</span></code></a></li>
 <li class="toctree-l7"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.get_persons_with_newly_onset_symptoms"><code class="docutils literal notranslate"><span class="pre">SymptomManager.get_persons_with_newly_onset_symptoms()</span></code></a></li>
 <li class="toctree-l7"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.reset_persons_with_newly_onset_symptoms"><code class="docutils literal notranslate"><span class="pre">SymptomManager.reset_persons_with_newly_onset_symptoms()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager._get_current_symptoms_from_tracker"><code class="docutils literal notranslate"><span class="pre">SymptomManager._get_current_symptoms_from_tracker()</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.clear_symptoms_for_deceased_person"><code class="docutils literal notranslate"><span class="pre">SymptomManager.clear_symptoms_for_deceased_person()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l6"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent"><code class="docutils literal notranslate"><span class="pre">SymptomManager_AutoOnsetEvent</span></code></a><ul>
@@ -3113,7 +3188,6 @@
 <li class="toctree-l4"><a class="reference internal" href="tlo.analysis.life_expectancy.html#tlo.analysis.life_expectancy.get_probability_of_premature_death"><code class="docutils literal notranslate"><span class="pre">get_probability_of_premature_death()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="tlo.analysis.performance.html">tlo.analysis.performance module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.analysis.utils.html">tlo.analysis.utils module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file"><code class="docutils literal notranslate"><span class="pre">parse_log_file()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.merge_log_files"><code class="docutils literal notranslate"><span class="pre">merge_log_files()</span></code></a></li>
@@ -3190,7 +3264,6 @@
 <li class="toctree-l2"><a class="reference internal" href="tlo.analysis.life_expectancy.html#tlo.analysis.life_expectancy.get_probability_of_premature_death"><code class="docutils literal notranslate"><span class="pre">get_probability_of_premature_death()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="tlo.analysis.performance.html">tlo.analysis.performance module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tlo.analysis.utils.html">tlo.analysis.utils module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file"><code class="docutils literal notranslate"><span class="pre">parse_log_file()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.analysis.utils.html#tlo.analysis.utils.merge_log_files"><code class="docutils literal notranslate"><span class="pre">merge_log_files()</span></code></a></li>
@@ -3942,6 +4015,81 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.causes.html">tlo.methods.causes module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.cervical_cancer.html">tlo.methods.cervical_cancer module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer"><code class="docutils literal notranslate"><span class="pre">CervicalCancer</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.__init__"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.read_parameters"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.read_parameters()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.initialise_population"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.initialise_population()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.initialise_simulation"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.initialise_simulation()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.build_linear_models"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.build_linear_models()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.on_birth"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.on_birth()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.report_daly_values"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.report_daly_values()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.do_at_generic_first_appt"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.do_at_generic_first_appt()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.choose_cin_procedure_and_schedule_it"><code class="docutils literal notranslate"><span class="pre">CervicalCancer.choose_cin_procedure_and_schedule_it()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerMainPollingEvent"><code class="docutils literal notranslate"><span class="pre">CervicalCancerMainPollingEvent</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerMainPollingEvent.__init__"><code class="docutils literal notranslate"><span class="pre">CervicalCancerMainPollingEvent.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerMainPollingEvent.apply"><code class="docutils literal notranslate"><span class="pre">CervicalCancerMainPollingEvent.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer_DeathInStage4"><code class="docutils literal notranslate"><span class="pre">CervicalCancer_DeathInStage4</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer_DeathInStage4.__init__"><code class="docutils literal notranslate"><span class="pre">CervicalCancer_DeathInStage4.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer_DeathInStage4.apply"><code class="docutils literal notranslate"><span class="pre">CervicalCancer_DeathInStage4.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_VIA"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_VIA</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_VIA.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_VIA.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_VIA.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_VIA.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_Xpert"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_Xpert</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_Xpert.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_Xpert.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Screening_Xpert.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Screening_Xpert.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Presentation_WithVaginalBleeding"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Presentation_WithVaginalBleeding</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Presentation_WithVaginalBleeding.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Presentation_WithVaginalBleeding.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Presentation_WithVaginalBleeding.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Presentation_WithVaginalBleeding.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Cryotherapy"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Cryotherapy</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Cryotherapy.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Cryotherapy.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Cryotherapy.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Cryotherapy.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Thermoablation"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Thermoablation</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Thermoablation.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Thermoablation.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_CINRemoval_Thermoablation.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_CINRemoval_Thermoablation.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Biopsy"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Biopsy</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Biopsy.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Biopsy.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Biopsy.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Biopsy.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_Start"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_Start</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_Start.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_Start.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_Start.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_Start.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_PostTreatmentCheck"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_PostTreatmentCheck</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_PostTreatmentCheck.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_PostTreatmentCheck.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_Treatment_PostTreatmentCheck.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_Treatment_PostTreatmentCheck.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_PalliativeCare"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_PalliativeCare</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_PalliativeCare.__init__"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_PalliativeCare.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.HSI_CervicalCancer_PalliativeCare.apply"><code class="docutils literal notranslate"><span class="pre">HSI_CervicalCancer_PalliativeCare.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerLoggingEvent"><code class="docutils literal notranslate"><span class="pre">CervicalCancerLoggingEvent</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerLoggingEvent.__init__"><code class="docutils literal notranslate"><span class="pre">CervicalCancerLoggingEvent.__init__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancerLoggingEvent.apply"><code class="docutils literal notranslate"><span class="pre">CervicalCancerLoggingEvent.apply()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.chronicsyndrome.html">tlo.methods.chronicsyndrome module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.chronicsyndrome.html#tlo.methods.chronicsyndrome.ChronicSyndrome"><code class="docutils literal notranslate"><span class="pre">ChronicSyndrome</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="tlo.methods.chronicsyndrome.html#tlo.methods.chronicsyndrome.ChronicSyndrome.__init__"><code class="docutils literal notranslate"><span class="pre">ChronicSyndrome.__init__()</span></code></a></li>
@@ -5739,6 +5887,8 @@
 <li class="toctree-l5"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.caused_by"><code class="docutils literal notranslate"><span class="pre">SymptomManager.caused_by()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.get_persons_with_newly_onset_symptoms"><code class="docutils literal notranslate"><span class="pre">SymptomManager.get_persons_with_newly_onset_symptoms()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.reset_persons_with_newly_onset_symptoms"><code class="docutils literal notranslate"><span class="pre">SymptomManager.reset_persons_with_newly_onset_symptoms()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager._get_current_symptoms_from_tracker"><code class="docutils literal notranslate"><span class="pre">SymptomManager._get_current_symptoms_from_tracker()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.clear_symptoms_for_deceased_person"><code class="docutils literal notranslate"><span class="pre">SymptomManager.clear_symptoms_for_deceased_person()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent"><code class="docutils literal notranslate"><span class="pre">SymptomManager_AutoOnsetEvent</span></code></a><ul>
@@ -8232,6 +8382,8 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.caused_by"><code class="docutils literal notranslate"><span class="pre">SymptomManager.caused_by()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.get_persons_with_newly_onset_symptoms"><code class="docutils literal notranslate"><span class="pre">SymptomManager.get_persons_with_newly_onset_symptoms()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.reset_persons_with_newly_onset_symptoms"><code class="docutils literal notranslate"><span class="pre">SymptomManager.reset_persons_with_newly_onset_symptoms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager._get_current_symptoms_from_tracker"><code class="docutils literal notranslate"><span class="pre">SymptomManager._get_current_symptoms_from_tracker()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.clear_symptoms_for_deceased_person"><code class="docutils literal notranslate"><span class="pre">SymptomManager.clear_symptoms_for_deceased_person()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent"><code class="docutils literal notranslate"><span class="pre">SymptomManager_AutoOnsetEvent</span></code></a><ul>

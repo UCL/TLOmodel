@@ -1,7 +1,0 @@
-tlo.analysis.performance module
-===============================
-
-.. automodule:: tlo.analysis.performance
-   :members:
-   :show-inheritance:
-   :undoc-members:

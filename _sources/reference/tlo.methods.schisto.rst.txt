@@ -66,6 +66,12 @@ tlo.methods.schisto module
         * - baseline_risk
           - REAL
           - number of worms applied as a baseline risk across districts to prevent fadeout, number is scaled by scaling_factor_baseline_risk
+        * - background_gamma
+          - REAL
+          - controls how fast the cushion shrinks as national prevalence falls; larger values (e.g. 2.5–3.0) make it disappear sooner
+        * - background_rel
+          - REAL
+          - a small proportional cushion (1% at baseline) applied to the human reservoir; keeps early declines smooth without creating an artificial floor
         * - daly_weight_mild_schistosomiasis
           - REAL
           - daly weight assigned to mild schistosomiasis, both species
@@ -105,13 +111,13 @@ tlo.methods.schisto module
 
      CAUSES_OF_DEATH : {}
 
-     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x1440e35d0>}
+     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x16a651250>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'HealthSystem'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem', 'HealthBurden'}
 
      __annotations__ : {}
 

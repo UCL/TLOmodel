@@ -15,6 +15,7 @@ Submodules
    tlo.methods.cardio_metabolic_disorders
    tlo.methods.care_of_women_during_pregnancy
    tlo.methods.causes
+   tlo.methods.cervical_cancer
    tlo.methods.chronicsyndrome
    tlo.methods.consumables
    tlo.methods.contraception

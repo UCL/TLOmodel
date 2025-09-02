@@ -9,7 +9,6 @@ Submodules
 
    tlo.analysis.hsi_events
    tlo.analysis.life_expectancy
-   tlo.analysis.performance
    tlo.analysis.utils
 
 Module contents
