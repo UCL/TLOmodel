@@ -118,7 +118,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         "rr_site_confined_age5069": Parameter(
             Types.REAL, "rate ratio for site-confined other_adult cancer for age 50-69"
         ),
-        "rr_site_confined_age70": Parameter(
+        "rr_site_confined_agege70": Parameter(
             Types.REAL, "rate ratio for site-confined other_adult cancer for age 70"
         ),
         "rr_site_confined_hiv": Parameter(
@@ -161,7 +161,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         "rp_other_adult_cancer_age5069": Parameter(
             Types.REAL, "relative prevalence at baseline of bladder cancer/cancer age 50-69"
         ),
-        "rp_other_adult_cancer_age70": Parameter(
+        "rp_other_adult_cancer_agege70": Parameter(
             Types.REAL, "relative prevalence at baseline of bladder cancer/cancer age 70+"
         ),
         "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_site_confined": Parameter(
@@ -284,7 +284,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(30,49)', p['rp_other_adult_cancer_age3049'])
             .when('.between(50,69)', p['rp_other_adult_cancer_age5069'])
-            .when('.between(70,120)', p['rp_other_adult_cancer_age70'])
+            .when('.between(70,120)', p['rp_other_adult_cancer_agege70'])
             .when('.between(0,14)', 0.0)
         )
 
@@ -435,7 +435,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             .when('.between(30,49)', p['rr_site_confined_age3049'])
             .when('.between(50,69)', p['rr_site_confined_age5069'])
             .when('.between(0,14)', 0.0)
-            .when('.between(70,120)', p['rr_site_confined_age70']),
+            .when('.between(70,120)', p['rr_site_confined_agege70']),
             Predictor('oac_status').when('none', 1.0).otherwise(0.0)
         ]
 
@@ -837,8 +837,8 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "oac_date_treatment"] = self.sim.date
             df.at[person_id, "oac_stage_at_which_treatment_given"] = df.at[person_id, "oac_status"]
 
-            # Schedule a post-treatment check for 12 months:
-            # (NOTE: discrepancy between comment and value)
+            # Schedule a post-treatment check for 3 months:
+            # (NOTE: discrepancy between original comment (12 mo) and current parameter value (3mo)
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
@@ -893,8 +893,8 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
             )
 
         else:
-            # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in one month
-            # (NOTE: discrepancy between comment and value)
+            # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in 3 months
+            # (NOTE: discrepancy between original comment (1 mo) and current parameter value (3mo)
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
