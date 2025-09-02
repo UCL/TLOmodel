@@ -187,11 +187,11 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         "main_polling_event_frequency_months": Parameter(
             Types.INT, "frequency in months for main polling event"
         ),
-        "post_treatment_check_years_initial": Parameter(
-            Types.INT, "years between post-treatment check appointments scheduled after first treatment"
+        "post_treatment_check_months_initial": Parameter(
+            Types.INT, "months between post-treatment check appointments scheduled after first treatment"
         ),
-        "post_treatment_check_years_recurring": Parameter(
-            Types.INT, "years between follow-up appointments recurring"
+        "post_treatment_check_months_recurring": Parameter(
+            Types.INT, "months between follow-up appointments recurring"
         ),
         "palliative_care_interval_months": Parameter(
             Types.INT, "months between palliative care appointments"
@@ -830,13 +830,12 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
             df.at[person_id, "oc_stage_at_which_treatment_applied"] = df.at[person_id, "oc_status"]
 
             # Schedule a post-treatment check for 12 months:
-            # (NOTE: discrepancy between comment and value)
             hs.schedule_hsi_event(
                 hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(years=p["post_treatment_check_years_initial"]),
+                topen=self.sim.date + DateOffset(years=p["post_treatment_check_months_initial"]),
                 tclose=None,
                 priority=0
             )
@@ -883,13 +882,13 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
             )
 
         else:
-            # Schedule another HSI_OesophagealCancer_PostTreatmentCheck event
+            # Schedule another HSI_OesophagealCancer_PostTreatmentCheck event in one month
             hs.schedule_hsi_event(
                 hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=p["post_treatment_check_years_recurring"]),
+                topen=self.sim.date + DateOffset(years=p["post_treatment_check_months_recurring"]),
                 tclose=None,
                 priority=0
             )
