@@ -1072,11 +1072,13 @@ def plot_sum_outcome_and_CIs__intervention_period(
 # ----------------------------------------------------------------------------------------------------------------------
 def plot_availability_heatmaps(outputs_path: Path) -> None:
     """
-    Plots availability of
-        * essential consumables,
-        * treatments (i.e., probability of all consumables essential for the treatment being available)
-    :param outputs_path: path where to save the plots as PNG files
-    :return:
+    Creates the following heatmaps of average availabilities at each facility level:
+    1a) Essential consumables: average over the entire year.
+    2a) Essential consumables: average for each month.
+    1b) Treatments: probability all essential consumables for each treatment are available, averaged over the year.
+    2b) Treatments: probability all essential consumables for each treatment are available, for each month.
+    :param outputs_path: Path to save the plots as PNG files.
+    :return: None
     """
     resourcefilepath = Path("./resources")
 
@@ -1097,6 +1099,7 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     tlo_availability_df = tlo_availability_df[tlo_availability_df.Facility_Level.isin(correct_order_of_fac_levels)]
 
     # HEATMAP OF CONSUMABLES AVAILABILITY
+    # 1a) Essential consumables: average over the entire year.
     # ###
     # Pivot the DataFrame
     aggregated_df = \
@@ -1125,7 +1128,30 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     plt.yticks(rotation=0)
     plt.savefig(outputs_path / 'consumable_availability_heatmap.png', dpi=300, bbox_inches='tight')
 
+    # 2a) Essential consumables: average for each month.
+    # ###
+    monthly_agg_df = \
+        tlo_availability_df.groupby(["Facility_Level", "item_code", "month"])[['available_prop']].mean().reset_index()
+    months = range(1, 13)
+    fig, axes = plt.subplots(3, 4, figsize=(24, 18))
+    for i, month in enumerate(months):
+        ax = axes[i // 4, i % 4]
+        month_df = monthly_agg_df[monthly_agg_df["month"] == month]
+        heatmap_data_month = month_df.pivot(
+            columns="Facility_Level", index="item_code", values="available_prop"
+        ).reindex(index=chosen_item_codes, columns=correct_order_of_fac_levels)
+        heatmap_data_month.index = heatmap_data_month.index.map(item_names_to_map)
+        sns.heatmap(heatmap_data_month, annot=True, cmap="RdYlGn", cbar=False, ax=ax, vmin=0, vmax=1)
+        ax.set_title(f"Month {month}", fontweight="bold")
+        ax.set_xlabel("Facility Level")
+        ax.set_ylabel("Consumable")
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+        ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+    plt.tight_layout()
+    plt.savefig(outputs_path / "consumable_monthly_availability_heatmaps.png", dpi=300, bbox_inches="tight")
+
     # HEATMAP OF TREATMENTS AVAILABILITY
+    # 1b) Treatments: probability all essential consumables for each treatment are available, averaged over the year.
     # ###
     treatment_item_map = {
         'ITC': ['F-75\ntherapeutic\nmilk', 'RUTF'],  # 1220, 1227
@@ -1158,3 +1184,38 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     plt.xticks(rotation=90)
     plt.yticks(rotation=0)
     plt.savefig(outputs_path / 'treatment_availability_heatmap.png', dpi=300, bbox_inches='tight')
+
+    # 2b) Treatments: probability all essential consumables for each treatment are available, for each month.
+    # ###
+    monthly_treatment_availability = {}
+    for month in months:
+        month_df = monthly_agg_df[monthly_agg_df["month"] == month]
+        heatmap_data_month = month_df.pivot(
+            columns="Facility_Level", index="item_code", values="available_prop"
+        ).reindex(index=chosen_item_codes, columns=correct_order_of_fac_levels)
+        heatmap_data_month.index = heatmap_data_month.index.map(item_names_to_map)
+        # Calculate treatment availability for each facility level
+        treatment_availability_month = {}
+        for treatment, items in treatment_item_map.items():
+            treatment_availability_month[treatment] = {
+                level: np.prod([heatmap_data_month.loc[item_code, level] for item_code in items])
+                for level in correct_order_of_fac_levels
+            }
+        treatment_heatmap_data_month = pd.DataFrame.from_dict(
+            treatment_availability_month, orient="index", columns=correct_order_of_fac_levels
+        )
+        treatment_heatmap_data_month = treatment_heatmap_data_month.reindex(columns=correct_order_of_fac_levels)
+        treatment_heatmap_data_month["Average"] = treatment_heatmap_data_month.mean(axis=1)
+        monthly_treatment_availability[month] = treatment_heatmap_data_month
+
+    fig, axes = plt.subplots(3, 4, figsize=(24, 18))
+    for i, month in enumerate(months):
+        ax = axes[i // 4, i % 4]
+        sns.heatmap(monthly_treatment_availability[month], annot=True, cmap="RdYlGn", cbar=False, ax=ax, vmin=0, vmax=1)
+        ax.set_title(f"Month {month}", fontweight="bold")
+        ax.set_xlabel("Facility Level")
+        ax.set_ylabel("Treatment")
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+        ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+    plt.tight_layout()
+    plt.savefig(outputs_path / "treatment_monthly_availability_heatmaps.png", dpi=300, bbox_inches="tight")
