@@ -4,7 +4,6 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -110,6 +109,29 @@ class Contraception(Module):
             Types.INT, "Maximum age for contraception use (inclusive)."),
         'sterilization_age_limit': Parameter(
             Types.INT, "Minimum age for sterilization procedures."),
+
+        'polling_frequency_months': Parameter(
+            Types.INT, "Frequency in months for contraception polling and logging events."),
+        'min_simulation_year': Parameter(
+            Types.INT, "Minimum year for simulation time trends."),
+        'max_simulation_year': Parameter(
+            Types.INT, "Maximum year for simulation time trends."),
+        'transition_year': Parameter(
+            Types.INT, "Transition year for time trend calculations (typically 2020)."),
+        'initiation_trend_rate_pre_transition': Parameter(
+            Types.REAL, "Annual rate of increase in contraception initiation before transition year."),
+        'initiation_trend_rate_post_transition': Parameter(
+            Types.REAL, "Annual rate of increase in contraception initiation after transition year."),
+        'discontinuation_trend_rate_pre_transition': Parameter(
+            Types.REAL, "Annual rate of decrease in contraception discontinuation before transition year."),
+        'discontinuation_trend_rate_post_transition': Parameter(
+            Types.REAL, "Annual rate of decrease in contraception discontinuation after transition year."),
+        'age_modification_factors': Parameter(
+            Types.LIST, "Age-specific modification factors for time trends by age group (15-19, 20-24, ..., 45-49)."),
+        'reference_year': Parameter(
+            Types.INT, "Reference year for time trend calculations (typically 2010)."),
+        'age_ranges': Parameter(
+            Types.LIST, "Age range labels for demographic analysis (e.g., ['15-19', '20-24', ...]).")
     }
 
     all_contraception_states = {
@@ -327,7 +349,7 @@ class Contraception(Module):
         processed_params = dict()
 
         def expand_to_age_years(values_by_age_groups, ages_by_year):
-            _d = dict(zip(['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'], values_by_age_groups))
+            _d = dict(zip(self.parameters['age_ranges'], values_by_age_groups))
             return np.array(
                 [_d[self.sim.modules['Demography'].AGE_RANGE_LOOKUP[_age_year]] for _age_year in ages_by_year]
             )
@@ -491,12 +513,21 @@ class Contraception(Module):
             (multiplicative effect). Values are chosen to induce a trend in age-specific fertility consistent with
              the WPP estimates."""
 
-            _years = np.arange(2010, 2101)
-            _ages = np.arange(15, 50)
+            _years = np.arange(self.parameters['min_simulation_year'], self.parameters['max_simulation_year'])
+            _ages = np.arange(self.parameters['min_age_contraception'], self.parameters['max_age_contraception'])
 
-            _init_over_time = np.exp(+0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.maximum(1.0, np.exp(
-                +0.01 * (_years - 2020)))
-            _init_over_time_modification_by_age = 1.0 / expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], _ages)
+            pre_transition_years = np.minimum(
+                self.parameters['transition_year'] - self.parameters['reference_year'],
+                (_years - self.parameters['reference_year'])
+            )
+            post_transition_years = _years - self.parameters['transition_year']
+
+            _init_over_time = (np.exp(self.parameters['initiation_trend_rate_pre_transition'] *
+                                     pre_transition_years) *
+                              np.maximum(1.0, np.exp(self.parameters['initiation_trend_rate_post_transition'] *
+                                                      post_transition_years)))
+            _init_over_time_modification_by_age = 1.0 / expand_to_age_years(
+                self.parameters['age_modification_factors'], _ages)
             _init = np.outer(_init_over_time, _init_over_time_modification_by_age)
 
             return pd.DataFrame(index=_years, columns=_ages, data=_init)
@@ -506,12 +537,21 @@ class Contraception(Module):
             (multiplicative effect). Values are chosen to induce a trend in age-specific fertility consistent with
             the WPP estimates."""
 
-            _years = np.arange(2010, 2101)
-            _ages = np.arange(15, 50)
+            _years = np.arange(self.parameters['min_simulation_year'], self.parameters['max_simulation_year'])
+            _ages = np.arange(self.parameters['min_age_contraception'], self.parameters['max_age_contraception'])
 
-            _discont_over_time = np.exp(-0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.minimum(1.0, np.exp(
-                -0.01 * (_years - 2020)))
-            _discont_over_time_modification_by_age = expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], _ages)
+            pre_transition_years = np.minimum(
+                self.parameters['transition_year'] - self.parameters['reference_year'],
+                (_years - self.parameters['reference_year'])
+            )
+            post_transition_years = _years - self.parameters['transition_year']
+
+            _discont_over_time = (np.exp(self.parameters['discontinuation_trend_rate_pre_transition'] *
+                                         pre_transition_years) *
+                                  np.minimum(1.0, np.exp(self.parameters['discontinuation_trend_rate_post_transition'] *
+                                                          post_transition_years)))
+            _discont_over_time_modification_by_age = expand_to_age_years(
+                self.parameters['age_modification_factors'], _ages)
             _discont = np.outer(_discont_over_time, _discont_over_time_modification_by_age)
 
             return pd.DataFrame(index=_years, columns=_ages, data=_discont)
@@ -531,7 +571,7 @@ class Contraception(Module):
 
             # first scaling factor is that worked out from the calibration script
             scaling_factor_as_dict = dict(zip(
-                ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'],
+                self.parameters['age_ranges'],
                 self.parameters['scaling_factor_on_monthly_risk_of_pregnancy']
             ))
 
@@ -855,7 +895,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module, run_do_pregnancy=True, run_update_contraceptive=True):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['polling_frequency_months']))
         self.age_low = module.parameters['min_age_contraception']
         self.age_high = module.parameters['max_age_contraception'] - 1
 
@@ -1124,7 +1164,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Logs state of contraceptive usage in the population at a point in time."""
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['polling_frequency_months']))
 
     def apply(self, population):
         df = population.props
