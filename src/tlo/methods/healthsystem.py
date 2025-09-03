@@ -1640,10 +1640,10 @@ class HealthSystem(Module):
 
         return sum(current_capabilities.get(_o) for _o in officers_in_the_same_level_in_all_districts)
 
-    
+
     def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests)-> bool:
         """Check if all officers required by the appt footprint are available to perform the HSI"""
-        
+
         ok_to_run = True
 
         for officer in expected_time_requests.keys():
@@ -1651,7 +1651,7 @@ class HealthSystem(Module):
                 availability = self.get_total_minutes_of_this_officer_in_this_district(self.capabilities_today, officer)
             else:
                 availability = self.get_total_minutes_of_this_officer_in_all_district(self.capabilities_today, officer)
-                
+
             # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
             if availability is None:
                 logger.warning(
@@ -1662,7 +1662,7 @@ class HealthSystem(Module):
 
             if availability == 0.0:
                 ok_to_run = False
-        
+
         return ok_to_run
 
 
@@ -2099,7 +2099,8 @@ class HealthSystem(Module):
 
                 if self.mode_appt_constraints == 1:
                     if event.expected_time_requests:
-                        ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(event.expected_time_requests)
+                        ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
+                                        event.expected_time_requests)
 
 
                 if ok_to_run:

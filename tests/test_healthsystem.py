@@ -446,8 +446,9 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     # read the results
     output = parse_log_file(sim.log_filepath, level=logging.INFO)
     pd.set_option('display.max_columns', None)
-    capacity_by_officer_and_level = output['tlo.methods.healthsystem.summary']['Capacity_By_OfficerType_And_FacilityLevel']
-    
+    summary = output['tlo.methods.healthsystem.summary']
+    capacity_by_officer_and_level = summary['Capacity_By_OfficerType_And_FacilityLevel']
+
     # Filter rows for the two years
     row_2010 = capacity_by_officer_and_level.loc[capacity_by_officer_and_level["date"] == "2010-12-31"].squeeze()
     row_2011 = capacity_by_officer_and_level.loc[capacity_by_officer_and_level["date"] == "2011-12-31"].squeeze()
@@ -455,12 +456,18 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     # Dictionary to store results
     results = {}
 
+    # Check that load has significantly reduced in second year, thanks to the significant
+    # rescaling of capabilities.
+    # (There is some degeneracy here, in that load could also be reduced due to declining demand.
+    # However it is extremely unlikely that demand for care would have dropped by a factor of 100
+    # in second year, hence this is a fair test).
     for col in capacity_by_officer_and_level.columns:
         if col == "date":
             continue  # skip the date column
         if not (capacity_by_officer_and_level[col] == 0).any():  # check column is not all zeros
             ratio = row_2010[col] / row_2011[col]
-            results[col] = ratio > 100 # Check that load has significantly reduced in second year, thanks to the significant rescaling of capabilities. (There is some degeneracy here, in that load could also be reduced due to declining demand. However it is extremely unlikely that demand for care would have dropped by a factor of 100 in second year, hence this is a fair test).
+
+            results[col] = ratio > 100
 
     assert all(results.values())
 
