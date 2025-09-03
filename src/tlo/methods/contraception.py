@@ -102,7 +102,14 @@ class Contraception(Module):
                         " if False: FP interventions (pop & ppfp) are not simulated."),
         'interventions_start_date': Parameter(
             Types.DATE, "The date since which the FP interventions (pop & ppfp) are implemented, if at all (ie, if "
-                        "use_interventions==True")
+                        "use_interventions==True"),
+
+        'min_age_contraception': Parameter(
+            Types.INT, "Minimum age for contraception use (inclusive)."),
+        'max_age_contraception': Parameter(
+            Types.INT, "Maximum age for contraception use (inclusive)."),
+        'sterilization_age_limit': Parameter(
+            Types.INT, "Minimum age for sterilization procedures."),
     }
 
     all_contraception_states = {
@@ -225,7 +232,8 @@ class Contraception(Module):
 
         # 2) Assign contraception method
         # Select females aged 15-49 from population, for current year
-        females1549 = df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
+        females1549 = df.is_alive & (df.sex == 'F') & df.age_years.between(
+            self.parameters['min_age_contraception'], self.parameters['max_age_contraception'] - 1)
         p_method = self.processed_params['initial_method_use']
         df.loc[females1549, 'co_contraception'] = df.loc[females1549, 'age_years'].apply(
             lambda _age_years: self.rng.choice(p_method.columns, p=p_method.loc[_age_years])
@@ -334,34 +342,36 @@ class Contraception(Module):
 
             # Check correct format
             assert set(p_method.columns) == set(self.all_contraception_states)
-            assert (p_method.index == range(15, 50)).all()
+            assert (p_method.index == range(
+                self.parameters['min_age_contraception'], self.parameters['max_age_contraception'])).all()
 
             return p_method
 
         def avoid_sterilization_below30(probs):
-            """Prevent women below 30 years having female sterilization and adjust the probability for women 30 and over
-            to preserve the overall probability of initiating sterilization."""
+            """Prevent women below sterilization_age_limit years having female sterilization and adjust the
+            probability for women at or above the limit to preserve the overall probability of initiating
+            sterilization."""
             # Input 'probs' must include probs for all methods including 'not_using'
             assert set(probs.index) == set(self.all_contraception_states)
 
-            # Prevent women below 30 years having 'female_sterilization'
-            probs_below30 = probs.copy()
-            probs_below30['female_sterilization'] = 0.0
+            # Prevent women below sterilization_age_limit years having 'female_sterilization'
+            probs_below_limit = probs.copy()
+            probs_below_limit['female_sterilization'] = 0.0
             # Scale so that the probability of all outcomes sum to 1.0
-            probs_below30 = probs_below30 / probs_below30.sum()
-            assert np.isclose(1.0, probs_below30.sum())
+            probs_below_limit = probs_below_limit / probs_below_limit.sum()
+            assert np.isclose(1.0, probs_below_limit.sum())
 
             # Increase prob of 'female_sterilization' in older women accordingly
-            probs_30plus = probs.copy()
-            probs_30plus['female_sterilization'] = (
+            probs_limit_plus = probs.copy()
+            probs_limit_plus['female_sterilization'] = (
                 probs.loc['female_sterilization'] /
                 self.ratio_n_females_30_49_to_15_49_in_2010
             )
             # Scale so that the probability of all outcomes sum to 1.0
-            probs_30plus = probs_30plus / probs_30plus.sum()
-            assert np.isclose(1.0, probs_30plus.sum())
+            probs_limit_plus = probs_limit_plus / probs_limit_plus.sum()
+            assert np.isclose(1.0, probs_limit_plus.sum())
 
-            return probs_below30, probs_30plus
+            return probs_below_limit, probs_limit_plus
 
         def contraception_initiation():
             """Generate the probability per month of a woman initiating onto each contraceptive, by the age (in whole
@@ -370,9 +380,9 @@ class Contraception(Module):
             # Probability of initiation by method per month (average over all ages)
             p_init_by_method = self.parameters['Initiation_ByMethod'].loc[0]
 
-            # Prevent women below 30 years having 'female_sterilization' while preserving the overall probability of
-            # 'female_sterilization' initiation
-            p_init_by_method_below30, p_init_by_method_30plus = avoid_sterilization_below30(p_init_by_method)
+            # Prevent women below sterilization_age_limit years having 'female_sterilization' while preserving
+            # the overall probability of 'female_sterilization' initiation
+            p_init_by_method_below_limit, p_init_by_method_limit_plus = avoid_sterilization_below30(p_init_by_method)
 
             # Effect of age
             age_effect = 1.0 + self.parameters['Initiation_ByAge'].set_index('age')['r_init1_age'].rename_axis(
@@ -381,31 +391,35 @@ class Contraception(Module):
             # Year effect
             year_effect = time_age_trend_in_initiation()
 
-            def apply_age_year_effects(probs_below30, probs_30plus):
+            def apply_age_year_effects(probs_below_limit, probs_limit_plus):
                 # Assemble into age-specific data-frame:
-                probs_by_method_below30 = probs_below30.copy().drop('not_using')
-                probs_by_method_30plus = probs_30plus.copy().drop('not_using')
+                probs_by_method_below_limit = probs_below_limit.copy().drop('not_using')
+                probs_by_method_limit_plus = probs_limit_plus.copy().drop('not_using')
                 p_init = dict()
+                p = self.parameters
                 for year in year_effect.index:
 
                     p_init_this_year = dict()
                     for a in age_effect.index:
-                        if a < 30:
-                            p_init_this_year[a] = probs_by_method_below30 * age_effect.at[a] * year_effect.at[year, a]
+                        if a < p['sterilization_age_limit']:
+                            p_init_this_year[a] = (probs_by_method_below_limit * age_effect.at[a] *
+                                                   year_effect.at[year, a])
                         else:
-                            p_init_this_year[a] = probs_by_method_30plus * age_effect.at[a] * year_effect.at[year, a]
+                            p_init_this_year[a] = (probs_by_method_limit_plus * age_effect.at[a] *
+                                                   year_effect.at[year, a])
                     p_init_this_year_df = pd.DataFrame.from_dict(p_init_this_year, orient='index')
 
                     # Check correct format of age/method data-frame
                     assert set(p_init_this_year_df.columns) == set(self.all_contraception_states - {'not_using'})
-                    assert (p_init_this_year_df.index == range(15, 50)).all()
+                    assert (p_init_this_year_df.index == range(
+                        self.parameters['min_age_contraception'], p['max_age_contraception'])).all()
                     assert (p_init_this_year_df >= 0.0).all().all()
 
                     p_init[year] = p_init_this_year_df
 
                 return p_init
 
-            return apply_age_year_effects(p_init_by_method_below30, p_init_by_method_30plus)
+            return apply_age_year_effects(p_init_by_method_below_limit, p_init_by_method_limit_plus)
 
         def contraception_switch():
             """Get the probability per month of a woman switching to contraceptive method, given that she is currently
@@ -419,15 +433,15 @@ class Contraception(Module):
             # Columns = "current method"; Row = "new method"
             switching_matrix = self.parameters['Prob_Switch_From_And_To'].set_index('switchfrom').transpose()
 
-            # Prevent women below 30 years having 'female_sterilization'
-            switching_matrix_below30 = switching_matrix.copy()
-            switching_matrix_below30.loc['female_sterilization', :] = 0.0
-            switching_matrix_below30 = switching_matrix_below30.apply(lambda col: col / col.sum())
+            # Prevent women below sterilization_age_limit years having 'female_sterilization'
+            switching_matrix_below_limit = switching_matrix.copy()
+            switching_matrix_below_limit.loc['female_sterilization', :] = 0.0
+            switching_matrix_below_limit = switching_matrix_below_limit.apply(lambda col: col / col.sum())
 
-            assert set(switching_matrix_below30.columns) == (
+            assert set(switching_matrix_below_limit.columns) == (
                 self.all_contraception_states - {"not_using", "female_sterilization"})
-            assert set(switching_matrix_below30.index) == (self.all_contraception_states - {"not_using"})
-            assert np.isclose(1.0, switching_matrix_below30.sum(axis=0)).all()
+            assert set(switching_matrix_below_limit.index) == (self.all_contraception_states - {"not_using"})
+            assert np.isclose(1.0, switching_matrix_below_limit.sum(axis=0)).all()
 
             # Increase prob of 'female_sterilization' in older women accordingly
             new_fs_probs_30plus = (
@@ -444,7 +458,7 @@ class Contraception(Module):
             assert set(switching_matrix_30plus.index) == (self.all_contraception_states - {"not_using"})
             assert np.isclose(1.0, switching_matrix_30plus.sum(axis=0)).all()
 
-            return p_switch_from, switching_matrix_below30, switching_matrix_30plus
+            return p_switch_from, switching_matrix_below_limit, switching_matrix_30plus
 
         def contraception_stop():
             """Get the probability per month of a woman stopping use of contraceptive method."""
@@ -842,8 +856,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module, run_do_pregnancy=True, run_update_contraceptive=True):
         super().__init__(module, frequency=DateOffset(months=1))
-        self.age_low = 15
-        self.age_high = 49
+        self.age_low = module.parameters['min_age_contraception']
+        self.age_high = module.parameters['max_age_contraception'] - 1
 
         self.run_do_pregnancy = run_do_pregnancy  # (Provided for testing only)
         self.run_update_contraceptive = run_update_contraceptive  # (Provided for testing only)
