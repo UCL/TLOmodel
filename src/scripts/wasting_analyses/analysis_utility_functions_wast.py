@@ -1133,6 +1133,7 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     monthly_agg_df = \
         tlo_availability_df.groupby(["Facility_Level", "item_code", "month"])[['available_prop']].mean().reset_index()
     months = range(1, 13)
+
     fig, axes = plt.subplots(3, 4, figsize=(24, 18))
     for i, month in enumerate(months):
         row = i // 4
@@ -1142,6 +1143,9 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
         heatmap_data_month = month_df.pivot(
             columns="Facility_Level", index="item_code", values="available_prop"
         ).reindex(index=chosen_item_codes, columns=correct_order_of_fac_levels)
+        # Add average column (across all facility levels)
+        aggregate_col_month = month_df.groupby('item_code')[['available_prop']].mean()
+        heatmap_data_month['Average'] = aggregate_col_month
         heatmap_data_month.index = heatmap_data_month.index.map(item_names_to_map)
         sns.heatmap(heatmap_data_month, annot=True, cmap="RdYlGn", cbar=False, ax=ax, vmin=0, vmax=1)
         ax.set_title(f"Month {month}", fontweight="bold")
