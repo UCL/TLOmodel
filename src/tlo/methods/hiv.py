@@ -431,9 +431,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Shortcut to parameters dict
         p = self.parameters
 
-        workbook = read_csv_files(resourcefilepath/'ResourceFile_HIV', files=None)
+        workbook = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
-
         # Load data on HIV prevalence
         p["hiv_prev"] = workbook["hiv_prevalence"]
 
@@ -1678,6 +1677,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             )
             schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
+
 # ---------------------------------------------------------------------------
 #   Main Polling Event
 # ---------------------------------------------------------------------------
@@ -2474,7 +2474,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             # set cap for number of repeat tests
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.
 
-
             if (
                 self.counter_for_test_not_available
                 <= self.module.parameters["hiv_healthseekingbehaviour_cap"]
@@ -2532,7 +2531,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
                 # Add used equipment
                 self.add_equipment({'Drip stand', 'Stool, adjustable height', 'Autoclave',
-                                       'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
+                                    'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
 
                 # Schedule follow-up appts
                 # schedule first follow-up appt, 3 days from procedure;
@@ -2744,7 +2743,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # check whether person had Rx at least 3 months ago and is now due repeat prescription
         # alternate routes into testing/tx may mean person already has recent ARV dispensation
         if person['hv_date_last_ART'] > (
-                self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
+            self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         if art_status_at_beginning_of_hsi == "not":
@@ -2944,13 +2943,13 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     self.module.item_codes_for_consumables_required[
                         "First line ART regimen: young child"
                     ]: dispensation_days
-                    * 2
+                       * 2
                 },
                 optional_item_codes={
                     self.module.item_codes_for_consumables_required[
                         "First line ART regimen: young child: cotrimoxazole"
                     ]: dispensation_days
-                    * 240
+                       * 240
                 },
                 return_individual_results=True,
             )
@@ -2961,7 +2960,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First line ART regimen: older child']: dispensation_days * 3},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
+                                         'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
                 return_individual_results=True)
 
         else:
@@ -2970,7 +2969,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First-line ART regimen: adult']: dispensation_days},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                    'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
+                                         'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
                 return_individual_results=True)
 
         # add drug names to dict
