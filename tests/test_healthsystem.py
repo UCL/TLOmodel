@@ -2018,17 +2018,23 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
 
 def test_mode_2_clinics(seed, tmpdir):
     """Test that clinics work as expected in mode_appt_constraints=2. Specifically:
-    - If non-fuungible capabilities are available, an event needing those capabilities runs;
-    - If non-fungible capabilities run out, the event does not run; this test checks that that events query the
-    correct capabilities and that correct counters are run down;
-    - If fungible capabilities are available, an event needing those capabilities runs;
-    - If fungible capabilities are not available, the event does not run;
-    - The fungible events in the following sequence run: fungible/non-fungible/fungible if non-fungible capabilities are not available but fungible are.
-    - Conversely, the non-fungible events in the following sequence run: fungible/non-fungible/fungible even if non-fungible capabilities are not available
+    - If non-fungible capabilities are available, an event eligible for those
+    capabilities runs;
+    - If non-fungible capabilities run out, the event does not run even if
+    fungible capabilities are available; this test checks that that events query
+    the correct capabilities and that correct counters are run down;
+    - If fungible capabilities are available, an event eligible for those
+    capabilities runs;
+    - If fungible capabilities are not available, the event does not run even if
+    non-fungible capabilities are available;
+    - The fungible events in the following sequence run:
+    fungible/non-fungible/fungible if non-fungible capabilities are not
+    available but fungible are.
+    - Conversely, the non-fungible events in the following sequence run:
+    fungible/non-fungible/fungible even if non-fungible capabilities are not available
     but fungible are;
-
     """
-                          # Create a dummy HSI event class
+    # Create a dummy HSI event class
     class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id, appt_type, level):
             super().__init__(module, person_id=person_id)
@@ -2085,10 +2091,8 @@ def test_mode_2_clinics(seed, tmpdir):
                      )
         sim.make_initial_population(n=tot_population)
         # Assign the entire population to the first district, so that all events are run in the same district
-        person_for_district = {d: i for i, d in enumerate(sim.population.props['district_of_residence'].cat.categories)}
-        keys_district = list(person_for_district.keys())
-        for i in range(0, tot_population):
-            sim.population.props.at[i, 'district_of_residence'] = keys_district[0]
+        sim.population.props['district_of_residence'] = list(sim.population.props['district_of_residence'].cat.categories)[0]
+        breakpoint()
 
         # healthsystem will query self.parameters['Clinics_Capabilities'] to determine clinic eligibility
         # So we will add a colummn with the dummy module name so that it becomes eligible

@@ -560,7 +560,7 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
         # If include_clinics is True, then read in the Resource file that contains the ringfenced clinics
         self.parameters['Clinics_Capabilities'] = pd.DataFrame()  # Initialise as empty DataFrame
-        if self.parameters['include_clinics']::
+        if self.parameters['include_clinics']:
             df = pd.read_csv(
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / 'clinics' / 'ResourceFile_Clinics.csv'
             )
@@ -1374,7 +1374,7 @@ class HealthSystem(Module):
         """Set value for `use_funded_or_actual_staffing` and update the daily_capabilities accordingly. """
         assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
         self._use_funded_or_actual_staffing = use_funded_or_actual_staffing
-        self.setup_daily_capabilities(self._use_funded_or_actual_staffing, self.include_clinics)
+        self.setup_daily_capabilities(self._use_funded_or_actual_staffing)
 
     def get_priority_policy_initial(self) -> str:
         """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but
