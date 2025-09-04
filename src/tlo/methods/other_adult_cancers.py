@@ -796,6 +796,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "oac_stage_at_which_treatment_given"] = df.at[person_id, "oac_status"]
 
             # Schedule a post-treatment check for 12 months:
+            # NOTE: Discrepancy between commented and coded interval. To review.
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
@@ -851,6 +852,7 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
 
         else:
             # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in one month
+            # NOTE: Discrepancy between commented and coded interval. To review.
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
