@@ -369,7 +369,7 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
-        include_clinics: bool = False,
+        include_clinics: Optional[bool] = False,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -424,7 +424,7 @@ class HealthSystem(Module):
         assert not (ignore_priority and policy_name is not None), (
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
-        assert isinstance(include_clinics, bool)
+
 
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
@@ -541,7 +541,7 @@ class HealthSystem(Module):
                 "hsi_event_count_log_period argument should be one of 'day', 'month' "
                 "'year', 'simulation' or None."
             )
-        self.include_clinics = include_clinics
+
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
@@ -557,7 +557,7 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
         # If include_clinics is True, then read in the Resource file that contains the ringfenced clinics
         self.parameters['Clinics_Capabilities'] = pd.DataFrame()  # Initialise as empty DataFrame
-        if self.include_clinics:
+        if self.parameters['include_clinics']::
             df = pd.read_csv(
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / 'clinics' / 'ResourceFile_Clinics.csv'
             )
@@ -593,7 +593,7 @@ class HealthSystem(Module):
         self.parameters['Appt_Time_Table'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
             'ResourceFile_Appt_Time_Table.csv')
-        # STOP HERE
+
         # Load 'Daily_Capabilities' (for both actual and funded)
         for _i in ['actual', 'funded', 'funded_plus']:
             self.parameters[f'Daily_Capabilities_{_i}'] = pd.read_csv(
@@ -737,6 +737,9 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
+
+        ## Ensure include_clinicis is setup appropriately - either via resource file or argument
+        self.set_include_clinics()
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -988,7 +991,7 @@ class HealthSystem(Module):
         self._facilities_for_each_district = facilities_per_level_and_district
 
 
-    def setup_daily_capabilities(self, use_funded_or_actual_staffing, include_clinics):
+    def setup_daily_capabilities(self, use_funded_or_actual_staffing):
         """Set up `self._daily_fungible_capabilities` and `self._officers_with_availability`.
         If include_clinics is True, split the capabilities into fungible and non-fungible and set up `self._daily_clinics_capabilities` and
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
@@ -1003,7 +1006,7 @@ class HealthSystem(Module):
         self._officers_with_availability = set(self._daily_fungible_capabilities.index[self._daily_fungible_capabilities > 0])
 
         # If include_clinics is True, then redefine daily_capabilities
-        if include_clinics:
+        if self.parameters['include_clinics']:
             ## Get the module column names before formatting as the dataframe will gain additional non-module columns
             module_cols = self.parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
             self.parameters['Clinics_Capabilities'] = self.format_clinic_capabilities()
@@ -1026,15 +1029,6 @@ class HealthSystem(Module):
             self._daily_clinics_capabilities = {}
             self._daily_clinics_capabilities_per_staff = {}
 
-
-
-
-    """Set the clinic eligibility for this HSI event Queue Item."""
-    def set_clinic_eligibility(self, hsi_q_item: HSIEventQueueItem, clinic_access: str = None) -> None:
-        if clinic_access is not None:
-            hsi_q_item.clinic_eligibility = clinic_access
-        else:
-            hsi_q_item.clinic_eligibility = get_clinic_eligibility(self.hsi_event.module)
 
 
     def get_clinic_eligibility(self, name):
@@ -1409,6 +1403,18 @@ class HealthSystem(Module):
                 .to_dict(orient="index")
             )
             del self.priority_rank_dict["lowest_priority_considered"]
+
+    def get_include_clinics(self) -> bool:
+        """Returns `include_clinics`. This is equal to what is specified in the Resource file, but
+        can be overwritten with the argument supplied at initialisation if one is provided."""
+        return self.parameters['include_clinics'] \
+            if self.arg_include_clinics is None \
+            else self.arg_include_clinics
+
+    def set_include_clinics(self):
+        """Sets `include_clinics`. This is equal to what is specified in the Resource file, but
+       is  overwritten with the argument supplied at initialisation if one is provided."""
+        self.parameters['include_clinics'] = self.get_include_clinics()
 
     def schedule_hsi_event(
         self,
