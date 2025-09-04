@@ -12,8 +12,8 @@ from tlo.analysis.utils import (
 )
 import geopandas as gpd
 
-min_year = 2025
-max_year = 2029
+min_year = 2026
+max_year = 2028
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
@@ -331,10 +331,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Zomba City', 'Zomba')
     print(df_dalys_by_district_all_scenarios)
     # Create maps for each scenario
-    n_scenarios = len(scenario_names)
-    fig, axes = plt.subplots(4, 3, figsize=(18, 18))
+    fig, axes = plt.subplots(3, 3, figsize=(18, 18))
     axes = axes.flatten()
-    for i, scenario in enumerate(scenario_names):
+    for i, scenario in enumerate(scenario_names[1:], start=1):
+            i = i-1
             difference_from_baseline = df_dalys_by_district_all_scenarios[scenario] - df_dalys_by_district_all_scenarios['Baseline']
             malawi_admin2['DALY_Rate'] = malawi_admin2['ADM2_EN'].map(difference_from_baseline)
             print(malawi_admin2['DALY_Rate'] )
