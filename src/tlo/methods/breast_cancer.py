@@ -865,8 +865,8 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
             )
 
         else:
-            # Schedule another HSI_BreastCancer_PostTreatmentCheck event in one month
-            # NOTE: discrepancy between commented and coded interval. To review.
+            # Schedule another HSI_BreastCancer_PostTreatmentCheck event in three months
+            # NOTE: interval of check-ups could be subject to reivew.
             hs.schedule_hsi_event(
                 hsi_event=HSI_BreastCancer_PostTreatmentCheck(
                     module=self.module,
