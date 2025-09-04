@@ -130,7 +130,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'proportion_oedema_with_WHZ<-2': Parameter(
             Types.REAL, 'proportion of individuals with oedema who are wasted (moderately or severely)'),
         'proportion_normal_whz': Parameter(
-            Types.REAL, 'proportion of children under 5 with no wasting (WHZ >= -2)'),
+            Types.REAL, 'proportion of under-five children without wasting (WHZ >= -2)'),
         # detection
         'growth_monitoring_frequency_days_agecat': Parameter(
             Types.LIST, 'growth monitoring frequency (days) for age categories '),
