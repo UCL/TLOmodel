@@ -733,10 +733,6 @@ class WastingAnalyses:
         fig.tight_layout()
         # Adjust the layout to make space for the footnote
         plt.subplots_adjust(bottom=0.15)  # Adjust the bottom margin
-        # Add footnote
-        fig.figure.text(0.5, 0.02,
-                        "Model output against Global Burden of Diseases (GBD) study data",
-                        ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
         fig_output_name = ('model_gbd_deaths_incl_burnin__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
         # plt.show()
