@@ -721,12 +721,12 @@ class WastingAnalyses:
                                      slice(None), ['0-4'], 'Childhood Undernutrition'
                                      )].groupby('period').sum()
         plotting = plot_df.loc[['2010-2014', '2015-2019']]
-        ax = plotting['model'].plot.bar(label='Model', ax=ax, rot=0)
+        ax = plotting['model'].plot.bar(label='TLO model', ax=ax, rot=0)
         ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
-                    fmt='o', color='#000', label="GBD")
+                    fmt='o', color='#000', label="GBD 2019 estimates")
 
-        ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5', fontsize=title_fontsize-1)
+        ax.set_title('Average annual under-five direct deaths due to severe acute malnutrition', fontsize=title_fontsize-1)
         ax.set_xlabel("time period")
         ax.set_ylabel("number of deaths")
         ax.legend(loc='upper center', fontsize=legend_fontsize)
