@@ -472,7 +472,10 @@ class HealthSystem(Module):
         self.arg_use_funded_or_actual_staffing = use_funded_or_actual_staffing
         self._use_funded_or_actual_staffing = None  # <-- this is the private internal store of the value that is used.
 
-        self.include_clinics = include_clinics
+
+        assert isinstance(include_clinics, bool)
+        self.arg_include_clinics = include_clinics
+
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
 
