@@ -27,7 +27,7 @@ def simulation(seed):
     sim.register(
         demography.Demography(),
         enhanced_lifestyle.Lifestyle(),
-        healthsystem.HealthSystem( mode_appt_constraints=0),
+        healthsystem.HealthSystem( mode_appt_constraints=1),
         healthburden.HealthBurden(),
         healthseekingbehaviour. HealthSeekingBehaviour(),
         symptommanager.SymptomManager(),
