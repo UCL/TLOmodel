@@ -105,20 +105,20 @@ class Contraception(Module):
                         "use_interventions==True"),
 
         'min_age_contraception': Parameter(
-            Types.INT, "Minimum age for contraception use (inclusive)."),
+            Types.INT, "Minimum age for contraception use."),
         'max_age_contraception': Parameter(
-            Types.INT, "Maximum age for contraception use (inclusive)."),
+            Types.INT, "Maximum age for contraception use."),
         'sterilization_age_limit': Parameter(
             Types.INT, "Minimum age for sterilization procedures."),
 
         'polling_frequency_months': Parameter(
-            Types.INT, "Frequency in months for contraception polling and logging events."),
+            Types.INT, "Frequency in months for contraception main polling event."),
         'min_simulation_year': Parameter(
             Types.INT, "Minimum year for simulation time trends."),
         'max_simulation_year': Parameter(
             Types.INT, "Maximum year for simulation time trends."),
         'transition_year': Parameter(
-            Types.INT, "Transition year for time trend calculations (typically 2020)."),
+            Types.INT, "Transition year for time trend calculations."),
         'initiation_trend_rate_pre_transition': Parameter(
             Types.REAL, "Annual rate of increase in contraception initiation before transition year."),
         'initiation_trend_rate_post_transition': Parameter(
@@ -128,9 +128,10 @@ class Contraception(Module):
         'discontinuation_trend_rate_post_transition': Parameter(
             Types.REAL, "Annual rate of decrease in contraception discontinuation after transition year."),
         'age_modification_factors': Parameter(
-            Types.LIST, "Age-specific modification factors for time trends by age group (15-19, 20-24, ..., 45-49)."),
+            Types.LIST, "Age-specific modification factors for time trends by age groups defined "
+                        "in parameter age_ranges."),
         'reference_year': Parameter(
-            Types.INT, "Reference year for time trend calculations (typically 2010)."),
+            Types.INT, "Reference year for time trend calculations."),
         'age_ranges': Parameter(
             Types.LIST, "Age range labels for demographic analysis (e.g., ['15-19', '20-24', ...]).")
     }
@@ -1165,7 +1166,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Logs state of contraceptive usage in the population at a point in time."""
-        super().__init__(module, frequency=DateOffset(months=module.parameters['polling_frequency_months']))
+        super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
         df = population.props
