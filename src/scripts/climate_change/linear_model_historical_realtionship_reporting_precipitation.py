@@ -72,10 +72,21 @@ zero_sum_columns = monthly_reporting_by_facility.columns[(monthly_reporting_by_f
 monthly_reporting_by_facility = monthly_reporting_by_facility.drop(columns=zero_sum_columns)
 
 if use_all_weather:
-    weather_data_monthly_df = weather_data_monthly_original.drop(columns=zero_sum_columns, errors='ignore')
+    # drop zero-sum columns
+    weather_data_monthly_clean = weather_data_monthly_original.drop(columns=zero_sum_columns, errors='ignore')
+    weather_data_five_day_cumulative_clean = weather_data_five_day_cumulative_original.drop(columns=zero_sum_columns, errors='ignore')
+
+    # find intersection of remaining columns
+    common_columns = weather_data_monthly_clean.columns.intersection(
+        weather_data_five_day_cumulative_clean.columns
+    )
+
+    # subset to only common cols
+    weather_data_monthly_df = weather_data_monthly_clean[common_columns]
+    weather_data_five_day_cumulative_df = weather_data_five_day_cumulative_clean[common_columns]
     nan_indices = np.isnan(weather_data_monthly_df)
 
-    weather_data_five_day_cumulative_df = weather_data_five_day_cumulative_original.drop(columns=zero_sum_columns, errors='ignore')
+    # trimming indices
 
     weather_data_monthly_df = weather_data_monthly_df.drop(weather_data_monthly_df.index[-2:])
     weather_data_five_day_cumulative_df = weather_data_five_day_cumulative_df.drop(weather_data_five_day_cumulative_df.index[-1:])
@@ -118,8 +129,6 @@ if use_all_weather:
     weather_data_five_day_cumulative = weather_data_five_day_cumulative.iloc[(min_year_for_analysis - absolute_min_year) * 12:]
     weather_data_monthly_flattened = weather_data_monthly.values.flatten()
     weather_data_five_day_cumulative_flattened = weather_data_five_day_cumulative.values.flatten()
-    print(len(weather_data_five_day_cumulative_flattened))
-
     weather_data = np.vstack((weather_data_monthly_flattened,weather_data_five_day_cumulative_flattened)).T
 
 # # Mask COVID-19 months for reporting
@@ -129,7 +138,8 @@ monthly_reporting_by_facility.loc[cyclone_freddy_months_phalombe, 'Phalombe Heal
 monthly_reporting_by_facility.loc[cyclone_freddy_months_thumbwe, 'Thumbwe Health Centre'] = 0
 
 # Drop September 2024 in ANC/reporting data
-monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[-1])
+monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[-4:])
+monthly_reporting_by_facility = monthly_reporting_by_facility[common_columns] #Only use where all data is
 # code if years need to be dropped
 monthly_reporting_by_facility = monthly_reporting_by_facility.iloc[(min_year_for_analysis-absolute_min_year)*12:]
 # Linear regression
@@ -138,26 +148,26 @@ num_facilities = len(monthly_reporting_by_facility.columns)
 year_repeated = [y for y in year_range for _ in range(12)]
 year = year_repeated[:-4]
 month = range(1, 13)
-year_flattened = year*len(monthly_reporting_by_facility.columns) # to get flattened data
-month_repeated = [m for m in range(1,9) for _ in range(len(monthly_reporting_by_facility.columns))]
-month_repeated = month_repeated*len(year_range)
-month_repeated_abbreviated = [m for m in range(9,13) for _ in range(len(monthly_reporting_by_facility.columns))]
-month_repeated_abbreviated = month_repeated_abbreviated*(len(year_range) - 1)
-month_repeated.extend(month_repeated_abbreviated)
-# for _ in year_range:
-#     month_repeated.extend(range(1, 13))
-# month = month_repeated[:-4]
-month_repeated_prediction = [m for m in range(1, 13) for _ in range(num_facilities)]
-month_flattened_prediction = month_repeated_prediction * len(year_range_prediction)
-month_flattened = month_repeated*len(monthly_reporting_by_facility.columns)
 
-facility_flattened = list(monthly_reporting_by_facility.columns) * len(month_repeated)
+year_flattened = year*len(monthly_reporting_by_facility.columns) # to get flattened data
+
+n_facilities = len(monthly_reporting_by_facility.columns)
+
+month_flattened = []
+# Full years (all except last one)
+for _ in range(len(year_range) - 1):
+    month_flattened.extend([m for _ in range(num_facilities) for m in range(1, 13)])
+# Last year (only Jan–Aug)
+month_flattened.extend([m for _ in range(num_facilities) for m in range(1, 9)])
+
+facility_flattened = list(monthly_reporting_by_facility.columns) * len(monthly_reporting_by_facility)
+
 # Flatten data
 y = monthly_reporting_by_facility.values.flatten()
 if np.nanmin(y) < 1:
      y += 1  # Shift to ensure positivity as taking log
 y[y > 4e3] = np.nan
-
+print(len(y))
 # One-hot encode facilities
 facility_encoded = pd.get_dummies(facility_flattened, drop_first=True)
 # above below
@@ -173,7 +183,7 @@ elif Inpatient:
     expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days.csv", index_col=0)
 
 expanded_facility_info = expanded_facility_info.drop(columns=zero_sum_columns)
-
+expanded_facility_info = expanded_facility_info[common_columns]
 expanded_facility_info = expanded_facility_info.T.reindex(columns=expanded_facility_info.index)
 
 zone_info_each_month = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range, historical = True)
@@ -445,6 +455,7 @@ axs[0].legend(loc='upper left', borderaxespad=0.)
 
 #plt.show()
 ## average of predictions
+print(year_month_labels_filtered)
 data_weather_predictions = pd.DataFrame({
     'Year': np.array(year_flattened)[mask_all_data],
     'Month': np.array(month_flattened)[mask_all_data],
@@ -455,7 +466,9 @@ data_weather_predictions = pd.DataFrame({
 })
 
 data_weather_predictions_grouped = data_weather_predictions.groupby('Year_Month', as_index=False).sum()
-
+data_weather_predictions_grouped[['Year', 'Month']] = data_weather_predictions_grouped['Year_Month'].str.split('-', expand=True).astype(int)
+data_weather_predictions_grouped = data_weather_predictions_grouped.sort_values(['Year', 'Month']).reset_index(drop=True)
+data_weather_predictions_grouped = data_weather_predictions_grouped.drop(columns=['Year', 'Month'])
 fig, ax = plt.subplots(figsize=(7, 7))
 
 ax.scatter(data_weather_predictions_grouped['Year_Month'],
@@ -477,15 +490,16 @@ ax.stem(data_weather_predictions_grouped['Year_Month'][negative_mask],
         data_weather_predictions_grouped['difference'][negative_mask],
         linefmt='#823038', markerfmt='o', basefmt="black", label="Fewer appointments projected due to more precipitation")
 
+print(data_weather_predictions_grouped['Year_Month'])
 ax.set_xlabel('Year-Month')
 ax.set_ylabel(f'Difference in Predicted {service} Services (Without vs. With Precipitation)')
 january_ticks = data_weather_predictions_grouped[data_weather_predictions_grouped['Year_Month'].str.endswith('-1')]
 print(january_ticks)
 ax.set_xticks(january_ticks['Year_Month'])
 ax.set_xticklabels(january_ticks['Year_Month'].str[:4], rotation=45, ha='right')
-ax.axvline(x='2023-3', color='#CDC6AE', linestyle='--', linewidth=1,  alpha=0.3, label="Cyclone Freddy")
-ax.axvline(x='2023-2', color='#CDC6AE', linestyle='--', linewidth=1, alpha=0.3)
-ax.axvspan('2023-2', '2023-3', color='#CDC6AE', alpha=0.3)
+ax.axvline(x='2023-2', color='#B4E33D', linestyle='--', linewidth=1,  alpha=0.3, label="Cyclone Freddy")
+ax.axvline(x='2023-3', color='#B4E33D', linestyle='--', linewidth=1, alpha=0.3)
+ax.axvspan('2023-2', '2023-3', color='#B4E33D', alpha=0.4)
 ax.legend(loc='upper left')
 
 plt.tight_layout()
