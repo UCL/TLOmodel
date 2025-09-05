@@ -3210,7 +3210,8 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
         self.TREATMENT_ID = 'PostnatalCare_Maternal_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 5})
+        params = module.current_parameters
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': params['beddays_extended_delivery']})
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare now running to capture '
@@ -3256,7 +3257,10 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
                 target = params['pnc_availability_odds']
                 params['odds_will_attend_pnc'] = 1
 
-                women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+                repro_mask = (df.is_alive & (df.sex == 'F') &
+                              (df.age_years > params['min_reproductive_age']) &
+                              (df.age_years < params['max_reproductive_age']))
+                women = df.loc[repro_mask]
                 mode_of_delivery = pd.Series(False, index=women.index)
                 delivery_setting = pd.Series(False, index=women.index)
 
@@ -3265,9 +3269,12 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
                 if 'delivery_setting' in mni_df.columns:
                     delivery_setting = pd.Series(mni_df['delivery_setting'], index=women.index)
 
+                repro_mask_pred = (df.is_alive & (df.sex == 'F') &
+                                   (df.age_years > params['min_reproductive_age']) &
+                                   (df.age_years < params['max_reproductive_age']))
                 mean = self.module.la_linear_models['postnatal_check'].predict(
-                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
-                    year=self.sim.date.year,
+                    df.loc[repro_mask_pred],
+                    year=self.module.sim.date.year,
                     mode_of_delivery=mode_of_delivery,
                     delivery_setting=delivery_setting).mean()
 
@@ -3278,10 +3285,10 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
 
                 # Then override the parameters which control neonatal care seeking
                 cov_prob = params['pnc_availability_odds'] / (params['pnc_availability_odds'] + 1)
-                params['prob_timings_pnc'] = [1.0, 0]
+                params['prob_timings_pnc'] = params['prob_timings_pnc_<48_scenario']
 
                 nb_params['prob_pnc_check_newborn'] = cov_prob
-                nb_params['prob_timings_pnc_newborns'] = [1.0, 0]
+                nb_params['prob_timings_pnc_newborns'] = params['prob_timings_pnc_newborns_<48_scenario']
 
             if params['alternative_pnc_quality']:
                 params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
@@ -3303,7 +3310,7 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
                 pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
 
             if params['sba_sens_analysis_max']:
-                params['odds_deliver_at_home'] = 0.0
+                params['odds_deliver_at_home'] = params['home_delivery_sens_analysis_prob']
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -3316,16 +3323,15 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
-        repro_women = df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
+        params = self.module.current_parameters
+        repro_women = (df.is_alive & (df.sex == 'F') &
+                     (df.age_years > params['min_reproductive_age']) &
+                     (df.age_years < params['max_reproductive_age']))
 
-        hysterectomy = df.is_alive & (df.sex == 'F') & df.la_has_had_hysterectomy & (df.age_years > 14) & (df.age_years
-                                                                                                           < 50)
-        labour = df.is_alive & (df.sex == 'F') & df.la_currently_in_labour & (df.age_years > 14) & (df.age_years
-                                                                                                    < 50)
-        postnatal = df.is_alive & (df.sex == 'F') & df.la_is_postpartum & (df.age_years > 14) & (df.age_years
-                                                                                                 < 50)
-        inpatient = df.is_alive & (df.sex == 'F') & df.hs_is_inpatient & (df.age_years > 14) & (df.age_years
-                                                                                                < 50)
+        hysterectomy = repro_women & df.la_has_had_hysterectomy
+        labour = repro_women & df.la_currently_in_labour
+        postnatal = repro_women & df.la_is_postpartum
+        inpatient = repro_women & df.hs_is_inpatient
 
         prop_hyst = (len(hysterectomy.loc[hysterectomy]) / len(repro_women.loc[repro_women])) * 100
         prop_in_labour = (len(labour.loc[labour]) / len(repro_women.loc[repro_women])) * 100
