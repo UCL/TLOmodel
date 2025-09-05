@@ -89,4 +89,14 @@ def repeat_info(info, num_facilities, year_range):
     # Repeat facilities in alternating order for each month and year
     repeated_info = [info[i % len(info)] for i in range(len(year_range) * 12 * num_facilities)]
     return repeated_info
+
+
+def repeat_info(info, num_facilities, year_range, historical):
+    # Repeat facilities in alternating order for each month and year
+    repeated_info = [info[i % len(info)] for i in range(len(year_range) * 12 * num_facilities)]
+
+    if historical:
+        return repeated_info[:-4 * num_facilities]  # Exclude final 4 months for all facilities
+    else:
+        return repeated_info
 #
