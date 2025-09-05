@@ -10,7 +10,7 @@ import analysis_utility_functions_wast
 
 # ####### TO SET #######################################################################################################
 # Where to save the outcomes
-outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
+outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes/heatmaps")
 ########################################################################################################################
 
 analysis_utility_functions_wast.plot_availability_heatmaps(outputs_path)
