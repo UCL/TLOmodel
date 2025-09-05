@@ -12,7 +12,7 @@ from netCDF4 import Dataset
 from shapely.geometry import Polygon
 
 # Load the dataset and the variable
-baseline = True
+baseline = False
 file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/2011/60ab007aa16d679a32f9c3e186d2f744.nc"
 dataset = Dataset(file_path_historical_data, mode='r')
 print(dataset.variables.keys())
@@ -89,37 +89,77 @@ long_format.columns = [
 
 long_format = long_format.dropna(subset=['A109__Latitude'])
 
-facilities_gdf = gpd.GeoDataFrame(
-    long_format,
-    geometry=gpd.points_from_xy(long_format['A109__Longitude'], long_format['A109__Latitude']),
-    crs="EPSG:4326"
+
+long_format = expanded_facility_info.T.reset_index()
+long_format.columns = [
+    'Facility', 'Zonename', 'Resid', 'Dist', 'A105', 'A109__Altitude', 'Ftype',
+    'A109__Latitude', 'A109__Longitude', 'minimum_distance', 'average_precipitation'
+]
+long_format.loc[long_format['Facility'] == 'Referral Hospital_Southern', 'Dist'] = 'Blantyre City'
+long_format.loc[long_format['Facility'] == 'Referral Hospital_Central', 'Dist'] = 'Lilongwe City'
+long_format.loc[long_format['Facility'] == 'Referral Hospital_Northern', 'Dist'] = 'Mzuzu City'
+long_format.loc[long_format['Facility'] == 'Mzuzu University Clinic', 'Dist'] = 'Mzuzu City'
+
+long_format.loc[long_format['Facility'] == 'Zomba Mental Hospital', 'Dist'] = 'Zomba City'
+long_format.loc[long_format['Facility'] == 'Headquarter', 'Dist'] = 'Lilongwe City'
+long_format['Dist'] = long_format['Dist'].replace({
+    'Blantyre City': 'Blantyre',
+    'Lilongwe City': 'Lilongwe',
+    'Zomba City': 'Zomba',
+    'Mzuzu City': 'Mzimba',
+    'Mzimba North': 'Mzimba',
+    'Mzimba South': 'Mzimba'
+})
+
+long_format['average_precipitation'] = pd.to_numeric(long_format['average_precipitation'], errors='coerce')
+
+district_precip = long_format.groupby("Dist", as_index=False)['average_precipitation'].mean()
+
+# Merge with shapefile (malawi_admin2 has district boundaries, usually in ADM2_EN)
+cities_to_drop = ["Blantyre City", "Lilongwe City", "Zomba City", "Mzuzu City"]
+
+malawi_admin2 = malawi_admin2.merge(district_precip, left_on="ADM2_EN", right_on="Dist", how="left")
+city_to_district = {
+    "Blantyre City": "Blantyre",
+    "Lilongwe City": "Lilongwe",
+    "Zomba City": "Zomba",
+    "Mzuzu City": "Mzimba"   # Mzuzu is inside Mzimba
+}
+
+# replace ADM2_EN for city polygons with their parent district
+malawi_admin2["ADM2_EN"] = malawi_admin2["ADM2_EN"].replace(city_to_district)
+
+# dissolve geometries so each district is a single polygon
+malawi_admin2 = malawi_admin2.dissolve(by="ADM2_EN", as_index=False, aggfunc="first")
+
+# recompute average_precipitation (if already merged with precip data)
+malawi_admin2["average_precipitation"] = (
+    malawi_admin2.groupby("ADM2_EN")["average_precipitation"]
+    .transform("mean")
 )
+norm = mcolors.Normalize(vmin=malawi_admin2['average_precipitation'].min(),
+                         vmax=malawi_admin2['average_precipitation'].max())
+cmap_districts = plt.cm.YlOrBr
 
-facilities_gdf['average_precipitation'] = pd.to_numeric(facilities_gdf['average_precipitation'], errors='coerce')
 
-norm = mcolors.Normalize(vmin=facilities_gdf['average_precipitation'].min(),
-                         vmax=facilities_gdf['average_precipitation'].max())
-cmap_facilities = plt.cm.YlOrBr
-facilities_gdf['color'] = facilities_gdf['average_precipitation'].apply(lambda x: cmap_facilities(norm(x)))
+print(malawi_admin2)
+grid_clipped_ADM2.plot(ax=ax, edgecolor='#1C6E8C', alpha=0)
+malawi_admin2.plot(column='average_precipitation', ax=ax, cmap=cmap_districts,
+                   edgecolor='black', linewidth=0.5, legend=False)
+grid_clipped_ADM1.plot(column='ADM1_EN', ax=ax, cmap=colors, edgecolor='#1C6E8C', alpha=0)
 
-# Plotting facilities on the map
-malawi_admin2.plot(ax=ax, edgecolor='black', color='white')
-grid_clipped_ADM2.plot(ax=ax, edgecolor='#1C6E8C', alpha=0.4)
-grid_clipped_ADM1.plot(column='ADM1_EN', ax=ax, cmap=colors, edgecolor='#1C6E8C', alpha=0.7)
-
-facilities_gdf.plot(ax=ax, color=facilities_gdf['color'], markersize=10)
-
-sm = plt.cm.ScalarMappable(cmap=cmap_facilities, norm=norm)
+sm = plt.cm.ScalarMappable(cmap=cmap_districts, norm=norm)
 sm.set_array([])
 cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.03, pad=0.04)
 cbar.set_label('Mean Monthly Precipitation (mm)')
+
 plt.xlabel("Longitude")
 plt.ylabel("Latitude")
 if baseline:
-    plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/baseline_weather.png')
+    plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/baseline_weather_district.png')
 
 else:
-    plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/historical_weather.png')
+    plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/historical_weather_district.png')
 
 plt.show()
 
