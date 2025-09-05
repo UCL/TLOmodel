@@ -796,12 +796,13 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "oac_stage_at_which_treatment_given"] = df.at[person_id, "oac_status"]
 
             # Schedule a post-treatment check for 12 months:
+            # NOTE: interval of check-ups could be subject to reivew.
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(months=3),
+                topen=self.sim.date + DateOffset(months=12),
                 tclose=None,
                 priority=0
             )
@@ -850,7 +851,8 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
             )
 
         else:
-            # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in three months
+            # NOTE: interval of check-ups could be subject to reivew.
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
