@@ -31,9 +31,9 @@ if TYPE_CHECKING:
     from tlo.population import IndividualProperties
 
 include_conditionality = True
-emulator_path = '/Users/mm2908/Desktop/EmuIBM/emulators/latest_CTGANSynthesizer_epochs500_dsF_batch_size500_num_k_folds10_Nsubsample10000_InAndOutC_test_k_folding_UniformEncoder_CTGANtest3_repeat_seed42_k_fold0.pkl'
+emulator_path = '/Users/mm2908/Desktop/EmuIBM/Save_With_WellPerforming/emulators/latest_CTGANSynthesizer_epochs500_dsF_batch_size500_num_k_folds10_Nsubsample10000_InAndOutC_test_k_folding_UniformEncoder_CTGANtest3_repeat_seed42_k_fold0.pkl'
 
-rti_scenario = "emulator" #standard # "emulator", "noRTIpoll"
+rti_scenario = "standard" #standard # "emulator", "noRTIpoll"
 if rti_scenario == "emulator":
     use_emulator = True
 elif rti_scenario == "standard" or rti_scenario == "noRTIpoll":

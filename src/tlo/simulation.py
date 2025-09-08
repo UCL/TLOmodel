@@ -372,11 +372,11 @@ class Simulation:
             progress_bar.stop()
         end_time = time.process_time()- start_time
         if rti_scenario == "standard":
-            filename = 'duration_time_standardRTI_200000ind.txt'
+            filename = 'duration_time_standardRTI_x250.txt'
         elif rti_scenario == "emulator":
-            filename = 'duration_time_emulatedRTI_200000ind.txt'
+            filename = 'duration_time_emulatedRTI_x250.txt'
         elif rti_scenario == "noRTIpoll":
-            filename = 'duration_time_noRTIPoll_200000ind.txt'
+            filename = 'duration_time_noRTIPoll_x250.txt'
         else:
             print("ERROR: I don't know pathname")
             exit(-1)

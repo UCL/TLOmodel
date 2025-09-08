@@ -58,7 +58,7 @@ class GenerateDataChains(BaseScenario):
         self.pop_size = 50_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10
+        self.runs_per_draw = 50
 
     def log_configuration(self):
         return {
