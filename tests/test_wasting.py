@@ -404,7 +404,7 @@ def test_nat_recovery_moderate_wasting(tmpdir):
 
 def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpdir):
     """ Assume: untreated SAM causes certain death, no complications occur, incidence and progression to severe wasting
-    are certain, and treatment prevents death.
+    are certain, and no full recovery neither death occurs with treatment
     Check: child progresses to SAM without complications, death is scheduled but cancelled by treatment, and recovery to
     MAM follows treatment. """
     popsize = 1000
@@ -442,7 +442,7 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     # Set complete recovery from SAM to zero. We want those with SAM to recover to MAM with treatment
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
     # Set probability of death after treatment at 0% (hence recovery to MAM with treatment at 100%)
-    p['prob_death_after_SAMcare'] = 0.0
+    p['prob_death_after_OutpatientSAMcare'] = 0.0
 
     # Run Wasting Polling event to get new incident cases:
     polling = Wasting_IncidencePoll(module=wmodule)
@@ -670,7 +670,7 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     # Set full recovery with treatment at 0%
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
     # Set death rate with treatment at 100%, hence all SAM cases should die with treatment
-    p['prob_death_after_SAMcare'] = 1.0
+    p['prob_death_after_OutpatientSAMcare'] = 1.0
     # Ensure the individual has no complications when SAM occurs
     p['prob_complications_in_SAM'] = 0.0
 
@@ -761,8 +761,7 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
 def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
     """ Show that if recovered with a treatment event before the person was going to recover naturally from moderate
     wasting with moderate or severe acute malnutrition, it causes the episode to end earlier, natural recovery is
-    cancelled.
-    Test for MAM and uncomplicated SAM. """
+    cancelled. Test for MAM and uncomplicated SAM. """
     for am_state_expected in ['MAM', 'SAM']:
         popsize = 1000
         sim = get_sim(tmpdir)
@@ -907,7 +906,7 @@ def test_recovery_before_death_scheduled(tmpdir):
     # Set moderate wasting incidence, progression to severe wasting, and death rate after SAM care at 100%
     wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
     wmodule.wasting_models.severe_wasting_progression_lm = LinearModel.multiplicative()
-    p['prob_death_after_SAMcare'] = 1.0
+    p['prob_death_after_OutpatientSAMcare'] = 1.0
     # Set full recovery with SAM care at 0%. With a 100% death rate after SAM care, there will be no recovery to MAM;
     # all individuals will die after receiving SAM care.
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
