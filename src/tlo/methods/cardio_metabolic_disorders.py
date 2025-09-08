@@ -215,9 +215,9 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                                                     'whether or not weight loss treatment worked'),
                   'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has'),
                   'ckd_total_dialysis_sessions': Property(Types.INT,
-                                            'total number of dialysis sessions the person has ever had'),
-                  'ckd_dialysis_sessions_this_month': Property(Types.INT,
-                                        'number of dialysis sessions the person has had in the current month')
+                                                          'total number of dialysis sessions the person has ever had'),
+                  'ckd_dialysis_sessions_this_week': Property(Types.INT,
+                                                               'number of dialysis sessions the person has had in the current month')
                   }
 
     def __init__(self, name=None, do_log_df: bool = False, do_condition_combos: bool = False):
@@ -471,7 +471,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, 'nc_ever_weight_loss_treatment'] = False
         df.loc[df.is_alive, 'nc_weight_loss_worked'] = False
 
-        df.loc[df.is_alive, 'ckd_dialysis_sessions_this_month'] = 0
+        df.loc[df.is_alive, 'ckd_dialysis_sessions_this_week'] = 0
         df.loc[df.is_alive, 'ckd_total_dialysis_sessions'] = 0
 
     def initialise_simulation(self, sim):
@@ -1085,34 +1085,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     else:
                         self.module.trackers['incident_event'].add(event, {df.at[person_id, 'age_range']: 1})
 
-        ckd_patients = (
-            df.is_alive
-            & df["nc_chronic_kidney_disease"]
-            & (
-                df["nc_hypertension"]
-                | df["nc_diabetes"]
-                | df["nc_chronic_ischemic_hd"]
-                | df["li_tob"]
-            )
-        )
-
-        will_receive_dialysis = ckd_patients & (
-            rng.random_sample(size=len(df)) < self.module.parameters['prob_ckd_patient_needs_dialysis']
-
-        )
-
-        for person_id in df.index[will_receive_dialysis]:
-            # Schedule dialysis session
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_Dialysis_Refill(
-                    module=self.module,
-                    person_id=person_id
-                ),
-                priority=1,
-                topen=random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng),
-                tclose=self.sim.date + self.frequency - pd.DateOffset(days=1)
-            )
-
 
 class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
     """
@@ -1683,6 +1655,19 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
             )
+            # Schedule dialysis refill for those with chronic_kidney_disease and start
+            # scheduling immediately, if possible
+            if self.condition == "chronic_kidney_disease":
+                if self.module.rng.random_sample() < self.module.parameters["prob_ckd_patient_needs_dialysis"]:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_CardioMetabolicDisorders_Dialysis_Refill(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=1,
+                        topen=self.sim.date,
+                        tclose=self.sim.date + pd.DateOffset(days=1)
+                    )
         else:
             # If person 'decides to' seek another appointment, schedule a new HSI appointment for tomorrow.
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give up coming back to
@@ -1787,7 +1772,7 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_Haemodialysis'
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment_Haemodialysis'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.num_of_sessions_had = 0  # A counter for the number of sessions had
@@ -1803,16 +1788,15 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
         df.at[person_id, 'ckd_total_dialysis_sessions'] += 1
 
         # Increment the session counter for the month
-        df.at[person_id, 'ckd_dialysis_sessions_this_month'] += 1
+        df.at[person_id, 'ckd_dialysis_sessions_this_week'] += 1
 
         # self.add_equipment({'Analyser, Haematology', 'Analyser, Combined Chemistry and Electrolytes'})
         self.add_equipment({'Chair', 'Dialysis Machine', 'Dialyser (Artificial Kidney)',
                             'Bloodlines', 'Dialysate solution', 'Dialysis water treatment system'})
 
-        #hsi_scheduled = [self.do_for_each_condition(_c) for _c in self.conditions_to_investigate]
-
-        if df.at[person_id, 'ckd_dialysis_sessions_this_month'] < 12:
-            next_session_date = self.sim.date + pd.DateOffset(days=2)  # 3 sessions per week (~every 2 days)
+        if df.at[person_id, 'ckd_dialysis_sessions_this_week'] < 3:
+            # 3 sessions per week (~every 2 days)
+            next_session_date = self.sim.date + pd.DateOffset(days=2)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_Dialysis_Refill(
                     module=self.module,
@@ -1824,16 +1808,15 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
             )
         else:
             # Reset counter at the end of the month and schedule first session of next month
-            df.at[person_id, 'ckd_dialysis_sessions_this_month'] = 0
-            next_month_start = self.sim.date + pd.DateOffset(months=1)
-            next_month_start = next_month_start.replace(day=1)  # Ensure start of month
+            df.at[person_id, 'ckd_dialysis_sessions_this_week'] = 0
+            next_week_start = self.sim.date + pd.DateOffset(weeks=1)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_Dialysis_Refill(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=next_month_start,
-                tclose=next_month_start + pd.DateOffset(days=1),
+                topen=next_week_start,
+                tclose=next_week_start + pd.DateOffset(days=1),
                 priority=1
             )
 
