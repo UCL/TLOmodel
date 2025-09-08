@@ -13,7 +13,7 @@ from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
-
+from numpy import random
 import tlo
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import (  # get_filtered_treatment_ids,
@@ -2534,17 +2534,17 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         prob_disruption = float(prob_disruption.iloc[0])
                         if np.random.binomial(1, prob_disruption) == 1:
                             climate_disrupted = True
-                            response_to_disruption = 'delay'
-                            if response_to_disruption == 'delay':
-                                self.module.call_and_record_weather_delayed_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
-                                if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
+                            if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
                                     self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                         priority=item.priority,
                                         topen=self.sim.date + DateOffset(weeks=self.module.parameters['delay_in_seeking_care_weather']),
                                         tclose=self.sim.date + DateOffset(weeks=self.module.parameters['delay_in_seeking_care_weather']) + DateOffset((item.topen - item.tclose).days),
                                         hsi_event=item.hsi_event
                                     )
-                                else:
+                                    self.module.call_and_record_weather_delayed_hsi_event(hsi_event=item.hsi_event,
+                                                                                          priority=item.priority)
+
+                            else:
                                     patient =  self.sim.population.props.loc[[item.hsi_event.target]]
                                     if patient.age_years.iloc[0] < 15:
                                         subgroup_name = 'children'
@@ -2557,7 +2557,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                                     will_seek_care = hsb_model.predict(
                                         df = patient,
-                                        subgroup=subgroup_name,
+                                        subgroup=subgroup_name, rnd = random,
                                         care_seeking_odds_ratios=care_seeking_odds_ratios
                                     )
                                     if will_seek_care.iloc[0]:
@@ -2569,10 +2569,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         )
                                         print("care sought")
                                     else:
-                                        response_to_disruption = 'cancel'
-                            if response_to_disruption == 'cancel':
-                                self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
-                                self.module.call_and_record_weather_cancelled_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
+                                        self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
+                                        self.module.call_and_record_weather_cancelled_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
 
                 # If not climate disrupted, check equipment
                 if not climate_disrupted:
