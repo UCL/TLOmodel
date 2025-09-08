@@ -217,7 +217,8 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                   'ckd_total_dialysis_sessions': Property(Types.INT,
                                                           'total number of dialysis sessions the person has ever had'),
                   'ckd_dialysis_sessions_this_week': Property(Types.INT,
-                                                               'number of dialysis sessions the person has had in the current month')
+                                                              'number of dialysis sessions the person has had in the '
+                                                              'current month')
                   }
 
     def __init__(self, name=None, do_log_df: bool = False, do_condition_combos: bool = False):
