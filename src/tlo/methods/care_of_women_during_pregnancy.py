@@ -87,8 +87,6 @@ class CareOfWomenDuringPregnancy(Module):
             Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC7'),
         'prob_seek_anc8': Parameter(
             Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC8'),
-        # 'visit_appointment_window_days': Parameter(
-        #     Types.INT, 'Days window within which ANC appointment can be scheduled'),
         'anc_consistency_threshold': Parameter(
             Types.INT, 'Minimum ANC appts required to attend for remaining ANC appts to be automatically scheduled'
         ),
