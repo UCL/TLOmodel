@@ -58,133 +58,170 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     PARAMETERS = {
         # initial prevalence of wasting by age group
-        'prev_init_any_by_agegp': Parameter(
-            Types.LIST, 'initial any wasting (WHZ < -2) prevalence in 2010 by age groups'),
-        'prev_init_sev_by_agegp': Parameter(
-            Types.LIST, 'initial severe wasting (WHZ < -3) prevalence in 2010 by age groups'),
+        "prev_init_any_by_agegp": Parameter(
+            Types.LIST, "initial any wasting (WHZ < -2) prevalence in 2010 by age groups"
+        ),
+        "prev_init_sev_by_agegp": Parameter(
+            Types.LIST, "initial severe wasting (WHZ < -3) prevalence in 2010 by age groups"
+        ),
         # incidence
-        'base_overall_inc_rate_wasting': Parameter(
-            Types.REAL, 'base overall monthly moderate wasting incidence rate '
-                        '(probability per child aged <0.5 years per month)'),
-        'rr_inc_rate_wasting_by_agegp': Parameter(
-            Types.LIST, 'relative risk of monthly moderate wasting incidence rate by age group '
-                        '(reference age group: <0.5 years)'),
-        'rr_wasting_AGA_and_preterm': Parameter(
-            Types.REAL, 'relative risk of moderate wasting incidence if born adequate for gestational age '
-                        'and preterm'),
-        'rr_wasting_SGA_and_term': Parameter(
-            Types.REAL, 'relative risk of moderate wasting incidence if born small for gestational age '
-                        'and term'),
-        'rr_wasting_SGA_and_preterm': Parameter(
-            Types.REAL, 'relative risk of moderate wasting incidence if born small for gestational age '
-                        'and preterm'),
-        'rr_wasting_wealth_level': Parameter(
-            Types.REAL, 'relative risk of moderate wasting incidence per 1 unit decrease in wealth level'),
+        "base_overall_inc_rate_wasting": Parameter(
+            Types.REAL,
+            "base overall monthly moderate wasting incidence rate (probability per child aged <0.5 years per month)",
+        ),
+        "rr_inc_rate_wasting_by_agegp": Parameter(
+            Types.LIST,
+            "relative risk of monthly moderate wasting incidence rate by age group (reference age group: <0.5 years)",
+        ),
+        "rr_wasting_AGA_and_preterm": Parameter(
+            Types.REAL, "relative risk of moderate wasting incidence if born adequate for gestational age and preterm"
+        ),
+        "rr_wasting_SGA_and_term": Parameter(
+            Types.REAL, "relative risk of moderate wasting incidence if born small for gestational age and term"
+        ),
+        "rr_wasting_SGA_and_preterm": Parameter(
+            Types.REAL, "relative risk of moderate wasting incidence if born small for gestational age and preterm"
+        ),
+        "rr_wasting_wealth_level": Parameter(
+            Types.REAL, "relative risk of moderate wasting incidence per 1 unit decrease in wealth level"
+        ),
         # progression
-        'min_days_duration_of_wasting': Parameter(
-            Types.REAL, 'minimum limit for moderate and severe wasting duration episode (days)'),
-        'duration_of_untreated_mod_wasting': Parameter(
-            Types.REAL, 'duration of untreated moderate wasting (days)'),
-        'duration_of_untreated_sev_wasting': Parameter(
-            Types.REAL, 'duration of untreated severe wasting (days)'),
-        'progression_severe_wasting_monthly_by_agegp': Parameter(
-            Types.LIST, 'monthly progression rate to severe wasting by age group'),
-        'prob_complications_in_SAM': Parameter(
-            Types.REAL, 'probability of medical complications in a SAM episode'),
-        'duration_sam_to_death': Parameter(
-            Types.REAL, 'duration of SAM till death if supposed to die due to untreated SAM (days)'),
-        'base_death_rate_untreated_SAM': Parameter(
-            Types.REAL, 'base death rate due to untreated SAM (reference age group <0.5 months old)'),
-        'rr_death_rate_by_agegp': Parameter(
-            Types.LIST, 'list with relative risks of death due to untreated SAM by age group, reference '
-                        'group <0.5 months old'),
+        "min_days_duration_of_wasting": Parameter(
+            Types.REAL, "minimum limit for moderate and severe wasting duration episode (days)"
+        ),
+        "duration_of_untreated_mod_wasting": Parameter(Types.REAL, "duration of untreated moderate wasting (days)"),
+        "duration_of_untreated_sev_wasting": Parameter(Types.REAL, "duration of untreated severe wasting (days)"),
+        "progression_severe_wasting_monthly_by_agegp": Parameter(
+            Types.LIST, "monthly progression rate to severe wasting by age group"
+        ),
+        "prob_complications_in_SAM": Parameter(Types.REAL, "probability of medical complications in a SAM episode"),
+        "duration_sam_to_death": Parameter(
+            Types.REAL, "duration of SAM till death if supposed to die due to untreated SAM (days)"
+        ),
+        "base_death_rate_untreated_SAM": Parameter(
+            Types.REAL, "base death rate due to untreated SAM (reference age group <0.5 months old)"
+        ),
+        "rr_death_rate_by_agegp": Parameter(
+            Types.LIST,
+            "list with relative risks of death due to untreated SAM by age group, reference group <0.5 months old",
+        ),
         # MUAC distributions
-        'proportion_WHZ<-3_with_MUAC<115mm': Parameter(
-            Types.REAL, 'proportion of individuals with severe wasting who have MUAC < 115 mm'),
-        'proportion_-3<=WHZ<-2_with_MUAC<115mm': Parameter(
-            Types.REAL, 'proportion of individuals with moderate wasting who have MUAC < 115 mm'),
-        'proportion_-3<=WHZ<-2_with_MUAC_[115-125)mm': Parameter(
-            Types.REAL, 'proportion of individuals with moderate wasting who have 115 mm ≤ MUAC < 125 mm'),
-        'proportion_mam_with_MUAC_[115-125)mm_and_normal_whz': Parameter(
-            Types.REAL, 'proportion of individuals with MAM who have 115 mm ≤ MUAC < 125 mm and normal/mild'
-                        ' WHZ'),
-        'proportion_mam_with_MUAC_[115-125)mm_and_-3<=WHZ<-2': Parameter(
-            Types.REAL, 'proportion of individuals with MAM who have both 115 mm ≤ MUAC < 125 mm and moderate'
-                        ' wasting'),
-        'proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC': Parameter(
-            Types.REAL, 'proportion of individuals with MAM who have moderate wasting and normal MUAC'),
-        'MUAC_distribution_WHZ<-3': Parameter(
-            Types.LIST,
-            'mean and standard deviation of a normal distribution of MUAC measurements for WHZ < -3'),
-        'MUAC_distribution_-3<=WHZ<-2': Parameter(
-            Types.LIST,
-            'mean and standard deviation of a normal distribution of MUAC measurements for -3 <= WHZ < -2'),
-        'MUAC_distribution_WHZ>=-2': Parameter(
-            Types.LIST,
-            'mean and standard deviation of a normal distribution of MUAC measurements for WHZ >= -2'),
+        "proportion_WHZ<-3_with_MUAC<115mm": Parameter(
+            Types.REAL, "proportion of individuals with severe wasting who have MUAC < 115 mm"
+        ),
+        "proportion_-3<=WHZ<-2_with_MUAC<115mm": Parameter(
+            Types.REAL, "proportion of individuals with moderate wasting who have MUAC < 115 mm"
+        ),
+        "proportion_-3<=WHZ<-2_with_MUAC_[115-125)mm": Parameter(
+            Types.REAL, "proportion of individuals with moderate wasting who have 115 mm ≤ MUAC < 125 mm"
+        ),
+        "proportion_mam_with_MUAC_[115-125)mm_and_normal_whz": Parameter(
+            Types.REAL, "proportion of individuals with MAM who have 115 mm ≤ MUAC < 125 mm and normal/mild WHZ"
+        ),
+        "proportion_mam_with_MUAC_[115-125)mm_and_-3<=WHZ<-2": Parameter(
+            Types.REAL, "proportion of individuals with MAM who have both 115 mm ≤ MUAC < 125 mm and moderate wasting"
+        ),
+        "proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC": Parameter(
+            Types.REAL, "proportion of individuals with MAM who have moderate wasting and normal MUAC"
+        ),
+        "MUAC_distribution_WHZ<-3": Parameter(
+            Types.LIST, "mean and standard deviation of a normal distribution of MUAC measurements for WHZ < -3"
+        ),
+        "MUAC_distribution_-3<=WHZ<-2": Parameter(
+            Types.LIST, "mean and standard deviation of a normal distribution of MUAC measurements for -3 <= WHZ < -2"
+        ),
+        "MUAC_distribution_WHZ>=-2": Parameter(
+            Types.LIST, "mean and standard deviation of a normal distribution of MUAC measurements for WHZ >= -2"
+        ),
         # nutritional oedema
-        'prevalence_nutritional_oedema': Parameter(
-            Types.REAL, 'prevalence of nutritional oedema'),
-        'proportion_WHZ<-2_with_oedema': Parameter(
-            Types.REAL, 'proportion of individuals with wasting (moderate or severe) who have oedema'),
-        'proportion_oedema_with_WHZ<-2': Parameter(
-            Types.REAL, 'proportion of individuals with oedema who are wasted (moderately or severely)'),
-        'proportion_normal_whz': Parameter(
-            Types.REAL, 'proportion of under-five children without wasting (WHZ >= -2)'),
+        "prevalence_nutritional_oedema": Parameter(Types.REAL, "prevalence of nutritional oedema"),
+        "proportion_WHZ<-2_with_oedema": Parameter(
+            Types.REAL, "proportion of individuals with wasting (moderate or severe) who have oedema"
+        ),
+        "proportion_oedema_with_WHZ<-2": Parameter(
+            Types.REAL, "proportion of individuals with oedema who are wasted (moderately or severely)"
+        ),
+        "proportion_normal_whz": Parameter(Types.REAL, "proportion of under-five children without wasting (WHZ >= -2)"),
         # detection
-        'growth_monitoring_frequency_days_agecat': Parameter(
-            Types.LIST, 'growth monitoring frequency (days) for age categories '),
-        'growth_monitoring_attendance_prob_agecat': Parameter(
-            Types.LIST, 'probability to attend the growth monitoring for age categories <1, [1; 2], (2; 5) '
-                        'years old'),
-        'seeking_care_MAM_prob': Parameter(
-            Types.REAL, 'probability of recognising symptoms and seeking care in MAM cases'),
+        "growth_monitoring_frequency_days_agecat": Parameter(
+            Types.LIST, "growth monitoring frequency (days) for age categories "
+        ),
+        "growth_monitoring_attendance_prob_agecat": Parameter(
+            Types.LIST, "probability to attend the growth monitoring for age categories <1, [1; 2], (2; 5) years old"
+        ),
+        "seeking_care_MAM_prob": Parameter(
+            Types.REAL, "probability of recognising symptoms and seeking care in MAM cases"
+        ),
         # treatment
-        'recovery_rate_with_soy_RUSF': Parameter(
-            Types.REAL, 'probability of recovery from MAM following treatment with soy RUSF'),
-        'recovery_rate_with_CSB++': Parameter(
-            Types.REAL, 'probability of recovery from MAM following treatment with CSB++'),
-        'recovery_rate_with_standard_RUTF': Parameter(
-            Types.REAL, 'probability of recovery from uncomplicated SAM following treatment with standard'
-                        'RUTF'),
-        'recovery_rate_with_inpatient_care': Parameter(
-            Types.REAL, 'probability of recovery from complicated SAM following treatment via inpatient '
-                        'care'),
-        'tx_length_weeks_SuppFeedingMAM': Parameter(
-            Types.REAL, 'number of weeks the patient receives treatment in the Supplementary Feeding '
-                        'Programme for MAM before being discharged'),
-        'tx_length_weeks_OutpatientSAM': Parameter(
-            Types.REAL, 'number of weeks the patient receives treatment in the Outpatient Therapeutic '
-                        'Programme for uncomplicated SAM before being discharged if they do not die beforehand'),
-        'tx_length_weeks_InpatientSAM': Parameter(
-            Types.REAL, 'number of weeks the patient receives treatment in the Inpatient Care for complicated'
-                        ' SAM before being discharged if they do not die beforehand'),
-        'prob_death_after_SAMcare': Parameter(
-            Types.REAL, 'probability of dying from SAM after receiving care if not fully recovered'),
+        "tx_length_weeks_SuppFeedingMAM": Parameter(
+            Types.REAL,
+            "number of weeks the patient receives treatment in the Supplementary Feeding "
+            "Programme for MAM before being discharged",
+        ),
+        "tx_length_weeks_OutpatientSAM": Parameter(
+            Types.REAL,
+            "number of weeks the patient receives treatment in the Outpatient Therapeutic "
+            "Programme for uncomplicated SAM before being discharged if they do not die beforehand",
+        ),
+        "tx_length_weeks_InpatientSAM": Parameter(
+            Types.REAL,
+            "number of weeks the patient receives treatment in the Inpatient Care for complicated"
+            " SAM before being discharged if they do not die beforehand",
+        ),
+        "recovery_rate_with_soy_RUSF": Parameter(
+            Types.REAL, "probability of recovery from MAM following treatment with soy RUSF"
+        ),
+        "recovery_rate_with_CSB++": Parameter(
+            Types.REAL, "probability of recovery from MAM following treatment with CSB++"
+        ),
+        "recovery_rate_with_standard_RUTF": Parameter(
+            Types.REAL, "probability of recovery from uncomplicated SAM following treatment with standardRUTF"
+        ),
+        "recovery_rate_with_inpatient_care": Parameter(
+            Types.REAL, "probability of recovery from complicated SAM following treatment via inpatient care"
+        ),
+        "prob_death_after_OutpatientSAMcare": Parameter(
+            Types.REAL, "probability of dying from SAM after receiving outpatient care if not fully recovered"
+        ),
+        "prob_death_after_InpatientSAMcare": Parameter(
+            Types.REAL, "probability of dying from SAM after receiving inpatient care if not fully recovered"
+        ),
         # interventions
-        'interv_start_year': Parameter(
-            Types.INT, 'the year when the interventions are activated by overwriting the relevant '
-                       'parameters'),
-        'interv_growth_monitoring_attendance_prob_agecat': Parameter(
-            Types.LIST, 'probability to attend the growth monitoring for age categories following the '
-                        'activation of the intervention'),
-        'interv_seeking_care_MAM_prob': Parameter(
-            Types.REAL, 'probability of recognising symptoms and seeking care in MAM cases following the '
-                        'activation of the intervention'),
-        'interv_food_supplements_avail_bool': Parameter(
-            Types.BOOL, 'indicates whether the intervention that applies fixed availability probabilities'
-                        '(`interv_avail_xx`) for food supplements across all facilities and months from'
-                        '`interv_start_year` is implemented. If `True`, the default availability probabilities are'
-                        'overridden with the corresponding fixed values.'),
-        'interv_avail_F75milk': Parameter(
-            Types.REAL, 'probability of F-75 therapeutic milk availability across all facilities and '
-                        'months following the activation of the intervention'),
-        'interv_avail_RUTF': Parameter(
-            Types.REAL, 'probability of RUTF availability across all facilities and '
-                        'months following the activation of the intervention'),
-        'interv_avail_CSB++': Parameter(
-            Types.REAL, 'probability of CSB++ availability across all facilities and '
-                        'months following the activation of the intervention'),
+        "interv_start_year": Parameter(
+            Types.INT, "the year when the interventions are activated by overwriting the relevant parameters"
+        ),
+        "interv_growth_monitoring_attendance_prob_agecat": Parameter(
+            Types.LIST,
+            "probability to attend the growth monitoring for age categories following the "
+            "activation of the intervention",
+        ),
+        "interv_seeking_care_MAM_prob": Parameter(
+            Types.REAL,
+            "probability of recognising symptoms and seeking care in MAM cases following the "
+            "activation of the intervention",
+        ),
+        "interv_food_supplements_avail_bool": Parameter(
+            Types.BOOL,
+            "indicates whether the intervention that applies fixed availability probabilities"
+            "(`interv_avail_xx`) for food supplements across all facilities and months from"
+            "`interv_start_year` is implemented. If `True`, the default availability probabilities are"
+            "overridden with the corresponding fixed values.",
+        ),
+        "interv_avail_F75milk": Parameter(
+            Types.REAL,
+            "probability of F-75 therapeutic milk availability across all facilities and "
+            "months following the activation of the intervention",
+        ),
+        "interv_avail_RUTF": Parameter(
+            Types.REAL,
+            "probability of RUTF availability across all facilities and "
+            "months following the activation of the intervention",
+        ),
+        "interv_avail_CSB++": Parameter(
+            Types.REAL,
+            "probability of CSB++ availability across all facilities and "
+            "months following the activation of the intervention",
+        ),
     }
 
     PROPERTIES = {
@@ -986,8 +1023,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             else:
                 outcome = rng.choice(['recovery_to_mam', 'death'],
                                      p=[
-                                         1-self.parameters['prob_death_after_SAMcare'],
-                                         self.parameters['prob_death_after_SAMcare']
+                                         1-self.parameters['prob_death_after_OutpatientSAMcare'],
+                                         self.parameters['prob_death_after_OutpatientSAMcare']
                                      ])
                 if outcome == 'death':
                     self.sim.schedule_event(
@@ -1031,8 +1068,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             else:
                 outcome = rng.choice(['complications_persist', 'death'],
                                      p=[
-                                         1-self.parameters['prob_death_after_SAMcare'],
-                                         self.parameters['prob_death_after_SAMcare']
+                                         1-self.parameters['prob_death_after_InpatientSAMcare'],
+                                         self.parameters['prob_death_after_InpatientSAMcare']
                                      ])
                 if outcome == 'death':
                     self.sim.schedule_event(
