@@ -15,7 +15,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2026
-max_year = 2028
+max_year = 2044
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
