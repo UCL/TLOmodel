@@ -303,13 +303,15 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         # risk of ever having depression in initial population
         self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel.multiplicative(
             Predictor('age_years').apply(
-                lambda x: (x if x > p['age_threshold_depression'] else 0) * self.parameters['init_rp_ever_depr_per_year_older_m']
+                lambda x: (x if x > p['age_threshold_depression'] else 0) *
+                          self.parameters['init_rp_ever_depr_per_year_older_m']
             )
         )
 
         # risk of ever having depression in initial population (female)
         self.linearModels['Depression_Ever_At_Population_Initialisation_Females'] = LinearModel.multiplicative(
-            Predictor('age_years').apply(lambda x: (x if x > p['age_threshold_depression'] else 0) * p['init_rp_ever_depr_per_year_older_f'])
+            Predictor('age_years').apply(lambda x: (x if x > p['age_threshold_depression'] else 0) *
+                                                   p['init_rp_ever_depr_per_year_older_f'])
         )
 
         # risk of ever having diagnosed depression in initial population
