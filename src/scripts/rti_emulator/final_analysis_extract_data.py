@@ -9,13 +9,22 @@ from typing import Tuple
 
 import pandas as pd
 from tlo import Date
-from tlo.analysis.utils import extract_results
+from tlo.analysis.utils import extract_results, make_calendar_period_type, make_calendar_period_lookup, make_age_grp_lookup, make_age_grp_types
 import matplotlib.pyplot as plt
 
+# Archive of outputs
+# Batch based on /Users/mm2908/Desktop/EmuIBM/Save_With_WellPerforming/emulators/latest_CTGANSynthesizer_epochs500_dsF_batch_size500_num_k_folds10_Nsubsample10000_InAndOutC_test_k_folding_UniformEncoder_CTGANtest3_repeat_seed42_k_fold0.pkl
+# 'standard_RTI': 'outputs/test_rti_emulator-2025-08-12T205454Z'
+# 'emulated_RTI': 'outputs/test_rti_emulator-2025-08-13T080302Z'
+# 'standard_RTI_x250': 'outputs/test_rti_emulator-2025-09-06T055808Z'
+# 'emulated_RTI_x250': 'outputs/test_rti_emulator-2025-09-05T085159Z'
+# 'no_RTI': 'outputs/test_rti_emulator-2025-08-13T143342Z'
 
 outputs = {
             'standard_RTI': {'results_folder' : Path('outputs/test_rti_emulator-2025-08-12T205454Z'), 'data': {}},
             'emulated_RTI': {'results_folder' : Path('outputs/test_rti_emulator-2025-08-13T080302Z'), 'data' : {}},
+            'standard_RTI_x250': {'results_folder' : Path('outputs/test_rti_emulator-2025-09-06T055808Z'), 'data': {}},
+            'emulated_RTI_x250': {'results_folder' : Path('outputs/test_rti_emulator-2025-09-05T085159Z'), 'data' : {}},
             'no_RTI': {'results_folder' : Path('outputs/test_rti_emulator-2025-08-13T143342Z'), 'data' : {}},
         }
 
@@ -50,6 +59,17 @@ def apply(results_folder: Path) -> Tuple:
         result = _df.drop(columns=drop_cols).groupby("year", as_index=True).sum().stack()
         result.index.set_names(["year", "label"], inplace=True)
         return result
+        
+    def get_dalys_by_period_sex_agegrp_label(df):
+        """Sum the dalys by period, sex, age-group and label"""
+        _, calperiodlookup = make_calendar_period_lookup()
+
+        df['age_grp'] = df['age_range'].astype(make_age_grp_types())
+        df["period"] = df["year"].map(calperiodlookup).astype(make_calendar_period_type())
+        df = df.drop(columns=['date', 'age_range', 'year'])
+        df = df.groupby(by=["period", "sex", "age_grp"]).sum().stack()
+        df.index = df.index.set_names('label', level=3)
+        return df
 
     def rename_index_levels(df):
         rename_dict = {}
@@ -98,7 +118,20 @@ def apply(results_folder: Path) -> Tuple:
   
     cfr = num_deaths_by_year_and_cause.div(num_individuals, level="year")
     
-    data = {'deaths' : num_deaths_by_year_and_cause, 'dalys' : num_dalys_by_year_and_cause, 'pop' : num_individuals, 'cfr' : cfr}
+    dalys_by_sex_and_age_time = extract_results(
+                                results_folder,
+                                module="tlo.methods.healthburden",
+                                key="dalys_stacked_by_age_and_time",  # <-- for DALYS stacked by age and time
+                                custom_generate_series=get_dalys_by_period_sex_agegrp_label,
+                                do_scaling=True
+                                )
+    # divide by five to give the average number of deaths per year within the five year period:
+    dalys_by_sex_and_age_time = dalys_by_sex_and_age_time.div(5.0)
+    dalys_by_sex_and_age = (dalys_by_sex_and_age_time.loc['2010-2014'] + dalys_by_sex_and_age_time.loc['2015-2019'])/2
+
+    # Collect all data for this output
+    data = {'deaths' : num_deaths_by_year_and_cause, 'dalys' : num_dalys_by_year_and_cause, 'pop' : num_individuals, 'cfr' : cfr, 'dalys_by_sex_and_age' : dalys_by_sex_and_age}
+
     return data
 
         
@@ -113,11 +146,289 @@ def compute_summary_stats(df):
     df[('0','upper')] = df_upper
     return df
 
-for key in outputs.keys():
-    outputs[key]['data'] = apply(outputs[key]['results_folder'])
-    for data_type in outputs[key]['data'].keys():
-        print("Summary statistics for ", data_type)
-        outputs[key]['data'][data_type] = compute_summary_stats(outputs[key]['data'][data_type])
+
+def compare_and_make_plots_age_sex_distr(outputs, first_scenario, second_scenario, third_scenario, fourth_scenario, target, compare_to_other_x250=True):
+    # Load from outputs
+    df_map = {
+        "normal":   outputs[first_scenario]['data'][target],
+        "emulated": outputs[second_scenario]['data'][target],
+        "normal_x250":   outputs[third_scenario]['data'][target],
+        "emulated_x250": outputs[fourth_scenario]['data'][target],
+    }
+    labels = [first_scenario, second_scenario, third_scenario, fourth_scenario]
+
+    # Focus cause
+    cause = 'Transport Injuries'
+    for k, df in df_map.items():
+        df_map[k] = compute_summary_stats(df.loc[(slice(None), slice(None), cause)])
+
+    # Age group mapping
+    age_grps = df_map["normal"].index.get_level_values('age_grp').unique()
+    age_grp_mapping = {age: i for i, age in enumerate(age_grps)}
+
+    # Init p-values
+    pvalues = pd.DataFrame(columns=['p-value ks', 'p-value t', 'p-value w'],
+                           index=pd.MultiIndex.from_tuples([], names=['case', 'sex', 'age_grp']))
+    """
+    # ---- Helper: compute p-values
+    def run_tests(case, df1, df2):
+        for sex in ['F', 'M']:
+            for age in age_grps:
+                data1, data2 = df1.loc[(sex, age)].values, df2.loc[(sex, age)].values
+                p_ks = ks_2samp(data1, data2).pvalue
+                p_t  = stats.ttest_ind(data1, data2).pvalue
+                p_w  = stats.wilcoxon(data1, data2).pvalue
+                pvalues.loc[(case, sex, age), :] = [p_ks, p_t, p_w]
+
+    run_tests("other_x1",   df_map["normal"],   df_map["emulated"])
+    if compare_to_other_x250:
+        run_tests("other_x250", df_map["normal_x250"], df_map["emulated_x250"])
+        """
+
+    # ---- Plot
+    fig, axes = plt.subplots(1, 2, figsize=(14, 7), sharey=True)
+    for ax in axes: ax.set_ylim(-10, 120000)
+
+    for i, sex in enumerate(['F', 'M']):
+        x_pos = [age_grp_mapping[a] for a in age_grps]
+
+        def plot_band_and_mean(df, color, marker, label, alpha_fill, alpha_line, ls):
+            mean = df.loc[(sex, slice(None)), ('0', 'mean')].values
+            low  = df.loc[(sex, slice(None)), ('0', 'lower')].values
+            up   = df.loc[(sex, slice(None)), ('0', 'upper')].values
+            axes[i].fill_between(x_pos, low, up, color=color, alpha=alpha_fill)
+            axes[i].plot(x_pos, mean, marker=marker, color=color, alpha=alpha_line, linestyle=ls, label=label)
+            return mean
+
+        # Plot main (normal vs emulated)
+        ls, fill, line = ('--', 0.1, 0.4) if compare_to_other_x250 else ('-', 0.3, 1.0)
+        m_norm = plot_band_and_mean(df_map["normal"], "blue", "o", labels[0] if i==0 else None, fill, line, ls)
+        m_emul = plot_band_and_mean(df_map["emulated"], "orange", "s", labels[1] if i==0 else None, fill, line, ls)
+
+        # Optional comparison to x250
+        if compare_to_other_x250:
+            m_norm_x250 = plot_band_and_mean(df_map["normal_x250"], "blue", "o", labels[2] if i==0 else None, 0.3, 1.0, '-')
+            m_emul_x250 = plot_band_and_mean(df_map["emulated_x250"], "orange", "s", labels[3] if i==0 else None, 0.3, 1.0, '-')
+
+        """
+        # Annotate KS values
+        y_base = 42000 if sex=="M" else 30000
+        for case, offset in [("other_x1", 7000), ("other_x250", 0)] if compare_to_other_x250 else [("other_x1", 7000)]:
+            for age in age_grps:
+                axes[i].text(age_grp_mapping[age], y_base+offset,
+                             f"{pvalues.loc[(case, sex, age), 'p-value ks']:.2f}",
+                             fontsize=8, ha="center", rotation=90)
+            axes[i].text(age_grp_mapping['0-4'], y_base+offset+3000,
+                         "KS test p-value" + (" (incr. other mortality)" if case=="other_x250" else ""),
+                         fontsize=8, ha="left")
+        """
+        # Formatting
+        axes[i].set_title(sex)
+        axes[i].set_xlabel("Age Group")
+        axes[i].set_ylabel("Averaged Yearly DALYs")
+        axes[i].set_xticks(x_pos)
+        axes[i].set_xticklabels(age_grps, rotation=45)
+        axes[i].legend()
+
+    plt.tight_layout()
+    fname = "plots/final_DALYs_Breakdown_by_age_grp_DC.png" if compare_to_other_x250 else "plots/final_DALYs_Breakdown_by_age_grp.png"
+    plt.savefig(fname)
+    plt.close()
+
+def compare_old(outputs, first_scenario, second_scenario, third_scenario, fourth_scenario, target):
+
+    # Load output files, which include standard other mortality and other mortality rates increased by x250
+    df_af_normal = pd.read_csv('DALYs_by_sex_age_' + first_data_set + '.csv', header=[0, 1], index_col=[0,1,2])
+    df_af_emulated = pd.read_csv('DALYs_by_sex_age_' + second_data_set + '.csv', header=[0, 1], index_col=[0,1,2])
+    df_af_normal_other_x250 = pd.read_csv('DALYs_by_sex_age_' + first_data_set + '_x250_other.csv', header=[0, 1], index_col=[0,1,2])
+    df_af_emulated_other_x250 = pd.read_csv('DALYs_by_sex_age_'+ second_data_set + '_x250_other.csv', header=[0, 1], index_col=[0,1,2])
+
+    # This is the cause that will be considered in the plots. Could also make loop over this
+    cause = 'Transport Injuries'
+    df_normal = df_af_normal.loc[(slice(None), slice(None), cause)]
+    df_normal_other_x250 = df_af_normal_other_x250.loc[(slice(None), slice(None), cause)]
+    df_emulated = df_af_emulated.loc[(slice(None), slice(None), cause)]
+    df_emulated_other_x250 = df_af_emulated_other_x250.loc[(slice(None), slice(None), cause)]
+
+    # Map 'age_grp' to numeric values for easier plotting
+    age_grp_mapping = {age: i for i, age in enumerate(df_normal.index.get_level_values('age_grp').unique())}
+
+    df_normal = compute_summary_stats(df_normal)
+    df_emulated = compute_summary_stats(df_emulated)
+    df_normal_other_x250 = compute_summary_stats(df_normal_other_x250)
+    df_emulated_other_x250 = compute_summary_stats(df_emulated_other_x250)
+    
+    # Store p-values for all x-values
+    index = pd.MultiIndex.from_tuples([], names=['case', 'sex', 'age_grp'])
+    columns = ['p-value ks', 'p-value t', 'p-value w']
+    pvalues = pd.DataFrame(index=index, columns=columns)
+
+    for sex in ['F','M']:
+        for age_group in df_normal_other_x250.index.get_level_values('age_grp').unique():
+        
+            # Compute statistical tests for x1 other mortality
+            data_normal = df_normal_other_x250.loc[(sex,age_group)].values
+            data_emulat = df_emulated_other_x250.loc[(sex,age_group)].values
+            
+            statistic, p_value_ks = ks_2samp(data_normal, data_emulat)
+            t_stat, p_value_t = stats.ttest_ind(data_normal, data_emulat)
+            res_w = stats.wilcoxon(data_normal,data_emulat)
+            p_value_w = res_w.pvalue
+            pvalues.loc[('other_x250',sex,age_group),:] = [p_value_ks, p_value_t, p_value_w]
+            
+            # Compute statistical tests for x250 other mortality
+            data_normal = df_normal.loc[(sex,age_group)].values
+            data_emulat = df_emulated.loc[(sex,age_group)].values
+            
+            statistic, p_value_ks = ks_2samp(data_normal, data_emulat)
+            t_stat, p_value_t = stats.ttest_ind(data_normal, data_emulat)
+            res_w = stats.wilcoxon(data_normal,data_emulat)
+            p_value_w = res_w.pvalue
+            pvalues.loc[('other_x1',sex,age_group),:] = [p_value_ks, p_value_t, p_value_w]
+            
+
+    # Create a figure for the subplots (one for each sex)
+    fig, axes = plt.subplots(1, 2, figsize=(14, 7), sharey=True)
+    for ax in axes:
+        ax.set_ylim(-1000, 55000)
+    
+    # Plot for each sex
+    for sex in ['F','M']:
+        if sex == 'F':
+            i = 0
+        else:
+            i = 1
+
+        # Extract the age groups from the dataframe
+        age_groups = df_normal.index.get_level_values('age_grp').unique()
+
+        # Create a numeric x_pos based on age groups for easier plotting
+        x_pos = [age_grp_mapping[age] for age in age_groups]
+
+        # Prepare the values for plotting
+        normal_means = df_normal.loc[(sex, slice(None)),('0','mean')].values
+        emulated_means = df_emulated.loc[(sex, slice(None)),('0','mean')].values
+        normal_lower = df_normal.loc[(sex, slice(None)),('0','lower')].values
+        normal_upper = df_normal.loc[(sex, slice(None)),('0','upper')].values
+        emulated_lower = df_emulated.loc[(sex, slice(None)),('0','lower')].values
+        emulated_upper = df_emulated.loc[(sex, slice(None)),('0','upper')].values
+        
+        if compare_to_other_x250:
+            normal_means_other_x250 = df_normal_other_x250.loc[(sex, slice(None)),('0','mean')].values
+            emulated_means_other_x250 = df_emulated_other_x250.loc[(sex, slice(None)),('0','mean')].values
+            normal_lower_other_x250 = df_normal_other_x250.loc[(sex, slice(None)),('0','lower')].values
+            normal_upper_other_x250 = df_normal_other_x250.loc[(sex, slice(None)),('0','upper')].values
+            emulated_lower_other_x250 = df_emulated_other_x250.loc[(sex, slice(None)),('0','lower')].values
+            emulated_upper_other_x250 = df_emulated_other_x250.loc[(sex, slice(None)),('0','upper')].values
+            fill_main_comparison = 0.1
+            line_main_compariosn = 0.4
+            main_linestyle = '--'
+            print(main_linestyle)
+        else:
+            fill_main_comparison = 0.3
+            line_main_compariosn = 1.0
+            main_linestyle = '-'
+            
+        # Calculate % error: ((emulated - original) / original) * 100
+        percent_error = 100 * (emulated_means - normal_means) / normal_means
+        if compare_to_other_x250:
+            percent_error_other_x250 = 100 * (emulated_means_other_x250 - normal_means_other_x250) / normal_means_other_x250
+
+        # Plot the shaded area for normal data (F or M)
+        axes[i].fill_between(x_pos, normal_lower, normal_upper,
+                             color='blue', alpha=fill_main_comparison)
+        if compare_to_other_x250:
+            axes[i].fill_between(x_pos, normal_lower_other_x250, normal_upper_other_x250,
+                                 color='blue', alpha=0.3)
+        
+        # Plot the shaded area for emulated data (F or M)
+        axes[i].fill_between(x_pos, emulated_lower, emulated_upper,
+                             color='orange', alpha=fill_main_comparison)
+        if compare_to_other_x250:
+            axes[i].fill_between(x_pos, emulated_lower_other_x250, emulated_upper_other_x250,
+                                 color='orange', alpha=0.3)
+
+        # Plot the mean values for normal and emulated data
+        axes[i].plot(x_pos, normal_means, 'o-', color='blue', alpha=line_main_compariosn, linestyle=main_linestyle, label=labels[first_data_set] if i == 0 else "")  # Normal mean
+        axes[i].plot(x_pos, emulated_means, 's-', color='orange', alpha=line_main_compariosn, linestyle=main_linestyle, label=labels[second_data_set] if i == 0 else "")  # Emulated mean
+        if compare_to_other_x250:
+            axes[i].plot(x_pos, normal_means_other_x250, 'o-', color='blue',  label=f'Original (incr. other mortality)' if i == 0 else "")  # Normal mean
+            axes[i].plot(x_pos, emulated_means_other_x250, 's-', color='orange',  label=f'Emulated (incr. other mortality)' if i == 0 else "")  # Emulated mean
+
+        # Include KS test p-values in the plot
+        if sex == 'M':
+            ks_yloc_other_x250 = 42000
+        else:
+            ks_yloc_other_x250 = 30000
+        ks_yloc_other_x1 = ks_yloc_other_x250 + 7000
+
+        for age_grp in df_normal.index.get_level_values('age_grp').unique():
+            ks_value = pvalues.loc[('other_x1',sex, age_grp), 'p-value ks']
+            axes[i].text(
+                x=age_grp_mapping[age_grp],
+                y=ks_yloc_other_x1,
+                s=f"{ks_value:.2f}",
+                fontsize=8,
+                ha='center',
+                rotation=90,
+                #bbox=dict(boxstyle="round,pad=0.1", facecolor="white", alpha=0.7)
+            )
+            
+        #ks_value = pvalues.loc[(date, cause), 'p-value ks']
+        leg_ypos = ks_yloc_other_x1+3000
+        axes[i].text(
+            x=age_grp_mapping['0-4'],
+            y=leg_ypos,
+            s=f"KS test p-value",
+            fontsize=8,
+            ha='left',
+            rotation=0,
+            #bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.7)
+        )
+        if compare_to_other_x250:
+            for age_grp in df_normal.index.get_level_values('age_grp').unique():
+                ks_value = pvalues.loc[('other_x250',sex, age_grp), 'p-value ks']
+                axes[i].text(
+                    x=age_grp_mapping[age_grp],
+                    y=ks_yloc_other_x250,
+                    s=f"{ks_value:.2f}",
+                    fontsize=8,
+                    ha='center',
+                    rotation=90,
+                    #bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.7)
+                )
+                
+            leg_ypos = ks_yloc_other_x250+3000
+            axes[i].text(
+                x=age_grp_mapping['0-4'],
+                y=leg_ypos,
+                s=f"KS test p-value (incr. other mortality)",
+                fontsize=8,
+                ha='left',
+                rotation=0,
+                #bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.7)
+            )
+
+        # Set titles and labels
+        axes[i].set_title(f'{sex}')
+        axes[i].set_xlabel('Age Group')
+        axes[i].set_ylabel('Averaged Yearly DALYs')
+
+        # Set x-ticks and labels
+        axes[i].set_xticks(x_pos)
+        axes[i].set_xticklabels(age_groups, rotation=45)
+
+        # Add a legend
+        axes[i].legend()
+
+    # Adjust layout for better spacing
+    plt.tight_layout()
+
+    # Show the plot
+    if compare_to_other_x250:
+        plt.savefig('plots/final_DALYs_Breakdown_by_age_grp_DC.png')
+    else:
+        plt.savefig('plots/final_DALYs_Breakdown_by_age_grp.png')
 
 
 def compare_and_plot(outputs, first_scenario, second_scenario, target, factor=None, ylabel=None):
@@ -144,7 +455,6 @@ def compare_and_plot(outputs, first_scenario, second_scenario, target, factor=No
                 'mean': df_cause[('0', 'mean')],
                 'upper': df_cause[('0', 'upper')]
             }
-        print(data)
         
         years = data[labels[0]]['mean'].index.get_level_values('year')
 
@@ -181,9 +491,19 @@ def compare_and_plot(outputs, first_scenario, second_scenario, target, factor=No
         plt.savefig(f'plots/final_{target}_due_to_{cause}.png')
         plt.close()
 
+
+# First collect all data
+for key in outputs.keys():
+    outputs[key]['data'] = apply(outputs[key]['results_folder'])
+    for data_type in outputs[key]['data'].keys():
+        outputs[key]['data'][data_type] = compute_summary_stats(outputs[key]['data'][data_type])
+
+
 compare_and_plot(outputs, 'standard_RTI', 'emulated_RTI', 'deaths', None, 'Deaths')
 compare_and_plot(outputs, 'standard_RTI', 'emulated_RTI', 'dalys', None, 'DALYs')
 compare_and_plot(outputs, 'standard_RTI', 'emulated_RTI', 'cfr', 1000, 'Crude mortality rate (/year/1000 individuals)')
+compare_and_make_plots_age_sex_distr(outputs, 'standard_RTI', 'emulated_RTI', 'standard_RTI_x250', 'emulated_RTI_x250', 'dalys_by_sex_and_age', compare_to_other_x250=True)
+
 
 exit(-1)
     
