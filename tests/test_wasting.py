@@ -534,8 +534,8 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     assert person['is_alive']
     assert pd.isnull(person['un_sam_death_date'])
     assert person['un_clinical_acute_malnutrition'] == 'MAM'
-    # check they have no symptoms:
-    assert 0 == len(sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=wmodule))
+    # weight_loss should not be assigned as a symptom
+    assert 'weight_loss' not in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
 
 def test_tx_complications_recovery_severe_acute_malnutrition_with_complications(tmpdir):
@@ -577,8 +577,8 @@ def test_tx_complications_recovery_severe_acute_malnutrition_with_complications(
     assert person['un_clinical_acute_malnutrition'] == 'SAM'
     # should have complications
     assert person['un_sam_with_complications']
-    # symptoms should be applied
-    assert person_id in set(sim.modules['SymptomManager'].who_has('weight_loss'))
+    # weight_loss should be assigned as a symptom
+    assert 'weight_loss' in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # Check death is scheduled
     assert isinstance(sim.find_events_for_person(person_id)[0][1], Wasting_SevereAcuteMalnutritionDeath_Event)
@@ -643,9 +643,8 @@ def test_tx_complications_recovery_severe_acute_malnutrition_with_complications(
     assert not person['un_sam_with_complications']
     assert pd.isnull(person['un_sam_death_date'])
     assert person['is_alive']
-
-    # check they still have symptoms:
-    assert 1 == len(sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=wmodule))
+    # check the child still has the weight_loss symptom
+    assert "weight_loss" in sim.modules["SymptomManager"].has_what(person_id=person_id, disease_module=wmodule)
 
 
 def test_nat_death_overwritten_by_tx_death(tmpdir):
@@ -689,8 +688,8 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     person = df.loc[person_id]
     # should be diagnosed as SAM due to severe wasting
     assert person['un_clinical_acute_malnutrition'] == 'SAM'
-    # symptoms should be applied
-    assert person_id in set(sim.modules['SymptomManager'].who_has('weight_loss'))
+    # weight_loss should be assigned as a symptom
+    assert 'weight_loss' in sim.modules['SymptomManager'].has_what(person_id=person_id)
     # natural death should be scheduled
     assert not pd.isnull(person['un_sam_death_date'])
 
@@ -1118,8 +1117,9 @@ def test_interventions_activation(tmpdir):
          "event.")
 
 def test_symptoms_with_MAM(tmpdir):
-    """ Before intervention, MAM cases do not seek care, so symptoms are not assigned. After activation, if care-seeking
-    is set to 100%, symptoms are always assigned; if set to 0%, symptoms remain unassigned. """
+    """ Before intervention, MAM cases do not seek care, assuming they do not recognise symptoms of weight loss, hence
+    the weight_loss symptom is not assigned. After activation, if care-seeking for MAM cases is set to 100%, the symptom
+     is always assigned; if set to 0%, the weight_loss symptom remains unassigned for MAM cases. """
     dur = pd.DateOffset(days=1)
     popsize = 1000
     sim = get_sim(tmpdir)
@@ -1143,8 +1143,10 @@ def test_symptoms_with_MAM(tmpdir):
     assert p['seeking_care_MAM_prob'] == 0.0
     wmodule.clinical_acute_malnutrition_state(person_id, df)
     assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
-    # Verify no symptoms are assigned
-    assert not sim.modules['SymptomManager'].has_what(person_id=person_id)
+    # weight_loss should not be assigned as a symptom
+    assert 'weight_loss' not in sim.modules['SymptomManager'].has_what(
+        person_id=person_id, disease_module=wmodule
+    )
 
     # ### If all MAM cases are seeking care, the symptoms are always assigned to them
     p['interv_seeking_care_MAM_prob'] = 1.0
@@ -1154,14 +1156,14 @@ def test_symptoms_with_MAM(tmpdir):
         "The parameter 'seeking_care_MAM_prob' was not correctly overwritten by the activation event."
     wmodule.clinical_acute_malnutrition_state(person_id, df)
     assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
-    # Verify symptoms are assigned
-    assert sim.modules['SymptomManager'].has_what(person_id=person_id)
+    # weight_loss should be assigned as a symptom
+    assert 'weight_loss' in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # reset symptoms
     sim.modules["SymptomManager"].clear_symptoms(
         person_id=person_id, disease_module=wmodule
     )
-    assert not sim.modules['SymptomManager'].has_what(person_id=person_id)
+    assert 'weight_loss' not in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # ### If no MAM cases are seeking care, the symptoms are never assigned to them
     p['interv_seeking_care_MAM_prob'] = 0.0
@@ -1171,5 +1173,5 @@ def test_symptoms_with_MAM(tmpdir):
         "The parameter 'seeking_care_MAM_prob' was not correctly overwritten by the activation event."
     wmodule.clinical_acute_malnutrition_state(person_id, df)
     assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
-    # Verify no symptoms are assigned
-    assert not sim.modules['SymptomManager'].has_what(person_id=person_id)
+    # weight_loss should not be assigned as a symptom
+    assert 'weight_loss' not in sim.modules['SymptomManager'].has_what(person_id=person_id)
