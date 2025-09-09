@@ -2557,7 +2557,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                                     will_seek_care = hsb_model.predict(
                                         df = patient,
-                                        subgroup=subgroup_name, rnd = random,
+                                        subgroup=subgroup_name, rng = random,
                                         care_seeking_odds_ratios=care_seeking_odds_ratios
                                     )
                                     if will_seek_care.iloc[0]:
