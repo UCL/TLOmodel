@@ -25,7 +25,8 @@ from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 start_date = Date(2010, 1, 1)
 end_date = Date(2029, 1, 12)
 popsize = 1000
-resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+resourcefilepath = Path(__file__).parent.parent / "resources"
+print("resourcefilepath", resourcefilepath)
 def get_dataframe_of_run_events_count(_sim):
     """Return a dataframe of event counts with info of treatment id, appointment footprint."""
     count_df = pd.DataFrame(index=range(len(_sim.modules['HealthSystem'].hsi_event_counts)))
