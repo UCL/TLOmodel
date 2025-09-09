@@ -4,21 +4,27 @@ import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.methods import (
-    chronicsyndrome,
+    care_of_women_during_pregnancy,
     demography,
     enhanced_lifestyle,
+    epi,
+    healthburden,
     healthseekingbehaviour,
     healthsystem,
-    mockitis,
+    hiv,
+    labour,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
     simplified_births,
     symptommanager,
+    tb,
 )
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2029, 1, 12)
 popsize = 1000
-
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 def get_dataframe_of_run_events_count(_sim):
     """Return a dataframe of event counts with info of treatment id, appointment footprint."""
@@ -51,25 +57,29 @@ def test_number_services(seed, tmpdir):
     # 585 highest
     sim = Simulation(start_date=start_date,
                      seed=seed,
+                     resourcefilepath=resourcefilepath,
                      log_config={
                      "filename": "log",
                      "directory": tmpdir,
                      })
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  climate_ssp = 'ssp585',
-                                  climate_model_ensemble_model='mean',
-                                  services_affected_precip = 'all'),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        mockitis.Mockitis(),
-        chronicsyndrome.ChronicSyndrome(),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-    )
-    #assert sim.modules['HealthSystem'].parameters['services_affected_precip'] == 'all'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     cons_availability="all",
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath),
+                 )
+    sim.modules['HealthSystem'].parameters['climate_ssp'] = "ssp585"
+    sim.modules['HealthSystem'].parameters['climate_model_ensemble_model'] = "mean"
+    sim.modules['HealthSystem'].parameters['services_affected_precip'] = "all"
+    assert sim.modules['HealthSystem'].parameters['services_affected_precip'] == 'all'
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -80,27 +90,31 @@ def test_number_services(seed, tmpdir):
     # 126 lowest
     sim_low = Simulation(start_date=start_date,
                      seed=seed,
+                     resourcefilepath=resourcefilepath,
                      log_config={
                          "filename": "log",
                          "directory": tmpdir})
-    sim_low.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    sim_low.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     cons_availability="all",
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath),
+                 )
+    sim_low.modules['HealthSystem'].parameters['climate_ssp'] = "ssp126"
+    sim_low.modules['HealthSystem'].parameters['climate_model_ensemble_model'] = "low"
+    sim_low.modules['HealthSystem'].parameters['services_affected_precip'] = "all"
+    assert sim_low.modules['HealthSystem'].parameters['services_affected_precip'] == 'all'
 
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  climate_ssp='ssp126',
-                                  climate_model_ensemble_model='lowest',
-                                  services_affected_precip='all'),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        mockitis.Mockitis(),
-        chronicsyndrome.ChronicSyndrome(),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-    )
     sim_low.make_initial_population(n=popsize)
     sim_low.simulate(end_date=end_date)
-    #assert sim_low.modules['HealthSystem'].services_affected_precip == 'all'
-    #assert sim_low.modules['HealthSystem'].climate_ssp == 'ssp126'
 
     # output_climate = parse_log_file(sim.log_filepath)
     hsi_event_count_df_climate_126 = get_dataframe_of_run_events_delayed(sim_low)
@@ -108,29 +122,39 @@ def test_number_services(seed, tmpdir):
     # no climate
     sim_no_climate = Simulation(start_date=start_date,
                      seed=seed,
+                     resourcefilepath=resourcefilepath,
                      log_config={
                      "filename": "log",
                      "directory": tmpdir,
 })
-    sim_no_climate.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  climate_ssp = 'ssp585',
-                                  climate_model_ensemble_model='mean',
-                                  services_affected_precip = 'none'),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        mockitis.Mockitis(),
-        chronicsyndrome.ChronicSyndrome(),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-    )
+    sim_no_climate = Simulation(start_date=start_date,
+                     seed=seed,
+                     resourcefilepath=resourcefilepath,
+                     log_config={
+                         "filename": "log",
+                         "directory": tmpdir})
+    sim_no_climate.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     cons_availability="all",
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath),
+                 )
+    sim_no_climate.modules['HealthSystem'].parameters['climate_ssp'] = "ssp126"
+    sim_no_climate.modules['HealthSystem'].parameters['climate_model_ensemble_model'] = "low"
+    sim_no_climate.modules['HealthSystem'].parameters['services_affected_precip'] = "none"
+    assert sim_no_climate.modules['HealthSystem'].parameters['services_affected_precip'] == 'all'
     sim_no_climate.make_initial_population(n=popsize)
     sim_no_climate.simulate(end_date=end_date)
-    #output_no_climate = parse_log_file(sim.log_filepath)
-    df = sim.population.props
-    #assert sim_no_climate.modules['HealthSystem'].services_affected_precip == 'none'
+
+    assert sim_no_climate.modules['HealthSystem'].parameters['services_affected_precip'] == 'all'
     hsi_event_count_df_no_climate = get_dataframe_of_run_events_delayed(sim_no_climate)
 
     #assert 0 > sum(hsi_event_count_df_no_climate['count'])
