@@ -1478,10 +1478,13 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[person_id, 'un_am_treatment_type'] = 'none'
 
-        # this will clear all wasting symptoms (applicable for SAM, not MAM)
-        self.sim.modules["SymptomManager"].clear_symptoms(
-            person_id=person_id, disease_module=self.module
-        )
+        # clear all wasting symptoms if not recognised
+        if rng.random_sample() < p["seeking_care_MAM_prob"]:
+            # check presence of weight_loss symptom
+            assert "weight_loss" in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
+        else:
+            # clear symptoms
+            self.sim.modules["SymptomManager"].clear_symptoms(person_id=person_id, disease_module=self.module)
 
         duration_of_untreated_mod_wasting = self.module.length_of_untreated_wasting('-3<=WHZ<-2')
         outcome_date = self.sim.date + DateOffset(days=duration_of_untreated_mod_wasting)
