@@ -46,7 +46,7 @@ jobs:
 
       - id: determine-correct-sha
         name: Determine the SHA to run profiling on
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           result-encoding: string
           script: |
