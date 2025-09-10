@@ -46,7 +46,7 @@ jobs:
 
       - id: determine-correct-sha
         name: Determine the SHA to run profiling on
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           result-encoding: string
           script: |
@@ -155,7 +155,7 @@ jobs:
       )
     steps:
       - name: Download the profiling results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ${{ needs.set-variables.outputs.artifact-name }}
           path: ${{ needs.set-variables.outputs.profiling-output-dir }}
