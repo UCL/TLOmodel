@@ -331,7 +331,7 @@ def make_simulation_health_system_functional(seed, cons_availability='all'):
     # Register the appropriate modules
     sim.register(demography.Demography(),
                  enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable=False, mode_appt_constraints=0,
+                 healthsystem.HealthSystem(disable=False, mode_appt_constraints=1,
                                            cons_availability=cons_availability),
                  symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
