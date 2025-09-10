@@ -378,8 +378,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         * the first annual logging event,
         * the first growth monitoring for all children under 5.
 
-        Initiates growth monitoring for all children under 5.
-
         :param sim:
         """
 
