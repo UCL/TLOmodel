@@ -1471,14 +1471,9 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Get a blank footprint and then edit to define call on resources
-        # of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one outpatient
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Undernutrition_Feeding_Supplementary'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
@@ -1518,14 +1513,9 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Get a blank footprint and then edit to define call on resources
-        # of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint['U5Malnutr'] = 1
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Undernutrition_Feeding_Outpatient'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"U5Malnutr": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
