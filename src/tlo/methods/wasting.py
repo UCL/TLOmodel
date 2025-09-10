@@ -1333,30 +1333,27 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Wasting)
 
-        self.attendance = None
-
         self.TREATMENT_ID = "Undernutrition_GrowthMonitoring"
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        rng = self.module.rng
+        p = self.module.parameters
+        person_age = self.sim.population.props.loc[self.target].age_exact_years
+        def get_attendance_prob(age):
+            if age < 1:
+                return p["growth_monitoring_attendance_prob_agecat"][0]
+            if age <= 2:
+                return p["growth_monitoring_attendance_prob_agecat"][1]
+            else:
+                return p["growth_monitoring_attendance_prob_agecat"][2]
+        self.attendance = rng.random_sample() < get_attendance_prob(person_age)
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Return the expected appointment footprint based on attendance at the HSI event."""
-        rng = self.module.rng
-        p = self.module.parameters
-        person_age = self.sim.population.props.loc[self.target].age_exact_years
-
         # TODO: for now assumed general attendance prob for <1 y old,
         #  later may be excluded from here and be dealt with within epi module
-        def get_attendance_prob(age):
-            if age < 1:
-                return p['growth_monitoring_attendance_prob_agecat'][0]
-            if age <= 2:
-                return p['growth_monitoring_attendance_prob_agecat'][1]
-            else:
-                return p['growth_monitoring_attendance_prob_agecat'][2]
-
         # perform growth monitoring if attending
-        self.attendance = rng.random_sample() < get_attendance_prob(person_age)
         if self.attendance:
             return self.make_appt_footprint({'Under5OPD': 1})
         else:
@@ -1409,16 +1406,16 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         # TODO: as stated above, for now we schedule next monitoring for all children, even those sent for treatment
         schedule_next_monitoring()
 
+        # the person may not attend the appt
+        if not self.attendance:
+            return
+
         # if person currently treated, or acute malnutrition already assessed,
         # it will not be assessed (again)
         # TODO: later could be scheduled for monitoring within the tx to use the resources
         if (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
                 self.sim.date) or \
             (self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']):
-            return
-
-        # the person may not attend the appt
-        if not self.attendance:
             return
 
         # Acute malnutrition assessment
