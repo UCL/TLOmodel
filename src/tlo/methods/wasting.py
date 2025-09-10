@@ -1423,12 +1423,8 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         # track the date of the last growth-monitoring appt
         df.at[person_id, 'un_last_growth_monitoring_appt_date'] = self.sim.date
 
-        available_equipment = []
-        for equip in ['Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape']:
-            available = rng.random_sample() < HSI_Event.probability_all_equipment_available(self, equip)
-            if available:
-                available_equipment.append(equip)
-        self.add_equipment(set(available_equipment))
+        # Add required equipment
+        self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
 
         def schedule_tx_by_diagnosis(hsi_event):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
