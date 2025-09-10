@@ -1716,7 +1716,7 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
     of wasting cases at recovery point since the previous logging, the prevalence proportions at the time of logging,
     and population sizes at the time of logging.
     Analysis scripts expect that the frequency of this logging event is once per year. Logs are expected to happen on
-    the last day of each year.
+    the first day of each year.
     """
 
     def __init__(self, module):
