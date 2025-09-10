@@ -373,17 +373,21 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
     def initialise_simulation(self, sim):
         """
         Prepares for simulation. Schedules:
-        * the first growth monitoring to happen straight away, scheduled monthly to detect new cases for treatment,
-        * the main incidence polling event,
-        * the main logging event.
+        * the logging of initial values,
+        * the first monthly incidence polling event,
+        * the first annual logging event,
+        * the first growth monitoring for all children under 5.
+
+        Initiates growth monitoring for all children under 5.
 
         :param sim:
         """
 
         sim.schedule_event(Wasting_InitLoggingEvent(self), sim.date)
-        sim.schedule_event(Wasting_InitiateGrowthMonitoring(self), sim.date)
         sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=1))
         sim.schedule_event(Wasting_LoggingEvent(self), sim.date + DateOffset(years=1))
+        # Schedule growth monitoring for all children under 5
+        self.schedule_growth_monitoring_on_initiation()
 
         # Retrieve the consumables codes and amounts of the consumables used
         self.cons_codes = self.get_consumables_for_each_treatment()
@@ -420,6 +424,37 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             hsi_event=HSI_Wasting_GrowthMonitoring(module=self, person_id=child_id),
             priority=2, topen=self.sim.date + pd.DateOffset(days=1)
         )
+
+    def schedule_growth_monitoring_on_initiation(self):
+        """
+        Schedules HSI_Wasting_GrowthMonitoring for all under-5 children at simulation initiation for a random day within
+        the age-dependent frequency.
+        """
+        df = self.sim.population.props
+        p = self.parameters
+        rng = self.rng
+
+        under5_idx = df.index[df.is_alive & (df.age_exact_years < 5)]
+
+        def get_monitoring_frequency_days(age):
+            if age < 1:
+                return p["growth_monitoring_frequency_days_agecat"][0]
+            elif age <= 2:
+                return p["growth_monitoring_frequency_days_agecat"][1]
+            else:
+                return p["growth_monitoring_frequency_days_agecat"][2]
+
+        # schedule monitoring within age-dependent frequency
+        for person_id in under5_idx:
+            next_event_days = rng.randint(
+                0, max(0, (get_monitoring_frequency_days(df.at[person_id, "age_exact_years"]) - 2))
+            )
+            if (df.at[person_id, "age_exact_years"] + (next_event_days / 365.25)) < 5:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Wasting_GrowthMonitoring(module=self, person_id=person_id),
+                    priority=2,
+                    topen=self.sim.date + pd.DateOffset(days=next_event_days),
+                )
 
     def muac_cutoff_by_WHZ(self, idx, whz) -> None:
         """
@@ -1274,54 +1309,6 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(Wasting_FullRecovery_Event(self.module, person_id), outcome_date)
             df.at[person_id, "un_full_recov_date"] = outcome_date
 
-class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
-    # TODO: maybe will be updated to integrate monitoring of < 1y old in epi module, and on birth schedule to be
-    #  monitored within wasting module only when > 1y old
-    """
-    Event that schedules HSI_Wasting_GrowthMonitoring for all under-5 children for a random day within the age-dependent
-    frequency.
-    """
-
-    def __init__(self, module):
-        """Runs only once, when simulation is initiated.
-        :param module: the module that created this event
-        """
-        super().__init__(module)
-        assert isinstance(module, Wasting)
-
-    def apply(self, population):
-        """Apply this event to the population.
-        :param population: the current population
-        """
-
-        df = population.props
-        rng = self.module.rng
-        p = self.module.parameters
-
-        # TODO: including treated children? (until there is growth monitoring with tx and scheduled post-tx, yes)
-        under5_idx = df.index[df.is_alive & (df.age_exact_years < 5)]
-        # and ~df.un_am_treatment_type.isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'])
-
-        def get_monitoring_frequency_days(age):
-            # TODO: maybe in future 0-1 to be dealt with within epi module
-            if age < 1:
-                return p['growth_monitoring_frequency_days_agecat'][0]
-            elif age <= 2:
-                return p['growth_monitoring_frequency_days_agecat'][1]
-            else:
-                return p['growth_monitoring_frequency_days_agecat'][2]
-
-        # schedule monitoring within age-dependent frequency
-        for person_id in under5_idx:
-            next_event_days = \
-                rng.randint(0, max(0, (get_monitoring_frequency_days(df.at[person_id, 'age_exact_years']) - 2)))
-            if (df.at[person_id, 'age_exact_years'] + (next_event_days / 365.25)) < 5:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=HSI_Wasting_GrowthMonitoring(module=self.module, person_id=person_id),
-                    priority=2, topen=self.sim.date + pd.DateOffset(days=next_event_days)
-                )
-
-
 class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
     """ Attendance is determined for the HSI. If the child attends, measurements with available equipment are performed
     for that child. Based on these measurements, the child can be diagnosed as well/MAM/(un)complicated SAM and
@@ -1363,7 +1350,6 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key='debug', data='This is HSI_Wasting_GrowthMonitoring')
 
         df = self.sim.population.props
-        rng = self.module.rng
         p = self.module.parameters
 
         # TODO: Will they be monitored during the treatment? Can we assume, that after the treatment they will be
@@ -1411,7 +1397,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
             return
 
         # if person currently treated, or acute malnutrition already assessed,
-        # it will not be assessed (again)
+        # acute malnutrition will not be assessed (again)
         # TODO: later could be scheduled for monitoring within the tx to use the resources
         if (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
                 self.sim.date) or \
