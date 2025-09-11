@@ -732,12 +732,6 @@ class WastingAnalyses:
 
             # Adjust the layout to make space for the footnote
             plt.subplots_adjust(top=0.15)  # Adjust the bottom margin
-            # Add footnote
-            fig.figure.text(0.43, 0.95,
-                            "proportion = number of wasted children in the age group "
-                            "/ total number of children in the age group",
-                            ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
-
             plt.tight_layout()
             fig_output_name = (f'wasting_prevalence_per_each_age_group_{year_calib}__' + self.datestamp)
             if year_calib in [2016, 2020]:
@@ -785,7 +779,7 @@ class WastingAnalyses:
         ax = plotting['model'].plot.bar(label='Model', ax=ax, rot=0)
         ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
-                    fmt='o', color='#000', label="GBD")
+                    fmt='o', color='#000', label="GBD (2019)")
 
         ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5',
                      fontsize=title_fontsize - 1)
@@ -795,10 +789,6 @@ class WastingAnalyses:
         fig.tight_layout()
         # Adjust the layout to make space for the footnote
         plt.subplots_adjust(bottom=0.15)  # Adjust the bottom margin
-        # Add footnote
-        fig.figure.text(0.5, 0.02,
-                        "Model output against Global Burden of Diseases (GBD) study data",
-                        ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
         fig_output_name = ('model_gbd_deaths_excl_burnin__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
         # plt.show()
