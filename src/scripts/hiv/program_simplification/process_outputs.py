@@ -120,7 +120,24 @@ def find_difference_relative_to_comparison_series_dataframe(_df: pd.DataFrame, *
 
 
 # set3_palette = sns.color_palette("Mako", 11).as_hex()
-colours = sns.color_palette("mako", n_colors=12)
+# colours = sns.color_palette("mako", n_colors=12)
+
+colours = [
+    "#3B4252",  # brighter slate
+    "#5B708C",  # mid grey-blue
+    "#4C89D9",  # vivid blue
+    "#76A9E0",  # lighter sky
+    "#4CCED9",  # aqua
+    "#66D9C1",  # mint
+    "#9CD48C",  # fresh green
+    "#F2D98D",  # golden sand
+    "#F29E74",  # warm coral
+    "#E06B75",  # lively crimson
+    "#C58CCB",  # pastel lilac
+    "#A6A5FF",  # periwinkle (light but visible)
+]
+
+
 scenario_colours = dict(zip(param_names, colours))
 
 
@@ -209,6 +226,7 @@ def plot_with_ci(
     colour_map: dict | None = None,
     percent_df=None,          # accepts Series or DF; wide (draw,stat) or flat
     ax=None,
+    annotate_labels: list[str] | set[str] | None = None,
 ):
 
     def _pick_stat_name(cols):
@@ -278,13 +296,23 @@ def plot_with_ci(
     ax.axhline(0, color="grey", linewidth=1)
 
     if percent_vals is not None:
+        # labels to annotate: by default annotate all; if provided, restrict
+        allowed = set(central.index) if annotate_labels is None else set(annotate_labels) & set(central.index)
+
         rng = float(upper.max() - lower.min()) if len(upper) and len(lower) else 0.0
         offset = 0.05 * rng
+
         for xi, label, bar in zip(x, central.index, bars):
-            pc = percent_vals.get(label, np.nan)
-            if pd.notna(pc):
-                ax.text(bar.get_x() + bar.get_width()/2, upper[label] + offset,
-                        f"{pc:.1f}%", ha="center", va="bottom", fontsize=9)
+            if label not in allowed:
+                continue
+            v = percent_vals.get(label, np.nan)
+            if pd.notna(v):
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    upper[label] + offset,
+                    f"{v:.1f}%",
+                    ha="center", va="bottom", fontsize=9
+                )
 
     # y-limits with padding
     span = float(upper.max() - lower.min()) if len(upper) else 0.0
@@ -983,8 +1011,16 @@ plot_with_ci(
     ylabel="Number HIV infections",
     percent_df=pc_infect_ci,
     colour_map=scenario_colours,
-    ax=axes[0]
+    ax=axes[0],
+    annotate_labels={'Reduce HIV testing',
+                     'Remove Viral Load Testing',
+                     'Remove PrEP for FSW',
+                     'Remove VMMC',
+                     'Increase 6-monthly Dispensing',
+                     'Reduce All Elements',
+                     'Program Scale-up'}
 )
+
 
 plot_with_ci(
     df=(aids_ci_edit / 1_000_000),
@@ -993,7 +1029,13 @@ plot_with_ci(
     ylabel="Difference from Status Quo, millions",
     percent_df=pc_aids_ci,
     colour_map=scenario_colours,
-    ax=axes[1]
+    ax=axes[1],
+    annotate_labels={'Reduce HIV testing',
+                     'Remove Viral Load Testing',
+                     'Replace Viral Load Testing',
+                     'Increase 6-monthly Dispensing',
+                     'Reduce All Elements',
+                     'Program Scale-up'}
 )
 
 plot_with_ci(
@@ -1003,7 +1045,13 @@ plot_with_ci(
     ylabel="Difference from Status Quo",
     percent_df=pc_aids_deaths_ci,
     colour_map=scenario_colours,
-    ax=axes[2]
+    ax=axes[2],
+    annotate_labels={'Reduce HIV testing',
+                     'Remove Viral Load Testing',
+                     'Replace Viral Load Testing',
+                     'Increase 6-monthly Dispensing',
+                     'Reduce All Elements',
+                     'Program Scale-up'}
 )
 
 # Only hide top two labels
@@ -1139,6 +1187,7 @@ def plot_cadre_hours_vs_outcomes(
     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
     figsize=(10, 12),
     ylabel=None,
+    exclude_scenarios: list[str] | None = None,
 ):
     """
     Panel plot: scatter cadre hours (x) vs new infections (y) with asymmetric CI whiskers.
@@ -1158,6 +1207,10 @@ def plot_cadre_hours_vs_outcomes(
     # Use draw order from the first cadre’s row
     first_cadre = cadres[0]
     draws_order = num_hcw_hours_diff_edit.xs("central", axis=1, level="stat").loc[first_cadre].index
+
+    # Drop any excluded scenarios
+    if exclude_scenarios:
+        draws_order = [d for d in draws_order if d not in exclude_scenarios]
 
     for ax, cadre in zip(axes, cadres):
         x_c = num_hcw_hours_diff_edit.xs("central", axis=1, level="stat").loc[cadre]
@@ -1209,8 +1262,11 @@ plot_cadre_hours_vs_outcomes(
     scenario_colours=scenario_colours,
     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
     figsize=(10, 11),
-    ylabel="New HIV infections (difference)"
+    ylabel="New HIV infections (difference)",
+    exclude_scenarios=["Program Scale-up"]
 )
+
+
 
 # for deaths vc HCW time
 epi_df = aids_deaths_ci.stack().to_frame().T
@@ -1224,7 +1280,8 @@ plot_cadre_hours_vs_outcomes(
     scenario_colours=scenario_colours,
     cadres=("Clinical", "Nursing_and_Midwifery", "Pharmacy"),
     figsize=(10, 11),
-    ylabel="AIDS deaths"
+    ylabel="AIDS deaths",
+    exclude_scenarios=["Program Scale-up"]
 )
 
 
