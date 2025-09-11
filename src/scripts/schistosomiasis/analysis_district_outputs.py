@@ -171,11 +171,10 @@ def compute_stepwise_effects_by_wash_strategy(df: pd.DataFrame) -> pd.DataFrame:
     Returns a DataFrame with same index as input and columns for each comparison.
     """
     wash_strategies = ['Pause WASH', 'Continue WASH', 'Scale-up WASH']
-    mda_steps = ['no MDA', 'MDA SAC', 'MDA PSAC', 'MDA All']
     comparisons = [
         ('MDA SAC', 'no MDA'),
-        ('MDA PSAC', 'MDA SAC'),
-        ('MDA All', 'MDA PSAC'),
+        ('MDA PSAC+SAC', 'MDA SAC'),
+        ('MDA All', 'MDA PSAC+SAC'),
     ]
 
     result_frames = []
@@ -1186,6 +1185,14 @@ year_eliminated = first_dual_species_stop_year(prev_haem_HML_All_district,
 year_eliminated.to_excel(results_folder / ('year_eliminated.xlsx'))
 
 
+year_eliminated_HM = first_dual_species_stop_year(prev_haem_HM_All_district,
+                                               prev_mansoni_HM_All_district,
+                                               threshold=0.01,
+                                               year_range=(2010, 2050))
+
+year_eliminated_HM.to_excel(results_folder / ('year_eliminated_HM.xlsx'))
+
+
 
 #################################################################################
 # %% PREVALENCE OF INFECTION OVERALL (BOTH SPECIES) BY DISTRICT
@@ -2107,7 +2114,7 @@ nhb_district_vs_noMDA = compute_nhb(
     dalys_averted=dalys_averted_district_compared_noMDA,
     comparison_costs=cons_costs_relative_noMDA_district,
     discount_rate_dalys=0.0,
-    threshold=120,
+    threshold=61,
     discount_rate_costs=0.0,
     return_summary=True
 )
@@ -2118,7 +2125,7 @@ nhb_district_vs_SAC = compute_nhb(
     dalys_averted=dalys_averted_district_compared_SAC,
     comparison_costs=cons_costs_relative_SAC_district,
     discount_rate_dalys=0.0,
-    threshold=120,
+    threshold=61,
     discount_rate_costs=0.0,
     return_summary=True
 )
@@ -2129,7 +2136,7 @@ nhb_district_vs_SAC_full_costs = compute_nhb(
     dalys_averted=dalys_averted_district_compared_SAC,
     comparison_costs=full_costs_relative_SAC_district,
     discount_rate_dalys=0.0,
-    threshold=120,
+    threshold=61,
     discount_rate_costs=0.0,
     return_summary=True
 )
@@ -2137,61 +2144,6 @@ nhb_district_vs_SAC_full_costs = compute_nhb(
 nhb_district_vs_SAC_full_costs.to_csv(results_folder / f'nhb_district_vs_SAC_full_costs{target_period()}.csv')
 
 
-
-# for each district under each WASH assumption, get the preferred strategy
-# preferred strategy chosen by maximum NHB
-# if nhb compared to SAC is negative, then return SAC as preferred strategy
-
-
-
-# def get_best_draw_per_district(df, keyword):
-#     """
-#     For each district, return the draw containing the keyword with the highest mean.
-#     If this best draw has a negative mean and the fallback draw '{keyword}, MDA SAC' is not present,
-#     return a row with draw set to that fallback and mean/lower/upper as NaN.
-#
-#     Parameters:
-#         df (pd.DataFrame): MultiIndex (district, draw) DataFrame with ['mean', 'lower', 'upper'].
-#         keyword (str): Draw prefix, e.g., "Continue WASH", "Pause WASH", etc.
-#
-#     Returns:
-#         pd.DataFrame: DataFrame with index=district and columns ['draw', 'mean', 'lower', 'upper'].
-#     """
-#     df_filtered = df[df.index.get_level_values("draw").str.contains(keyword)]
-#     df_reset = df_filtered.reset_index()
-#
-#     # Get best draw (highest mean) per district
-#     best_draws = (
-#         df_reset
-#         .sort_values("mean", ascending=False)
-#         .groupby("district")
-#         .first()
-#         .loc[:, ["draw", "mean", "lower", "upper"]]
-#     )
-#
-#     fallback_draw = f"{keyword}, MDA SAC"
-#
-#     # Handle districts where best draw is negative
-#     for district in best_draws.index[best_draws["mean"] < 0]:
-#         try:
-#             # Check if fallback draw exists
-#             fallback_row = df.loc[(district, fallback_draw)]
-#             best_draws.loc[district] = {
-#                 "draw": fallback_draw,
-#                 "mean": fallback_row["mean"],
-#                 "lower": fallback_row["lower"],
-#                 "upper": fallback_row["upper"],
-#             }
-#         except KeyError:
-#             # If fallback draw is missing, assign NaNs but retain fallback draw name
-#             best_draws.loc[district] = {
-#                 "draw": fallback_draw,
-#                 "mean": np.nan,
-#                 "lower": np.nan,
-#                 "upper": np.nan,
-#             }
-#
-#     return best_draws
 
 
 def get_best_draw_per_district(df, keyword):
@@ -2237,7 +2189,7 @@ def get_best_draw_per_district(df, keyword):
 pause_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Pause WASH")
 continue_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Continue WASH")
 scaleup_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Scale-up WASH")
-# 10 districts showing PSAC (7) or All (3) as best strategy
+# 8 districts showing PSAC, 2 showing All as best strategy
 
 
 pause_wash_best_strategy.to_csv(results_folder / f'pause_wash_nhb_vs_SAC_{target_period()}.csv')
@@ -2248,8 +2200,119 @@ scaleup_wash_best_strategy.to_csv(results_folder / f'scaleup_wash_nhb_vs_SAC_{ta
 pause_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Pause WASH")
 continue_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Continue WASH")
 scaleup_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Scale-up WASH")
-# todo this shows 14 districts with no MDA as best strategy,
+# todo this shows 21 districts with no MDA as best strategy,
 #  DALYs averted in MDA SAC probably small so nhb becomes negative
+
+
+
+
+#################################################################################
+# %% Max implementation costs
+#################################################################################
+
+
+# Max implementation cost = DALYs averted x CET - cons costs
+# not incremental costs but actual costs incurred
+# dalys averted compared to no MDA
+# need this restricted to target period
+
+
+
+
+def calculate_max_hr_costs(dalys_df, cons_costs_df, cet, start_year=2024, end_year=2050):
+    """
+    Calculate maximum allowable HR costs given DALYs averted and consumable costs.
+
+    Parameters
+    ----------
+    dalys_df : pd.DataFrame
+        DALYs averted relative to SAC MDA.
+        Index: MultiIndex (year, district) [unnamed]
+        Columns: MultiIndex (wash_strategy, comparison, run).
+    cons_costs_df : pd.DataFrame
+        Incremental consumable costs, same format as dalys_df.
+    cet : float
+        Cost-effectiveness threshold (per DALY).
+    start_year : int
+        First year to include in evaluation.
+    end_year : int
+        Last year to include in evaluation.
+
+    Returns
+    -------
+    pd.DataFrame
+        MultiIndex (district, wash_strategy, comparison)
+        Columns = ['mean', 'lower', 'upper'] based on run-level estimates.
+    """
+
+    # --- 1. Restrict to evaluation years ---
+    years = dalys_df.index.get_level_values(0)
+    mask = (years >= start_year) & (years <= end_year)
+    dalys_eval = dalys_df.loc[mask]
+
+    years = cons_costs_df.index.get_level_values(0)
+    mask = (years >= start_year) & (years <= end_year)
+    cons_eval = cons_costs_df.loc[mask]
+
+    # --- 2. Align indices ---
+    dalys_eval, cons_eval = dalys_eval.align(cons_eval, join="inner")
+
+    # --- 3. Collapse over years (sum DALYs averted and costs) ---
+    districts = dalys_eval.index.get_level_values(1)
+    dalys_eval = dalys_eval.copy()
+    cons_eval = cons_eval.copy()
+    dalys_eval.index = districts
+    cons_eval.index = districts
+
+    dalys_sum = dalys_eval.groupby(level=0).sum()
+    cons_sum = cons_eval.groupby(level=0).sum()
+
+    # --- 4. Compute max HR costs: (DALYs * CET) - consumables ---
+    max_hr = dalys_sum * cet - cons_sum
+
+    # --- 5. Summarise across runs ---
+    results = []
+    for (wash_strategy, comparison), df_sub in max_hr.groupby(level=[0,1], axis=1):
+        for district, series in df_sub.iterrows():
+            vals = series.dropna().values
+            n = len(vals)
+            if n == 0:
+                continue
+            mean_val = vals.mean()
+            if n > 1:
+                se = vals.std(ddof=1) / np.sqrt(n)
+                lower = mean_val - 1.96 * se
+                upper = mean_val + 1.96 * se
+            else:  # only one run, no uncertainty
+                lower = upper = mean_val
+
+            results.append({
+                "district": district,
+                "wash_strategy": wash_strategy,
+                "comparison": comparison,
+                "mean": mean_val,
+                "lower": lower,
+                "upper": upper
+            })
+
+    results_df = pd.DataFrame(results)
+    results_df = results_df.set_index(["district", "wash_strategy", "comparison"])
+
+    return results_df
+
+
+
+# todo these are comparing all to SAC
+# todo there are 8 positive values for PSAC vs SAC
+# todo 2 positive values for All vs SAC
+
+max_costs = calculate_max_hr_costs(dalys_df=dalys_averted_district_compared_SAC,
+                                   cons_costs_df=cons_costs_relative_SAC_district,
+                                   cet=61,
+                                   start_year=2024,
+                                   end_year=2050)
+
+max_costs.to_csv(results_folder / f'max_costs_comparedSAC{target_period()}.csv')
 
 
 

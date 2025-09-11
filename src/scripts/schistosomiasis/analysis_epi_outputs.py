@@ -19,6 +19,7 @@ from collections import defaultdict
 import textwrap
 from typing import Tuple
 
+from scripts.schistosomiasis.analysis_district_outputs import prev_mansoni_national_summary
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
     format_gbd,
@@ -1353,7 +1354,7 @@ def plot_combined_prevalence(summary_prev_mansoni_H_All, summary_prev_haem_H_All
     mda_colours = {
         'no MDA': '#1b9e77',
         'MDA SAC': '#d95f02',
-        'MDA PSAC': '#7570b3',
+        'MDA PSAC+SAC': '#7570b3',
         'MDA All': '#e7298a'
     }
 
@@ -1375,15 +1376,15 @@ def plot_combined_prevalence(summary_prev_mansoni_H_All, summary_prev_haem_H_All
     ordered_draws = [
         'Pause WASH, no MDA',
         'Pause WASH, MDA SAC',
-        'Pause WASH, MDA PSAC',
+        'Pause WASH, MDA PSAC+SAC',
         'Pause WASH, MDA All',
         'Continue WASH, no MDA',
         'Continue WASH, MDA SAC',
-        'Continue WASH, MDA PSAC',
+        'Continue WASH, MDA PSAC+SAC',
         'Continue WASH, MDA All',
         'Scale-up WASH, no MDA',
         'Scale-up WASH, MDA SAC',
-        'Scale-up WASH, MDA PSAC',
+        'Scale-up WASH, MDA PSAC+SAC',
         'Scale-up WASH, MDA All'
     ]
 
@@ -1401,7 +1402,7 @@ def plot_combined_prevalence(summary_prev_mansoni_H_All, summary_prev_haem_H_All
                                 color=get_colour(draw), alpha=0.3)
         ax.set_title(title)
         ax.set_ylabel("Prevalence")
-        ax.set_ylim(0, 0.035)
+        ax.set_ylim(0, 1)
         ax.set_xticks(df.index)
         ax.set_xticklabels(df.index.astype(int))
 
@@ -1453,7 +1454,7 @@ def plot_combined_prevalence(summary_prev_mansoni_H_All, summary_prev_haem_H_All
     fig.tight_layout()
     return fig
 
-fig = plot_combined_prevalence(summary_prev_mansoni_H_All, summary_prev_haem_H_All, target_period)
+fig = plot_combined_prevalence(prev_mansoni_national_summary, prev_haem_national_summary, target_period)
 fig.savefig(make_graph_file_name("combined_summary_prevalence_high_intensity_all_ages"))
 plt.show()
 

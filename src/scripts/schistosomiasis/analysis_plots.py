@@ -46,7 +46,7 @@ resourcefilepath = Path("./resources")
 
 output_folder = Path("./outputs/t.mangal@imperial.ac.uk")
 
-results_folder = get_scenario_outputs("schisto_scenarios.py", output_folder)[-1]
+results_folder = get_scenario_outputs("schisto_scenarios-2025.py", output_folder)[-1]
 
 
 # Declare path for output graphs from this script
@@ -116,18 +116,18 @@ def plot_species_prevalence_with_heavy(
     label_map = {
         'no MDA': 'no MDA',
         'MDA SAC': 'MDA SAC',
-        'MDA PSAC': 'MDA PSAC',
+        'MDA PSAC+SAC': 'MDA PSAC+SAC',
         'MDA All': 'MDA All',
         'WASH only': 'WASH only'
     }
     colour_map = {
         'no MDA': '#1b9e77',
         'MDA SAC': '#d95f02',
-        'MDA PSAC': '#7570b3',
+        'MDA PSAC+SAC': '#7570b3',
         'MDA All': '#e7298a',
         'WASH only': '#e6ab02'
     }
-    order = ['no MDA', 'MDA SAC', 'MDA PSAC', 'MDA All', 'WASH only']
+    order = ['no MDA', 'MDA SAC', 'MDA PSAC+SAC', 'MDA All', 'WASH only']
 
     # Filter main data
     df_filtered = df[(df['date'] == year) & (df['draw'].str.contains('Continue WASH'))].copy()
@@ -264,7 +264,7 @@ def plot_pc_py_averted_ci(df, draw_order, xlabel_labels=None, ylabel=None, ylim=
 
     # Define plotting and legend order
     ordered_age_groups = ['Infants+PSAC', 'SAC', 'Adults']
-    legend_labels = ['PSAC', 'SAC', 'Adults']
+    legend_labels = ['PSAC+SAC', 'SAC', 'Adults']
 
     palette = sns.color_palette("Set2", len(ordered_age_groups))
     stagger = np.linspace(-0.2, 0.2, len(ordered_age_groups))
@@ -321,12 +321,12 @@ def plot_pc_py_averted_ci(df, draw_order, xlabel_labels=None, ylabel=None, ylim=
 # Usage:
 draw_order = [
     'Continue WASH, MDA SAC',
-    'Continue WASH, MDA PSAC',
+    'Continue WASH, MDA PSAC+SAC',
     'Continue WASH, MDA All',
     'Scale-up WASH, no MDA'
 ]
 
-x_labels = ['MDA SAC', 'MDA PSAC', 'MDA All', 'WASH only']
+x_labels = ['MDA SAC', 'MDA PSAC+SAC', 'MDA All', 'WASH only']
 
 fig = plot_pc_py_averted_ci(
     df=pc_py_averted,
@@ -414,20 +414,20 @@ def plot_dalys_averted_bar(summary_df):
     # Define the draw order and corresponding labels
     draw_order = [
         'Continue WASH, MDA SAC',
-        'Continue WASH, MDA PSAC',
+        'Continue WASH, MDA PSAC+SAC',
         'Continue WASH, MDA All',
         'Scale-up WASH, no MDA'
     ]
     label_map = {
         'Continue WASH, MDA SAC': 'MDA SAC',
-        'Continue WASH, MDA PSAC': 'MDA PSAC',
+        'Continue WASH, MDA PSAC+SAC': 'MDA PSAC+SAC',
         'Continue WASH, MDA All': 'MDA All',
         'Scale-up WASH, no MDA': 'WASH only'
     }
     colour_map = {
         'no MDA': '#1b9e77',
         'MDA SAC': '#d95f02',
-        'MDA PSAC': '#7570b3',
+        'MDA PSAC+SAC': '#7570b3',
         'MDA All': '#e7298a',
         'WASH only': '#e6ab02'
     }
@@ -499,7 +499,7 @@ def plot_prevalence_heatmap(df, year=2050, threshold=1.5, filename=None):
 
     # Define desired orders (phases reduced to just 'Continue')
     phase_order = ['Continue']
-    mda_order = ['no MDA', 'MDA SAC', 'MDA PSAC', 'MDA All']
+    mda_order = ['no MDA', 'MDA SAC', 'MDA PSAC+SAC', 'MDA All']
 
     # Sorting helper
     col_df = pd.DataFrame({'phase': phase_labels, 'mda': mda_labels, 'orig': draw_labels})
@@ -594,6 +594,110 @@ prev_mansoni_HML_All_district = pd.read_excel(path2, index_col=[0, 1])  # assumi
 
 plot_prevalence_heatmap(prev_haem_HML_All_district, year=2050, threshold=0.01, filename='prev_haem_HML_district2050.png')
 plot_prevalence_heatmap(prev_mansoni_HML_All_district, year=2050, threshold=0.01, filename='prev_mansoni_HML_district2050.png')
+
+
+
+#################################################################################
+# %% PREVALENCE OVER TIME
+#################################################################################
+
+
+file_path = results_folder / 'prev_mansoni_national_summary 2024-2050.xlsx'
+mansoni_prev = pd.read_excel(file_path)
+
+file_path = results_folder / 'prev_haem_national_summary 2024-2050.xlsx'
+haem_prev = pd.read_excel(file_path)
+
+
+
+
+def plot_combined_prevalence(mansoni_df, haem_df, start_year=2022, xtick_step=2):
+    """
+    Plot combined prevalence for mansoni and haematobium infections (all ages),
+    using flat dataframes with columns:
+    ['Unnamed: 0', 'date', 'draw', 'mean', 'lower_ci', 'upper_ci'].
+    Only plots scenarios where 'draw' contains 'Continue WASH'.
+
+    Parameters
+    ----------
+    mansoni_df : pd.DataFrame
+        Data for S. mansoni.
+    haem_df : pd.DataFrame
+        Data for S. haematobium.
+    start_year : int
+        First year to include in the plots (default=2022).
+    """
+
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(10, 12), sharex=True)
+
+    # Colours by MDA strategy
+    mda_colours = {
+        'no MDA': '#1b9e77',
+        'MDA SAC': '#d95f02',
+        'MDA PSAC+SAC': '#7570b3',
+        'MDA All': '#e7298a'
+    }
+
+    def get_colour(draw):
+        for key in mda_colours:
+            if key in draw:
+                return mda_colours[key]
+        return '#000000'
+
+    # Filter to "Continue WASH" scenarios
+    def filter_continue(df):
+        return df[df["draw"].str.contains("Continue WASH")]
+
+    def plot_on_ax(df, ax, title):
+        df = filter_continue(df)
+        df = df[df["date"] >= start_year]  # restrict by start_year
+        for draw_name in df["draw"].unique():
+            sub = df[df["draw"] == draw_name]
+            ax.plot(sub["date"], sub["mean"],
+                    label=draw_name.replace("Continue WASH, ", ""),
+                    color=get_colour(draw_name), linestyle="-", lw=1.5)
+            ax.fill_between(sub["date"], sub["lower_ci"], sub["upper_ci"],
+                            color=get_colour(draw_name), alpha=0.3)
+        ax.set_title(title)
+        ax.set_ylabel("Prevalence")
+        ax.set_ylim(0, 0.4)
+
+        # Limit ticks
+        years = sorted(df["date"].unique())
+        ax.set_xticks(years[::xtick_step])
+        ax.set_xticklabels(years[::xtick_step])
+
+    # Mansoni
+    plot_on_ax(
+        mansoni_df,
+        axes[0],
+        "Mansoni prevalence"
+    )
+
+    # Haem
+    plot_on_ax(
+        haem_df,
+        axes[1],
+        "Haematobium prevalence"
+    )
+    axes[1].set_xlabel("Year")
+
+    # Legends: only MDA strategies matter now
+    colour_legend = [
+        Line2D([0], [0], color=col, lw=1.5, linestyle="-")
+        for col in mda_colours.values()
+    ]
+    colour_labels = list(mda_colours.keys())
+    axes[0].legend(colour_legend, colour_labels, title="MDA Strategy")
+
+    fig.tight_layout()
+    return fig
+
+
+
+fig = plot_combined_prevalence(mansoni_prev, haem_prev, start_year=2022)
+fig.savefig(make_graph_file_name("prevalence_over_time_all_ages"))
+plt.show()
 
 
 
