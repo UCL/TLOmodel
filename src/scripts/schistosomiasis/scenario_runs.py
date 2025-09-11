@@ -133,7 +133,7 @@ class SchistoScenarios(BaseScenario):
                 ),
 
             # MDA PSAC
-            "Pause WASH, MDA PSAC":
+            "Pause WASH, MDA PSAC+SAC":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.high_coverage_MDA(),
@@ -141,14 +141,14 @@ class SchistoScenarios(BaseScenario):
                     scenario_definitions.pause_WASH(),
                 ),
 
-            "Continue WASH, MDA PSAC":
+            "Continue WASH, MDA PSAC+SAC":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.high_coverage_MDA(),
                     scenario_definitions.expand_MDA_to_PSAC(),
                 ),
 
-            "Scale-up WASH, MDA PSAC":
+            "Scale-up WASH, MDA PSAC+SAC":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.high_coverage_MDA(),
