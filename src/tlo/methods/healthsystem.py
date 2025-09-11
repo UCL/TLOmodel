@@ -996,9 +996,8 @@ class HealthSystem(Module):
 
     def setup_daily_capabilities(self, use_funded_or_actual_staffing):
         """Set up `self._daily_fungible_capabilities` and `self._officers_with_availability`.
-        If include_clinics is True, split the capabilities into fungible and non-fungible and set up `self._daily_clinics_capabilities` and
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
-         and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
+        and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
 
         self._daily_fungible_capabilities, self._daily_fungible_capabilities_per_staff = self.format_daily_capabilities(use_funded_or_actual_staffing)
@@ -1010,28 +1009,34 @@ class HealthSystem(Module):
 
         # If include_clinics is True, then redefine daily_capabilities
         if self.parameters['include_clinics']:
-            ## Get the module column names before formatting as the dataframe will gain additional non-module columns
-            module_cols = self.parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
-            self.parameters['Clinics_Capabilities'] = self.format_clinic_capabilities()
-            updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities_per_staff)
-            ## New capabilities are old_capabilities * fungible
-            updated_capabilities['Mins_Per_Day_Per_Staff'] = updated_capabilities['Fungible'] * updated_capabilities['Mins_Per_Day_Per_Staff']
-            ## Module specific capabilities are total time * non-fungible
-            updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis =  0)
-            ## Store the non-fungible capabilities structured as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
-            self._daily_clinics_capabilities_per_staff = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
-            self._daily_fungible_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
-
-            ## Do the split for _daily_fungible_capabilities
-            updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities)
-            updated_capabilities['Total_Minutes_Per_Day'] = updated_capabilities['Fungible'] * updated_capabilities['Total_Minutes_Per_Day']
-            updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Minutes_Per_Day'], axis =  0)
-            self._daily_clinics_capabilities = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
-            self._daily_fungible_capabilities = updated_capabilities['Total_Minutes_Per_Day']
+            self.adjust_capabilities_for_clinics()
         else:
             self._daily_clinics_capabilities = {}
             self._daily_clinics_capabilities_per_staff = {}
 
+
+    def adjust_capabilities_for_clinics(self):
+        """Adjust the capabilities to account for ringfenced clinics if include_clinics is True.
+        This is done by splitting the capabilities into fungible and non-fungible components as specified in the
+        ResourceFile_Clinics.csv file.
+        """
+        module_cols = self.parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
+        self.parameters['Clinics_Capabilities'] = self.format_clinic_capabilities()
+        updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities_per_staff)
+        ## New capabilities are old_capabilities * fungible
+        updated_capabilities['Mins_Per_Day_Per_Staff'] = updated_capabilities['Fungible'] * updated_capabilities['Mins_Per_Day_Per_Staff']
+        ## Module specific capabilities are total time * non-fungible
+        updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis =  0)
+        ## Store the non-fungible capabilities structured as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
+        self._daily_clinics_capabilities_per_staff = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
+        self._daily_fungible_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
+
+        ## Do the split for _daily_fungible_capabilities
+        updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities)
+        updated_capabilities['Total_Minutes_Per_Day'] = updated_capabilities['Fungible'] * updated_capabilities['Total_Minutes_Per_Day']
+        updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Minutes_Per_Day'], axis =  0)
+        self._daily_clinics_capabilities = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
+        self._daily_fungible_capabilities = updated_capabilities['Total_Minutes_Per_Day']
 
 
     def get_clinic_eligibility(self, name):
