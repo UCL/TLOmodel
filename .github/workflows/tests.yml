@@ -81,7 +81,7 @@ jobs:
           tox -v -e py311 -- pytest --show-capture=no -vv "${{ matrix.file }}" --junit-xml="${{ matrix.file }}.results.xml"
       - name: Generate test report
         if: always()
-        uses: pmeier/pytest-results-action@fc6576eced1f411ea48ab10e917d9cfce2960e29
+        uses: pmeier/pytest-results-action@20b595761ba9bf89e115e875f8bc863f913bc8ad
         with:
           path: ${{ matrix.file }}.results.xml
           summary: true
