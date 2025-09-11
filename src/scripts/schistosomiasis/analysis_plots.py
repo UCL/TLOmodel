@@ -715,10 +715,10 @@ def plot_icer_three_panels(df, context="Continue_WASH"):
     # Filter for the specified WASH context
     df_filtered = df[df['wash_strategy'].str.contains(context, na=False)]
 
-    categories = ['MDA SAC', 'MDA PSAC', 'MDA All']
+    categories = ['MDA SAC', 'MDA PSAC+SAC', 'MDA All']
     titles = {
         'MDA SAC': f'{context} MDA SAC',
-        'MDA PSAC': 'MDA PSAC',
+        'MDA PSAC+SAC': 'MDA PSAC+SAC',
         'MDA All': 'MDA All'
     }
 
@@ -784,7 +784,7 @@ def plot_icer_three_panels(df, context="Continue_WASH"):
     plt.show()
 
 
-file_path = results_folder / f'icer_district_cons_only_2024-2040.xlsx'
+file_path = results_folder / f'icer_district_cons_only_2024-2050.xlsx'
 icer_district_df = pd.read_excel(file_path)
 icer_district_df['draw'] = icer_district_df['comparison'].str.extract(r'^(.*?)\s+vs')
 
@@ -897,13 +897,29 @@ plot_icer_three_panels(icer_district_df, context='Scale-up WASH')
 #
 
 
+file_path = results_folder / f'sum_incremental_dalys_averted_district2024-2050.xlsx'
+dalys_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
+
+file_path = results_folder / f'sum_incremental_full_costs_incurred_district2024-2050.xlsx'
+full_costs_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
+full_costs_district_df.columns = full_costs_district_df.columns.droplevel(2)
+
+file_path = results_folder / f'sum_incremental_cons_costs_incurred_district2024-2050.xlsx'
+cons_costs_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
+cons_costs_district_df.columns = cons_costs_district_df.columns.droplevel(2)
+
+
+
+
 def plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df: pd.DataFrame,
     costs_district_df: pd.DataFrame,
     wash_strategy: str,
     comparison: str,
     plot_summary: bool = True,
-    thresholds: list[float] = [500.0]
+    thresholds: list[float] = [500.0],
+    scale_x=0.5,
+    scale_y=0.5,
 ):
     """
     Plot DALYs averted (x-axis) vs incremental costs (y-axis) by district
@@ -959,8 +975,8 @@ def plot_dalys_vs_costs_by_district_with_thresholds(
         # Axis limits
         x_min, x_max = mean_dalys.min(), mean_dalys.max()
         y_min, y_max = mean_costs.min(), mean_costs.max()
-        x_pad = 0.5 * (x_max - x_min) if x_max > x_min else 1
-        y_pad = 0.5 * (y_max - y_min) if y_max > y_min else 1
+        x_pad = scale_x * (x_max - x_min) if x_max > x_min else 1
+        y_pad = scale_y * (y_max - y_min) if y_max > y_min else 1
         x_lims = (x_min - x_pad, x_max + x_pad)
         y_lims = (y_min - y_pad, y_max + y_pad)
 
@@ -1013,8 +1029,8 @@ def plot_dalys_vs_costs_by_district_with_thresholds(
         # Axis limits
         x_min, x_max = mean_dalys.min(), mean_dalys.max()
         y_min, y_max = mean_costs.min(), mean_costs.max()
-        x_pad = 0.1 * (x_max - x_min) if x_max > x_min else 1
-        y_pad = 0.5 * (y_max - y_min) if y_max > y_min else 1
+        x_pad = scale_x * (x_max - x_min) if x_max > x_min else 1
+        y_pad = scale_y * (y_max - y_min) if y_max > y_min else 1
         x_lims = (x_min - x_pad, x_max + x_pad)
         y_lims = (y_min - y_pad, y_max + y_pad)
         plt.xlim(x_lims)
@@ -1043,16 +1059,8 @@ def plot_dalys_vs_costs_by_district_with_thresholds(
 
 
 
-file_path = results_folder / f'sum_incremental_dalys_averted_district2024-2040.xlsx'
-dalys_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
 
-file_path = results_folder / f'sum_incremental_full_costs_incurred_district2024-2040.xlsx'
-full_costs_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
-full_costs_district_df.columns = full_costs_district_df.columns.droplevel(2)
 
-file_path = results_folder / f'sum_incremental_cons_costs_incurred_district2024-2040.xlsx'
-cons_costs_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
-cons_costs_district_df.columns = cons_costs_district_df.columns.droplevel(2)
 
 plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
@@ -1060,58 +1068,73 @@ plot_dalys_vs_costs_by_district_with_thresholds(
     wash_strategy='Continue WASH',
     comparison='MDA SAC vs no MDA',
     plot_summary=True,
-    thresholds=[4,5,6,7,8,9,10]
+    thresholds=[5,10,20,50,61],
+    scale_x=1.5,
+    scale_y=1.5,
 )
+
 
 
 plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
     costs_district_df=full_costs_district_df,
     wash_strategy='Continue WASH',
-    comparison='MDA PSAC vs MDA SAC',
+    comparison='MDA PSAC+SAC vs MDA SAC',
     plot_summary=True,
-    thresholds=[4,5,6,7,8,9,10]
+    thresholds=[5,10,20,50,61,1000],
+    scale_x=1.5,
+    scale_y=1.5,
 )
+
+
+
 
 plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
     costs_district_df=full_costs_district_df,
     wash_strategy='Continue WASH',
-    comparison='MDA All vs MDA PSAC',
+    comparison='MDA All vs MDA PSAC+SAC',
     plot_summary=True,
-    thresholds=[4,5,6,7,8,9,10]
+    thresholds=[5,10,20,50,61,1000],
 )
 
 
 
 
 # cons only
-plot_dalys_vs_costs_by_district(
+plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
     costs_district_df=cons_costs_district_df,
     wash_strategy='Continue WASH',
     comparison='MDA SAC vs no MDA',
     plot_summary=True,
-    threshold=120
-)
+    thresholds=[1,2,3,4,5],
+    scale_x=0.2,
+    scale_y=0.4,)
 
-plot_dalys_vs_costs_by_district(
+
+
+plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
     costs_district_df=cons_costs_district_df,
     wash_strategy='Continue WASH',
-    comparison='MDA PSAC vs MDA SAC',
+    comparison='MDA PSAC+SAC vs MDA SAC',
     plot_summary=True,
-    threshold=120
-)
+    thresholds=[5,10,20,50,61],
+    scale_x=0.5,
+    scale_y=0.5,)
 
-plot_dalys_vs_costs_by_district(
+
+
+plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
     costs_district_df=cons_costs_district_df,
     wash_strategy='Continue WASH',
-    comparison='MDA All vs MDA PSAC',
+    comparison='MDA All vs MDA PSAC+SAC',
     plot_summary=True,
-    threshold=120
-)
+    thresholds=[5,10,20,50,61],
+    scale_x=0.5,
+    scale_y=0.5,)
 
 
 
