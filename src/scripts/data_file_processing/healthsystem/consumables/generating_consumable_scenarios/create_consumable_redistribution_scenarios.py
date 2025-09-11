@@ -9,7 +9,8 @@ import pandas as pd
 from typing import Literal, Optional, Dict, Tuple
 import requests
 
-from pulp import LpProblem, LpMaximize, LpVariable, LpBinary, LpStatus, value, lpSum, LpContinuous
+from pulp import LpProblem, LpMaximize, LpVariable, LpBinary, LpStatus, value, lpSum, LpContinuous, PULP_CBC_CMD
+
 
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -331,51 +332,93 @@ def redistribute_radius_lp(
 
     # iterate per (district, month, item)
     group_cols = list(id_cols)
+    EPS = 1e-9
+    EPS_AMC = 1e-6
+
     for (d, m, i), g in df.groupby(group_cols):
         # facilities in this slice
         g = g.copy()
-        facs = g[facility_col].tolist()
 
+        # ---------- (1) Select the correct time matrix for this district / slice ----------
+        if isinstance(time_matrix, dict):
+            T_d = time_matrix.get(d)
+            if T_d is None or T_d.empty:
+                continue
+        else:
+            T_d = time_matrix
+
+        # facilities present in this slice AND in the matrix index/cols
+        slice_facs = g[facility_col].dropna().unique().tolist()
+        present = [f for f in slice_facs if (f in  T_d.index and f in T_d.columns)]
+        if len(present) < 2:
+            continue
+
+        # subset and sanitize travel-times (NaN -> inf)
+        # This is to make sure that the redistribution LP is run only for those pairs for which a travel time could be calculated
+        T_sub = T_d.loc[present, present].replace(np.nan, np.inf)
+
+        # ---------- (2) Clean inputs (AMC, OB) ----------
         # build per-fac arrays
-        AMC = g.set_index(facility_col)[amc_col].astype(float)
-        OB0 = g.set_index(facility_col)["OB"].astype(float)
+        AMC = (g.set_index(facility_col)[amc_col]
+               .astype(float)
+               .replace([np.inf, -np.inf], np.nan)
+               .fillna(0.0))
+        AMC[AMC <= 0.0] = EPS_AMC  # avoid zero AMC
 
+        OB0 = (g.set_index(facility_col)["OB"]
+               .astype(float)
+               .replace([np.inf, -np.inf], np.nan)
+               .fillna(0.0))
+
+        # keep only present facilities
+        AMC = AMC.reindex(present).fillna(EPS_AMC)
+        OB0 = OB0.reindex(present).fillna(0.0)
+
+        # ---------- (3) Surplus/deficit with finite guards ----------
         # donor surplus cap and receiver deficit
         surplus_cap = alpha * np.maximum(0.0, OB0.values - tau_keep * AMC.values)
-        deficit     = np.maximum(0.0, tau_tar * AMC.values - OB0.values)
-        donors_mask = surplus_cap > 1e-9 # boolean vector marking facilities that actually have positive surplus
-        recv_mask   = deficit > 1e-9 # boolean vector marking facilities that actually have a real need (deficit > 0).
+        deficit = np.maximum(0.0, tau_tar * AMC.values - OB0.values)
+        surplus_cap = np.where(np.isfinite(surplus_cap), surplus_cap, 0.0)
+        deficit = np.where(np.isfinite(deficit), deficit, 0.0)
 
+        donors_mask = surplus_cap > EPS
+        recv_mask = deficit > EPS
         if not donors_mask.any() or not recv_mask.any():
-            # nothing to do for this slice
             continue
 
         donors = list(AMC.index[donors_mask])
         receivers = list(AMC.index[recv_mask])
 
-        # Feasible edges within radius
-        #feasible = build_edges_within_radius(time_matrix.loc[donors + receivers, donors + receivers], radius_minutes)
-        T_d = time_matrix[d]  # time_matrix is dict {district -> DataFrame}
-
-        # 2) limit to only facilities present in this slice
-        slice_facs = g[facility_col].unique().tolist()
-        T_d = T_d.loc[slice_facs, slice_facs]
-
-        # 3) build feasible edges for this radius
-        feasible = {}
-        for g_fac in T_d.index:
-            feas_mask = (T_d.loc[g_fac].to_numpy() <= radius_minutes) & np.isfinite(T_d.loc[g_fac].to_numpy())
-            feasible[g_fac] = set(T_d.columns[feas_mask]) - {g_fac}
-
-        # Minimum lot (units) for each receiver depends on its AMC
-        AMC_map = AMC.to_dict()
-        Qmin_units = {f: Qmin_days * max(1e-9, AMC_map[f]) for f in receivers}
-
-        # Big-M per edge: cannot exceed receiver deficit
-        deficit_map = dict(zip(AMC.index, deficit)) # creates a dict with key = facility and value = deficit
-        # this is the upper bound for how much a facility can receive
-        smax_map = dict(zip(AMC.index, surplus_cap)) # creates a dict with key = facility and value = donatable surplus
+        smax_map = {fac: float(x) for fac, x in zip(AMC.index, surplus_cap)} # creates a dict with key = facility and value = donatable surplus
         # this is the upper bound for how much a facility can donate
+        deficit_map = {fac: float(x) for fac, x in zip(AMC.index, deficit)} # creates a dict with key = facility and value = deficit
+        # this is the upper bound for how much a facility can receive
+
+        # ---------- (4) Build feasible edges within radius (finite & <= radius) ----------
+        feasible = {}
+        for g_fac in present:
+            row = T_sub.loc[g_fac].to_numpy()
+            mask = (row <= radius_minutes) & np.isfinite(row)
+            feas = set(T_sub.columns[mask]) - {g_fac}
+            feasible[g_fac] = feas
+
+        # ---------- (5) Edge set with tight M_edge and min-lot per receiver ----------
+        Qmin_units = {f: float(max(Qmin_days * AMC[f], 0.0)) for f in present}
+        M_edge = {}
+        for g_fac in donors:
+            smax = smax_map.get(g_fac, 0.0)
+            if smax <= EPS:
+                continue
+            for f_fac in feasible.get(g_fac, set()):
+                if f_fac not in receivers:
+                    continue
+                h = deficit_map.get(f_fac, 0.0)
+                M = min(h, smax)
+                if np.isfinite(M) and M > EPS:
+                    M_edge[(g_fac, f_fac)] = M
+
+        if not M_edge:
+            continue  # nothing feasible to move
 
         # Build MILP
         prob = LpProblem(f"Redistribution_{d}_{m}_{i}", LpMaximize)
@@ -383,134 +426,215 @@ def redistribute_radius_lp(
         # Variables
         t = {}   # transfer amounts per (g,f): continuous >=0
         y = {}   # edge-activation binaries
+        for (g_fac, f_fac), M in M_edge.items():
+            t[(g_fac, f_fac)] = LpVariable(f"t_{g_fac}->{f_fac}", lowBound=0, upBound=M, cat=LpContinuous)
+            y[(g_fac, f_fac)] = LpVariable(f"y_{g_fac}->{f_fac}", lowBound=0, upBound=1, cat=LpBinary)
 
-        for g_fac in donors:
-            for f_fac in feasible.get(g_fac, set()):
-                if f_fac in receivers:
-                    t[(g_fac, f_fac)] = LpVariable(f"t_{g_fac}->{f_fac}", lowBound=0, cat=LpContinuous)
-                    y[(g_fac, f_fac)] = LpVariable(f"y_{g_fac}->{f_fac}", lowBound=0, upBound=1, cat=LpBinary)
-
-        # Objective: maximize total shipped (sum of t)
+        # objective: maximize total shipped (proxy for availability gain)
         prob += lpSum(t.values())
 
-        # Donor outflow caps
+        # donor outflow caps
         for g_fac in donors:
-            prob += lpSum(t[(g_fac, f_fac)] for f_fac in receivers if (g_fac, f_fac) in t) <= smax_map[g_fac]
+            prob += lpSum(t[(g_fac, f_fac)] for f_fac in receivers if (g_fac, f_fac) in t) <= smax_map.get(g_fac, 0.0)
 
-        # Receiver inflow caps
+        # receiver inflow caps
         for f_fac in receivers:
-            prob += lpSum(t[(g_fac, f_fac)] for g_fac in donors if (g_fac, f_fac) in t) <= deficit_map[f_fac]
+            prob += lpSum(t[(g_fac, f_fac)] for g_fac in donors if (g_fac, f_fac) in t) <= deficit_map.get(f_fac, 0.0)
 
-        # Edge linking + minimum lot size + K_in/K_out
-        for (g_fac, f_fac), var in t.items():
-            M = deficit_map[f_fac]
-            prob += var <= M * y[(g_fac, f_fac)]
-            # minimum lot only makes sense if the edge is used at all; also don't force Qmin to exceed deficit
-            prob += var >= min(Qmin_units[f_fac], deficit_map[f_fac]) * y[(g_fac, f_fac)]
+        # link t and y; enforce min-lot clipped by edge capacity
+        for (g_fac, f_fac), M in M_edge.items():
+            prob += t[(g_fac, f_fac)] <= M * y[(g_fac, f_fac)]
+            qmin = min(Qmin_units.get(f_fac, 0.0), M)
+            # if qmin is basically zero, don't force a min lot
+            if qmin > EPS:
+                prob += t[(g_fac, f_fac)] >= qmin * y[(g_fac, f_fac)]
 
-        # Max donors per receiver
+        # cardinality limits
         for f_fac in receivers:
             prob += lpSum(y[(g_fac, f_fac)] for g_fac in donors if (g_fac, f_fac) in y) <= K_in
-
-        # Max receivers per donor
         for g_fac in donors:
             prob += lpSum(y[(g_fac, f_fac)] for f_fac in receivers if (g_fac, f_fac) in y) <= K_out
 
-        # Solve (default solver)
-        prob.solve()
+        # solve
+        prob.solve(PULP_CBC_CMD(msg=False, cuts=0, presolve=True, threads=1))
 
-        # Apply transfers to OB'
-        if LpStatus[prob.status] not in ("Optimal","Optimal Infeasible","Not Solved"):
-            # If not solved (rare), skip changes
+        if LpStatus[prob.status] not in ("Optimal", "Optimal Infeasible", "Not Solved"):
             continue
 
-        # net change per facility
-        delta = {fac: 0.0 for fac in facs}
+        # ---------- (7) Apply transfers to OB' ----------
+        delta = {fac: 0.0 for fac in present}
         for (g_fac, f_fac), var in t.items():
-            moved = value(var) or 0.0
-            delta[g_fac] -= moved
-            delta[f_fac] += moved
+            moved = float(value(var) or 0.0)
+            if moved:
+                delta[g_fac] -= moved
+                delta[f_fac] += moved
 
-        # write back OB'
         sel = (df["district"].eq(d) & df["month"].eq(m) & df["item_code"].eq(i))
         df.loc[sel, "OB_prime"] = df.loc[sel].apply(
-            lambda r: r["OB"] + delta.get(r[facility_col], 0.0), axis=1
+            lambda r: (r["OB"] + delta.get(r[facility_col], 0.0)), axis=1
         )
 
-    # Mechanistic availability after redistribution
-    df["available_prop_redis"] = np.minimum(1.0, np.maximum(0.0, df["OB_prime"] / np.maximum(1e-9, df[amc_col])))
+        print(d, m, i,
+              "donors:", len(donors),
+              "receivers:", len(receivers),
+              "edges:", len(M_edge))
+
+    # ---------- (8) Mechanistic availability after redistribution ----------
+    df["available_prop_redis"] = np.minimum(1.0, np.maximum(0.0, df["OB_prime"] / np.maximum(EPS_AMC,
+                                                                                             df[amc_col].astype(
+                                                                                                 float).values)))
     return df
 
 def redistribute_pooling_lp(
     df: pd.DataFrame,
-    tau_min: float = 0.25,   # optional lower floor (this is the same as 7 days Q_min)
-    tau_max: float = 3.0,    # storage/USAID style max
+    tau_min: float = 0.25,   # lower floor in "months of demand" (≈ 7–8 days)
+    tau_max: float = 3.0,    # upper ceiling (storage/policy max)
     id_cols=("district","month","item_code"),
     facility_col="fac_name",
     amc_col="amc",
     close_cols=("closing_bal","received","dispensed"),
+    keep_baseline_for_amc0: bool = True,   # leave baseline availability where AMC≈0
+    amc_eps: float = 1e-6                  # threshold to treat AMC as "zero"
 ) -> pd.DataFrame:
     """
-    Scenario 3: district-level pooling/push. Linear program maximizing total presumed availability.
-
-    We linearize p = min(1, x/AMC) by introducing p_f in [0,1] with constraint AMC_f * p_f <= x_f.
-
-    Returns df with 'available_prop_redis' updated for the pooling scenario.
+    Scenario 3: district-level pooling/push (robust).
+    Maximizes total availability with:
+      - NaN/inf guards on AMC/OB
+      - duplicate facility IDs collapsed within group
+      - floors scaled if total stock < sum floors
+      - optional 'excess' sink if total stock > sum ceilings
+      - availability computed safely; AMC≈0 rows keep baseline (optional)
     """
     closing_bal, received, dispensed = close_cols
-    df = df.copy()
-    df["OB"] = compute_opening_balance(df)
+    out = df.copy()
 
-    df["OB_prime"] = df["OB"]
+    # Safe opening balance
+    out["OB"] = (
+        out[closing_bal].astype(float)
+        - out[received].astype(float)
+        + out[dispensed].astype(float)
+    ).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+
+    # Default (will overwrite per group)
+    out["OB_prime"] = out["OB"]
 
     group_cols = list(id_cols)
-    for (d, m, i), g in df.groupby(group_cols):
-        g = g.copy()
-        facs = g[facility_col].tolist()
-        AMC = g.set_index(facility_col)[amc_col].astype(float)
-        OB0 = g.set_index(facility_col)["OB"].astype(float)
 
+    for (d, m, i), g in out.groupby(group_cols, sort=False):
+        g = g.copy()
+
+        # Clean AMC/OB and collapse duplicate facilities (unique index is required)
+        AMC = (g.set_index(facility_col)[amc_col]
+                 .astype(float)
+                 .replace([np.inf, -np.inf], np.nan)
+                 .fillna(0.0))
+        OB0 = (g.set_index(facility_col)["OB"]
+                 .astype(float)
+                 .replace([np.inf, -np.inf], np.nan)
+                 .fillna(0.0))
+
+        if AMC.index.duplicated().any():
+            AMC = AMC.groupby(level=0).first()
+        if OB0.index.duplicated().any():
+            OB0 = OB0.groupby(level=0).sum()
+
+        facs_all = AMC.index.tolist()
         total_stock = float(OB0.sum())
         if total_stock <= 1e-9:
-            # nothing to allocate
             continue
 
-        # LP
+        # Positive-demand decision set
+        mask_pos = AMC >= amc_eps
+        facs_pos = AMC.index[mask_pos].tolist()
+        if len(facs_pos) == 0:
+            # No demand nodes to allocate to; leave OB as-is (or zero them if you prefer)
+            continue
+
+        AMC_pos = AMC.loc[facs_pos]
+        # Floors/ceilings
+        lb = (tau_min * AMC_pos).astype(float)
+        ub = (tau_max * AMC_pos).astype(float)
+
+        sum_lb = float(lb.sum())
+        sum_ub = float(ub.sum())
+
+        # Feasibility: scale floors if not enough stock
+        if total_stock + 1e-9 < sum_lb:
+            scale = max(1e-9, total_stock / max(1e-9, sum_lb))
+            lb = lb * scale
+            sum_lb = float(lb.sum())
+
+        # If stock exceeds ceilings, allow an excess sink to absorb leftovers
+        allow_excess_sink = total_stock > sum_ub + 1e-9
+
+        # ---------- LP ----------
         prob = LpProblem(f"Pooling_{d}_{m}_{i}", LpMaximize)
 
-        # Decision vars
-        x = {f: LpVariable(f"x_{f}", lowBound=0) for f in facs}      # allocated opening stock
-        p = {f: LpVariable(f"p_{f}", lowBound=0, upBound=1) for f in facs}  # availability
+        # Decision variables
+        x = {f: LpVariable(f"x_{f}", lowBound=0) for f in facs_pos}      # allocation
+        p = {f: LpVariable(f"p_{f}", lowBound=0, upBound=1) for f in facs_pos}  # availability
 
-        # Objective: maximize sum p_f (optionally weight by item importance)
+        excess = LpVariable("excess", lowBound=0) if allow_excess_sink else None
+
+        # Objective: maximize total availability
         prob += lpSum(p.values())
 
         # Conservation
-        prob += lpSum(x.values()) == total_stock
+        if excess is None:
+            prob += lpSum(x.values()) == total_stock
+        else:
+            prob += lpSum(x.values()) + excess == total_stock
 
-        # Guardrails (optional)
-        for f in facs:
-            prob += x[f] >= tau_min * AMC[f]
-            prob += x[f] <= tau_max * AMC[f]
+        # Floors/ceilings (use scalar values to avoid float(Series) errors)
+        for f in facs_pos:
+            prob += x[f] >= float(lb.loc[f])
+            prob += x[f] <= float(ub.loc[f])
 
-        # Linearization: AMC_f * p_f <= x_f
-        for f in facs:
-            prob += AMC[f] * p[f] <= x[f]
+        # Linearization: AMC_f * p_f <= x_f (only for AMC>=amc_eps)
+        for f in facs_pos:
+            prob += float(AMC_pos.loc[f]) * p[f] <= x[f]
 
+        # Solve
         prob.solve()
-
-        if LpStatus[prob.status] not in ("Optimal","Optimal Infeasible","Not Solved"):
+        if LpStatus[prob.status] != "Optimal":
             continue
 
-        # Write back OB' and p'
-        x_sol = {f: value(var) or 0.0 for f, var in x.items()}
-        # OB' equals allocated x
-        sel = (df["district"].eq(d) & df["month"].eq(m) & df["item_code"].eq(i))
-        df.loc[sel, "OB_prime"] = df.loc[sel].apply(lambda r: x_sol.get(r[facility_col], r["OB"]), axis=1)
+        # Apply solution
+        x_sol = {f: float(value(var) or 0.0) for f, var in x.items()}
 
-    # Mechanistic availability p' = min(1, OB'/AMC)
-    df["available_prop_redis"] = np.minimum(1.0, np.maximum(0.0, df["OB_prime"] / np.maximum(1e-9, df[amc_col])))
-    return df
+        sel = (out["district"].eq(d) & out["month"].eq(m) & out["item_code"].eq(i))
+        # Map allocation to rows with positive demand
+        mask_rows_pos = sel & out[facility_col].isin(facs_pos)
+        out.loc[mask_rows_pos, "OB_prime"] = out.loc[mask_rows_pos, facility_col].map(x_sol).values
+
+        # Rows with AMC<eps donate to the pool; set OB' to 0 (availability handled below)
+        mask_rows_zero = sel & ~out[facility_col].isin(facs_pos)
+        out.loc[mask_rows_zero, "OB_prime"] = 0.0
+
+    # ---------- Availability after redistribution (safe) ----------
+    amc_safe = out[amc_col].astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    pos_mask = amc_safe >= amc_eps
+
+    p_mech = np.zeros(len(out), dtype=float)
+    # Mechanistic availability for positive-demand rows
+    denom = np.maximum(amc_eps, amc_safe[pos_mask].to_numpy())
+    p_mech[pos_mask.values] = np.minimum(1.0, np.maximum(
+        0.0, out.loc[pos_mask, "OB_prime"].to_numpy() / denom
+    ))
+
+    if keep_baseline_for_amc0:
+        # Keep baseline availability where AMC≈0
+        base = (out.loc[~pos_mask, "available_prop"]
+                  .astype(float)
+                  .replace([np.inf, -np.inf], np.nan)
+                  .fillna(0.0)).to_numpy()
+        p_mech[~pos_mask.values] = base
+    else:
+        # Or: 1 if OB'>0 else 0 for AMC≈0 rows
+        p_mech[~pos_mask.values] = (out.loc[~pos_mask, "OB_prime"].to_numpy() > 0.0).astype(float)
+
+    out["available_prop_redis"] = p_mech
+    return out
 
 # ------------------------
 # 4) HIGH-LEVEL DRIVER
@@ -637,7 +761,9 @@ plt.savefig(outputfilepath / "neighbour_count_by_max_travel_time")
 
 #Drop NAs
 # TODO find a more generalisable solution for this issue (within the optimisation functions)
-lmis = lmis[(lmis.amc != 0) & (lmis.amc.notna())]
+#lmis = lmis[(lmis.amc != 0) & (lmis.amc.notna())]
+
+#lmis = lmis[lmis.district == 'Lilongwe']
 
 tlo_30 = run_redistribution_scenarios(
     lmis,
@@ -683,23 +809,27 @@ tlo_availability_df = tlo_availability_df.merge(program_item_mapping,
 tlo_availability_df = tlo_availability_df[~tlo_availability_df[['District', 'Facility_Level', 'month', 'item_code']].duplicated()]
 
 
-comparison_df = tlo_30.merge(tlo_availability_df, left_on = ['district', 'Facility_Level', 'month', 'item_code'],
+comparison_df = tlo_30.rename(columns ={'new_available_prop': 'available_prop_30mins'}).merge(tlo_availability_df, left_on = ['district', 'Facility_Level', 'month', 'item_code'],
                              right_on = ['District', 'Facility_Level', 'month', 'item_code'], how = 'left', validate = "1:1")
-comparison_df = comparison_df.merge(tlo_60, on = ['district', 'Facility_Level', 'month', 'item_code'], how = 'left', validate = "1:1")
-print(comparison_df['new_available_prop_x'].mean(),comparison_df['new_available_prop_y'].mean(),
-comparison_df['available_prop'].mean())
+comparison_df = comparison_df.merge(tlo_60.rename(columns ={'new_available_prop': 'available_prop_60mins'}), on = ['district', 'Facility_Level', 'month', 'item_code'], how = 'left', validate = "1:1")
+comparison_df = comparison_df.merge(tlo_pooling.rename(columns ={'new_available_prop': 'available_prop_pooling'}), on = ['district', 'Facility_Level', 'month', 'item_code'], how = 'left', validate = "1:1")
+print(comparison_df['available_prop'].mean(),comparison_df['available_prop_30mins'].mean(),
+comparison_df['available_prop_60mins'].mean(), comparison_df['available_prop_pooling'].mean())
 
-comparison_df['new_available_prop_x'] = np.maximum(
-    comparison_df['new_available_prop_x'],
+comparison_df['available_prop_30mins'] = np.maximum(
+    comparison_df['available_prop_30mins'],
     comparison_df['available_prop']
 )
-comparison_df['new_available_prop_y'] = np.maximum(
-    comparison_df['new_available_prop_y'],
+comparison_df['available_prop_60mins'] = np.maximum(
+    comparison_df['available_prop_60mins'],
     comparison_df['available_prop']
 )
-
-print(comparison_df['new_available_prop_x'].mean(),comparison_df['new_available_prop_y'].mean(),
-comparison_df['available_prop'].mean())
+comparison_df['available_prop_pooling'] = np.maximum(
+    comparison_df['available_prop_pooling'],
+    comparison_df['available_prop']
+)
+print(comparison_df['available_prop'].mean(),comparison_df['available_prop_30mins'].mean(),
+comparison_df['available_prop_60mins'].mean(), comparison_df['available_prop_pooling'].mean())
 
 # TODO keep only government facilities?
 
