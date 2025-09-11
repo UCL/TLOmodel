@@ -2085,14 +2085,18 @@ def test_mode_2_clinics(seed, tmpdir):
                                                randomise_queue=True,
                                                policy_name="",
                                                use_funded_or_actual_staffing='funded_plus',
-                                               include_clinics=True),
+                                               include_clinics = True
+                                               ),
                      DummyModuleFungible(),
                      DummyModuleNonFungible()
                      )
         sim.make_initial_population(n=tot_population)
         # Assign the entire population to the first district, so that all events are run in the same district
-        sim.population.props['district_of_residence'] = list(sim.population.props['district_of_residence'].cat.categories)[0]
-        breakpoint()
+        col = "district_of_residence"
+        s = sim.population.props[col]
+        ## Not specifying the dtype explicitly here made the col a string rather than a category
+        ## and that caused problems later on.
+        sim.population.props[col] = pd.Series(s.cat.categories[0], index=s.index, dtype=s.dtype)
 
         # healthsystem will query self.parameters['Clinics_Capabilities'] to determine clinic eligibility
         # So we will add a colummn with the dummy module name so that it becomes eligible
@@ -2131,11 +2135,9 @@ def test_mode_2_clinics(seed, tmpdir):
 
         return sim
 
-
-
     tot_population = 100
     sim = create_simulation(tmpdir, tot_population)
-
+    breakpoint()
     # Test that capabilities are split according the proportion.
     ## 50% of capabilities are fungible and 50% non-fungible.
     module_cols = sim.modules['HealthSystem'].parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
@@ -2145,9 +2147,8 @@ def test_mode_2_clinics(seed, tmpdir):
     sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['DummyModuleNonFungible'] = 0.5
     sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['Fungible'] = 0.5
 
-    sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['DummyModuleNonFungible'] = 0.5
-    sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['Fungible'] = 0.5
-    sim.modules['HealthSystem'].setup_daily_capabilities('funded_plus', True)
+
+    sim.modules['HealthSystem'].setup_daily_capabilities('funded_plus')
     fungible = sim.modules['HealthSystem']._daily_fungible_capabilities_per_staff.to_dict()
     nonfungible = sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible']
     nonzero = {k: v for k, v in fungible.items() if v > 0.0}

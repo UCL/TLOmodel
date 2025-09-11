@@ -548,7 +548,7 @@ class HealthSystem(Module):
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
-        path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
+        path_to_resourcefiles_for_healthsystem = resourcefilepath / 'Healthsystem'
 
         # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
@@ -559,28 +559,22 @@ class HealthSystem(Module):
         self.parameters['Master_Facilities_List'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
         # If include_clinics is True, then read in the Resource file that contains the ringfenced clinics
-        self.parameters['Clinics_Capabilities'] = pd.DataFrame()  # Initialise as empty DataFrame
+
+        print(f"HealthSystem: arg_include_clinics is {self.arg_include_clinics}")
+        ## Ensure include_clinicis is setup appropriately - either via resource file or argument
+        self.set_include_clinics()
         if self.parameters['include_clinics']:
+            print("HealthSystem: include_clinics is True, so reading in ResourceFile_Clinics.csv")
             df = pd.read_csv(
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / 'clinics' / 'ResourceFile_Clinics.csv'
             )
-            ## Raise an error if any of the facilities is level 2.
-            all_level2_facilities = self.parameters['Master_Facilities_List'][self.parameters['Master_Facilities_List']['Facility_Level'] == '2']
-            cl_level2_facilities = df[df['Facility_ID'].isin(all_level2_facilities['Facility_ID'])]
-            if not cl_level2_facilities.empty:
-                raise ValueError('Level 2 facilities should not be present in the resource file for clinics. ')
-
-            ## Check that the fractions add to 1 for each row.
-            id_cols = ['Facility_ID', 'Officer_Type_Code']
-            data = df.drop(columns=id_cols)
-            row_sums = data.sum(axis=1)
-            mask = ~np.isclose(row_sums, 1.0, rtol=1e-5, atol=1e-8)
-            if mask.any():
-                raise ValueError(
-                    f"Row(s) {df[mask][id_col].values} in the ringfenced clinics file do not sum to 1.0. "
-                    "Please ensure that the fractions for each appointment type sum to 1.0."
-                )
-            self.parameters['Clinics_Capabilities'] = df
+            print("HealthSystem: Successfully read in ResourceFile_Clinics.csv")
+            self.validate_clinic_capabilities(df)
+            print("HealthSystem: Successfully validated ResourceFile_Clinics.csv")
+            ## If all ok, then update self
+            self.parameters['Clinics_Capabilities']  = df
+        else:
+            self.parameters['Clinics_Capabilities'] = pd.DataFrame()
 
 
         # Load ResourceFiles that define appointment and officer types
@@ -675,6 +669,32 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
+
+    def validate_clinic_capabilities(self, clinic_capabilities_df: pd.DataFrame):
+        """Validate the contents of the clinics capabilities dataframe.
+        :param clinic_capabilities_df: DataFrame read from ResourceFile_Clinics.csv
+        Checks that a) no level 2 facilities are included, and b) that the fractions sum to 1 for each row.
+        Raises ValueError if either of the two checks fails. Note that check on fractions will not be
+        carried out if level 2 facilities are included. That is, users will only get to know about the
+        errors one at a time.
+        """
+        all_level2_facilities = self.parameters['Master_Facilities_List'][self.parameters['Master_Facilities_List']['Facility_Level'] == '2']
+        cl_level2_facilities = clinic_capabilities_df[clinic_capabilities_df['Facility_ID'].isin(all_level2_facilities['Facility_ID'])]
+        if not cl_level2_facilities.empty:
+            raise ValueError('Level 2 facilities should not be present in the resource file for clinics. ')
+
+        ## Check that the fractions add to 1 for each row.
+        id_cols = ['Facility_ID', 'Officer_Type_Code']
+        data = clinic_capabilities_df.drop(columns=id_cols)
+        row_sums = data.sum(axis=1)
+        mask = ~np.isclose(row_sums, 1.0, rtol=1e-5, atol=1e-8)
+        if mask.any():
+            raise ValueError(
+                f"Row(s) {clinic_capabilities_df[mask][id_col].values} in the ringfenced clinics file do not sum to 1.0. "
+                "Please ensure that the fractions for each appointment type sum to 1.0."
+            )
+
+
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
 
@@ -741,8 +761,7 @@ class HealthSystem(Module):
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
 
-        ## Ensure include_clinicis is setup appropriately - either via resource file or argument
-        self.set_include_clinics()
+
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -1009,34 +1028,32 @@ class HealthSystem(Module):
 
         # If include_clinics is True, then redefine daily_capabilities
         if self.parameters['include_clinics']:
-            self.adjust_capabilities_for_clinics()
+            self.adjust_clinics_capabilities()
         else:
             self._daily_clinics_capabilities = {}
             self._daily_clinics_capabilities_per_staff = {}
 
 
-    def adjust_capabilities_for_clinics(self):
+    def adjust_clinics_capabilities(self):
         """Adjust the capabilities to account for ringfenced clinics if include_clinics is True.
         This is done by splitting the capabilities into fungible and non-fungible components as specified in the
         ResourceFile_Clinics.csv file.
         """
-        module_cols = self.parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
+        module_cols = self.modules_eligible_for_clinics
         self.parameters['Clinics_Capabilities'] = self.format_clinic_capabilities()
-        updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities_per_staff)
-        ## New capabilities are old_capabilities * fungible
-        updated_capabilities['Mins_Per_Day_Per_Staff'] = updated_capabilities['Fungible'] * updated_capabilities['Mins_Per_Day_Per_Staff']
-        ## Module specific capabilities are total time * non-fungible
-        updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis =  0)
-        ## Store the non-fungible capabilities structured as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
-        self._daily_clinics_capabilities_per_staff = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
-        self._daily_fungible_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
 
-        ## Do the split for _daily_fungible_capabilities
         updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities)
-        updated_capabilities['Total_Minutes_Per_Day'] = updated_capabilities['Fungible'] * updated_capabilities['Total_Minutes_Per_Day']
+        ## New capabilities are old_capabilities * proportions specified; modules includes fungible
         updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Minutes_Per_Day'], axis =  0)
-        self._daily_clinics_capabilities = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
-        self._daily_fungible_capabilities = updated_capabilities['Total_Minutes_Per_Day']
+        self._daily_clinics_capabilities = updated_capabilities[module_cols].to_dict()
+
+
+        updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities_per_staff)
+        ## New capabilities are old_capabilities * proportions specified; modules includes fungible
+        updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis =  0)
+        self._daily_clinics_capabilities_per_staff = updated_capabilities[module_cols].to_dict()
+
+
 
 
     def get_clinic_eligibility(self, name):
@@ -1046,9 +1063,7 @@ class HealthSystem(Module):
         this implementation is likely to change in the future to break the one-to-one relationship between
         modules and clinics.
         """
-        ## This has the potential to go wrong because self.parameters['Clinics_Capabilities'] has additional columns
-        module_cols = self.parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
-        eligible = name in module_cols
+        eligible = name in self.modules_eligible_for_clinics
 
         if eligible:
             return name
