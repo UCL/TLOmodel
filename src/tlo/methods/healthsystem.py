@@ -1170,7 +1170,7 @@ class HealthSystem(Module):
 
         capabilities_cl = self.parameters['Clinics_Capabilities']
         # Create dataframe containing background information about facility and officer types
-        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
+        facility_ids = set(self._facility_by_facility_id.keys())
         officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
         facs = list()
         officers = list()
