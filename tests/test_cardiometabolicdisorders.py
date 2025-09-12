@@ -140,6 +140,10 @@ def test_basic_run_with_high_incidence_hypertension(seed):
     # other conditions to 0
 
     p['hypertension_onset']["baseline_annual_probability"] = float('inf')
+    for key in p['hypertension_onset'].index:
+        if key.startswith('rr_'):
+            p['hypertension_onset'][key] = 1.0
+
     p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = float('inf')
     p['diabetes_onset'] *= 0.0
     p['chronic_lower_back_pain_onset'] *= 0.0
