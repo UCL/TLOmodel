@@ -2075,7 +2075,7 @@ def test_mode_2_clinics(seed, tmpdir):
                 pass
 
 
-        log_config = {"filename": "log", "directory": tmpdir, "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG}}
+        log_config = {"filename": "log", "directory": tmpdir, "custom_levels": {"tlo.methods.healthsystem": logging.CRITICAL}}
         start_date = Date(2010, 1, 1)
         sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
         sim.register(demography.Demography(),
@@ -2097,11 +2097,6 @@ def test_mode_2_clinics(seed, tmpdir):
         ## Not specifying the dtype explicitly here made the col a string rather than a category
         ## and that caused problems later on.
         sim.population.props[col] = pd.Series(s.cat.categories[0], index=s.index, dtype=s.dtype)
-
-        # healthsystem will query self.parameters['Clinics_Capabilities'] to determine clinic eligibility
-        # So we will add a colummn with the dummy module name so that it becomes eligible
-        sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['DummyModuleNonFungible'] = 0
-
         sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
 
         return sim
@@ -2137,23 +2132,26 @@ def test_mode_2_clinics(seed, tmpdir):
 
     tot_population = 100
     sim = create_simulation(tmpdir, tot_population)
-    breakpoint()
-    # Test that capabilities are split according the proportion.
-    ## 50% of capabilities are fungible and 50% non-fungible.
-    module_cols = sim.modules['HealthSystem'].parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
-    ## Remove extra columns that are not needed for this test
-    sim.modules['HealthSystem'].parameters['Clinics_Capabilities'] = sim.modules['HealthSystem'].parameters['Clinics_Capabilities'].drop(columns=module_cols)
-    # Precise values here are not important, because we will adjust capabilities later.
-    sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['DummyModuleNonFungible'] = 0.5
-    sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['Fungible'] = 0.5
 
-
+    ## Test that capabilities are split according the proportion specified
+    ## 60% of capabilities are fungible and 40% non-fungible.
+    ## Dummy Clinic capabilities
+    sim.modules['HealthSystem'].parameters['Clinics_Capabilities'] = pd.DataFrame([
+        {"Facility_ID": 20.0,
+         "Officer_Type_Code": "DCSA",
+         "Fungible": 0.6,
+         'DummyModuleNonFungible': 0.4}
+    ])
+    sim.modules['HealthSystem'].modules_eligible_for_clinics = ['Fungible', 'DummyModuleNonFungible']
     sim.modules['HealthSystem'].setup_daily_capabilities('funded_plus')
-    fungible = sim.modules['HealthSystem']._daily_fungible_capabilities_per_staff.to_dict()
+    fungible = sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['Fungible']
     nonfungible = sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible']
+
     nonzero = {k: v for k, v in fungible.items() if v > 0.0}
     ratio = np.array([nonfungible[k] / v for k,v in nonzero.items()])
-    assert all(abs(ratio - [0.5] < 1e-7)), "Fungible capabilities are not split correctly"
+
+    assert all(abs(ratio - [0.4 / 0.6] < 1e-7)), "Fungible capabilities are not split correctly"
+    breakpoint()
 
     # Schedule an identical appointment for all individuals, assigning clinc as follows:
     # half individuals have clinic_eligibility=Fungible and half clinic_eligibility=Hiv

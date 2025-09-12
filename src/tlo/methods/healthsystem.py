@@ -573,9 +573,9 @@ class HealthSystem(Module):
             print("HealthSystem: Successfully validated ResourceFile_Clinics.csv")
             ## If all ok, then update self
             self.parameters['Clinics_Capabilities']  = df
+            self.modules_eligible_for_clinics = df.columns.difference(['Facility_ID', 'Officer_Type_Code'])
         else:
             self.parameters['Clinics_Capabilities'] = pd.DataFrame()
-
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
@@ -1025,7 +1025,6 @@ class HealthSystem(Module):
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
         self._officers_with_availability = set(self._daily_fungible_capabilities.index[self._daily_fungible_capabilities > 0])
-
         # If include_clinics is True, then redefine daily_capabilities
         if self.parameters['include_clinics']:
             self.adjust_clinics_capabilities()
@@ -1044,6 +1043,7 @@ class HealthSystem(Module):
 
         updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities)
         ## New capabilities are old_capabilities * proportions specified; modules includes fungible
+
         updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Minutes_Per_Day'], axis =  0)
         self._daily_clinics_capabilities = updated_capabilities[module_cols].to_dict()
 
