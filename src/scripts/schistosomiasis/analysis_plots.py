@@ -5,6 +5,7 @@ import datetime
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
 from matplotlib.patches import Patch
+import ast
 
 import pandas as pd
 # import lacroix
@@ -34,13 +35,6 @@ from tlo.analysis.utils import (
     make_age_grp_types,
     unflatten_flattened_multi_index_in_logging,
 )
-
-from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
-                                             summarize_cost_data,
-                                             do_stacked_bar_plot_of_cost_by_category,
-                                             do_line_plot_of_cost,
-                                             create_summary_treemap_by_cost_subgroup,
-                                             estimate_projected_health_spending)
 
 resourcefilepath = Path("./resources")
 
@@ -264,7 +258,7 @@ def plot_pc_py_averted_ci(df, draw_order, xlabel_labels=None, ylabel=None, ylim=
 
     # Define plotting and legend order
     ordered_age_groups = ['Infants+PSAC', 'SAC', 'Adults']
-    legend_labels = ['PSAC+SAC', 'SAC', 'Adults']
+    legend_labels = ['PSAC', 'SAC', 'Adults']
 
     palette = sns.color_palette("Set2", len(ordered_age_groups))
     stagger = np.linspace(-0.2, 0.2, len(ordered_age_groups))
@@ -797,105 +791,6 @@ plot_icer_three_panels(icer_district_df, context='Scale-up WASH')
 # %% PLOTS DALYS VS COSTS
 #################################################################################
 
-#
-# def plot_dalys_vs_costs_by_district(
-#     dalys_district_df: pd.DataFrame,
-#     costs_district_df: pd.DataFrame,
-#     wash_strategy: str,
-#     comparison: str,
-#     plot_summary: bool = True,
-#     threshold: float = 500.0
-# ):
-#     """
-#     Plot DALYs averted (x-axis) vs incremental costs (y-axis) by district
-#     for a specified WASH strategy and comparison. Points are coloured by
-#     cost-effectiveness based on a threshold ICER.
-#     """
-#     try:
-#         dalys_sub = dalys_district_df.xs(wash_strategy, axis=1, level='wash_strategy')[comparison]
-#         costs_sub = costs_district_df.xs(wash_strategy, axis=1, level='wash_strategy')[comparison]
-#     except KeyError as e:
-#         raise KeyError(f"Specified key not found in DataFrame columns: {e}")
-#
-#     districts = dalys_sub.index
-#     plt.figure(figsize=(10, 8))
-#
-#     if plot_summary:
-#         mean_dalys = dalys_sub.mean(axis=1)
-#         se_dalys = dalys_sub.std(axis=1, ddof=1) / np.sqrt(dalys_sub.shape[1])
-#         ci_dalys = 1.96 * se_dalys
-#
-#         mean_costs = costs_sub.mean(axis=1)
-#         se_costs = costs_sub.std(axis=1, ddof=1) / np.sqrt(costs_sub.shape[1])
-#         ci_costs = 1.96 * se_costs
-#
-#         icers = mean_costs / mean_dalys
-#         cost_effective = icers < threshold
-#
-#         for district in districts:
-#             colour = 'blue' if cost_effective[district] else 'red'
-#             plt.errorbar(
-#                 mean_dalys[district], mean_costs[district],
-#                 xerr=ci_dalys[district], yerr=ci_costs[district],
-#                 fmt='o', capsize=5, markersize=6,
-#                 ecolor='grey', elinewidth=1.5,
-#                 markerfacecolor=colour, markeredgecolor='black'
-#             )
-#             plt.text(mean_dalys[district], mean_costs[district], district,
-#                      fontsize=9, alpha=0.8, ha='right', va='bottom')
-#
-#         # Axis range padding
-#         x_min, x_max = mean_dalys.min(), mean_dalys.max()
-#         y_min, y_max = mean_costs.min(), mean_costs.max()
-#         x_pad = 0.1 * (x_max - x_min) if x_max > x_min else 1
-#         y_pad = 0.1 * (y_max - y_min) if y_max > y_min else 1
-#         plt.xlim(x_min - x_pad, x_max + x_pad)
-#         plt.ylim(y_min - y_pad, y_max + y_pad)
-#
-#         # ICER threshold line: cost = threshold × DALY
-#         x_line = np.linspace(*plt.xlim(), 100)
-#         y_line = threshold * x_line
-#         plt.plot(x_line, y_line, linestyle='--', color='grey', label=f"ICER = ${threshold:.0f}/DALY")
-#         plt.legend(loc='best')
-#
-#     else:
-#         num_runs = dalys_sub.shape[1]
-#         colours = plt.cm.viridis(np.linspace(0, 1, num_runs))
-#
-#         for run_idx in range(num_runs):
-#             plt.scatter(
-#                 dalys_sub.iloc[:, run_idx],
-#                 costs_sub.iloc[:, run_idx],
-#                 label=f'Run {run_idx + 1}',
-#                 color=colours[run_idx],
-#                 alpha=0.7,
-#                 s=40,
-#                 edgecolors='none'
-#             )
-#
-#         mean_dalys = dalys_sub.mean(axis=1)
-#         mean_costs = costs_sub.mean(axis=1)
-#         for district, x, y in zip(districts, mean_dalys, mean_costs):
-#             plt.text(x, y, district, fontsize=9, alpha=0.8,
-#                      horizontalalignment='right', verticalalignment='bottom')
-#
-#         x_min, x_max = dalys_sub.values.min(), dalys_sub.values.max()
-#         y_min, y_max = costs_sub.values.min(), costs_sub.values.max()
-#         x_pad = 0.1 * (x_max - x_min) if x_max > x_min else 1
-#         y_pad = 0.1 * (y_max - y_min) if y_max > y_min else 1
-#         plt.xlim(x_min - x_pad, x_max + x_pad)
-#         plt.ylim(y_min - y_pad, y_max + y_pad)
-#
-#     plt.xlabel('DALYs Averted')
-#     plt.ylabel('Incremental Costs (USD)')
-#     # plt.title(f'Incremental Costs vs DALYs Averted by District\nStrategy: {wash_strategy} | Comparison: {comparison}')
-#     plt.title(f'{comparison}')
-#     plt.grid(True, linestyle='--', alpha=0.5)
-#
-#     plt.tight_layout()
-#     plt.show()
-#
-
 
 file_path = results_folder / f'sum_incremental_dalys_averted_district2024-2050.xlsx'
 dalys_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
@@ -1143,352 +1038,527 @@ plot_dalys_vs_costs_by_district_with_thresholds(
 # %% KAPLAN-MEIER time to elimination
 #################################################################################
 
-# for the main plot, Continue only and plot both species together
+
+path = Path(results_folder) / "prev_haem_H_year_district 2024-2050.xlsx"
+
+prev_haem_H_All_district = pd.read_excel(
+    path,
+    index_col=[0, 1],
+    header=[0, 1]  # explicitly tell pandas the first two rows are headers
+)
+prev_haem_H_All_district.columns.names = ["draw", "run"]
+
+
+path2 = Path(results_folder) / "prev_mansoni_H_year_district 2024-2050.xlsx"
+
+prev_mansoni_H_All_district = pd.read_excel(
+    path2,
+    index_col=[0, 1],
+    header=[0, 1]  # explicitly tell pandas the first two rows are headers
+)
+prev_mansoni_H_All_district.columns.names = ["draw", "run"]
+
+
+
+path3 = Path(results_folder) / "prev_haem_HML_All_district 2024-2050.xlsx"
+
+prev_haem_HML_All_district = pd.read_excel(
+    path3,
+    index_col=[0, 1],
+    header=[0, 1]  # explicitly tell pandas the first two rows are headers
+)
+prev_haem_HML_All_district.columns.names = ["draw", "run"]
+
+
+path4 = Path(results_folder) / "prev_mansoni_HML_All_district 2024-2050.xlsx"
+
+prev_mansoni_HML_All_district = pd.read_excel(
+    path4,
+    index_col=[0, 1],
+    header=[0, 1]  # explicitly tell pandas the first two rows are headers
+)
+prev_mansoni_HML_All_district.columns.names = ["draw", "run"]
+
+
+
+
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
 def plot_ephp_km_continue(
     df: pd.DataFrame,
-    threshold: float = 0.05,
-    year_range: tuple = (2011, 2050),
+    threshold: float = 0.01,
+    year_range: tuple = (2024, 2050),
     alpha: float = 1.0,
     figsize: tuple = (10, 6),
-    species=None
+    species=None,
+    ci: tuple = (0.025, 0.975),   # confidence interval quantiles
 ):
     """
-    Plot Kaplan-Meier style curves in a single panel showing the proportion of districts
-    reaching prevalence < threshold by year, for:
-        - Each MDA strategy under 'Continue WASH'
-        - 'no MDA' under 'Scale-up WASH' as 'WASH only'
+    Plot Kaplan–Meier style curves showing the proportion of districts
+    reaching prevalence < threshold by year, with mean lines and CI bands.
+
+    Rows: MultiIndex (year, district)
+    Columns: MultiIndex (draw, run)
     """
 
     mda_colours = {
-        'no MDA': '#1b9e77',  # Teal
-        'MDA SAC': '#d95f02',  # Orange
-        'MDA PSAC': '#7570b3',  # Purple
-        'MDA All': '#e7298a',  # Pink
-        'WASH only': '#e6ab02'  # Mustard Yellow – distinct from teal
+        'no MDA': '#1b9e77',      # Teal
+        'MDA SAC': '#d95f02',     # Orange
+        'MDA PSAC+SAC': '#7570b3',# Purple
+        'MDA All': '#e7298a',     # Pink
+        'WASH only': '#e6ab02'    # Mustard Yellow
     }
 
-    def extract_mda_label(draw_name: str) -> str:
-        """Extract MDA category for legend from draw name."""
-        mda_labels = ["no MDA", "MDA SAC", "MDA PSAC", "MDA All"]
-        for label in mda_labels:
-            if label in draw_name:
-                return label
-        return "Other"
-
-    df = df.loc[df.index.get_level_values("year") >= year_range[0]]
-
-    # Mean across runs per draw
-    # todo here change to mean with CI bands
-    df_mean_runs = df.groupby(axis=1, level="draw").mean()
-
-    # Identify threshold crossing
-    below = (df_mean_runs < threshold).reset_index()
-    long_format = below.melt(id_vars=["year", "district"], var_name="draw", value_name="below_threshold")
-    below_threshold = long_format[long_format["below_threshold"]]
-
-    # First year reaching threshold by draw
-    first_years = below_threshold.groupby(["district", "draw"])["year"].min().reset_index(name="year_ephp")
-
-    total_districts = df.index.get_level_values("district").nunique()
-
-    # Cumulative count of districts reaching EPHP
-    ephp_counts = (
-        first_years.groupby(["draw", "year_ephp"])
-        .size()
-        .groupby(level=0)
-        .cumsum()
-        .reset_index(name="num_districts")
-    )
-    ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
-    ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
-    ephp_counts.to_excel(
-        results_folder / f'ephp_counts{species}_continue.xlsx')
-
-    # Draws to plot
     draw_labels = {
         'Continue WASH, no MDA': 'no MDA',
         'Continue WASH, MDA SAC': 'MDA SAC',
-        'Continue WASH, MDA PSAC': 'MDA PSAC',
+        'Continue WASH, MDA PSAC+SAC': 'MDA PSAC+SAC',
         'Continue WASH, MDA All': 'MDA All',
         'Scale-up WASH, no MDA': 'WASH only',
     }
 
+    # Restrict to plotting window
+    years_idx = df.index.get_level_values("year")
+    df = df[(years_idx >= year_range[0]) & (years_idx <= year_range[1])]
+    total_districts = df.index.get_level_values("district").nunique()
+    years = list(range(year_range[0], year_range[1] + 1))
+
     plt.figure(figsize=figsize)
+
     for draw, label in draw_labels.items():
-        if draw in ephp_counts["draw"].unique():
-            data = ephp_counts[ephp_counts["draw"] == draw]
-            plt.step(
-                data["year_ephp"],
-                data["prop_districts"],
-                where="post",
-                label=label,
-                color=mda_colours.get(label, "grey"),
-                linewidth=1.8,
-                alpha=alpha,
-            )
-        else:
-            # Offset zero-line slightly to avoid overlap
-            y_offset = {
-                'no MDA': -0.002,
-                'WASH only': 0.002
-            }.get(label, 0)
+        if draw not in df.columns.get_level_values("draw"):
+            continue
 
-            plt.step(
-                [year_range[0], year_range[1]],
-                [y_offset, y_offset],
-                where="post",
-                label=label,
-                color=mda_colours.get(label, "grey"),
-                linestyle="--" if label == "WASH only" else "--",
-                linewidth=1.5,
-                alpha=alpha,
-            )
+        runs = df[draw].columns
+        trajectories = []
 
-    plt.title("")
+        for run in runs:
+            s = df[(draw, run)]
+            b = s < threshold
+
+            if not b.any():
+                # never below threshold → flat 0
+                y = [0.0] * len(years)
+            else:
+                fy = (
+                    b[b].reset_index()
+                      .groupby("district")["year"]
+                      .min()
+                )
+                counts_by_year = fy.value_counts().reindex(years, fill_value=0).sort_index()
+                prop = counts_by_year.cumsum() / total_districts
+                y = prop.reindex(years, fill_value=0.0).tolist()
+
+            trajectories.append(y)
+
+        trajectories = np.array(trajectories)  # shape (n_runs, n_years)
+
+        # Mean and CI
+        mean_vals = trajectories.mean(axis=0)
+        lower = np.quantile(trajectories, ci[0], axis=0)
+        upper = np.quantile(trajectories, ci[1], axis=0)
+
+        # Plot mean line
+        plt.step(
+            years, mean_vals,
+            where="post",
+            label=label,
+            color=mda_colours.get(label, "grey"),
+            linewidth=1.8,
+            alpha=alpha,
+        )
+
+        # Plot CI band
+        plt.fill_between(
+            years, lower, upper,
+            step="post",
+            color=mda_colours.get(label, "grey"),
+            alpha=0.2,
+        )
+
     plt.ylabel(f"Proportion < {threshold * 100:.1f}%")
     plt.xlabel("Year")
-    plt.ylim(-0.05, 1)
-    plt.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
+    plt.ylim(-0.05, 1.05)
+    plt.grid(True, axis="y", color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
     plt.legend(title="Strategy", loc="upper left", fontsize="small")
     plt.tight_layout()
-    plt.savefig(results_folder / f"ephp_km_plot_{species}_continue.png", dpi=300)
-
+    plt.savefig(results_folder / f"ephp_km_plot_{species}_continue_withCI.png", dpi=300)
     plt.show()
+
+
+
 
 
 plot_ephp_km_continue(prev_haem_H_All_district, species='haem', threshold=0.01)
-plot_ephp_km_continue(prev_mansoni_H_All_district, species='mansoni', threshold=0.01)
 
-plot_ephp_km_continue(prev_haem_HML_All_district, species='haem', threshold=0.01)
-plot_ephp_km_continue(prev_mansoni_HML_All_district, species='mansoni', threshold=0.01)
+plot_ephp_km_continue(prev_mansoni_H_All_district, species='mansoni', threshold=0.001)
 
 
 
-# get the figures for the SI separately
-def plot_ephp_km_pause(
+
+plot_ephp_km_continue(prev_haem_HML_All_district, species='haem', threshold=0.02)
+
+
+plot_ephp_km_continue(prev_mansoni_HML_All_district, species='mansoni', threshold=0.02)
+
+
+# todo this should be updated as function above
+# # get the figures for the SI separately
+# def plot_ephp_km_pause(
+#     df: pd.DataFrame,
+#     threshold: float = 0.015,
+#     year_range: tuple = (2024, 2040),
+#     alpha: float = 1.0,
+#     figsize: tuple = (10, 6),
+#         species=None
+# ):
+#     """
+#     Plot Kaplan-Meier style curves in a single panel showing the proportion of districts
+#     reaching prevalence < threshold by year, for:
+#         - Each MDA strategy under 'Continue WASH'
+#         - 'no MDA' under 'Scale-up WASH' as 'WASH only'
+#     """
+#
+#     mda_colours = {
+#         'no MDA': '#1b9e77',  # Teal
+#         'MDA SAC': '#d95f02',  # Orange
+#         'MDA PSAC': '#7570b3',  # Purple
+#         'MDA All': '#e7298a',  # Pink
+#         'WASH only': '#e6ab02'  # Mustard Yellow – distinct from teal
+#     }
+#
+#     def extract_mda_label(draw_name: str) -> str:
+#         """Extract MDA category for legend from draw name."""
+#         mda_labels = ["no MDA", "MDA SAC", "MDA PSAC", "MDA All"]
+#         for label in mda_labels:
+#             if label in draw_name:
+#                 return label
+#         return "Other"
+#
+#     df = df.loc[df.index.get_level_values("year") >= year_range[0]]
+#
+#     # Mean across runs per draw
+#     df_mean_runs = df.groupby(axis=1, level="draw").mean()
+#
+#     # Identify threshold crossing
+#     below = (df_mean_runs < threshold).reset_index()
+#     long_format = below.melt(id_vars=["year", "district"], var_name="draw", value_name="below_threshold")
+#     below_threshold = long_format[long_format["below_threshold"]]
+#
+#     # First year reaching threshold by draw
+#     first_years = below_threshold.groupby(["district", "draw"])["year"].min().reset_index(name="year_ephp")
+#
+#     total_districts = df.index.get_level_values("district").nunique()
+#
+#     # Cumulative count of districts reaching EPHP
+#     ephp_counts = (
+#         first_years.groupby(["draw", "year_ephp"])
+#         .size()
+#         .groupby(level=0)
+#         .cumsum()
+#         .reset_index(name="num_districts")
+#     )
+#     ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
+#     ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
+#     ephp_counts.to_excel(
+#         results_folder / f'ephp_counts{species}.xlsx')
+#
+#     # Draws to plot
+#     draw_labels = {
+#         'Pause WASH, no MDA': 'no MDA',
+#         'Pause WASH, MDA SAC': 'MDA SAC',
+#         'Pause WASH, MDA PSAC': 'MDA PSAC',
+#         'Pause WASH, MDA All': 'MDA All',
+#         'Scale-up WASH, no MDA': 'WASH only',
+#     }
+#
+#     plt.figure(figsize=figsize)
+#     for draw, label in draw_labels.items():
+#         if draw in ephp_counts["draw"].unique():
+#             data = ephp_counts[ephp_counts["draw"] == draw]
+#             plt.step(
+#                 data["year_ephp"],
+#                 data["prop_districts"],
+#                 where="post",
+#                 label=label,
+#                 color=mda_colours.get(label, "grey"),
+#                 linewidth=1.8,
+#                 alpha=alpha,
+#             )
+#         else:
+#             # Offset zero-line slightly to avoid overlap
+#             y_offset = {
+#                 'no MDA': -0.001,
+#                 'WASH only': 0.001
+#             }.get(label, 0)
+#
+#             plt.step(
+#                 [year_range[0], year_range[1]],
+#                 [y_offset, y_offset],
+#                 where="post",
+#                 label=label,
+#                 color=mda_colours.get(label, "grey"),
+#                 linestyle="--" if label == "WASH only" else "--",
+#                 linewidth=1.5,
+#                 alpha=alpha,
+#             )
+#
+#     plt.title("")
+#     plt.ylabel(f"Proportion < {threshold * 100:.1f}%")
+#     plt.xlabel("Year")
+#     plt.ylim(-0.05, 1)
+#     plt.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
+#     plt.legend(title="Strategy", loc="upper left", fontsize="small")
+#     plt.tight_layout()
+#     plt.savefig(results_folder / f"ephp_km_plot_{species}_pause.png", dpi=300)
+#     plt.show()
+#
+#
+# plot_ephp_km_pause(prev_haem_H_All_district, species='haem')
+#
+# plot_ephp_km_pause(prev_mansoni_H_All_district, species='mansoni')
+#
+#
+# # get the figures for the SI separately
+# def plot_ephp_km_scaleup(
+#     df: pd.DataFrame,
+#     threshold: float = 0.015,
+#     year_range: tuple = (2024, 2040),
+#     alpha: float = 1.0,
+#     figsize: tuple = (10, 6),
+#         species=None
+# ):
+#     """
+#     Plot Kaplan-Meier style curves in a single panel showing the proportion of districts
+#     reaching prevalence < threshold by year, for:
+#         - Each MDA strategy under 'Continue WASH'
+#         - 'no MDA' under 'Scale-up WASH' as 'WASH only'
+#     """
+#
+#     mda_colours = {
+#         'no MDA': '#1b9e77',  # Teal
+#         'MDA SAC': '#d95f02',  # Orange
+#         'MDA PSAC': '#7570b3',  # Purple
+#         'MDA All': '#e7298a',  # Pink
+#         'WASH only': '#e6ab02'  # Mustard Yellow – distinct from teal
+#     }
+#
+#     def extract_mda_label(draw_name: str) -> str:
+#         """Extract MDA category for legend from draw name."""
+#         mda_labels = ["no MDA", "MDA SAC", "MDA PSAC", "MDA All"]
+#         for label in mda_labels:
+#             if label in draw_name:
+#                 return label
+#         return "Other"
+#
+#     df = df.loc[df.index.get_level_values("year") >= year_range[0]]
+#
+#     # Mean across runs per draw
+#     df_mean_runs = df.groupby(axis=1, level="draw").mean()
+#
+#     # Identify threshold crossing
+#     below = (df_mean_runs < threshold).reset_index()
+#     long_format = below.melt(id_vars=["year", "district"], var_name="draw", value_name="below_threshold")
+#     below_threshold = long_format[long_format["below_threshold"]]
+#
+#     # First year reaching threshold by draw
+#     first_years = below_threshold.groupby(["district", "draw"])["year"].min().reset_index(name="year_ephp")
+#
+#     total_districts = df.index.get_level_values("district").nunique()
+#
+#     # Cumulative count of districts reaching EPHP
+#     ephp_counts = (
+#         first_years.groupby(["draw", "year_ephp"])
+#         .size()
+#         .groupby(level=0)
+#         .cumsum()
+#         .reset_index(name="num_districts")
+#     )
+#     ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
+#     ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
+#     ephp_counts.to_excel(
+#         results_folder / f'ephp_counts{species}_scaleup.xlsx')
+#
+#     # Draws to plot
+#     draw_labels = {
+#         'Scale-up WASH, no MDA': 'no MDA',
+#         'Scale-up WASH, MDA SAC': 'MDA SAC',
+#         'Scale-up WASH, MDA PSAC': 'MDA PSAC',
+#         'Scale-up WASH, MDA All': 'MDA All',
+#     }
+#
+#     plt.figure(figsize=figsize)
+#     for draw, label in draw_labels.items():
+#         if draw in ephp_counts["draw"].unique():
+#             data = ephp_counts[ephp_counts["draw"] == draw]
+#             plt.step(
+#                 data["year_ephp"],
+#                 data["prop_districts"],
+#                 where="post",
+#                 label=label,
+#                 color=mda_colours.get(label, "grey"),
+#                 linewidth=1.8,
+#                 alpha=alpha,
+#             )
+#         else:
+#             # Offset zero-line slightly to avoid overlap
+#             y_offset = {
+#                 'no MDA': -0.001,
+#                 'WASH only': 0.001
+#             }.get(label, 0)
+#
+#             plt.step(
+#                 [year_range[0], year_range[1]],
+#                 [y_offset, y_offset],
+#                 where="post",
+#                 label=label,
+#                 color=mda_colours.get(label, "grey"),
+#                 linestyle="--" if label == "WASH only" else "--",
+#                 linewidth=1.5,
+#                 alpha=alpha,
+#             )
+#
+#     plt.title("")
+#     plt.ylabel(f"Proportion < {threshold * 100:.1f}%")
+#     plt.xlabel("Year")
+#     plt.ylim(-0.05, 1)
+#     plt.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
+#     plt.legend(title="Strategy", loc="upper left", fontsize="small")
+#     plt.tight_layout()
+#     plt.savefig(results_folder / f"ephp_km_plot_{species}_scaleup.png", dpi=300)
+#     plt.show()
+#
+#
+# plot_ephp_km_scaleup(prev_haem_H_All_district)
+# plot_ephp_km_scaleup(prev_mansoni_H_All_district)
+#
+
+
+
+def plot_ephp_km_continue_runs(
     df: pd.DataFrame,
-    threshold: float = 0.015,
-    year_range: tuple = (2024, 2040),
-    alpha: float = 1.0,
+    threshold: float = 0.01,
+    year_range: tuple = (2024, 2050),
+    alpha: float = 0.5,
     figsize: tuple = (10, 6),
-        species=None
+    species=None,
 ):
     """
-    Plot Kaplan-Meier style curves in a single panel showing the proportion of districts
-    reaching prevalence < threshold by year, for:
-        - Each MDA strategy under 'Continue WASH'
-        - 'no MDA' under 'Scale-up WASH' as 'WASH only'
+    Plot Kaplan–Meier–style curves showing, for each run, the proportion of districts
+    that have first reached prevalence < threshold by year, for selected Continue-WASH draws.
+
+    Data requirements:
+      - Rows index: MultiIndex ('year', 'district')
+      - Columns: MultiIndex ('draw', 'run')
     """
 
+    # Colours and legend labels
     mda_colours = {
-        'no MDA': '#1b9e77',  # Teal
-        'MDA SAC': '#d95f02',  # Orange
-        'MDA PSAC': '#7570b3',  # Purple
-        'MDA All': '#e7298a',  # Pink
-        'WASH only': '#e6ab02'  # Mustard Yellow – distinct from teal
+        'no MDA': '#1b9e77',       # Teal
+        'MDA SAC': '#d95f02',      # Orange
+        'MDA PSAC+SAC': '#7570b3', # Purple
+        'MDA All': '#e7298a',      # Pink
+        'WASH only': '#e6ab02',    # Mustard Yellow
     }
-
-    def extract_mda_label(draw_name: str) -> str:
-        """Extract MDA category for legend from draw name."""
-        mda_labels = ["no MDA", "MDA SAC", "MDA PSAC", "MDA All"]
-        for label in mda_labels:
-            if label in draw_name:
-                return label
-        return "Other"
-
-    df = df.loc[df.index.get_level_values("year") >= year_range[0]]
-
-    # Mean across runs per draw
-    df_mean_runs = df.groupby(axis=1, level="draw").mean()
-
-    # Identify threshold crossing
-    below = (df_mean_runs < threshold).reset_index()
-    long_format = below.melt(id_vars=["year", "district"], var_name="draw", value_name="below_threshold")
-    below_threshold = long_format[long_format["below_threshold"]]
-
-    # First year reaching threshold by draw
-    first_years = below_threshold.groupby(["district", "draw"])["year"].min().reset_index(name="year_ephp")
-
-    total_districts = df.index.get_level_values("district").nunique()
-
-    # Cumulative count of districts reaching EPHP
-    ephp_counts = (
-        first_years.groupby(["draw", "year_ephp"])
-        .size()
-        .groupby(level=0)
-        .cumsum()
-        .reset_index(name="num_districts")
-    )
-    ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
-    ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
-    ephp_counts.to_excel(
-        results_folder / f'ephp_counts{species}.xlsx')
-
-    # Draws to plot
     draw_labels = {
-        'Pause WASH, no MDA': 'no MDA',
-        'Pause WASH, MDA SAC': 'MDA SAC',
-        'Pause WASH, MDA PSAC': 'MDA PSAC',
-        'Pause WASH, MDA All': 'MDA All',
+        'Continue WASH, no MDA': 'no MDA',
+        'Continue WASH, MDA SAC': 'MDA SAC',
+        'Continue WASH, MDA PSAC+SAC': 'MDA PSAC+SAC',
+        'Continue WASH, MDA All': 'MDA All',
         'Scale-up WASH, no MDA': 'WASH only',
     }
 
-    plt.figure(figsize=figsize)
-    for draw, label in draw_labels.items():
-        if draw in ephp_counts["draw"].unique():
-            data = ephp_counts[ephp_counts["draw"] == draw]
-            plt.step(
-                data["year_ephp"],
-                data["prop_districts"],
-                where="post",
-                label=label,
-                color=mda_colours.get(label, "grey"),
-                linewidth=1.8,
-                alpha=alpha,
-            )
-        else:
-            # Offset zero-line slightly to avoid overlap
-            y_offset = {
-                'no MDA': -0.001,
-                'WASH only': 0.001
-            }.get(label, 0)
+    # Basic checks
+    if not isinstance(df.columns, pd.MultiIndex) or df.columns.nlevels != 2:
+        raise ValueError("Expected columns as a 2-level MultiIndex: ('draw','run').")
+    if df.columns.names != ["draw", "run"]:
+        df.columns = pd.MultiIndex.from_tuples(df.columns.tolist(), names=["draw", "run"])
+    if not isinstance(df.index, pd.MultiIndex) or set(df.index.names) != {"year", "district"}:
+        raise ValueError("Expected index MultiIndex with names ('year','district').")
 
-            plt.step(
-                [year_range[0], year_range[1]],
-                [y_offset, y_offset],
-                where="post",
-                label=label,
-                color=mda_colours.get(label, "grey"),
-                linestyle="--" if label == "WASH only" else "--",
-                linewidth=1.5,
-                alpha=alpha,
-            )
+    # Restrict years
+    years_idx = df.index.get_level_values("year")
+    df = df[(years_idx >= year_range[0]) & (years_idx <= year_range[1])]
 
-    plt.title("")
-    plt.ylabel(f"Proportion < {threshold * 100:.1f}%")
-    plt.xlabel("Year")
-    plt.ylim(-0.05, 1)
-    plt.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
-    plt.legend(title="Strategy", loc="upper left", fontsize="small")
-    plt.tight_layout()
-    plt.savefig(results_folder / f"ephp_km_plot_{species}_pause.png", dpi=300)
-    plt.show()
+    # Only keep the draws we want (and that exist)
+    desired_draws = list(draw_labels.keys())
+    available_draws = df.columns.get_level_values("draw").unique()
+    selected_draws = [d for d in desired_draws if d in set(available_draws)]
+    if not selected_draws:
+        raise ValueError("None of the selected Continue-WASH draws are present in the DataFrame.")
 
-
-plot_ephp_km_pause(prev_haem_H_All_district, species='haem')
-plot_ephp_km_pause(prev_mansoni_H_All_district, species='mansoni')
-
-
-# get the figures for the SI separately
-def plot_ephp_km_scaleup(
-    df: pd.DataFrame,
-    threshold: float = 0.015,
-    year_range: tuple = (2024, 2040),
-    alpha: float = 1.0,
-    figsize: tuple = (10, 6),
-        species=None
-):
-    """
-    Plot Kaplan-Meier style curves in a single panel showing the proportion of districts
-    reaching prevalence < threshold by year, for:
-        - Each MDA strategy under 'Continue WASH'
-        - 'no MDA' under 'Scale-up WASH' as 'WASH only'
-    """
-
-    mda_colours = {
-        'no MDA': '#1b9e77',  # Teal
-        'MDA SAC': '#d95f02',  # Orange
-        'MDA PSAC': '#7570b3',  # Purple
-        'MDA All': '#e7298a',  # Pink
-        'WASH only': '#e6ab02'  # Mustard Yellow – distinct from teal
-    }
-
-    def extract_mda_label(draw_name: str) -> str:
-        """Extract MDA category for legend from draw name."""
-        mda_labels = ["no MDA", "MDA SAC", "MDA PSAC", "MDA All"]
-        for label in mda_labels:
-            if label in draw_name:
-                return label
-        return "Other"
-
-    df = df.loc[df.index.get_level_values("year") >= year_range[0]]
-
-    # Mean across runs per draw
-    df_mean_runs = df.groupby(axis=1, level="draw").mean()
-
-    # Identify threshold crossing
-    below = (df_mean_runs < threshold).reset_index()
-    long_format = below.melt(id_vars=["year", "district"], var_name="draw", value_name="below_threshold")
-    below_threshold = long_format[long_format["below_threshold"]]
-
-    # First year reaching threshold by draw
-    first_years = below_threshold.groupby(["district", "draw"])["year"].min().reset_index(name="year_ephp")
-
+    # Precompute constants
+    years = list(range(year_range[0], year_range[1] + 1))
     total_districts = df.index.get_level_values("district").nunique()
 
-    # Cumulative count of districts reaching EPHP
-    ephp_counts = (
-        first_years.groupby(["draw", "year_ephp"])
-        .size()
-        .groupby(level=0)
-        .cumsum()
-        .reset_index(name="num_districts")
-    )
-    ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
-    ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
-    ephp_counts.to_excel(
-        results_folder / f'ephp_counts{species}_scaleup.xlsx')
-
-    # Draws to plot
-    draw_labels = {
-        'Scale-up WASH, no MDA': 'no MDA',
-        'Scale-up WASH, MDA SAC': 'MDA SAC',
-        'Scale-up WASH, MDA PSAC': 'MDA PSAC',
-        'Scale-up WASH, MDA All': 'MDA All',
-    }
-
     plt.figure(figsize=figsize)
-    for draw, label in draw_labels.items():
-        if draw in ephp_counts["draw"].unique():
-            data = ephp_counts[ephp_counts["draw"] == draw]
-            plt.step(
-                data["year_ephp"],
-                data["prop_districts"],
-                where="post",
-                label=label,
-                color=mda_colours.get(label, "grey"),
-                linewidth=1.8,
-                alpha=alpha,
-            )
-        else:
-            # Offset zero-line slightly to avoid overlap
-            y_offset = {
-                'no MDA': -0.001,
-                'WASH only': 0.001
-            }.get(label, 0)
+
+    # One faint line per (draw, run)
+    for draw in selected_draws:
+        label = draw_labels[draw]
+        # available runs for this draw
+        runs = sorted(
+            df.columns[df.columns.get_level_values("draw") == draw]
+              .get_level_values("run").unique()
+        )
+
+        for run_id in runs:
+            # Series indexed by (year, district)
+            s = df[(draw, run_id)]
+
+            # Boolean where prevalence < threshold
+            b = s < threshold
+
+            if not b.any():
+                # No district ever below threshold in the window → flat 0
+                y = [0.0] * len(years)
+            else:
+                # First year each district goes below threshold
+                # (keep only True rows, then min year per district)
+                fy = (
+                    b[b].reset_index()            # keep True rows
+                      .groupby("district")["year"]
+                      .min()
+                )
+                # Counts by year, cumulative → proportions
+                counts_by_year = fy.value_counts().reindex(years, fill_value=0).sort_index()
+                prop = counts_by_year.cumsum() / total_districts
+                y = prop.reindex(years, fill_value=0.0).tolist()
 
             plt.step(
-                [year_range[0], year_range[1]],
-                [y_offset, y_offset],
+                years, y,
                 where="post",
-                label=label,
                 color=mda_colours.get(label, "grey"),
-                linestyle="--" if label == "WASH only" else "--",
-                linewidth=1.5,
+                linewidth=1.0,
                 alpha=alpha,
             )
 
-    plt.title("")
-    plt.ylabel(f"Proportion < {threshold * 100:.1f}%")
+        # Single proxy for legend
+        plt.step([], [], where="post",
+                 label=label,
+                 color=mda_colours.get(label, "grey"),
+                 linewidth=1.6)
+
+    plt.ylabel(f"Proportion < {threshold*100:.1f}%")
     plt.xlabel("Year")
-    plt.ylim(-0.05, 1)
-    plt.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
+    plt.ylim(-0.05, 1.05)
+    plt.grid(True, axis="y", color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
     plt.legend(title="Strategy", loc="upper left", fontsize="small")
     plt.tight_layout()
-    plt.savefig(results_folder / f"ephp_km_plot_{species}_scaleup.png", dpi=300)
+
+    # Optional save
+    if species is not None:
+        plt.savefig(results_folder / f"ephp_km_plot_{species}_continue_runs.png", dpi=300)
+
     plt.show()
 
 
-plot_ephp_km_scaleup(prev_haem_H_All_district)
-plot_ephp_km_scaleup(prev_mansoni_H_All_district)
+plot_ephp_km_continue_runs(prev_haem_HML_All_district, species='haem', threshold=0.02)
 
+
+plot_ephp_km_continue_runs(prev_mansoni_HML_All_district, species='mansoni', threshold=0.02)
