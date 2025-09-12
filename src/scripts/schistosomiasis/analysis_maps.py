@@ -40,13 +40,13 @@ lake_malawi = lakes[lakes['name'].notna() & lakes['name'].str.contains("Malawi",
 
 
 output_folder = Path("./outputs/t.mangal@imperial.ac.uk")
-results_folder = get_scenario_outputs("schisto_scenarios.py", output_folder)[-1]
+results_folder = get_scenario_outputs("schisto_scenarios-2025.py", output_folder)[-1]
 
 
 # --- load data with values per district ---
-pause_wash_best_strategy = read_csv(results_folder / f'pause_wash_best_strategy2024-2040.csv')
-continue_wash_best_strategy = read_csv(results_folder / f'continue_wash_best_strategy2024-2040.csv')
-scaleup_wash_best_strategy = read_csv(results_folder / f'scaleup_wash_best_strategy2024-2040.csv')
+pause_wash_best_strategy = read_csv(results_folder / f'pause_wash_nhb_vs_SAC_2024-2050.csv')
+continue_wash_best_strategy = read_csv(results_folder / f'continue_wash_nhb_vs_SAC_2024-2050.csv')
+scaleup_wash_best_strategy = read_csv(results_folder / f'scaleup_wash_nhb_vs_SAC_2024-2050.csv')
 
 
 # --- Prepare for merge ---
@@ -142,8 +142,9 @@ suggest that the costs may outweigh the health benefits compared to the baseline
 
 
 # match draw names from preferred stratgy to draw name first_years_ephp_df_haem
-first_years_ephp_df_haem = pd.read_excel(results_folder / 'first_years_ephp_df_haem 2024-2040.xlsx')
-first_years_ephp_df_mansoni = pd.read_excel(results_folder / 'first_years_ephp_df_mansoni 2024-2040.xlsx')
+# todo these are probably 2% limits like the KM plots
+first_years_ephp_df_haem = pd.read_excel(results_folder / 'first_years_haem HML_2percent_2024-2050.xlsx')
+first_years_ephp_df_mansoni = pd.read_excel(results_folder / 'first_years_mansoni HML_2percent 2024-2050.xlsx')
 
 # Merge to get year_ephp for the best strategy under Continue WASH
 continue_wash_best_strategy_with_ehph = continue_wash_best_strategy.merge(
@@ -166,7 +167,7 @@ map_with_nhb_diffs_ephp = map_with_nhb_diffs_continue.merge(
 #---------------- maps for paper
 
 
-fig, axs = plt.subplots(1, 3, figsize=(24, 8))
+fig, axs = plt.subplots(1, 3, figsize=(15, 8))
 
 # Define maps and their respective columns and titles
 maps = [
@@ -174,6 +175,15 @@ maps = [
     (map_with_nhb_diffs_ephp, 'year_ephp_haem', "Elimination Year: S. Haematobium", 'plasma'),
     (map_with_nhb_diffs_ephp, 'year_ephp_mansoni', "Elimination Year: S. Mansoni", 'plasma'),
 ]
+
+# Align CRS for all datasets
+target_crs = "EPSG:4326"
+
+for g in [map_with_nhb_diffs_ephp, lake_malawi, gdf_national]:
+    if g.crs is None:
+        g.set_crs(target_crs, inplace=True)   # assign if missing (assumes it's already lat/lon)
+    else:
+        g.to_crs(target_crs, inplace=True)    # reproject if necessary
 
 for i, (ax, (gdf, column, title, cmap)) in enumerate(zip(axs, maps)):
     # Set normalisation
@@ -183,7 +193,7 @@ for i, (ax, (gdf, column, title, cmap)) in enumerate(zip(axs, maps)):
         vmax = gdf[column].max()
     else:
         # Fixed range for years on second and third maps
-        vmin, vmax = 2024, 2040
+        vmin, vmax = 2024, 2050
 
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 
@@ -196,12 +206,12 @@ for i, (ax, (gdf, column, title, cmap)) in enumerate(zip(axs, maps)):
         hatch='///',
         zorder=1
     )
-    lake_malawi.boundary.plot(
-        ax=ax,
-        edgecolor='slategrey',
-        linewidth=1.2,
-        zorder=2
-    )
+    # lake_malawi.boundary.plot(
+    #     ax=ax,
+    #     edgecolor='slategrey',
+    #     linewidth=1.2,
+    #     zorder=2
+    # )
 
     # Prepare missing data style for second and third maps
     if i == 0:
@@ -238,11 +248,26 @@ for i, (ax, (gdf, column, title, cmap)) in enumerate(zip(axs, maps)):
     gdf_national.boundary.plot(ax=ax, edgecolor='grey', linewidth=1.5, zorder=4)
 
     # Add asterisks only on first map
-    if i == 0:
-        for idx, row in gdf.iterrows():
-            if isinstance(row['draw_x'], str) and "MDA All" in row['draw_x']:
-                centroid = row['geometry'].centroid
-                ax.text(centroid.x, centroid.y, '*', fontsize=24, ha='center', va='center', color='red', zorder=5)
+    # if i == 0:
+    #     for idx, row in gdf.iterrows():
+    #         if isinstance(row['draw_x'], str) and "MDA All" in row['draw_x']:
+    #             centroid = row['geometry'].centroid
+    #             ax.text(centroid.x, centroid.y, '*', fontsize=24, ha='center', va='center', color='red', zorder=5)
+    if "district" in gdf.columns:
+        islands = gdf[gdf["district"].str.contains("Likoma|Chizumulu", case=False, na=False)]
+        if not islands.empty:
+            islands.plot(
+                column=column,
+                cmap=cmap,
+                vmin=vmin,
+                vmax=vmax,
+                norm=norm,
+                ax=ax,
+                edgecolor="none",
+                linewidth=0,
+                legend=False,
+                zorder=9,  # on top of everything
+            )
 
     ax.set_title(title, fontsize=14)
     ax.axis('off')
@@ -253,7 +278,7 @@ for ax, (gdf, column, title, cmap) in zip(axs, maps):
         vmin = gdf[column].min()
         vmax = gdf[column].max()
     else:
-        vmin, vmax = 2024, 2040
+        vmin, vmax = 2024, 2050
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])

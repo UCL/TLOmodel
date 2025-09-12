@@ -1072,6 +1072,20 @@ first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_HML_A
 first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HML_1percent {target_period()}.xlsx'))
 
 
+# prevalence <2% any infection - for maps
+first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_HML_All_district,
+                                                           threshold=0.02,
+                                                           year_range=(2010, 2050))
+first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HML_2percent_{target_period()}.xlsx'))
+
+
+first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_HML_All_district,
+                                                           threshold=0.02,
+                                                              year_range=(2010, 2050))
+first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HML_2percent {target_period()}.xlsx'))
+
+
+
 # zero moderate or heavy infection
 first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_HM_All_district,
                                                            threshold=0.001)

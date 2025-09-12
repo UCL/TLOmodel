@@ -1085,9 +1085,6 @@ prev_mansoni_HML_All_district.columns.names = ["draw", "run"]
 
 
 
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
 
 def plot_ephp_km_continue(
     df: pd.DataFrame,
@@ -1187,17 +1184,17 @@ def plot_ephp_km_continue(
     plt.grid(True, axis="y", color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
     plt.legend(title="Strategy", loc="upper left", fontsize="small")
     plt.tight_layout()
-    plt.savefig(results_folder / f"ephp_km_plot_{species}_continue_withCI.png", dpi=300)
+    plt.savefig(results_folder / f"ephp_km_plot_{species}_{threshold}_continue_withCI.png", dpi=300)
     plt.show()
 
 
 
 
-
-plot_ephp_km_continue(prev_haem_H_All_district, species='haem', threshold=0.01)
-
-plot_ephp_km_continue(prev_mansoni_H_All_district, species='mansoni', threshold=0.001)
-
+#
+# plot_ephp_km_continue(prev_haem_H_All_district, species='haem', threshold=0.01)
+#
+# plot_ephp_km_continue(prev_mansoni_H_All_district, species='mansoni', threshold=0.001)
+#
 
 
 
