@@ -57,7 +57,7 @@ def return_sum_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
 def extract_birth_data_frames_and_outcomes(
     folder,
     years_of_interest,
-    intervention_years,
+    intervention_datayears,
     interv
 ) -> Dict[str, pd.DataFrame]:
     """
@@ -65,13 +65,14 @@ def extract_birth_data_frames_and_outcomes(
 
     :param folder: Path to the folder containing outcome data.
     :param years_of_interest: List of years to extract data for.
-    :param intervention_years: List of years during which the intervention was implemented (if any).
+    :param intervention_datayears: List of years for which we need data to plot means over the interventions years, ie
+        from the year before interventions are implemented until the last year of interventions.
     :param interv: Name or identifier of the intervention.
     :return: Dictionary with DataFrames:
             (1) 'births_df': Birth counts for years of interest (by draw and run),
             (2) 'births_mean_ci_df': Mean and 95% CI for total births per year and draw,
             (3) 'interv_births_df': Birth counts for intervention years,
-            (4) 'interv_births_mean_ci_df': Mean and 95% CI for births per year and draw for intervention years.
+            (4) 'interv_births_mean_ci_df': Mean and 95% CI for births per year and draw for intervention_datayears.
     """
 
     print(f"    -{interv=}")
@@ -89,14 +90,17 @@ def extract_birth_data_frames_and_outcomes(
 
     births_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(births_df)
 
-    interv_births_df = births_df.loc[intervention_years]
+    interv_births_df = births_df.loc[intervention_datayears]
     interv_births_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_births_df)
+
+    # report during which years interventions were implemented (if any)
+    interv_years = [year+1 for year in intervention_datayears[:-1]]
 
     return {'births_df': births_df,
             'births_mean_ci_df': births_mean_ci_per_year_per_draw_df,
             'interv_births_df': interv_births_df,
             'interv_births_mean_ci_df': interv_births_per_year_per_draw_df,
-            'interv_years': intervention_years}
+            'interv_years': interv_years}
 
 def extract_death_data_frames_and_outcomes(
     folder,
@@ -169,19 +173,22 @@ def extract_death_data_frames_and_outcomes(
     neo_Diarrhoea_deaths_with_SAM_mean_ci_per_year_per_draw_df = \
         return_mean_95_CI_across_runs(neonatal_Diarrhoea_deaths_with_SAM_df)
 
+    # neo deaths for each year within intervention period
     interv_neo_deaths_df = neonatal_deaths_df.loc[intervention_years]
-    interv_neo_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_deaths_df)
     interv_neo_SAM_deaths_df = neonatal_SAM_deaths_df.loc[intervention_years]
-    interv_neo_SAM_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_SAM_deaths_df)
     interv_neo_ALRI_deaths_df = neonatal_ALRI_deaths_df.loc[intervention_years]
-    interv_neo_ALRI_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_ALRI_deaths_df)
     interv_neo_Diarrhoea_deaths_df = neonatal_Diarrhoea_deaths_df.loc[intervention_years]
+    interv_neo_ALRI_deaths_with_SAM_df = neonatal_ALRI_deaths_with_SAM_df.loc[intervention_years]
+    interv_neo_Diarrhoea_deaths_with_SAM_df = neonatal_Diarrhoea_deaths_with_SAM_df.loc[intervention_years]
+
+    # sum of neo deaths over intervention period
+    interv_neo_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_deaths_df)
+    interv_neo_SAM_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_SAM_deaths_df)
+    interv_neo_ALRI_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_ALRI_deaths_df)
     interv_neo_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_neo_Diarrhoea_deaths_df)
-    interv_neo_ALRI_deaths_with_SAM_df = neonatal_ALRI_deaths_with_SAM_df.loc[intervention_years]
     interv_neo_ALRI_deaths_with_SAM_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_neo_ALRI_deaths_with_SAM_df)
-    interv_neo_Diarrhoea_deaths_with_SAM_df = neonatal_Diarrhoea_deaths_with_SAM_df.loc[intervention_years]
     interv_neo_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_neo_Diarrhoea_deaths_with_SAM_df)
 
@@ -240,20 +247,23 @@ def extract_death_data_frames_and_outcomes(
     under5_Diarrhoea_deaths_with_SAM_mean_ci_per_year_per_draw_df = \
         return_mean_95_CI_across_runs(under5_Diarrhoea_deaths_with_SAM_df)
 
+    # under 5 deaths for each year within intervention period
     interv_under5_deaths_df = under5_deaths_df.loc[intervention_years]
-    interv_under5_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_deaths_df)
     interv_under5_SAM_deaths_df = under5_SAM_deaths_df.loc[intervention_years]
-    interv_under5_SAM_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_SAM_deaths_df)
     interv_under5_ALRI_deaths_df = under5_ALRI_deaths_df.loc[intervention_years]
+    interv_under5_Diarrhoea_deaths_df = under5_Diarrhoea_deaths_df.loc[intervention_years]
+    interv_under5_ALRI_deaths_with_SAM_df = under5_ALRI_deaths_with_SAM_df.loc[intervention_years]
+    interv_under5_Diarrhoea_deaths_with_SAM_df = under5_Diarrhoea_deaths_with_SAM_df.loc[intervention_years]
+
+    # sum of under 5 deaths over intervention period
+    interv_under5_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_deaths_df)
+    interv_under5_SAM_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_SAM_deaths_df)
     interv_under5_ALRI_deaths_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_under5_ALRI_deaths_df)
-    interv_under5_Diarrhoea_deaths_df = under5_Diarrhoea_deaths_df.loc[intervention_years]
     interv_under5_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_under5_Diarrhoea_deaths_df)
-    interv_under5_ALRI_deaths_with_SAM_df = under5_ALRI_deaths_with_SAM_df.loc[intervention_years]
     interv_under5_ALRI_deaths_with_SAM_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_under5_ALRI_deaths_with_SAM_df)
-    interv_under5_Diarrhoea_deaths_with_SAM_df = under5_Diarrhoea_deaths_with_SAM_df.loc[intervention_years]
     interv_under5_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_under5_Diarrhoea_deaths_with_SAM_df)
 
@@ -320,14 +330,7 @@ def extract_death_data_frames_and_outcomes(
             'under5_mort_rate_mean_ci_df': under5mr_per_year_per_draw_df,
             'interv_years': intervention_years}
 
-    # # TODO: rm prints when no longer needed
-    # print("\nYears, and (Draws, Runs) with no under 5 death:")
-    # no_under5_deaths = [(under5_deaths.index[row], under5_deaths.columns[col]) for row, col in
-    #                  zip(*np.where(under5_deaths == 0.0))]
-    # print(f"{no_under5_deaths}")
-    # #
-
-def extract_interv_daly_data_frames_and_outcomes(
+def extract_daly_data_frames_and_outcomes(
     folder,
     years_of_interest,
     intervention_years,
@@ -347,7 +350,7 @@ def extract_interv_daly_data_frames_and_outcomes(
     # Extract all DALYs assigned to children under 5 --- dalys_stacked_by_age_and_time, i.e. all the year of life lost
     # are ascribed to the age of the death and the year of the death differentiated by cause of death / disability
 
-    def extrapolate_interv_dalys_data_from_logs(df: pd.DataFrame) -> pd.Series:
+    def extrapolate_dalys_data_from_logs(df: pd.DataFrame) -> pd.Series:
         # Melt the DataFrame to have 'cause_of_dalys' as a variable
         df_with_cause_of_dalys = df.melt(
             id_vars=['age_range', 'sex', 'year'],
@@ -363,25 +366,25 @@ def extract_interv_daly_data_frames_and_outcomes(
         )
 
         # Keep only dalys for children under-5 by year and cause_of_dalys
-        under5_interv_dalys_by_year_cause = \
+        under5_dalys_by_year_cause = \
             df_with_cause_of_dalys[
-                (df_with_cause_of_dalys['year'].isin(intervention_years)) &
+                (df_with_cause_of_dalys['year'].isin(years_of_interest)) &
                 (df_with_cause_of_dalys['age_range'] == '0-4')
             ].groupby(['year', 'cause_of_dalys'],as_index=True)['dalys'].sum()
 
-        return under5_interv_dalys_by_year_cause
+        return under5_dalys_by_year_cause
 
-    under5_interv_dalys_by_cause_df = extract_results(
+    under5_dalys_by_cause_df = extract_results(
         folder,
         module="tlo.methods.healthburden",
         key="dalys_stacked_by_age_and_time",
-        custom_generate_series=lambda df: extrapolate_interv_dalys_data_from_logs(df),
+        custom_generate_series=lambda df: extrapolate_dalys_data_from_logs(df),
         do_scaling=True
     ).fillna(0)
 
     # Apply 3% discount rate to DALYs. Re-indexing is required to use the discounting function,
     # so the MultiIndexes must be restored afterward.
-    under5_dalys_by_cause_df__reset_index = under5_interv_dalys_by_cause_df.reset_index()
+    under5_dalys_by_cause_df__reset_index = under5_dalys_by_cause_df.reset_index()
     under5_dalys_by_cause_df__reset_index.columns = [
         f"{col[0]}_{col[1]}" if col[1] != "" else f"{col[0]}"
         for col in under5_dalys_by_cause_df__reset_index.columns.values
@@ -392,41 +395,46 @@ def extract_interv_daly_data_frames_and_outcomes(
                 _df=under5_dalys_by_cause_df__reset_index, _discount_rate=0.03, _column_for_discounting=col
             )[col]
     # set MultiIndex for rows
-    under5_interv_dalys_by_cause_df = under5_dalys_by_cause_df__reset_index.set_index(['year', 'cause_of_dalys'])
+    under5_dalys_by_cause_df = under5_dalys_by_cause_df__reset_index.set_index(['year', 'cause_of_dalys'])
     # create MultiIndex for columns
-    new_col_tuples = [tuple(map(int, col.split('_'))) for col in under5_interv_dalys_by_cause_df.columns if '_' in col]
+    new_col_tuples = [tuple(map(int, col.split('_'))) for col in under5_dalys_by_cause_df.columns if '_' in col]
     new_col_index = pd.MultiIndex.from_tuples(new_col_tuples, names=['draw', 'run'])
-    under5_interv_dalys_by_cause_df = under5_interv_dalys_by_cause_df[[f"{d}_{r}" for d, r in new_col_tuples]]
-    under5_interv_dalys_by_cause_df.columns = new_col_index
+    under5_dalys_by_cause_df = under5_dalys_by_cause_df[[f"{d}_{r}" for d, r in new_col_tuples]]
+    under5_dalys_by_cause_df.columns = new_col_index
 
     # number of dalys by any cause
-    interv_under5_dalys_df = under5_interv_dalys_by_cause_df.groupby(['year']).sum()
+    under5_dalys_df = under5_dalys_by_cause_df.groupby(['year']).sum()
     # number of dalys by specific causes
-    interv_under5_SAM_dalys_df = under5_interv_dalys_by_cause_df.xs("Childhood Undernutrition", level=1)
-    interv_under5_ALRI_dalys_df = under5_interv_dalys_by_cause_df.xs("Lower respiratory infections", level=1)
-    interv_under5_Diarrhoea_dalys_df = under5_interv_dalys_by_cause_df.xs("Childhood Diarrhoea", level=1)
+    under5_SAM_dalys_df = under5_dalys_by_cause_df.xs("Childhood Undernutrition", level=1)
+    under5_ALRI_dalys_df = under5_dalys_by_cause_df.xs("Lower respiratory infections", level=1)
+    under5_Diarrhoea_dalys_df = under5_dalys_by_cause_df.xs("Childhood Diarrhoea", level=1)
 
-    interv_under5_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_under5_dalys_df)
-    interv_under5_SAM_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_under5_SAM_dalys_df)
-    interv_under5_ALRI_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_under5_ALRI_dalys_df)
-    interv_under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df = \
-        return_mean_95_CI_across_runs(interv_under5_Diarrhoea_dalys_df)
+    under5_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_dalys_df)
+    under5_SAM_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_SAM_dalys_df)
+    under5_ALRI_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_ALRI_dalys_df)
+    under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_Diarrhoea_dalys_df)
 
+    # under 5 DALYs for each year within intervention period
+    interv_under5_dalys_df = under5_dalys_df.loc[intervention_years]
+    interv_under5_SAM_dalys_df = under5_SAM_dalys_df.loc[intervention_years]
+    interv_under5_ALRI_dalys_df = under5_ALRI_dalys_df.loc[intervention_years]
+    interv_under5_Diarrhoea_dalys_df = under5_Diarrhoea_dalys_df.loc[intervention_years]
+
+    # sum of under 5 DALYs over intervention period
     interv_under5_dalys_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_dalys_df)
     interv_under5_SAM_dalys_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_SAM_dalys_df)
-    interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df = \
-        return_sum_95_CI_across_runs(interv_under5_ALRI_dalys_df)
+    interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_ALRI_dalys_df)
     interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_under5_Diarrhoea_dalys_df)
 
-    return {'interv_under5_dalys_df': interv_under5_dalys_df,
-            'interv_under5_SAM_dalys_df': interv_under5_SAM_dalys_df,
-            'interv_under5_ALRI_dalys_df': interv_under5_ALRI_dalys_df,
-            'interv_under5_Diarrhoea_dalys_df': interv_under5_Diarrhoea_dalys_df,
-            'interv_under5_dalys_mean_ci_df': interv_under5_dalys_mean_ci_per_year_per_draw_df,
-            'interv_under5_SAM_dalys_mean_ci_df': interv_under5_SAM_dalys_mean_ci_per_year_per_draw_df,
-            'interv_under5_ALRI_dalys_mean_ci_df': interv_under5_ALRI_dalys_mean_ci_per_year_per_draw_df,
-            'interv_under5_Diarrhoea_dalys_mean_ci_df': interv_under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df,
+    return {'under5_dalys_df': under5_dalys_df,
+            'under5_SAM_dalys_df': under5_SAM_dalys_df,
+            'under5_ALRI_dalys_df': under5_ALRI_dalys_df,
+            'under5_Diarrhoea_dalys_df': under5_Diarrhoea_dalys_df,
+            'under5_dalys_mean_ci_df': under5_dalys_mean_ci_per_year_per_draw_df,
+            'under5_SAM_dalys_mean_ci_df': under5_SAM_dalys_mean_ci_per_year_per_draw_df,
+            'under5_ALRI_dalys_mean_ci_df': under5_ALRI_dalys_mean_ci_per_year_per_draw_df,
+            'under5_Diarrhoea_dalys_mean_ci_df': under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df,
             'interv_under5_dalys_sum_ci_df': interv_under5_dalys_sum_per_draw_CI_across_runs_df,
             'interv_under5_SAM_dalys_sum_ci_df': interv_under5_SAM_dalys_sum_per_draw_CI_across_runs_df,
             'interv_under5_ALRI_dalys_sum_ci_df': interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df,
@@ -442,7 +450,7 @@ def regenerate_pickles_with_debug_logs(iterv_folders_dict) -> None:
 def extract_tx_data_frames(
     folder,
     years_of_interest,
-    intervention_years,
+    intervention_datayears,
     interv
 ) -> Dict[str, pd.DataFrame]:
     """
@@ -450,7 +458,7 @@ def extract_tx_data_frames(
 
     :param folder: Path to the folder containing outcome data.
     :param years_of_interest: List of years to extract data for.
-    :param intervention_years: List of years during which the intervention was implemented (if any).
+    :param intervention_datayears: List of years for which data include the interventions if any implemented.
     :param interv: Name or identifier of the intervention.
     :return: Dictionary with DataFrames:
         (1) 'tx_by_age_group_df': Counts by year, treatment, age_group (by draw and run),
@@ -493,10 +501,13 @@ def extract_tx_data_frames(
     tx_mean_ci_df = return_mean_95_CI_across_runs(tx_mean_df)
 
     # For intervention years
-    interv_tx_by_age_group_df = tx_by_age_group_df.loc[intervention_years]
+    interv_tx_by_age_group_df = tx_by_age_group_df.loc[intervention_datayears]
     interv_tx_by_age_group_mean_ci_df = return_mean_95_CI_across_runs(interv_tx_by_age_group_df)
     interv_tx_mean_df = interv_tx_by_age_group_df.groupby(['year', 'treatment']).sum()
     interv_tx_mean_ci_df = return_mean_95_CI_across_runs(interv_tx_mean_df)
+
+    # report during which years interventions were implemented (if any)
+    interv_years = [year+1 for year in intervention_datayears[:-1]]
 
     return {
         'tx_by_age_group_df': tx_by_age_group_df,
@@ -505,7 +516,7 @@ def extract_tx_data_frames(
         'interv_tx_by_age_group_df': interv_tx_by_age_group_df,
         'interv_tx_by_age_group_mean_ci_df': interv_tx_by_age_group_mean_ci_df,
         'interv_tx_mean_ci_df': interv_tx_mean_ci_df,
-        'interv_years': intervention_years
+        'interv_years': interv_years
     }
 
 def get_scen_colour(scen_name: str) -> str:
@@ -729,8 +740,8 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
                                'under5_ALRI_deaths_with_SAM_mean_ci_df', 'under5_Diarrhoea_deaths_with_SAM_mean_ci_df']
         else:  # outcome_type == "DALYs":
             neonatal_outcomes = [None, None, None, None]  # No data on DALYs for neonatal
-            under5_outcomes = ['interv_under5_dalys_mean_ci_df', 'interv_under5_SAM_dalys_mean_ci_df',
-                               'interv_under5_ALRI_dalys_mean_ci_df', 'interv_under5_Diarrhoea_dalys_mean_ci_df']
+            under5_outcomes = ['under5_dalys_mean_ci_df', 'under5_SAM_dalys_mean_ci_df',
+                               'under5_ALRI_dalys_mean_ci_df', 'under5_Diarrhoea_dalys_mean_ci_df']
         outcome = neonatal_outcomes[i] if cohort == 'Neonatal' else under5_outcomes[i]
 
         if outcome:
@@ -755,7 +766,7 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
                 means, ci_lower, ci_upper = zip(*scen_data.values.flatten())
 
                 # Plot the data
-                years_to_plot = [year for year in plot_years if year in scen_data.index]
+                years_to_plot = [year for year in plot_years if year-1 in scen_data.index]
                 ax.plot(years_to_plot, means, label=scenario, color=get_scen_colour(scenario))
                 ax.fill_between(years_to_plot, ci_lower, ci_upper, color=get_scen_colour(scenario), alpha=0.2)
 

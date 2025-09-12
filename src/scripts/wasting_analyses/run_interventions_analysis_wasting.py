@@ -38,7 +38,7 @@ intervs_of_interest = ['GM', 'CS', 'FS']
 intervention_years = list(range(2026, 2031))
 scenarios_to_compare = ['GM_FullAttend', 'CS_100', 'FS_Full']
 # Which years to plot (from post burn-in period)
-plot_years = list(range(2015, 2031))
+plot_years = list(range(2015, 2032))
 # Plot settings
 legend_fontsize = 12
 title_fontsize = 16
@@ -52,8 +52,9 @@ outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
 cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
 # force_calculation of [births_data, deaths_data, dalys_data, tx_data],
 #   if True, enables to force recalculation of the corresponding data
-force_calculation = [False, False, False, False]  # [True, True, True]  #
-########################################################################################################################
+force_calculation = [False, False, False, False]
+# force_calculation = [True, True, True, True]
+######################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")
 # Ensure Status Quo is always included within the both intervs_of_interest and scenarios_to_compare
@@ -85,6 +86,16 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     :param scenarios_tocompare: List of scenarios to be plotted together for comparison
     :param intervsall: List of all interventions
     """
+
+    # deaths and dalys data are extracted for the whole year, which means when plotted in discrete times, at the point
+    # of year xxxx, which is beginning of the year data from xxxx-1 year needs to be plotted
+    datayears = [year-1 for year in plotyears]
+    # when plotting means for intervention years, it needs to be plotted from the first year of interventions being
+    # implemented until the beginning of year after last year of interventions
+    interv_plotyears = interventionyears + [interventionyears[-1] + 1]
+    # to plot the mean for year xxxx, since it shows as in first day of the year, the data from the end of previous
+    # years need to be used
+    interv_datayears = [year-1 for year in interv_plotyears]
 
     print("\n----------------------------")
     print("   --- MAIN ANALYSES ---")
@@ -129,7 +140,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         print("\nbirth outcomes calculation ...")
         birth_outcomes_dict = {
             interv: util_fncs.extract_birth_data_frames_and_outcomes(
-                iterv_folders_dict[interv], plotyears, interventionyears, interv
+                iterv_folders_dict[interv], datayears, interv_datayears, interv
             )
             for interv in scenario_folders
         }
@@ -153,7 +164,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         print("\ndeath outcomes calculation ...")
         death_outcomes_dict = {
             interv: util_fncs.extract_death_data_frames_and_outcomes(
-                iterv_folders_dict[interv], birth_outcomes_dict[interv]['births_df'], plotyears, interventionyears,
+                iterv_folders_dict[interv], birth_outcomes_dict[interv]['births_df'], datayears, interventionyears,
                 interv
             ) for interv in scenario_folders
         }
@@ -174,13 +185,13 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         with dalys_outcomes_path.open("rb") as f:
             dalys_outcomes_dict = pickle.load(f)
     else:
-        print("\ndalys outcomes calculation ...")
+        print("\ndalys outcomes for intervention period calculation ...")
         dalys_outcomes_dict = {
-            interv: util_fncs.extract_interv_daly_data_frames_and_outcomes(
-                iterv_folders_dict[interv], plotyears, interventionyears, interv
+            interv: util_fncs.extract_daly_data_frames_and_outcomes(
+                iterv_folders_dict[interv], datayears, interventionyears, interv
             ) for interv in scenario_folders
         }
-        print("saving dalys outcomes to file ...")
+        print("saving dalys outcomes for intervention period to file ...")
         with dalys_outcomes_path.open("wb") as f:
             pickle.dump(dalys_outcomes_dict, f)
 
@@ -573,6 +584,12 @@ def run_behind_the_scene_analysis_wasting(
     Loads or extracts treatment outcomes for behind-the-scenes analysis.
     """
 
+    datayears = [year-1 for year in plotyears]
+    # when plotting means for intervention years, it needs to be plotted from the first year of interventions being
+    # implemented until the beginning of year after last year of interventions
+    interv_plotyears = interventionyears + [interventionyears[-1] + 1]
+    interv_datayears = [year-1 for year in interv_plotyears]
+
     print("\n----------------------------")
     print("--- BEHIND-THE-SCENE ANALYSES ---")
     iterv_folders_dict = {
@@ -639,7 +656,7 @@ def run_behind_the_scene_analysis_wasting(
         print("\ntx outcomes calculation ...")
         tx_outcomes_dict = {
             interv: util_fncs.extract_tx_data_frames(
-                iterv_folders_dict[interv], plotyears, interventionyears, interv
+                iterv_folders_dict[interv], datayears, interv_datayears, interv
             ) for interv in scenario_folders
 		}
         print("saving tx outcomes to file ...")
