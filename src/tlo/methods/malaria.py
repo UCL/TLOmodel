@@ -298,6 +298,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         all_inc = all_inc.reset_index()
 
         all_inc['district_num'] = all_inc['admin'].map(mapper_district_name_to_num)
+
+        # Filter to only include Rumphi district (district_num = 3)
+        all_inc = all_inc[all_inc['district_num'] == 3].copy()
         assert not all_inc['district_num'].isna().any()
 
         self.all_inc = all_inc.drop(columns=['admin']).set_index(['month', 'district_num', 'llin', 'irs'])
