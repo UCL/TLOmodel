@@ -476,14 +476,6 @@ class WastingAnalyses:
         ax.set_xticklabels(age_groups)
         ax.set_ylim([0, 0.16])
         ax.legend(fontsize=legend_fontsize)
-
-        # Adjust the layout to make space for the footnote
-        plt.subplots_adjust(top=0.15) # Adjust the top margin
-        # Add footnote
-        fig.figure.text(0.43, 0.95,
-                        "proportion = number of wasted children in the age group "
-                        "/ total number of children in the age group",
-                        ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
         plt.tight_layout()
         fig_output_name = ('wasting_initial_prevalence_per_each_age_group__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
@@ -566,7 +558,7 @@ class WastingAnalyses:
                 bottom += w_prev_plot_df[col]
         ax.set_xticks(pos)
         ax.set_xticklabels(w_prev_plot_df.index, rotation=90)
-        ax.set_title("Wasting prevalence in children 0-59 months per year", fontsize=title_fontsize-6)
+        # ax.set_title("Wasting prevalence in children 0-59 months per year", fontsize=title_fontsize-6)
         ax.set_ylabel('proportion of wasted children in the year')
         ax.set_xlabel('year')
         ax.set_ylim([0, 0.06])
@@ -723,15 +715,12 @@ class WastingAnalyses:
 
             ax.set_xlabel('age group')
             ax.set_ylabel('proportion')
-            ax.set_title(f"Wasting prevalence in children 0-59 months per each age group in {year_calib}",
-                         fontsize=title_fontsize-1)
+            # ax.set_title(f"Wasting prevalence in children 0-59 months per each age group in {year_calib}",
+            #              fontsize=title_fontsize-1)
             ax.set_xticks([r + bar_width / 2 for r in range(len(plotting_model))])
             ax.set_xticklabels(age_groups)
             ax.set_ylim([0, 0.12])
             ax.legend(fontsize=legend_fontsize)
-
-            # Adjust the layout to make space for the footnote
-            plt.subplots_adjust(top=0.15)  # Adjust the bottom margin
             plt.tight_layout()
             fig_output_name = (f'wasting_prevalence_per_each_age_group_{year_calib}__' + self.datestamp)
             if year_calib in [2016, 2020]:
@@ -754,13 +743,11 @@ class WastingAnalyses:
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
                     fmt='o', color='#000', label="GBD 2019 estimates")
 
-        ax.set_title('Average annual under-five direct deaths due to severe acute malnutrition', fontsize=title_fontsize-1)
+        # ax.set_title('Average annual under-five direct deaths due to severe acute malnutrition', fontsize=title_fontsize-1)
         ax.set_xlabel("time period")
         ax.set_ylabel("number of deaths")
         ax.legend(loc='upper center', fontsize=legend_fontsize)
         fig.tight_layout()
-        # Adjust the layout to make space for the footnote
-        plt.subplots_adjust(bottom=0.15)  # Adjust the bottom margin
         fig_output_name = ('model_gbd_deaths_incl_burnin__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
         # plt.show()
@@ -781,14 +768,12 @@ class WastingAnalyses:
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
                     fmt='o', color='#000', label="GBD (2019)")
 
-        ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5',
-                     fontsize=title_fontsize - 1)
+        # ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5',
+        #              fontsize=title_fontsize - 1)
         ax.set_xlabel("time period")
         ax.set_ylabel("number of deaths")
         ax.legend(loc='upper right', fontsize=legend_fontsize)
         fig.tight_layout()
-        # Adjust the layout to make space for the footnote
-        plt.subplots_adjust(bottom=0.15)  # Adjust the bottom margin
         fig_output_name = ('model_gbd_deaths_excl_burnin__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
         # plt.show()
