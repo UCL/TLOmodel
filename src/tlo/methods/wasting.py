@@ -157,7 +157,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         "growth_monitoring_attendance_prob_agecat": Parameter(
             Types.LIST, "probability to attend the growth monitoring for age categories <1, [1; 2], (2; 5) years old"
         ),
-        "seeking_care_MAM_prob": Parameter(
+        "awareness_MAM_prob": Parameter(
             Types.REAL, "probability of recognising symptoms and seeking care in MAM cases"
         ),
         # treatment
@@ -202,7 +202,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             "probability to attend the growth monitoring for age categories following the "
             "activation of the intervention",
         ),
-        "interv_seeking_care_MAM_prob": Parameter(
+        "interv_awareness_MAM_prob": Parameter(
             Types.REAL,
             "probability of recognising symptoms and seeking care in MAM cases following the "
             "activation of the intervention",
@@ -692,7 +692,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             else:
                 df.at[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
                 # apply symptoms to certain MAM cases
-                if self.rng.random_sample() < p['seeking_care_MAM_prob']:
+                if self.rng.random_sample() < p['awareness_MAM_prob']:
                     self.wasting_clinical_symptoms(person_id=person_id)
                 else:
                     # clear all wasting symptoms
@@ -1479,7 +1479,7 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_am_treatment_type'] = 'none'
 
         # clear all wasting symptoms if not recognised
-        if rng.random_sample() < p["seeking_care_MAM_prob"]:
+        if rng.random_sample() < p["awareness_MAM_prob"]:
             # check presence of weight_loss symptom
             assert "weight_loss" in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
         else:
