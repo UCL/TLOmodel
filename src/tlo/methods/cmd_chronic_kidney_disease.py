@@ -286,6 +286,30 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
+class HSI_Kidney_Transplant_Evaluation(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is the event a person undergoes in order to determine whether an individual is eligible for a kidney transplant
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, CMDChronicKidneyDisease)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Dr_CMD_Kidney_Transplant_Evaluation'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(key='debug',
+                     data=f'This is HSI_Kidney_Transplant_Evaluation for person {person_id}')
+        df = self.sim.population.props
+        # person = df.loc[person_id]
+        # hs = self.sim.modules["HealthSystem"]
+        pass
+
+
 class CMDChronicKidneyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
