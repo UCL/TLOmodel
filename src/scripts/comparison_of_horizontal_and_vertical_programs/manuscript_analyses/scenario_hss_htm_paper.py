@@ -36,7 +36,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 5
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
@@ -98,12 +98,6 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.accelerated_hrh_expansion(),
                 ),
 
-            "Increase Capacity at Primary Care Levels":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.increase_capacity_at_primary_care(),
-                ),
-
             # - - - Supply Chains - - -
 
             "Consumables Increased to 75th Percentile":
@@ -163,14 +157,6 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
                     scenario_definitions.accelerated_hrh_expansion(),
-                ),
-
-            # - - - HIV SCALE-UP INCREASED PRIMARY CARE WORKFORCE- - -
-            "HIV Program Scale-up With Increased HRH at Primary Care Levels":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.increase_capacity_at_primary_care(),
                 ),
 
             # - - - HIV SCALE-UP CONS 75th PERCENTILE- - -
@@ -238,14 +224,6 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.accelerated_hrh_expansion(),
                 ),
 
-            # - - - TB SCALE-UP INCREASED PRIMARY CARE WORKFORCE- - -
-            "TB Program Scale-up With Increased HRH at Primary Care Levels":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.tb_scaleup(),
-                    scenario_definitions.increase_capacity_at_primary_care(),
-                ),
-
             # - - - TB SCALE-UP CONS 75th PERCENTILE- - -
             "TB Program Scale-up With Consumables at 75th Percentile":
                 mix_scenarios(
@@ -309,14 +287,6 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.baseline(),
                     scenario_definitions.malaria_scaleup(),
                     scenario_definitions.accelerated_hrh_expansion(),
-                ),
-
-            # - - - Malaria SCALE-UP INCREASED PRIMARY CARE WORKFORCE- - -
-            "Malaria Program Scale-up With Increased HRH at Primary Care Levels":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.malaria_scaleup(),
-                    scenario_definitions.increase_capacity_at_primary_care(),
                 ),
 
             # - - - Malaria SCALE-UP CONS 75th PERCENTILE- - -
@@ -392,16 +362,6 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.accelerated_hrh_expansion(),
                 ),
 
-            # - - - HTM SCALE-UP INCREASED PRIMARY CARE WORKFORCE- - -
-            "HTM Program Scale-up With Increased HRH at Primary Care Levels":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.tb_scaleup(),
-                    scenario_definitions.malaria_scaleup(),
-                    scenario_definitions.increase_capacity_at_primary_care(),
-                ),
-
             # - - - HTM SCALE-UP CONS 75th PERCENTILE- - -
             "HTM Program Scale-up With Consumables at 75th Percentile":
                 mix_scenarios(
@@ -441,6 +401,107 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.malaria_scaleup(),
                     scenario_definitions.hss_package_realistic(),
                 ),
+
+            # **************************************************
+            # FRONTIER COMBINATIONS
+            # **************************************************
+
+            # - - - HIV / TB SCALE-UP - - -
+            "HIV/TB Program Scale-up":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                ),
+
+            "HIV/TB Program Scale-up With HRH Scale-up (4%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.hrh_using_historical_scaling(),
+                ),
+
+            "HIV/TB Program Scale-up With Consumables at 75th Percentile":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.cons_at_75th_percentile(),
+                ),
+
+            "HIV/TB Program Scale-up With HSS Expansion Package":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.hss_package_realistic(),
+                ),
+
+            # - - - HIV / Malaria SCALE-UP - - -
+            "HIV/Malaria Program Scale-up":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                ),
+
+            "HIV/Malaria Program Scale-up With HRH Scale-up (4%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hrh_using_historical_scaling(),
+                ),
+
+            "HIV/Malaria Program Scale-up With Consumables at 75th Percentile":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.cons_at_75th_percentile(),
+                ),
+
+            "HIV/Malaria Program Scale-up With HSS Expansion Package":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hss_package_realistic(),
+                ),
+
+            # - - - TB / Malaria SCALE-UP - - -
+            "TB/Malaria Program Scale-up":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                ),
+
+            "TB/Malaria Program Scale-up With HRH Scale-up (4%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hrh_using_historical_scaling(),
+                ),
+
+            "TB/Malaria Program Scale-up With Consumables at 75th Percentile":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.cons_at_75th_percentile(),
+                ),
+
+            "TB/Malaria Program Scale-up With HSS Expansion Package":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hss_package_realistic(),
+                ),
+
         }
 
 

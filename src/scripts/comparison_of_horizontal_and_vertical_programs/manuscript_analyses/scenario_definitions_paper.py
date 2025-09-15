@@ -210,9 +210,7 @@ class ScenarioDefinitions:
     def hss_package_realistic(self) -> Dict:
         """The parameters for the Health System Strengthening Package with 75th percentile cons"""
         return mix_scenarios(
-            self.increase_capacity_at_primary_care(),
-            self.accelerated_hrh_expansion(),
-            self.perfect_healthcare_seeking(),
+            self.hrh_using_historical_scaling(),
             self.cons_at_75th_percentile(),
         )
 
