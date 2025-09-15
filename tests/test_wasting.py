@@ -1086,8 +1086,8 @@ def test_default_interv_pars(tmpdir):
         ("The parameters 'growth_monitoring_attendance_prob_agecat' and "
          "'interv_growth_monitoring_attendance_prob_agecat' do not match.")
 
-    assert p['seeking_care_MAM_prob'] == p['interv_seeking_care_MAM_prob'], \
-        "The parameters 'seeking_care_MAM_prob' and 'interv_seeking_care_MAM_prob' do not match."
+    assert p['awareness_MAM_prob'] == p['interv_awareness_MAM_prob'], \
+        "The parameters 'awareness_MAM_prob' and 'interv_awareness_MAM_prob' do not match."
 
     assert not p['interv_food_supplements_avail_bool'], \
         "The parameters 'interv_food_supplements_avail_bool' should be False by default but it is not."
@@ -1139,8 +1139,8 @@ def test_symptoms_with_MAM(tmpdir):
     df.loc[person_id, 'un_am_nutritional_oedema'] = False
 
     # ### Before the intervention is activated, symptoms are never assigned to MAM cases
-    # This part of the test only makes sense when seeking_care_MAM_prob is set to 0.0 by default.
-    assert p['seeking_care_MAM_prob'] == 0.0
+    # This part of the test only makes sense when awareness_MAM_prob is set to 0.0 by default.
+    assert p['awareness_MAM_prob'] == 0.0
     wmodule.clinical_acute_malnutrition_state(person_id, df)
     assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
     # weight_loss should not be assigned as a symptom
@@ -1149,11 +1149,11 @@ def test_symptoms_with_MAM(tmpdir):
     )
 
     # ### If all MAM cases are seeking care, the symptoms are always assigned to them
-    p['interv_seeking_care_MAM_prob'] = 1.0
+    p['interv_awareness_MAM_prob'] = 1.0
     activation_event = Wasting_ActivateInterventionsEvent(wmodule)
     activation_event.apply(sim.population)
-    assert p['seeking_care_MAM_prob'] == p['interv_seeking_care_MAM_prob'], \
-        "The parameter 'seeking_care_MAM_prob' was not correctly overwritten by the activation event."
+    assert p['awareness_MAM_prob'] == p['interv_awareness_MAM_prob'], \
+        "The parameter 'awareness_MAM_prob' was not correctly overwritten by the activation event."
     wmodule.clinical_acute_malnutrition_state(person_id, df)
     assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
     # weight_loss should be assigned as a symptom
@@ -1166,11 +1166,11 @@ def test_symptoms_with_MAM(tmpdir):
     assert 'weight_loss' not in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # ### If no MAM cases are seeking care, the symptoms are never assigned to them
-    p['interv_seeking_care_MAM_prob'] = 0.0
+    p['interv_awareness_MAM_prob'] = 0.0
     activation_event = Wasting_ActivateInterventionsEvent(wmodule)
     activation_event.apply(sim.population)
-    assert p['seeking_care_MAM_prob'] == p['interv_seeking_care_MAM_prob'], \
-        "The parameter 'seeking_care_MAM_prob' was not correctly overwritten by the activation event."
+    assert p['awareness_MAM_prob'] == p['interv_awareness_MAM_prob'], \
+        "The parameter 'awareness_MAM_prob' was not correctly overwritten by the activation event."
     wmodule.clinical_acute_malnutrition_state(person_id, df)
     assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
     # weight_loss should not be assigned as a symptom
