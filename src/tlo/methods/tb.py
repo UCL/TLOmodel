@@ -919,6 +919,10 @@ class Tb(Module):
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
             )
 
+        # todo update availability of Xpert in all years/facilities
+        self.sim.modules['HealthSystem'].override_availability_of_consumables(
+            {187: 0.857})
+
     def update_parameters_for_program_scaleup(self):
         """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
@@ -2064,6 +2068,7 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
         # ------------------------- Culture testing if program scale-up ------------------------- #
         # under program scale-up, if a person tests negative but still has all symptoms
         # indicative of TB, they are referred for culture test which has perfect sensitivity
+        # this is only called in a scale-up scenario - not routinely
         # this has the effect to reduce false negatives
         person_has_tb_symptoms = all(symptom in persons_symptoms for symptom in self.module.symptom_list)
 
