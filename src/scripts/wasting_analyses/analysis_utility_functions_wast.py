@@ -1242,7 +1242,7 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
         heatmap_data_requested_fac_level,
         annot=True, cmap="RdYlGn", vmin=0, vmax=1,cbar_kws={"label": "Proportion of days available"}
     )
-    plt.title("Monthly average availability of consumables at requested facility levels", fontweight="bold")
+    # plt.title("Monthly average availability of consumables at requested facility levels", fontweight="bold")
     plt.xlabel("Month")
     plt.ylabel("Consumable")
     plt.xticks(rotation=0)
@@ -1364,7 +1364,7 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
         treatment_heatmap_data_requested_fac_level,
         annot=True, cmap="RdYlGn", vmin=0, vmax=1, cbar_kws={"label": "Proportion of days available"}
     )
-    plt.title("Monthly average availability of treatments at requested facility levels", fontweight="bold")
+    # plt.title("Monthly average availability of treatments at requested facility levels", fontweight="bold")
     plt.xlabel("Month")
     plt.ylabel("Treatment")
     plt.xticks(rotation=0)
