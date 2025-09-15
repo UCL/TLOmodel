@@ -32,14 +32,11 @@ class HTMWithAndWithoutHSS(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        # self.end_date = Date(2036, 1, 1)
-        # self.pop_size = 100_000
-        self.end_date = Date(2011, 1, 1)
-        self.pop_size = 1000
+        self.end_date = Date(2036, 1, 1)
+        self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        # self.runs_per_draw = 10
-        self.runs_per_draw = 1
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
@@ -74,8 +71,8 @@ class HTMWithAndWithoutHSS(BaseScenario):
         scenario_definitions = ScenarioDefinitions()
 
         return {
-            # "Baseline":
-            #     scenario_definitions.baseline(),
+            "Baseline":
+                scenario_definitions.baseline(),
 
             # ***************************
             # HEALTH SYSTEM STRENGTHENING
@@ -121,389 +118,389 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.cons_at_EPI_availability(),
                 ),
 
-            # "HSS Expansion Package":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hss_package_realistic(),
-            #     ),
+            "HSS Expansion Package":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hss_package_realistic(),
+                ),
 
             # **************************************************
             # VERTICAL PROGRAMS WITH AND WITHOUT THE HSS PACKAGE
             # **************************************************
 
-            # # - - - HIV SCALE-UP WITHOUT HSS - - -
-            # "HIV Program Scale-up Without HSS Expansion":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #     ),
-            #
-            # # - - - HIV SCALE-UP MODERATE HRH HSS PACKAGE- - -
-            # "HIV Program Scale-up With HRH Scale-up (1%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.moderate_hrh_expansion(),
-            #     ),
-            #
-            # # - - - HIV SCALE-UP HISTORICAL HRH HSS PACKAGE- - -
-            # "HIV Program Scale-up With HRH Scale-up (4%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.hrh_using_historical_scaling(),
-            #     ),
-            #
-            # # - - - HIV SCALE-UP ACCELERATED HRH HSS PACKAGE- - -
-            # "HIV Program Scale-up With HRH Scale-up (6%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.accelerated_hrh_expansion(),
-            #     ),
-            #
-            # # - - - HIV SCALE-UP CONS 75th PERCENTILE- - -
-            # "HIV Program Scale-up With Consumables at 75th Percentile":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.cons_at_75th_percentile(),
-            #     ),
-            #
-            # # - - - HIV SCALE-UP CONS HIV LEVEL- - -
-            # "HIV Program Scale-up With Consumables at HIV levels":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.cons_at_HIV_availability(),
-            #     ),
-            #
-            # # - - - HIV SCALE-UP CONS EPI LEVEL- - -
-            # "HIV Program Scale-up With Consumables at EPI levels":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.cons_at_EPI_availability(),
-            #     ),
-            #
-            # # - - - HIV SCALE-UP *WITH* HSS PACKAGE- - -
-            # "HIV Programs Scale-up With HSS Expansion Package":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.hss_package_realistic(),
-            #     ),
-            #
-            # # - - - TB - - -
-            #
-            # # - - - TB SCALE-UP WITHOUT HSS - - -
-            # "TB Program Scale-up Without HSS Expansion":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #     ),
-            #
-            # # - - - TB SCALE-UP MODERATE HRH HSS PACKAGE- - -
-            # "TB Program Scale-up With HRH Scale-up (1%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.moderate_hrh_expansion(),
-            #     ),
-            #
-            # # - - - TB SCALE-UP HISTORICAL HRH HSS PACKAGE- - -
-            # "TB Program Scale-up With HRH Scale-up (4%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.hrh_using_historical_scaling(),
-            #     ),
-            #
-            # # - - - TB SCALE-UP ACCELERATED HRH HSS PACKAGE- - -
-            # "TB Program Scale-up With HRH Scale-up (6%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.accelerated_hrh_expansion(),
-            #     ),
-            #
-            # # - - - TB SCALE-UP CONS 75th PERCENTILE- - -
-            # "TB Program Scale-up With Consumables at 75th Percentile":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.cons_at_75th_percentile(),
-            #     ),
-            #
-            # # - - - TB SCALE-UP CONS HIV LEVEL- - -
-            # "TB Program Scale-up With Consumables at HIV levels":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.cons_at_HIV_availability(),
-            #     ),
-            #
-            # # - - - TB SCALE-UP CONS EPI LEVEL- - -
-            # "TB Program Scale-up With Consumables at EPI levels":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.cons_at_EPI_availability(),
-            #     ),
-            #
-            # # - - - TB SCALE-UP *WITH* HSS PACKAGE- - -
-            # "TB Programs Scale-up With HSS Expansion Package":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.hss_package_realistic(),
-            #     ),
-            #
-            # # - - - MALARIA - - -
-            #
-            # # - - - Malaria SCALE-UP WITHOUT HSS - - -
-            # "Malaria Program Scale-up Without HSS Expansion":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.malaria_scaleup(),
-            #     ),
-            #
-            # # - - - Malaria SCALE-UP MODERATE HRH HSS PACKAGE- - -
-            # "Malaria Program Scale-up With HRH Scale-up (1%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.moderate_hrh_expansion(),
-            #     ),
-            #
-            # # - - - Malaria SCALE-UP HISTORICAL HRH HSS PACKAGE- - -
-            # "Malaria Program Scale-up With HRH Scale-up (4%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.hrh_using_historical_scaling(),
-            #     ),
-            #
-            # # - - - Malaria SCALE-UP ACCELERATED HRH HSS PACKAGE- - -
-            # "Malaria Program Scale-up With HRH Scale-up (6%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.accelerated_hrh_expansion(),
-            #     ),
-            #
-            # # - - - Malaria SCALE-UP CONS 75th PERCENTILE- - -
-            # "Malaria Program Scale-up With Consumables at 75th Percentile":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.cons_at_75th_percentile(),
-            #     ),
-            #
-            # # - - - Malaria SCALE-UP CONS HIV LEVEL- - -
-            # "Malaria Program Scale-up With Consumables at HIV levels":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.cons_at_HIV_availability(),
-            #     ),
-            #
-            # # - - - Malaria SCALE-UP CONS EPI LEVEL- - -
-            # "Malaria Program Scale-up With Consumables at EPI levels":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.cons_at_EPI_availability(),
-            #     ),
-            #
-            # # - - - Malaria SCALE-UP *WITH* HSS PACKAGE- - -
-            # "Malaria Programs Scale-up With HSS Expansion Package":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.hss_package_realistic(),
-            #     ),
-            #
-            # # - - - HTM - - -
-            #
-            # # - - - HTM SCALE-UP WITHOUT HSS - - -
-            # "HTM Program Scale-up Without HSS Expansion":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #     ),
-            #
-            # # - - - HTM SCALE-UP MODERATE HRH HSS PACKAGE- - -
-            # "HTM Program Scale-up With HRH Scale-up (1%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.moderate_hrh_expansion(),
-            #     ),
-            #
-            # # - - - HTM SCALE-UP HISTORICAL HRH HSS PACKAGE- - -
-            # "HTM Program Scale-up With HRH Scale-up (4%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.hrh_using_historical_scaling(),
-            #     ),
-            #
-            # # - - - HTM SCALE-UP ACCELERATED HRH HSS PACKAGE- - -
-            # "HTM Program Scale-up With HRH Scale-up (6%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.accelerated_hrh_expansion(),
-            #     ),
-            #
-            # # - - - HTM SCALE-UP CONS 75th PERCENTILE- - -
-            # "HTM Program Scale-up With Consumables at 75th Percentile":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.cons_at_75th_percentile(),
-            #     ),
-            #
-            # # - - - HTM SCALE-UP CONS HIV LEVEL- - -
-            # "HTM Program Scale-up With Consumables at HIV levels":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.cons_at_HIV_availability(),
-            #     ),
-            #
-            # # - - - HTM SCALE-UP CONS EPI LEVEL- - -
-            # "HTM Program Scale-up With Consumables at EPI levels":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.cons_at_EPI_availability(),
-            #     ),
-            #
-            # # - - - HTM SCALE-UP *WITH* HSS PACKAGE- - -
-            # "HTM Programs Scale-up With HSS Expansion Package":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.hss_package_realistic(),
-            #     ),
-            #
-            # # **************************************************
-            # # FRONTIER COMBINATIONS
-            # # **************************************************
-            #
-            # # - - - HIV / TB SCALE-UP - - -
-            # "HIV/TB Program Scale-up":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #     ),
-            #
-            # "HIV/TB Program Scale-up With HRH Scale-up (4%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.hrh_using_historical_scaling(),
-            #     ),
-            #
-            # "HIV/TB Program Scale-up With Consumables at 75th Percentile":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.cons_at_75th_percentile(),
-            #     ),
-            #
-            # "HIV/TB Program Scale-up With HSS Expansion Package":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.hss_package_realistic(),
-            #     ),
-            #
-            # # - - - HIV / Malaria SCALE-UP - - -
-            # "HIV/Malaria Program Scale-up":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #     ),
-            #
-            # "HIV/Malaria Program Scale-up With HRH Scale-up (4%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.hrh_using_historical_scaling(),
-            #     ),
-            #
-            # "HIV/Malaria Program Scale-up With Consumables at 75th Percentile":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.cons_at_75th_percentile(),
-            #     ),
-            #
-            # "HIV/Malaria Program Scale-up With HSS Expansion Package":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.hiv_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.hss_package_realistic(),
-            #     ),
-            #
-            # # - - - TB / Malaria SCALE-UP - - -
-            # "TB/Malaria Program Scale-up":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #     ),
-            #
-            # "TB/Malaria Program Scale-up With HRH Scale-up (4%)":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.hrh_using_historical_scaling(),
-            #     ),
-            #
-            # "TB/Malaria Program Scale-up With Consumables at 75th Percentile":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.cons_at_75th_percentile(),
-            #     ),
-            #
-            # "TB/Malaria Program Scale-up With HSS Expansion Package":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.tb_scaleup(),
-            #         scenario_definitions.malaria_scaleup(),
-            #         scenario_definitions.hss_package_realistic(),
-            #     ),
+            # - - - HIV SCALE-UP WITHOUT HSS - - -
+            "HIV Program Scale-up Without HSS Expansion":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                ),
+
+            # - - - HIV SCALE-UP MODERATE HRH HSS PACKAGE- - -
+            "HIV Program Scale-up With HRH Scale-up (1%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.moderate_hrh_expansion(),
+                ),
+
+            # - - - HIV SCALE-UP HISTORICAL HRH HSS PACKAGE- - -
+            "HIV Program Scale-up With HRH Scale-up (4%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.hrh_using_historical_scaling(),
+                ),
+
+            # - - - HIV SCALE-UP ACCELERATED HRH HSS PACKAGE- - -
+            "HIV Program Scale-up With HRH Scale-up (6%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.accelerated_hrh_expansion(),
+                ),
+
+            # - - - HIV SCALE-UP CONS 75th PERCENTILE- - -
+            "HIV Program Scale-up With Consumables at 75th Percentile":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.cons_at_75th_percentile(),
+                ),
+
+            # - - - HIV SCALE-UP CONS HIV LEVEL- - -
+            "HIV Program Scale-up With Consumables at HIV levels":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.cons_at_HIV_availability(),
+                ),
+
+            # - - - HIV SCALE-UP CONS EPI LEVEL- - -
+            "HIV Program Scale-up With Consumables at EPI levels":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.cons_at_EPI_availability(),
+                ),
+
+            # - - - HIV SCALE-UP *WITH* HSS PACKAGE- - -
+            "HIV Programs Scale-up With HSS Expansion Package":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.hss_package_realistic(),
+                ),
+
+            # - - - TB - - -
+
+            # - - - TB SCALE-UP WITHOUT HSS - - -
+            "TB Program Scale-up Without HSS Expansion":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                ),
+
+            # - - - TB SCALE-UP MODERATE HRH HSS PACKAGE- - -
+            "TB Program Scale-up With HRH Scale-up (1%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.moderate_hrh_expansion(),
+                ),
+
+            # - - - TB SCALE-UP HISTORICAL HRH HSS PACKAGE- - -
+            "TB Program Scale-up With HRH Scale-up (4%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.hrh_using_historical_scaling(),
+                ),
+
+            # - - - TB SCALE-UP ACCELERATED HRH HSS PACKAGE- - -
+            "TB Program Scale-up With HRH Scale-up (6%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.accelerated_hrh_expansion(),
+                ),
+
+            # - - - TB SCALE-UP CONS 75th PERCENTILE- - -
+            "TB Program Scale-up With Consumables at 75th Percentile":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.cons_at_75th_percentile(),
+                ),
+
+            # - - - TB SCALE-UP CONS HIV LEVEL- - -
+            "TB Program Scale-up With Consumables at HIV levels":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.cons_at_HIV_availability(),
+                ),
+
+            # - - - TB SCALE-UP CONS EPI LEVEL- - -
+            "TB Program Scale-up With Consumables at EPI levels":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.cons_at_EPI_availability(),
+                ),
+
+            # - - - TB SCALE-UP *WITH* HSS PACKAGE- - -
+            "TB Programs Scale-up With HSS Expansion Package":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.hss_package_realistic(),
+                ),
+
+            # - - - MALARIA - - -
+
+            # - - - Malaria SCALE-UP WITHOUT HSS - - -
+            "Malaria Program Scale-up Without HSS Expansion":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.malaria_scaleup(),
+                ),
+
+            # - - - Malaria SCALE-UP MODERATE HRH HSS PACKAGE- - -
+            "Malaria Program Scale-up With HRH Scale-up (1%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.moderate_hrh_expansion(),
+                ),
+
+            # - - - Malaria SCALE-UP HISTORICAL HRH HSS PACKAGE- - -
+            "Malaria Program Scale-up With HRH Scale-up (4%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hrh_using_historical_scaling(),
+                ),
+
+            # - - - Malaria SCALE-UP ACCELERATED HRH HSS PACKAGE- - -
+            "Malaria Program Scale-up With HRH Scale-up (6%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.accelerated_hrh_expansion(),
+                ),
+
+            # - - - Malaria SCALE-UP CONS 75th PERCENTILE- - -
+            "Malaria Program Scale-up With Consumables at 75th Percentile":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.cons_at_75th_percentile(),
+                ),
+
+            # - - - Malaria SCALE-UP CONS HIV LEVEL- - -
+            "Malaria Program Scale-up With Consumables at HIV levels":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.cons_at_HIV_availability(),
+                ),
+
+            # - - - Malaria SCALE-UP CONS EPI LEVEL- - -
+            "Malaria Program Scale-up With Consumables at EPI levels":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.cons_at_EPI_availability(),
+                ),
+
+            # - - - Malaria SCALE-UP *WITH* HSS PACKAGE- - -
+            "Malaria Programs Scale-up With HSS Expansion Package":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hss_package_realistic(),
+                ),
+
+            # - - - HTM - - -
+
+            # - - - HTM SCALE-UP WITHOUT HSS - - -
+            "HTM Program Scale-up Without HSS Expansion":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                ),
+
+            # - - - HTM SCALE-UP MODERATE HRH HSS PACKAGE- - -
+            "HTM Program Scale-up With HRH Scale-up (1%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.moderate_hrh_expansion(),
+                ),
+
+            # - - - HTM SCALE-UP HISTORICAL HRH HSS PACKAGE- - -
+            "HTM Program Scale-up With HRH Scale-up (4%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hrh_using_historical_scaling(),
+                ),
+
+            # - - - HTM SCALE-UP ACCELERATED HRH HSS PACKAGE- - -
+            "HTM Program Scale-up With HRH Scale-up (6%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.accelerated_hrh_expansion(),
+                ),
+
+            # - - - HTM SCALE-UP CONS 75th PERCENTILE- - -
+            "HTM Program Scale-up With Consumables at 75th Percentile":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.cons_at_75th_percentile(),
+                ),
+
+            # - - - HTM SCALE-UP CONS HIV LEVEL- - -
+            "HTM Program Scale-up With Consumables at HIV levels":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.cons_at_HIV_availability(),
+                ),
+
+            # - - - HTM SCALE-UP CONS EPI LEVEL- - -
+            "HTM Program Scale-up With Consumables at EPI levels":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.cons_at_EPI_availability(),
+                ),
+
+            # - - - HTM SCALE-UP *WITH* HSS PACKAGE- - -
+            "HTM Programs Scale-up With HSS Expansion Package":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hss_package_realistic(),
+                ),
+
+            # **************************************************
+            # FRONTIER COMBINATIONS
+            # **************************************************
+
+            # - - - HIV / TB SCALE-UP - - -
+            "HIV/TB Program Scale-up":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                ),
+
+            "HIV/TB Program Scale-up With HRH Scale-up (4%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.hrh_using_historical_scaling(),
+                ),
+
+            "HIV/TB Program Scale-up With Consumables at 75th Percentile":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.cons_at_75th_percentile(),
+                ),
+
+            "HIV/TB Program Scale-up With HSS Expansion Package":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.hss_package_realistic(),
+                ),
+
+            # - - - HIV / Malaria SCALE-UP - - -
+            "HIV/Malaria Program Scale-up":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                ),
+
+            "HIV/Malaria Program Scale-up With HRH Scale-up (4%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hrh_using_historical_scaling(),
+                ),
+
+            "HIV/Malaria Program Scale-up With Consumables at 75th Percentile":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.cons_at_75th_percentile(),
+                ),
+
+            "HIV/Malaria Program Scale-up With HSS Expansion Package":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.hiv_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hss_package_realistic(),
+                ),
+
+            # - - - TB / Malaria SCALE-UP - - -
+            "TB/Malaria Program Scale-up":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                ),
+
+            "TB/Malaria Program Scale-up With HRH Scale-up (4%)":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hrh_using_historical_scaling(),
+                ),
+
+            "TB/Malaria Program Scale-up With Consumables at 75th Percentile":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.cons_at_75th_percentile(),
+                ),
+
+            "TB/Malaria Program Scale-up With HSS Expansion Package":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.tb_scaleup(),
+                    scenario_definitions.malaria_scaleup(),
+                    scenario_definitions.hss_package_realistic(),
+                ),
 
         }
 
