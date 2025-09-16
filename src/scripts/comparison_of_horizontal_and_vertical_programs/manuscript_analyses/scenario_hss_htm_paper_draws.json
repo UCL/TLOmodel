@@ -2,7 +2,7 @@
   "scenario_script_path": "src/scripts/comparison_of_horizontal_and_vertical_programs/manuscript_analyses/scenario_hss_htm_paper.py",
   "scenario_seed": 0,
   "arguments": [],
-  "runs_per_draw": 10,
+  "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
@@ -1743,6 +1743,6 @@
       "draw_name": "51"
     }
   ],
-  "commit": "18244a840b8c24970d766d0778eb5f476e0784fc",
-  "github": "https://github.com/UCL/TLOmodel/tree/18244a840b8c24970d766d0778eb5f476e0784fc"
+  "commit": "6e8d9fa6aaddd415e9748d82ba86b18c43625906",
+  "github": "https://github.com/UCL/TLOmodel/tree/6e8d9fa6aaddd415e9748d82ba86b18c43625906"
 }

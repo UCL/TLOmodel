@@ -18,7 +18,7 @@ tlo batch-submit --more-memory
 from pathlib import Path
 from typing import Dict
 
-from scripts.comparison_of_horizontal_and_vertical_programs.global_fund_analyses.scenario_definitions_gf import (
+from scripts.comparison_of_horizontal_and_vertical_programs.manuscript_analyses.scenario_definitions_paper import (
     ScenarioDefinitions,
 )
 from tlo import Date, logging
