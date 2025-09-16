@@ -25,7 +25,8 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -53,9 +54,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
     The HIV Disease Module
     """
 
-    def __init__(self, name=None, resourcefilepath=None, run_with_checks=False):
+    def __init__(self, name=None, run_with_checks=False):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         assert isinstance(run_with_checks, bool)
         self.run_with_checks = run_with_checks
@@ -420,7 +420,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """
         * 1) Reads the ResourceFiles
         * 2) Declare the Symptoms
@@ -431,7 +431,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Shortcut to parameters dict
         p = self.parameters
 
-        workbook = read_csv_files(self.resourcefilepath/'ResourceFile_HIV', files=None)
+        workbook = read_csv_files(resourcefilepath/'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         # Load data on HIV prevalence
@@ -458,11 +458,15 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if "HealthBurden" in self.sim.modules.keys():
-            # Chronic infection but not AIDS (including if on ART)
-            # (taken to be equal to "Symptomatic HIV without anaemia")
+            # Symptomatic HIV without anemia
             self.daly_wts["hiv_infection_but_not_aids"] = self.sim.modules[
                 "HealthBurden"
             ].get_daly_weight(17)
+
+            # AIDS with antiretroviral treatment without anemia
+            self.daly_wts["hiv_infection_on_ART"] = self.sim.modules[
+                "HealthBurden"
+            ].get_daly_weight(20)
 
             #  AIDS without anti-retroviral treatment without anemia
             self.daly_wts["aids"] = self.sim.modules["HealthBurden"].get_daly_weight(19)
@@ -1130,10 +1134,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # prep poll for AGYW - target to the highest risk
         # increase retention to 75% for FSW and AGYW
         p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
-        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params["probability_of_being_retained_on_prep_every_3_months"]
+        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
+            "probability_of_being_retained_on_prep_every_3_months"
+        ]
 
         # perfect retention on ART
-        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params["probability_of_being_retained_on_art_every_3_months"]
+        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params[
+            "probability_of_being_retained_on_art_every_3_months"
+        ]
 
         # increase probability of VMMC after hiv test
         p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
@@ -1293,7 +1301,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         dalys = pd.Series(data=0, index=df.loc[df.is_alive].index)
 
         # All those infected get the 'infected but not AIDS' daly_wt:
-        dalys.loc[df.hv_inf] = self.daly_wts["hiv_infection_but_not_aids"]
+        dalys.loc[df.hv_inf & (df.hv_art == "not")] = self.daly_wts["hiv_infection_but_not_aids"]
+
+        # infected and on ART and virally suppressed
+        dalys.loc[df.hv_inf & (df.hv_art == "on_VL_suppressed")] = self.daly_wts["hiv_infection_on_ART"]
 
         # Overwrite the value for those that currently have symptoms of AIDS with the 'AIDS' daly_wt:
         dalys.loc[
@@ -2894,7 +2905,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']:
+        if (self.module.rng.random_sample(size=1) <
+            p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']):
             _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
@@ -2928,11 +2940,20 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for young children
             drugs_available = self.get_consumables(
-                item_codes={self.module.item_codes_for_consumables_required[
-                                'First line ART regimen: young child']: dispensation_days * 2},
-                optional_item_codes={self.module.item_codes_for_consumables_required[
-                                         'First line ART regimen: young child: cotrimoxazole']: dispensation_days * 240},
-                return_individual_results=True)
+                item_codes={
+                    self.module.item_codes_for_consumables_required[
+                        "First line ART regimen: young child"
+                    ]: dispensation_days
+                    * 2
+                },
+                optional_item_codes={
+                    self.module.item_codes_for_consumables_required[
+                        "First line ART regimen: young child: cotrimoxazole"
+                    ]: dispensation_days
+                    * 240
+                },
+                return_individual_results=True,
+            )
 
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for older children
@@ -3570,6 +3591,8 @@ class DummyHivModule(Module):
         "hv_inf": Property(Types.BOOL, "DUMMY version of the property for hv_inf"),
         "hv_art": Property(Types.CATEGORICAL, "DUMMY version of the property for hv_art.",
                            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
+        "hv_diagnosed": Property(Types.BOOL, "DUMMY version of the property for hv_diagnosed.",
+                           categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
     }
 
     def __init__(self, name=None, hiv_prev=0.1, art_cov=0.75):
@@ -3577,7 +3600,7 @@ class DummyHivModule(Module):
         self.hiv_prev = hiv_prev
         self.art_cov = art_cov
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         pass
 
     def initialise_population(self, population):
@@ -3586,6 +3609,8 @@ class DummyHivModule(Module):
         df.loc[(df.is_alive & df.hv_inf), "hv_art"] = pd.Series(
             self.rng.rand(sum(df.is_alive & df.hv_inf)) < self.art_cov).replace(
             {True: "on_VL_suppressed", False: "not"}).values
+        df.loc[(df.is_alive & df.hv_inf), "hv_diagnosed"] = (
+            self.rng.random_sample(len(df.loc[(df.is_alive & df.hv_inf)])) < 0.5)
 
     def initialise_simulation(self, sim):
         pass
@@ -3596,3 +3621,4 @@ class DummyHivModule(Module):
 
         if df.at[child, "hv_inf"]:
             df.at[child, "hv_art"] = "on_VL_suppressed" if self.rng.rand() < self.art_cov else "not"
+            df.at[child, "hv_diagnosed"] = self.rng.rand() < 0.5

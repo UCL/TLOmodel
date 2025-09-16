@@ -22,8 +22,8 @@ popsize = 500
 @pytest.fixture
 def simulation(seed):
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date, seed=seed)
-    core_module = demography.Demography(resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    core_module = demography.Demography()
     sim.register(core_module)
     return sim
 
@@ -63,9 +63,9 @@ def test_storage_of_cause_of_death(seed):
         def initialise_simulation(self, sim):
             pass
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, resourcefilepath=rfp)
     sim.register(
-        demography.Demography(resourcefilepath=rfp),
+        demography.Demography(),
         DummyModule()
     )
     sim.make_initial_population(n=20)
@@ -103,11 +103,10 @@ def test_cause_of_death_being_registered(tmpdir, seed):
             "*": logging.WARNING,
             'tlo.methods.demography': logging.INFO
         }
-    })
+    }, resourcefilepath=rfp)
 
     sim.register(
         *fullmodel(
-            resourcefilepath=rfp,
             module_kwargs={"HealthSystem": {"disable": True}},
         )
     )
@@ -168,9 +167,9 @@ def test_calc_of_scaling_factor(tmpdir, seed):
         'custom_levels': {
             "*": logging.INFO,
         }
-    })
+    }, resourcefilepath=rfp)
     sim.register(
-        demography.Demography(resourcefilepath=rfp),
+        demography.Demography(),
     )
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=sim.start_date)
@@ -333,9 +332,9 @@ def test_max_age_initial(seed):
     def max_age_in_sim_with_max_age_initial_argument(_max_age_initial):
         """Return the greatest value of `age_years` in a population that is created."""
         resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
         sim.register(
-            demography.Demography(resourcefilepath=resourcefilepath)
+            demography.Demography()
         )
         sim.modules['Demography'].parameters['max_age_initial'] = _max_age_initial
         sim.make_initial_population(n=50_000)
@@ -382,10 +381,9 @@ def test_equal_allocation_by_district(seed):
     """
 
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
         demography.Demography(
-            resourcefilepath=resourcefilepath,
             equal_allocation_by_district=True,
         )
     )

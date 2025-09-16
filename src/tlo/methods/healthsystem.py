@@ -1,6 +1,7 @@
 import datetime
 import heapq as hp
 import itertools
+import math
 import re
 import warnings
 from collections import Counter, defaultdict
@@ -13,8 +14,7 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
 
-import tlo
-from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
 from tlo.analysis.utils import (  # get_filtered_treatment_ids,
     flatten_multi_index_series_into_dict_for_logging,
 )
@@ -36,6 +36,7 @@ from tlo.methods.hsi_event import (
     HSIEventQueueItem,
     HSIEventWrapper,
 )
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -189,6 +190,14 @@ class HealthSystem(Module):
             " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
             "if an argument is provided to the module initialiser."
             "Note that other options are also available: see the `Consumables` class."),
+        'cons_override_treatment_ids': Parameter(
+            Types.LIST,
+            "Consumable availability within any treatment ids listed in this parameter will be set at to a "
+            "given probabilty stored in override_treatment_ids_avail. By default this list is empty"),
+        'cons_override_treatment_ids_prob_avail': Parameter(
+            Types.REAL,
+            "Probability that consumables for treatment ids listed in cons_override_treatment_ids will be "
+            "available"),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
@@ -345,11 +354,11 @@ class HealthSystem(Module):
 
         # Mode Appt Constraints
         'mode_appt_constraints': Parameter(
-            Types.INT, 'Integer code in `{0, 1, 2}` determining mode of constraints with regards to officer numbers '
-                       'and time - 0: no constraints, all HSI events run with no squeeze factor, 1: elastic constraints'
-                       ', all HSI events run with squeeze factor, 2: hard constraints, only HSI events with no squeeze '
-                       'factor run. N.B. This parameter is over-ridden if an argument is provided'
-                       ' to the module initialiser.',
+            Types.INT, 'Integer code in `{1, 2}` determining mode of constraints with regards to officer numbers '
+                       'and time - 1: elastic constraints, all HSI events run with squeeze factor, provided '
+                       'officers required to deliver the HSI have capabilities > 0'
+                       '2: hard constraints, only HSI events with no squeeze factor run. N.B. This parameter'
+                       'is over-ridden if an argument is provided to the module initialiser.',
         ),
         'mode_appt_constraints_postSwitch': Parameter(
             Types.INT, 'Mode considered after a mode switch in year_mode_switch.'),
@@ -370,7 +379,6 @@ class HealthSystem(Module):
     def __init__(
         self,
         name: Optional[str] = None,
-        resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
         mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
@@ -388,12 +396,11 @@ class HealthSystem(Module):
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
-        :param resourcefilepath: Path to directory containing resource files.
         :param service_availability: A list of treatment IDs to allow.
-        :param mode_appt_constraints: Integer code in ``{0, 1, 2}`` determining mode of
-            constraints with regards to officer numbers and time - 0: no constraints,
-            all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
-            events run with squeeze factor, 2: hard constraints, only HSI events with
+        :param mode_appt_constraints: Integer code in ``{1, 2}`` determining mode of
+            constraints with regards to officer numbers and time - 1: elastic constraints, all HSI
+            events run with squeeze factor provided officers required have nonzero capabilities,
+            2: hard constraints, only HSI events with
             no squeeze factor run.
         :param cons_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
         let no consumable be ever be available; if 'all', then all consumables are always available. When using 'all'
@@ -429,7 +436,6 @@ class HealthSystem(Module):
         """
 
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         assert isinstance(disable, bool)
         assert isinstance(disable_and_reject_all, bool)
@@ -445,7 +451,7 @@ class HealthSystem(Module):
 
         self.mode_appt_constraints = None  # Will be the final determination of the `mode_appt_constraints'
         if mode_appt_constraints is not None:
-            assert mode_appt_constraints in {0, 1, 2}
+            assert mode_appt_constraints in {1, 2}
         self.arg_mode_appt_constraints = mode_appt_constraints
 
         self.rng_for_hsi_queue = None  # Will be a dedicated RNG for the purpose of randomising the queue
@@ -527,6 +533,10 @@ class HealthSystem(Module):
         # Create counter for the running total of footprint of all the HSIs being run today
         self.running_total_footprint: Counter = Counter()
 
+        # A reusable store for holding squeeze factors in get_squeeze_factors()
+        self._get_squeeze_factors_store_grow = 500
+        self._get_squeeze_factors_store = np.zeros(self._get_squeeze_factors_store_grow)
+
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
             # Counters for binning HSI events run (by unique integer keys) over
@@ -551,9 +561,9 @@ class HealthSystem(Module):
                 "'year', 'simulation' or None."
             )
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
-        path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
+        path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
 
         # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
@@ -610,16 +620,16 @@ class HealthSystem(Module):
 
         # Data on the priority of each Treatment_ID that should be adopted in the queueing system according to different
         # priority policies. Load all policies at this stage, and decide later which one to adopt.
-        self.parameters['priority_rank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
-                                                         'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
-                                                         sheet_name=None)
+        self.parameters['priority_rank'] = read_csv_files(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
+                                                         'ResourceFile_PriorityRanking_ALLPOLICIES',
+                                                         files=None)
 
-        self.parameters['HR_scaling_by_level_and_officer_type_table']: Dict = pd.read_excel(
+        self.parameters['HR_scaling_by_level_and_officer_type_table']: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
             "scaling_capabilities" /
-            "ResourceFile_HR_scaling_by_level_and_officer_type.xlsx",
-            sheet_name=None  # all sheets read in
+            "ResourceFile_HR_scaling_by_level_and_officer_type",
+            files=None  # all sheets read in
         )
         # Ensure the mode of HR scaling to be considered in included in the tables loaded
         assert (self.parameters['HR_scaling_by_level_and_officer_type_mode'] in
@@ -627,23 +637,23 @@ class HealthSystem(Module):
             (f"Value of `HR_scaling_by_level_and_officer_type_mode` not recognised: "
              f"{self.parameters['HR_scaling_by_level_and_officer_type_mode']}")
 
-        self.parameters['HR_scaling_by_district_table']: Dict = pd.read_excel(
+        self.parameters['HR_scaling_by_district_table']: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
             "scaling_capabilities" /
-            "ResourceFile_HR_scaling_by_district.xlsx",
-            sheet_name=None  # all sheets read in
+            "ResourceFile_HR_scaling_by_district",
+            files=None  # all sheets read in
         )
         # Ensure the mode of HR scaling by district to be considered in included in the tables loaded
         assert self.parameters['HR_scaling_by_district_mode'] in self.parameters['HR_scaling_by_district_table'], \
             f"Value of `HR_scaling_by_district_mode` not recognised: {self.parameters['HR_scaling_by_district_mode']}"
 
-        self.parameters['yearly_HR_scaling']: Dict = pd.read_excel(
+        self.parameters['yearly_HR_scaling']: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
             "scaling_capabilities" /
-            "ResourceFile_dynamic_HR_scaling.xlsx",
-            sheet_name=None,  # all sheets read in
+            "ResourceFile_dynamic_HR_scaling",
+            files=None,  # all sheets read in
             dtype={
                 'year': int,
                 'dynamic_HR_scaling_factor': float,
@@ -682,6 +692,10 @@ class HealthSystem(Module):
         # Determine mode_appt_constraints
         self.mode_appt_constraints = self.get_mode_appt_constraints()
 
+        # If we're using mode 1, HSI event priorities are ignored - all events will have the same priority
+        if self.mode_appt_constraints == 1:
+            self.ignore_priority = True
+
         # Determine service_availability
         self.service_availability = self.get_service_availability()
 
@@ -706,8 +720,12 @@ class HealthSystem(Module):
                 self.parameters['availability_estimates']),
             item_code_designations=self.parameters['consumables_item_designations'],
             rng=rng_for_consumables,
-            availability=self.get_cons_availability()
+            availability=self.get_cons_availability(),
+            treatment_ids_overridden=self.parameters['cons_override_treatment_ids'],
+            treatment_ids_overridden_avail=self.parameters['cons_override_treatment_ids_prob_avail'],
         )
+        # We don't need to hold onto this large dataframe
+        del self.parameters['availability_estimates']
 
         # Determine equip_availability
         self.equipment = Equipment(
@@ -988,7 +1006,9 @@ class HealthSystem(Module):
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
          and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
-        self._daily_capabilities, self._daily_capabilities_per_staff = self.format_daily_capabilities(use_funded_or_actual_staffing)
+        self._daily_capabilities, self._daily_capabilities_per_staff = (
+            self.format_daily_capabilities(use_funded_or_actual_staffing)
+        )
 
         # Also, store the set of officers with non-zero daily availability
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
@@ -998,11 +1018,12 @@ class HealthSystem(Module):
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to:
-        1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
-        is available.
+        1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no
+        capacity is available.
         2. Give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
         (This is so that its easier to track where demands are being placed where there is no capacity)
-        3. Compute daily capabilities per staff. This will be used to compute staff count in a way that is independent of assumed efficiency.
+        3. Compute daily capabilities per staff. This will be used to compute staff count in a way that is independent
+        of assumed efficiency.
         """
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
@@ -1013,7 +1034,6 @@ class HealthSystem(Module):
 
         # Create new column where capabilities per staff are computed
         capabilities['Mins_Per_Day_Per_Staff'] = capabilities['Total_Mins_Per_Day']/capabilities['Staff_Count']
-
 
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
@@ -1136,10 +1156,12 @@ class HealthSystem(Module):
             how='left'
         )
 
+        availability_columns = list(filter(lambda x: x.startswith('available_prop'), dfx.columns))
+
         # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \
             dfx.drop(dfx.index[~dfx['Facility_Level'].isin(AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2)]) \
-               .groupby(by=['District', 'month', 'item_code'])['available_prop'] \
+               .groupby(by=['District', 'month', 'item_code'])[availability_columns] \
                .mean() \
                .reset_index()\
                .assign(Facility_Level=LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2)
@@ -1168,7 +1190,9 @@ class HealthSystem(Module):
         # check values the same for everything apart from the facility level '2' facilities
         facilities_with_any_differences = set(
             df_updated.loc[
-                ~(df_original == df_updated).all(axis=1),
+                ~(
+                    df_original.sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True) == df_updated
+                ).all(axis=1),
                 'Facility_ID']
         )
         level2_facilities = set(
@@ -1351,9 +1375,7 @@ class HealthSystem(Module):
         # If ignoring the priority in scheduling, then over-write the provided priority information with 0.
         if self.ignore_priority:
             priority = 0
-
-        # Use of "" not ideal, see note in initialise_population
-        if self.priority_policy != "":
+        elif self.priority_policy != "":
             # Look-up priority ranking of this treatment_ID in the policy adopted
             priority = self.enforce_priority_policy(hsi_event=hsi_event)
 
@@ -1418,44 +1440,31 @@ class HealthSystem(Module):
     # This is where the priority policy is enacted
     def enforce_priority_policy(self, hsi_event) -> int:
         """Return priority for HSI_Event based on policy under consideration """
+        priority_ranking = self.priority_rank_dict
 
-        pr = self.priority_rank_dict
-        pdf = self.sim.population.props
-
-        if hsi_event.TREATMENT_ID in pr:
-            _priority_ranking = pr[hsi_event.TREATMENT_ID]['Priority']
-
-            # Check whether fast-tracking routes are available for this treatment. If person qualifies for one
-            # don't check remaining.
-
-            # Look up relevant attributes for HSI_Event's target
-            list_targets = [_t[0] for _t in self.list_fasttrack]
-            target_attributes = pdf.loc[hsi_event.target, list_targets]
-
-            # Warning: here assuming that the first fast-tracking eligibility encountered
-            # will determine the priority to be used. If different fast-tracking channels have
-            # different priorities for the same treatment, this will be a problem!
-            # First item in Lists is age-related, therefore need to invoke different logic.
-            if (
-                (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] > -1)
-                and (target_attributes['age_exact_years'] <= 5)
-            ):
-                return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]]
-
-            # All other attributes are looked up the same way, so can do this in for loop
-            for i in range(1, len(self.list_fasttrack)):
-                if (
-                    (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] > - 1)
-                    and target_attributes[i]
-                ):
-                    return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]]
-
-            return _priority_ranking
-
-        else:  # If treatment is not ranked in the policy, issue a warning and assign priority=3 by default
-            warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID \n"
-                                      f"{hsi_event.TREATMENT_ID}"))
+        if hsi_event.TREATMENT_ID not in priority_ranking:
+            # If treatment is not ranked in the policy, issue a warning and assign priority=3 by default
+            warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID {hsi_event.TREATMENT_ID}"))
             return self.lowest_priority_considered
+
+        # Check whether fast-tracking routes are available for this treatment.
+        # If person qualifies for one don't check remaining.
+        # Warning: here assuming that the first fast-tracking eligibility encountered
+        # will determine the priority to be used. If different fast-tracking channels have
+        # different priorities for the same treatment, this will be a problem!
+        # First item in Lists is age-related, therefore need to invoke different logic.
+        df = self.sim.population.props
+        treatment_ranking = priority_ranking[hsi_event.TREATMENT_ID]
+        for attribute, fasttrack_code in self.list_fasttrack:
+            if treatment_ranking[fasttrack_code] > -1:
+                if attribute == 'age_exact_years':
+                    if df.at[hsi_event.target, attribute] <= 5:
+                        return treatment_ranking[fasttrack_code]
+                else:
+                    if df.at[hsi_event.target, attribute]:
+                        return treatment_ranking[fasttrack_code]
+
+        return treatment_ranking["Priority"]
 
     def check_hsi_event_is_valid(self, hsi_event):
         """Check the integrity of an HSI_Event."""
@@ -1463,9 +1472,9 @@ class HealthSystem(Module):
 
         # Check that non-empty treatment ID specified
         assert hsi_event.TREATMENT_ID != ''
-        
+
         # Check that the target of the HSI is not the entire population
-        assert not isinstance(hsi_event.target, tlo.population.Population)
+        assert not isinstance(hsi_event.target, Population)
 
         # This is an individual-scoped HSI event.
         # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT and ACCEPTED_FACILITY_LEVELS.
@@ -1746,23 +1755,34 @@ class HealthSystem(Module):
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
         # based on the load-factor of the officer with the largest time requirement for that
         # event (or zero if event has an empty footprint)
-        squeeze_factor_per_hsi_event = []
-        for footprint in footprints_per_event:
-            if len(footprint) > 0:
+
+        # Instead of repeatedly creating lists for squeeze factors, we reuse a numpy array
+        # If the current store is too small, replace it
+        if len(footprints_per_event) > len(self._get_squeeze_factors_store):
+            # The new array size is a multiple of `grow`
+            new_size = math.ceil(
+                len(footprints_per_event) / self._get_squeeze_factors_store_grow
+            ) * self._get_squeeze_factors_store_grow
+            self._get_squeeze_factors_store = np.zeros(new_size)
+
+        for i, footprint in enumerate(footprints_per_event):
+            if footprint:
                 # If any of the required officers are not available at the facility, set overall squeeze to inf
-                require_missing_officer = any([load_factor[officer] == float('inf') for officer in footprint])
+                require_missing_officer = False
+                for officer in footprint:
+                    if load_factor[officer] == float('inf'):
+                        require_missing_officer = True
+                        # No need to check the rest
+                        break
 
                 if require_missing_officer:
-                    squeeze_factor_per_hsi_event.append(float('inf'))
+                    self._get_squeeze_factors_store[i] = np.inf
                 else:
-                    squeeze_factor_per_hsi_event.append(max(load_factor[footprint.most_common()[0][0]], 0.))
+                    self._get_squeeze_factors_store[i] = max(load_factor[footprint.most_common()[0][0]], 0.)
             else:
-                squeeze_factor_per_hsi_event.append(0.0)
-        squeeze_factor_per_hsi_event = np.array(squeeze_factor_per_hsi_event)
+                self._get_squeeze_factors_store[i] = 0.0
 
-        assert (squeeze_factor_per_hsi_event >= 0).all()
-
-        return squeeze_factor_per_hsi_event
+        return self._get_squeeze_factors_store
 
     def record_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True, priority=None):
         """
@@ -2007,6 +2027,26 @@ class HealthSystem(Module):
         """
         self.consumables.override_availability(item_codes)
 
+    def override_cons_availability_for_treatment_ids(self,
+                                                     treatment_ids: list = None,
+                                                     prob_available: float = None) -> None:
+        """
+        This function can be called by any module to update the treatment ids for which consumable availability should
+        be overridden and to provide a probability of availability.
+
+        :param treatment_ids: The treatment ids which should have availability overridden (list)
+        :param prob_available: The probability of availability in those treatment_ids (float)
+        :return: None
+        """
+
+        # Update internal cons function to update the cons 'owned' lists in which this information is stored
+        self.consumables.treatment_ids_overridden = treatment_ids if treatment_ids is not None else []
+
+        if (treatment_ids is not None) and (len(treatment_ids) > 0):
+            assert prob_available is not None, "If treatment_ids is provided, prob_available must be provided"
+
+        self.consumables.treatment_ids_overridden_avail = prob_available if prob_available is not None else 0.0
+
     def _write_hsi_event_counts_to_log_and_reset(self):
         logger_summary.info(
             key="hsi_event_counts",
@@ -2063,12 +2103,12 @@ class HealthSystem(Module):
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
 
-    def run_individual_level_events_in_mode_0_or_1(self,
+    def run_individual_level_events_in_mode_1(self,
                                                    _list_of_individual_hsi_event_tuples:
                                                    List[HSIEventQueueItem]) -> List:
         """Run a list of individual level events. Returns: list of events that did not run (maybe an empty list)."""
         _to_be_held_over = list()
-        assert self.mode_appt_constraints in (0, 1)
+        assert self.mode_appt_constraints == 1
 
         if _list_of_individual_hsi_event_tuples:
             # Examine total call on health officers time from the HSI events in the list:
@@ -2087,18 +2127,12 @@ class HealthSystem(Module):
                 self.running_total_footprint.update(footprint)
 
             # Estimate Squeeze-Factors for today
-            if self.mode_appt_constraints == 0:
-                # For Mode 0 (no Constraints), the squeeze factors are all zero.
-                squeeze_factor_per_hsi_event = np.zeros(
-                    len(footprints_of_all_individual_level_hsi_event))
-            else:
-                # For Other Modes, the squeeze factors must be computed
-                squeeze_factor_per_hsi_event = self.get_squeeze_factors(
-                    footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                    total_footprint=self.running_total_footprint,
-                    current_capabilities=self.capabilities_today,
-                    compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
-                )
+            squeeze_factor_per_hsi_event = self.get_squeeze_factors(
+                footprints_per_event=footprints_of_all_individual_level_hsi_event,
+                total_footprint=self.running_total_footprint,
+                current_capabilities=self.capabilities_today,
+                compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
+            )
 
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
@@ -2108,7 +2142,6 @@ class HealthSystem(Module):
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
 
-                # Mode 0: All HSI Event run, with no squeeze
                 # Mode 1: All HSI Events run with squeeze provided latter is not inf
                 ok_to_run = True
 
@@ -2149,15 +2182,13 @@ class HealthSystem(Module):
                         self.running_total_footprint -= original_call
                         self.running_total_footprint += updated_call
 
-                        # Don't recompute for mode=0
-                        if self.mode_appt_constraints != 0:
-                            squeeze_factor_per_hsi_event = self.get_squeeze_factors(
-                                footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                                total_footprint=self.running_total_footprint,
-                                current_capabilities=self.capabilities_today,
-                                compute_squeeze_factor_to_district_level=self.
-                                compute_squeeze_factor_to_district_level,
-                            )
+                        squeeze_factor_per_hsi_event = self.get_squeeze_factors(
+                            footprints_per_event=footprints_of_all_individual_level_hsi_event,
+                            total_footprint=self.running_total_footprint,
+                            current_capabilities=self.capabilities_today,
+                            compute_squeeze_factor_to_district_level=self.
+                            compute_squeeze_factor_to_district_level,
+                        )
 
                     else:
                         # no actual footprint is returned so take the expected initial declaration as the actual,
@@ -2282,71 +2313,50 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     def _is_last_day_of_the_month(date):
         return date.month != (date + pd.DateOffset(days=1)).month
 
-    def _get_events_due_today(self,) -> Tuple[List, List]:
-        """Interrogate the HSI_EVENT queue object to remove from it the events due today, and to return these in two
-        lists:
-         * list_of_individual_hsi_event_tuples_due_today
+    def _get_events_due_today(self) -> List:
+        """Interrogate the HSI_EVENT queue to remove and return the events due today
         """
-        _list_of_individual_hsi_event_tuples_due_today = list()
-        _list_of_events_not_due_today = list()
+        due_today = list()
 
-        # To avoid repeated dataframe accesses in subsequent loop, assemble set of alive
-        # person IDs as  one-off operation, exploiting the improved efficiency of
-        # boolean-indexing of a Series compared to row-by-row access. From benchmarks
-        # converting Series to list before converting to set is ~2x more performant than
-        # direct conversion to set, while checking membership of set is ~10x quicker
-        # than checking membership of Pandas Index object and ~25x quicker than checking
-        # membership of list
-        alive_persons = set(
-            self.sim.population.props.index[self.sim.population.props.is_alive].to_list()
-        )
+        is_alive = self.sim.population.props.is_alive
 
         # Traverse the queue and split events into the two lists (due-individual, not_due)
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
-            next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
-            # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
+            event = hp.heappop(self.module.HSI_EVENT_QUEUE)
 
-            event = next_event_tuple.hsi_event
-
-            if self.sim.date > next_event_tuple.tclose:
+            if self.sim.date > event.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 self.module.call_and_record_never_ran_hsi_event(
-                      hsi_event=event,
-                      priority=next_event_tuple.priority
+                      hsi_event=event.hsi_event,
+                      priority=event.priority
                      )
 
-            elif event.target not in alive_persons:
+            elif not is_alive[event.hsi_event.target]:
                 # if the person who is the target is no longer alive, do nothing more,
-                # i.e. remove from heapq
-                pass
+                # i.e. remove from queue
+                continue
 
-            elif self.sim.date < next_event_tuple.topen:
-                # The event is not yet due (before topen)
-                hp.heappush(_list_of_events_not_due_today, next_event_tuple)
+            elif self.sim.date < event.topen:
+                # The event is not yet due (before topen). In mode 1, all events have the same priority and are,
+                # therefore, sorted by date. Put this event back and exit.
+                hp.heappush(self.module.HSI_EVENT_QUEUE, event)
+                break
 
             else:
                 # The event is now due to run today and the person is confirmed to be still alive
                 # Add it to the list of events due today
                 # NB. These list is ordered by priority and then due date
-                _list_of_individual_hsi_event_tuples_due_today.append(next_event_tuple)
+                due_today.append(event)
 
-        # add events from the _list_of_events_not_due_today back into the queue
-        while len(_list_of_events_not_due_today) > 0:
-            hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(_list_of_events_not_due_today))
+        return due_today
 
-        return _list_of_individual_hsi_event_tuples_due_today
-
-    def process_events_mode_0_and_1(self, hold_over: List[HSIEventQueueItem]) -> None:
+    def process_events_mode_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
             # Get the events that are due today:
-            (
-                list_of_individual_hsi_event_tuples_due_today
-             ) = self._get_events_due_today()
+            list_of_individual_hsi_event_tuples_due_today = self._get_events_due_today()
 
-            if (
-                (len(list_of_individual_hsi_event_tuples_due_today) == 0)
-            ):
+            if not list_of_individual_hsi_event_tuples_due_today:
                 break
 
             # For each individual level event, check whether the equipment it has already declared is available. If it
@@ -2360,7 +2370,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
 
             # Try to run the list of individual-level events that have their essential equipment
-            _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(
+            _to_be_held_over = self.module.run_individual_level_events_in_mode_1(
                 list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment,
             )
             hold_over.extend(_to_be_held_over)
@@ -2558,9 +2568,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # were exhausted, so here we traverse the queue again to ensure that if any events expired were
         # left unchecked they are properly removed from the queue, and did_not_run() is invoked for all
         # postponed events. (This should still be more efficient than querying the queue as done in
-        # mode_appt_constraints = 0 and 1 while ensuring mid-day effects are avoided.)
+        # mode_appt_constraints = 1 while ensuring mid-day effects are avoided.)
         # We also schedule a call_never_run for any HSI below the lowest_priority_considered,
-        # in case any of them where left in the queue due to a transition from mode 0/1 to mode 2
+        # in case any of them where left in the queue due to a transition from mode 1 to mode 2
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
@@ -2591,7 +2601,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             elif self.sim.date < next_event_tuple.topen:
                 # The event is not yet due (before topen). Do not stop querying the queue here if we have
                 # reached the lowest_priority_considered, as we want to make sure HSIs with lower priority
-                # (which may have been scheduled during a prior mode 0/1 period) are flushed from the queue.
+                # (which may have been scheduled during a prior mode 1 period) are flushed from the queue.
                 hp.heappush(list_of_events_not_due_today, next_event_tuple)
 
             else:
@@ -2667,11 +2677,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
 
-        if self.module.mode_appt_constraints in (0, 1):
+        if self.module.mode_appt_constraints == 1:
             # Run all events due today, repeating the check for due events until none are due
             # (this allows for HSI that are added to the queue in the course of other HSI
             # for this today to be run this day).
-            self.process_events_mode_0_and_1(hold_over)
+            self.process_events_mode_1(hold_over)
 
         elif self.module.mode_appt_constraints == 2:
             self.process_events_mode_2(hold_over)
@@ -3192,9 +3202,46 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
+        health_system: HealthSystem = self.module
+        preswitch_mode = health_system.mode_appt_constraints
 
         # Change mode_appt_constraints
-        self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
+        health_system.mode_appt_constraints = health_system.parameters["mode_appt_constraints_postSwitch"]
+
+        # If we've changed from mode 1 to mode 2, update the priority for every HSI event in the queue
+        if preswitch_mode == 1 and health_system.mode_appt_constraints == 2:
+            # A place to store events with updated priority
+            updated_events: List[HSIEventQueueItem|None] = [None] * len(health_system.HSI_EVENT_QUEUE)
+            offset = 0
+
+            # For each HSI event in the queue
+            while health_system.HSI_EVENT_QUEUE:
+                event = hp.heappop(health_system.HSI_EVENT_QUEUE)
+
+                # Get its priority
+                enforced_priority = health_system.enforce_priority_policy(event.hsi_event)
+
+                # If it's different
+                if event.priority != enforced_priority:
+                    # Wrap it up with the new priority - everything else is the same
+                    event = HSIEventQueueItem(
+                        enforced_priority,
+                        event.topen,
+                        event.rand_queue_counter,
+                        event.queue_counter,
+                        event.tclose,
+                        event.hsi_event
+                    )
+
+                # Save it
+                updated_events[offset] = event
+                offset += 1
+
+            # Add all the events back in the event queue
+            while updated_events:
+                hp.heappush(health_system.HSI_EVENT_QUEUE, updated_events.pop())
+
+            del updated_events
 
         logger.info(key="message",
                     data=f"Switched mode at sim date: "
@@ -3232,4 +3279,3 @@ class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
             description="The number of hcw_staff this year",
             data=current_staff_count,
         )
-

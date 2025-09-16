@@ -23,7 +23,11 @@ import squarify
 
 from tlo import Date, Simulation, logging, util
 from tlo.logging.reader import LogData
-from tlo.util import create_age_range_lookup
+from tlo.util import (
+    create_age_range_lookup,
+    parse_csv_values_for_columns_with_mixed_datatypes,
+    read_csv_files,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -237,7 +241,10 @@ def extract_draw_names(results_folder: Path) -> dict[int, str]:
     draws = [f for f in os.scandir(results_folder) if f.is_dir()]
     return {
         int(d.name):
-            load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")["tlo.scenario"]["draw_name"]["draw_name"].values[0]
+            load_pickled_dataframes(results_folder,
+                                    d.name,
+                                    0,
+                                    name="tlo.scenario")["tlo.scenario"]["draw_name"]["draw_name"].values[0]
         for d in draws
     }
 
@@ -384,7 +391,8 @@ def compute_summary_statistics(
 
     if use_standard_error:
         if not central_measure == 'mean':
-            warnings.warn("When using 'standard-error' the central measure in the summary statistics is always the mean.")
+            warnings.warn(
+                "When using 'standard-error' the central measure in the summary statistics is always the mean.")
             central_measure = 'mean'
     elif central_measure is None:
         # If no argument is provided for 'central_measure' (and not using standard-error), default to using 'median'
@@ -560,6 +568,9 @@ def summarize(
     if isinstance(output, pd.DataFrame):
         output = output.rename(columns={'central': 'mean'},
                                level=0 if output.columns.nlevels == 1 else 1)
+    else:
+        output.name = 'mean'  # rename the series to mean
+
     return output
 
 
@@ -977,6 +988,7 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
 
     'BladderCancer*': 'orchid',
     'BreastCancer*': 'mediumvioletred',
+    'CervicalCancer*': 'mediumturquoise',
     'OesophagealCancer*': 'deeppink',
     'ProstateCancer*': 'hotpink',
     'OtherAdultCancer*': 'palevioletred',
@@ -1039,6 +1051,8 @@ CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Stroke': 'burlywood',
 
     'Cancer (Bladder)': 'deeppink',
+    'Cancer (Cervix)': 'mediumturquoise',
+
     'Cancer (Breast)': 'darkmagenta',
     'Cancer (Oesophagus)': 'mediumvioletred',
     'Cancer (Other)': 'crimson',
@@ -1293,10 +1307,11 @@ def get_mappers_in_fullmodel(resourcefilepath: Path, outputpath: Path):
     fullmodel."""
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': outputpath})
+    sim = Simulation(start_date=start_date, seed=0,
+                     log_config={'filename': 'test_log', 'directory': outputpath}, resourcefilepath=resourcefilepath)
 
     from tlo.methods.fullmodel import fullmodel
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim.register(*fullmodel())
 
     sim.make_initial_population(n=10_000)
     sim.simulate(end_date=start_date)
@@ -1484,7 +1499,7 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
                 squeeze_single_col_df_to_series(
                     drop_extra_columns(
                         construct_multiindex_if_implied(
-                            pd.read_excel(workbook, sheet_name=sheet_name))))
+                            workbook[sheet_name])))
 
         elif isinstance(_value, str) and _value.startswith("["):
             # this looks like its intended to be a list
@@ -1492,11 +1507,11 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
         else:
             return _value
 
-    workbook = pd.ExcelFile(
-        resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx')
+    workbook = read_csv_files(
+        resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking', files=None)
 
     # Load the ResourceFile for the list of parameters that may change
-    mainsheet = pd.read_excel(workbook, 'main').set_index(['Module', 'Parameter'])
+    mainsheet = workbook['main'].set_index(['Module', 'Parameter'])
 
     # Select which columns for parameter changes to extract
     cols = []
@@ -1509,6 +1524,7 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
     # Collect parameters that will be changed (collecting the first encountered non-NAN value)
     params_to_change = mainsheet[cols].dropna(axis=0, how='all')\
                                       .apply(lambda row: [v for v in row if not pd.isnull(v)][0], axis=1)
+    params_to_change = params_to_change.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
     # Convert to dictionary
     params = defaultdict(lambda: defaultdict(dict))
