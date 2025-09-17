@@ -24,7 +24,8 @@
           "year_mode_switch": 2019,
           "policy_name": "HTM",
           "tclose_overwrite": 1,
-          "tclose_days_offset_overwrite": 7
+          "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling"
         }
       },
       "draw_name": "0"
@@ -76,7 +77,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "yearly_HR_scaling_mode": "historical_scaling"
+          "yearly_HR_scaling_mode": "historical_scaling_maintained"
         }
       },
       "draw_name": "2"
@@ -128,6 +129,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         }
@@ -155,6 +157,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario10"
         }
@@ -182,6 +185,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario11"
         }
@@ -209,18 +213,9 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "year_HR_scaling_by_level_and_officer_type": 2019,
-          "HR_scaling_by_level_and_officer_type_mode": "x1.338_fac0&1",
-          "yearly_HR_scaling_mode": "historical_scaling_accelerated",
+          "yearly_HR_scaling_mode": "historical_scaling_maintained",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
-        },
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-          "max_healthcare_seeking": [
-            false,
-            true
-          ],
-          "year_of_switch": 2019
         }
       },
       "draw_name": "7"
@@ -245,7 +240,8 @@
           "year_mode_switch": 2019,
           "policy_name": "HTM",
           "tclose_overwrite": 1,
-          "tclose_days_offset_overwrite": 7
+          "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling"
         },
         "Hiv": {
           "type_of_scaleup": "target",
@@ -305,7 +301,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "yearly_HR_scaling_mode": "historical_scaling"
+          "yearly_HR_scaling_mode": "historical_scaling_maintained"
         },
         "Hiv": {
           "type_of_scaleup": "target",
@@ -365,6 +361,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
@@ -396,6 +393,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario10"
         },
@@ -427,6 +425,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario11"
         },
@@ -458,22 +457,13 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "year_HR_scaling_by_level_and_officer_type": 2019,
-          "HR_scaling_by_level_and_officer_type_mode": "x1.338_fac0&1",
-          "yearly_HR_scaling_mode": "historical_scaling_accelerated",
+          "yearly_HR_scaling_mode": "historical_scaling_maintained",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
         "Hiv": {
           "type_of_scaleup": "target",
           "scaleup_start_year": 2024
-        },
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-          "max_healthcare_seeking": [
-            false,
-            true
-          ],
-          "year_of_switch": 2019
         }
       },
       "draw_name": "15"
@@ -498,7 +488,8 @@
           "year_mode_switch": 2019,
           "policy_name": "HTM",
           "tclose_overwrite": 1,
-          "tclose_days_offset_overwrite": 7
+          "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling"
         },
         "Tb": {
           "type_of_scaleup": "target",
@@ -558,7 +549,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "yearly_HR_scaling_mode": "historical_scaling"
+          "yearly_HR_scaling_mode": "historical_scaling_maintained"
         },
         "Tb": {
           "type_of_scaleup": "target",
@@ -618,6 +609,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
@@ -649,6 +641,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario10"
         },
@@ -680,6 +673,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario11"
         },
@@ -711,22 +705,13 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "year_HR_scaling_by_level_and_officer_type": 2019,
-          "HR_scaling_by_level_and_officer_type_mode": "x1.338_fac0&1",
-          "yearly_HR_scaling_mode": "historical_scaling_accelerated",
+          "yearly_HR_scaling_mode": "historical_scaling_maintained",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
         "Tb": {
           "type_of_scaleup": "target",
           "scaleup_start_year": 2024
-        },
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-          "max_healthcare_seeking": [
-            false,
-            true
-          ],
-          "year_of_switch": 2019
         }
       },
       "draw_name": "23"
@@ -751,7 +736,8 @@
           "year_mode_switch": 2019,
           "policy_name": "HTM",
           "tclose_overwrite": 1,
-          "tclose_days_offset_overwrite": 7
+          "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling"
         },
         "Malaria": {
           "type_of_scaleup": "target",
@@ -811,7 +797,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "yearly_HR_scaling_mode": "historical_scaling"
+          "yearly_HR_scaling_mode": "historical_scaling_maintained"
         },
         "Malaria": {
           "type_of_scaleup": "target",
@@ -871,6 +857,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
@@ -902,6 +889,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario10"
         },
@@ -933,6 +921,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario11"
         },
@@ -964,22 +953,13 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "year_HR_scaling_by_level_and_officer_type": 2019,
-          "HR_scaling_by_level_and_officer_type_mode": "x1.338_fac0&1",
-          "yearly_HR_scaling_mode": "historical_scaling_accelerated",
+          "yearly_HR_scaling_mode": "historical_scaling_maintained",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
         "Malaria": {
           "type_of_scaleup": "target",
           "scaleup_start_year": 2024
-        },
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-          "max_healthcare_seeking": [
-            false,
-            true
-          ],
-          "year_of_switch": 2019
         }
       },
       "draw_name": "31"
@@ -1004,7 +984,8 @@
           "year_mode_switch": 2019,
           "policy_name": "HTM",
           "tclose_overwrite": 1,
-          "tclose_days_offset_overwrite": 7
+          "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling"
         },
         "Hiv": {
           "type_of_scaleup": "target",
@@ -1080,7 +1061,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "yearly_HR_scaling_mode": "historical_scaling"
+          "yearly_HR_scaling_mode": "historical_scaling_maintained"
         },
         "Hiv": {
           "type_of_scaleup": "target",
@@ -1156,6 +1137,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
@@ -1195,6 +1177,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario10"
         },
@@ -1234,6 +1217,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario11"
         },
@@ -1273,9 +1257,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "year_HR_scaling_by_level_and_officer_type": 2019,
-          "HR_scaling_by_level_and_officer_type_mode": "x1.338_fac0&1",
-          "yearly_HR_scaling_mode": "historical_scaling_accelerated",
+          "yearly_HR_scaling_mode": "historical_scaling_maintained",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
@@ -1290,13 +1272,6 @@
         "Malaria": {
           "type_of_scaleup": "target",
           "scaleup_start_year": 2024
-        },
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-          "max_healthcare_seeking": [
-            false,
-            true
-          ],
-          "year_of_switch": 2019
         }
       },
       "draw_name": "39"
@@ -1321,7 +1296,8 @@
           "year_mode_switch": 2019,
           "policy_name": "HTM",
           "tclose_overwrite": 1,
-          "tclose_days_offset_overwrite": 7
+          "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling"
         },
         "Hiv": {
           "type_of_scaleup": "target",
@@ -1355,7 +1331,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "yearly_HR_scaling_mode": "historical_scaling"
+          "yearly_HR_scaling_mode": "historical_scaling_maintained"
         },
         "Hiv": {
           "type_of_scaleup": "target",
@@ -1389,6 +1365,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
@@ -1424,9 +1401,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "year_HR_scaling_by_level_and_officer_type": 2019,
-          "HR_scaling_by_level_and_officer_type_mode": "x1.338_fac0&1",
-          "yearly_HR_scaling_mode": "historical_scaling_accelerated",
+          "yearly_HR_scaling_mode": "historical_scaling_maintained",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
@@ -1437,13 +1412,6 @@
         "Tb": {
           "type_of_scaleup": "target",
           "scaleup_start_year": 2024
-        },
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-          "max_healthcare_seeking": [
-            false,
-            true
-          ],
-          "year_of_switch": 2019
         }
       },
       "draw_name": "43"
@@ -1468,7 +1436,8 @@
           "year_mode_switch": 2019,
           "policy_name": "HTM",
           "tclose_overwrite": 1,
-          "tclose_days_offset_overwrite": 7
+          "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling"
         },
         "Hiv": {
           "type_of_scaleup": "target",
@@ -1502,7 +1471,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "yearly_HR_scaling_mode": "historical_scaling"
+          "yearly_HR_scaling_mode": "historical_scaling_maintained"
         },
         "Hiv": {
           "type_of_scaleup": "target",
@@ -1536,6 +1505,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
@@ -1571,9 +1541,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "year_HR_scaling_by_level_and_officer_type": 2019,
-          "HR_scaling_by_level_and_officer_type_mode": "x1.338_fac0&1",
-          "yearly_HR_scaling_mode": "historical_scaling_accelerated",
+          "yearly_HR_scaling_mode": "historical_scaling_maintained",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
@@ -1584,13 +1552,6 @@
         "Malaria": {
           "type_of_scaleup": "target",
           "scaleup_start_year": 2024
-        },
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-          "max_healthcare_seeking": [
-            false,
-            true
-          ],
-          "year_of_switch": 2019
         }
       },
       "draw_name": "47"
@@ -1615,7 +1576,8 @@
           "year_mode_switch": 2019,
           "policy_name": "HTM",
           "tclose_overwrite": 1,
-          "tclose_days_offset_overwrite": 7
+          "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling"
         },
         "Tb": {
           "type_of_scaleup": "target",
@@ -1649,7 +1611,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "yearly_HR_scaling_mode": "historical_scaling"
+          "yearly_HR_scaling_mode": "historical_scaling_maintained"
         },
         "Tb": {
           "type_of_scaleup": "target",
@@ -1683,6 +1645,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
@@ -1718,9 +1681,7 @@
           "policy_name": "HTM",
           "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
-          "year_HR_scaling_by_level_and_officer_type": 2019,
-          "HR_scaling_by_level_and_officer_type_mode": "x1.338_fac0&1",
-          "yearly_HR_scaling_mode": "historical_scaling_accelerated",
+          "yearly_HR_scaling_mode": "historical_scaling_maintained",
           "year_cons_availability_switch": 2019,
           "cons_availability_postSwitch": "scenario6"
         },
@@ -1731,18 +1692,11 @@
         "Malaria": {
           "type_of_scaleup": "target",
           "scaleup_start_year": 2024
-        },
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-          "max_healthcare_seeking": [
-            false,
-            true
-          ],
-          "year_of_switch": 2019
         }
       },
       "draw_name": "51"
     }
   ],
-  "commit": "6e8d9fa6aaddd415e9748d82ba86b18c43625906",
-  "github": "https://github.com/UCL/TLOmodel/tree/6e8d9fa6aaddd415e9748d82ba86b18c43625906"
+  "commit": "d1c74da947619a8a6bdd43ae10505ffe2a66b5fc",
+  "github": "https://github.com/UCL/TLOmodel/tree/d1c74da947619a8a6bdd43ae10505ffe2a66b5fc"
 }
