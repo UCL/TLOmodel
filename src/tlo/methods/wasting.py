@@ -1697,7 +1697,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
 
             # Admission for the treatment
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Perform measurements (height/length), weight, MUAC and log equipment required for the treatment
+            # Perform acute malnutrition assessment based on measurements (height/length, weight, MUAC) and log equipment required for the treatment
             self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape",
                                 "Development milestone charts", "Measuring Cup", "Mixing Bowls"})
             # Record that the treatment is provided:
@@ -1736,7 +1736,6 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         treatment = 'OTP'
 
         df = self.sim.population.props
-        # p = self.module.parameters
 
         logger.debug(key='seek-tx',
                      data={
@@ -1760,9 +1759,17 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
                                'person_id': person_id,
                                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
                          description='essential consumables availability recorded')
+
+            # Admission for the treatment
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Perform acute malnutrition assessment based on measurements (height/length, weight, MUAC)
+            self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape",
+                                "Development milestone charts"})
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
-            self.module.do_when_am_treatment(person_id, treatment='OTP')
+            # Perform the treatment: cancel natural recovery/progression,
+            # then determine and schedule the outcome following treatment
+            self.module.do_when_am_treatment(person_id, treatment=treatment)
         else:
             logger.debug(key='wast-cons-avail',
                          data={'treatment': treatment,
@@ -1818,9 +1825,17 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
                                'person_id': person_id,
                                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
                          description='essential consumables availability recorded')
+
+            # Admission for the treatment
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Perform acute malnutrition assessment based on measurements (height/length, weight, MUAC)
+            self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape",
+                                "Development milestone charts"})
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
-            self.module.do_when_am_treatment(person_id, treatment='ITC')
+            # Perform the treatment: cancel natural recovery/progression,
+            # then determine and schedule the outcome following treatment
+            self.module.do_when_am_treatment(person_id, treatment=treatment)
         else:
             logger.debug(key='wast-cons-avail',
                          data={'treatment': treatment,
