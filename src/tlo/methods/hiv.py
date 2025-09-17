@@ -126,9 +126,15 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "Whether the person is currently taking and receiving a malaria-protective effect from cotrimoxazole",
         ),
-        "hv_is_on_prep": Property(
+        "hv_is_on_prep_oral": Property(
             Types.BOOL,
-            "Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis",
+            "Whether the person is currently taking and receiving a protective effect "
+            "from oral Pre-Exposure Prophylaxis",
+        ),
+        "hv_is_on_prep_inj": Property(
+            Types.BOOL,
+            "Whether the person is currently taking and receiving a protective effect "
+            "from injectable Pre-Exposure Prophylaxis",
         ),
         "hv_behaviour_change": Property(
             Types.BOOL,
@@ -149,8 +155,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # --- Counters for logging:
         "hv_VMMC_in_last_year": Property(Types.BOOL, "whether VMMC was performed in the last year"),
-        "hv_days_on_prep_AGYW": Property(Types.INT, "number of days spent on prep per logger time interval for AGYW"),
-        "hv_days_on_prep_FSW": Property(Types.INT, "number of days spent on prep per logger time interval for FSW"),
+        "hv_days_on_oral_prep_AGYW": Property(Types.INT,
+                                              "number of days spent on oral prep per "
+                                              "logger time interval for AGYW"),
+        "hv_days_on_oral_prep_FSW": Property(Types.INT,
+                                             "number of days spent on oral prep per "
+                                             "logger time interval for FSW"),
+        "hv_days_on_inj_prep_AGYW": Property(Types.INT, "number of days spent on inj prep per "
+                                                        "logger time interval for AGYW"),
+        "hv_days_on_inj_prep_FSW": Property(Types.INT, "number of days spent on inj prep per "
+                                                       "logger time interval for FSW"),
     }
 
     PARAMETERS = {
@@ -732,8 +746,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # --- Counters
         df.loc[df.is_alive, "hv_VMMC_in_last_year"] = False
-        df.loc[df.is_alive, "hv_days_on_prep_AGYW"] = 0
-        df.loc[df.is_alive, "hv_days_on_prep_FSW"] = 0
+        df.loc[df.is_alive, "hv_days_on_oral_prep_AGYW"] = 0
+        df.loc[df.is_alive, "hv_days_on_oral_prep_FSW"] = 0
+        df.loc[df.is_alive, "hv_days_on_inj_prep_AGYW"] = 0
+        df.loc[df.is_alive, "hv_days_on_inj_prep_FSW"] = 0
 
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
@@ -1388,8 +1404,17 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # no prevention, no VL testing, testing rates very low, keep ANC/TB etc passive case finding
 
 
-        # 2 PrEP oral only in FSW
+        # 2 PrEP oral only in FSW, switch everything else off
+
+
         # 3 PrEP oral + inj in FSW
+        # need to increase prep and switch everything else off
+        # increase prob_prep_for_fsw_after_hiv_test to 0.34 to get 50% coverage
+        # need 30 oral :70 inj mix
+        # different efficacy and follow-up time
+
+
+
         # 4 PrEP oral only AGYW and Pregnant women
         # 5 PrEP oral + inj AGYW and Pregnant women
 
@@ -1572,7 +1597,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "hv_aids_at_art_start"] = False
         df.at[child_id, "hv_aids_at_art_reinitiation"] = False
         df.at[child_id, "hv_on_cotrimoxazole"] = False
-        df.at[child_id, "hv_is_on_prep"] = False
+        df.at[child_id, "hv_is_on_prep_oral"] = False
+        df.at[child_id, "hv_is_on_prep_inj"] = False
         df.at[child_id, "hv_behaviour_change"] = False
         df.at[child_id, "hv_diagnosed"] = False
         df.at[child_id, "hv_number_tests"] = 0
@@ -1587,8 +1613,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # --- Counters
         df.at[child_id, "hv_VMMC_in_last_year"] = False
-        df.at[child_id, "hv_days_on_prep_AGYW"] = 0
-        df.at[child_id, "hv_days_on_prep_FSW"] = 0
+        df.at[child_id, "hv_days_on_oral_prep_AGYW"] = 0
+        df.at[child_id, "hv_days_on_oral_prep_FSW"] = 0
+        df.at[child_id, "hv_days_on_inj_prep_AGYW"] = 0
+        df.at[child_id, "hv_days_on_inj_prep_FSW"] = 0
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
@@ -2213,7 +2241,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         df.is_alive
                         & ~df.hv_inf
                         & df.li_is_sexworker
-                        & ~df.hv_is_on_prep
+                        & ~(df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
                         & df.age_years.between(15, 80)
                         ].index
 
@@ -2321,7 +2349,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     & ~df.hv_diagnosed
                     & df.age_years.between(15, 25)
                     & (df.sex == "F")
-                    & ~df.hv_is_on_prep
+                    & ~(df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
                     ].index
 
                 if len(agyw_idx) == 0:
@@ -2384,8 +2412,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 eligible_fsw_idx = df.loc[df.is_alive &
                                           ~df.hv_diagnosed &
                                           df.li_is_sexworker &
-                                          ~df.hv_is_on_prep &
-                                          (random_draw < p["prob_prep_for_fsw_after_hiv_test"])].index
+                                          ~(df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
+                (random_draw < p["prob_prep_for_fsw_after_hiv_test"])].index
 
                 for person in eligible_fsw_idx:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2503,7 +2531,7 @@ class HivInfectionDuringBreastFeedingEvent(Event, IndividualScopeEventMixin):
 
         # If child is on NVP for HIV prophylaxis, then do not let the infection occur
         # (the prophylaxis is assumed to be perfectly effective in blocking transmission)
-        if df.at[person_id, "hv_is_on_prep"]:
+        if df.at[person_id, "hv_is_on_prep_oral"]:
             return
 
         # Onset the infection for this person (which will schedule progression etc)
@@ -2759,13 +2787,14 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
     This event is scheduled by 'HSI_Hiv_StartOrContinueOnPrep' 3 months after it is run.
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, type_of_prep):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
         df = self.sim.population.props
         person = df.loc[person_id]
         m = self.module
+        property = 'hv_is_on_prep_oral' if self.type_of_prep=='oral' else 'hv_is_on_prep_inj'
 
         # If the person is no longer alive or has been diagnosed with hiv, they will not continue on PrEP
         if (
@@ -2775,13 +2804,12 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             return
 
         # Check that they are on PrEP currently:
-        if not person["hv_is_on_prep"]:
+        if not person[property]:
             logger.warning(
                 key="message",
                 data="This event should not be running: Hiv_DecisionToContinueOnPrEP is for those currently on prep")
 
         # check still eligible, person must be <25 years old or a fsw
-        # todo changed age to exclude AGYW
         if (person["age_years"] < 25) or person["li_is_sexworker"]:
 
             # Determine if this appointment is actually attended by the person who has already started on PrEP
@@ -2799,7 +2827,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
 
             else:
                 # Defaults to being off PrEP - reset flag and take no further action
-                df.at[person_id, "hv_is_on_prep"] = False
+                df.at[person_id, property] = False
 
 
 class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
@@ -3004,7 +3032,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     if (
                         (person["sex"] == "F")
                         & person["li_is_sexworker"]
-                        & ~person["hv_is_on_prep"]
+                        & ~(df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
                         & (self.sim.date.year >= self.module.parameters["prep_start_year"])
                     ):
                         if self.module.lm["lm_prep"].predict(df.loc[[person_id]], self.module.rng
@@ -3153,7 +3181,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         if self.get_consumables(
             item_codes={self.module.item_codes_for_consumables_required['infant_prep']: 63}
         ):
-            df.at[person_id, "hv_is_on_prep"] = True
+            df.at[person_id, "hv_is_on_prep_oral"] = True
 
             # Schedule follow-up visit for 3 months time
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -3169,7 +3197,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
 
         else:
             # infant does not get NVP now but has repeat visit scheduled up to 5 times
-            df.at[person_id, "hv_is_on_prep"] = False
+            df.at[person_id, "hv_is_on_prep_oral"] = False
 
             if (
                 self.repeat_visits
@@ -3192,11 +3220,11 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
     def never_ran(self, *args, **kwargs):
         """This is called if this HSI was never run.
         Default the person to being off PrEP"""
-        self.sim.population.props.at[self.target, "hv_is_on_prep"] = False
+        self.sim.population.props.at[self.target, "hv_is_on_prep_oral"] = False
 
 
 class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, type_of_prep):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
@@ -3210,6 +3238,8 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         person = df.loc[person_id]
+        property = 'hv_is_on_prep_oral' if self.type_of_prep=='oral' else 'hv_is_on_prep_inj'
+        days_on_prep_property = 'hv_days_on_oral_prep' if self.type_of_prep=='oral' else 'hv_days_on_inj_prep'
 
         # Do not run if the person is not alive or is diagnosed with hiv
         if (
@@ -3237,27 +3267,27 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
         # HIV test is negative - check that PrEP is available and if it is, initiate or continue PrEP:
         else:
-            days_on_prep = self.module.parameters['initial_dispensation_period_months'] * 30
+            days_on_prep = self.module.parameters['initial_dispensation_period_months'] * 30 if self.type_of_prep=='oral' else 56
             if self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['prep']: days_on_prep}
             ):
-                df.at[person_id, "hv_is_on_prep"] = True
+                df.at[person_id, property] = True
 
                 if df.at[person_id, "li_is_sexworker"]:
-                    df.at[person_id, 'hv_days_on_prep_FSW'] += days_on_prep
+                    df.at[person_id, f'{days_on_prep_property}_FSW'] += days_on_prep
 
                 elif (df.at[person_id, "sex"] == "F") and (15 <= df.at[person_id, "age_years"] <= 24):
-                    df.at[person_id, 'hv_days_on_prep_AGYW'] += days_on_prep
+                    df.at[person_id, f'{days_on_prep_property}_AGYW'] += days_on_prep
 
                 # Schedule 'decision about whether to continue on PrEP' for 3 months time
                 self.sim.schedule_event(
                     Hiv_DecisionToContinueOnPrEP(person_id=person_id, module=self.module),
-                    self.sim.date + pd.DateOffset(months=self.module.parameters['initial_dispensation_period_months']),
+                    self.sim.date + pd.DateOffset(days=days_on_prep),
                 )
 
             else:
                 # If PrEP is not available, the person will default and not be on PrEP
-                df.at[person_id, "hv_is_on_prep"] = False
+                df.at[person_id, property] = False
 
                 self.counter_for_drugs_not_available += (
                     1  # The current appointment is included in the count.
@@ -3278,7 +3308,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
     def never_ran(self):
             """This is called if this HSI was never run.
             Default the person to being off PrEP"""
-            self.sim.population.props.at[self.target, "hv_is_on_prep"] = False
+            self.sim.population.props.at[self.target, property] = False
 
 
 class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -3761,208 +3791,231 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
         now = self.sim.date
+        # todo several loggers clear the counters so check when commenting / uncommenting
 
-        # ------------------------------------ TESTING ------------------------------------
-        # testing can happen through lm[spontaneous_testing] or symptom-driven or ANC or TB
+        # # ------------------------------------ TESTING ------------------------------------
+        # # testing can happen through lm[spontaneous_testing] or symptom-driven or ANC or TB
+        #
+        # # proportion of adult population tested in past year
+        # n_tested = len(
+        #     df.loc[
+        #         df.is_alive
+        #         & (df.hv_number_tests > 0)
+        #         & (df.age_years >= 15)
+        #         & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        # n_pop = len(df.loc[df.is_alive & (df.age_years >= 15)])
+        # tested = n_tested / n_pop if n_pop else 0
+        #
+        # # proportion of adult population tested in past year by sex
+        # testing_by_sex = {}
+        # for sex in ["F", "M"]:
+        #     n_tested = len(
+        #         df.loc[
+        #             (df.sex == sex)
+        #             & (df.hv_number_tests > 0)
+        #             & (df.age_years >= 15)
+        #             & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
+        #             ]
+        #     )
+        #     n_pop = len(df.loc[(df.sex == sex) & (df.age_years >= 15)])
+        #     testing_by_sex[sex] = n_tested / n_pop if n_pop else 0
+        #
+        # # per_capita_testing_rate: number of tests administered divided by population
+        # current_testing_rate = self.module.per_capita_testing_rate()
+        #
+        # # testing yield: number positive results divided by number tests performed
+        # # if person has multiple tests in one year, will only count 1
+        # total_tested = len(
+        #     df.loc[(df.hv_number_tests > 0)
+        #            & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
+        #            ]
+        # )
+        # total_tested_hiv_positive = len(
+        #     df.loc[df.hv_inf
+        #            & (df.hv_number_tests > 0)
+        #            & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
+        #            ]
+        # )
+        # testing_yield = total_tested_hiv_positive / total_tested if total_tested > 0 else 0
+        #
+        # # ------------------------------------ TREATMENT ------------------------------------
+        # def treatment_counts(subset):
+        #     # total number of subset (subset is a true/false series)
+        #     count = sum(subset)
+        #     # proportion of subset living with HIV that are diagnosed:
+        #     proportion_diagnosed = (
+        #         sum(subset & df.hv_diagnosed) / count if count > 0 else 0.0
+        #     )
+        #     # proportions of subset living with HIV on treatment:
+        #     art = sum(subset & (df.hv_art != "not"))
+        #     art_cov = art / count if count > 0 else 0.0
+        #
+        #     # proportion of subset on treatment that have good VL suppression
+        #     art_vs = sum(subset & (df.hv_art == "on_VL_suppressed"))
+        #     art_cov_vs = art_vs / art if art > 0 else 0.0
+        #     return proportion_diagnosed, art_cov, art_cov_vs
+        #
+        # alive_infected = df.is_alive & df.hv_inf
+        # dx_adult, art_cov_adult, art_cov_vs_adult = treatment_counts(
+        #     alive_infected & (df.age_years >= 15)
+        # )
+        # dx_children, art_cov_children, art_cov_vs_children = treatment_counts(
+        #     alive_infected & (df.age_years < 15)
+        # )
+        #
+        # n_on_art_male_15plus = len(
+        #     df.loc[
+        #         (df.age_years >= 15)
+        #         & (df.sex == "M")
+        #         & df.is_alive
+        #         & (df.hv_art != "not")
+        #         ]
+        # )
+        #
+        # n_on_art_female_15plus = len(
+        #     df.loc[
+        #         (df.age_years >= 15)
+        #         & (df.sex == "F")
+        #         & df.is_alive
+        #         & (df.hv_art != "not")
+        #         ]
+        # )
+        #
+        # n_on_art_children = len(
+        #     df.loc[
+        #         (df.age_years < 15)
+        #         & df.is_alive
+        #         & (df.hv_art != "not")
+        #         ]
+        # )
+        #
+        # n_on_art_total = n_on_art_male_15plus + n_on_art_female_15plus + n_on_art_children
+        #
+        # # ------------------------------------ BEHAVIOUR CHANGE ------------------------------------
+        #
+        # # proportion of adults (15+) exposed to behaviour change intervention
+        # prop_adults_exposed_to_behav_intv = len(
+        #     df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
+        # ) / len(df[df.is_alive & (df.age_years >= 15)]) if len(df[df.is_alive & (df.age_years >= 15)]) else 0
+        #
+        # # ------------------------------------ PREP AMONG FSW ------------------------------------
+        # n_fsw = len(
+        #     df.loc[
+        #         df.is_alive
+        #         & df.li_is_sexworker
+        #         & (df.sex == "F")
+        #         & df.age_years.between(15, 49)
+        #         ]
+        # )
+        #
+        # prop_fsw_on_prep_oral = (
+        #     0.0
+        #     if n_fsw == 0
+        #     else len(
+        #         df[
+        #             df.is_alive
+        #             & df.li_is_sexworker
+        #             & (df.age_years >= 15)
+        #             & df.hv_is_on_prep_oral
+        #             ]
+        #     ) / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
+        # ) if len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)]) else 0
+        #
+        # prop_fsw_on_prep_inj = (
+        #     0.0
+        #     if n_fsw == 0
+        #     else len(
+        #         df[
+        #             df.is_alive
+        #             & df.li_is_sexworker
+        #             & (df.age_years >= 15)
+        #             & df.hv_is_on_prep_inj
+        #             ]
+        #     ) / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
+        # ) if len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)]) else 0
+        #
+        # PY_PREP_ORAL_AGYW = df["hv_days_on_oral_prep_AGYW"].sum() / 365
+        #
+        # PY_PREP_ORAL_FSW = df["hv_days_on_oral_prep_FSW"].sum() / 365
+        #
+        # PY_PREP_INJ_AGYW = df["hv_days_on_inj_prep_AGYW"].sum() / 365
+        #
+        # PY_PREP_INJ_FSW = df["hv_days_on_inj_prep_FSW"].sum() / 365
+        #
+        # # ------------------------------------ MALE CIRCUMCISION ------------------------------------
+        # # NB. Among adult men
+        # num_men_circ = len(
+        #     df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
+        # )
+        #
+        # prop_men_circ = len(
+        #     df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
+        # ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) if len(
+        #     df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) else 0
+        #
+        # N_NewVMMC = len(df[df.hv_VMMC_in_last_year & (df.age_years >= 15)])
+        #
+        # logger.info(
+        #     key="hiv_program_coverage",
+        #     description="Coverage of interventions for HIV among adult (15+) and children (0-14s)",
+        #     data={
+        #         "number_adults_tested": n_tested,
+        #         "prop_tested_adult": tested,
+        #         "prop_tested_adult_male": testing_by_sex["M"],
+        #         "prop_tested_adult_female": testing_by_sex["F"],
+        #         "per_capita_testing_rate": current_testing_rate,
+        #         "testing_yield": testing_yield,
+        #         "dx_adult": dx_adult,
+        #         "dx_childen": dx_children,
+        #         "art_coverage_adult": art_cov_adult,
+        #         "art_coverage_adult_VL_suppression": art_cov_vs_adult,
+        #         "art_coverage_child": art_cov_children,
+        #         "art_coverage_child_VL_suppression": art_cov_vs_children,
+        #         "n_on_art_total": n_on_art_total,
+        #         "n_on_art_male_15plus": n_on_art_male_15plus,
+        #         "n_on_art_female_15plus": n_on_art_female_15plus,
+        #         "n_on_art_children": n_on_art_children,
+        #         "n_tdf_tests_performed": self.module.stored_tdf_numbers,
+        #         "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
+        #         "n_fsw": n_fsw,
+        #         "prop_fsw_on_prep_oral": prop_fsw_on_prep_oral,
+        #         "prop_fsw_on_prep_inj": prop_fsw_on_prep_inj,
+        #         "PY_PREP_ORAL_AGYW": PY_PREP_ORAL_AGYW,
+        #         "PY_PREP_ORAL_FSW": PY_PREP_ORAL_FSW,
+        #         "PY_PREP_INJ_AGYW": PY_PREP_INJ_AGYW,
+        #         "PY_PREP_INJ_FSW": PY_PREP_INJ_FSW,
+        #         "prop_men_circ": prop_men_circ,
+        #         "N_NewVMMC": N_NewVMMC,
+        #     },
+        # )
+        # # after logger, reset yearly logged properties
+        # df["hv_VMMC_in_last_year"] = False
+        # df["hv_days_on_oral_prep_AGYW"] = 0
+        # df["hv_days_on_oral_prep_FSW"] = 0
+        # df["hv_days_on_inj_prep_AGYW"] = 0
+        # df["hv_days_on_inj_prep_FSW"] = 0
+        # self.module.stored_tdf_numbers = 0
 
-        # proportion of adult population tested in past year
-        n_tested = len(
-            df.loc[
-                df.is_alive
-                & (df.hv_number_tests > 0)
-                & (df.age_years >= 15)
-                & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        n_pop = len(df.loc[df.is_alive & (df.age_years >= 15)])
-        tested = n_tested / n_pop if n_pop else 0
-
-        # proportion of adult population tested in past year by sex
-        testing_by_sex = {}
-        for sex in ["F", "M"]:
-            n_tested = len(
-                df.loc[
-                    (df.sex == sex)
-                    & (df.hv_number_tests > 0)
-                    & (df.age_years >= 15)
-                    & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
-                    ]
-            )
-            n_pop = len(df.loc[(df.sex == sex) & (df.age_years >= 15)])
-            testing_by_sex[sex] = n_tested / n_pop if n_pop else 0
-
-        # per_capita_testing_rate: number of tests administered divided by population
-        current_testing_rate = self.module.per_capita_testing_rate()
-
-        # testing yield: number positive results divided by number tests performed
-        # if person has multiple tests in one year, will only count 1
-        total_tested = len(
-            df.loc[(df.hv_number_tests > 0)
-                   & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
-                   ]
-        )
-        total_tested_hiv_positive = len(
-            df.loc[df.hv_inf
-                   & (df.hv_number_tests > 0)
-                   & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
-                   ]
-        )
-        testing_yield = total_tested_hiv_positive / total_tested if total_tested > 0 else 0
-
-        # ------------------------------------ TREATMENT ------------------------------------
-        def treatment_counts(subset):
-            # total number of subset (subset is a true/false series)
-            count = sum(subset)
-            # proportion of subset living with HIV that are diagnosed:
-            proportion_diagnosed = (
-                sum(subset & df.hv_diagnosed) / count if count > 0 else 0.0
-            )
-            # proportions of subset living with HIV on treatment:
-            art = sum(subset & (df.hv_art != "not"))
-            art_cov = art / count if count > 0 else 0.0
-
-            # proportion of subset on treatment that have good VL suppression
-            art_vs = sum(subset & (df.hv_art == "on_VL_suppressed"))
-            art_cov_vs = art_vs / art if art > 0 else 0.0
-            return proportion_diagnosed, art_cov, art_cov_vs
-
-        alive_infected = df.is_alive & df.hv_inf
-        dx_adult, art_cov_adult, art_cov_vs_adult = treatment_counts(
-            alive_infected & (df.age_years >= 15)
-        )
-        dx_children, art_cov_children, art_cov_vs_children = treatment_counts(
-            alive_infected & (df.age_years < 15)
-        )
-
-        n_on_art_male_15plus = len(
-            df.loc[
-                (df.age_years >= 15)
-                & (df.sex == "M")
-                & df.is_alive
-                & (df.hv_art != "not")
-                ]
-        )
-
-        n_on_art_female_15plus = len(
-            df.loc[
-                (df.age_years >= 15)
-                & (df.sex == "F")
-                & df.is_alive
-                & (df.hv_art != "not")
-                ]
-        )
-
-        n_on_art_children = len(
-            df.loc[
-                (df.age_years < 15)
-                & df.is_alive
-                & (df.hv_art != "not")
-                ]
-        )
-
-        n_on_art_total = n_on_art_male_15plus + n_on_art_female_15plus + n_on_art_children
-
-        # ------------------------------------ BEHAVIOUR CHANGE ------------------------------------
-
-        # proportion of adults (15+) exposed to behaviour change intervention
-        prop_adults_exposed_to_behav_intv = len(
-            df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
-        ) / len(df[df.is_alive & (df.age_years >= 15)]) if len(df[df.is_alive & (df.age_years >= 15)]) else 0
-
-        # ------------------------------------ PREP AMONG FSW ------------------------------------
-        n_fsw = len(
-            df.loc[
-                df.is_alive
-                & df.li_is_sexworker
-                & (df.sex == "F")
-                & df.age_years.between(15, 49)
-                ]
-        )
-
-        prop_fsw_on_prep = (
-            0.0
-            if n_fsw == 0
-            else len(
-                df[
-                    df.is_alive
-                    & df.li_is_sexworker
-                    & (df.age_years >= 15)
-                    & df.hv_is_on_prep
-                    ]
-            ) / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
-        ) if len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)]) else 0
-
-        PY_PREP_ORAL_AGYW = df["hv_days_on_prep_AGYW"].sum() / 365
-
-        PY_PREP_ORAL_FSW = df["hv_days_on_prep_FSW"].sum() / 365
-
-        # ------------------------------------ MALE CIRCUMCISION ------------------------------------
-        # NB. Among adult men
-        num_men_circ = len(
-            df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
-        )
-
-        prop_men_circ = len(
-            df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
-        ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) if len(
-            df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) else 0
-
-        N_NewVMMC = len(df[df.hv_VMMC_in_last_year & (df.age_years >= 15)])
-
-        logger.info(
-            key="hiv_program_coverage",
-            description="Coverage of interventions for HIV among adult (15+) and children (0-14s)",
-            data={
-                "number_adults_tested": n_tested,
-                "prop_tested_adult": tested,
-                "prop_tested_adult_male": testing_by_sex["M"],
-                "prop_tested_adult_female": testing_by_sex["F"],
-                "per_capita_testing_rate": current_testing_rate,
-                "testing_yield": testing_yield,
-                "dx_adult": dx_adult,
-                "dx_childen": dx_children,
-                "art_coverage_adult": art_cov_adult,
-                "art_coverage_adult_VL_suppression": art_cov_vs_adult,
-                "art_coverage_child": art_cov_children,
-                "art_coverage_child_VL_suppression": art_cov_vs_children,
-                "n_on_art_total": n_on_art_total,
-                "n_on_art_male_15plus": n_on_art_male_15plus,
-                "n_on_art_female_15plus": n_on_art_female_15plus,
-                "n_on_art_children": n_on_art_children,
-                "n_tdf_tests_performed": self.module.stored_tdf_numbers,
-                "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
-                "n_fsw": n_fsw,
-                "prop_fsw_on_prep": prop_fsw_on_prep,
-                "PY_PREP_ORAL_AGYW": PY_PREP_ORAL_AGYW,
-                "PY_PREP_ORAL_FSW": PY_PREP_ORAL_FSW,
-                "prop_men_circ": prop_men_circ,
-                "N_NewVMMC": N_NewVMMC,
-            },
-        )
-        # after logger, reset yearly logged properties
-        df["hv_VMMC_in_last_year"] = False
-        df["hv_days_on_prep_AGYW"] = 0
-        df["hv_days_on_prep_FSW"] = 0
-        self.module.stored_tdf_numbers = 0
-
-        # ------------------------------------ TREATMENT DELAYS ------------------------------------
-        # for every person initiated on treatment, record time from onset to treatment
-        # each year a series of intervals in days (treatment date - onset date) are recorded
-        # convert to list
-
-        # adults
-        # get index of adults starting tx in last time-period
-        adult_tx_idx = df.loc[(df.age_years >= 16) &
-                              (df.hv_date_first_ART_initiation >= (now - DateOffset(months=self.repeat)))].index
-        # calculate treatment_date - onset_date for each person in index
-        adult_tx_delays = (df.loc[adult_tx_idx, "hv_date_first_ART_initiation"] - df.loc[adult_tx_idx, "hv_date_inf"]).dt.days
-        adult_tx_delays = adult_tx_delays.tolist()
-
-        # children
-        child_tx_idx = df.loc[(df.age_years < 16) &
-                              (df.hv_date_first_ART_initiation >= (now - DateOffset(months=self.repeat)))].index
-        child_tx_delays = (df.loc[child_tx_idx, "hv_date_first_ART_initiation"] - df.loc[child_tx_idx, "hv_date_inf"]).dt.days
-        child_tx_delays = child_tx_delays.tolist()
+        # # ------------------------------------ TREATMENT DELAYS ------------------------------------
+        # # for every person initiated on treatment, record time from onset to treatment
+        # # each year a series of intervals in days (treatment date - onset date) are recorded
+        # # convert to list
+        #
+        # # adults
+        # # get index of adults starting tx in last time-period
+        # adult_tx_idx = df.loc[(df.age_years >= 16) &
+        #                       (df.hv_date_first_ART_initiation >= (now - DateOffset(months=self.repeat)))].index
+        # # calculate treatment_date - onset_date for each person in index
+        # adult_tx_delays = (df.loc[adult_tx_idx, "hv_date_first_ART_initiation"] - df.loc[adult_tx_idx, "hv_date_inf"]).dt.days
+        # adult_tx_delays = adult_tx_delays.tolist()
+        #
+        # # children
+        # child_tx_idx = df.loc[(df.age_years < 16) &
+        #                       (df.hv_date_first_ART_initiation >= (now - DateOffset(months=self.repeat)))].index
+        # child_tx_delays = (df.loc[child_tx_idx, "hv_date_first_ART_initiation"] - df.loc[child_tx_idx, "hv_date_inf"]).dt.days
+        # child_tx_delays = child_tx_delays.tolist()
 
         # logger.info(
         #     key="hiv_treatment_delays",
@@ -3973,1424 +4026,587 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #     },
         # )
 
-        # ------------------------------------ STOCKS ------------------------------------
-        N_PLHIV_00_14_C = len(df[df.hv_inf & df.is_alive & (df.age_years < 15)])
-
-        N_PLHIV_15_24_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == 'M')]
-        )
-
-        N_PLHIV_15_24_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == 'F')]
-        )
-
-        N_PLHIV_25_49_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == 'M')]
-        )
-
-        N_PLHIV_25_49_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == 'F')]
-        )
-
-        N_PLHIV_50_UP_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(50, 120) & (df.sex == 'M')]
-        )
-
-        N_PLHIV_50_UP_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(50, 120) & (df.sex == 'F')]
-        )
-
-        N_Total_00_14_C = len(df[df.is_alive & (df.age_years < 15)])
-
-        N_Total_15_24_M = len(
-            df[df.is_alive & df.age_years.between(15, 24) & (df.sex == 'M')]
-        )
-
-        N_Total_15_24_F = len(
-            df[df.is_alive & df.age_years.between(15, 24) & (df.sex == 'F')]
-        )
-
-        N_Total_25_49_M = len(
-            df[df.is_alive & df.age_years.between(25, 49) & (df.sex == 'M')]
-        )
-
-        N_Total_25_49_F = len(
-            df[df.is_alive & df.age_years.between(25, 49) & (df.sex == 'F')]
-        )
-
-        N_Total_50_UP_M = len(
-            df[df.is_alive & df.age_years.between(50, 120) & (df.sex == 'M')]
-        )
-
-        N_Total_50_UP_F = len(
-            df[df.is_alive & df.age_years.between(50, 120) & (df.sex == 'F')]
-        )
-
-        N_Diag_00_14_C = len(df[df.hv_inf & df.hv_diagnosed & df.is_alive & (df.age_years < 15)])
-
-        N_Diag_15_UP_M = len(df[df.hv_inf & df.hv_diagnosed & df.is_alive &
-                                (df.age_years >= 15) & (df.sex == 'M')])
-
-        N_Diag_15_UP_F = len(df[df.hv_inf & df.hv_diagnosed & df.is_alive &
-                                (df.age_years >= 15) & (df.sex == 'F')])
-
-        N_ART_00_14_C = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive & (df.age_years < 15)])
-
-        N_ART_15_UP_M = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive &
-                               (df.age_years >= 15) & (df.sex == 'M')])
-
-        N_ART_15_UP_F = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive &
-                               (df.age_years >= 15) & (df.sex == 'F')])
-
-        N_VLS_15_UP_M = len(df[df.hv_inf & (df.hv_art == 'on_VL_suppressed') & df.is_alive &
-                               (df.age_years >= 15) & (df.sex == 'M')])
-
-        N_VLS_15_UP_F = len(df[df.hv_inf & (df.hv_art == 'on_VL_suppressed') & df.is_alive &
-                               (df.age_years >= 15) & (df.sex == 'F')])
-
-        N_PLHIV_15_UP_AIDS = len(df[df.hv_inf & (df.sy_aids_symptoms > 0) & df.is_alive &
-                                    (df.age_years >= 15)])
-
-        N_PLHIV_15_UP_NO_AIDS = len(df[df.hv_inf & (df.sy_aids_symptoms == 0) & df.is_alive &
-                                       (df.age_years >= 15)])
-
-        logger.info(
-            key="stock_variables",
-            description="Stock variables",
-            data={
-                "N_PLHIV_00_14_C": N_PLHIV_00_14_C,
-                "N_PLHIV_15_24_M": N_PLHIV_15_24_M,
-                "N_PLHIV_15_24_F": N_PLHIV_15_24_F,
-                "N_PLHIV_25_49_M": N_PLHIV_25_49_M,
-                "N_PLHIV_25_49_F": N_PLHIV_25_49_F,
-                "N_PLHIV_50_UP_M": N_PLHIV_50_UP_M,
-                "N_PLHIV_50_UP_F": N_PLHIV_50_UP_F,
-                "N_Total_00_14_C": N_Total_00_14_C,
-                "N_Total_15_24_M": N_Total_15_24_M,
-                "N_Total_15_24_F": N_Total_15_24_F,
-                "N_Total_25_49_M": N_Total_25_49_M,
-                "N_Total_25_49_F": N_Total_25_49_F,
-                "N_Total_50_UP_M": N_Total_50_UP_M,
-                "N_Total_50_UP_F": N_Total_50_UP_F,
-                "N_Diag_00_14_C": N_Diag_00_14_C,
-                "N_Diag_15_UP_M": N_Diag_15_UP_M,
-                "N_Diag_15_UP_F": N_Diag_15_UP_F,
-                "N_ART_00_14_C": N_ART_00_14_C,
-                "N_ART_15_UP_M": N_ART_15_UP_M,
-                "N_ART_15_UP_F": N_ART_15_UP_F,
-                "N_VLS_15_UP_M": N_VLS_15_UP_M,
-                "N_VLS_15_UP_F": N_VLS_15_UP_F,
-                "N_PLHIV_15_UP_AIDS": N_PLHIV_15_UP_AIDS,
-                "N_PLHIV_15_UP_NO_AIDS": N_PLHIV_15_UP_NO_AIDS,
-                "N_Circumcised_15_49_M": num_men_circ,
-            },
-        )
-
-        # ------------------------------------ FLOWS ------------------------------------
-        # these variables are calculated over the previous 12 months
-
-        N_BirthAll = len(
-            df.loc[
-                df.is_alive &
-                (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_BirthHIV = len(
-            df.loc[
-                df.hv_inf & df.is_alive &
-                (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_BirthART = len(
-            df.loc[
-                df.hv_inf & df.is_alive & (df.hv_art != 'not') &
-                (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_00_14_C = len(
-            df.loc[
-                (df.age_years < 15) &
-                (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_15_24_M = len(
-            df.loc[
-                df.age_years.between(15, 24)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_15_24_F = len(
-            df.loc[
-                df.age_years.between(15, 24)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_25_49_M = len(
-            df.loc[
-                df.age_years.between(25, 49)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_25_49_F = len(
-            df.loc[
-                df.age_years.between(25, 49)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_50_UP_M = len(
-            df.loc[
-                df.age_years.between(50, 120)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_50_UP_F = len(
-            df.loc[
-                df.age_years.between(50, 120)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_DeathsHIV_00_14_C = 0  # from deaths logger
-        N_DeathsHIV_15_UP_M = 0
-        N_DeathsHIV_15_UP_F = 0
-        N_DeathsAll_00_14_C = 0
-        N_DeathsAll_15_UP_M = 0
-        N_DeathsAll_15_UP_F = 0
-
-        N_YLL_00_14_C = 0  # from deaths data
-        N_YLL_15_UP_M = 0
-        N_YLL_15_UP_F = 0
-
-        N_HIVTest_Facility_NEG_15_UP = 0  # from separate logger
-        N_HIVTest_Facility_POS_15_UP = 0
-        N_HIVTest_Index_NEG_15_UP = 0
-        N_HIVTest_Index_POS_15_UP = 0
-        N_HIVTest_Community_NEG_15_UP = 0
-        N_HIVTest_Community_POS_15_UP = 0
-        N_HIVTest_SelfTest_POS_15_UP = 0
-        N_HIVTest_SelfTest_Dist = 0
-        N_Condom_Acts = 0
-
-        N_NewVMMC = len(df[df.hv_VMMC_in_last_year & (df.age_years >= 15)])
-
-        PY_PREP_ORAL_AGYW = df["hv_days_on_prep_AGYW"].sum() / 365
-
-        PY_PREP_ORAL_FSW = df["hv_days_on_prep_FSW"].sum() / 365
-
-        PY_PREP_ORAL_MSM = 0
-        PY_PREP_INJECT_AGYW = 0
-        PY_PREP_INJECT_FSW = 0
-        PY_PREP_INJECT_MSM = 0
-
-        N_ART_ADH_15_UP_F = 0
-        N_ART_ADH_15_UP_M = 0
-
-        N_VL_TEST_15_UP = 0  # from separate logger
-        N_VL_TEST_00_14 = 0
-
-        N_OUTREACH_FSW = 0
-        N_OUTREACH_MSM = 0
-        N_EconEmpowerment = 0
-        N_CSE_15_19_F = 0
-        N_CSE_15_19_M = 0
-
-        logger.info(
-            key="flow_variables",
-            description="Flow variables",
-            data={
-                "N_BirthAll": N_BirthAll,
-                "N_BirthHIV": N_BirthHIV,
-                "N_BirthART": N_BirthART,
-                "N_NewHIV_00_14_C": N_NewHIV_00_14_C,
-                "N_NewHIV_15_24_M": N_NewHIV_15_24_M,
-                "N_NewHIV_15_24_F": N_NewHIV_15_24_F,
-                "N_NewHIV_25_49_M": N_NewHIV_25_49_M,
-                "N_NewHIV_25_49_F": N_NewHIV_25_49_F,
-                "N_NewHIV_50_UP_M": N_NewHIV_50_UP_M,
-                "N_NewHIV_50_UP_F": N_NewHIV_50_UP_F,
-                "N_DeathsHIV_00_14_C": N_DeathsHIV_00_14_C,
-                "N_DeathsHIV_15_UP_M": N_DeathsHIV_15_UP_M,
-                "N_DeathsHIV_15_UP_F": N_DeathsHIV_15_UP_F,
-                "N_DeathsAll_00_14_C": N_DeathsAll_00_14_C,
-                "N_DeathsAll_15_UP_M": N_DeathsAll_15_UP_M,
-                "N_DeathsAll_15_UP_F": N_DeathsAll_15_UP_F,
-                "N_YLL_00_14_C": N_YLL_00_14_C,
-                "N_YLL_15_UP_M": N_YLL_15_UP_M,
-                "N_YLL_15_UP_F": N_YLL_15_UP_F,
-                "N_HIVTest_Facility_NEG_15_UP": N_HIVTest_Facility_NEG_15_UP,
-                "N_HIVTest_Facility_POS_15_UP": N_HIVTest_Facility_POS_15_UP,
-                "N_HIVTest_Index_NEG_15_UP": N_HIVTest_Index_NEG_15_UP,
-                "N_HIVTest_Index_POS_15_UP": N_HIVTest_Index_POS_15_UP,
-                "N_HIVTest_Community_NEG_15_UP": N_HIVTest_Community_NEG_15_UP,
-                "N_HIVTest_Community_POS_15_UP": N_HIVTest_Community_POS_15_UP,
-                "N_HIVTest_SelfTest_POS_15_UP": N_HIVTest_SelfTest_POS_15_UP,
-                "N_HIVTest_SelfTest_Dist": N_HIVTest_SelfTest_Dist,
-                "N_Condom_Acts": N_Condom_Acts,
-                "N_NewVMMC": N_NewVMMC,
-                "PY_PREP_ORAL_AGYW": PY_PREP_ORAL_AGYW,
-                "PY_PREP_ORAL_FSW": PY_PREP_ORAL_FSW,
-                "PY_PREP_ORAL_MSM": PY_PREP_ORAL_MSM,
-                "PY_PREP_INJECT_AGYW": PY_PREP_INJECT_AGYW,
-                "PY_PREP_INJECT_FSW": PY_PREP_INJECT_FSW,
-                "PY_PREP_INJECT_MSM": PY_PREP_INJECT_MSM,
-                "N_ART_ADH_15_UP_F": N_ART_ADH_15_UP_F,
-                "N_ART_ADH_15_UP_M": N_ART_ADH_15_UP_M,
-                "N_VL_TEST_15_UP": N_VL_TEST_15_UP,
-                "N_VL_TEST_00_14": N_VL_TEST_00_14,
-                "N_OUTREACH_FSW": N_OUTREACH_FSW,
-                "N_OUTREACH_MSM": N_OUTREACH_MSM,
-                "N_EconEmpowerment": N_EconEmpowerment,
-                "N_CSE_15_19_F": N_CSE_15_19_F,
-                "N_CSE_15_19_M": N_CSE_15_19_M,
-                "n_fsw": n_fsw,
-            },
-        )
-
-        # ------------------------------------ MIHPSA DEATHS OUTPUTS ------------------------------------
-        POP_15_64_M = len(
-            df[df.is_alive & df.age_years.between(15, 65) & (df.sex == 'M')]
-        )
-
-        POP_15_64_F = len(
-            df[df.is_alive & df.age_years.between(15, 65) & (df.sex == 'F')]
-        )
-
-        POP_15_64 = len(df[df.is_alive & df.age_years.between(15, 65)])
-
-
-
-
-        Num_HIV_15_64_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 65) & (df.sex == 'M')]
-        )
-
-        Num_HIV_15_64_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 65) & (df.sex == 'F')]
-        )
-
-        Num_HIV_15_64 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 65)]
-        )
-
-
-
-        HIV_PREV_15_64_M = Num_HIV_15_64_M / POP_15_64_M
-
-        HIV_PREV_15_64_F = Num_HIV_15_64_F / POP_15_64_F
-
-        HIV_PREV_15_64 = Num_HIV_15_64 / POP_15_64
-
-
-
-        N_NewHIV_15_64_M = len(
-            df[
-                df.age_years.between(15, 65)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_15_64_F = len(
-            df[
-                df.age_years.between(15, 65)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_15_64 = len(
-            df[
-                df.age_years.between(15, 65)
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-
-        N_dx_15_64_M = len(
-            df[
-                df.hv_inf
-                & df.hv_diagnosed
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'M')])
-
-        N_dx_15_64_F = len(
-            df[
-                df.hv_inf
-                & df.hv_diagnosed
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'F')])
-
-        N_dx_15_64 = len(
-            df[
-                df.hv_inf
-                & df.hv_diagnosed
-                & df.is_alive
-                & df.age_years.between(15, 65)])
-
-
-        prop_dx_15_64_M = (N_dx_15_64_M / Num_HIV_15_64_M) * 100
-        prop_dx_15_64_F = (N_dx_15_64_F / Num_HIV_15_64_F) * 100
-        prop_dx_15_64 = (N_dx_15_64 / Num_HIV_15_64) * 100
-
-        N_ART_15_64_M = len(
-            df[
-                df.hv_inf
-                & (df.hv_art != 'not')
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'M')])
-
-        N_ART_15_64_F = len(
-            df[
-                df.hv_inf
-                & (df.hv_art != 'not')
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'F')])
-
-        N_ART_15_64 = len(
-            df[
-                df.hv_inf
-                & (df.hv_art != 'not')
-                & df.is_alive
-                & df.age_years.between(15, 65)])
-
-        Of_dx_on_ART_15_64_M = (N_ART_15_64_M / N_dx_15_64_M) * 100
-        Of_dx_on_ART_15_64_F = (N_ART_15_64_F / N_dx_15_64_F) * 100
-        Of_dx_on_ART_15_64 = (N_ART_15_64 / N_dx_15_64) * 100
-
-        N_VLS_15_64_M = len(
-            df[
-                df.hv_inf
-                & (df.hv_art == 'on_VL_suppressed')
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'M')])
-
-        N_VLS_15_64_F = len(
-            df[
-                df.hv_inf
-                & (df.hv_art == 'on_VL_suppressed')
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'F')])
-
-        N_VLS_15_64 = len(
-            df[
-                df.hv_inf
-                & (df.hv_art == 'on_VL_suppressed')
-                & df.is_alive
-                & df.age_years.between(15, 65)])
-
-        on_ART_and_VLS_15_64_M = (N_VLS_15_64_M / N_ART_15_64_M) * 100
-        on_ART_and_VLS_15_64_F = (N_VLS_15_64_F / N_ART_15_64_F) * 100
-        on_ART_and_VLS_15_64 = (N_VLS_15_64 / N_ART_15_64) * 100
-
-        logger.info(
-            key="mihpsa_15_64",
-            description="mihpsa_15_64",
-            data={
-                "POP_15_64_M": POP_15_64_M,
-                "POP_15_64_F": POP_15_64_F,
-                "POP_15_64": POP_15_64,
-                "HIV_PREV_15_64_M": HIV_PREV_15_64_M,
-                "HIV_PREV_15_64_F": HIV_PREV_15_64_F,
-                "HIV_PREV_15_64": HIV_PREV_15_64,
-                "N_NewHIV_15_64_M": N_NewHIV_15_64_M,
-                "N_NewHIV_15_64_F": N_NewHIV_15_64_F,
-                "N_NewHIV_15_64": N_NewHIV_15_64,
-                "prop_dx_15_64_M": prop_dx_15_64_M,
-                "prop_dx_15_64_F": prop_dx_15_64_F,
-                "prop_dx_15_64": prop_dx_15_64,
-                "Of_dx_on_ART_15_64_M": Of_dx_on_ART_15_64_M,
-                "Of_dx_on_ART_15_64_F": Of_dx_on_ART_15_64_F,
-                "Of_dx_on_ART_15_64": Of_dx_on_ART_15_64,
-                "on_ART_and_VLS_15_64_M": on_ART_and_VLS_15_64_M,
-                "on_ART_and_VLS_15_64_F": on_ART_and_VLS_15_64_F,
-                "on_ART_and_VLS_15_64": on_ART_and_VLS_15_64,
-            },
-        )
-
-        # age-specific outputs
-        Num_HIV_15_34 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 35)]
-        )
-
-        Num_HIV_15_34_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 35) & (df.sex == 'M')]
-        )
-
-        Num_HIV_15_34_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 35) & (df.sex == 'F')]
-        )
-
-        Num_HIV_35_49 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(35, 50)]
-        )
-
-        Num_HIV_35_49_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(35, 50) & (df.sex == 'M')]
-        )
-
-        Num_HIV_35_49_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(35, 50) & (df.sex == 'F')]
-        )
-
-        Num_HIV_50 = len(
-            df[df.hv_inf & df.is_alive & (df.age_years >= 50)]
-        )
-
-        Num_HIV_50_M = len(
-            df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == 'M')]
-        )
-
-        Num_HIV_50_F = len(
-            df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == 'F')]
-        )
-
-        logger.info(
-            key="mihpsa_age_breakdown",
-            description="mihpsa_age_breakdown",
-            data={
-                "Num_HIV_15_34": Num_HIV_15_34,
-                "Num_HIV_15_34_M": Num_HIV_15_34_M,
-                "Num_HIV_15_34_F": Num_HIV_15_34_F,
-                "Num_HIV_35_49": Num_HIV_35_49,
-                "Num_HIV_35_49_M": Num_HIV_35_49_M,
-                "Num_HIV_35_49_F": Num_HIV_35_49_F,
-                "Num_HIV_50": Num_HIV_50,
-                "Num_HIV_50_M": Num_HIV_50_M,
-                "Num_HIV_50_F": Num_HIV_50_F,
-            },
-        )
-
-        # ------------------------------------ LONG-TERM MIHPSA OUTPUTS ------------------------------------
-
-        Total_00_14_M = len(df[df.is_alive & df.age_years.between(0, 15) & (df.sex == "M")])
-        Total_15_24_M = len(df[df.is_alive & df.age_years.between(15, 25) & (df.sex == "M")])
-        Total_25_49_M = len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")])
-        Total_50_UP_M = len(df[df.is_alive & (df.age_years >= 50) & (df.sex == "M")])
-
-        Total_00_14_F = len(df[df.is_alive & df.age_years.between(0, 15) & (df.sex == "F")])
-        Total_15_24_F = len(df[df.is_alive & df.age_years.between(15, 25) & (df.sex == "F")])
-        Total_25_49_F = len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")])
-        Total_50_UP_F = len(df[df.is_alive & (df.age_years >= 50) & (df.sex == "M")])
-
-        Total_FSW = n_fsw
-        Total_MSM = 0
-
-        # Male
-        PLHIV_00_14_M = len(df[df.hv_inf & df.is_alive & df.age_years.between(0, 14) & (df.sex == "M")])
-        PLHIV_15_24_M = len(df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")])
-        PLHIV_25_49_M = len(df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")])
-        PLHIV_50_UP_M = len(df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == "M")])
-
-        # Female
-        PLHIV_00_14_F = len(df[df.hv_inf & df.is_alive & df.age_years.between(0, 14) & (df.sex == "F")])
-        PLHIV_15_24_F = len(df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")])
-        PLHIV_25_49_F = len(df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")])
-        PLHIV_50_UP_F = len(df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == "F")])
-
-        PLHIV_FSW = len(df[df.hv_inf & df.is_alive & df.li_is_sexworker & (df.sex == "F")])
-        PLHIV_MSM = 0
-
-        # Male
-        Diagnosed_00_14_M = len(
-            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(0, 14) & (df.sex == "M")])
-        Diagnosed_15_24_M = len(
-            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(15, 24) & (df.sex == "M")])
-        Diagnosed_25_49_M = len(
-            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(25, 49) & (df.sex == "M")])
-        Diagnosed_50_UP_M = len(df[df.hv_inf & df.is_alive & df.hv_diagnosed & (df.age_years >= 50) & (df.sex == "M")])
-
-        # Female
-        Diagnosed_00_14_F = len(
-            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(0, 14) & (df.sex == "F")])
-        Diagnosed_15_24_F = len(
-            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(15, 24) & (df.sex == "F")])
-        Diagnosed_25_49_F = len(
-            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(25, 49) & (df.sex == "F")])
-        Diagnosed_50_UP_F = len(df[df.hv_inf & df.is_alive & df.hv_diagnosed & (df.age_years >= 50) & (df.sex == "F")])
-
-        Diagnosed_FSW = len(
-            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.li_is_sexworker & (df.sex == "F")])
-        Diagnosed_MSM = 0
-
-        # Define valid ART statuses
-        on_art_status = ['on_not_VL_suppressed', 'on_VL_suppressed']
-
-        # Male
-        ART_00_14_M = len(
-            df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(0, 14) & (df.sex == "M")])
-        ART_15_24_M = len(df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(15, 24) & (
-                df.sex == "M")])
-        ART_25_49_M = len(df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(25, 49) & (
-                df.sex == "M")])
-        ART_50_UP_M = len(
-            df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & (df.age_years >= 50) & (df.sex == "M")])
-
-        # Female
-        ART_00_14_F = len(
-            df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(0, 14) & (df.sex == "F")])
-        ART_15_24_F = len(df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(15, 24) & (
-                df.sex == "F")])
-        ART_25_49_F = len(df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(25, 49) & (
-                df.sex == "F")])
-        ART_50_UP_F = len(
-            df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & (df.age_years >= 50) & (df.sex == "F")])
-
-        ART_FSW = len(
-            df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.li_is_sexworker & (df.sex == "F")])
-        ART_MSM = 0
-
-
-        # Male
-        VLS_00_14_M = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(0,
-                                                                                                                14) & (
-                                     df.sex == "M")])
-        VLS_15_24_M = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(15,
-                                                                                                                24) & (
-                                     df.sex == "M")])
-        VLS_25_49_M = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(25,
-                                                                                                                49) & (
-                                     df.sex == "M")])
-        VLS_50_UP_M = len(
-            df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & (df.age_years >= 50) & (df.sex == "M")])
-
-        # Female
-        VLS_00_14_F = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(0,
-                                                                                                                14) & (
-                                     df.sex == "F")])
-        VLS_15_24_F = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(15,
-                                                                                                                24) & (
-                                     df.sex == "F")])
-        VLS_25_49_F = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(25,
-                                                                                                                49) & (
-                                     df.sex == "F")])
-        VLS_50_UP_F = len(
-            df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & (df.age_years >= 50) & (df.sex == "F")])
-
-        VLS_FSW = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.li_is_sexworker & (
-                                     df.sex == "F")])
-        VLS_MSM = 0
-
-        Birth_All = 0
-        Birth_HIV = 0
-        DeathsAll_00_14_M = 0
-        DeathsAll_15_24_M = 0
-        DeathsAll_25_49_M = 0
-        DeathsAll_50_UP_M = 0
-        DeathsAll_00_14_F = 0
-        DeathsAll_15_24_F = 0
-        DeathsAll_25_49_F = 0
-        DeathsAll_50_UP_F = 0
-
-        # Male
-        NewHIV_00_14_M = len(
-            df.loc[
-                df.age_years.between(0, 14)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
-                ]
-        )
-
-        NewHIV_15_24_M = len(
-            df.loc[
-                df.age_years.between(15, 24)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
-                ]
-        )
-
-        NewHIV_25_49_M = len(
-            df.loc[
-                df.age_years.between(25, 49)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
-                ]
-        )
-
-        NewHIV_50_UP_M = len(
-            df.loc[
-                (df.age_years >= 50)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
-                ]
-        )
-
-        # Female
-        NewHIV_00_14_F = len(
-            df.loc[
-                df.age_years.between(0, 14)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
-                ]
-        )
-
-        NewHIV_15_24_F = len(
-            df.loc[
-                df.age_years.between(15, 24)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
-                ]
-        )
-
-        NewHIV_25_49_F = len(
-            df.loc[
-                df.age_years.between(25, 49)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
-                ]
-        )
-
-        NewHIV_50_UP_F = len(
-            df.loc[
-                (df.age_years >= 50)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
-                ]
-        )
-
-        NewHIV_FSW = len(
-            df.loc[
-                df.li_is_sexworker
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
-                ]
-        )
-        NewHIV_MSM = 0
-
-        DeathsHIV_00_14_M = 0
-        DeathsHIV_15_24_M = 0
-        DeathsHIV_25_49_M = 0
-        DeathsHIV_50_UP_M = 0
-        DeathsHIV_00_14_F = 0
-        DeathsHIV_15_24_F = 0
-        DeathsHIV_25_49_F = 0
-        DeathsHIV_50_UP_F = 0
-        DALYs_Undiscounted = 0
-        TotalCost_Undiscounted = 0
-
-        Percent_circumcised = prop_men_circ
-        Percent_condom_use_GP = 0
-        PrEP_FSW = PY_PREP_ORAL_FSW
-        PrEP_MSM = 0
-        PrEP_GP = PY_PREP_ORAL_AGYW
-        PrEP_Pop_GP = 0
-        NewHIV_PrEP_Pop_GP = 0
-        Percent_FSW_reached = len(
-            df.loc[
-                df.li_is_sexworker
-                & (df.sex == 'F')
-                & (df.hv_is_on_prep)
-                ]) / len(
-            df.loc[
-                df.li_is_sexworker
-                & (df.sex == 'F')
-                ])
-
-        Percent_MSM_reached = 0
-
-        logger.info(
-            key="long_term_mihpsa",
-            description="long_term_mihpsa",
-            data={
-                "Total_00_14_M": Total_00_14_M,
-                "Total_15_24_M": Total_15_24_M,
-                "Total_25_49_M": Total_25_49_M,
-                "Total_50_UP_M": Total_50_UP_M,
-                "Total_00_14_F": Total_00_14_F,
-                "Total_15_24_F": Total_15_24_F,
-                "Total_25_49_F": Total_25_49_F,
-                "Total_50_UP_F": Total_50_UP_F,
-                "Total_FSW": Total_FSW,
-                "Total_MSM": Total_MSM,
-                "PLHIV_00_14_M": PLHIV_00_14_M,
-                "PLHIV_15_24_M": PLHIV_15_24_M,
-                "PLHIV_25_49_M": PLHIV_25_49_M,
-                "PLHIV_50_UP_M": PLHIV_50_UP_M,
-                "PLHIV_00_14_F": PLHIV_00_14_F,
-                "PLHIV_15_24_F": PLHIV_15_24_F,
-                "PLHIV_25_49_F": PLHIV_25_49_F,
-                "PLHIV_50_UP_F": PLHIV_50_UP_F,
-                "PLHIV_FSW": PLHIV_FSW,
-                "PLHIV_MSM": PLHIV_MSM,
-                "Diagnosed_00_14_M": Diagnosed_00_14_M,
-                "Diagnosed_15_24_M": Diagnosed_15_24_M,
-                "Diagnosed_25_49_M": Diagnosed_25_49_M,
-                "Diagnosed_50_UP_M": Diagnosed_50_UP_M,
-                "Diagnosed_00_14_F": Diagnosed_00_14_F,
-                "Diagnosed_15_24_F": Diagnosed_15_24_F,
-                "Diagnosed_25_49_F": Diagnosed_25_49_F,
-                "Diagnosed_50_UP_F": Diagnosed_50_UP_F,
-                "Diagnosed_FSW": Diagnosed_FSW,
-                "Diagnosed_MSM": Diagnosed_MSM,
-                "ART_00_14_M": ART_00_14_M,
-                "ART_15_24_M": ART_15_24_M,
-                "ART_25_49_M": ART_25_49_M,
-                "ART_50_UP_M": ART_50_UP_M,
-                "ART_00_14_F": ART_00_14_F,
-                "ART_15_24_F": ART_15_24_F,
-                "ART_25_49_F": ART_25_49_F,
-                "ART_50_UP_F": ART_50_UP_F,
-                "ART_FSW": ART_FSW,
-                "ART_MSM": ART_MSM,
-                "VLS_00_14_M": VLS_00_14_M,
-                "VLS_15_24_M": VLS_15_24_M,
-                "VLS_25_49_M": VLS_25_49_M,
-                "VLS_50_UP_M": VLS_50_UP_M,
-                "VLS_00_14_F": VLS_00_14_F,
-                "VLS_15_24_F": VLS_15_24_F,
-                "VLS_25_49_F": VLS_25_49_F,
-                "VLS_50_UP_F": VLS_50_UP_F,
-                "VLS_FSW": VLS_FSW,
-                "VLS_MSM": VLS_MSM,
-                "Birth_All": Birth_All,
-                "Birth_HIV": Birth_HIV,
-                "DeathsAll_00_14_M": DeathsAll_00_14_M,
-                "DeathsAll_15_24_M": DeathsAll_15_24_M,
-                "DeathsAll_25_49_M": DeathsAll_25_49_M,
-                "DeathsAll_50_UP_M": DeathsAll_50_UP_M,
-                "DeathsAll_00_14_F": DeathsAll_00_14_F,
-                "DeathsAll_15_24_F": DeathsAll_15_24_F,
-                "DeathsAll_25_49_F": DeathsAll_25_49_F,
-                "DeathsAll_50_UP_F": DeathsAll_50_UP_F,
-                "NewHIV_00_14_M": NewHIV_00_14_M,
-                "NewHIV_15_24_M": NewHIV_15_24_M,
-                "NewHIV_25_49_M": NewHIV_25_49_M,
-                "NewHIV_50_UP_M": NewHIV_50_UP_M,
-                "NewHIV_00_14_F": NewHIV_00_14_F,
-                "NewHIV_15_24_F": NewHIV_15_24_F,
-                "NewHIV_25_49_F": NewHIV_25_49_F,
-                "NewHIV_50_UP_F": NewHIV_50_UP_F,
-                "NewHIV_FSW": NewHIV_FSW,
-                "NewHIV_MSM": NewHIV_MSM,
-                "DeathsHIV_00_14_M": DeathsHIV_00_14_M,
-                "DeathsHIV_15_24_M": DeathsHIV_15_24_M,
-                "DeathsHIV_25_49_M": DeathsHIV_25_49_M,
-                "DeathsHIV_50_UP_M": DeathsHIV_50_UP_M,
-                "DeathsHIV_00_14_F": DeathsHIV_00_14_F,
-                "DeathsHIV_15_24_F": DeathsHIV_15_24_F,
-                "DeathsHIV_25_49_F": DeathsHIV_25_49_F,
-                "DeathsHIV_50_UP_F": DeathsHIV_50_UP_F,
-                "DALYs_Undiscounted": DALYs_Undiscounted,
-                "TotalCost_Undiscounted": TotalCost_Undiscounted,
-                "Percent_circumcised": Percent_circumcised,
-                "Percent_condom use_GP": Percent_condom_use_GP,
-                "PrEP_FSW": PrEP_FSW,
-                "PrEP_MSM": PrEP_MSM,
-                "PrEP_GP": PrEP_GP,
-                "PrEP_Pop_GP": PrEP_Pop_GP,
-                "NewHIV_PrEP_Pop_GP": NewHIV_PrEP_Pop_GP,
-                "Percent_FSW reached": Percent_FSW_reached,
-                "Percent_MSM reached": Percent_MSM_reached,
-            },
-        )
-
-        # after logger, reset yearly logged properties
-        df["hv_VMMC_in_last_year"] = False
-        df["hv_days_on_prep_AGYW"] = 0
-        df["hv_days_on_prep_FSW"] = 0
-
-        # ------------------------------------ Multi-month dispensing ------------------------------------
-        # Filter denominator: alive, HIV-infected, and on ART
-        denominator = df[df.is_alive & df.hv_inf & (df.hv_art != 'not')].copy()
-
-        # Identify breastfeeding mothers
-        breastfeeding_mother_ids = (
-            df.loc[df['nb_breastfeeding_status'] != 'none', 'mother_id']
-            .dropna()
-            .unique()
-        )
-
-        # Define group masks
-        group_masks = {
-            'child': denominator['age_years'] < 15,
-            'pregnant_women': (denominator['sex'] == 'F') & (denominator['age_years'] >= 15) & denominator[
-                'is_pregnant'],
-            'breastfeeding_women': (denominator['sex'] == 'F') & (denominator['age_years'] >= 15) &
-                                   denominator.index.isin(breastfeeding_mother_ids),
-        }
-
-        # Exclude pregnant/breastfeeding women for adult_female group
-        excluded_ids = set(
-            denominator.loc[group_masks['pregnant_women'] | group_masks['breastfeeding_women']].index
-        )
-        group_masks['adult_female'] = (
-            (denominator['sex'] == 'F') & (denominator['age_years'] >= 15) &
-            ~denominator.index.isin(excluded_ids)
-        )
-        group_masks['adult_male'] = (denominator['sex'] == 'M') & (denominator['age_years'] >= 15)
-
-        # Assign group labels
-        group_labels = pd.Series(index=denominator.index, dtype='object')
-        for group, mask in group_masks.items():
-            group_labels.loc[mask] = group
-        group_labels = group_labels.dropna()
-
-        # Filter and annotate the working dataframe
-        grouped_df = (
-            denominator.loc[group_labels.index]
-            .assign(group=group_labels)
-            .copy()
-        )
-
-        # Define dispensing interval bins and labels
-        dispense_bins = [-float('inf'), 3, 6, float('inf')]
-        dispense_labels = ['<3', '3-5', '6+']
-
-        # Ensure 'interval' is a Categorical with all possible levels
-        grouped_df['interval'] = pd.Categorical(
-            pd.cut(
-                grouped_df['hv_arv_dispensing_interval'],
-                bins=dispense_bins,
-                labels=dispense_labels,
-                right=False
-            ),
-            categories=dispense_labels
-        )
-
-        # Define full group list to ensure consistent logging keys across time
-        all_groups = ['child', 'pregnant_women', 'breastfeeding_women', 'adult_female', 'adult_male']
-        full_index = pd.MultiIndex.from_product(
-            [all_groups, dispense_labels],
-            names=['group', 'interval']
-        )
-
-        # Crosstab with full index reindexing
-        prop_series = (
-            pd.crosstab(
-                grouped_df['group'],
-                grouped_df['interval'],
-                normalize='index'
-            )
-            .reindex(columns=dispense_labels, fill_value=0)
-            .stack()
-            .reindex(full_index, fill_value=0)
-        )
-
-        # Log results
-        logger.info(
-            key="arv_dispensing_intervals",
-            data=flatten_multi_index_series_into_dict_for_logging(prop_series),
-            description="Proportion of people by ARV dispensing interval categories (<3, 3-5, 6+ months)"
-        )
-
-        # ------------------------------------ STOCKS ------------------------------------
-        N_PLHIV_00_14_C = len(df[df.hv_inf & df.is_alive & (df.age_years < 15)])
-
-        N_PLHIV_15_24_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == 'M')]
-        )
-
-        N_PLHIV_15_24_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == 'F')]
-        )
-
-        N_PLHIV_25_49_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == 'M')]
-        )
-
-        N_PLHIV_25_49_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == 'F')]
-        )
-
-        N_PLHIV_50_UP_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(50, 120) & (df.sex == 'M')]
-        )
-
-        N_PLHIV_50_UP_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(50, 120) & (df.sex == 'F')]
-        )
-
-        N_Total_00_14_C = len(df[df.is_alive & (df.age_years < 15)])
-
-        N_Total_15_24_M = len(
-            df[df.is_alive & df.age_years.between(15, 24) & (df.sex == 'M')]
-        )
-
-        N_Total_15_24_F = len(
-            df[df.is_alive & df.age_years.between(15, 24) & (df.sex == 'F')]
-        )
-
-        N_Total_25_49_M = len(
-            df[df.is_alive & df.age_years.between(25, 49) & (df.sex == 'M')]
-        )
-
-        N_Total_25_49_F = len(
-            df[df.is_alive & df.age_years.between(25, 49) & (df.sex == 'F')]
-        )
-
-        N_Total_50_UP_M = len(
-            df[df.is_alive & df.age_years.between(50, 120) & (df.sex == 'M')]
-        )
-
-        N_Total_50_UP_F = len(
-            df[df.is_alive & df.age_years.between(50, 120) & (df.sex == 'F')]
-        )
-
-        N_Diag_00_14_C = len(df[df.hv_inf & df.hv_diagnosed & df.is_alive & (df.age_years < 15)])
-
-        N_Diag_15_UP_M = len(df[df.hv_inf & df.hv_diagnosed & df.is_alive &
-                                (df.age_years >= 15) & (df.sex == 'M')])
-
-        N_Diag_15_UP_F = len(df[df.hv_inf & df.hv_diagnosed & df.is_alive &
-                                (df.age_years >= 15) & (df.sex == 'F')])
-
-        N_ART_00_14_C = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive & (df.age_years < 15)])
-
-        N_ART_15_UP_M = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive &
-                               (df.age_years >= 15) & (df.sex == 'M')])
-
-        N_ART_15_UP_F = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive &
-                               (df.age_years >= 15) & (df.sex == 'F')])
-
-        N_VLS_15_UP_M = len(df[df.hv_inf & (df.hv_art == 'on_VL_suppressed') & df.is_alive &
-                               (df.age_years >= 15) & (df.sex == 'M')])
-
-        N_VLS_15_UP_F = len(df[df.hv_inf & (df.hv_art == 'on_VL_suppressed') & df.is_alive &
-                               (df.age_years >= 15) & (df.sex == 'F')])
-
-        N_PLHIV_15_UP_AIDS = len(df[df.hv_inf & (df.sy_aids_symptoms > 0) & df.is_alive &
-                                    (df.age_years >= 15)])
-
-        N_PLHIV_15_UP_NO_AIDS = len(df[df.hv_inf & (df.sy_aids_symptoms == 0) & df.is_alive &
-                                       (df.age_years >= 15)])
-
-        logger.info(
-            key="stock_variables",
-            description="Stock variables",
-            data={
-                "N_PLHIV_00_14_C": N_PLHIV_00_14_C,
-                "N_PLHIV_15_24_M": N_PLHIV_15_24_M,
-                "N_PLHIV_15_24_F": N_PLHIV_15_24_F,
-                "N_PLHIV_25_49_M": N_PLHIV_25_49_M,
-                "N_PLHIV_25_49_F": N_PLHIV_25_49_F,
-                "N_PLHIV_50_UP_M": N_PLHIV_50_UP_M,
-                "N_PLHIV_50_UP_F": N_PLHIV_50_UP_F,
-                "N_Total_00_14_C": N_Total_00_14_C,
-                "N_Total_15_24_M": N_Total_15_24_M,
-                "N_Total_15_24_F": N_Total_15_24_F,
-                "N_Total_25_49_M": N_Total_25_49_M,
-                "N_Total_25_49_F": N_Total_25_49_F,
-                "N_Total_50_UP_M": N_Total_50_UP_M,
-                "N_Total_50_UP_F": N_Total_50_UP_F,
-                "N_Diag_00_14_C": N_Diag_00_14_C,
-                "N_Diag_15_UP_M": N_Diag_15_UP_M,
-                "N_Diag_15_UP_F": N_Diag_15_UP_F,
-                "N_ART_00_14_C": N_ART_00_14_C,
-                "N_ART_15_UP_M": N_ART_15_UP_M,
-                "N_ART_15_UP_F": N_ART_15_UP_F,
-                "N_VLS_15_UP_M": N_VLS_15_UP_M,
-                "N_VLS_15_UP_F": N_VLS_15_UP_F,
-                "N_PLHIV_15_UP_AIDS": N_PLHIV_15_UP_AIDS,
-                "N_PLHIV_15_UP_NO_AIDS": N_PLHIV_15_UP_NO_AIDS,
-                "N_Circumcised_15_49_M": num_men_circ,
-            },
-        )
-
-        # ------------------------------------ FLOWS ------------------------------------
-        # these variables are calculated over the previous 12 months
-
-        N_BirthAll = len(
-            df.loc[
-                df.is_alive &
-                (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_BirthHIV = len(
-            df.loc[
-                df.hv_inf & df.is_alive &
-                (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_BirthART = len(
-            df.loc[
-                df.hv_inf & df.is_alive & (df.hv_art != 'not') &
-                (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_00_14_C = len(
-            df.loc[
-                (df.age_years < 15) &
-                (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_15_24_M = len(
-            df.loc[
-                df.age_years.between(15, 24)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_15_24_F = len(
-            df.loc[
-                df.age_years.between(15, 24)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_25_49_M = len(
-            df.loc[
-                df.age_years.between(25, 49)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_25_49_F = len(
-            df.loc[
-                df.age_years.between(25, 49)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_50_UP_M = len(
-            df.loc[
-                df.age_years.between(50, 120)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_50_UP_F = len(
-            df.loc[
-                df.age_years.between(50, 120)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_DeathsHIV_00_14_C = 0  # from deaths logger
-        N_DeathsHIV_15_UP_M = 0
-        N_DeathsHIV_15_UP_F = 0
-        N_DeathsAll_00_14_C = 0
-        N_DeathsAll_15_UP_M = 0
-        N_DeathsAll_15_UP_F = 0
-
-        N_YLL_00_14_C = 0  # from deaths data
-        N_YLL_15_UP_M = 0
-        N_YLL_15_UP_F = 0
-
-        N_HIVTest_Facility_NEG_15_UP = 0  # from separate logger
-        N_HIVTest_Facility_POS_15_UP = 0
-        N_HIVTest_Index_NEG_15_UP = 0
-        N_HIVTest_Index_POS_15_UP = 0
-        N_HIVTest_Community_NEG_15_UP = 0
-        N_HIVTest_Community_POS_15_UP = 0
-        N_HIVTest_SelfTest_POS_15_UP = 0
-        N_HIVTest_SelfTest_Dist = 0
-        N_Condom_Acts = 0
-
-        N_NewVMMC = len(df[df.hv_VMMC_in_last_year & (df.age_years >= 15)])
-
-        PY_PREP_ORAL_AGYW = df["hv_days_on_prep_AGYW"].sum() / 365
-
-        PY_PREP_ORAL_FSW = df["hv_days_on_prep_FSW"].sum() / 365
-
-        PY_PREP_ORAL_MSM = 0
-        PY_PREP_INJECT_AGYW = 0
-        PY_PREP_INJECT_FSW = 0
-        PY_PREP_INJECT_MSM = 0
-
-        N_ART_ADH_15_UP_F = 0
-        N_ART_ADH_15_UP_M = 0
-
-        N_VL_TEST_15_UP = 0  # from separate logger
-        N_VL_TEST_00_14 = 0
-
-        N_OUTREACH_FSW = 0
-        N_OUTREACH_MSM = 0
-        N_EconEmpowerment = 0
-        N_CSE_15_19_F = 0
-        N_CSE_15_19_M = 0
-
-        logger.info(
-            key="flow_variables",
-            description="Flow variables",
-            data={
-                "N_BirthAll": N_BirthAll,
-                "N_BirthHIV": N_BirthHIV,
-                "N_BirthART": N_BirthART,
-                "N_NewHIV_00_14_C": N_NewHIV_00_14_C,
-                "N_NewHIV_15_24_M": N_NewHIV_15_24_M,
-                "N_NewHIV_15_24_F": N_NewHIV_15_24_F,
-                "N_NewHIV_25_49_M": N_NewHIV_25_49_M,
-                "N_NewHIV_25_49_F": N_NewHIV_25_49_F,
-                "N_NewHIV_50_UP_M": N_NewHIV_50_UP_M,
-                "N_NewHIV_50_UP_F": N_NewHIV_50_UP_F,
-                "N_DeathsHIV_00_14_C": N_DeathsHIV_00_14_C,
-                "N_DeathsHIV_15_UP_M": N_DeathsHIV_15_UP_M,
-                "N_DeathsHIV_15_UP_F": N_DeathsHIV_15_UP_F,
-                "N_DeathsAll_00_14_C": N_DeathsAll_00_14_C,
-                "N_DeathsAll_15_UP_M": N_DeathsAll_15_UP_M,
-                "N_DeathsAll_15_UP_F": N_DeathsAll_15_UP_F,
-                "N_YLL_00_14_C": N_YLL_00_14_C,
-                "N_YLL_15_UP_M": N_YLL_15_UP_M,
-                "N_YLL_15_UP_F": N_YLL_15_UP_F,
-                "N_HIVTest_Facility_NEG_15_UP": N_HIVTest_Facility_NEG_15_UP,
-                "N_HIVTest_Facility_POS_15_UP": N_HIVTest_Facility_POS_15_UP,
-                "N_HIVTest_Index_NEG_15_UP": N_HIVTest_Index_NEG_15_UP,
-                "N_HIVTest_Index_POS_15_UP": N_HIVTest_Index_POS_15_UP,
-                "N_HIVTest_Community_NEG_15_UP": N_HIVTest_Community_NEG_15_UP,
-                "N_HIVTest_Community_POS_15_UP": N_HIVTest_Community_POS_15_UP,
-                "N_HIVTest_SelfTest_POS_15_UP": N_HIVTest_SelfTest_POS_15_UP,
-                "N_HIVTest_SelfTest_Dist": N_HIVTest_SelfTest_Dist,
-                "N_Condom_Acts": N_Condom_Acts,
-                "N_NewVMMC": N_NewVMMC,
-                "PY_PREP_ORAL_AGYW": PY_PREP_ORAL_AGYW,
-                "PY_PREP_ORAL_FSW": PY_PREP_ORAL_FSW,
-                "PY_PREP_ORAL_MSM": PY_PREP_ORAL_MSM,
-                "PY_PREP_INJECT_AGYW": PY_PREP_INJECT_AGYW,
-                "PY_PREP_INJECT_FSW": PY_PREP_INJECT_FSW,
-                "PY_PREP_INJECT_MSM": PY_PREP_INJECT_MSM,
-                "N_ART_ADH_15_UP_F": N_ART_ADH_15_UP_F,
-                "N_ART_ADH_15_UP_M": N_ART_ADH_15_UP_M,
-                "N_VL_TEST_15_UP": N_VL_TEST_15_UP,
-                "N_VL_TEST_00_14": N_VL_TEST_00_14,
-                "N_OUTREACH_FSW": N_OUTREACH_FSW,
-                "N_OUTREACH_MSM": N_OUTREACH_MSM,
-                "N_EconEmpowerment": N_EconEmpowerment,
-                "N_CSE_15_19_F": N_CSE_15_19_F,
-                "N_CSE_15_19_M": N_CSE_15_19_M,
-                "n_fsw": n_fsw,
-            },
-        )
-
-        # ------------------------------------ MIHPSA DEATHS OUTPUTS ------------------------------------
-        POP_15_64_M = len(
-            df[df.is_alive & df.age_years.between(15, 65) & (df.sex == 'M')]
-        )
-
-        POP_15_64_F = len(
-            df[df.is_alive & df.age_years.between(15, 65) & (df.sex == 'F')]
-        )
-
-        POP_15_64 = len(df[df.is_alive & df.age_years.between(15, 65)])
-
-        Num_HIV_15_64_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 65) & (df.sex == 'M')]
-        )
-
-        Num_HIV_15_64_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 65) & (df.sex == 'F')]
-        )
-
-        Num_HIV_15_64 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 65)]
-        )
-
-        HIV_PREV_15_64_M = Num_HIV_15_64_M / POP_15_64_M
-
-        HIV_PREV_15_64_F = Num_HIV_15_64_F / POP_15_64_F
-
-        HIV_PREV_15_64 = Num_HIV_15_64 / POP_15_64
-
-        N_NewHIV_15_64_M = len(
-            df[
-                df.age_years.between(15, 65)
-                & (df.sex == 'M')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_15_64_F = len(
-            df[
-                df.age_years.between(15, 65)
-                & (df.sex == 'F')
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_NewHIV_15_64 = len(
-            df[
-                df.age_years.between(15, 65)
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        N_dx_15_64_M = len(
-            df[
-                df.hv_inf
-                & df.hv_diagnosed
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'M')])
-
-        N_dx_15_64_F = len(
-            df[
-                df.hv_inf
-                & df.hv_diagnosed
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'F')])
-
-        N_dx_15_64 = len(
-            df[
-                df.hv_inf
-                & df.hv_diagnosed
-                & df.is_alive
-                & df.age_years.between(15, 65)])
-
-        prop_dx_15_64_M = (N_dx_15_64_M / Num_HIV_15_64_M) * 100
-        prop_dx_15_64_F = (N_dx_15_64_F / Num_HIV_15_64_F) * 100
-        prop_dx_15_64 = (N_dx_15_64 / Num_HIV_15_64) * 100
-
-        N_ART_15_64_M = len(
-            df[
-                df.hv_inf
-                & (df.hv_art != 'not')
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'M')])
-
-        N_ART_15_64_F = len(
-            df[
-                df.hv_inf
-                & (df.hv_art != 'not')
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'F')])
-
-        N_ART_15_64 = len(
-            df[
-                df.hv_inf
-                & (df.hv_art != 'not')
-                & df.is_alive
-                & df.age_years.between(15, 65)])
-
-        Of_dx_on_ART_15_64_M = (N_ART_15_64_M / N_dx_15_64_M) * 100
-        Of_dx_on_ART_15_64_F = (N_ART_15_64_F / N_dx_15_64_F) * 100
-        Of_dx_on_ART_15_64 = (N_ART_15_64 / N_dx_15_64) * 100
-
-        N_VLS_15_64_M = len(
-            df[
-                df.hv_inf
-                & (df.hv_art == 'on_VL_suppressed')
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'M')])
-
-        N_VLS_15_64_F = len(
-            df[
-                df.hv_inf
-                & (df.hv_art == 'on_VL_suppressed')
-                & df.is_alive
-                & df.age_years.between(15, 65)
-                & (df.sex == 'F')])
-
-        N_VLS_15_64 = len(
-            df[
-                df.hv_inf
-                & (df.hv_art == 'on_VL_suppressed')
-                & df.is_alive
-                & df.age_years.between(15, 65)])
-
-        on_ART_and_VLS_15_64_M = (N_VLS_15_64_M / N_ART_15_64_M) * 100
-        on_ART_and_VLS_15_64_F = (N_VLS_15_64_F / N_ART_15_64_F) * 100
-        on_ART_and_VLS_15_64 = (N_VLS_15_64 / N_ART_15_64) * 100
-
-        logger.info(
-            key="mihpsa_15_64",
-            description="mihpsa_15_64",
-            data={
-                "POP_15_64_M": POP_15_64_M,
-                "POP_15_64_F": POP_15_64_F,
-                "POP_15_64": POP_15_64,
-                "HIV_PREV_15_64_M": HIV_PREV_15_64_M,
-                "HIV_PREV_15_64_F": HIV_PREV_15_64_F,
-                "HIV_PREV_15_64": HIV_PREV_15_64,
-                "N_NewHIV_15_64_M": N_NewHIV_15_64_M,
-                "N_NewHIV_15_64_F": N_NewHIV_15_64_F,
-                "N_NewHIV_15_64": N_NewHIV_15_64,
-                "prop_dx_15_64_M": prop_dx_15_64_M,
-                "prop_dx_15_64_F": prop_dx_15_64_F,
-                "prop_dx_15_64": prop_dx_15_64,
-                "Of_dx_on_ART_15_64_M": Of_dx_on_ART_15_64_M,
-                "Of_dx_on_ART_15_64_F": Of_dx_on_ART_15_64_F,
-                "Of_dx_on_ART_15_64": Of_dx_on_ART_15_64,
-                "on_ART_and_VLS_15_64_M": on_ART_and_VLS_15_64_M,
-                "on_ART_and_VLS_15_64_F": on_ART_and_VLS_15_64_F,
-                "on_ART_and_VLS_15_64": on_ART_and_VLS_15_64,
-            },
-        )
-
-        # age-specific outputs
-        Num_HIV_15_34 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 35)]
-        )
-
-        Num_HIV_15_34_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 35) & (df.sex == 'M')]
-        )
-
-        Num_HIV_15_34_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 35) & (df.sex == 'F')]
-        )
-
-        Num_HIV_35_49 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(35, 50)]
-        )
-
-        Num_HIV_35_49_M = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(35, 50) & (df.sex == 'M')]
-        )
-
-        Num_HIV_35_49_F = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(35, 50) & (df.sex == 'F')]
-        )
-
-        Num_HIV_50 = len(
-            df[df.hv_inf & df.is_alive & (df.age_years >= 50)]
-        )
-
-        Num_HIV_50_M = len(
-            df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == 'M')]
-        )
-
-        Num_HIV_50_F = len(
-            df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == 'F')]
-        )
-
-        logger.info(
-            key="mihpsa_age_breakdown",
-            description="mihpsa_age_breakdown",
-            data={
-                "Num_HIV_15_34": Num_HIV_15_34,
-                "Num_HIV_15_34_M": Num_HIV_15_34_M,
-                "Num_HIV_15_34_F": Num_HIV_15_34_F,
-                "Num_HIV_35_49": Num_HIV_35_49,
-                "Num_HIV_35_49_M": Num_HIV_35_49_M,
-                "Num_HIV_35_49_F": Num_HIV_35_49_F,
-                "Num_HIV_50": Num_HIV_50,
-                "Num_HIV_50_M": Num_HIV_50_M,
-                "Num_HIV_50_F": Num_HIV_50_F,
-            },
-        )
+        # # ------------------------------------ Multi-month dispensing ------------------------------------
+        # # Filter denominator: alive, HIV-infected, and on ART
+        # denominator = df[df.is_alive & df.hv_inf & (df.hv_art != 'not')].copy()
+        #
+        # # Identify breastfeeding mothers
+        # breastfeeding_mother_ids = (
+        #     df.loc[df['nb_breastfeeding_status'] != 'none', 'mother_id']
+        #     .dropna()
+        #     .unique()
+        # )
+        #
+        # # Define group masks
+        # group_masks = {
+        #     'child': denominator['age_years'] < 15,
+        #     'pregnant_women': (denominator['sex'] == 'F') & (denominator['age_years'] >= 15) & denominator[
+        #         'is_pregnant'],
+        #     'breastfeeding_women': (denominator['sex'] == 'F') & (denominator['age_years'] >= 15) &
+        #                            denominator.index.isin(breastfeeding_mother_ids),
+        # }
+        #
+        # # Exclude pregnant/breastfeeding women for adult_female group
+        # excluded_ids = set(
+        #     denominator.loc[group_masks['pregnant_women'] | group_masks['breastfeeding_women']].index
+        # )
+        # group_masks['adult_female'] = (
+        #     (denominator['sex'] == 'F') & (denominator['age_years'] >= 15) &
+        #     ~denominator.index.isin(excluded_ids)
+        # )
+        # group_masks['adult_male'] = (denominator['sex'] == 'M') & (denominator['age_years'] >= 15)
+        #
+        # # Assign group labels
+        # group_labels = pd.Series(index=denominator.index, dtype='object')
+        # for group, mask in group_masks.items():
+        #     group_labels.loc[mask] = group
+        # group_labels = group_labels.dropna()
+        #
+        # # Filter and annotate the working dataframe
+        # grouped_df = (
+        #     denominator.loc[group_labels.index]
+        #     .assign(group=group_labels)
+        #     .copy()
+        # )
+        #
+        # # Define dispensing interval bins and labels
+        # dispense_bins = [-float('inf'), 3, 6, float('inf')]
+        # dispense_labels = ['<3', '3-5', '6+']
+        #
+        # # Ensure 'interval' is a Categorical with all possible levels
+        # grouped_df['interval'] = pd.Categorical(
+        #     pd.cut(
+        #         grouped_df['hv_arv_dispensing_interval'],
+        #         bins=dispense_bins,
+        #         labels=dispense_labels,
+        #         right=False
+        #     ),
+        #     categories=dispense_labels
+        # )
+        #
+        # # Define full group list to ensure consistent logging keys across time
+        # all_groups = ['child', 'pregnant_women', 'breastfeeding_women', 'adult_female', 'adult_male']
+        # full_index = pd.MultiIndex.from_product(
+        #     [all_groups, dispense_labels],
+        #     names=['group', 'interval']
+        # )
+        #
+        # # Crosstab with full index reindexing
+        # prop_series = (
+        #     pd.crosstab(
+        #         grouped_df['group'],
+        #         grouped_df['interval'],
+        #         normalize='index'
+        #     )
+        #     .reindex(columns=dispense_labels, fill_value=0)
+        #     .stack()
+        #     .reindex(full_index, fill_value=0)
+        # )
+        #
+        # # Log results
+        # logger.info(
+        #     key="arv_dispensing_intervals",
+        #     data=flatten_multi_index_series_into_dict_for_logging(prop_series),
+        #     description="Proportion of people by ARV dispensing interval categories (<3, 3-5, 6+ months)"
+        # )
+        #
+        # # ------------------------------------ MIHPSA STOCKS ------------------------------------
+        # N_PLHIV_00_14_C = len(df[df.hv_inf & df.is_alive & (df.age_years < 15)])
+        #
+        # N_PLHIV_15_24_M = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == 'M')]
+        # )
+        #
+        # N_PLHIV_15_24_F = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == 'F')]
+        # )
+        #
+        # N_PLHIV_25_49_M = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == 'M')]
+        # )
+        #
+        # N_PLHIV_25_49_F = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == 'F')]
+        # )
+        #
+        # N_PLHIV_50_UP_M = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(50, 120) & (df.sex == 'M')]
+        # )
+        #
+        # N_PLHIV_50_UP_F = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(50, 120) & (df.sex == 'F')]
+        # )
+        #
+        # N_Total_00_14_C = len(df[df.is_alive & (df.age_years < 15)])
+        #
+        # N_Total_15_24_M = len(
+        #     df[df.is_alive & df.age_years.between(15, 24) & (df.sex == 'M')]
+        # )
+        #
+        # N_Total_15_24_F = len(
+        #     df[df.is_alive & df.age_years.between(15, 24) & (df.sex == 'F')]
+        # )
+        #
+        # N_Total_25_49_M = len(
+        #     df[df.is_alive & df.age_years.between(25, 49) & (df.sex == 'M')]
+        # )
+        #
+        # N_Total_25_49_F = len(
+        #     df[df.is_alive & df.age_years.between(25, 49) & (df.sex == 'F')]
+        # )
+        #
+        # N_Total_50_UP_M = len(
+        #     df[df.is_alive & df.age_years.between(50, 120) & (df.sex == 'M')]
+        # )
+        #
+        # N_Total_50_UP_F = len(
+        #     df[df.is_alive & df.age_years.between(50, 120) & (df.sex == 'F')]
+        # )
+        #
+        # N_Diag_00_14_C = len(df[df.hv_inf & df.hv_diagnosed & df.is_alive & (df.age_years < 15)])
+        #
+        # N_Diag_15_UP_M = len(df[df.hv_inf & df.hv_diagnosed & df.is_alive &
+        #                         (df.age_years >= 15) & (df.sex == 'M')])
+        #
+        # N_Diag_15_UP_F = len(df[df.hv_inf & df.hv_diagnosed & df.is_alive &
+        #                         (df.age_years >= 15) & (df.sex == 'F')])
+        #
+        # N_ART_00_14_C = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive & (df.age_years < 15)])
+        #
+        # N_ART_15_UP_M = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive &
+        #                        (df.age_years >= 15) & (df.sex == 'M')])
+        #
+        # N_ART_15_UP_F = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive &
+        #                        (df.age_years >= 15) & (df.sex == 'F')])
+        #
+        # N_VLS_15_UP_M = len(df[df.hv_inf & (df.hv_art == 'on_VL_suppressed') & df.is_alive &
+        #                        (df.age_years >= 15) & (df.sex == 'M')])
+        #
+        # N_VLS_15_UP_F = len(df[df.hv_inf & (df.hv_art == 'on_VL_suppressed') & df.is_alive &
+        #                        (df.age_years >= 15) & (df.sex == 'F')])
+        #
+        # N_PLHIV_15_UP_AIDS = len(df[df.hv_inf & (df.sy_aids_symptoms > 0) & df.is_alive &
+        #                             (df.age_years >= 15)])
+        #
+        # N_PLHIV_15_UP_NO_AIDS = len(df[df.hv_inf & (df.sy_aids_symptoms == 0) & df.is_alive &
+        #                                (df.age_years >= 15)])
+        #
+        # logger.info(
+        #     key="stock_variables",
+        #     description="Stock variables",
+        #     data={
+        #         "N_PLHIV_00_14_C": N_PLHIV_00_14_C,
+        #         "N_PLHIV_15_24_M": N_PLHIV_15_24_M,
+        #         "N_PLHIV_15_24_F": N_PLHIV_15_24_F,
+        #         "N_PLHIV_25_49_M": N_PLHIV_25_49_M,
+        #         "N_PLHIV_25_49_F": N_PLHIV_25_49_F,
+        #         "N_PLHIV_50_UP_M": N_PLHIV_50_UP_M,
+        #         "N_PLHIV_50_UP_F": N_PLHIV_50_UP_F,
+        #         "N_Total_00_14_C": N_Total_00_14_C,
+        #         "N_Total_15_24_M": N_Total_15_24_M,
+        #         "N_Total_15_24_F": N_Total_15_24_F,
+        #         "N_Total_25_49_M": N_Total_25_49_M,
+        #         "N_Total_25_49_F": N_Total_25_49_F,
+        #         "N_Total_50_UP_M": N_Total_50_UP_M,
+        #         "N_Total_50_UP_F": N_Total_50_UP_F,
+        #         "N_Diag_00_14_C": N_Diag_00_14_C,
+        #         "N_Diag_15_UP_M": N_Diag_15_UP_M,
+        #         "N_Diag_15_UP_F": N_Diag_15_UP_F,
+        #         "N_ART_00_14_C": N_ART_00_14_C,
+        #         "N_ART_15_UP_M": N_ART_15_UP_M,
+        #         "N_ART_15_UP_F": N_ART_15_UP_F,
+        #         "N_VLS_15_UP_M": N_VLS_15_UP_M,
+        #         "N_VLS_15_UP_F": N_VLS_15_UP_F,
+        #         "N_PLHIV_15_UP_AIDS": N_PLHIV_15_UP_AIDS,
+        #         "N_PLHIV_15_UP_NO_AIDS": N_PLHIV_15_UP_NO_AIDS,
+        #         "N_Circumcised_15_49_M": num_men_circ,
+        #     },
+        # )
+        #
+        # # ------------------------------------ MIHPSA FLOWS ------------------------------------
+        # # these variables are calculated over the previous 12 months
+        #
+        # N_BirthAll = len(
+        #     df.loc[
+        #         df.is_alive &
+        #         (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_BirthHIV = len(
+        #     df.loc[
+        #         df.hv_inf & df.is_alive &
+        #         (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_BirthART = len(
+        #     df.loc[
+        #         df.hv_inf & df.is_alive & (df.hv_art != 'not') &
+        #         (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_NewHIV_00_14_C = len(
+        #     df.loc[
+        #         (df.age_years < 15) &
+        #         (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_NewHIV_15_24_M = len(
+        #     df.loc[
+        #         df.age_years.between(15, 24)
+        #         & (df.sex == 'M')
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_NewHIV_15_24_F = len(
+        #     df.loc[
+        #         df.age_years.between(15, 24)
+        #         & (df.sex == 'F')
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_NewHIV_25_49_M = len(
+        #     df.loc[
+        #         df.age_years.between(25, 49)
+        #         & (df.sex == 'M')
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_NewHIV_25_49_F = len(
+        #     df.loc[
+        #         df.age_years.between(25, 49)
+        #         & (df.sex == 'F')
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_NewHIV_50_UP_M = len(
+        #     df.loc[
+        #         df.age_years.between(50, 120)
+        #         & (df.sex == 'M')
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_NewHIV_50_UP_F = len(
+        #     df.loc[
+        #         df.age_years.between(50, 120)
+        #         & (df.sex == 'F')
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_DeathsHIV_00_14_C = 0  # from deaths logger
+        # N_DeathsHIV_15_UP_M = 0
+        # N_DeathsHIV_15_UP_F = 0
+        # N_DeathsAll_00_14_C = 0
+        # N_DeathsAll_15_UP_M = 0
+        # N_DeathsAll_15_UP_F = 0
+        #
+        # N_YLL_00_14_C = 0  # from deaths data
+        # N_YLL_15_UP_M = 0
+        # N_YLL_15_UP_F = 0
+        #
+        # N_HIVTest_Facility_NEG_15_UP = 0  # from separate logger
+        # N_HIVTest_Facility_POS_15_UP = 0
+        # N_HIVTest_Index_NEG_15_UP = 0
+        # N_HIVTest_Index_POS_15_UP = 0
+        # N_HIVTest_Community_NEG_15_UP = 0
+        # N_HIVTest_Community_POS_15_UP = 0
+        # N_HIVTest_SelfTest_POS_15_UP = 0
+        # N_HIVTest_SelfTest_Dist = 0
+        # N_Condom_Acts = 0
+        #
+        # N_NewVMMC = len(df[df.hv_VMMC_in_last_year & (df.age_years >= 15)])
+        #
+        # PY_PREP_ORAL_AGYW = df["hv_days_on_oral_prep_AGYW"].sum() / 365
+        # PY_PREP_ORAL_FSW = df["hv_days_on_oral_prep_FSW"].sum() / 365
+        # PY_PREP_ORAL_MSM = 0
+        #
+        # PY_PREP_INJECT_AGYW = df["hv_days_on_inj_prep_AGYW"].sum() / 365
+        # PY_PREP_INJECT_FSW = df["hv_days_on_inj_prep_FSW"].sum() / 365
+        # PY_PREP_INJECT_MSM = 0
+        #
+        # N_ART_ADH_15_UP_F = 0
+        # N_ART_ADH_15_UP_M = 0
+        #
+        # N_VL_TEST_15_UP = 0  # from separate logger
+        # N_VL_TEST_00_14 = 0
+        #
+        # N_OUTREACH_FSW = 0
+        # N_OUTREACH_MSM = 0
+        # N_EconEmpowerment = 0
+        # N_CSE_15_19_F = 0
+        # N_CSE_15_19_M = 0
+        #
+        # logger.info(
+        #     key="flow_variables",
+        #     description="Flow variables",
+        #     data={
+        #         "N_BirthAll": N_BirthAll,
+        #         "N_BirthHIV": N_BirthHIV,
+        #         "N_BirthART": N_BirthART,
+        #         "N_NewHIV_00_14_C": N_NewHIV_00_14_C,
+        #         "N_NewHIV_15_24_M": N_NewHIV_15_24_M,
+        #         "N_NewHIV_15_24_F": N_NewHIV_15_24_F,
+        #         "N_NewHIV_25_49_M": N_NewHIV_25_49_M,
+        #         "N_NewHIV_25_49_F": N_NewHIV_25_49_F,
+        #         "N_NewHIV_50_UP_M": N_NewHIV_50_UP_M,
+        #         "N_NewHIV_50_UP_F": N_NewHIV_50_UP_F,
+        #         "N_DeathsHIV_00_14_C": N_DeathsHIV_00_14_C,
+        #         "N_DeathsHIV_15_UP_M": N_DeathsHIV_15_UP_M,
+        #         "N_DeathsHIV_15_UP_F": N_DeathsHIV_15_UP_F,
+        #         "N_DeathsAll_00_14_C": N_DeathsAll_00_14_C,
+        #         "N_DeathsAll_15_UP_M": N_DeathsAll_15_UP_M,
+        #         "N_DeathsAll_15_UP_F": N_DeathsAll_15_UP_F,
+        #         "N_YLL_00_14_C": N_YLL_00_14_C,
+        #         "N_YLL_15_UP_M": N_YLL_15_UP_M,
+        #         "N_YLL_15_UP_F": N_YLL_15_UP_F,
+        #         "N_HIVTest_Facility_NEG_15_UP": N_HIVTest_Facility_NEG_15_UP,
+        #         "N_HIVTest_Facility_POS_15_UP": N_HIVTest_Facility_POS_15_UP,
+        #         "N_HIVTest_Index_NEG_15_UP": N_HIVTest_Index_NEG_15_UP,
+        #         "N_HIVTest_Index_POS_15_UP": N_HIVTest_Index_POS_15_UP,
+        #         "N_HIVTest_Community_NEG_15_UP": N_HIVTest_Community_NEG_15_UP,
+        #         "N_HIVTest_Community_POS_15_UP": N_HIVTest_Community_POS_15_UP,
+        #         "N_HIVTest_SelfTest_POS_15_UP": N_HIVTest_SelfTest_POS_15_UP,
+        #         "N_HIVTest_SelfTest_Dist": N_HIVTest_SelfTest_Dist,
+        #         "N_Condom_Acts": N_Condom_Acts,
+        #         "N_NewVMMC": N_NewVMMC,
+        #         "PY_PREP_ORAL_AGYW": PY_PREP_ORAL_AGYW,
+        #         "PY_PREP_ORAL_FSW": PY_PREP_ORAL_FSW,
+        #         "PY_PREP_ORAL_MSM": PY_PREP_ORAL_MSM,
+        #         "PY_PREP_INJECT_AGYW": PY_PREP_INJECT_AGYW,
+        #         "PY_PREP_INJECT_FSW": PY_PREP_INJECT_FSW,
+        #         "PY_PREP_INJECT_MSM": PY_PREP_INJECT_MSM,
+        #         "N_ART_ADH_15_UP_F": N_ART_ADH_15_UP_F,
+        #         "N_ART_ADH_15_UP_M": N_ART_ADH_15_UP_M,
+        #         "N_VL_TEST_15_UP": N_VL_TEST_15_UP,
+        #         "N_VL_TEST_00_14": N_VL_TEST_00_14,
+        #         "N_OUTREACH_FSW": N_OUTREACH_FSW,
+        #         "N_OUTREACH_MSM": N_OUTREACH_MSM,
+        #         "N_EconEmpowerment": N_EconEmpowerment,
+        #         "N_CSE_15_19_F": N_CSE_15_19_F,
+        #         "N_CSE_15_19_M": N_CSE_15_19_M,
+        #         "n_fsw": n_fsw,
+        #     },
+        # )
+        #
+        # # ------------------------------------ MIHPSA DEATHS OUTPUTS ------------------------------------
+        # POP_15_64_M = len(
+        #     df[df.is_alive & df.age_years.between(15, 65) & (df.sex == 'M')]
+        # )
+        #
+        # POP_15_64_F = len(
+        #     df[df.is_alive & df.age_years.between(15, 65) & (df.sex == 'F')]
+        # )
+        #
+        # POP_15_64 = len(df[df.is_alive & df.age_years.between(15, 65)])
+        #
+        # Num_HIV_15_64_M = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 65) & (df.sex == 'M')]
+        # )
+        #
+        # Num_HIV_15_64_F = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 65) & (df.sex == 'F')]
+        # )
+        #
+        # Num_HIV_15_64 = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 65)]
+        # )
+        #
+        # HIV_PREV_15_64_M = Num_HIV_15_64_M / POP_15_64_M
+        #
+        # HIV_PREV_15_64_F = Num_HIV_15_64_F / POP_15_64_F
+        #
+        # HIV_PREV_15_64 = Num_HIV_15_64 / POP_15_64
+        #
+        # N_NewHIV_15_64_M = len(
+        #     df[
+        #         df.age_years.between(15, 65)
+        #         & (df.sex == 'M')
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_NewHIV_15_64_F = len(
+        #     df[
+        #         df.age_years.between(15, 65)
+        #         & (df.sex == 'F')
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_NewHIV_15_64 = len(
+        #     df[
+        #         df.age_years.between(15, 65)
+        #         & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        #
+        # N_dx_15_64_M = len(
+        #     df[
+        #         df.hv_inf
+        #         & df.hv_diagnosed
+        #         & df.is_alive
+        #         & df.age_years.between(15, 65)
+        #         & (df.sex == 'M')])
+        #
+        # N_dx_15_64_F = len(
+        #     df[
+        #         df.hv_inf
+        #         & df.hv_diagnosed
+        #         & df.is_alive
+        #         & df.age_years.between(15, 65)
+        #         & (df.sex == 'F')])
+        #
+        # N_dx_15_64 = len(
+        #     df[
+        #         df.hv_inf
+        #         & df.hv_diagnosed
+        #         & df.is_alive
+        #         & df.age_years.between(15, 65)])
+        #
+        # prop_dx_15_64_M = (N_dx_15_64_M / Num_HIV_15_64_M) * 100
+        # prop_dx_15_64_F = (N_dx_15_64_F / Num_HIV_15_64_F) * 100
+        # prop_dx_15_64 = (N_dx_15_64 / Num_HIV_15_64) * 100
+        #
+        # N_ART_15_64_M = len(
+        #     df[
+        #         df.hv_inf
+        #         & (df.hv_art != 'not')
+        #         & df.is_alive
+        #         & df.age_years.between(15, 65)
+        #         & (df.sex == 'M')])
+        #
+        # N_ART_15_64_F = len(
+        #     df[
+        #         df.hv_inf
+        #         & (df.hv_art != 'not')
+        #         & df.is_alive
+        #         & df.age_years.between(15, 65)
+        #         & (df.sex == 'F')])
+        #
+        # N_ART_15_64 = len(
+        #     df[
+        #         df.hv_inf
+        #         & (df.hv_art != 'not')
+        #         & df.is_alive
+        #         & df.age_years.between(15, 65)])
+        #
+        # Of_dx_on_ART_15_64_M = (N_ART_15_64_M / N_dx_15_64_M) * 100
+        # Of_dx_on_ART_15_64_F = (N_ART_15_64_F / N_dx_15_64_F) * 100
+        # Of_dx_on_ART_15_64 = (N_ART_15_64 / N_dx_15_64) * 100
+        #
+        # N_VLS_15_64_M = len(
+        #     df[
+        #         df.hv_inf
+        #         & (df.hv_art == 'on_VL_suppressed')
+        #         & df.is_alive
+        #         & df.age_years.between(15, 65)
+        #         & (df.sex == 'M')])
+        #
+        # N_VLS_15_64_F = len(
+        #     df[
+        #         df.hv_inf
+        #         & (df.hv_art == 'on_VL_suppressed')
+        #         & df.is_alive
+        #         & df.age_years.between(15, 65)
+        #         & (df.sex == 'F')])
+        #
+        # N_VLS_15_64 = len(
+        #     df[
+        #         df.hv_inf
+        #         & (df.hv_art == 'on_VL_suppressed')
+        #         & df.is_alive
+        #         & df.age_years.between(15, 65)])
+        #
+        # on_ART_and_VLS_15_64_M = (N_VLS_15_64_M / N_ART_15_64_M) * 100
+        # on_ART_and_VLS_15_64_F = (N_VLS_15_64_F / N_ART_15_64_F) * 100
+        # on_ART_and_VLS_15_64 = (N_VLS_15_64 / N_ART_15_64) * 100
+        #
+        # logger.info(
+        #     key="mihpsa_15_64",
+        #     description="mihpsa_15_64",
+        #     data={
+        #         "POP_15_64_M": POP_15_64_M,
+        #         "POP_15_64_F": POP_15_64_F,
+        #         "POP_15_64": POP_15_64,
+        #         "HIV_PREV_15_64_M": HIV_PREV_15_64_M,
+        #         "HIV_PREV_15_64_F": HIV_PREV_15_64_F,
+        #         "HIV_PREV_15_64": HIV_PREV_15_64,
+        #         "N_NewHIV_15_64_M": N_NewHIV_15_64_M,
+        #         "N_NewHIV_15_64_F": N_NewHIV_15_64_F,
+        #         "N_NewHIV_15_64": N_NewHIV_15_64,
+        #         "prop_dx_15_64_M": prop_dx_15_64_M,
+        #         "prop_dx_15_64_F": prop_dx_15_64_F,
+        #         "prop_dx_15_64": prop_dx_15_64,
+        #         "Of_dx_on_ART_15_64_M": Of_dx_on_ART_15_64_M,
+        #         "Of_dx_on_ART_15_64_F": Of_dx_on_ART_15_64_F,
+        #         "Of_dx_on_ART_15_64": Of_dx_on_ART_15_64,
+        #         "on_ART_and_VLS_15_64_M": on_ART_and_VLS_15_64_M,
+        #         "on_ART_and_VLS_15_64_F": on_ART_and_VLS_15_64_F,
+        #         "on_ART_and_VLS_15_64": on_ART_and_VLS_15_64,
+        #     },
+        # )
+        #
+        # # age-specific outputs
+        # Num_HIV_15_34 = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 35)]
+        # )
+        #
+        # Num_HIV_15_34_M = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 35) & (df.sex == 'M')]
+        # )
+        #
+        # Num_HIV_15_34_F = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(15, 35) & (df.sex == 'F')]
+        # )
+        #
+        # Num_HIV_35_49 = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(35, 50)]
+        # )
+        #
+        # Num_HIV_35_49_M = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(35, 50) & (df.sex == 'M')]
+        # )
+        #
+        # Num_HIV_35_49_F = len(
+        #     df[df.hv_inf & df.is_alive & df.age_years.between(35, 50) & (df.sex == 'F')]
+        # )
+        #
+        # Num_HIV_50 = len(
+        #     df[df.hv_inf & df.is_alive & (df.age_years >= 50)]
+        # )
+        #
+        # Num_HIV_50_M = len(
+        #     df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == 'M')]
+        # )
+        #
+        # Num_HIV_50_F = len(
+        #     df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == 'F')]
+        # )
+        #
+        # logger.info(
+        #     key="mihpsa_age_breakdown",
+        #     description="mihpsa_age_breakdown",
+        #     data={
+        #         "Num_HIV_15_34": Num_HIV_15_34,
+        #         "Num_HIV_15_34_M": Num_HIV_15_34_M,
+        #         "Num_HIV_15_34_F": Num_HIV_15_34_F,
+        #         "Num_HIV_35_49": Num_HIV_35_49,
+        #         "Num_HIV_35_49_M": Num_HIV_35_49_M,
+        #         "Num_HIV_35_49_F": Num_HIV_35_49_F,
+        #         "Num_HIV_50": Num_HIV_50,
+        #         "Num_HIV_50_M": Num_HIV_50_M,
+        #         "Num_HIV_50_F": Num_HIV_50_F,
+        #     },
+        # )
 
         # ------------------------------------ LONG-TERM MIHPSA OUTPUTS ------------------------------------
 
@@ -5609,7 +4825,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[
                 df.li_is_sexworker
                 & (df.sex == 'F')
-                & (df.hv_is_on_prep)
+                & (df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
                 ]) / len(
             df.loc[
                 df.li_is_sexworker
@@ -5716,8 +4932,10 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # after logger, reset yearly logged properties
         df["hv_VMMC_in_last_year"] = False
-        df["hv_days_on_prep_AGYW"] = 0
-        df["hv_days_on_prep_FSW"] = 0
+        df["hv_days_on_oral_prep_AGYW"] = 0
+        df["hv_days_on_oral_prep_FSW"] = 0
+        df["hv_days_on_inj_prep_AGYW"] = 0
+        df["hv_days_on_inj_prep_FSW"] = 0
 
 
 # ---------------------------------------------------------------------------
