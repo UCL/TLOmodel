@@ -697,6 +697,29 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
             # If consumables are available add used equipment and run the dx_test representing the biopsy
             # n.b. endoscope not in equipment list
             self.add_equipment({'Endoscope', 'Ordinary Microscope'})
+            
+            # Additional cancer equipment based on column H comments
+            # Laboratory equipment for cancer screening and diagnosis
+            if self.module.rng.random() < 0.80:  # 80% probability at level 1b
+                self.add_equipment({221})  # Analyser, Haematology
+            
+            if self.module.rng.random() < 0.70:  # 70% probability at level 1b  
+                self.add_equipment({220})  # Analyser, Chemistry
+            
+            # Imaging equipment for oesophageal cancer investigation
+            if self.module.rng.random() < 0.60:  # 60% probability at level 1b
+                self.add_equipment({202})  # X-ray machine
+            
+            if self.module.rng.random() < 0.50:  # 50% probability at level 1b
+                self.add_equipment({161})  # Ultrasound scanning machine
+            
+            # Sample processing - "assumed used for all cancers"
+            if self.module.rng.random() < 0.90:  # 90% probability for sample handling
+                self.add_equipment({334})  # Sample Rack
+            
+            # Safety equipment - "assumed used for all cancers"
+            if self.module.rng.random() < 1.0:  # 100% probability for safety
+                self.add_equipment({50})   # Safety Goggles
 
             # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -787,6 +810,39 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         if cons_avail:
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+            
+            # Additional cancer treatment equipment based on column H comments
+            # Laboratory equipment for pre-operative assessment and monitoring
+            if self.module.rng.random() < 0.95:  # 95% probability at level 3
+                self.add_equipment({221})  # Analyser, Haematology
+            
+            if self.module.rng.random() < 0.95:  # 95% probability at level 3
+                self.add_equipment({220})  # Analyser, Chemistry
+            
+            if self.module.rng.random() < 0.85:  # 85% probability at level 3
+                self.add_equipment({139})  # Analyser, Hormones
+            
+            # Advanced imaging for surgical planning
+            if self.module.rng.random() < 0.90:  # 90% probability at level 3
+                self.add_equipment({202})  # X-ray machine
+            
+            if self.module.rng.random() < 0.80:  # 80% probability at level 3
+                self.add_equipment({161})  # Ultrasound scanning machine
+            
+            # Oesophageal-specific surgical equipment
+            if self.module.rng.random() < 0.70:  # 70% probability at level 3
+                self.add_equipment({217})  # Endoscope (for surgical assessment)
+            
+            # Sample processing and pathology
+            if self.module.rng.random() < 0.95:  # 95% probability for sample handling
+                self.add_equipment({334})  # Sample Rack
+            
+            if self.module.rng.random() < 0.90:  # 90% probability for pathology
+                self.add_equipment({358})  # Ordinary Microscope
+            
+            # Safety equipment
+            if self.module.rng.random() < 1.0:  # 100% probability for safety
+                self.add_equipment({50})   # Safety Goggles
 
             # Log chemotherapy consumables
             self.get_consumables(
@@ -835,6 +891,33 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         assert not df.at[person_id, "oc_status"] == 'none'
         assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "oc_date_treatment"])
+
+        # Equipment for post-treatment monitoring and follow-up
+        # Laboratory equipment for monitoring treatment response
+        if self.module.rng.random() < 0.90:  # 90% probability at level 3
+            self.add_equipment({221})  # Analyser, Haematology
+        
+        if self.module.rng.random() < 0.85:  # 85% probability at level 3
+            self.add_equipment({220})  # Analyser, Chemistry
+        
+        # Imaging for follow-up assessment
+        if self.module.rng.random() < 0.70:  # 70% probability at level 3
+            self.add_equipment({202})  # X-ray machine
+        
+        if self.module.rng.random() < 0.60:  # 60% probability at level 3
+            self.add_equipment({161})  # Ultrasound scanning machine
+        
+        # Endoscopy for oesophageal surveillance
+        if self.module.rng.random() < 0.50:  # 50% probability for surveillance endoscopy
+            self.add_equipment({217})  # Endoscope
+        
+        # Sample processing for any biopsies during follow-up
+        if self.module.rng.random() < 0.80:  # 80% probability for sample handling
+            self.add_equipment({334})  # Sample Rack
+        
+        # Safety equipment
+        if self.module.rng.random() < 1.0:  # 100% probability for safety
+            self.add_equipment({50})   # Safety Goggles
 
         if df.at[person_id, 'oc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
@@ -897,6 +980,29 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment({'Infusion pump', 'Drip stand'})
+            
+            # Additional cancer palliative care equipment based on column H comments
+            # Pain management and comfort care equipment
+            if self.module.rng.random() < 0.70:  # 70% probability at level 2
+                self.add_equipment({221})  # Analyser, Haematology (for monitoring)
+            
+            if self.module.rng.random() < 0.60:  # 60% probability at level 2
+                self.add_equipment({220})  # Analyser, Chemistry (for electrolyte monitoring)
+            
+            # Basic imaging for symptom management
+            if self.module.rng.random() < 0.50:  # 50% probability at level 2
+                self.add_equipment({202})  # X-ray machine (for complications)
+            
+            if self.module.rng.random() < 0.40:  # 40% probability at level 2
+                self.add_equipment({161})  # Ultrasound scanning machine
+            
+            # Sample processing for monitoring
+            if self.module.rng.random() < 0.70:  # 70% probability for sample handling
+                self.add_equipment({334})  # Sample Rack
+            
+            # Safety equipment
+            if self.module.rng.random() < 1.0:  # 100% probability for safety
+                self.add_equipment({50})   # Safety Goggles
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):

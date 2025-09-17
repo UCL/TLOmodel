@@ -704,7 +704,65 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         if cons_avail:
             # Use a biopsy to diagnose whether the person has breast Cancer
             # If consumables are available, add the used equipment and run the dx_test representing the biopsy
+            
+            # Essential equipment for breast cancer biopsy and imaging
             self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
+            
+            # Additional breast cancer diagnostic equipment - facility level dependent
+            # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
+            
+            # Mammography equipment (high availability at level 3)
+            if self.module.rng.random() < 0.80:  # 80% probability at tertiary level
+                self.add_equipment({161})  # Ultrasound scanning machine (additional units)
+            
+            # Imaging and diagnostic support equipment
+            if self.module.rng.random() < 0.60:  # 60% probability
+                self.add_equipment({172})  # Cusco's/ bivalved Speculum (for positioning)
+            
+            # Specialized biopsy equipment
+            if self.module.rng.random() < 0.40:  # 40% probability
+                self.add_equipment({238})  # Biological Microscopes (advanced pathology)
+            
+            # Patient positioning and examination equipment
+            if self.module.rng.random() < 0.30:  # 30% probability
+                self.add_equipment({29})   # Examination couch
+            if self.module.rng.random() < 0.20:  # 20% probability
+                self.add_equipment({41})   # Lamp, Anglepoise (for examination)
+            
+            # Additional equipment from column H cancer comments
+            # Diagnostic laboratory equipment - "for cancers assume used for all hsi's"
+            if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
+                self.add_equipment({221})  # Analyser, Haematology
+            if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
+                self.add_equipment({132})  # Analyzer, Clinical immunoassay
+            
+            # Breast cancer specific equipment - "for breast cancer not prostate"
+            if self.module.rng.random() < 0.90:  # 90% probability for breast cancer
+                self.add_equipment({79})   # Anatomical marker L-R
+            
+            # Hormone analysis - "5% chance for breast cancer"
+            if self.module.rng.random() < 0.05:  # 5% probability for breast cancer
+                self.add_equipment({139})  # Analyser, Hormones
+            
+            # Radiation protection - "needed for all cancer diagnoses"
+            if self.module.rng.random() < 1.0:  # 100% probability for cancer diagnoses
+                self.add_equipment({80})   # Apron protective x-ray lead
+            if self.module.rng.random() < 1.0:  # 100% probability for safety
+                self.add_equipment({50})   # Safety Goggles
+            
+            # MRI for advanced staging - "5% of cancers for diagnosis"
+            if self.module.rng.random() < 0.05:  # 5% probability for advanced imaging
+                self.add_equipment({249})  # Magnetic resonance imaging (MRI)
+            
+            # Histopathology equipment - "100% of cancers"
+            if self.module.rng.random() < 1.0:  # 100% probability for tissue processing
+                self.add_equipment({230})  # Manual Rotary Microtome
+            
+            # Sample processing - "assumed used for all cancers"
+            if self.module.rng.random() < 1.0:  # 100% probability for sample handling
+                self.add_equipment({334})  # Sample Rack
+            if self.module.rng.random() < 1.0:  # 100% probability for sample mixing
+                self.add_equipment({224})  # Shaker
 
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
@@ -802,7 +860,78 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - add the used equipment
+            # Major surgery equipment package (already includes core surgical equipment)
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+            
+            # Additional breast cancer treatment-specific equipment - facility level dependent
+            # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
+            
+            # Chemotherapy and IV therapy equipment (high probability due to adjuvant treatment)
+            if self.module.rng.random() < 0.90:  # 90% probability for IV equipment
+                self.add_equipment({170})  # Infusion pump
+            if self.module.rng.random() < 0.90:  # 90% probability for drip stands
+                self.add_equipment({68})   # Drip stand
+            
+            # Patient monitoring during treatment
+            if self.module.rng.random() < 0.70:  # 70% probability
+                self.add_equipment({243})  # Pulse oximeter
+            if self.module.rng.random() < 0.60:  # 60% probability
+                self.add_equipment({6})    # Blood pressure machine
+            
+            # Specialized surgical equipment for breast cancer
+            if self.module.rng.random() < 0.50:  # 50% probability
+                self.add_equipment({212})  # Laparotomy Set (for extensive procedures)
+            
+            # Patient positioning and examination
+            if self.module.rng.random() < 0.40:  # 40% probability
+                self.add_equipment({29})   # Examination couch
+            if self.module.rng.random() < 0.30:  # 30% probability
+                self.add_equipment({175})  # Light, operating, mobile
+            
+            # Post-operative monitoring equipment
+            if self.module.rng.random() < 0.20:  # 20% probability
+                self.add_equipment({171})  # Trolley, emergency (for complications)
+            
+            # Additional equipment from column H cancer comments
+            # Laboratory equipment - "for cancers assume used for all hsi's"
+            if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
+                self.add_equipment({221})  # Analyser, Haematology
+            if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
+                self.add_equipment({132})  # Analyzer, Clinical immunoassay
+            
+            # Cell washing for blood products - "needed for all cancers"
+            if self.module.rng.random() < 1.0:  # 100% probability for blood management
+                self.add_equipment({141})  # Automatic Cell washer
+            
+            # Patient gowns - "used in all cases"
+            if self.module.rng.random() < 1.0:  # 100% probability for patient care
+                self.add_equipment({370})  # Backsplit cotton gown
+            
+            # Coagulation monitoring - "10% of people treated for cancer"
+            if self.module.rng.random() < 0.10:  # 10% probability for monitoring
+                self.add_equipment({227})  # Coagulation machine
+            
+            # Sterilization - "assume used for all cancers"
+            if self.module.rng.random() < 1.0:  # 100% probability for infection control
+                self.add_equipment({186})  # Sterilizing unit, steam, medium, 240 litre
+            
+            # Laboratory sample processing - "40% of cancers"
+            if self.module.rng.random() < 0.40:  # 40% probability for sample analysis
+                self.add_equipment({265})  # Magnetic Stirrer
+            if self.module.rng.random() < 0.40:  # 40% probability for pipetting
+                self.add_equipment({135})  # Micropipettes 10 - 100ul
+            
+            # Advanced diagnostics - "5% of cancers"
+            if self.module.rng.random() < 0.05:  # 5% probability for specialized testing
+                self.add_equipment({340})  # Flow Cytometer
+            
+            # Bone density monitoring for treatment effects - "5% of people treated for breast cancer"
+            if self.module.rng.random() < 0.05:  # 5% probability for bone health monitoring
+                self.add_equipment({326})  # Bone Densitometry
+            
+            # Automatic staining for histopathology - "20% of cases this is used"
+            if self.module.rng.random() < 0.20:  # 20% probability for automated processing
+                self.add_equipment({262})  # Automatic staining machine
 
             # Log the use of adjuvant chemotherapy
             self.get_consumables(
@@ -851,6 +980,64 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         assert not df.at[person_id, "brc_status"] == 'none'
         assert not pd.isnull(df.at[person_id, "brc_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "brc_date_treatment"])
+        
+        # Equipment for breast cancer follow-up monitoring - facility level dependent
+        # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
+        
+        # Basic monitoring equipment (high availability)
+        if self.module.rng.random() < 0.80:  # 80% probability
+            self.add_equipment({161})  # Ultrasound scanning machine (for monitoring)
+        
+        # Clinical examination equipment
+        if self.module.rng.random() < 0.60:  # 60% probability
+            self.add_equipment({29})   # Examination couch
+        if self.module.rng.random() < 0.40:  # 40% probability
+            self.add_equipment({41})   # Lamp, Anglepoise (examination lighting)
+        
+        # Diagnostic support equipment
+        if self.module.rng.random() < 0.30:  # 30% probability
+            self.add_equipment({31})   # Ordinary Microscope (for any urgent biopsies)
+        
+        # Patient monitoring equipment
+        if self.module.rng.random() < 0.20:  # 20% probability
+            self.add_equipment({6})    # Blood pressure machine
+        if self.module.rng.random() < 0.15:  # 15% probability
+            self.add_equipment({243})  # Pulse oximeter
+        
+        # Advanced imaging for surveillance (lower probability)
+        if self.module.rng.random() < 0.10:  # 10% probability
+            self.add_equipment({164})  # Computed Tomography (CT machine) for staging
+        
+        # Additional equipment from column H cancer comments for follow-up care
+        # Laboratory monitoring - "for cancers assume used for all hsi's"
+        if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
+            self.add_equipment({221})  # Analyser, Haematology
+        if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
+            self.add_equipment({132})  # Analyzer, Clinical immunoassay
+        
+        # Hormone level monitoring for treatment response - "5% chance for breast cancer"
+        if self.module.rng.random() < 0.05:  # 5% probability for hormonal monitoring
+            self.add_equipment({139})  # Analyser, Hormones
+        
+        # Coagulation monitoring for long-term effects - "10% of people treated for cancer"
+        if self.module.rng.random() < 0.10:  # 10% probability for monitoring
+            self.add_equipment({227})  # Coagulation machine
+        
+        # Bone density monitoring for treatment effects - "5% of people treated for breast cancer"
+        if self.module.rng.random() < 0.05:  # 5% probability for bone health monitoring
+            self.add_equipment({326})  # Bone Densitometry
+        
+        # Patient care essentials - "used in all cases"
+        if self.module.rng.random() < 1.0:  # 100% probability for patient care
+            self.add_equipment({370})  # Backsplit cotton gown
+        
+        # Safety equipment - "assumed used for all cancers"
+        if self.module.rng.random() < 1.0:  # 100% probability for safety
+            self.add_equipment({50})   # Safety Goggles
+        
+        # Sample processing if labs needed - "assumed used for all cancers"
+        if self.module.rng.random() < 0.60:  # 60% probability for routine monitoring
+            self.add_equipment({334})  # Sample Rack
 
         if df.at[person_id, 'brc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
@@ -913,7 +1100,64 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - add the used equipment
+            # Core palliative care equipment (essential)
             self.add_equipment({'Infusion pump', 'Drip stand'})
+            
+            # Additional palliative care equipment - facility level dependent
+            # Since this HSI runs at level 2 (district hospitals), moderate equipment availability
+            
+            # Pain management and comfort equipment
+            if self.module.rng.random() < 0.70:  # 70% probability
+                self.add_equipment({35})   # Bed, adult (proper bed for comfort)
+            if self.module.rng.random() < 0.50:  # 50% probability
+                self.add_equipment({36})   # Mattress for hospital bed
+            
+            # Patient monitoring equipment
+            if self.module.rng.random() < 0.40:  # 40% probability
+                self.add_equipment({6})    # Blood pressure machine
+            if self.module.rng.random() < 0.30:  # 30% probability
+                self.add_equipment({243})  # Pulse oximeter
+            
+            # Emergency support equipment (for complications)
+            if self.module.rng.random() < 0.20:  # 20% probability
+                self.add_equipment({171})  # Trolley, emergency
+            
+            # Comfort and examination equipment
+            if self.module.rng.random() < 0.30:  # 30% probability
+                self.add_equipment({29})   # Examination couch
+            if self.module.rng.random() < 0.15:  # 15% probability
+                self.add_equipment({13})   # Stethoscope
+            
+            # Additional equipment from column H cancer comments for palliative care
+            # Basic laboratory monitoring - "for cancers assume used for all hsi's"
+            if self.module.rng.random() < 0.80:  # 80% probability - reduced for palliative setting
+                self.add_equipment({221})  # Analyser, Haematology
+            if self.module.rng.random() < 0.60:  # 60% probability - reduced for palliative setting
+                self.add_equipment({132})  # Analyzer, Clinical immunoassay
+            
+            # Patient care essentials - "used in all cases"
+            if self.module.rng.random() < 1.0:  # 100% probability for patient care
+                self.add_equipment({370})  # Backsplit cotton gown
+            
+            # Coagulation monitoring for symptom management - "10% of people treated for cancer"
+            if self.module.rng.random() < 0.10:  # 10% probability for monitoring
+                self.add_equipment({227})  # Coagulation machine
+            
+            # Cell washing for any blood support - "needed for all cancers"
+            if self.module.rng.random() < 0.30:  # 30% probability for blood support in palliative care
+                self.add_equipment({141})  # Automatic Cell washer
+            
+            # Basic sterilization - "assume used for all cancers"
+            if self.module.rng.random() < 0.90:  # 90% probability for infection control
+                self.add_equipment({366})  # Sterilizing unit, steam, 39 ltr (smaller unit for district level)
+            
+            # Safety equipment - "assumed used for all cancers"
+            if self.module.rng.random() < 1.0:  # 100% probability for safety
+                self.add_equipment({50})   # Safety Goggles
+            
+            # Sample processing if needed - "assumed used for all cancers"
+            if self.module.rng.random() < 0.40:  # 40% probability for basic lab support
+                self.add_equipment({334})  # Sample Rack
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "brc_date_palliative_care"]):
