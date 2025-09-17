@@ -137,7 +137,7 @@ tlo.methods.healthsystem module
           - Offset in days from topen at which tclose will be set by the healthsystem for all HSIsif tclose_overwrite is set to True.
         * - mode_appt_constraints
           - INT
-          - Integer code in `{0, 1, 2}` determining mode of constraints with regards to officer numbers and time - 0: no constraints, all HSI events run with no squeeze factor, 1: elastic constraints, all HSI events run with squeeze factor, 2: hard constraints, only HSI events with no squeeze factor run. N.B. This parameter is over-ridden if an argument is provided to the module initialiser.
+          - Integer code in `{1, 2}` determining mode of constraints with regards to officer numbers and time - 1: elastic constraints, all HSI events run with squeeze factor, provided officers required to deliver the HSI have capabilities > 02: hard constraints, only HSI events with no squeeze factor run. N.B. This parameteris over-ridden if an argument is provided to the module initialiser.
         * - mode_appt_constraints_postSwitch
           - INT
           - Mode considered after a mode switch in year_mode_switch.
@@ -170,13 +170,13 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     capabilities_today : <property object at 0x147f75170>
+     capabilities_today : <property object at 0x16e520e00>
 
-     hsi_event_counts : <property object at 0x147f75350>
+     hsi_event_counts : <property object at 0x16e520fe0>
 
-     never_ran_hsi_event_counts : <property object at 0x147f753a0>
+     never_ran_hsi_event_counts : <property object at 0x16e521030>
 
-     use_funded_or_actual_staffing : <property object at 0x147f75260>
+     use_funded_or_actual_staffing : <property object at 0x16e520ef0>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -278,7 +278,7 @@ tlo.methods.healthsystem module
 
      .. automethod:: on_end_of_year
 
-     .. automethod:: run_individual_level_events_in_mode_0_or_1
+     .. automethod:: run_individual_level_events_in_mode_1
 
 
 
@@ -307,7 +307,7 @@ tlo.methods.healthsystem module
 
      .. automethod:: _get_events_due_today
 
-     .. automethod:: process_events_mode_0_and_1
+     .. automethod:: process_events_mode_1
 
      .. automethod:: process_events_mode_2
 
@@ -353,7 +353,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x147f75670>
+     current_pop_size : <property object at 0x16e521300>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.healthsystem module &mdash; TLOmodel 0.1.dev2548+g49029e4 documentation</title>
+  <title>tlo.methods.healthsystem module &mdash; TLOmodel 0.1.dev2558+g9b3fa2fb4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=ef897455"></script>
+      <script src="../_static/documentation_options.js?v=942bd948"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -101,10 +101,10 @@ The execution of all health systems interactions are controlled through this mod
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> – Name to use for module, defaults to module class name if <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
 <li><p><strong>service_availability</strong> – A list of treatment IDs to allow.</p></li>
-<li><p><strong>mode_appt_constraints</strong> – Integer code in <code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">1,</span> <span class="pre">2}</span></code> determining mode of
-constraints with regards to officer numbers and time - 0: no constraints,
-all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
-events run with squeeze factor, 2: hard constraints, only HSI events with
+<li><p><strong>mode_appt_constraints</strong> – Integer code in <code class="docutils literal notranslate"><span class="pre">{1,</span> <span class="pre">2}</span></code> determining mode of
+constraints with regards to officer numbers and time - 1: elastic constraints, all HSI
+events run with squeeze factor provided officers required have nonzero capabilities,
+2: hard constraints, only HSI events with
 no squeeze factor run.</p></li>
 <li><p><strong>cons_availability</strong> – If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then</p></li>
 </ul>
@@ -321,7 +321,7 @@ event details and frequencies.</p></li>
 </tr>
 <tr class="row-odd"><td><p>mode_appt_constraints</p></td>
 <td><p>INT</p></td>
-<td><p>Integer code in <cite>{0, 1, 2}</cite> determining mode of constraints with regards to officer numbers and time - 0: no constraints, all HSI events run with no squeeze factor, 1: elastic constraints, all HSI events run with squeeze factor, 2: hard constraints, only HSI events with no squeeze factor run. N.B. This parameter is over-ridden if an argument is provided to the module initialiser.</p></td>
+<td><p>Integer code in <cite>{1, 2}</cite> determining mode of constraints with regards to officer numbers and time - 1: elastic constraints, all HSI events run with squeeze factor, provided officers required to deliver the HSI have capabilities &gt; 02: hard constraints, only HSI events with no squeeze factor run. N.B. This parameteris over-ridden if an argument is provided to the module initialiser.</p></td>
 </tr>
 <tr class="row-even"><td><p>mode_appt_constraints_postSwitch</p></td>
 <td><p>INT</p></td>
@@ -360,10 +360,10 @@ event details and frequencies.</p></li>
 <p><strong>Class attributes:</strong></p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>__annotations__ : {}</p>
-<p>capabilities_today : &lt;property object at 0x147f75170&gt;</p>
-<p>hsi_event_counts : &lt;property object at 0x147f75350&gt;</p>
-<p>never_ran_hsi_event_counts : &lt;property object at 0x147f753a0&gt;</p>
-<p>use_funded_or_actual_staffing : &lt;property object at 0x147f75260&gt;</p>
+<p>capabilities_today : &lt;property object at 0x16e520e00&gt;</p>
+<p>hsi_event_counts : &lt;property object at 0x16e520fe0&gt;</p>
+<p>never_ran_hsi_event_counts : &lt;property object at 0x16e521030&gt;</p>
+<p>use_funded_or_actual_staffing : &lt;property object at 0x16e520ef0&gt;</p>
 <p><strong>Functions (defined or overridden in class HealthSystem):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.__init__">
@@ -373,10 +373,10 @@ event details and frequencies.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> – Name to use for module, defaults to module class name if <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
 <li><p><strong>service_availability</strong> – A list of treatment IDs to allow.</p></li>
-<li><p><strong>mode_appt_constraints</strong> – Integer code in <code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">1,</span> <span class="pre">2}</span></code> determining mode of
-constraints with regards to officer numbers and time - 0: no constraints,
-all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
-events run with squeeze factor, 2: hard constraints, only HSI events with
+<li><p><strong>mode_appt_constraints</strong> – Integer code in <code class="docutils literal notranslate"><span class="pre">{1,</span> <span class="pre">2}</span></code> determining mode of
+constraints with regards to officer numbers and time - 1: elastic constraints, all HSI
+events run with squeeze factor provided officers required have nonzero capabilities,
+2: hard constraints, only HSI events with
 no squeeze factor run.</p></li>
 <li><p><strong>cons_availability</strong> – If ‘default’ then use the availability specified in the ResourceFile; if ‘none’, then</p></li>
 </ul>
@@ -885,8 +885,8 @@ be overridden and to provide a probability of availability.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.run_individual_level_events_in_mode_0_or_1">
-<span class="sig-name descname"><span class="pre">run_individual_level_events_in_mode_0_or_1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_list_of_individual_hsi_event_tuples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">HSIEventQueueItem</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.run_individual_level_events_in_mode_0_or_1" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.run_individual_level_events_in_mode_1">
+<span class="sig-name descname"><span class="pre">run_individual_level_events_in_mode_1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_list_of_individual_hsi_event_tuples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">HSIEventQueueItem</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.run_individual_level_events_in_mode_1" title="Link to this definition"></a></dt>
 <dd><p>Run a list of individual level events. Returns: list of events that did not run (maybe an empty list).</p>
 </dd></dl>
 
@@ -963,8 +963,8 @@ healthsystem’s capabilities for the following day, given assumptions about how
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemScheduler.process_events_mode_0_and_1">
-<span class="sig-name descname"><span class="pre">process_events_mode_0_and_1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hold_over</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">HSIEventQueueItem</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemScheduler.process_events_mode_0_and_1" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemScheduler.process_events_mode_1">
+<span class="sig-name descname"><span class="pre">process_events_mode_1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hold_over</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">HSIEventQueueItem</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemScheduler.process_events_mode_1" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1068,7 +1068,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
-<p>current_pop_size : &lt;property object at 0x147f75670&gt;</p>
+<p>current_pop_size : &lt;property object at 0x16e521300&gt;</p>
 <p><strong>Functions (defined or overridden in class DynamicRescalingHRCapabilities):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.DynamicRescalingHRCapabilities.__init__">

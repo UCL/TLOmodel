@@ -640,15 +640,15 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'HealthSystem', 'PostnatalSupervisor', 'Contraception', 'NewbornOutcomes', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'PregnancySupervisor'}
+     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Contraception', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'HealthSystem', 'PostnatalSupervisor'}
 
-     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x16a8e5290>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x16a8e4750>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x16a8e6710>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x16a8e5c50>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x16a8e70d0>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x16a8e4c90>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x16a8e4590>, 'eclampsia': <tlo.methods.causes.Cause object at 0x16a8e5510>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x16e89fb50>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x16e89e9d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x16e89dad0>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x16e89d390>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x16e89d2d0>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x16e89ee10>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x16e89d0d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x16e89db10>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x16a8e64d0>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x16e89c650>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'Stunting'}
 
