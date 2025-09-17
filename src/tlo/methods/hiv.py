@@ -583,8 +583,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Predictor("age_years").when("<15", 0.0).when("<49", 1.0).otherwise(0.0),
             Predictor("sex").when("F", p["rr_sex_f"]),
             Predictor("li_is_circ").when(True, p["rr_circumcision"]),
-            Predictor("hv_is_on_prep").
-            when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]),
+            Predictor("hv_is_on_oral_prep").
+            when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_oral_prep"]),
+            Predictor("hv_is_on_inj_prep").
+            when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_inj_prep"]),
             Predictor("li_urban").when(False, p["rr_rural"]),
             Predictor("li_wealth", conditions_are_mutually_exclusive=True)
             .when(2, p["rr_windex_poorer"])
@@ -2797,6 +2799,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id, type_of_prep):
         super().__init__(module, person_id=person_id)
+        self.type_of_prep=type_of_prep
 
     def apply(self, person_id):
         df = self.sim.population.props
@@ -3240,6 +3243,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"PharmDispensing": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.counter_for_drugs_not_available = 0
+        self.type_of_prep = type_of_prep
 
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for this person; or continue them on PrEP for 3 more months"""
@@ -3289,7 +3293,8 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
                 # Schedule 'decision about whether to continue on PrEP' for 3 months time
                 self.sim.schedule_event(
-                    Hiv_DecisionToContinueOnPrEP(person_id=person_id, module=self.module),
+                    Hiv_DecisionToContinueOnPrEP(person_id=person_id, module=self.module,
+                                                 type_of_prep=self.type_of_prep),
                     self.sim.date + pd.DateOffset(days=days_on_prep),
                 )
 
