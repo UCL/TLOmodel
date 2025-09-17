@@ -42,7 +42,7 @@ class LongRun(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
         return get_parameters_for_status_quo()

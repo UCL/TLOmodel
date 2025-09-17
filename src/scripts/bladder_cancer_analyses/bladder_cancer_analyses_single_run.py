@@ -9,14 +9,21 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     bladder_cancer,
+    care_of_women_during_pregnancy,
+    contraception,
     demography,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    schisto,
-    simplified_births,
+    hiv,
+    labour,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
     symptommanager,
+    tb,
 )
 
 # import numpy as np
@@ -34,30 +41,43 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013,  1, 1)
-popsize = 5000
+popsize = 19000
 
 # Establish the simulation object
 log_config = {
     'filename': 'LogFile',
     'directory': outputpath,
     'custom_levels': {
-        "*": logging.WARNING,
-        'tlo.methods.bladder_cancer': logging.INFO,
-        'tlo.methods.schisto': logging.INFO,
+        'tlo.methods.demography': logging.CRITICAL,
+        'tlo.methods.contraception': logging.CRITICAL,
+        'tlo.methods.healthsystem': logging.CRITICAL,
+        'tlo.methods.labour': logging.CRITICAL,
+        'tlo.methods.healthburden': logging.CRITICAL,
+        'tlo.methods.symptommanager': logging.CRITICAL,
+        'tlo.methods.healthseekingbehaviour': logging.CRITICAL,
+        'tlo.methods.pregnancy_supervisor': logging.CRITICAL
     }
 }
-sim = Simulation(start_date=start_date, seed=4, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=4, log_config=log_config, resourcefilepath=resourcefilepath)
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-             bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-             schisto.Schisto(resourcefilepath=resourcefilepath)
+sim.register(demography.Demography(),
+             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+             contraception.Contraception(),
+             enhanced_lifestyle.Lifestyle(),
+             healthsystem.HealthSystem(),
+             symptommanager.SymptomManager(),
+             healthseekingbehaviour.HealthSeekingBehaviour(),
+             healthburden.HealthBurden(),
+             labour.Labour(),
+             newborn_outcomes.NewbornOutcomes(),
+             pregnancy_supervisor.PregnancySupervisor(),
+             postnatal_supervisor.PostnatalSupervisor(),
+             bladder_cancer.BladderCancer(),
+             hiv.Hiv(),
+             tb.Tb(),
+             epi.Epi()
+
              )
 
 # Run the simulation and flush the logger

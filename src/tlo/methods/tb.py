@@ -4,6 +4,8 @@
     for eligible people (HIV+ and paediatric contacts of active TB cases
 """
 from functools import reduce
+from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 
@@ -24,10 +26,9 @@ logger.setLevel(logging.INFO)
 class Tb(Module):
     """Set up the baseline population with TB prevalence"""
 
-    def __init__(self, name=None, resourcefilepath=None, run_with_checks=False):
+    def __init__(self, name=None, run_with_checks=False):
         super().__init__(name)
 
-        self.resourcefilepath = resourcefilepath
         self.daly_wts = dict()
         self.lm = dict()
         self.footprints_for_consumables_required = dict()
@@ -389,7 +390,7 @@ class Tb(Module):
         )
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         """
         * 1) Reads the ResourceFiles
         * 2) Declares the DALY weights
@@ -397,7 +398,7 @@ class Tb(Module):
         """
 
         # 1) Read the ResourceFiles
-        workbook = read_csv_files(self.resourcefilepath/"ResourceFile_TB", files=None)
+        workbook = read_csv_files(resourcefilepath/"ResourceFile_TB", files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         p = self.parameters
@@ -683,7 +684,7 @@ class Tb(Module):
         self.item_codes_for_consumables_required['slides'] = hs.get_item_code_from_item_name(
             "Microscope slides, lime-soda-glass, pack of 50")
         self.item_codes_for_consumables_required['gloves'] = hs.get_item_code_from_item_name(
-            "Glove disposable powdered latex medium_100_CMST")
+            "Disposables gloves, powder free, 100 pieces per box")
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             tb_sputum_test_smear_positive=DxTest(
@@ -1756,20 +1757,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         test_result = None
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
-        # refer for HIV testing: all ages
-        # do not run if already HIV diagnosed or had test in last week
-        if not person["hv_diagnosed"] or (person["hv_last_test_date"] >= (now - DateOffset(days=7))):
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=hiv.HSI_Hiv_TestAndRefer(
-                    person_id=person_id,
-                    module=self.sim.modules["Hiv"],
-                    referred_from="Tb",
-                ),
-                priority=1,
-                topen=now,
-                tclose=None,
-            )
-
         # ------------------------- x-ray for children ------------------------- #
 
         # child under 5 -> chest x-ray, but access is limited
@@ -2332,6 +2319,21 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if person["tb_on_treatment"] or not person["tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+        # ------------------------- HIV test referral ------------------------- #
+        # refer for HIV testing: all ages
+        # do not run if already HIV diagnosed or had test in last week
+        if not person["hv_diagnosed"] or (person["hv_last_test_date"] >= (now - DateOffset(days=7))):
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=hiv.HSI_Hiv_TestAndRefer(
+                    person_id=person_id,
+                    module=self.sim.modules["Hiv"],
+                    referred_from="Tb",
+                ),
+                priority=1,
+                topen=now,
+                tclose=None,
+            )
+
         treatment_regimen = self.select_treatment(person_id)
         # treatment supplied in kits, one kit per treatment course
         treatment_available = self.get_consumables(
@@ -2634,20 +2636,19 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
 
         else:
             # Check/log use of consumables, and give IPT if available
-
-            # if child and HIV+ or child under 2 yrs
-            if ((person["age_years"] <= 15) and person["hv_inf"]) or (person["age_years"] <= 2):
-
-                # 6 months dispensation, once daily
-                drugs_available = self.get_consumables(
-                    item_codes={self.module.item_codes_for_consumables_required["tb_ipt"]: 180})
-
-            # for all others
-            else:
+            # from 2019, 3HP given if eligible, no follow-up
+            if (self.sim.date.year >= 2019) and (person["age_years"] >= 15):
                 # 12 weeks dispensation, once weekly
                 drugs_available = self.get_consumables(
                     item_codes={self.module.item_codes_for_consumables_required["tb_3HP"]: 12}
                 )
+                months_to_follow_up = 3
+
+            else:
+                # 6 months dispensation, once daily
+                drugs_available = self.get_consumables(
+                    item_codes={self.module.item_codes_for_consumables_required["tb_ipt"]: 180})
+                months_to_follow_up = 6
 
             # if available, schedule IPT decision
             if drugs_available:
@@ -2655,14 +2656,14 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, "tb_on_ipt"] = True
                 df.at[person_id, "tb_date_ipt"] = self.sim.date
 
-                # schedule decision to continue or end IPT after 6 months
+                # schedule decision to continue or end IPT after prescription ends
                 self.sim.schedule_event(
                     Tb_DecisionToContinueIPT(self.module, person_id),
-                    self.sim.date + DateOffset(months=6),
+                    self.sim.date + DateOffset(months=months_to_follow_up),
                 )
 
             else:
-                # Reschedule this HSI to occur again, up to a 5 times in total
+                # Reschedule this HSI to occur again, up to 5 times in total
                 if (
                     self.number_of_occurrences
                     <= self.module.parameters["tb_healthseekingbehaviour_cap"]
@@ -2730,11 +2731,10 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
         # default update properties for all
         df.at[person_id, "tb_on_ipt"] = False
 
-        # decide whether PLHIV will continue
+        # decide whether PLHIV will continue (if 2017-2019 IPT lifelong)
         if (
             person["hv_diagnosed"]
-            and (not person["tb_diagnosed"])
-            and (person["tb_date_ipt"] < (self.sim.date - pd.DateOffset(days=36 * 30.5)))
+            and 2017 >= self.sim.date.year >= 2019
             and (m.rng.random_sample() < m.parameters["prob_retained_ipt_6_months"])
         ):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -3180,7 +3180,7 @@ class DummyTbModule(Module):
         super().__init__(name)
         self.active_tb_prev = active_tb_prev
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         pass
 
     def initialise_population(self, population):

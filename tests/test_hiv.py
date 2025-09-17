@@ -55,34 +55,34 @@ def get_sim(seed, use_simplified_birth=True, cons_availability='all'):
     """get sim with the checks for configuration of properties running in the HIV module"""
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
     if use_simplified_birth:
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability=cons_availability),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     epi.Epi(resourcefilepath=resourcefilepath),
-                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
-                     tb.Tb(resourcefilepath=resourcefilepath),
+        sim.register(demography.Demography(),
+                     simplified_births.SimplifiedBirths(),
+                     enhanced_lifestyle.Lifestyle(),
+                     healthsystem.HealthSystem(cons_availability=cons_availability),
+                     symptommanager.SymptomManager(),
+                     healthseekingbehaviour.HealthSeekingBehaviour(),
+                     epi.Epi(),
+                     hiv.Hiv(run_with_checks=True),
+                     tb.Tb(),
                      )
     else:
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                     labour.Labour(resourcefilepath=resourcefilepath),
-                     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability=cons_availability),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     epi.Epi(resourcefilepath=resourcefilepath),
-                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
-                     tb.Tb(resourcefilepath=resourcefilepath),
+        sim.register(demography.Demography(),
+                     pregnancy_supervisor.PregnancySupervisor(),
+                     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                     labour.Labour(),
+                     newborn_outcomes.NewbornOutcomes(),
+                     postnatal_supervisor.PostnatalSupervisor(),
+                     enhanced_lifestyle.Lifestyle(),
+                     healthsystem.HealthSystem(cons_availability=cons_availability),
+                     symptommanager.SymptomManager(),
+                     healthseekingbehaviour.HealthSeekingBehaviour(),
+                     epi.Epi(),
+                     hiv.Hiv(run_with_checks=True),
+                     tb.Tb(),
                      # Disable check to avoid error due to lack of Contraception module
                      check_all_dependencies=False,
                      )
@@ -471,23 +471,19 @@ def test_aids_symptoms_lead_to_treatment_being_initiated(seed):
     # Set up simulation object in custom way:
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     cons_availability='all'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
-                                                               # force symptoms to lead to health care seeking:
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(# force symptoms to lead to health care seeking:
                                                                force_any_symptom_to_lead_to_healthcareseeking=True),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
-                 tb.Tb(resourcefilepath=resourcefilepath),
+                 epi.Epi(),
+                 hiv.Hiv(run_with_checks=True),
+                 tb.Tb(),
                  )
 
     # Let there be a 0% probability of TestAndRefer events being scheduled
@@ -651,18 +647,18 @@ def test_child_circ(seed):
     def find_event_scheduled(cons_availability='all', prob=1.0):
         start_date = Date(2010, 1, 1)
         popsize = 1000
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
         # Register the appropriate modules, using simplified birth
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability=cons_availability),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     epi.Epi(resourcefilepath=resourcefilepath),
-                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
-                     tb.Tb(resourcefilepath=resourcefilepath),
+        sim.register(demography.Demography(),
+                     simplified_births.SimplifiedBirths(),
+                     enhanced_lifestyle.Lifestyle(),
+                     healthsystem.HealthSystem(cons_availability=cons_availability),
+                     symptommanager.SymptomManager(),
+                     healthseekingbehaviour.HealthSeekingBehaviour(),
+                     epi.Epi(),
+                     hiv.Hiv(run_with_checks=True),
+                     tb.Tb(),
                      )
 
         # Re-set the probability of being circumcised
@@ -797,10 +793,12 @@ def test_hsi_testandrefer_and_prep(seed):
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 1.0
     decision_event.apply(person_id)
     assert df.at[person_id, "hv_is_on_prep"]
-    date_next_hsi_event, next_hsi_event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
-    ][0]
+    events = [
+        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
+        if isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) and (ev[0] >= date_decision_event)
+    ]
+
+    assert len(events) > 0, "No HSI_Hiv_StartOrContinueOnPrep events found on or after the decision date"
 
     # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI or
     # "decision" events
@@ -808,6 +806,7 @@ def test_hsi_testandrefer_and_prep(seed):
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 0.0
     decision_event.apply(person_id)
+
     assert not df.at[person_id, "hv_is_on_prep"]
     assert 0 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
@@ -844,6 +843,12 @@ def test_hsi_testandrefer_and_art(seed):
     df.at[person_id, "hv_diagnosed"] = False
     df.at[person_id, "hv_number_tests"] = 0
     df.at[person_id, "age_years"] = 40
+
+    # schedule AIDS event - usually scheduled through HIV poll
+    sim.schedule_event(
+        event=HivAidsOnsetEvent(person_id=person_id, module=sim.modules['Hiv'], cause='AIDS_non_TB'),
+        date=sim.date + pd.DateOffset(years=10),
+    )
 
     # Run the TestAndRefer event
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
@@ -894,7 +899,9 @@ def test_hsi_testandrefer_and_art(seed):
     assert df.at[person_id, "hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_3_months"] = 0.0
+
     decision_event.apply(person_id)
+
     assert df.at[person_id, "hv_art"] == "not"
     assert 1 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
@@ -988,21 +995,20 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart(seed):
     # Make the health-system unavailable to run any HSI event
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           capabilities_coefficient=0.0,
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(capabilities_coefficient=0.0,
                                            mode_appt_constraints=2,
                                            cons_availability='all'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
-                 tb.Tb(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 epi.Epi(),
+                 hiv.Hiv(run_with_checks=True),
+                 tb.Tb(),
                  )
 
     # Make the population
@@ -1084,21 +1090,20 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart(seed):
 
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           capabilities_coefficient=0.0,
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(capabilities_coefficient=0.0,
                                            mode_appt_constraints=2,
                                            cons_availability='all'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
-                 tb.Tb(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 epi.Epi(),
+                 hiv.Hiv( run_with_checks=True),
+                 tb.Tb(),
                  )
 
     # Make the population
@@ -1179,16 +1184,16 @@ def test_use_dummy_version(seed):
     """check that the dummy version of the HIV module works ok: provides the hv_inf property as a bool"""
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(),
+                 epi.Epi(),
                  hiv.DummyHivModule(hiv_prev=1.0),
                  tb.DummyTbModule(active_tb_prev=0.01),
                  )
@@ -1222,35 +1227,36 @@ def test_baseline_hiv_prevalence(seed):
 
     start_date = Date(2010, 1, 1)
     popsize = 100000
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
-                 tb.Tb(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 epi.Epi(),
+                 hiv.Hiv(run_with_checks=False),
+                 tb.Tb(),
                  )
 
     # Make the population
     sim.make_initial_population(n=popsize)
     df = sim.population.props
 
+    # et absolute tolerance to the interval of the uncertainty around calibration targets
     adult_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
     ) / len(df[df.is_alive & df.age_years.between(15, 49)])
-    assert np.isclose(adult_prev_1549, adult_prev_1549_data, rtol=0.05)
+    assert np.isclose(adult_prev_1549, adult_prev_1549_data, atol=0.01)
 
     female_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")])
-    assert np.isclose(female_prev_1549, female_prev_1549_data, rtol=0.05)
+    assert np.isclose(female_prev_1549, female_prev_1549_data, atol=0.01)
 
     male_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")])
-    assert np.isclose(male_prev_1549, male_prev_1549_data, rtol=0.05)
+    assert np.isclose(male_prev_1549, male_prev_1549_data, atol=0.01)
