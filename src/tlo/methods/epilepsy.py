@@ -637,36 +637,20 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
-        # Add equipment for severe epilepsy cases - facility level dependent
+        # Add equipment for severe epilepsy cases
         if df.at[person_id, 'ep_seiz_stat'] == '3':  # Frequent seizures
             # Assessment and mobility equipment for severe epilepsy
-            # Facility level affects equipment availability
-            if self.ACCEPTED_FACILITY_LEVEL == '1a':
-                wheelchair_prob = 0.01  # 1% at community level
-            else:
-                wheelchair_prob = 0.03  # 3% at district hospital and above
-                
-            if self.module.rng.random() < wheelchair_prob:
-                self.add_equipment({98})  # Wheelchair
-            
+            self.add_equipment({'Wheelchair'})
+
             # Pediatric equipment for children with severe epilepsy
-            # Higher availability at hospital levels
             if df.at[person_id, 'age_years'] < 18:
-                if self.ACCEPTED_FACILITY_LEVEL == '1a':
-                    pediatric_prob = 0.005  # 0.5% at community level
-                else:
-                    pediatric_prob = 0.01   # 1% at district hospital and above
-                    
-                if self.module.rng.random() < pediatric_prob:
-                    self.add_equipment({395})  # Paediatric Corner sit
-                if self.module.rng.random() < pediatric_prob:
-                    self.add_equipment({394})  # Paediatric CP Chair
-                if self.module.rng.random() < pediatric_prob:
-                    self.add_equipment({376})  # Paediatric mat
-                if self.module.rng.random() < pediatric_prob:
-                    self.add_equipment({396})  # Paediatric rollator
-                if self.module.rng.random() < pediatric_prob:
-                    self.add_equipment({393})  # Paediatric Standing frame
+                self.add_equipment({
+                    'Paediatric Corner sit',
+                    'Paediatric CP Chair',
+                    'Paediatric mat',
+                    'Paediatric rollator',
+                    'Paediatric Standing frame'
+                })
 
         # Check what drugs are available
         best_available_medicine = self.module.get_best_available_medicine(self)
@@ -734,94 +718,50 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'ep_antiep']:
             return hs.get_blank_appt_footprint()
 
-        # Add equipment for severe epilepsy cases at follow-up visits - facility level dependent
+        # Add equipment for severe epilepsy cases at follow-up visits
         if df.at[person_id, 'ep_seiz_stat'] == '3':  # Frequent seizures
-            # Determine probability multiplier based on facility level
-            if self.ACCEPTED_FACILITY_LEVEL == '1a':
-                prob_multiplier = 0.5  # 50% of standard probability at community level
-            else:
-                prob_multiplier = 1.0  # Full probability at district hospital and above
-            
-            # Communication and cognitive equipment
-            if self.module.rng.random() < (0.01 * prob_multiplier):
-                self.add_equipment({342})  # Adaptive communication switches (Infrared switches)
-            if self.module.rng.random() < (0.01 * prob_multiplier):
-                self.add_equipment({350})  # Speech therapy kit
-            if self.module.rng.random() < (0.01 * prob_multiplier):
-                self.add_equipment({346})  # Voice synthesizer
-            
-            # Assessment and physiotherapy equipment
-            if self.module.rng.random() < (0.01 * prob_multiplier):
-                self.add_equipment({397})  # Bobath bed
-            if self.module.rng.random() < (0.10 * prob_multiplier):  # Higher base probability for dexterity assessment
-                self.add_equipment({105})  # Box and Block Test
-            if self.module.rng.random() < (0.05 * prob_multiplier):  # Functional aids
-                self.add_equipment({99})   # Built Up (adapted) Utensils
-            if self.module.rng.random() < (0.01 * prob_multiplier):
-                self.add_equipment({102})  # Goniometer
-            if self.module.rng.random() < (0.02 * prob_multiplier):
-                self.add_equipment({101})  # Grasp Dynamometer
-            if self.module.rng.random() < (0.02 * prob_multiplier):
-                self.add_equipment({110})  # Hand function kits
-            if self.module.rng.random() < (0.01 * prob_multiplier):
-                self.add_equipment({284})  # Hot Pack Therapy Units
-            if self.module.rng.random() < (0.01 * prob_multiplier):
-                self.add_equipment({382})  # Interferential therapy machine
-            if self.module.rng.random() < (0.01 * prob_multiplier):
-                self.add_equipment({288})  # Muscle stimulator
-            if self.module.rng.random() < (0.01 * prob_multiplier):
-                self.add_equipment({287})  # TENs Unit
-            if self.module.rng.random() < (0.01 * prob_multiplier):
-                self.add_equipment({383})  # Transcutaneous electrical neuromuscular stimulation
-            
-            # Exercise and mobility equipment
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({149})  # Exercise Mats
-            if self.module.rng.random() < 0.02:  # 2% probability
-                self.add_equipment({389})  # Gym mat
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({152})  # Parallel Bars
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({96})   # Pulley System
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({95})   # Suspension Slings
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({296})  # Rehabilitation wall bars
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({199})  # Rollators
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({384})  # Walking Frame
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({399})  # Walking Cane
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({379})  # Overhead pulley
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({381})  # Training stairs
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({387})  # Stress Ball
-            if self.module.rng.random() < 0.03:  # 3% probability
-                self.add_equipment({98})   # Wheelchair
-            
-            # Therapy balls and weights (marked as not essential)
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({107})  # Ordinary balls
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({104})  # Medicinal Balls (Sets of 0.5kgs, 1kg, 2kgs, 3kgs, 4kgs, 5kgs)
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({373})  # Exercise ball
-            
+            # Equipment for severe epilepsy rehabilitation and support
+            self.add_equipment({
+                'Adaptive communication switches (Infrared switches)',
+                'Speech therapy kit',
+                'Bobath bed',
+                'Box and Block Test',
+                'Built Up (adapted) Utensils',
+                'Goniometer',
+                'Grasp Dynamometer',
+                'Hand function kits',
+                'Hot Pack Therapy Units',
+                'Interferential therapy machine',
+                'Muscle stimulator',
+                'TENs Unit',
+                'Transcutaneous electrical neuromuscular stimulation',
+                'Exercise Mats',
+                'Gym mat',
+                'Parallel Bars',
+                'Pulley System',
+                'Suspension Slings',
+                'Rehabilitation wall bars',
+                'Rollators',
+                'Walking Frame',
+                'Walking Cane',
+                'Overhead pulley',
+                'Training stairs',
+                'Stress Ball',
+                'Wheelchair',
+                'Ordinary balls',
+                'Medicinal Balls (Sets of 0.5kgs, 1kg, 2kgs, 3kgs, 4kgs, 5kgs)',
+                'Exercise ball'
+            })
+
             # Pediatric equipment for children with severe epilepsy
             if df.at[person_id, 'age_years'] < 18:
-                if self.module.rng.random() < 0.01:  # 1% probability
-                    self.add_equipment({395})  # Paediatric Corner sit
-                if self.module.rng.random() < 0.01:  # 1% probability
-                    self.add_equipment({394})  # Paediatric CP Chair
-                if self.module.rng.random() < 0.01:  # 1% probability
-                    self.add_equipment({376})  # Paediatric mat
-                if self.module.rng.random() < 0.01:  # 1% probability
-                    self.add_equipment({396})  # Paediatric rollator
-                if self.module.rng.random() < 0.01:  # 1% probability
-                    self.add_equipment({393})  # Paediatric Standing frame
+                self.add_equipment({
+                    'Paediatric Corner sit',
+                    'Paediatric CP Chair',
+                    'Paediatric mat',
+                    'Paediatric rollator',
+                    'Paediatric Standing frame'
+                })
 
         # Request the medicine
         best_available_medicine = self.module.get_best_available_medicine(self)

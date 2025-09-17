@@ -738,23 +738,14 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
-            # Add basic equipment for PSA testing and initial assessment
-            # Basic laboratory equipment for PSA test - facility level 1b
-            if self.module.rng.random() < 1.0:  # 100% probability for essential lab work
-                self.add_equipment({221})  # Analyser, Haematology
-            
-            # Prostate cancer specific hormone analysis - "100% for prostate cancer"
-            if self.module.rng.random() < 0.80:  # 80% probability at level 1b
-                self.add_equipment({139})  # Analyser, Hormones (for PSA)
-            
-            # Sample processing - "assumed used for all cancers"
-            if self.module.rng.random() < 0.90:  # 90% probability for sample handling
-                self.add_equipment({334})  # Sample Rack
-            
-            # Safety equipment - "assumed used for all cancers"
-            if self.module.rng.random() < 1.0:  # 100% probability for safety
-                self.add_equipment({50})   # Safety Goggles
-            
+            # Equipment for PSA testing and initial prostate cancer assessment
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyser, Hormones',
+                'Sample Rack',
+                'Safety Goggles'
+            })
+
             # send for biopsy
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
@@ -802,23 +793,14 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
-            # Add basic equipment for PSA testing and initial assessment
-            # Basic laboratory equipment for PSA test - facility level 1b
-            if self.module.rng.random() < 1.0:  # 100% probability for essential lab work
-                self.add_equipment({221})  # Analyser, Haematology
-            
-            # Prostate cancer specific hormone analysis - "100% for prostate cancer"
-            if self.module.rng.random() < 0.80:  # 80% probability at level 1b
-                self.add_equipment({139})  # Analyser, Hormones (for PSA)
-            
-            # Sample processing - "assumed used for all cancers"
-            if self.module.rng.random() < 0.90:  # 90% probability for sample handling
-                self.add_equipment({334})  # Sample Rack
-            
-            # Safety equipment - "assumed used for all cancers"
-            if self.module.rng.random() < 1.0:  # 100% probability for safety
-                self.add_equipment({50})   # Safety Goggles
-            
+            # Equipment for PSA testing and initial prostate cancer assessment
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyser, Hormones',
+                'Sample Rack',
+                'Safety Goggles'
+            })
+
             # send for biopsy
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
@@ -862,45 +844,28 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
         if cons_available:
             # If consumables are available update the use of equipment and run the dx_test representing the biopsy
             self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
-            
+
             # Additional prostate cancer diagnostic equipment - facility level dependent
             # Since this HSI runs at level 1b, moderate equipment availability
-            
+
             # Essential cancer laboratory equipment - "for cancers assume used for all hsi's"
             if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
                 self.add_equipment({221})  # Analyser, Haematology
             if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
                 self.add_equipment({132})  # Analyzer, Clinical immunoassay
-            
-            # Prostate cancer specific hormone analysis - "100% for prostate cancer"
-            if self.module.rng.random() < 1.0:  # 100% probability for prostate cancer
-                self.add_equipment({139})  # Analyser, Hormones
-            
-            # Specialized urological imaging - "20% bladder cancer, 5% all cancers"
-            if self.module.rng.random() < 0.10:  # 10% probability for prostate cancer (between bladder and general)
-                self.add_equipment({364})  # Intravenous Pyelography set
-            if self.module.rng.random() < 0.10:  # 10% probability for prostate cancer
-                self.add_equipment({325})  # Intravenous Pyrography set
-            
-            # Radiation protection - "needed for all cancer diagnoses"
-            if self.module.rng.random() < 1.0:  # 100% probability for cancer diagnoses
-                self.add_equipment({80})   # Apron protective x-ray lead
-            if self.module.rng.random() < 1.0:  # 100% probability for safety
-                self.add_equipment({50})   # Safety Goggles
-            
-            # Histopathology equipment - "100% of cancers"
-            if self.module.rng.random() < 1.0:  # 100% probability for tissue processing
-                self.add_equipment({230})  # Manual Rotary Microtome
-            
-            # Sample processing - "assumed used for all cancers"
-            if self.module.rng.random() < 1.0:  # 100% probability for sample handling
-                self.add_equipment({334})  # Sample Rack
-            if self.module.rng.random() < 1.0:  # 100% probability for sample mixing
-                self.add_equipment({224})  # Shaker
-            
-            # MRI for advanced staging - "5% of cancers for diagnosis"
-            if self.module.rng.random() < 0.05:  # 5% probability for advanced imaging
-                self.add_equipment({249})  # Magnetic resonance imaging (MRI)
+
+            # Equipment for prostate cancer biopsy and investigation
+            self.add_equipment({
+                'Analyser, Hormones',
+                'Intravenous Pyelography set',
+                'Intravenous Pyrography set',
+                'Apron protective x-ray lead',
+                'Safety Goggles',
+                'Manual Rotary Microtome',
+                'Sample Rack',
+                'Shaker',
+                'Magnetic resonance imaging (MRI)'
+            })
 
             # Use a biopsy  to assess whether the person has prostate cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -991,55 +956,39 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
-            
+
             # Additional prostate cancer treatment-specific equipment - facility level dependent
             # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
-            
+
             # Essential cancer laboratory equipment - "for cancers assume used for all hsi's"
             if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
                 self.add_equipment({221})  # Analyser, Haematology
             if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
                 self.add_equipment({132})  # Analyzer, Clinical immunoassay
-            
+
             # Prostate cancer specific hormone analysis - "100% for prostate cancer"
             if self.module.rng.random() < 1.0:  # 100% probability for prostate cancer
                 self.add_equipment({139})  # Analyser, Hormones
-            
+
             # Cell washing for blood products - "needed for all cancers"
             if self.module.rng.random() < 1.0:  # 100% probability for blood management
                 self.add_equipment({141})  # Automatic Cell washer
-            
+
             # Patient gowns - "used in all cases"
             if self.module.rng.random() < 1.0:  # 100% probability for patient care
                 self.add_equipment({370})  # Backsplit cotton gown
-            
-            # Coagulation monitoring - "10% of people treated for cancer"
-            if self.module.rng.random() < 0.10:  # 10% probability for monitoring
-                self.add_equipment({227})  # Coagulation machine
-            
-            # Sterilization - "assume used for all cancers"
-            if self.module.rng.random() < 1.0:  # 100% probability for infection control
-                self.add_equipment({186})  # Sterilizing unit, steam, medium, 240 litre
-            
-            # Laboratory sample processing - "40% of cancers"
-            if self.module.rng.random() < 0.40:  # 40% probability for sample analysis
-                self.add_equipment({265})  # Magnetic Stirrer
-            if self.module.rng.random() < 0.40:  # 40% probability for pipetting
-                self.add_equipment({135})  # Micropipettes 10 - 100ul
-            
-            # Advanced diagnostics - "5% of cancers"
-            if self.module.rng.random() < 0.05:  # 5% probability for specialized testing
-                self.add_equipment({340})  # Flow Cytometer
-            
-            # Urological imaging for treatment planning - "20% bladder cancer, 5% all cancers"
-            if self.module.rng.random() < 0.15:  # 15% probability for urological procedures
-                self.add_equipment({324})  # Urethrogram set
-            if self.module.rng.random() < 0.10:  # 10% probability for urological imaging
-                self.add_equipment({364})  # Intravenous Pyelography set
-            
-            # Automatic staining for histopathology - "20% of cases this is used"
-            if self.module.rng.random() < 0.20:  # 20% probability for automated processing
-                self.add_equipment({262})  # Automatic staining machine
+
+            # Equipment for prostate cancer treatment
+            self.add_equipment({
+                'Coagulation machine',
+                'Sterilizing unit, steam, medium, 240 litre',
+                'Magnetic Stirrer',
+                'Micropipettes 10 - 100ul',
+                'Flow Cytometer',
+                'Urethrogram set',
+                'Intravenous Pyelography set',
+                'Automatic staining machine'
+            })
 
             # Record date and stage of starting treatment
             df.at[person_id, "pc_date_treatment"] = self.sim.date
@@ -1083,39 +1032,25 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         assert not df.at[person_id, "pc_status"] == 'none'
         assert not pd.isnull(df.at[person_id, "pc_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "pc_date_treatment"])
-        
+
         # Equipment for prostate cancer follow-up monitoring - facility level dependent
         # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
-        
+
         # Essential cancer laboratory monitoring - "for cancers assume used for all hsi's"
         if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
             self.add_equipment({221})  # Analyser, Haematology
         if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
             self.add_equipment({132})  # Analyzer, Clinical immunoassay
-        
-        # Prostate cancer specific hormone monitoring - "100% for prostate cancer"
-        if self.module.rng.random() < 1.0:  # 100% probability for prostate cancer follow-up
-            self.add_equipment({139})  # Analyser, Hormones
-        
-        # Coagulation monitoring for long-term effects - "10% of people treated for cancer"
-        if self.module.rng.random() < 0.10:  # 10% probability for monitoring
-            self.add_equipment({227})  # Coagulation machine
-        
-        # Patient care essentials - "used in all cases"
-        if self.module.rng.random() < 1.0:  # 100% probability for patient care
-            self.add_equipment({370})  # Backsplit cotton gown
-        
-        # Safety equipment - "assumed used for all cancers"
-        if self.module.rng.random() < 1.0:  # 100% probability for safety
-            self.add_equipment({50})   # Safety Goggles
-        
-        # Sample processing if labs needed - "assumed used for all cancers"
-        if self.module.rng.random() < 0.60:  # 60% probability for routine monitoring
-            self.add_equipment({334})  # Sample Rack
-        
-        # Basic imaging monitoring
-        if self.module.rng.random() < 0.30:  # 30% probability for routine imaging
-            self.add_equipment({161})  # Ultrasound scanning machine
+
+        # Equipment for prostate cancer post-treatment monitoring
+        self.add_equipment({
+            'Analyser, Hormones',
+            'Coagulation machine',
+            'Backsplit cotton gown',
+            'Safety Goggles',
+            'Sample Rack',
+            'Ultrasound scanning machine'
+        })
 
         if df.at[person_id, 'pc_status'] == 'metastatic':
             # If has progressed to metastatic, then start Palliative Care immediately:
@@ -1177,41 +1112,22 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.add_equipment({'Infusion pump', 'Drip stand'})
-            
-            # Additional equipment from column H cancer comments for palliative care
-            # Since this HSI runs at level 2 (district hospitals), moderate equipment availability
-            
-            # Basic laboratory monitoring - "for cancers assume used for all hsi's"
-            if self.module.rng.random() < 0.80:  # 80% probability - reduced for palliative setting
-                self.add_equipment({221})  # Analyser, Haematology
-            if self.module.rng.random() < 0.60:  # 60% probability - reduced for palliative setting
-                self.add_equipment({132})  # Analyzer, Clinical immunoassay
-            
-            # Prostate cancer specific hormone monitoring - "100% for prostate cancer"
-            if self.module.rng.random() < 0.80:  # 80% probability for palliative hormone management
-                self.add_equipment({139})  # Analyser, Hormones
-            
-            # Patient care essentials - "used in all cases"
-            if self.module.rng.random() < 1.0:  # 100% probability for patient care
-                self.add_equipment({370})  # Backsplit cotton gown
-            
-            # Coagulation monitoring for symptom management - "10% of people treated for cancer"
-            if self.module.rng.random() < 0.10:  # 10% probability for monitoring
-                self.add_equipment({227})  # Coagulation machine
-            
-            # Cell washing for any blood support - "needed for all cancers"
-            if self.module.rng.random() < 0.30:  # 30% probability for blood support in palliative care
-                self.add_equipment({141})  # Automatic Cell washer
-            
-            # Basic sterilization - "assume used for all cancers"
-            if self.module.rng.random() < 0.90:  # 90% probability for infection control
-                self.add_equipment({366})  # Sterilizing unit, steam, 39 ltr (smaller unit for district level)
-            
+            self.add_equipment({
+                'Infusion pump',
+                'Drip stand',
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
+                'Analyser, Hormones',
+                'Backsplit cotton gown',
+                'Coagulation machine',
+                'Automatic Cell washer',
+                'Sterilizing unit, steam, 39 ltr'
+            })
+
             # Safety equipment - "assumed used for all cancers"
             if self.module.rng.random() < 1.0:  # 100% probability for safety
                 self.add_equipment({50})   # Safety Goggles
-            
+
             # Sample processing if needed - "assumed used for all cancers"
             if self.module.rng.random() < 0.40:  # 40% probability for basic lab support
                 self.add_equipment({334})  # Sample Rack

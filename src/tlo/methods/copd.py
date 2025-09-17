@@ -229,7 +229,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
                 {self.item_codes["bronchodilater_inhaler"]: 1}
             ):
                 individual_properties["ch_has_inhaler"] = True
-            
+
             # Schedule moderate COPD treatment for moderate cases (to handle equipment)
             if "breathless_moderate" in symptoms:
                 event = HSI_Copd_TreatmentOnModerateExacerbation(
@@ -238,7 +238,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
                 schedule_hsi_event(
                     event, topen=self.sim.date, priority=0
                 )
-            
+
             if "breathless_severe" in symptoms:
                 event = HSI_Copd_TreatmentOnSevereExacerbation(
                     module=self, person_id=person_id
@@ -551,8 +551,9 @@ class CopdDeath(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        df = self.sim.population.props
-        person = df.loc[person_id, ['is_alive', 'age_years', 'ch_will_die_this_episode', 'ch_lungfunction']]
+        person = self.sim.population.props.loc[
+            person_id, ['is_alive', 'age_years', 'ch_will_die_this_episode', 'ch_lungfunction']
+        ]
         # Check if an individual should still die and, if so, cause the death
         if person.is_alive and person.ch_will_die_this_episode:
             self.sim.modules['Demography'].do_death(
@@ -575,23 +576,13 @@ class HSI_Copd_TreatmentOnModerateExacerbation(HSI_Event, IndividualScopeEventMi
 
     def apply(self, person_id, squeeze_factor):
         """Treatment for moderate COPD exacerbation - community-based care."""
-        df = self.sim.population.props
-        
-        # Equipment for moderate COPD cases - facility level dependent
-        # Incentive spirometers - 100% of all COPD cases
-        self.add_equipment({157})  # Incentive spirometers
-        
-        # Blood Gas Analyser - availability depends on facility level
-        # Level 1a (community health centers): 5% probability
-        # Level 1b and above (district hospitals): 15% probability
-        if self.ACCEPTED_FACILITY_LEVEL == '1a':
-            blood_gas_prob = 0.05  # 5% for basic community facilities
-        else:
-            blood_gas_prob = 0.15  # 15% for district hospitals and above
-            
-        if self.module.rng.random() < blood_gas_prob:
-            self.add_equipment({127})  # Analyser, Blood Gas
-        
+
+        # Equipment for moderate COPD cases
+        self.add_equipment({
+            'Incentive spirometers',
+            'Analyser, Blood Gas'
+        })
+
         # Give bronchodilator treatment if available
         self.get_consumables({self.module.item_codes['bronchodilater_inhaler']: 1})
 
@@ -634,33 +625,19 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
                 oxygen=self.get_consumables({self.module.item_codes['oxygen']: 23_040}),
                 aminophylline=self.get_consumables({self.module.item_codes['aminophylline']: 600})
             )
-            
+
             # Equipment for severe COPD exacerbations
-            # Standard oxygen delivery equipment (already implemented)
-            self.add_equipment({'Oxygen cylinder, with regulator', 'Nasal Prongs', 'Drip stand', 'Infusion pump'})
-            
-            # Additional COPD-specific equipment - facility level dependent
-            # Incentive spirometers - 100% of COPD cases
-            self.add_equipment({157})  # Incentive spirometers
-            
-            # Blood Gas Analyser - availability depends on facility level
-            # Level 1a (community): 70% probability (lower than hospital)
-            # Level 1b and 2 (hospitals): 100% probability
-            if self.ACCEPTED_FACILITY_LEVEL == '1a':
-                blood_gas_prob = 0.70  # 70% for community facilities in severe cases
-            else:
-                blood_gas_prob = 1.00  # 100% for hospitals
-                
-            if self.module.rng.random() < blood_gas_prob:
-                self.add_equipment({127})  # Analyser, Blood Gas
-            
-            # Equipment for severe exacerbations (1% probability each)
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({64})   # Ambu bag, adult with mask
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({158})  # Postural Drainage Couch
-            if self.module.rng.random() < 0.01:  # 1% probability
-                self.add_equipment({367})  # Resuscitator
+            self.add_equipment({
+                'Oxygen cylinder, with regulator',
+                'Nasal Prongs',
+                'Drip stand',
+                'Infusion pump',
+                'Incentive spirometers',
+                'Analyser, Blood Gas',
+                'Ambu bag, adult with mask',
+                'Postural Drainage Couch',
+                'Resuscitator'
+            })
 
             if prob_treatment_success:
                 df.at[person_id, 'ch_will_die_this_episode'] = False

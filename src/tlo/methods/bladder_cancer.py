@@ -733,27 +733,16 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
         if cons_avail:
             # Use a biopsy to diagnose whether the person has bladder Cancer
             # If consumables are available update the use of equipment and run the dx_test representing the biopsy
-            self.add_equipment({'Cystoscope', 'Ordinary Microscope', 'Ultrasound scanning machine'})
-            
-            # Additional cancer equipment based on column H comments
-            # Laboratory equipment for cancer screening and diagnosis
-            if self.module.rng.random() < 0.80:  # 80% probability at level 1b
-                self.add_equipment({221})  # Analyser, Haematology
-            
-            if self.module.rng.random() < 0.70:  # 70% probability at level 1b  
-                self.add_equipment({220})  # Analyser, Chemistry
-            
-            # Urological imaging equipment - relevant for bladder cancer
-            if self.module.rng.random() < 0.60:  # 60% probability at level 1b
-                self.add_equipment({202})  # X-ray machine
-            
-            # Sample processing - "assumed used for all cancers"
-            if self.module.rng.random() < 0.90:  # 90% probability for sample handling
-                self.add_equipment({334})  # Sample Rack
-            
-            # Safety equipment - "assumed used for all cancers"
-            if self.module.rng.random() < 1.0:  # 100% probability for safety
-                self.add_equipment({50})   # Safety Goggles
+            self.add_equipment({
+                'Cystoscope',
+                'Ordinary Microscope',
+                'Ultrasound scanning machine',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Use a cystoscope to diagnose whether the person has bladder Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -826,27 +815,16 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
         if cons_avail:
             # Use a biopsy to diagnose whether the person has bladder Cancer
             # If consumables are available log the use of equipment and run the dx_test representing the biopsy
-            self.add_equipment({'Cystoscope', 'Ordinary Microscope', 'Ultrasound scanning machine'})
-            
-            # Additional cancer equipment based on column H comments
-            # Laboratory equipment for cancer screening and diagnosis
-            if self.module.rng.random() < 0.80:  # 80% probability at level 1b
-                self.add_equipment({221})  # Analyser, Haematology
-            
-            if self.module.rng.random() < 0.70:  # 70% probability at level 1b  
-                self.add_equipment({220})  # Analyser, Chemistry
-            
-            # Urological imaging equipment - relevant for bladder cancer
-            if self.module.rng.random() < 0.60:  # 60% probability at level 1b
-                self.add_equipment({202})  # X-ray machine
-            
-            # Sample processing - "assumed used for all cancers"
-            if self.module.rng.random() < 0.90:  # 90% probability for sample handling
-                self.add_equipment({334})  # Sample Rack
-            
-            # Safety equipment - "assumed used for all cancers"
-            if self.module.rng.random() < 1.0:  # 100% probability for safety
-                self.add_equipment({50})   # Safety Goggles
+            self.add_equipment({
+                'Cystoscope',
+                'Ordinary Microscope',
+                'Ultrasound scanning machine',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Use a cystoscope to diagnose whether the person has bladder Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -938,39 +916,19 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if cons_avail:
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
-            
-            # Additional cancer treatment equipment based on column H comments
-            # Laboratory equipment for pre-operative assessment and monitoring
-            if self.module.rng.random() < 0.95:  # 95% probability at level 3
-                self.add_equipment({221})  # Analyser, Haematology
-            
-            if self.module.rng.random() < 0.95:  # 95% probability at level 3
-                self.add_equipment({220})  # Analyser, Chemistry
-            
-            if self.module.rng.random() < 0.85:  # 85% probability at level 3
-                self.add_equipment({139})  # Analyser, Hormones
-            
-            # Advanced imaging for surgical planning
-            if self.module.rng.random() < 0.90:  # 90% probability at level 3
-                self.add_equipment({202})  # X-ray machine
-            
-            if self.module.rng.random() < 0.80:  # 80% probability at level 3
-                self.add_equipment({161})  # Ultrasound scanning machine
-            
-            # Cancer-specific surgical equipment
-            if self.module.rng.random() < 0.70:  # 70% probability at level 3
-                self.add_equipment({163})  # Cystoscope (for bladder surgery)
-            
-            # Sample processing and pathology
-            if self.module.rng.random() < 0.95:  # 95% probability for sample handling
-                self.add_equipment({334})  # Sample Rack
-            
-            if self.module.rng.random() < 0.90:  # 90% probability for pathology
-                self.add_equipment({358})  # Ordinary Microscope
-            
-            # Safety equipment
-            if self.module.rng.random() < 1.0:  # 100% probability for safety
-                self.add_equipment({50})   # Safety Goggles
+
+            # Additional cancer treatment equipment for bladder cancer surgery
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'Analyser, Hormones',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Cystoscope',
+                'Sample Rack',
+                'Ordinary Microscope',
+                'Safety Goggles'
+            })
 
             # Record date and stage of starting treatment
             df.at[person_id, "bc_date_treatment"] = self.sim.date
@@ -1016,31 +974,15 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
         assert not pd.isnull(df.at[person_id, "bc_date_treatment"])
 
         # Equipment for post-treatment monitoring and follow-up
-        # Laboratory equipment for monitoring treatment response
-        if self.module.rng.random() < 0.90:  # 90% probability at level 3
-            self.add_equipment({221})  # Analyser, Haematology
-        
-        if self.module.rng.random() < 0.85:  # 85% probability at level 3
-            self.add_equipment({220})  # Analyser, Chemistry
-        
-        # Urological follow-up equipment for bladder cancer
-        if self.module.rng.random() < 0.70:  # 70% probability at level 3
-            self.add_equipment({202})  # X-ray machine
-        
-        if self.module.rng.random() < 0.60:  # 60% probability at level 3
-            self.add_equipment({161})  # Ultrasound scanning machine
-        
-        # Cystoscopy for bladder surveillance
-        if self.module.rng.random() < 0.50:  # 50% probability for surveillance cystoscopy
-            self.add_equipment({163})  # Cystoscope
-        
-        # Sample processing for any biopsies during follow-up
-        if self.module.rng.random() < 0.80:  # 80% probability for sample handling
-            self.add_equipment({334})  # Sample Rack
-        
-        # Safety equipment
-        if self.module.rng.random() < 1.0:  # 100% probability for safety
-            self.add_equipment({50})   # Safety Goggles
+        self.add_equipment({
+            'Analyser, Haematology',
+            'Analyser, Chemistry',
+            'X-ray machine',
+            'Ultrasound scanning machine',
+            'Cystoscope',
+            'Sample Rack',
+            'Safety Goggles'
+        })
 
         if df.at[person_id, 'bc_status'] == 'metastatic':
             # If has progressed to metastatic, then start Palliative Care immediately:
@@ -1102,30 +1044,16 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.add_equipment({'Infusion pump', 'Drip stand'})
-            
-            # Additional cancer palliative care equipment based on column H comments
-            # Pain management and comfort care equipment
-            if self.module.rng.random() < 0.70:  # 70% probability at level 2
-                self.add_equipment({221})  # Analyser, Haematology (for monitoring)
-            
-            if self.module.rng.random() < 0.60:  # 60% probability at level 2
-                self.add_equipment({220})  # Analyser, Chemistry (for electrolyte monitoring)
-            
-            # Basic imaging for symptom management
-            if self.module.rng.random() < 0.50:  # 50% probability at level 2
-                self.add_equipment({202})  # X-ray machine (for complications)
-            
-            if self.module.rng.random() < 0.40:  # 40% probability at level 2
-                self.add_equipment({161})  # Ultrasound scanning machine
-            
-            # Sample processing for monitoring
-            if self.module.rng.random() < 0.70:  # 70% probability for sample handling
-                self.add_equipment({334})  # Sample Rack
-            
-            # Safety equipment
-            if self.module.rng.random() < 1.0:  # 100% probability for safety
-                self.add_equipment({50})   # Safety Goggles
+            self.add_equipment({
+                'Infusion pump',
+                'Drip stand',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "bc_date_palliative_care"]):
