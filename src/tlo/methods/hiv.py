@@ -495,6 +495,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "whether TDF urine test is being used in place of VL testing"
         ),
+        "injectable_prep_allowed": Parameter(
+            Types.BOOL,
+            "whether injectable prep is allowed"
+        ),
     }
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
@@ -1424,6 +1428,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
 
         # 4 PrEP oral only AGYW and Pregnant women
+
+
         # 5 PrEP oral + inj AGYW and Pregnant women
 
         # 6 VMMC
@@ -2402,10 +2408,15 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     ]
 
                 for person in give_prep:
+                    if self.module.parameters['injectable_prep_allowed']:
+                        type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
+                    else:
+                        type_of_prep = 'oral'
+
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
                                                                 module=self.module,
-                                                                type_of_prep='oral'),
+                                                                type_of_prep=type_of_prep),
                         priority=1,
                         topen=self.sim.date,
                         tclose=self.sim.date + pd.DateOffset(
@@ -2425,10 +2436,15 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 (random_draw < p["prob_prep_for_fsw_after_hiv_test"])].index
 
                 for person in eligible_fsw_idx:
+                    if self.module.parameters['injectable_prep_allowed']:
+                        type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
+                    else:
+                        type_of_prep = 'oral'
+
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
                                                                 module=self.module,
-                                                                type_of_prep='oral'),
+                                                                type_of_prep=type_of_prep),
                         priority=1,
                         topen=self.sim.date,
                         tclose=self.sim.date + pd.DateOffset(
@@ -3048,9 +3064,14 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     ):
                         if self.module.lm["lm_prep"].predict(df.loc[[person_id]], self.module.rng
                                                              ):
+                            if self.module.parameters['injectable_prep_allowed']:
+                                type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
+                            else:
+                                type_of_prep = 'oral'
+
                             self.sim.modules["HealthSystem"].schedule_hsi_event(
                                 HSI_Hiv_StartOrContinueOnPrep(
-                                    person_id=person_id, module=self.module, type_of_prep='oral'
+                                    person_id=person_id, module=self.module, type_of_prep=type_of_prep
                                 ),
                                 topen=self.sim.date,
                                 tclose=None,
