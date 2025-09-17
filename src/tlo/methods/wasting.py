@@ -1729,7 +1729,6 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         treatment = 'OTP'
 
         df = self.sim.population.props
-        # p = self.module.parameters
 
         logger.debug(key='seek-tx',
                      data={
@@ -1745,7 +1744,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
 
         # Do here whatever happens to an individual during the admission for the treatment
         # ~~~~~~~~~~~~~~~~~~~~~~
-        # Perform measurements (height/length), weight, MUAC
+        # Perform measurements (height/length, weight, MUAC)
         self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
 
         # Check and log availability of consumables
