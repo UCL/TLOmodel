@@ -52,15 +52,15 @@ class WastingAnalysis(BaseScenario):
 
     # Scaling up care-seeking (CS) scenarios
     def draw_parameters(self, draw_number, rng):
-        ### prob of care seeking for MAM cases
-        # care_seek_prob = [0.1, 0.3, 0.5, 1.0]
-        care_seek_prob = [1.0, 1.0]
+        ### prob of symptoms awareness in MAM cases leading to care-seeking
+        # awareness_prob = [0.1, 0.3, 0.5, 1.0]
+        awareness_prob = [1.0, 1.0]
 
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {
                 'Wasting': {
-                    'interv_seeking_care_MAM_prob': care_seek_prob[draw_number]
+                    'interv_awareness_MAM_prob': awareness_prob[draw_number]
                 }
             }
         )
