@@ -2408,7 +2408,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     ]
 
                 for person in give_prep:
-                    if self.module.parameters['injectable_prep_allowed']:
+                    if (self.module.parameters['injectable_prep_allowed'] &
+                        (self.sim.date.year >= 2025)):
                         type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
                     else:
                         type_of_prep = 'oral'
@@ -3064,7 +3065,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     ):
                         if self.module.lm["lm_prep"].predict(df.loc[[person_id]], self.module.rng
                                                              ):
-                            if self.module.parameters['injectable_prep_allowed']:
+                            if (self.module.parameters['injectable_prep_allowed'] &
+                                (self.sim.date.year >= 2025)):
                                 type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
                             else:
                                 type_of_prep = 'oral'
@@ -3083,7 +3085,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             # set cap for number of repeat tests
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.
-
 
             if (
                 self.counter_for_test_not_available
@@ -3268,6 +3269,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for this person; or continue them on PrEP for 3 more months"""
+        print(self.type_of_prep, self.sim.date)
 
         df = self.sim.population.props
         person = df.loc[person_id]

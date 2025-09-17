@@ -34,10 +34,9 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2035, 1, 1)
+end_date = Date(2030, 1, 1)
 popsize = 10_000
 
-# scenario = 1
 
 # set up the log config
 log_config = {
@@ -63,11 +62,10 @@ seed = random.randint(0, 50000)
 # seed = 41728  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
-    demography.Demography(resourcefilepath=resourcefilepath),
-    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    demography.Demography(),
+    simplified_births.SimplifiedBirths(),
+    enhanced_lifestyle.Lifestyle(),
     healthsystem.HealthSystem(
-        resourcefilepath=resourcefilepath,
         service_availability=["*"],  # all treatment allowed
         mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
         cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
@@ -77,38 +75,20 @@ sim.register(
         disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
     ),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    epi.Epi(resourcefilepath=resourcefilepath),
-    hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
-    tb.Tb(resourcefilepath=resourcefilepath),
+    symptommanager.SymptomManager(),
+    healthseekingbehaviour.HealthSeekingBehaviour(),
+    healthburden.HealthBurden(),
+    epi.Epi(),
+    hiv.Hiv(run_with_checks=False),
+    tb.Tb(),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
 # set the scenario
-sim.modules["Hiv"].parameters["select_mihpsa_scenario"] = 7
-sim.modules["Hiv"].parameters["scaleup_start_year"] = 2024
-# sim.modules["Hiv"].parameters["prep_start_year"] = 2011
-# sim.modules["Tb"].parameters["scenario"] = scenario
-# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
-# sim.modules["Tb"].parameters["scenario_SI"] = "z"
+sim.modules["Hiv"].parameters["select_mihpsa_scenario"] = 0
+sim.modules["Hiv"].parameters["injectable_prep_allowed"] = True
+sim.modules["Hiv"].parameters["prep_start_year"] = 2011
 
-# sim.modules["Tb"].parameters["rr_tb_hiv"] = 5  # default 13
-# rr relapse if HIV+ 4.7
-# sim.modules["Tb"].parameters["rr_tb_aids"] = 26  # default 26
-
-# to cluster tests in positive people
-# sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 1.1  # default 1.5
-
-# to account for people starting-> defaulting, or not getting cons
-# this not used now if perfect referral testing->treatment
-# affects the prob of art start once diagnosed
-# sim.modules["Hiv"].parameters["treatment_initiation_adjustment"] = 1  # default 1.5
-
-# assume all defaulting is due to cons availability
-# sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 1.0
-# sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
