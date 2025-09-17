@@ -2396,7 +2396,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 for person in give_prep:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
-                                                                module=self.module),
+                                                                module=self.module,
+                                                                type_of_prep='oral'),
                         priority=1,
                         topen=self.sim.date,
                         tclose=self.sim.date + pd.DateOffset(
@@ -2418,7 +2419,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 for person in eligible_fsw_idx:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
-                                                                module=self.module),
+                                                                module=self.module,
+                                                                type_of_prep='oral'),
                         priority=1,
                         topen=self.sim.date,
                         tclose=self.sim.date + pd.DateOffset(
@@ -2819,7 +2821,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             ):
                 # Continue on PrEP - and schedule an HSI for a refill appointment today
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=m),
+                    HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=m, type_of_prep=self.type_of_prep),
                     topen=self.sim.date,
                     tclose=self.sim.date + pd.DateOffset(days=7),
                     priority=0,
@@ -3039,7 +3041,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                                                              ):
                             self.sim.modules["HealthSystem"].schedule_hsi_event(
                                 HSI_Hiv_StartOrContinueOnPrep(
-                                    person_id=person_id, module=self.module
+                                    person_id=person_id, module=self.module, type_of_prep='oral'
                                 ),
                                 topen=self.sim.date,
                                 tclose=None,
