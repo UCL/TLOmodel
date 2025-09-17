@@ -57,13 +57,11 @@ class WastingAnalysis(BaseScenario):
         #     0.3,
         #     0.5
         # ]
-        care_seek_prob = [
-            0.5, 1.0
-        ]
+        awareness_prob = [1.0, 1.0]
 
         return {
             'Wasting': {
-                'interv_seeking_care_MAM_prob': care_seek_prob[draw_number]
+                'interv_awareness_MAM_prob': awareness_prob[draw_number]
             }
         }
 
