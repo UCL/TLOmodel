@@ -695,8 +695,17 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
 
         if cons_avail:
             # If consumables are available add used equipment and run the dx_test representing the biopsy
-            # n.b. endoscope not in equipment list
-            self.add_equipment({'Endoscope', 'Ordinary Microscope'})
+            # Equipment for oesophageal cancer investigation
+            self.add_equipment({
+                'Endoscope',
+                'Ordinary Microscope',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -788,6 +797,19 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
+            # Additional cancer treatment equipment for oesophageal surgery
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'Analyser, Hormones',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Endoscope',
+                'Sample Rack',
+                'Ordinary Microscope',
+                'Safety Goggles'
+            })
+
             # Log chemotherapy consumables
             self.get_consumables(
                 item_codes=self.module.item_codes_oesophageal_can['treatment_chemotherapy'],
@@ -835,6 +857,17 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         assert not df.at[person_id, "oc_status"] == 'none'
         assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "oc_date_treatment"])
+
+        # Equipment for post-treatment monitoring and follow-up
+        self.add_equipment({
+            'Analyser, Haematology',
+            'Analyser, Chemistry',
+            'X-ray machine',
+            'Ultrasound scanning machine',
+            'Endoscope',
+            'Sample Rack',
+            'Safety Goggles'
+        })
 
         if df.at[person_id, 'oc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
@@ -897,6 +930,29 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment({'Infusion pump', 'Drip stand'})
+
+            # Additional cancer palliative care equipment based on column H comments
+            # Pain management and comfort care equipment
+            if self.module.rng.random() < 0.70:  # 70% probability at level 2
+                self.add_equipment({221})  # Analyser, Haematology (for monitoring)
+
+            if self.module.rng.random() < 0.60:  # 60% probability at level 2
+                self.add_equipment({220})  # Analyser, Chemistry (for electrolyte monitoring)
+
+            # Basic imaging for symptom management
+            if self.module.rng.random() < 0.50:  # 50% probability at level 2
+                self.add_equipment({202})  # X-ray machine (for complications)
+
+            if self.module.rng.random() < 0.40:  # 40% probability at level 2
+                self.add_equipment({161})  # Ultrasound scanning machine
+
+            # Sample processing for monitoring
+            if self.module.rng.random() < 0.70:  # 70% probability for sample handling
+                self.add_equipment({334})  # Sample Rack
+
+            # Safety equipment
+            if self.module.rng.random() < 1.0:  # 100% probability for safety
+                self.add_equipment({50})   # Safety Goggles
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):
