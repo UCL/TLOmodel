@@ -52,14 +52,14 @@ class WastingAnalysis(BaseScenario):
 
     # Scaling up Care-Seeking & Food Supplements availability (CS & FS) scenarios
     def draw_parameters(self, draw_number, rng):
-        care_seek_prob = [1.0, 1.0]
+        awareness_prob = [1.0, 1.0]
         avail_prob = [1.0, 1.0]
 
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {
                 'Wasting': {
-                    'interv_seeking_care_MAM_prob': care_seek_prob[draw_number],
+                    'interv_awareness_MAM_prob': awareness_prob[draw_number],
                     'interv_food_supplements_avail_bool': True,
                     'interv_avail_F75milk': avail_prob[draw_number],
                     'interv_avail_RUTF': avail_prob[draw_number],
