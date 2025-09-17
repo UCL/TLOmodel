@@ -232,9 +232,15 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         "rr_behaviour_change": Parameter(
             Types.REAL, "Relative risk of HIV with behaviour modification"
         ),
-        "proportion_reduction_in_risk_of_hiv_aq_if_on_prep": Parameter(
+        "proportion_reduction_in_risk_of_hiv_aq_if_on_oral_prep": Parameter(
             Types.REAL,
-            "Proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; 1.0 for perfect efficacy.",
+            "Proportion reduction in risk of HIV acquisition if on oral PrEP. "
+            "0 for no efficacy; 1.0 for perfect efficacy.",
+        ),
+        "proportion_reduction_in_risk_of_hiv_aq_if_on_inj_prep": Parameter(
+            Types.REAL,
+            "Proportion reduction in risk of HIV acquisition if on inj PrEP. "
+            "0 for no efficacy; 1.0 for perfect efficacy.",
         ),
         # Natural history - survival (adults)
         "mean_months_between_aids_and_death": Parameter(
