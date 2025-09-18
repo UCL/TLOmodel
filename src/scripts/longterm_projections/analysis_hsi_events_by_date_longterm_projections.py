@@ -837,6 +837,33 @@ def table2_description_of_coarse_hsi_events(
     max_year: int,
 ):
     """Table 1 extended: Compute mean HSI event counts over time and plot bar and normalized trends"""
+    treatment_group = {
+        'Alri*': 'RMNCH',
+        'AntenatalCare*': 'RMNCH',
+        'BladderCancer*': 'NCDs',
+        'BreastCancer*': 'NCDs',
+        'CardioMetabolicDisorders*': 'NCDs',
+        'Contraception*': 'RMNCH',
+        'Copd*': 'NCDs',
+        'DeliveryCare*': 'RMNCH',
+        'Depression*': 'NCDs',
+        'Diarrhoea*': 'RMNCH',
+        'Epi*': 'RMNCH',
+        'Epilepsy*': 'NCDs',
+        'FirstAttendance*': 'First Attendance',
+        'Hiv*': 'HIV/AIDS',
+        'Inpatient*': 'Inpatient',
+        'Malaria*': 'Malaria',
+        'Measles*': 'RMNCH',
+        'OesophagealCancer*': 'NCDs',
+        'OtherAdultCancer*': 'NCDs',
+        'PostnatalCare*': 'RMNCH',
+        'ProstateCancer*': 'NCDs',
+        'Rti*': 'Transport Injuries',
+        'Schisto*': 'RMNCH',
+        'Tb*': 'TB (non-AIDS)',
+        'Undernutrition*': 'RMNCH',
+    }
     target_year_sequence = range(min_year, max_year, spacing_of_years)
     event_counts_by_year = {draw: {} for draw in range(len(scenario_names))}
     all_draws_population = pd.DataFrame(columns=range(len(scenario_names)))
@@ -847,7 +874,7 @@ def table2_description_of_coarse_hsi_events(
         for target_year in target_year_sequence:
             target_period = (
                 Date(target_year, 1, 1),
-                Date(target_year + spacing_of_years - 1, 12, 31)
+                Date(target_year, 12, 31)
             )
 
             def get_population_for_year(_df):
@@ -861,6 +888,26 @@ def table2_description_of_coarse_hsi_events(
 
                 return population_sum
 
+            def get_num_treatments_group(_df):
+                    """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
+                    _df = _df.loc[pd.to_datetime(_df.date).between(*target_period), 'TREATMENT_ID'].apply(
+                        pd.Series).sum()
+                    print( _df.index)
+                    _df.index = _df.index.map(lambda x: "_".join(x.split('_')[:2]) + "*")
+                    #_df = _df.rename(index=treatment_group)
+                    _df = _df.groupby(level=0).sum()
+                    return _df
+
+            num_treatments_group = summarize(extract_results(
+                results_folder,
+                module='tlo.methods.healthsystem.summary',
+                key='HSI_Event_non_blank_appt_footprint',
+                custom_generate_series=get_num_treatments_group,
+                do_scaling=True
+            ),
+                only_mean=True,
+                collapse_columns=True,
+            )[draw]
             result_data_population = summarize(extract_results(
                 results_folder,
                 module='tlo.methods.demography',
@@ -872,51 +919,7 @@ def table2_description_of_coarse_hsi_events(
                 collapse_columns=True,
             )[draw]
             all_years_data_population_mean[target_year] = result_data_population['mean']
-            coarser_IDs = get_filtered_treatment_ids(depth=2)
-            per_run_event_counts = []
-            hsi_details = None
-
-            for run in range(number_of_runs):
-                real_population_scaling_factor = load_pickled_dataframes(
-                    results_folder, draw, run, 'tlo.methods.population'
-                )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
-
-                log = load_pickled_dataframes(results_folder, draw, run)
-                if hsi_details is None:
-                    hsi_details = log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0][
-                        'hsi_event_key_to_event_details']
-
-                hsi_event_key_to_counts = log["tlo.methods.healthsystem.summary"]["hsi_event_counts"]
-                hsi_event_key_to_counts = hsi_event_key_to_counts[
-                    hsi_event_key_to_counts['date'].between(target_period[0], target_period[1])
-                ]
-
-                unscaled_counts = {}
-                for event_dict in hsi_event_key_to_counts['hsi_event_key_to_counts']:
-                    for event_key, count in event_dict.items():
-                        unscaled_counts[event_key] = unscaled_counts.get(event_key, 0) + count
-
-                scaled_counts = {k: v * real_population_scaling_factor for k, v in unscaled_counts.items()}
-                per_run_event_counts.append(scaled_counts)
-
-            event_counts_df = pd.DataFrame(per_run_event_counts).fillna(0)
-            event_counts_mean = event_counts_df.mean(axis=0)
-
-            event_key_to_event_name = {
-                key: val['event_name'].replace('HSI_', '') for key, val in hsi_details.items()
-            }
-            named_event_counts = event_counts_mean.rename(index=event_key_to_event_name)
-
-            coarser_id_to_total_counts = {cid: 0.0 for cid in coarser_IDs}
-            for event_name, count in named_event_counts.items():
-                for cid in coarser_IDs:
-                    match_ratio = difflib.SequenceMatcher(None, cid.lower(), event_name.lower()).ratio()
-                    if match_ratio > 0.4:  # adjust threshold as needed
-                        coarser_id_to_total_counts[cid] += count
-
-            named_event_counts = pd.Series(coarser_id_to_total_counts)
-
-            event_counts_by_year[draw][target_year] = (named_event_counts / result_data_population[
+            event_counts_by_year[draw][target_year] = (num_treatments_group['mean'] / result_data_population[
                 'mean'].values) * 1000
         df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
 
@@ -960,7 +963,7 @@ def table2_description_of_coarse_hsi_events(
         axes[0].set_xticklabels(new_labels, rotation=0)
 
         axes[0].tick_params(axis='both', labelsize=11)
-        axes[0].legend(title='Treatment ID', loc='upper left', fontsize=8, title_fontsize=9, ncol = 2)
+        axes[0].legend(title='Treatment ID', loc='upper left',bbox_to_anchor=(0, 1.25), fontsize=8, title_fontsize=9, ncol = 2)
 
         # Panel B: Normalized (line plot)
         df_top_events_normalized = df_top_events.div(df_top_events.iloc[:, 0], axis=0)
@@ -991,12 +994,31 @@ def table2_description_of_coarse_hsi_events(
                     fontsize=9,
                     va='center'
                 )
-        axes[1].hlines(
-            y=1,
-            xmin=min(axes[1].get_xlim()),
-            xmax=max(axes[1].get_xlim()),
-            color='black'
+
+        print(df_normalized_population)
+        axes[1].plot(
+            df_normalized_population.columns.astype(int),
+            df_normalized_population.loc['total'].values,
+            color='black',
+            linestyle='--',
+            alpha=0.6,
+            linewidth=1.0
         )
+        axes[1].text(
+            x=df_normalized_population.columns[-1] + 1.0,
+            y=df_normalized_population.iloc[0, -1],
+            s='Population',
+            color='black',
+            fontsize=8,
+            va='center'
+        )
+        print(df_top_events_normalized.columns[0])
+        axes[1].hlines(
+                y=1,
+                xmin=int(df_top_events_normalized.columns[0]),
+                xmax=int(df_top_events_normalized.columns[-1]),
+                color='black'
+            )
         axes[1].set_xlabel("Year", fontsize=12)
         axes[1].set_ylabel("Fold Change", fontsize=12)
         axes[1].legend().set_visible(False)
