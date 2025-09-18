@@ -273,7 +273,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Plotting
         fig, axes = plt.subplots(1, 1, figsize=(10, 10))
-
+        axes.text(-0.1, 1.05, '(D)', transform=axes.transAxes,
+                         fontsize=18, va='top', ha='right')
         def create_non_overlapping_positions(y_values, min_gap_ratio=0.02):
                 """
                 Adjust y positions to prevent overlaps while minimizing displacement
@@ -326,12 +327,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 adjusted_y = adjusted_y_positions[i]
                 final_x = df_all_years_prevalence_normalized.columns[-1]
 
-                # Always add connecting line from data point to label
                 axes.plot([final_x, final_x + 1.0],
                           [original_y, adjusted_y],
                           color=color, linestyle='--', alpha=0.6, linewidth=1.0)
 
-                # Place text to the RIGHT of the final data point
                 axes.text(
                     x=final_x + 1.5,  # Offset to the right
                     y=adjusted_y,
@@ -348,7 +347,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 xmax=max(axes.get_xlim()),
                 color='black'
             )
-
+        axes.plot(
+                df_normalized_population,
+                color='black',
+                linestyle='--',
+                linewidth=4,
+            )
+        axes.text(
+                x=df_normalized_population.index[-1] + 1.0,
+                y=df_normalized_population.iloc[-1],
+                s='Population',
+                color='black',
+                fontsize=8,
+                va='center'
+            )
         axes.set_xlabel('Year', fontsize=12)
         axes.set_ylabel('Fold change in age-standardised prevalence', fontsize=12)
         axes.tick_params(axis='both', which='major', labelsize=12)
