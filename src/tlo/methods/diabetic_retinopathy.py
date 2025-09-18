@@ -580,7 +580,7 @@ class HSI_Dr_Eye_Examination(HSI_Event, IndividualScopeEventMixin):
         assert pd.isnull(df.at[person_id, 'dr_date_treatment'])
 
         is_cons_available = self.get_consumables(
-            self.module.cons_item_codes['focal_laser']
+            self.module.cons_item_codes['eye_examination']
         )
 
         dx_result = hs.dx_manager.run_dx_test(
