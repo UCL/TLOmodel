@@ -392,7 +392,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
         ## BARPLOTS STACKED PER 1000
-        fig, axes = plt.subplots(1, 3, figsize=(28, 12))
+        fig, axes = plt.subplots(2, 2, figsize=(20, 20))
+        axes = axes.flatten()
         axes[0].text(-0.1, 1.05, '(A)', transform=axes[0].transAxes,
                      fontsize=18, va='top', ha='right')
 
@@ -497,7 +498,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[1].set_xlabel('Year', fontsize=15)
         axes[1].set_ylabel('Normalized DALYs', fontsize=15)
         axes[1].tick_params(axis='both', which='major', labelsize=14)
-
+        axes[1].hlines(
+                y=1,
+                xmin=min(axes[1].get_xlim()),
+                xmax=max(axes[1].get_xlim()),
+                color='black'
+            )
         # Panel C: IDs
         panel_c_groups = group_1 + group_4
         line_handles_c = []
@@ -564,7 +570,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[2].set_xlabel('Year', fontsize=15)
         axes[2].set_ylabel('Normalized DALYs', fontsize=15)
         axes[2].tick_params(axis='both', which='major', labelsize=14)
-
+        axes[2].hlines(
+                y=1,
+                xmin=min(axes[2].get_xlim()),
+                xmax=max(axes[2].get_xlim()),
+                color='black'
+            )
         # Legend for Panel A (keeping the original legend structure)
         ordered_names = new_order
         name_to_handle = dict(line_handles_b + line_handles_c)
