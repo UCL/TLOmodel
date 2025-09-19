@@ -1038,7 +1038,7 @@ plot_dalys_vs_costs_by_district_with_thresholds(
 # %% KAPLAN-MEIER time to elimination
 #################################################################################
 
-
+# heavy infections
 path = Path(results_folder) / "prev_haem_H_year_district 2024-2050.xlsx"
 
 prev_haem_H_All_district = pd.read_excel(
@@ -1059,7 +1059,7 @@ prev_mansoni_H_All_district = pd.read_excel(
 prev_mansoni_H_All_district.columns.names = ["draw", "run"]
 
 
-
+# all infections HML
 path3 = Path(results_folder) / "prev_haem_HML_All_district 2024-2050.xlsx"
 
 prev_haem_HML_All_district = pd.read_excel(
@@ -1089,7 +1089,7 @@ prev_mansoni_HML_All_district.columns.names = ["draw", "run"]
 def plot_ephp_km_continue(
     df: pd.DataFrame,
     threshold: float = 0.01,
-    year_range: tuple = (2024, 2050),
+    year_range: tuple = (2020, 2050),
     alpha: float = 1.0,
     figsize: tuple = (10, 6),
     species=None,
@@ -1184,7 +1184,7 @@ def plot_ephp_km_continue(
     plt.grid(True, axis="y", color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
     plt.legend(title="Strategy", loc="upper left", fontsize="small")
     plt.tight_layout()
-    plt.savefig(results_folder / f"ephp_km_plot_{species}_{threshold}_continue_withCI.png", dpi=300)
+    plt.savefig(results_folder / f"ephp_km_plot_{species}_{threshold}_continue.png", dpi=300)
     plt.show()
 
 

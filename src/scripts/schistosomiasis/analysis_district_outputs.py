@@ -72,9 +72,13 @@ scenario_info = get_scenario_info(results_folder)
 # Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
 
+# todo the scaling factors were calculated incorrectly
 tmp = log['tlo.methods.population']['scaling_factor_district']
 district_scaling_factor = pd.DataFrame(tmp.iloc[0]['scaling_factor_district'], index=[0]).T
 district_scaling_factor.columns = ['scaling_factor']
+
+district_scaling_factor = pd.read_excel(results_folder / 'scaling_factor_district.xlsx',
+                                        index_col=0)
 
 
 #################################################################################
@@ -1318,7 +1322,7 @@ def get_person_years_infected_by_district(_df: pd.DataFrame) -> pd.Series:
     return py_by_district
 
 
-infection_levels = ['Low-infection', 'Moderate-infection', 'Heavy-infection']
+# infection_levels = ['Low-infection', 'Moderate-infection', 'Heavy-infection']
 
 py_district = extract_results(
         results_folder,
@@ -1407,6 +1411,13 @@ num_py_averted_combined_national.to_excel(results_folder / f'num_py_averted_nati
 # %% PERSON-YEARS INFECTED BY AGE AND DISTRICT
 #################################################################################
 
+TARGET_PERIOD = (Date(2024, 1, 1), Date(2050, 12, 31))
+
+# TARGET_PERIOD = (Date(2024, 1, 1), Date(2024, 12, 31))  # if repeating for one year
+
+infection_levels = ['Low-infection', 'Moderate-infection', 'Heavy-infection']
+infection_levels = ['Heavy-infection']
+
 
 def get_person_years_infected_by_district_and_age(_df: pd.DataFrame) -> pd.Series:
     """
@@ -1468,7 +1479,7 @@ formatted = df_long.apply(
 # Return to wide format: rows = (district, age_group), columns = draw
 formatted_df = formatted.unstack(level=-1)
 
-output_path = results_folder / f'table_summary_py_by_district_age_{target_period()}.xlsx'
+output_path = results_folder / f'table_summary_py_by_district_age_{target_period()}_H.xlsx'
 formatted_df.to_excel(output_path)
 
 
@@ -1503,6 +1514,9 @@ formatted_df = formatted.unstack(level=-1)
 
 output_path = results_folder / f'table_summary_py_national_age_{target_period()}.xlsx'
 formatted_df.to_excel(output_path)
+
+
+
 
 # -------------------------- national PY averted by age
 num_py_averted_age = compute_summary_statistics(
@@ -1727,8 +1741,6 @@ mda_episodes_per_year_district_scaled.index = mda_episodes_per_year_district_sca
 
 
 # adjust the counts to stop after schisto eliminated in district
-
-
 def apply_stop_year_to_mda_counts(
     counts_df: pd.DataFrame,
     stopping_years: pd.DataFrame,
@@ -1849,6 +1861,15 @@ cons_costs_per_year_district_child = mda_episodes_per_year_district_scaled * con
 cons_costs_per_year_district_adults = mda_episodes_per_year_district_scaled * cons_cost_per_mda_incl_adults
 cons_costs_per_year_district = combine_on_keyword(cons_costs_per_year_district_child,
                                                   cons_costs_per_year_district_adults, keyword="MDA All")
+
+
+start_year, end_year = TARGET_PERIOD
+# Filter by year in the MultiIndex
+df_filtered = cons_costs_per_year_district.loc[start_year.year:end_year.year]
+cons_costs_total_by_district = df_filtered.groupby('District').sum()
+cons_costs_total_by_district_summary = compute_summary_statistics(cons_costs_total_by_district,
+                                                                  central_measure='mean')
+cons_costs_total_by_district_summary.to_excel(results_folder / f'cons_costs_total_by_district_summary{target_period()}.xlsx')
 
 
 cons_costs_per_year_national = sum_by_year_all_districts(cons_costs_per_year_district, TARGET_PERIOD)
