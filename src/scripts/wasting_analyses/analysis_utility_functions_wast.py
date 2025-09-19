@@ -1030,6 +1030,13 @@ def plot_sum_outcome_and_CIs__intervention_period(
                             output_costs_medical_df.loc[scen, 'total'] - output_costs_medical_df.loc['SQ', 'total']
                 print(f"\naverted_DALYs:\n{averted_DALYs}")
                 print(f"\nincremental_costs:\n{incremental_costs}")
+                net_health_benefit = {scen: averted_DALYs[scen][0] - (incremental_costs.get(scen, 0) / 80) for scen in averted_DALYs}
+                print(f"\nnet_health_benefit:\n{net_health_benefit}")
+                net_monetary_benefit = {
+                    scen: (averted_DALYs[scen][0] * 80) - incremental_costs.get(scen, 0) for scen in averted_DALYs
+                }
+                print(f"\nnet_monetary_benefit:\n{net_monetary_benefit}")
+                # TODO: add CIs
 
                 # Plot cost-effectiveness scatter plot
                 fig_ce, ax_ce = plt.subplots()
