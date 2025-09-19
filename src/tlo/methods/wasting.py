@@ -63,6 +63,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'prev_init_sev_by_agegp': Parameter(
             Types.LIST, 'initial severe wasting (WHZ < -3) prevalence in 2010 by age groups'),
         # incidence
+        'min_days_to_relapse':  Parameter(
+            Types.REAL, 'minimum days to relapse: the incidence of another wasting episode in the previous '
+                        'month cannot occur if recovery happened fewer than this number of days before the start of '
+                        'that month'),
         'base_overall_inc_rate_wasting': Parameter(
             Types.REAL, 'base overall monthly moderate wasting incidence rate '
                         '(probability per child aged <0.5 years per month)'),
@@ -954,15 +958,20 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         df = population.props
+        p = self.module.parameters
         rng = self.module.rng
 
         # # # INCIDENCE OF MODERATE WASTING # # # # # # # # # # # # # # # # # # # # #
-        # Determine who will be onset with wasting among those who are alive, under 5, currently do not have acute
-        # malnutrition, are not being treated, and did not recover in the last 14 days
+        # Determine who developed wasting among those who are alive, under 5, currently do not have acute
+        # malnutrition, are not being treated, and did not recover later than min_days_to_relapse before the start
+        # of the previous month (incidence can occur on any day within the previous month)
+        days_in_month = (self.sim.date - pd.DateOffset(days=1)).days_in_month
         not_am_or_treated_or_recently_recovered =\
             df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_clinical_acute_malnutrition == 'well') &
                    (df.un_am_tx_start_date.isna()) &
-                   (df.un_am_recovery_date.isna() | (df.un_am_recovery_date < self.sim.date - pd.DateOffset(days=14)))]
+                   (df.un_am_recovery_date.isna() |
+                    (df.un_am_recovery_date < self.sim.date - pd.DateOffset(days=(p['min_days_to_relapse'] +
+                                                                                  days_in_month))))]
 
         incidence_of_wasting_bool = \
             self.module.wasting_models.wasting_incidence_lm.predict(not_am_or_treated_or_recently_recovered, rng=rng)
@@ -970,7 +979,6 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         mod_wasting_new_cases_idx = mod_wasting_new_cases.index
         # update the properties for new cases of wasted children
         df.loc[mod_wasting_new_cases_idx, 'un_ever_wasted'] = True
-        days_in_month = (self.sim.date - pd.DateOffset(days=1)).days_in_month
         df.loc[mod_wasting_new_cases_idx, 'un_last_wasting_date_of_onset'] = (
             self.sim.date - pd.to_timedelta(rng.randint(1, days_in_month, size=len(mod_wasting_new_cases_idx)),
                                             unit='D')

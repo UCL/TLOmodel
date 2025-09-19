@@ -1031,10 +1031,11 @@ def test_recovery_before_death_scheduled(tmpdir):
 
 def test_no_wasting_after_recent_recovery(tmpdir):
     """ Test that a person who recovered from wasting 5 days ago does not become wasted again. (The 5-day interval is
-    used as an example within the assumed 14-day relapse-free window.) """
+    used as an example within the assumed min_days_to_relapse-day relapse-free window.) """
     popsize = 1000
     sim = get_sim(tmpdir)
     wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)  # zero duration
@@ -1046,11 +1047,13 @@ def test_no_wasting_after_recent_recovery(tmpdir):
     person_id = under5s.index[0]
 
     # Manually set this individual properties to be well and recovered 5 days ago
+    nmb_days_recovered_ago_to_test_no_relapse = 5
+    assert nmb_days_recovered_ago_to_test_no_relapse <= p['min_days_to_relapse']
     df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
     df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
     df.at[person_id, 'un_am_nutritional_oedema'] = False
     df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
-    df.at[person_id, 'un_am_recovery_date'] = sim.date - pd.DateOffset(days=5)
+    df.at[person_id, 'un_am_recovery_date'] = sim.date - pd.DateOffset(days=nmb_days_recovered_ago_to_test_no_relapse)
 
     # Set incidence of wasting at 100%
     wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
