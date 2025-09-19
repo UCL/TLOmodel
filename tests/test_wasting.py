@@ -58,17 +58,16 @@ def get_sim(tmpdir):
                              "tlo.methods.wasting": logging.INFO}
                      })
 
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable=False,
-                                           cons_availability='all',
-                                           equip_availability='all'),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 simplified_births.SimplifiedBirths(),
-                 wasting.Wasting()
-                 )
+    sim.register(
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(disable=False, cons_availability="all", equip_availability="all"),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(force_any_symptom_to_lead_to_healthcareseeking=True),
+        healthburden.HealthBurden(),
+        simplified_births.SimplifiedBirths(),
+        wasting.Wasting(),
+    )
     return sim
 
 
