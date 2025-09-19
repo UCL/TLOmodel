@@ -21,34 +21,12 @@ from tlo.analysis.utils import compare_number_of_deaths, get_scenario_outputs, p
 total_time_start = time.time()
 
 # ####### TO SET #######################################################################################################
-scenario_filename = 'wasting_analysis__minimal_model'
-outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting")
+# scenario_filename = 'wasting_analysis__minimal_model'
+scenario_filename = 'wasting_analysis__full_model_SQ'
+outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/SQ")
 legend_fontsize = 12
 title_fontsize = 16
 ########################################################################################################################
-
-def create_calib_outcome_csv(sim_results_folder_path_str):
-    """
-    Creates a new empty csv file with the header if it doesn't exist yet.
-    :return:
-    """
-    csv_file_name = str(sim_results_folder_path_str).replace(str(outputs_path), '').lstrip('/') + \
-                    "_model_calib-data_intersect_bool"
-    csv_file_path = sim_results_folder_path_str / f"{csv_file_name}.csv"
-
-    if not csv_file_path.exists():
-        age_groups = [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]
-        calib_ys = [2015, 2019]
-        wast_type_agegp = [f'{wast_type}_wast__{low_bound}_{high_bound}mo' for wast_type in ['any', 'sev'] for
-                           low_bound, high_bound in age_groups]
-        year_wast_age_grps = [f'{year}__{wast_age_grp}' for year in calib_ys for wast_age_grp in wast_type_agegp]
-        sum_year_prev_calib_points = [f'{year}__sum_prev_calib_points' for year in calib_ys]
-
-        with open(csv_file_path, 'w') as csv_file:
-            csv_file.write(
-                'draw,run,' + ','.join(year_wast_age_grps) + ',deaths_2010_2014,deaths_2015_2019,' +
-                ','.join(sum_year_prev_calib_points) + ',sum_prev_calib_points,sum_all_calib_points\n'
-            )
 
 class WastingAnalyses:
     """
@@ -109,9 +87,47 @@ class WastingAnalyses:
             'moderate wasting': '#FFA783',
         }
 
+        self.calib_outcomes_folder_path_name = (
+            Path(sim_results_folder_path_str).parent / f"calib_outcome_figures_SQ-{self.datestamp}"
+        )
+        self.calib_outcomes_folder_path_name.mkdir(parents=True, exist_ok=True)
+
+    def create_calib_outcome_csv(self):
+        """
+        Creates a new empty csv file with the header if it doesn't exist yet.
+        :return:
+        """
+        csv_file_name = (
+            str(self.outcomes_folder_path).replace(str(outputs_path), "").lstrip("/")
+            + "_model_calib-data_intersect_bool"
+        )
+        csv_file_path = self.calib_outcomes_folder_path_name / f"{csv_file_name}.csv"
+
+        if not csv_file_path.exists():
+            age_groups = [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]
+            calib_ys = [2016, 2020]
+            wast_type_agegp = [
+                f"{wast_type}_wast__{low_bound}_{high_bound}mo"
+                for wast_type in ["any", "sev"]
+                for low_bound, high_bound in age_groups
+            ]
+            year_wast_age_grps = [f"{year}__{wast_age_grp}" for year in calib_ys for wast_age_grp in wast_type_agegp]
+            sum_year_prev_calib_points = [f"{year}__sum_prev_calib_points" for year in calib_ys]
+
+            with open(csv_file_path, "w") as csv_file:
+                csv_file.write(
+                    "draw,run,"
+                    + ",".join(year_wast_age_grps)
+                    + ",deaths_2010_2014,deaths_2015_2019,"
+                    + ",".join(sum_year_prev_calib_points)
+                    + ",sum_prev_calib_points,sum_all_calib_points\n"
+                )
+
     def save_fig__store_pdf_file(self, fig, fig_output_name: str) -> None:
-        full_path_and_file_name = self.outcomes_folder_path + f'/{self.draw_nmb}/{self.run_nmb}/' + fig_output_name + \
-                    f'_{self.draw_nmb}_{self.run_nmb}'
+        # Save figures one folder up, into 'calib_outcome_figures_SQ-{datestamp}'
+        output_folder = Path(self.outcomes_folder_path).parent / f'calib_outcome_figures_SQ-{self.datestamp}'
+        output_folder.mkdir(parents=True, exist_ok=True)
+        full_path_and_file_name = str(output_folder / (fig_output_name + f'_{self.draw_nmb}_{self.run_nmb}'))
         if self.png: #TODO: doesn't seem to be working
             fig.savefig(full_path_and_file_name + '.png', format='png')
         fig.savefig(full_path_and_file_name + '.pdf', format='pdf')
@@ -120,7 +136,7 @@ class WastingAnalyses:
     def plot_wasting_incidence(self):
         """ plot the incidence of wasting over time """
         w_inc_df = self.__w_logs_dict['wasting_incidence_count']
-        w_inc_df = w_inc_df.set_index(w_inc_df.date.dt.year)
+        w_inc_df = w_inc_df.set_index(w_inc_df.date.dt.year-1)
         w_inc_df = w_inc_df.drop(columns='date')
         # check no incidence of well-nourished
         all_zeros = w_inc_df['WHZ>=-2'].apply(lambda x: all(value == 0 for value in x.values()))
@@ -460,14 +476,6 @@ class WastingAnalyses:
         ax.set_xticklabels(age_groups)
         ax.set_ylim([0, 0.16])
         ax.legend(fontsize=legend_fontsize)
-
-        # Adjust the layout to make space for the footnote
-        plt.subplots_adjust(top=0.15) # Adjust the top margin
-        # Add footnote
-        fig.figure.text(0.43, 0.95,
-                        "proportion = number of wasted children in the age group "
-                        "/ total number of children in the age group",
-                        ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
         plt.tight_layout()
         fig_output_name = ('wasting_initial_prevalence_per_each_age_group__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
@@ -484,19 +492,13 @@ class WastingAnalyses:
         w_prev_calib_data_years_only_df = pd.DataFrame({
             'sev_wast_calib': [0.015, 0.011, 0.006, 0.007],
             'mod_wast_calib': [0.025, 0.027, 0.021, 0.019]
-        }, index=[2010, 2013, 2015, 2019])
-        date_range = pd.Index(range(2010, 2031), name='date')
+        }, index=[2010, 2014, 2016, 2020])
+        date_range = pd.Index(range(2010, 2031), name='date') #TODO 2032 with new sims
         w_prev_calib = pd.DataFrame(index=date_range)
         # filling missing values with 0
         w_prev_calib_df = w_prev_calib.merge(
             w_prev_calib_data_years_only_df, left_index=True, right_index=True, how='left'
         ).fillna(0)
-
-        ## Prevalence at the end of years - model
-        w_prev_df = self.__w_logs_dict["wasting_prevalence_props"]
-        w_prev_df = w_prev_df[['date', 'total_sev_under5_prop', 'total_mod_under5_prop']]
-        w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
-        w_prev_df = w_prev_df.drop(columns='date')
 
         ## Initial prevalence at the beginning of 2010 - model
         init_w_prev_2010_only_df = self.__w_logs_dict["wasting_init_prevalence_props"]
@@ -511,6 +513,12 @@ class WastingAnalyses:
         init_w_prev_df = init_w_prev_df.merge(
             init_w_prev_2010_only_df, left_index=True, right_index=True, how='left'
         ).fillna(0)
+
+        ## Prevalence at the beginning of years - model
+        w_prev_df = self.__w_logs_dict["wasting_prevalence_props"]
+        w_prev_df = w_prev_df[['date', 'total_sev_under5_prop', 'total_mod_under5_prop']]
+        w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
+        w_prev_df = w_prev_df.drop(columns='date')
 
         w_prev_calib_and_init_df = pd.merge(init_w_prev_df, w_prev_calib_df, on='date')
         w_prev_plot_df = pd.merge(w_prev_df, w_prev_calib_and_init_df, on='date').loc[lambda df: df.index >= 2015]
@@ -550,7 +558,7 @@ class WastingAnalyses:
                 bottom += w_prev_plot_df[col]
         ax.set_xticks(pos)
         ax.set_xticklabels(w_prev_plot_df.index, rotation=90)
-        ax.set_title("Wasting prevalence in children 0-59 months per year", fontsize=title_fontsize-6)
+        # ax.set_title("Wasting prevalence in children 0-59 months per year", fontsize=title_fontsize-6)
         ax.set_ylabel('proportion of wasted children in the year')
         ax.set_xlabel('year')
         ax.set_ylim([0, 0.06])
@@ -587,18 +595,37 @@ class WastingAnalyses:
 
         # ### Model Outcomes
         # Load modelled prevalence proportions
+        # year 2010
+        init_w_prev_2010_only_df = self.__w_logs_dict["wasting_init_prevalence_props"]
+        init_w_prev_2010_only_df = init_w_prev_2010_only_df.drop(columns={'total_mod_under5_prop', 'total_sev_under5_prop'})
+        init_w_prev_2010_only_df = init_w_prev_2010_only_df.set_index(init_w_prev_2010_only_df.date.dt.year)
+        init_w_prev_2010_only_df = init_w_prev_2010_only_df.drop(columns='date')
+        # from year 2011
         w_prev_model_df = self.__w_logs_dict["wasting_prevalence_props"]
         w_prev_model_df = w_prev_model_df.drop(columns={'total_mod_under5_prop', 'total_sev_under5_prop'})
         w_prev_model_df = w_prev_model_df.set_index(w_prev_model_df.date.dt.year)
         w_prev_model_df = w_prev_model_df.drop(columns='date')
+        # merge 2010 and 2011+ data frames
+        w_prev_model_df = pd.concat([init_w_prev_2010_only_df, w_prev_model_df], axis=0)
 
         # Load modelled population sizes
+        # year 2010
+        init_pop_sizes_2010_only_df = self.__w_logs_dict["init pop sizes"]
+        init_pop_sizes_2010_only_df = \
+            init_pop_sizes_2010_only_df.set_index(init_pop_sizes_2010_only_df.date.dt.year).rename_axis('year')
+        init_pop_sizes_2010_only_df = init_pop_sizes_2010_only_df.drop(columns='date')
+        init_pop_sizes_2010_only_df = init_pop_sizes_2010_only_df.filter(like='total__').rename(
+            lambda x: x.replace('total__', ''), axis=1
+        )[age_groups]
+        # from year 2011
         pop_sizes_model_df = self.__w_logs_dict['pop sizes']
         pop_sizes_model_df = pop_sizes_model_df.set_index(pop_sizes_model_df.date.dt.year).rename_axis('year')
         pop_sizes_model_df = pop_sizes_model_df.drop(columns='date')
         pop_sizes_model_df = pop_sizes_model_df.filter(like='total__').rename(
             lambda x: x.replace('total__', ''), axis=1
         )[age_groups]
+        # merge 2010 and 2011+ data frames
+        pop_sizes_model_df = pd.concat([init_pop_sizes_2010_only_df, pop_sizes_model_df], axis=0)
 
         for year_calib in w_prev_calib_data_df.index:
             w_prev_calib_data_year_df = w_prev_calib_data_df.loc[w_prev_calib_data_df.index == year_calib]
@@ -688,24 +715,15 @@ class WastingAnalyses:
 
             ax.set_xlabel('age group')
             ax.set_ylabel('proportion')
-            ax.set_title(f"Wasting prevalence in children 0-59 months per each age group in {year_calib}",
-                         fontsize=title_fontsize-1)
+            # ax.set_title(f"Wasting prevalence in children 0-59 months per each age group in {year_calib}",
+            #              fontsize=title_fontsize-1)
             ax.set_xticks([r + bar_width / 2 for r in range(len(plotting_model))])
             ax.set_xticklabels(age_groups)
             ax.set_ylim([0, 0.12])
             ax.legend(fontsize=legend_fontsize)
-
-            # Adjust the layout to make space for the footnote
-            plt.subplots_adjust(top=0.15)  # Adjust the bottom margin
-            # Add footnote
-            fig.figure.text(0.43, 0.95,
-                            "proportion = number of wasted children in the age group "
-                            "/ total number of children in the age group",
-                            ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
-
             plt.tight_layout()
             fig_output_name = (f'wasting_prevalence_per_each_age_group_{year_calib}__' + self.datestamp)
-            if year_calib in [2015, 2019]:
+            if year_calib in [2016, 2020]:
                 self.save_fig__store_pdf_file(fig, fig_output_name)
             # plt.show()
 
@@ -720,22 +738,16 @@ class WastingAnalyses:
                                      slice(None), ['0-4'], 'Childhood Undernutrition'
                                      )].groupby('period').sum()
         plotting = plot_df.loc[['2010-2014', '2015-2019']]
-        ax = plotting['model'].plot.bar(label='Model', ax=ax, rot=0)
+        ax = plotting['model'].plot.bar(label='TLO model', ax=ax, rot=0)
         ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
-                    fmt='o', color='#000', label="GBD")
+                    fmt='o', color='#000', label="GBD 2019 estimates")
 
-        ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5', fontsize=title_fontsize-1)
+        # ax.set_title('Average annual under-five direct deaths due to severe acute malnutrition', fontsize=title_fontsize-1)
         ax.set_xlabel("time period")
         ax.set_ylabel("number of deaths")
         ax.legend(loc='upper center', fontsize=legend_fontsize)
         fig.tight_layout()
-        # Adjust the layout to make space for the footnote
-        plt.subplots_adjust(bottom=0.15)  # Adjust the bottom margin
-        # Add footnote
-        fig.figure.text(0.5, 0.02,
-                        "Model output against Global Burden of Diseases (GBD) study data",
-                        ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
         fig_output_name = ('model_gbd_deaths_incl_burnin__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
         # plt.show()
@@ -754,28 +766,22 @@ class WastingAnalyses:
         ax = plotting['model'].plot.bar(label='Model', ax=ax, rot=0)
         ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
-                    fmt='o', color='#000', label="GBD")
+                    fmt='o', color='#000', label="GBD (2019)")
 
-        ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5',
-                     fontsize=title_fontsize - 1)
+        # ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5',
+        #              fontsize=title_fontsize - 1)
         ax.set_xlabel("time period")
         ax.set_ylabel("number of deaths")
         ax.legend(loc='upper right', fontsize=legend_fontsize)
         fig.tight_layout()
-        # Adjust the layout to make space for the footnote
-        plt.subplots_adjust(bottom=0.15)  # Adjust the bottom margin
-        # Add footnote
-        fig.figure.text(0.5, 0.02,
-                        "Model output against Global Burden of Diseases (GBD) study data",
-                        ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
         fig_output_name = ('model_gbd_deaths_excl_burnin__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
         # plt.show()
 
-    def plot_all_figs_in_one_pdf(self, in_outcome_figs_folder):
+    def plot_all_figs_in_one_pdf(self):
 
-        output_file_path = \
-            in_outcome_figs_folder / f'wasting_all_figures__{self.datestamp}_{self.draw_nmb}_{self.run_nmb}.pdf'
+        output_file_path = (self.calib_outcomes_folder_path_name /
+                            f'wasting_all_figures__{self.datestamp}_{self.draw_nmb}_{self.run_nmb}.pdf')
         # Remove the existing output file if it exists to ensure a clean start
         if os.path.exists(output_file_path):
             os.remove(output_file_path)
@@ -807,6 +813,7 @@ if __name__ == "__main__":
     # Find sim_results_folder_path associated with a given batch_file (and get most recent [-1])
     sim_results_folder_path = get_scenario_outputs(scenario_filename, outputs_path)[-1]
     sim_results_folder_name = sim_results_folder_path.name
+    print(f"Calibrating {sim_results_folder_name=}")
     # Get the datestamp
     assert sim_results_folder_name.startswith(scenario_filename + '-'),\
         "The scenario output name does not correspond with the set scenario_filename."
@@ -814,10 +821,6 @@ if __name__ == "__main__":
 
     folders = [name for name in os.listdir(sim_results_folder_path) if \
     os.path.isdir(os.path.join(sim_results_folder_path, name)) and name.isdigit()]
-
-    # Create a csv to write down calibration outputs
-    #  as bool values indicating whether model outcomes and calibration data intersect
-    create_calib_outcome_csv(sim_results_folder_path)
 
     # Analyse each draw
     # for now, we always have just one run, run 0
@@ -828,6 +831,10 @@ if __name__ == "__main__":
 
         # initialise the wasting class
         wasting_analyses = WastingAnalyses(str(sim_results_folder_path), datestamp, draw_nmb, run_nmb)
+
+        # Create a csv to write down calibration outputs
+        #  as bool values indicating whether model outcomes and calibration data intersect
+        wasting_analyses.create_calib_outcome_csv()
 
         # plot wasting incidence
         wasting_analyses.plot_wasting_incidence()
@@ -851,9 +858,7 @@ if __name__ == "__main__":
         wasting_analyses.plot_model_gbd_deaths_excl_burnin_period()
 
         # ### Save all figures in one pdf
-        outcome_figs_folder = sim_results_folder_path / '_outcome_figures'
-        outcome_figs_folder.mkdir(parents=True, exist_ok=True)
-        wasting_analyses.plot_all_figs_in_one_pdf(outcome_figs_folder)
+        wasting_analyses.plot_all_figs_in_one_pdf()
 
         time_end = time.time()
         print(f"... finished in (s): {(time_end - time_start)}")
