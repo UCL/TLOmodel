@@ -30,13 +30,12 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = Path("./resources")
+resourcefilepath = './resources'
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2030, 1, 1)
 popsize = 10_000
-
 
 # set up the log config
 log_config = {
@@ -44,15 +43,11 @@ log_config = {
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        # "tlo.methods.deviance_measure": logging.INFO,
-        # "tlo.methods.epi": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
-        "tlo.methods.tb": logging.INFO,
-        "tlo.methods.demography": logging.INFO,
-        "tlo.methods.demography.detail": logging.WARNING,
+        # "tlo.methods.tb": logging.INFO,
+        # "tlo.methods.demography": logging.INFO,
         # "tlo.methods.healthsystem.summary": logging.INFO,
-        # "tlo.methods.healthsystem": logging.INFO,
-        "tlo.methods.healthburden": logging.INFO,
+        # "tlo.methods.healthburden": logging.INFO,
     },
 }
 
@@ -60,13 +55,13 @@ log_config = {
 # need to call epi before tb to get bcg vax
 seed = random.randint(0, 50000)
 # seed = 41728  # set seed for reproducibility
-sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config,
+                 show_progress_bar=True, resourcefilepath=resourcefilepath)
 sim.register(
     demography.Demography(),
     simplified_births.SimplifiedBirths(),
     enhanced_lifestyle.Lifestyle(),
-    healthsystem.HealthSystem(
-        service_availability=["*"],  # all treatment allowed
+    healthsystem.HealthSystem(service_availability=["*"],  # all treatment allowed
         mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
         cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
@@ -83,6 +78,7 @@ sim.register(
     tb.Tb(),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
+
 
 # set the scenario
 sim.modules["Hiv"].parameters["select_mihpsa_scenario"] = 0

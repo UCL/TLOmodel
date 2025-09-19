@@ -587,9 +587,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Predictor("age_years").when("<15", 0.0).when("<49", 1.0).otherwise(0.0),
             Predictor("sex").when("F", p["rr_sex_f"]),
             Predictor("li_is_circ").when(True, p["rr_circumcision"]),
-            Predictor("hv_is_on_oral_prep").
+            Predictor("hv_is_on_prep_oral").
             when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_oral_prep"]),
-            Predictor("hv_is_on_inj_prep").
+            Predictor("hv_is_on_prep_inj").
             when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_inj_prep"]),
             Predictor("li_urban").when(False, p["rr_rural"]),
             Predictor("li_wealth", conditions_are_mutually_exclusive=True)
@@ -2352,41 +2352,50 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         ),  # (to occur before next polling)
                     )
 
-        # ----------------------------------- PrEP poll for AGYW -----------------------------------
+        # ----------------------------------- PrEP poll for AGYW and pregnant women -----------------------------------
         def prep_for_agyw():
 
             if self.sim.date.year >= p["prep_start_year"]:
 
                 # select highest risk agyw
-                agyw_idx = df.loc[
+                # Common mask for alive, undiagnosed, female, not on PrEP
+                common = (
                     df.is_alive
                     & ~df.hv_diagnosed
-                    & df.age_years.between(15, 25)
                     & (df.sex == "F")
                     & ~(df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
-                    ].index
+                )
 
-                if len(agyw_idx) == 0:
+                # AGYW 15–25
+                agyw_idx = df.loc[common & df.age_years.between(15, 25)].index
+
+                # Pregnant women (any age)
+                pregnant_idx = df.loc[common & df.is_pregnant].index
+
+                # Combine and drop duplicates
+                eligible_idx = agyw_idx.union(pregnant_idx)
+
+                if len(eligible_idx) == 0:
                     return  # no eligible AGYW
 
                 # calculate relative risk of infection
-                rr_of_infection = self.module.lm["rr_of_infection"].predict(df.loc[agyw_idx])
+                rr_of_infection = self.module.lm["rr_of_infection"].predict(df.loc[eligible_idx])
                 mean_risk = rr_of_infection.mean()
                 scaled_risk = rr_of_infection / mean_risk
 
                 # get probabilities for receiving prep from linear model
-                prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[agyw_idx],
+                prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[eligible_idx],
                                                                    year=self.sim.date.year,
                 )
 
                 # number of AGYW expected to get PrEP = mean(prob_prep) * total AGYW
-                expected_n = int(round(prob_prep.mean() * len(agyw_idx)))
+                expected_n = int(round(prob_prep.mean() * len(eligible_idx)))
 
                 # subset to top 50% by risk
                 top_risk_threshold = np.percentile(scaled_risk, 50)
                 high_risk_mask = scaled_risk >= top_risk_threshold
 
-                high_risk_idx = agyw_idx[high_risk_mask]
+                high_risk_idx = eligible_idx[high_risk_mask]
                 high_risk_probs = prob_prep[high_risk_mask]
 
                 if len(high_risk_idx) == 0:
@@ -2406,7 +2415,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 give_prep = high_risk_idx[
                     self.module.rng.random_sample(len(high_risk_idx)) < rescaled_probs
                     ]
-
+                # todo dates should be scattered throughout year
                 for person in give_prep:
                     if (self.module.parameters['injectable_prep_allowed'] &
                         (self.sim.date.year >= 2025)):
@@ -2433,8 +2442,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 eligible_fsw_idx = df.loc[df.is_alive &
                                           ~df.hv_diagnosed &
                                           df.li_is_sexworker &
-                                          ~(df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
-                (random_draw < p["prob_prep_for_fsw_after_hiv_test"])].index
+                                          ~(df.hv_is_on_prep_oral | df.hv_is_on_prep_inj) &
+                                          (random_draw < p["prob_prep_for_fsw_after_hiv_test"])].index
 
                 for person in eligible_fsw_idx:
                     if self.module.parameters['injectable_prep_allowed']:
@@ -2442,6 +2451,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     else:
                         type_of_prep = 'oral'
 
+                    # todo dates should be scattered throughout year
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
                                                                 module=self.module,
@@ -3042,7 +3052,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                         df.at[person_id, "hv_behaviour_change"] = True
 
                     # If person is a man, and not circumcised, then consider referring to VMMC
-                    if (person["sex"] == "M") & (~person["li_is_circ"]):
+                    if (person["sex"] == "M") and (not person["li_is_circ"]):
                         x = self.module.lm["lm_circ"].predict(
                             df.loc[[person_id]], self.module.rng,
                             year=self.sim.date.year,
@@ -3059,11 +3069,11 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # available 2018 onwards
                     if (
                         (person["sex"] == "F")
-                        & person["li_is_sexworker"]
-                        & ~(df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
-                        & (self.sim.date.year >= self.module.parameters["prep_start_year"])
+                        and person["li_is_sexworker"]
+                        and not (person["hv_is_on_prep_oral"] or person["hv_is_on_prep_inj"])
+                        and (self.sim.date.year >= self.module.parameters["prep_start_year"])
                     ):
-                        if self.module.lm["lm_prep"].predict(df.loc[[person_id]], self.module.rng
+                         if self.module.lm["lm_prep"].predict(df.loc[[person_id]], self.module.rng
                                                              ):
                             if (self.module.parameters['injectable_prep_allowed'] &
                                 (self.sim.date.year >= 2025)):
@@ -3269,7 +3279,6 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for this person; or continue them on PrEP for 3 more months"""
-        print(self.type_of_prep, self.sim.date)
 
         df = self.sim.population.props
         person = df.loc[person_id]
@@ -3307,6 +3316,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required['prep']: days_on_prep}
             ):
                 df.at[person_id, property] = True
+                print(self.type_of_prep, self.sim.date, person_id)  # todo this is person actually getting PrEP
 
                 if df.at[person_id, "li_is_sexworker"]:
                     df.at[person_id, f'{days_on_prep_property}_FSW'] += days_on_prep
@@ -4656,6 +4666,15 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         Total_25_49_F = len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")])
         Total_50_UP_F = len(df[df.is_alive & (df.age_years >= 50) & (df.sex == "M")])
 
+        n_fsw = len(
+            df.loc[
+                df.is_alive
+                & df.li_is_sexworker
+                & (df.sex == "F")
+                & df.age_years.between(15, 49)
+                ]
+        )
+
         Total_FSW = n_fsw
         Total_MSM = 0
 
@@ -4850,24 +4869,26 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         DALYs_Undiscounted = 0
         TotalCost_Undiscounted = 0
 
-        Percent_circumcised = prop_men_circ
+        PY_PREP_ORAL_AGYW = df["hv_days_on_oral_prep_AGYW"].sum() / 365
+        PY_PREP_ORAL_FSW = df["hv_days_on_oral_prep_FSW"].sum() / 365
+
+        PY_PREP_INJECT_AGYW = df["hv_days_on_inj_prep_AGYW"].sum() / 365
+        PY_PREP_INJECT_FSW = df["hv_days_on_inj_prep_FSW"].sum() / 365
+
+        prop_men_circ = len(
+            df[df.is_alive & (df.sex == "M") & (df.age_years.between(15,49)) & df.li_is_circ]
+        ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years.between(15,49))]) if len(
+            df[df.is_alive & (df.sex == "M") & (df.age_years.between(15,49))]) else 0
+
+
+        Percent_circumcised = prop_men_circ * 100
         Percent_condom_use_GP = 0
-        PrEP_FSW = PY_PREP_ORAL_FSW
+        PrEP_FSW = PY_PREP_ORAL_FSW + PY_PREP_INJECT_FSW
         PrEP_MSM = 0
-        PrEP_GP = PY_PREP_ORAL_AGYW
+        PrEP_GP = PY_PREP_ORAL_AGYW + PY_PREP_INJECT_AGYW
         PrEP_Pop_GP = 0
         NewHIV_PrEP_Pop_GP = 0
-        Percent_FSW_reached = len(
-            df.loc[
-                df.li_is_sexworker
-                & (df.sex == 'F')
-                & (df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
-                ]) / len(
-            df.loc[
-                df.li_is_sexworker
-                & (df.sex == 'F')
-                ])
-
+        Percent_FSW_reached = 0  # this is outreach
         Percent_MSM_reached = 0
 
         logger.info(
