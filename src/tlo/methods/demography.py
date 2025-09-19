@@ -306,12 +306,13 @@ class Demography(Module):
         # Compute the initial population scaling factor by district
         # compute the scaling factors by district
         # get the actual numbers in each district in 2010
-        district_pop = init_pop.groupby('District')['Count'].sum()
+        district_pop = self.parameters['pop_2010'].groupby('District')['Count'].sum()
         # get the numbers in new population dataframe by district
         model_pop = df.district_of_residence[df.is_alive].value_counts()
 
         self.initial_model_to_data_popsize_ratio_district = \
-            self.compute_initial_model_to_data_popsize_ratio_by_district(district_pop, model_pop)
+            self.compute_initial_model_to_data_popsize_ratio_by_district(district_pop=district_pop,
+                                                                         model_pop=model_pop)
 
     def initialise_simulation(self, sim):
         """
