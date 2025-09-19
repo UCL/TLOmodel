@@ -13,7 +13,7 @@ class ClimateDisruptionScenario(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2045, 1, 12)
-        self.pop_size = 100_000
+        self.pop_size = 10_000
         self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
@@ -65,7 +65,7 @@ class ClimateDisruptionScenario(BaseScenario):
             get_parameters_for_status_quo(),
             {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                 'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, True],
+                'max_healthcare_seeking': [False, False],
                 'year_of_switch': self.YEAR_OF_CHANGE
                 },
              "HealthSystem": {
@@ -104,7 +104,7 @@ class ClimateDisruptionScenario(BaseScenario):
             get_parameters_for_status_quo(),
             {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                 'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, True],
+                'max_healthcare_seeking': [False, False],
                 'year_of_switch': self.YEAR_OF_CHANGE
                 },
              "HealthSystem": {
@@ -144,7 +144,7 @@ class ClimateDisruptionScenario(BaseScenario):
             get_parameters_for_status_quo(),
             {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                 'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, True],
+                'max_healthcare_seeking': [False, False],
                 'year_of_switch': self.YEAR_OF_CHANGE
                 },
              "HealthSystem": {
@@ -183,7 +183,7 @@ class ClimateDisruptionScenario(BaseScenario):
             get_parameters_for_status_quo(),
             {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                 'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, True],
+                'max_healthcare_seeking': [False, False],
                 'year_of_switch': self.YEAR_OF_CHANGE
                 },
              "HealthSystem": {
@@ -222,7 +222,7 @@ class ClimateDisruptionScenario(BaseScenario):
             get_parameters_for_status_quo(),
             {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                 'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, True],
+                'max_healthcare_seeking': [False, False],
                 'year_of_switch': self.YEAR_OF_CHANGE
                 },
              "HealthSystem": {
@@ -261,7 +261,7 @@ class ClimateDisruptionScenario(BaseScenario):
             get_parameters_for_status_quo(),
             {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                 'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, True],
+                'max_healthcare_seeking': [False, False],
                 'year_of_switch': self.YEAR_OF_CHANGE
                 },
              "HealthSystem": {
@@ -300,7 +300,7 @@ class ClimateDisruptionScenario(BaseScenario):
             get_parameters_for_status_quo(),
             {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                 'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, True],
+                'max_healthcare_seeking': [False, False],
                 'year_of_switch': self.YEAR_OF_CHANGE
                 },
              "HealthSystem": {
@@ -339,7 +339,7 @@ class ClimateDisruptionScenario(BaseScenario):
             get_parameters_for_status_quo(),
             {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                 'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, True],
+                'max_healthcare_seeking': [False, False],
                 'year_of_switch': self.YEAR_OF_CHANGE
                 },
              "HealthSystem": {
@@ -378,7 +378,7 @@ class ClimateDisruptionScenario(BaseScenario):
             get_parameters_for_status_quo(),
             {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                 'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, True],
+                'max_healthcare_seeking': [False, False],
                 'year_of_switch': self.YEAR_OF_CHANGE
                 },
              "HealthSystem": {
@@ -417,7 +417,7 @@ class ClimateDisruptionScenario(BaseScenario):
             get_parameters_for_status_quo(),
             {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                 'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, True],
+                'max_healthcare_seeking': [False, False],
                 'year_of_switch': self.YEAR_OF_CHANGE
                 },
              "HealthSystem": {
