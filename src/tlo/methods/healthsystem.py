@@ -1952,7 +1952,7 @@ class HealthSystem(Module):
         ):
             """Write the log `HSI_Event` and add to the summary counter."""
             logger.debug(
-                key="Climate_delated_HSI_Event",
+                key="Climate_cancelled_HSI_Event",
             data = {
                 'Event_Name': event_details.event_name,
                 'TREATMENT_ID': event_details.treatment_id,
@@ -1985,7 +1985,7 @@ class HealthSystem(Module):
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.debug(
-            key="Climate_delated_HSI_Event",
+            key="Climate_delayed_HSI_Event",
         data = {
             'Event_Name': event_details.event_name,
             'TREATMENT_ID': event_details.treatment_id,
@@ -2518,7 +2518,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 climate_disrupted = False
 
                 # First, check for climate disruption
-                if year >= 2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] is not None:
+                if year > 2010: #= 2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] is not None:
                     assert self.module.parameters['services_affected_precip'] == 'all'
                     fac_level = item.hsi_event.facility_info.level
                     facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_level}']
@@ -2530,8 +2530,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             (self.module.parameters['projected_precip_disruptions']['service'] == self.module.parameters['services_affected_precip']),
                             'disruption'
                         ]
-                        prob_disruption = pd.DataFrame(prob_disruption)
-                        prob_disruption = float(prob_disruption.iloc[0])
+                        #prob_disruption = pd.DataFrame(prob_disruption)
+                        #prob_disruption = float(prob_disruption.iloc[0])
+                        prob_disruption = 1
                         if np.random.binomial(1, prob_disruption) == 1:
                             climate_disrupted = True
                             if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
@@ -2569,6 +2570,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         )
                                         print("care sought")
                                     else:
+                                        print("cancelled")
                                         self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
                                         self.module.call_and_record_weather_cancelled_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
 

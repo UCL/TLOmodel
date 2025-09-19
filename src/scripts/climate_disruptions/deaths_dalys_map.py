@@ -341,8 +341,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             malawi_admin2.plot(column='DALY_Rate', ax=axes[i], legend=True, cmap='PiYG',edgecolor='black', vmin=vmin, vmax=vmax)
             axes[i].set_title(f'DALYs per 1000 - {scenario}')
             axes[i].axis('off')
-            water_bodies.plot(ax=axes[i], facecolor="none", edgecolor="#999999", linewidth=0.5, hatch="xxx")
-            water_bodies.plot(ax=axes[i], facecolor="none", edgecolor="black", linewidth=1)
+            water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", edgecolor="#999999", linewidth=0.5, hatch="xxx")
+            water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", edgecolor="black", linewidth=1)
 
     fig.tight_layout()
     fig.savefig(output_folder / "dalys_maps_all_scenarios_difference.png", dpi=300, bbox_inches='tight')
