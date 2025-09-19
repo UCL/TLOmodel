@@ -2,7 +2,7 @@
 and summary statistics for paper
 
 JOB ID:
-schisto_scenarios-2025-03-22T130153Z
+PosixPath('outputs/t.mangal@imperial.ac.uk/schisto_scenarios-2025-08-27T102826Z')
 """
 
 from pathlib import Path
@@ -73,13 +73,14 @@ scenario_info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 
 # todo the scaling factors were calculated incorrectly
-tmp = log['tlo.methods.population']['scaling_factor_district']
-district_scaling_factor = pd.DataFrame(tmp.iloc[0]['scaling_factor_district'], index=[0]).T
-district_scaling_factor.columns = ['scaling_factor']
+# tmp = log['tlo.methods.population']['scaling_factor_district']
+# district_scaling_factor = pd.DataFrame(tmp.iloc[0]['scaling_factor_district'], index=[0]).T
+# district_scaling_factor.columns = ['scaling_factor']
 
 district_scaling_factor = pd.read_excel(results_folder / 'scaling_factor_district.xlsx',
                                         index_col=0)
 
+district_scaling_factor = 1/ district_scaling_factor  # because logger usually scales this
 
 #################################################################################
 # %% USEFUL FUNCTIONS
@@ -379,81 +380,227 @@ def format_summary_for_output(
 
 
 
+# def compute_icer_district(
+#     dalys_averted: pd.DataFrame,
+#     comparison_costs: pd.DataFrame,
+#     discount_rate_dalys: float = 0.0,
+#     discount_rate_costs: float = 0.0,
+#     return_summary: bool = True
+# ) -> pd.DataFrame | pd.Series:
+#     """
+#     Compute ICERs comparing costs and DALYs averted over a TARGET_PERIOD by district, run, and scenario.
+#
+#     Assumes:
+#     - Row MultiIndex: ['year', 'district_of_residence'] or ['year', 'District']
+#     - Column MultiIndex: ['wash_strategy', 'comparison', 'run']
+#     - TARGET_PERIOD is a global tuple of (start_year, end_year) as datetime or int
+#     """
+#     global TARGET_PERIOD
+#     start_year, end_year = TARGET_PERIOD
+#     start_year = start_year.year if hasattr(start_year, "year") else start_year
+#     end_year = end_year.year if hasattr(end_year, "year") else end_year
+#
+#     # --- Apply year masks separately
+#     years_dalys = dalys_averted.index.get_level_values('year')
+#     mask_dalys = (years_dalys >= start_year) & (years_dalys <= end_year)
+#     dalys_period = dalys_averted.loc[mask_dalys]
+#     # where daly values are tiny, assume 0 to avoid strange ICER values (huge and negative)
+#     dalys_period = dalys_period.applymap(
+#         lambda x: 0.0 if -10 <= x <= 10 else x
+#     )
+#
+#     years_costs = comparison_costs.index.get_level_values('year')
+#     mask_costs = (years_costs >= start_year) & (years_costs <= end_year)
+#     costs_period = comparison_costs.loc[mask_costs]
+#
+#     # --- Discounting
+#     years_since_start_dalys = years_dalys[mask_dalys] - start_year
+#     years_since_start_costs = years_costs[mask_costs] - start_year
+#
+#     discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start_dalys)
+#     discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start_costs)
+#
+#     if discount_rate_dalys != 0.0:
+#         dalys_period = dalys_period.mul(discount_weights_dalys.values, axis=0)
+#
+#     if discount_rate_costs != 0.0:
+#         costs_period = costs_period.mul(discount_weights_costs.values, axis=0)
+#
+#     # --- Aggregate over time (group by district)
+#     total_dalys = dalys_period.groupby(level='district_of_residence').sum()
+#     total_costs = costs_period.groupby(level='District').sum()
+#
+#     # --- Compute ICERs
+#     icers = total_costs.divide(total_dalys).replace([np.inf, -np.inf], np.nan)
+#
+#     # --- Convert to long format
+#     icers_long = (
+#         icers
+#         .stack(['wash_strategy', 'comparison', 'run'])
+#         .rename('icer')
+#         .reset_index()
+#     )
+#
+#     if return_summary:
+#         summary = (
+#             icers_long
+#             .groupby(['District', 'wash_strategy', 'comparison'])['icer']
+#             .agg(
+#                 mean='mean',
+#                 lower=lambda x: np.quantile(x, 0.025),
+#                 upper=lambda x: np.quantile(x, 0.975)
+#             )
+#             .reset_index()
+#         )
+#         return summary
+#     else:
+#         return icers_long
+
+
+
+
+import numpy as np
+import pandas as pd
+
 def compute_icer_district(
     dalys_averted: pd.DataFrame,
     comparison_costs: pd.DataFrame,
     discount_rate_dalys: float = 0.0,
     discount_rate_costs: float = 0.0,
-    return_summary: bool = True
-) -> pd.DataFrame | pd.Series:
+    return_summary: bool = True,
+    tiny_threshold: float = 1e-6,      # absolute tolerance for “no additional benefit”
+    threshold_ce: float = 61.0         # cost-effectiveness threshold (USD/DALY)
+) -> pd.DataFrame:
     """
-    Compute ICERs comparing costs and DALYs averted over a TARGET_PERIOD by district, run, and scenario.
+    Compute ICERs by district, run and scenario over TARGET_PERIOD; summarise to a single row
+    per (district, wash_strategy, comparison) with classification counts.
 
     Assumes:
-    - Row MultiIndex: ['year', 'district_of_residence'] or ['year', 'District']
-    - Column MultiIndex: ['wash_strategy', 'comparison', 'run']
-    - TARGET_PERIOD is a global tuple of (start_year, end_year) as datetime or int
+      - Row MultiIndex for DALYs: ['year', 'district_of_residence']
+      - Row MultiIndex for COSTS: ['year', 'District']
+      - Column MultiIndex for both: ['wash_strategy', 'comparison', 'run']
+      - TARGET_PERIOD is (start_date_or_year, end_date_or_year)
     """
+
+    # --- Years filter (2024–2050 per your requirement)
     global TARGET_PERIOD
-    start_year, end_year = TARGET_PERIOD
-    start_year = start_year.year if hasattr(start_year, "year") else start_year
-    end_year = end_year.year if hasattr(end_year, "year") else end_year
+    start, end = TARGET_PERIOD
+    start_y = start.year if hasattr(start, "year") else int(start)
+    end_y   = end.year   if hasattr(end, "year")   else int(end)
 
-    # --- Apply year masks separately
-    years_dalys = dalys_averted.index.get_level_values('year')
-    mask_dalys = (years_dalys >= start_year) & (years_dalys <= end_year)
-    dalys_period = dalys_averted.loc[mask_dalys]
-    # where daly values are tiny, assume 0 to avoid strange ICER values (huge and negative)
-    dalys_period = dalys_period.applymap(
-        lambda x: 0.0 if -10 <= x <= 10 else x
-    )
+    # Slice DALYs
+    yrs_d = dalys_averted.index.get_level_values('year')
+    mask_d = (yrs_d >= start_y) & (yrs_d <= end_y)
+    d_df = dalys_averted.loc[mask_d]
 
-    years_costs = comparison_costs.index.get_level_values('year')
-    mask_costs = (years_costs >= start_year) & (years_costs <= end_year)
-    costs_period = comparison_costs.loc[mask_costs]
+    # Slice COSTS
+    yrs_c = comparison_costs.index.get_level_values('year')
+    mask_c = (yrs_c >= start_y) & (yrs_c <= end_y)
+    c_df = comparison_costs.loc[mask_c]
 
-    # --- Discounting
-    years_since_start_dalys = years_dalys[mask_dalys] - start_year
-    years_since_start_costs = years_costs[mask_costs] - start_year
-
-    discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start_dalys)
-    discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start_costs)
-
+    # --- Discounting (optional)
+    t_d = (yrs_d[mask_d] - start_y)
+    t_c = (yrs_c[mask_c] - start_y)
     if discount_rate_dalys != 0.0:
-        dalys_period = dalys_period.mul(discount_weights_dalys.values, axis=0)
-
+        w_d = 1.0 / (1.0 + discount_rate_dalys) ** t_d
+        d_df = d_df.mul(w_d.values, axis=0)
     if discount_rate_costs != 0.0:
-        costs_period = costs_period.mul(discount_weights_costs.values, axis=0)
+        w_c = 1.0 / (1.0 + discount_rate_costs) ** t_c
+        c_df = c_df.mul(w_c.values, axis=0)
 
-    # --- Aggregate over time (group by district)
-    total_dalys = dalys_period.groupby(level='district_of_residence').sum()
-    total_costs = costs_period.groupby(level='District').sum()
-
-    # --- Compute ICERs
-    icers = total_costs.divide(total_dalys).replace([np.inf, -np.inf], np.nan)
-
-    # --- Convert to long format
-    icers_long = (
-        icers
-        .stack(['wash_strategy', 'comparison', 'run'])
-        .rename('icer')
-        .reset_index()
+    # --- Aggregate over time to per-district, per-(wash, comparison, run)
+    dalys_tot = (
+        d_df.groupby(level='district_of_residence').sum()
+            .stack(['wash_strategy','comparison','run'])
+            .rename('dalys').reset_index()
+            .rename(columns={'district_of_residence':'district'})
+    )
+    costs_tot = (
+        c_df.groupby(level='District').sum()
+            .stack(['wash_strategy','comparison','run'])
+            .rename('costs').reset_index()
+            .rename(columns={'District':'district'})
     )
 
-    if return_summary:
-        summary = (
-            icers_long
-            .groupby(['District', 'wash_strategy', 'comparison'])['icer']
-            .agg(
-                mean='mean',
-                lower=lambda x: np.quantile(x, 0.025),
-                upper=lambda x: np.quantile(x, 0.975)
-            )
-            .reset_index()
-        )
-        return summary
-    else:
-        return icers_long
+    # --- Merge DALYs and COSTS (outer join to surface any misalignments)
+    x = pd.merge(costs_tot, dalys_tot, on=['district','wash_strategy','comparison','run'], how='outer')
+
+    # Replace missing with 0 for DALYs (no incremental health gain recorded) and 0 for costs if absent
+    x['costs'] = x['costs'].fillna(0.0)
+    x['dalys'] = x['dalys'].fillna(0.0)
+
+    # --- Per-run classification
+    def classify(row):
+        dc, dd = row['costs'], row['dalys']
+        if dd <= tiny_threshold and dc > 0:
+            return "Dominated (no additional benefit)"
+        if dd < -tiny_threshold and dc > 0:
+            return "Dominated (worse health, higher cost)"
+        if dd >= tiny_threshold and dc < 0:
+            return "Cost-saving"
+        # valid ICER if dd≥tiny and dc≥0 (or dd<0 and dc<0 -> analogue; treat as invalid for ICER)
+        if dd >= tiny_threshold and dc >= 0:
+            return "ICER valid"
+        # everything else (e.g., both zero): treat as no additional benefit
+        return "Dominated (no additional benefit)"
+
+    x['status'] = x.apply(classify, axis=1)
+
+    # Compute ICER where valid; leave NaN otherwise
+    x['icer'] = np.where(x['status'] == 'ICER valid', x['costs'] / x['dalys'], np.nan)
+
+    # Indicator for CE threshold among valid runs
+    x['ce_below_threshold'] = (x['status'] == 'ICER valid') & (x['icer'] < threshold_ce)
+
+    if not return_summary:
+        return x  # per-run tidy output with status
+
+    # --- Summarise to one row per district × wash × comparison
+    def _q(a, p):  # nanquantile wrapper
+        a = np.asarray(a, dtype=float)
+        a = a[~np.isnan(a)]
+        return np.nan if a.size == 0 else float(np.quantile(a, p))
+
+    grp = x.groupby(['district','wash_strategy','comparison'], sort=False)
+
+    summary = grp.apply(lambda g: pd.Series({
+        # ICER summary over valid runs only
+        'mean':  np.nanmean(g.loc[g['status']=='ICER valid', 'icer']) if (g['status']=='ICER valid').any() else np.nan,
+        'lower': _q(g.loc[g['status']=='ICER valid', 'icer'], 0.025),
+        'upper': _q(g.loc[g['status']=='ICER valid', 'icer'], 0.975),
+
+        # classification counts
+        'n_runs':                    int(len(g)),
+        'n_valid':                   int((g['status']=='ICER valid').sum()),
+        'n_dominated_no_benefit':    int((g['status']=='Dominated (no additional benefit)').sum()),
+        'n_dominated_worse_health':  int((g['status']=='Dominated (worse health, higher cost)').sum()),
+        'n_cost_saving':             int((g['status']=='Cost-saving').sum()),
+
+        # proportion of valid runs below threshold
+        'prop_valid_below_61': float(
+            g.loc[g['status']=='ICER valid','ce_below_threshold'].mean()
+        ) if (g['status']=='ICER valid').any() else np.nan
+    })).reset_index()
+
+    # One overall status flag to prevent duplicate rows in the output table
+    def overall_status(row):
+        if row['n_valid'] == 0 and (row['n_dominated_no_benefit'] + row['n_dominated_worse_health']) > 0:
+            return "All dominated"
+        if row['n_cost_saving'] > 0 and row['n_valid'] == 0:
+            return "All cost-saving"
+        if row['n_valid'] > 0 and (row['n_dominated_no_benefit'] + row['n_dominated_worse_health'] + row['n_cost_saving']) == 0:
+            return "All valid"
+        return "Mixed"
+
+    summary['status'] = summary.apply(overall_status, axis=1)
+
+    # Nicely formatted ICER cell (only if there were valid runs)
+    def fmt(m, lo, hi):
+        return "" if np.isnan(m) else f"{m:.2f} ({lo:.2f}–{hi:.2f})"
+    summary['formatted'] = [fmt(m, lo, hi) for m, lo, hi in zip(summary['mean'], summary['lower'], summary['upper'])]
+
+    return summary
+
 
 
 
@@ -1322,7 +1469,7 @@ def get_person_years_infected_by_district(_df: pd.DataFrame) -> pd.Series:
     return py_by_district
 
 
-# infection_levels = ['Low-infection', 'Moderate-infection', 'Heavy-infection']
+infection_levels = ['Low-infection', 'Moderate-infection', 'Heavy-infection']
 
 py_district = extract_results(
         results_folder,
@@ -1410,23 +1557,24 @@ num_py_averted_combined_national.to_excel(results_folder / f'num_py_averted_nati
 #################################################################################
 # %% PERSON-YEARS INFECTED BY AGE AND DISTRICT
 #################################################################################
-
 TARGET_PERIOD = (Date(2024, 1, 1), Date(2050, 12, 31))
-
-# TARGET_PERIOD = (Date(2024, 1, 1), Date(2024, 12, 31))  # if repeating for one year
-
 infection_levels = ['Low-infection', 'Moderate-infection', 'Heavy-infection']
-infection_levels = ['Heavy-infection']
 
 
-def get_person_years_infected_by_district_and_age(_df: pd.DataFrame) -> pd.Series:
+# -------------------------
+# Helper function
+# -------------------------
+def get_person_years_infected_by_district_and_age(_df: pd.DataFrame,
+                                                  target_period: tuple,
+                                                  infection_levels: list) -> pd.Series:
     """
-    Get person-years infected by district and age group, summed over the specified time period and infection levels.
+    Get person-years infected by district and age group,
+    summed over the specified time period and infection levels.
     """
     # Filter to target period
-    df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)].drop(columns='date')
+    df = _df.loc[pd.to_datetime(_df.date).between(*target_period)].drop(columns='date')
 
-    # Filter columns by infection level
+    # Filter columns by infection level(s)
     pattern = '|'.join(infection_levels)
     df_filtered = df.filter(regex=f'infection_level=({pattern})')
 
@@ -1434,133 +1582,146 @@ def get_person_years_infected_by_district_and_age(_df: pd.DataFrame) -> pd.Serie
     columns_split = df_filtered.columns.str.extract(
         r'species=([^|]+)\|age_group=([^|]+)\|infection_level=([^|]+)\|district=([^|]+)'
     )
-    df_filtered.columns = pd.MultiIndex.from_frame(columns_split, names=['species', 'age_group', 'infection_level', 'district'])
+    df_filtered.columns = pd.MultiIndex.from_frame(columns_split,
+                                                   names=['species','age_group','infection_level','district'])
 
-    # Sum across time (i.e., sum values for each column over the period)
+    # Sum across time
     summed_by_time = df_filtered.sum(axis=0)
 
     # Group by district and age_group, summing over infection levels and species
-    py_by_district_age = summed_by_time.groupby(['district', 'age_group']).sum() / 365.25
+    py_by_district_age = summed_by_time.groupby(['district','age_group']).sum() / 365.25
 
     return py_by_district_age
 
 
-py_district_age = extract_results(
-    results_folder,
-    module="tlo.methods.schisto",
-    key="Schisto_person_days_infected",
-    custom_generate_series=get_person_years_infected_by_district_and_age,
-    do_scaling=False,
-).pipe(set_param_names_as_column_index_level_0)
+# -------------------------
+# Parameters: periods and infection-level sets
+# -------------------------
+target_periods = {
+    "2024-2050": (Date(2024,1,1), Date(2050,12,31)),
+    "2024":      (Date(2024,1,1), Date(2024,12,31)),
+}
 
-# Multiply by district scaling factor (broadcasting across age_groups)
-scaled_py_district_age = py_district_age.mul(
-    district_scaling_factor['scaling_factor'],
-    axis=0,
-    level='district'  # ensures correct alignment on the first level of the index
-)
-
-scaled_py_district_age.to_excel(results_folder / f'num_py_infected_by_district_and_age_{target_period()}.xlsx')
-
-summary_py_by_district_age = compute_summary_statistics(scaled_py_district_age,
-                                                        central_measure='mean')
-
-summary_py_by_district_age.to_excel(results_folder / f'summary_num_py_infected_by_district_and_age_{target_period()}.xlsx')
+infection_level_sets = {
+    "H": ["Heavy-infection"],
+    "HML": ["Low-infection","Moderate-infection","Heavy-infection"],
+}
 
 
-# format into nice table for output
-df_million = summary_py_by_district_age / 1_000_000
+# -------------------------
+# Wrapper to run analyses
+# -------------------------
+def run_analysis_for_period_and_levels(period_name, period_tuple,
+                                       levels_name, infection_levels):
 
-# Rearrange into long format: rows = (district, age_group, draw), columns = stat
-df_long = df_million.stack(level='draw')  # columns now: lower, central, upper
-formatted = df_long.apply(
-    lambda row: f"{row['central']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
-)
-# Return to wide format: rows = (district, age_group), columns = draw
-formatted_df = formatted.unstack(level=-1)
+    # Call extract_results with custom generator
+    py_district_age = extract_results(
+        results_folder,
+        module="tlo.methods.schisto",
+        key="Schisto_person_days_infected",
+        custom_generate_series=lambda _df: get_person_years_infected_by_district_and_age(
+            _df, target_period=period_tuple, infection_levels=infection_levels),
+        do_scaling=False,
+    ).pipe(set_param_names_as_column_index_level_0)
 
-output_path = results_folder / f'table_summary_py_by_district_age_{target_period()}_H.xlsx'
-formatted_df.to_excel(output_path)
+    # Scale to district population
+    scaled_py_district_age = py_district_age.mul(
+        district_scaling_factor['scaling_factor'],
+        axis=0,
+        level='district'
+    )
+
+    # Save district + age totals
+    scaled_py_district_age.to_excel(
+        results_folder / f'num_py_infected_by_district_and_age_{period_name}_{levels_name}.xlsx'
+    )
+
+    # Summary statistics
+    summary_py_by_district_age = compute_summary_statistics(scaled_py_district_age,
+                                                            central_measure='mean')
+    summary_py_by_district_age.to_excel(
+        results_folder / f'summary_num_py_infected_by_district_and_age_{period_name}_{levels_name}.xlsx'
+    )
+
+    # Format into nice output table
+    df_million = summary_py_by_district_age / 1_000_000
+    df_long = df_million.stack(level='draw')  # columns: lower, central, upper
+    formatted = df_long.apply(
+        lambda row: f"{row['central']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+    )
+    formatted_df = formatted.unstack(level=-1)
+    formatted_df.to_excel(
+        results_folder / f'table_summary_py_by_district_age_{period_name}_{levels_name}.xlsx'
+    )
+
+    # National totals by age-group
+    by_age_group = scaled_py_district_age.groupby(level='age_group').sum()
+    adults_total = by_age_group.loc['Adults']
+    infants_psac_total = by_age_group.loc[['Infant','PSAC']].sum()
+    sac_total = by_age_group.loc['SAC']
+
+    age_group_summary = pd.DataFrame({
+        'Adults': adults_total,
+        'Infants+PSAC': infants_psac_total,
+        'SAC': sac_total
+    }).T
+
+    age_group_summary2 = compute_summary_statistics(age_group_summary,
+                                                    central_measure='mean')
+
+    tmp = age_group_summary2 / 1_000_000
+    df_long = tmp.stack(level='draw')
+    formatted = df_long.apply(
+        lambda row: f"{row['central']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+    )
+    formatted_df = formatted.unstack(level=-1)
+    formatted_df.to_excel(
+        results_folder / f'table_summary_py_national_age_{period_name}_{levels_name}.xlsx'
+    )
+
+    num_py_averted_age = compute_summary_statistics(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            age_group_summary,
+            comparison="Continue WASH, no MDA",
+        ),
+        central_measure='mean'
+    )
+    num_py_averted_age.to_excel(results_folder / f'num_py_averted_age_{period_name}_{levels_name}.xlsx')
+
+    pc_py_averted_age = 100.0 * compute_summary_statistics(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            age_group_summary,
+            comparison="Continue WASH, no MDA",
+            scaled=True
+        ),
+        central_measure='mean'
+    )
+    pc_py_averted_age.to_excel(results_folder / f'pc_py_averted_age_{period_name}_{levels_name}.xlsx')
+
+    # -------------------------- national PY infected by age
+    # Sum across districts for each age_group, for every (draw, run) combination
+    df_summed = scaled_py_district_age.groupby(level='age_group').sum()
+    # Rearrange so we can group over 'draw' in columns
+    # The result will be: index=age_group, columns=draw, values=mean over runs
+    mean_by_draw = df_summed.groupby(axis=1, level='draw').mean()
+    se_by_draw = df_summed.groupby(axis=1, level='draw').sem()  # standard error of the mean
+
+    output_path = results_folder / f'mean_py_age_national{period_name}_{levels_name}.xlsx'
+    mean_by_draw.to_excel(output_path)
+
+    output_path = results_folder / f'se_py_age_national{period_name}_{levels_name}.xlsx'
+    se_by_draw.to_excel(output_path)
 
 
-# get the total py infected nationally by age-group
-by_age_group = scaled_py_district_age.groupby(level='age_group').sum()
-
-# Step 2: Aggregate the age groups
-adults_total = by_age_group.loc['Adults']
-infants_psac_total = by_age_group.loc[['Infant', 'PSAC']].sum()
-sac_total = by_age_group.loc['SAC']
-
-# Step 3: Combine into single DataFrame and convert to millions
-age_group_summary = pd.DataFrame({
-    'Adults': adults_total,
-    'Infants+PSAC': infants_psac_total,
-    'SAC': sac_total
-}).T
-
-age_group_summary2 = compute_summary_statistics(age_group_summary,
-                                                central_measure='mean')
-
-# format into nice table for output
-tmp = age_group_summary2 / 1_000_000
-
-# Rearrange into long format: rows = (district, age_group, draw), columns = stat
-df_long = tmp.stack(level='draw')  # columns now: lower, central, upper
-formatted = df_long.apply(
-    lambda row: f"{row['central']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
-)
-# Return to wide format: rows = (district, age_group), columns = draw
-formatted_df = formatted.unstack(level=-1)
-
-output_path = results_folder / f'table_summary_py_national_age_{target_period()}.xlsx'
-formatted_df.to_excel(output_path)
+# -------------------------
+# Run over all combinations
+# -------------------------
+for pname, ptuple in target_periods.items():
+    for lname, levels in infection_level_sets.items():
+        run_analysis_for_period_and_levels(pname, ptuple, lname, levels)
 
 
 
-
-# -------------------------- national PY averted by age
-num_py_averted_age = compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        age_group_summary,
-        comparison="Continue WASH, no MDA",
-    ),
-    central_measure='mean'
-)
-output_path = results_folder / f'num_py_averted_age_{target_period()}.xlsx'
-num_py_averted_age.to_excel(output_path)
-
-pc_py_averted_age = 100.0 * compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        age_group_summary,
-        comparison="Continue WASH, no MDA",
-        scaled=True
-    ),
-    central_measure='mean'
-)
-output_path = results_folder / f'pc_py_averted_age_{target_period()}.xlsx'
-pc_py_averted_age.to_excel(output_path)
-
-
-
-
-
-
-
-# -------------------------- national PY infected by age
-# todo get the national numbers of py infected by age scaled by district
-
-# Sum across districts for each age_group, for every (draw, run) combination
-df_summed = scaled_py_district_age.groupby(level='age_group').sum()
-# Rearrange so we can group over 'draw' in columns
-# The result will be: index=age_group, columns=draw, values=mean over runs
-mean_by_draw = df_summed.groupby(axis=1, level='draw').mean()
-se_by_draw = df_summed.groupby(axis=1, level='draw').sem()  # standard error of the mean
-
-output_path = results_folder / f'mean_py_age_national{target_period()}.xlsx'
-mean_by_draw.to_excel(output_path)
-
-output_path = results_folder / f'se_py_age_national{target_period()}.xlsx'
-se_by_draw.to_excel(output_path)
 
 
 
@@ -1863,6 +2024,7 @@ cons_costs_per_year_district = combine_on_keyword(cons_costs_per_year_district_c
                                                   cons_costs_per_year_district_adults, keyword="MDA All")
 
 
+# summary costs just for target period
 start_year, end_year = TARGET_PERIOD
 # Filter by year in the MultiIndex
 df_filtered = cons_costs_per_year_district.loc[start_year.year:end_year.year]
@@ -2041,6 +2203,7 @@ icer_district["formatted"] = icer_district.apply(
 
 
 icer_district.to_excel(results_folder / f'icer_district_{target_period()}.xlsx')
+
 
 # --- ICERS district for consumables costs only ---
 

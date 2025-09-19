@@ -49,11 +49,6 @@ def make_graph_file_name(name):
 
 
 
-# todo we now have some preferred strategies for cons costs only
-#  full costs some have MDA none as preferred
-#  check time to elimination of H and HM and HML, see which figure looks best
-#  ICER plots might look weird, no ICERs for PSAC/All in some districts where eliminated
-
 #################################################################################
 # %% multi-panel epi outputs
 #################################################################################
@@ -964,8 +959,8 @@ plot_dalys_vs_costs_by_district_with_thresholds(
     comparison='MDA SAC vs no MDA',
     plot_summary=True,
     thresholds=[5,10,20,50,61],
-    scale_x=1.5,
-    scale_y=1.5,
+    scale_x=0.5,
+    scale_y=0.5,
 )
 
 
@@ -976,9 +971,9 @@ plot_dalys_vs_costs_by_district_with_thresholds(
     wash_strategy='Continue WASH',
     comparison='MDA PSAC+SAC vs MDA SAC',
     plot_summary=True,
-    thresholds=[5,10,20,50,61,1000],
-    scale_x=1.5,
-    scale_y=1.5,
+    thresholds=[5,10,20,50,61],
+    scale_x=0.5,
+    scale_y=0.5,
 )
 
 
@@ -990,7 +985,9 @@ plot_dalys_vs_costs_by_district_with_thresholds(
     wash_strategy='Continue WASH',
     comparison='MDA All vs MDA PSAC+SAC',
     plot_summary=True,
-    thresholds=[5,10,20,50,61,1000],
+    thresholds=[5,10,20,50,61],
+    scale_x=0.5,
+    scale_y=0.5,
 )
 
 
@@ -1003,9 +1000,9 @@ plot_dalys_vs_costs_by_district_with_thresholds(
     wash_strategy='Continue WASH',
     comparison='MDA SAC vs no MDA',
     plot_summary=True,
-    thresholds=[1,2,3,4,5],
-    scale_x=0.2,
-    scale_y=0.4,)
+    thresholds=[5,10,20,50,61],
+    scale_x=0.5,
+    scale_y=0.5)
 
 
 
@@ -1435,127 +1432,3 @@ plot_ephp_km_continue(prev_mansoni_HML_All_district, species='mansoni', threshol
 # plot_ephp_km_scaleup(prev_mansoni_H_All_district)
 #
 
-
-
-def plot_ephp_km_continue_runs(
-    df: pd.DataFrame,
-    threshold: float = 0.01,
-    year_range: tuple = (2024, 2050),
-    alpha: float = 0.5,
-    figsize: tuple = (10, 6),
-    species=None,
-):
-    """
-    Plot Kaplan–Meier–style curves showing, for each run, the proportion of districts
-    that have first reached prevalence < threshold by year, for selected Continue-WASH draws.
-
-    Data requirements:
-      - Rows index: MultiIndex ('year', 'district')
-      - Columns: MultiIndex ('draw', 'run')
-    """
-
-    # Colours and legend labels
-    mda_colours = {
-        'no MDA': '#1b9e77',       # Teal
-        'MDA SAC': '#d95f02',      # Orange
-        'MDA PSAC+SAC': '#7570b3', # Purple
-        'MDA All': '#e7298a',      # Pink
-        'WASH only': '#e6ab02',    # Mustard Yellow
-    }
-    draw_labels = {
-        'Continue WASH, no MDA': 'no MDA',
-        'Continue WASH, MDA SAC': 'MDA SAC',
-        'Continue WASH, MDA PSAC+SAC': 'MDA PSAC+SAC',
-        'Continue WASH, MDA All': 'MDA All',
-        'Scale-up WASH, no MDA': 'WASH only',
-    }
-
-    # Basic checks
-    if not isinstance(df.columns, pd.MultiIndex) or df.columns.nlevels != 2:
-        raise ValueError("Expected columns as a 2-level MultiIndex: ('draw','run').")
-    if df.columns.names != ["draw", "run"]:
-        df.columns = pd.MultiIndex.from_tuples(df.columns.tolist(), names=["draw", "run"])
-    if not isinstance(df.index, pd.MultiIndex) or set(df.index.names) != {"year", "district"}:
-        raise ValueError("Expected index MultiIndex with names ('year','district').")
-
-    # Restrict years
-    years_idx = df.index.get_level_values("year")
-    df = df[(years_idx >= year_range[0]) & (years_idx <= year_range[1])]
-
-    # Only keep the draws we want (and that exist)
-    desired_draws = list(draw_labels.keys())
-    available_draws = df.columns.get_level_values("draw").unique()
-    selected_draws = [d for d in desired_draws if d in set(available_draws)]
-    if not selected_draws:
-        raise ValueError("None of the selected Continue-WASH draws are present in the DataFrame.")
-
-    # Precompute constants
-    years = list(range(year_range[0], year_range[1] + 1))
-    total_districts = df.index.get_level_values("district").nunique()
-
-    plt.figure(figsize=figsize)
-
-    # One faint line per (draw, run)
-    for draw in selected_draws:
-        label = draw_labels[draw]
-        # available runs for this draw
-        runs = sorted(
-            df.columns[df.columns.get_level_values("draw") == draw]
-              .get_level_values("run").unique()
-        )
-
-        for run_id in runs:
-            # Series indexed by (year, district)
-            s = df[(draw, run_id)]
-
-            # Boolean where prevalence < threshold
-            b = s < threshold
-
-            if not b.any():
-                # No district ever below threshold in the window → flat 0
-                y = [0.0] * len(years)
-            else:
-                # First year each district goes below threshold
-                # (keep only True rows, then min year per district)
-                fy = (
-                    b[b].reset_index()            # keep True rows
-                      .groupby("district")["year"]
-                      .min()
-                )
-                # Counts by year, cumulative → proportions
-                counts_by_year = fy.value_counts().reindex(years, fill_value=0).sort_index()
-                prop = counts_by_year.cumsum() / total_districts
-                y = prop.reindex(years, fill_value=0.0).tolist()
-
-            plt.step(
-                years, y,
-                where="post",
-                color=mda_colours.get(label, "grey"),
-                linewidth=1.0,
-                alpha=alpha,
-            )
-
-        # Single proxy for legend
-        plt.step([], [], where="post",
-                 label=label,
-                 color=mda_colours.get(label, "grey"),
-                 linewidth=1.6)
-
-    plt.ylabel(f"Proportion < {threshold*100:.1f}%")
-    plt.xlabel("Year")
-    plt.ylim(-0.05, 1.05)
-    plt.grid(True, axis="y", color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
-    plt.legend(title="Strategy", loc="upper left", fontsize="small")
-    plt.tight_layout()
-
-    # Optional save
-    if species is not None:
-        plt.savefig(results_folder / f"ephp_km_plot_{species}_continue_runs.png", dpi=300)
-
-    plt.show()
-
-
-plot_ephp_km_continue_runs(prev_haem_HML_All_district, species='haem', threshold=0.02)
-
-
-plot_ephp_km_continue_runs(prev_mansoni_HML_All_district, species='mansoni', threshold=0.02)
