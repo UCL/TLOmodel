@@ -2035,7 +2035,8 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             for age_grp in self.module.wasting_recovery_tracker.keys():
                 for recov_opt in self.module.recovery_options:
                     if self.module.wasting_recovery_tracker[age_grp][recov_opt]:
-                        recovery_df.loc[age_grp, recov_opt] = len(self.module.wasting_recovery_tracker[age_grp][recov_opt])
+                        recovery_df.loc[age_grp, recov_opt] = \
+                            len(self.module.wasting_recovery_tracker[age_grp][recov_opt])
                     else:
                         recovery_df.loc[age_grp, recov_opt] = 0
 
@@ -2066,8 +2067,8 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         assert all(length >=
                                    (p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 2)
                                    for length in self.module.wasting_recovery_tracker[age_grp][recov_opt]),\
-                            (f"{self.module.wasting_recovery_tracker[age_grp][recov_opt]=} contains length(s) < duration "
-                             "of (mod + sev wast - 2): "
+                            (f"{self.module.wasting_recovery_tracker[age_grp][recov_opt]=} contains length(s) < "
+                             "duration of (mod + sev wast - 2): "
                              f"{(p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 2)=}"
                              f" days; {age_grp=}, {recov_opt=}")
                     elif recov_opt in ['mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov', 'mod_SAM_tx_recov_to_MAM',
@@ -2149,7 +2150,7 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             # Reset the recovery tracker
             self.module.wasting_recovery_tracker = copy.deepcopy(self.module.wasting_recovery_tracker_blank)
 
-        # ----- PREVALENCE LOG ----------------
+        # ----- PREVALENCE & POP SIZE LOGS ----------------
         # Wasting totals (prevalence & pop size at logging time)
         # declare a dictionary that will hold proportions of wasting prevalence per each age group
         wasting_prev_dict: Dict[str, Any] = dict()
