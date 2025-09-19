@@ -2215,3 +2215,72 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # log pop sizes
         logger.info(key='pop sizes', data=pop_sizes_dict)
+
+class Wasting_ActivateInterventionsEvent(Event, PopulationScopeEventMixin):
+    """
+    This event activates the intervention(s) by overwriting the relevant parameters with values set for draws in the
+    scenario file. The default values are set as the original parameters prior intervention(s), hence if scenario does
+    not define any 'interv_' parameter, no intervention is activated.
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+        assert isinstance(module, Wasting)
+
+    def apply(self, population):
+        p = self.module.parameters
+
+        # ###
+        # Log whether GM intervention is ON
+        logger.debug(
+            key="GM-interv",
+            data={'GM interv ON':
+                      p['growth_monitoring_attendance_prob_agecat'] != \
+                      p['interv_growth_monitoring_attendance_prob_agecat'],
+                  'growth_monitoring_attendance_prob_agecat': p['growth_monitoring_attendance_prob_agecat'],
+                  'interv_growth_monitoring_attendance_prob_agecat':
+                      p['interv_growth_monitoring_attendance_prob_agecat']
+                  },
+            description="record info about growth monitoring (GM) intervention"
+        )
+        # Overwrite growth monitoring attendance probs
+        p['growth_monitoring_attendance_prob_agecat'] = p['interv_growth_monitoring_attendance_prob_agecat']
+
+        # ###
+        # Log whether CS intervention is ON
+        logger.debug(
+            key="CS-interv",
+            data={'CS interv ON':
+                      p['awareness_MAM_prob'] != p['interv_awareness_MAM_prob'],
+                  'awareness_MAM_prob': p['awareness_MAM_prob'],
+                  'interv_awareness_MAM_prob':
+                      p['interv_awareness_MAM_prob']
+                  },
+            description="record info abo care-seeking (CS) intervention"
+        )
+        # Overwrite seeking care prob for MAM cases
+        p['awareness_MAM_prob'] = p['interv_awareness_MAM_prob']
+
+        # ###
+        # Log whether FS intervention is ON
+        logger.debug(
+            key="FS-interv",
+            data={'FS interv ON': p['interv_food_supplements_avail_bool'],
+                  'F-75 milk availability': p['interv_avail_F75milk'],
+                  'RUTF availability': p['interv_avail_RUTF'],
+                  'CSB availability': p['interv_avail_CSB++']
+                  },
+            description="record info about food supplements (FS) intervention"
+        )
+        # If FS intervention is ON, override the probabilities
+        if p['interv_food_supplements_avail_bool']:
+            get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+            item_code_F75milk = get_item_code("F-75 therapeutic milk, 102.5 g")
+            item_code_RUTF = get_item_code("Therapeutic spread, sachet 92g/CAR-150")
+            item_code_CSB = get_item_code("Corn Soya Blend (or Supercereal - CSB++)")
+
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({
+                item_code_F75milk: p['interv_avail_F75milk'],
+                item_code_RUTF: p['interv_avail_RUTF'],
+                item_code_CSB: p['interv_avail_CSB++'],
+            })
