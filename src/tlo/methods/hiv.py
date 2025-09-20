@@ -1414,6 +1414,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # todo mihpsa longterm control scenarios
 
         # ----------------------------------------------
+        # 0 Status Quo
+        # ----------------------------------------------
+        # no action
+
+
+        # ----------------------------------------------
         # 1 base
         # ----------------------------------------------
         if p["mihpsa_scenario"] == 1:

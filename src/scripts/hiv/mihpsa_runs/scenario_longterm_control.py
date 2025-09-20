@@ -33,7 +33,6 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     hiv,
-    hiv_tb_calibration,
     simplified_births,
     symptommanager,
     tb,
@@ -48,13 +47,11 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2051, 1, 1)  # todo need to log to mid-year 2050
-        self.pop_size = 125_000
-        # self.scenarios = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-        self.scenarios = [1, 7]
+        self.end_date = Date(2035, 1, 1)  # todo need to log to mid-year 2050
+        self.pop_size = 20_000
+        self.scenarios = [1, 2, 3, 4, 5, 6, 8, 9]
         self.number_of_draws = len(self.scenarios)
-        # self.number_of_draws = 1
-        self.runs_per_draw = 3
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -72,23 +69,21 @@ class TestScenario(BaseScenario):
 
     def modules(self):
         return [
-            demography.Demography(resourcefilepath=self.resources),
-            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(
-                resourcefilepath=self.resources,
-                service_availability=["*"],  # all treatment allowed
+            demography.Demography(),
+            simplified_births.SimplifiedBirths(),
+            enhanced_lifestyle.Lifestyle(),
+            healthsystem.HealthSystem(service_availability=["*"],  # all treatment allowed
                 mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
                 cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
                 ignore_priority=False,  # do not use the priority information in HSI event to schedule
                 capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
             ),
-            symptommanager.SymptomManager(resourcefilepath=self.resources),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-            healthburden.HealthBurden(resourcefilepath=self.resources),
-            epi.Epi(resourcefilepath=self.resources),
-            hiv.Hiv(resourcefilepath=self.resources),
-            tb.Tb(resourcefilepath=self.resources),
+            symptommanager.SymptomManager(),
+            healthseekingbehaviour.HealthSeekingBehaviour(),
+            healthburden.HealthBurden(),
+            epi.Epi(),
+            hiv.Hiv(),
+            tb.Tb(),
         ]
 
     def draw_parameters(self, draw_number, rng):
