@@ -1422,7 +1422,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # ----------------------------------------------
         # 1 base
         # ----------------------------------------------
-        if p["mihpsa_scenario"] == 1:
+        if p["select_mihpsa_scenario"] == 1:
             # no prevention, no VL testing, testing rates very low, keep ANC/TB etc passive case finding
             p["prob_circ_after_hiv_test"] = 0
             p["increase_in_prob_circ_2019"] = 0
@@ -1432,9 +1432,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_prep_for_agyw"] = 0
 
             # no viral load tests available
-            item_codes = self.item_codes_for_consumables_required['vl_measurement']
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {item_codes: 0.0})  # 190 for VL test
+                {190: 0.0})  # 190 for VL test
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1443,7 +1442,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # ----------------------------------------------
         # 2 PrEP oral only in FSW, switch everything else off
         # ----------------------------------------------
-        if p["mihpsa_scenario"] == 2:
+        if p["select_mihpsa_scenario"] == 2:
             p["prob_circ_after_hiv_test"] = 0
             p["increase_in_prob_circ_2019"] = 0
             p["prob_circ_for_child_from_2020"] = 0
@@ -1451,9 +1450,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_prep_for_agyw"] = 0
 
             # no viral load tests available
-            item_codes = self.item_codes_for_consumables_required['vl_measurement']
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {item_codes: 0.0})  # 190 for VL test
+                {190: 0.0})  # 190 for VL test
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1468,7 +1466,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # increase prob_prep_for_fsw_after_hiv_test to 0.34 to get 50% coverage
         # need 30 oral :70 inj mix
         # different efficacy and follow-up time
-        if p["mihpsa_scenario"] == 3:
+        if p["select_mihpsa_scenario"] == 3:
             p["prob_circ_after_hiv_test"] = 0
             p["increase_in_prob_circ_2019"] = 0
             p["prob_circ_for_child_from_2020"] = 0
@@ -1479,9 +1477,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_prep_for_agyw"] = 0
 
             # no viral load tests available
-            item_codes = self.item_codes_for_consumables_required['vl_measurement']
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {item_codes: 0.0})  # 190 for VL test
+                {190: 0.0})  # 190 for VL test
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1490,7 +1487,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # ----------------------------------------------
         # 4 PrEP oral only AGYW and Pregnant women
         # ----------------------------------------------
-        if p["mihpsa_scenario"] == 4:
+        if p["select_mihpsa_scenario"] == 4:
             p["prob_circ_after_hiv_test"] = 0
             p["increase_in_prob_circ_2019"] = 0
             p["prob_circ_for_child_from_2020"] = 0
@@ -1499,9 +1496,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_prep_for_agyw"] = 0.1
 
             # no viral load tests available
-            item_codes = self.item_codes_for_consumables_required['vl_measurement']
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {item_codes: 0.0})  # 190 for VL test
+                {190: 0.0})  # 190 for VL test
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1510,7 +1506,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # ----------------------------------------------
         # 5 PrEP oral + inj AGYW and Pregnant women
         # ----------------------------------------------
-        if p["mihpsa_scenario"] == 5:
+        if p["select_mihpsa_scenario"] == 5:
             p["prob_circ_after_hiv_test"] = 0
             p["increase_in_prob_circ_2019"] = 0
             p["prob_circ_for_child_from_2020"] = 0
@@ -1520,9 +1516,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["injectable_prep_allowed"] = True
 
             # no viral load tests available
-            item_codes = self.item_codes_for_consumables_required['vl_measurement']
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {item_codes: 0.0})  # 190 for VL test
+                {190: 0.0})  # 190 for VL test
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1533,7 +1528,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # ----------------------------------------------
         # todo this needs to be ramped up to get to 90%
 
-        if p["mihpsa_scenario"] == 6:
+        if p["select_mihpsa_scenario"] == 6:
 
             p["prob_circ_after_hiv_test"] = 0.05  # default
             p["increase_in_prob_circ_2019"] = 3  # default
@@ -1544,9 +1539,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_prep_for_agyw"] = 0
 
             # no viral load tests available
-            item_codes = self.item_codes_for_consumables_required['vl_measurement']
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {item_codes: 0.0})  # 190 for VL test
+                {190: 0.0})  # 190 for VL test
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1556,15 +1550,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # 7 Key population outreach FSW
         # ----------------------------------------------
         # todo some decline in risk
+        if p["select_mihpsa_scenario"] == 7:
+            p["rr_fsw"] = p["rr_fsw"] * 0.9
 
-
-
-        # ----------------------------------------------
-        # 8 Testing
-        # ----------------------------------------------
-        # allow testing to remain at 2023 levels
-
-        if p["mihpsa_scenario"] == 9:
+            # no prevention, no VL testing, testing rates very low, keep ANC/TB etc passive case finding
             p["prob_circ_after_hiv_test"] = 0
             p["increase_in_prob_circ_2019"] = 0
             p["prob_circ_for_child_from_2020"] = 0
@@ -1573,9 +1562,29 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_prep_for_agyw"] = 0
 
             # no viral load tests available
-            item_codes = self.item_codes_for_consumables_required['vl_measurement']
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {item_codes: 0.0})  # 190 for VL test
+                {190: 0.0})  # 190 for VL test
+
+            # reduce general testing
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
+
+        # ----------------------------------------------
+        # 8 Testing
+        # ----------------------------------------------
+        # allow testing to remain at 2023 levels
+
+        if p["select_mihpsa_scenario"] == 8:
+            p["prob_circ_after_hiv_test"] = 0
+            p["increase_in_prob_circ_2019"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
+
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+            p["prob_prep_for_agyw"] = 0
+
+            # no viral load tests available
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {190: 0.0})  # 190 for VL test
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1587,7 +1596,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # ----------------------------------------------
         # this is through VL monitoring
 
-        if p["mihpsa_scenario"] == 9:
+        if p["select_mihpsa_scenario"] == 9:
             p["prob_circ_after_hiv_test"] = 0
             p["increase_in_prob_circ_2019"] = 0
             p["prob_circ_for_child_from_2020"] = 0
