@@ -1930,6 +1930,18 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         return return_prob
 
+    def update_viral_suppression_status(self):
+        """Helper function to determine whether person who is currently not virally suppressed
+        will become virally suppressed following viral load test."
+        """
+        p = self.module.parameters
+
+        return (
+            "on_VL_suppressed"
+            if self.module.rng.random_sample() < p["prob_of_viral_suppression_following_VL_test"]
+            else "on_not_VL_suppressed"
+        )
+
     def setup_art_dispensation_lookup(self):
         """Preprocess the dispensation probability table into a nested dict for fast lookup."""
         df = self.parameters["dispensation_period_months"]
@@ -2423,13 +2435,17 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     else:
                         type_of_prep = 'oral'
 
+                    date_prep = self.sim.date + pd.DateOffset(
+                        days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
+                    )
+
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
                                                                 module=self.module,
                                                                 type_of_prep=type_of_prep),
                         priority=1,
-                        topen=self.sim.date,
-                        tclose=self.sim.date + pd.DateOffset(
+                        topen=date_prep,
+                        tclose=date_prep + pd.DateOffset(
                             months=self.frequency.months
                         )
                     )
@@ -2451,14 +2467,17 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     else:
                         type_of_prep = 'oral'
 
-                    # todo dates should be scattered throughout year
+                    date_prep = self.sim.date + pd.DateOffset(
+                        days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
+                    )
+
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
                                                                 module=self.module,
                                                                 type_of_prep=type_of_prep),
                         priority=1,
-                        topen=self.sim.date,
-                        tclose=self.sim.date + pd.DateOffset(
+                        topen=date_prep,
+                        tclose=date_prep + pd.DateOffset(
                             months=self.frequency.months
                         )
                     )
@@ -2922,6 +2941,25 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
+
+
+class Hiv_AdherenceCounselling(Event, IndividualScopeEventMixin):
+    """Helper event that is used to 'decide' if someone on Treatment who is not currently
+    virally suppressed will become suppressed
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        if not person["is_alive"]:
+            return
+
+        df.at[person_id, "hv_art"] = self.module.update_viral_suppression_status()
+
 
 
 class HivScaleUpEvent(Event, PopulationScopeEventMixin):
@@ -3630,16 +3668,37 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     if tdf_result == 'negative':
                         # intervention triggered to increase chance of suppression
                         if person["hv_art"] == "on_not_VL_suppressed":
-                            df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
+                            # todo schedule Adherence Counselling - no delay
+                            self.sim.schedule_event(
+                                Hiv_AdherenceCounselling(
+                                    person_id=person_id, module=self.module
+                                ),
+                                self.sim.date ,
+                            )
+                            # df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
                         self.module.stored_tdf_numbers += 1
 
                 # Else, use VL test
                 elif not p["switch_vl_test_to_tdf"] and self.get_consumables(
                     item_codes=self.module.item_codes_for_consumables_required['vl_measurement']):
 
+                    # todo add logic around unsuppressed person receiving and acting on result
                     if person["hv_art"] == "on_not_VL_suppressed":
+                        # Only some people get their result
+                        if self.rng.random_sample() < 0.6:  # ~0.6
+                            # Only some true high-VL are identified as such (PPV)
+                            if self.rng.random_sample() < 0.6:  # ~0.5–0.6
+                                # Apply adherence counselling after 3–6 month delay
+                                delay_months = self.rng.randint(3, 7)
+                                self.sim.schedule_event(
+                                    Hiv_AdherenceCounselling(
+                                        person_id=person_id, module=self.module
+                                    ),
+                                    self.sim.date + pd.DateOffset(months=delay_months),
+                                )
+
                         # intervention triggered to increase chance of suppression
-                        df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
+                        # df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
 
                     logger.info(
                         key='hiv_VLtest',
@@ -3663,18 +3722,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         return (
             "on_VL_suppressed"
             if (self.module.rng.random_sample() < prob_vs)
-            else "on_not_VL_suppressed"
-        )
-
-    def update_viral_suppression_status(self):
-        """Helper function to determine whether person who is currently not virally suppressed
-        will become virally suppressed following viral load test."
-        """
-        p = self.module.parameters
-
-        return (
-            "on_VL_suppressed"
-            if self.module.rng.random_sample() < p["prob_of_viral_suppression_following_VL_test"]
             else "on_not_VL_suppressed"
         )
 
