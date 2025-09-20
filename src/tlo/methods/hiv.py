@@ -1408,37 +1408,209 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
     def update_parameters_for_mihpsa_interventions(self):
         """ options for interventions defined by scenario number """
         p = self.parameters
-        updated_params_workbook = p["mihpsa_scenarios"]
-        updated_params = updated_params_workbook.set_index('parameter')['target_value'].to_dict()
+        # updated_params_workbook = p["mihpsa_scenarios"]
+        # updated_params = updated_params_workbook.set_index('parameter')['target_value'].to_dict()
 
         # todo mihpsa longterm control scenarios
+
+        # ----------------------------------------------
         # 1 base
-        # no prevention, no VL testing, testing rates very low, keep ANC/TB etc passive case finding
+        # ----------------------------------------------
+        if p["mihpsa_scenario"] == 1:
+            # no prevention, no VL testing, testing rates very low, keep ANC/TB etc passive case finding
+            p["prob_circ_after_hiv_test"] = 0
+            p["increase_in_prob_circ_2019"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
 
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+            p["prob_prep_for_agyw"] = 0
 
+            # no viral load tests available
+            item_codes = self.item_codes_for_consumables_required['vl_measurement']
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {item_codes: 0.0})  # 190 for VL test
+
+            # reduce general testing
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
+
+        # ----------------------------------------------
         # 2 PrEP oral only in FSW, switch everything else off
+        # ----------------------------------------------
+        if p["mihpsa_scenario"] == 2:
+            p["prob_circ_after_hiv_test"] = 0
+            p["increase_in_prob_circ_2019"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
+
+            p["prob_prep_for_agyw"] = 0
+
+            # no viral load tests available
+            item_codes = self.item_codes_for_consumables_required['vl_measurement']
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {item_codes: 0.0})  # 190 for VL test
+
+            # reduce general testing
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
 
 
+        # ----------------------------------------------
         # 3 PrEP oral + inj in FSW
+        # ----------------------------------------------
+
         # need to increase prep and switch everything else off
         # increase prob_prep_for_fsw_after_hiv_test to 0.34 to get 50% coverage
         # need 30 oral :70 inj mix
         # different efficacy and follow-up time
+        if p["mihpsa_scenario"] == 3:
+            p["prob_circ_after_hiv_test"] = 0
+            p["increase_in_prob_circ_2019"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
 
+            p["prob_prep_for_fsw_after_hiv_test"] = 0.34
+            p["injectable_prep_allowed"] = True
 
+            p["prob_prep_for_agyw"] = 0
 
+            # no viral load tests available
+            item_codes = self.item_codes_for_consumables_required['vl_measurement']
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {item_codes: 0.0})  # 190 for VL test
+
+            # reduce general testing
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
+
+        # ----------------------------------------------
         # 4 PrEP oral only AGYW and Pregnant women
+        # ----------------------------------------------
+        if p["mihpsa_scenario"] == 4:
+            p["prob_circ_after_hiv_test"] = 0
+            p["increase_in_prob_circ_2019"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
 
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+            p["prob_prep_for_agyw"] = 0.1
 
+            # no viral load tests available
+            item_codes = self.item_codes_for_consumables_required['vl_measurement']
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {item_codes: 0.0})  # 190 for VL test
+
+            # reduce general testing
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
+
+        # ----------------------------------------------
         # 5 PrEP oral + inj AGYW and Pregnant women
+        # ----------------------------------------------
+        if p["mihpsa_scenario"] == 5:
+            p["prob_circ_after_hiv_test"] = 0
+            p["increase_in_prob_circ_2019"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
 
-        # 6 VMMC
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+            p["prob_prep_for_agyw"] = 0.3
+            p["injectable_prep_allowed"] = True
+
+            # no viral load tests available
+            item_codes = self.item_codes_for_consumables_required['vl_measurement']
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {item_codes: 0.0})  # 190 for VL test
+
+            # reduce general testing
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
+
+        # ----------------------------------------------
+        # 6 Retain VMMC
+        # ----------------------------------------------
+        # todo this needs to be ramped up to get to 90%
+
+        if p["mihpsa_scenario"] == 6:
+
+            p["prob_circ_after_hiv_test"] = 0.05  # default
+            p["increase_in_prob_circ_2019"] = 3  # default
+            p["prob_circ_for_child_from_2020"] = 0.0008  # default, 0.0128 pre 2020
+
+
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+            p["prob_prep_for_agyw"] = 0
+
+            # no viral load tests available
+            item_codes = self.item_codes_for_consumables_required['vl_measurement']
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {item_codes: 0.0})  # 190 for VL test
+
+            # reduce general testing
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
+
+        # ----------------------------------------------
         # 7 Key population outreach FSW
+        # ----------------------------------------------
+        # todo some decline in risk
+
+
+
+        # ----------------------------------------------
         # 8 Testing
+        # ----------------------------------------------
+        # allow testing to remain at 2023 levels
+
+        if p["mihpsa_scenario"] == 9:
+            p["prob_circ_after_hiv_test"] = 0
+            p["increase_in_prob_circ_2019"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
+
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+            p["prob_prep_for_agyw"] = 0
+
+            # no viral load tests available
+            item_codes = self.item_codes_for_consumables_required['vl_measurement']
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {item_codes: 0.0})  # 190 for VL test
+
+            # reduce general testing
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
+
+
+        # ----------------------------------------------
         # 9 Adherence support
+        # ----------------------------------------------
+        # this is through VL monitoring
+
+        if p["mihpsa_scenario"] == 9:
+            p["prob_circ_after_hiv_test"] = 0
+            p["increase_in_prob_circ_2019"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
+
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+            p["prob_prep_for_agyw"] = 0
+
+            # reduce general testing
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
+
+
+
+
+        # ----------------------------------------------
         # 10 Minimum package
-        # 11 Status Quo
+        # ----------------------------------------------
+
+
+
+
+        # ----------------------------------------------
         # 12 Worst case
+        # ----------------------------------------------
+
+
+
+
+
 
         # todo these are mihpsa CE scenarios
         # if p['select_mihpsa_scenario'] == 1:
@@ -3675,7 +3847,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                                 ),
                                 self.sim.date ,
                             )
-                            # df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
                         self.module.stored_tdf_numbers += 1
 
                 # Else, use VL test
@@ -3685,20 +3856,17 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     # todo add logic around unsuppressed person receiving and acting on result
                     if person["hv_art"] == "on_not_VL_suppressed":
                         # Only some people get their result
-                        if self.rng.random_sample() < 0.6:  # ~0.6
+                        if self.module.rng.random_sample() < 0.6:  # ~0.6
                             # Only some true high-VL are identified as such (PPV)
-                            if self.rng.random_sample() < 0.6:  # ~0.5–0.6
+                            if self.module.rng.random_sample() < 0.6:  # ~0.5–0.6
                                 # Apply adherence counselling after 3–6 month delay
-                                delay_months = self.rng.randint(3, 7)
+                                delay_months = self.module.rng.randint(3, 7)
                                 self.sim.schedule_event(
                                     Hiv_AdherenceCounselling(
                                         person_id=person_id, module=self.module
                                     ),
                                     self.sim.date + pd.DateOffset(months=delay_months),
                                 )
-
-                        # intervention triggered to increase chance of suppression
-                        # df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
 
                     logger.info(
                         key='hiv_VLtest',
