@@ -2112,11 +2112,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         """Helper function to determine whether person who is currently not virally suppressed
         will become virally suppressed following viral load test."
         """
-        p = self.module.parameters
+        p = self.parameters
 
         return (
             "on_VL_suppressed"
-            if self.module.rng.random_sample() < p["prob_of_viral_suppression_following_VL_test"]
+            if self.rng.random_sample() < p["prob_of_viral_suppression_following_VL_test"]
             else "on_not_VL_suppressed"
         )
 
@@ -3532,7 +3532,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required['prep']: days_on_prep}
             ):
                 df.at[person_id, property] = True
-                print(self.type_of_prep, self.sim.date, person_id)  # todo this is person actually getting PrEP
+                # print(self.type_of_prep, self.sim.date, person_id)  # todo this is person actually getting PrEP
 
                 if df.at[person_id, "li_is_sexworker"]:
                     df.at[person_id, f'{days_on_prep_property}_FSW'] += days_on_prep
@@ -5106,11 +5106,19 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         Percent_condom_use_GP = 0
         PrEP_FSW = PY_PREP_ORAL_FSW + PY_PREP_INJECT_FSW
         PrEP_MSM = 0
-        PrEP_GP = PY_PREP_ORAL_AGYW + PY_PREP_INJECT_AGYW
+        PrEP_GP = 0
         PrEP_Pop_GP = 0
         NewHIV_PrEP_Pop_GP = 0
         Percent_FSW_reached = 0  # this is outreach
         Percent_MSM_reached = 0
+
+        num_men_circ_15_24 = len(
+            df[df.is_alive & (df.sex == "M") & df.age_years.between(15,24) & df.li_is_circ]
+        )
+        PrEP_AGYW_PG = PY_PREP_ORAL_AGYW + PY_PREP_INJECT_AGYW
+        Total_AGYW_PG = len(
+            df[df.is_alive & (df.sex == "F") & df.age_years.between(15,24)])
+
 
         logger.info(
             key="long_term_mihpsa",
@@ -5205,6 +5213,9 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "NewHIV_PrEP_Pop_GP": NewHIV_PrEP_Pop_GP,
                 "Percent_FSW reached": Percent_FSW_reached,
                 "Percent_MSM reached": Percent_MSM_reached,
+                "N_circumcised_15_24_M": num_men_circ_15_24,
+                "PrEP_AGYW_PG": PrEP_AGYW_PG,
+                "Total_AGYW_PG": Total_AGYW_PG,
             },
         )
 
