@@ -5124,9 +5124,13 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         num_men_circ_15_24 = len(
             df[df.is_alive & (df.sex == "M") & df.age_years.between(15,24) & df.li_is_circ]
         )
+        # todo this should include pregnant women (included in PrEP AGYW)
         PrEP_AGYW_PG = PY_PREP_ORAL_AGYW + PY_PREP_INJECT_AGYW
-        Total_AGYW_PG = len(
+        TOTAL_AGYW = len(
             df[df.is_alive & (df.sex == "F") & df.age_years.between(15,24)])
+        TOTAL_PG = len(
+            df[df.is_alive & (df.sex == "F") & df.is_pregnant])
+        Total_AGYW_PG = TOTAL_AGYW + TOTAL_PG
 
 
         logger.info(

@@ -6,7 +6,7 @@ tlo parse-log /Users/tmangal/PycharmProjects/TLOmodel/outputs/mihpsa_runs-2025-0
 
 mihpsa_runs-2025-04-19T220218Z
 
-tlo parse-log 'outputs/longterm_mihpsa_runs-2025-05-16T131354Z/0/0'
+tlo parse-log 'outputs/mihpsa_runs-2025-09-20T142441Z/0/0'
 when running locally
 
 
@@ -16,7 +16,7 @@ longterm_mihpsa_runs-2025-05-17T165444Z
 
 import datetime
 from pathlib import Path
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file, compute_summary_statistics
 
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
@@ -32,6 +32,7 @@ from tlo.analysis.utils import (
     get_scenario_outputs,
     load_pickled_dataframes,
     summarize,
+    compute_summary_statistics
 )
 from tlo import Date
 
@@ -165,12 +166,18 @@ variables = [
     "NewHIV_PrEP_Pop_GP",
     "Percent_FSW reached",
     "Percent_MSM reached",
+    "N_circumcised_15_24_M",
+    "PrEP_AGYW_PG",
+    "Total_AGYW_PG",
 ]
 
-stocks_output = {}
+
+
+# scaled
+scaled_stocks_output = {}
 
 for var in variables:
-    result = summarize(
+    result = compute_summary_statistics(
         extract_results(
             results_folder,
             module="tlo.methods.hiv",
@@ -179,27 +186,32 @@ for var in variables:
             index="date",
             do_scaling=True,
         ),
-        collapse_columns=False,
-        only_mean=True
+        only_central=True,
+        central_measure='mean',
     )
 
     for draw in result.columns:
-        if draw not in stocks_output:
-            stocks_output[draw] = pd.DataFrame()  # Initialise DataFrame for the draw if not exists
+        if draw not in scaled_stocks_output:
+            scaled_stocks_output[draw] = pd.DataFrame()  # Initialise DataFrame for the draw if not exists
 
-        stocks_output[draw][var] = result[draw]
+        scaled_stocks_output[draw][var] = result[draw]
+
+
 
 with pd.ExcelWriter(results_folder / "longterm_outputs_scaled.xlsx", engine='openpyxl') as writer:
     # Iterate over the dictionary and write each DataFrame to a new sheet
-    for draw, df in stocks_output.items():
+    for draw, df in scaled_stocks_output.items():
         df = df.T  # Switch rows and columns
         # Writing each draw's DataFrame to a new sheet named after the draw
         df.to_excel(writer, sheet_name=f'Draw_{draw}', index=True)
 
-stocks_output = {}
+
+
+# unscaled
+unscaled_stocks_output = {}
 
 for var in variables:
-    result = summarize(
+    result = compute_summary_statistics(
         extract_results(
             results_folder,
             module="tlo.methods.hiv",
@@ -208,19 +220,19 @@ for var in variables:
             index="date",
             do_scaling=False,
         ),
-        collapse_columns=False,
-        only_mean=True
+        only_central=True,
+        central_measure='mean',
     )
 
     for draw in result.columns:
-        if draw not in stocks_output:
-            stocks_output[draw] = pd.DataFrame()  # Initialise DataFrame for the draw if not exists
+        if draw not in unscaled_stocks_output:
+            unscaled_stocks_output[draw] = pd.DataFrame()  # Initialise DataFrame for the draw if not exists
 
-        stocks_output[draw][var] = result[draw]
+        unscaled_stocks_output[draw][var] = result[draw]
 
 with pd.ExcelWriter(results_folder / "longterm_outputs_unscaled.xlsx", engine='openpyxl') as writer:
     # Iterate over the dictionary and write each DataFrame to a new sheet
-    for draw, df in stocks_output.items():
+    for draw, df in unscaled_stocks_output.items():
         df = df.T  # Switch rows and columns
         # Writing each draw's DataFrame to a new sheet named after the draw
         df.to_excel(writer, sheet_name=f'Draw_{draw}', index=True)
