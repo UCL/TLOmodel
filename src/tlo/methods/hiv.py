@@ -1530,8 +1530,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         if p["select_mihpsa_scenario"] == 6:
 
-            p["prob_circ_after_hiv_test"] = 0.05  # default
-            p["increase_in_prob_circ_2019"] = 3  # default
+            p["prob_circ_after_hiv_test"] = 0.1  # default 0.05 gave 43% by 2035
             p["prob_circ_for_child_from_2020"] = 0.0008  # default, 0.0128 pre 2020
 
 

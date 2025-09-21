@@ -230,6 +230,8 @@ for var in variables:
 
         unscaled_stocks_output[draw][var] = result[draw]
 
+
+
 with pd.ExcelWriter(results_folder / "longterm_outputs_unscaled.xlsx", engine='openpyxl') as writer:
     # Iterate over the dictionary and write each DataFrame to a new sheet
     for draw, df in unscaled_stocks_output.items():
