@@ -5129,7 +5129,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         TOTAL_AGYW = len(
             df[df.is_alive & (df.sex == "F") & df.age_years.between(15,24)])
         TOTAL_PG = len(
-            df[df.is_alive & (df.sex == "F") & df.is_pregnant])
+            df[df.is_alive & (df.sex == "F") & df.is_pregnant & ~df.age_years.between(15,24)])
         Total_AGYW_PG = TOTAL_AGYW + TOTAL_PG
 
 
