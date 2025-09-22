@@ -601,9 +601,8 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_gets_new_stage, 'brc_status'] = stage
             df.loc[idx_gets_new_stage, 'brc_new_stage_this_month'] = True
 
-        # todo: people can move through more than one stage per month (this event runs every month)
-        # todo: I am guessing this is somehow a consequence of this way of looping through the stages
-        # todo: I imagine this issue is the same for bladder cancer and oesophageal cancer
+        # NB: people can move through more than one stage per month in rare cases
+        # (this is due to the looping through the stages)
 
         # -------------------- UPDATING OF SYMPTOM OF breast_lump_discernible OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of breast_lump_
@@ -717,11 +716,6 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
                         topen=self.sim.date,
                         tclose=None
                     )
-
-
-#   todo: we would like to note that the symptom has been investigated in a diagnostic test and the diagnosis was
-#   todo: was missed, so the same test will not likely be repeated, at least not in the short term, so we even
-#   todo: though the symptom remains we don't want to keep repeating the HSI which triggers the diagnostic test
 
 
 class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
