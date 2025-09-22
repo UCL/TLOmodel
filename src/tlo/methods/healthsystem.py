@@ -2003,6 +2003,7 @@ class HealthSystem(Module):
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
 
+
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
         # If we are at the end of the year preceeding the mode switch, and if wanted
@@ -2019,6 +2020,9 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period == "year":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+
+        # Record equipment usage for the year, for each facility
+        self._record_general_equipment_usage_for_year()
 
     def run_individual_level_events_in_mode_1(self,
                                                    _list_of_individual_hsi_event_tuples:
@@ -2145,6 +2149,23 @@ class HealthSystem(Module):
                     )
 
         return _to_be_held_over
+
+    def _record_general_equipment_usage_for_year(self):
+        """This event is called at the end of each year and records the general equipment usage for the year, for each
+        facility_id."""
+
+        general_equipment_by_facility_level = {
+            '1a': self.equipment.from_pkg_names('General_FacilityLevel_1a_and_1b'),
+            '1b': self.equipment.from_pkg_names('General_FacilityLevel_1a_and_1b'),
+            '2': self.equipment.from_pkg_names('General_FacilityLevel_2'),
+        }
+
+        for fac in self._facility_by_facility_id.values():
+            self.equipment.record_use_of_equipment(
+                facility_id=fac.facility_id,
+                item_codes=general_equipment_by_facility_level.get(fac.level, set())
+            )
+
 
     @property
     def hsi_event_counts(self) -> Counter:
