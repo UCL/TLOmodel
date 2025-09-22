@@ -35,11 +35,31 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
 
     def get_num_treatments_total(_df):
-        """Return the number of treatments in total of all treatments (total within the TARGET_PERIOD)"""
-        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
-        _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
-        _df = _df.groupby(level=0).sum().sum()
-        return pd.Series(_df)
+        _df['date'] = pd.to_datetime(_df['date'])
+
+        # filter to target period
+        _df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+        total = {}
+
+        for d in _df['hsi_event_key_to_counts']:
+            for k, v in d.items():
+                total[k] = 0
+                total[k] += total.get(k, 0) + v
+        return pd.Series(sum(total.values()), name="total_treatments")
+
+    def get_num_treatments_never_ran(_df):
+        _df['date'] = pd.to_datetime(_df['date'])
+
+        # filter to target period
+        _df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+        total = {}
+
+        for d in _df['never_ran_hsi_event_key_to_counts']:
+            for k, v in d.items():
+                total[k] = 0
+                total[k] += total.get(k, 0) + v
+        return pd.Series(sum(total.values()), name="total_treatments")
+
 
     def get_num_treatments_total_delayed(_df):
         _df['date'] = pd.to_datetime(_df['date'])
@@ -158,7 +178,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 num_treatments_total = summarize(extract_results(
                     results_folder,
                     module='tlo.methods.healthsystem.summary',
-                    key='HSI_Event',
+                    key='hsi_event_counts',
                     custom_generate_series=get_num_treatments_total,
                     do_scaling=True
                 ),
@@ -175,8 +195,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     extract_results(
                         results_folder,
                         module='tlo.methods.healthsystem.summary',
-                        key='Never_ran_HSI_Event',
-                        custom_generate_series=get_num_treatments_total,
+                        key='never_ran_hsi_event_counts',
+                        custom_generate_series=get_num_treatments_never_ran,
                         do_scaling=True
                     ),
                     only_mean=False,
