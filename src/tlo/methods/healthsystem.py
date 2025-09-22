@@ -736,6 +736,26 @@ class HealthSystem(Module):
             model_to_data_popsize_ratio=self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
         )
 
+        df = self.sim.population.props.copy()
+        print(f"Simulation start date: {sim.date} — initial alive population: {int(df.is_alive.sum())}")
+
+        if "service_provider" not in df.columns:
+            population_total = len(df)
+            gov_facilities = int(0.6 * population_total)
+            cham_facilities = population_total - gov_facilities
+
+            providers = ["government"] * gov_facilities + ["cham"] * cham_facilities
+            self.rng_for_hsi_queue.shuffle(providers)  # randomize tbe order of the list
+            df["service_provider"] = providers
+
+        if self.arg_facility_type == "government":
+            df["is_alive"] &= (df["service_provider"] == "government")
+        elif self.arg_facility_type == "cham":
+            df["is_alive"] &= (df["service_provider"] == "cham")
+
+        print(f"Facility type: {self.arg_facility_type} — Alive population: {df.is_alive.sum()}")
+        print(df["service_provider"].value_counts())
+
         # Set the consumables modules in preparation for the simulation
         self.consumables.on_start_of_day(sim.date)
 
