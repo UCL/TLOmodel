@@ -3650,7 +3650,9 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
 
         if df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off_iss_score:
 
-            self.add_equipment({*self.healthcare_system.equipment.from_pkg_names('ICU'), 'Motorcycle ambulance'})
+            self.add_equipment({*self.healthcare_system.equipment.from_pkg_names('ICU'),
+                                *self.healthcare_system.equipment.from_pkg_names('Emergency'),
+                                'Motorcycle ambulance'})
 
             mean_icu_days = p['mean_icu_days']
             sd_icu_days = p['sd_icu_days']
