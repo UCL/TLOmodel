@@ -803,7 +803,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(years=12),
+                topen=self.sim.date + DateOffset(months=12),
                 tclose=None,
                 priority=0
             )
@@ -855,7 +855,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=1),
+                topen=self.sim.date + DateOffset(months=1),
                 tclose=None,
                 priority=0
             )
