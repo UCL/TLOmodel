@@ -140,7 +140,10 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         self.parameters["symptom_prob"] = workbook["symptoms"]
+        self.declare_parameter_metadata(parameter_name="symptom_prob", param_label="local")
+
         self.parameters["case_fatality_rate"] = workbook["cfr"].set_index('age')["probability"].to_dict()
+        self.declare_parameter_metadata(parameter_name="case_fatality_rate", param_label="universal")
 
         # moderate symptoms all mapped to moderate_measles, pneumonia/encephalitis mapped to severe_measles
 
