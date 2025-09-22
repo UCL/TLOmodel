@@ -2162,7 +2162,7 @@ class HealthSystem(Module):
 
         for fac in self._facility_by_facility_id.values():
             self.equipment.record_use_of_equipment(
-                facility_id=fac.facility_id,
+                facility_id=fac.id,
                 item_codes=general_equipment_by_facility_level.get(fac.level, set())
             )
 
