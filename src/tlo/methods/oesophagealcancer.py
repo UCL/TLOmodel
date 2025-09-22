@@ -951,8 +951,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
                 self.add_equipment({334})  # Sample Rack
 
             # Safety equipment
-            if self.module.rng.random() < 1.0:  # 100% probability for safety
-                self.add_equipment({50})   # Safety Goggles
+            self.add_equipment({50})   # Safety Goggles
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):

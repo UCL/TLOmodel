@@ -849,10 +849,7 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
             # Since this HSI runs at level 1b, moderate equipment availability
 
             # Essential cancer laboratory equipment - "for cancers assume used for all hsi's"
-            if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
-                self.add_equipment({221})  # Analyser, Haematology
-            if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
-                self.add_equipment({132})  # Analyzer, Clinical immunoassay
+            self.add_equipment({221, 132})  # Analyser, Haematology and Analyzer, Clinical immunoassay
 
             # Equipment for prostate cancer biopsy and investigation
             self.add_equipment({
@@ -961,22 +958,8 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
 
             # Essential cancer laboratory equipment - "for cancers assume used for all hsi's"
-            if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
-                self.add_equipment({221})  # Analyser, Haematology
-            if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
-                self.add_equipment({132})  # Analyzer, Clinical immunoassay
-
-            # Prostate cancer specific hormone analysis - "100% for prostate cancer"
-            if self.module.rng.random() < 1.0:  # 100% probability for prostate cancer
-                self.add_equipment({139})  # Analyser, Hormones
-
-            # Cell washing for blood products - "needed for all cancers"
-            if self.module.rng.random() < 1.0:  # 100% probability for blood management
-                self.add_equipment({141})  # Automatic Cell washer
-
-            # Patient gowns - "used in all cases"
-            if self.module.rng.random() < 1.0:  # 100% probability for patient care
-                self.add_equipment({370})  # Backsplit cotton gown
+            # Prostate cancer specific hormone analysis, cell washing, and patient gowns
+            self.add_equipment({221, 132, 139, 141, 370})  # Analyser Haematology, Clinical immunoassay, Hormones, Cell washer, Gown
 
             # Equipment for prostate cancer treatment
             self.add_equipment({
@@ -1037,10 +1020,7 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
 
         # Essential cancer laboratory monitoring - "for cancers assume used for all hsi's"
-        if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
-            self.add_equipment({221})  # Analyser, Haematology
-        if self.module.rng.random() < 1.0:  # 100% probability - used for all cancer HSIs
-            self.add_equipment({132})  # Analyzer, Clinical immunoassay
+        self.add_equipment({221, 132})  # Analyser, Haematology and Analyzer, Clinical immunoassay
 
         # Equipment for prostate cancer post-treatment monitoring
         self.add_equipment({
@@ -1125,8 +1105,7 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             })
 
             # Safety equipment - "assumed used for all cancers"
-            if self.module.rng.random() < 1.0:  # 100% probability for safety
-                self.add_equipment({50})   # Safety Goggles
+            self.add_equipment({50})   # Safety Goggles
 
             # Sample processing if needed - "assumed used for all cancers"
             if self.module.rng.random() < 0.40:  # 40% probability for basic lab support
