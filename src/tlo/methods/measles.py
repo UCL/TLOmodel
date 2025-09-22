@@ -279,7 +279,7 @@ class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
         # transmission probability follows a sinusoidal function with peak in May
         # value is per person per month
         trans_prob = p["beta_baseline"] * (1 + p["beta_scale"] *
-                                           math.cos((2 + math.pi * (month - p["phase_shift"])) / p["period"]))
+                                           math.cos((2 * math.pi * (month - p["phase_shift"])) / p["period"]))
 
         # get individual levels of protection due to vaccine
         protected_by_vaccine = pd.Series(1, index=df.index)  # all fully susceptible
@@ -384,7 +384,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         return date_of_symp_onset
 
     def get_prob_death(self, _age):
-        """Returns the probability of death for this person based on their age and whether they have untreated HIV."""
+        """Returns the probability of death for this person based on their age."""
         p = self.module.parameters
         return p["case_fatality_rate"].get(_age)
 
