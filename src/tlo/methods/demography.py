@@ -311,8 +311,7 @@ class Demography(Module):
         model_pop = df.district_of_residence[df.is_alive].value_counts()
 
         self.initial_model_to_data_popsize_ratio_district = \
-            self.compute_initial_model_to_data_popsize_ratio_by_district(district_pop=district_pop,
-                                                                         model_pop=model_pop)
+            self.compute_initial_model_to_data_popsize_ratio_by_district(district_pop, model_pop)
 
     def initialise_simulation(self, sim):
         """
