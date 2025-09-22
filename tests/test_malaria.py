@@ -139,7 +139,7 @@ def test_remove_malaria_test(seed):
     sim.register(
         demography.Demography(),
         healthsystem.HealthSystem(service_availability=service_availability,
-            mode_appt_constraints=0,
+            mode_appt_constraints=1,
             cons_availability='all',
             ignore_priority=True,
             capabilities_coefficient=0.0,
