@@ -154,8 +154,9 @@ things_which_are_general_at_level_1a_and_1b = [
     'Room heater, electric, wall mounted',
 ]
 
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 the_equipment_resource_file = Path('resources/healthsystem/infrastructure_and_equipment/ResourceFile_EquipmentCatalogue.csv')
 
