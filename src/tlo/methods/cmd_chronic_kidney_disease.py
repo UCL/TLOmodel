@@ -97,7 +97,7 @@ class CMDChronicKidneyDisease(Module):
         self.parameters['rate_onset_to_stage1_4'] = 0.29
         self.parameters['rate_stage1_4_to_stage5'] = 0.4
 
-        self.parameters['init_prob_any_ckd'] = [0.5, 0.3, 0.2]
+        self.parameters['init_prob_any_ckd'] = [0.6, 0.4]
 
         self.parameters['rp_ckd_nc_diabetes'] = 1.1
         self.parameters['rp_ckd_hiv_infection'] = 1.2
