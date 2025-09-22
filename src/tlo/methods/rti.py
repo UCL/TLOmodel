@@ -3650,7 +3650,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
 
         if df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off_iss_score:
 
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ICU'))
+            self.add_equipment({*self.healthcare_system.equipment.from_pkg_names('ICU'), 'Motorcycle ambulance'})
 
             mean_icu_days = p['mean_icu_days']
             sd_icu_days = p['sd_icu_days']
@@ -3983,7 +3983,12 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key='rti_general_message',
                          data=f"Hypovolemic shock treatment available for person {person_id}")
             df.at[person_id, 'rt_in_shock'] = False
-            self.add_equipment({'Infusion pump', 'Drip stand', 'Oxygen cylinder, with regulator', 'Nasal Prongs'})
+            self.add_equipment({'Infusion pump',
+                                'Drip stand',
+                                'Oxygen cylinder, with regulator',
+                                'Nasal Prongs',
+                                'Anti-shock garment',
+                                })
         else:
             if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                 self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
@@ -4088,7 +4093,12 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                               f"{person_id}"
                          )
 
-            self.add_equipment({'Casting platform', 'Casting chairs', 'Bucket, 10L'})
+            self.add_equipment({
+                *self.healthcare_system.equipment.from_pkg_names('Minor Surgery'),
+                *self.healthcare_system.equipment.from_pkg_names('Casting'),
+                'Crutches, Elbow',
+                'Crutches, Axillary',
+            })
 
             # update the property rt_med_int to indicate they are recieving treatment
             df.at[person_id, 'rt_med_int'] = True
@@ -4220,7 +4230,12 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                          data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
                          )
 
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+            self.add_equipment({
+                *self.healthcare_system.equipment.from_pkg_names('Major Surgery'),
+                *self.healthcare_system.equipment.from_pkg_names('Casting'),
+                'Crutches, Elbow',
+                'Crutches, Axillary',
+            })
 
             person = df.loc[person_id]
             # update the dataframe to show this person is recieving treatment
@@ -4430,6 +4445,11 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                                   f"{person_id}")
                 logger.debug(key='rti_general_message',
                              data=f"This facility treated their {burncounts} burns")
+
+                self.add_equipment({
+                    'Cradle, burns',
+                })
+
                 df.at[person_id, 'rt_med_int'] = True
                 person = df.loc[person_id]
                 injury_column, _ = road_traffic_injuries.rti_find_injury_column(
