@@ -7,6 +7,7 @@ disease modules.
 from __future__ import annotations
 
 import json
+import warnings
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Literal
 
@@ -405,6 +406,9 @@ class Module:
         """Declare metadata for a parameter"""
         if parameter_name not in self.PARAMETERS:
             raise ValueError(f"Parameter {parameter_name} not declared in PARAMETERS dictionary")
+
+        if self.PARAMETERS[parameter_name].metadata != {}:
+            warnings.warn(f"Parameter {parameter_name} already has metadata declared")
 
         self.PARAMETERS[parameter_name].metadata.update(param_label=param_label, prior_min=prior_min, prior_max=priox_max)
 
