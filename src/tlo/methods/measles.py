@@ -106,7 +106,9 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         ),
         "main_polling_event_frequency_months": Parameter(
             Types.REAL, "Measles main polling event frequency months"
-        )
+        ),
+        "case_fatality_rate": Parameter(
+            Types.DICT, "Case fatality rate for measles infection"),
     }
 
     PROPERTIES = {
