@@ -403,6 +403,9 @@ class Module:
                                    prior_min: Optional = None,
                                    priox_max: Optional = None) -> None:
         """Declare metadata for a parameter"""
+        if parameter_name not in self.PARAMETERS:
+            raise ValueError(f"Parameter {parameter_name} not declared in PARAMETERS dictionary")
+
         self.PARAMETERS[parameter_name].metadata.update(param_label=param_label, prior_min=prior_min, prior_max=priox_max)
 
 
