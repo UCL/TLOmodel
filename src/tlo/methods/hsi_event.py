@@ -325,7 +325,7 @@ class HSI_Event:
         self.facility_info = health_system.get_facility_info(self)
 
         # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
-        # Types.
+        # Types, and the associated equipement
         # (HSI that require a bed for one or more days always need such appointments, but this may have been
         # missed in the declaration of the `EXPECTED_APPT_FOOTPRINT` in the HSI.)
         # NB. The in-patient day Appointment time is automatically applied on subsequent days.
@@ -335,6 +335,7 @@ class HSI_Event:
                     self.EXPECTED_APPT_FOOTPRINT
                 )
             )
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('In-patient'))
 
         # Write the time requirements for staff of the appointments to the HSI:
         self.expected_time_requests = (
