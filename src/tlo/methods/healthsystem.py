@@ -2568,10 +2568,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                             tclose=self.sim.date + DateOffset(month=1) + DateOffset((item.topen - item.tclose).days),
                                             hsi_event=item.hsi_event
                                         )
-                                        print("care sought")
+                                        self.module.call_and_record_weather_delayed_hsi_event(hsi_event=item.hsi_event,
+                                                                                              priority=item.priority)
                                     else:
-                                        print("cancelled")
-                                        self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
                                         self.module.call_and_record_weather_cancelled_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
 
                 # If not climate disrupted, check equipment
