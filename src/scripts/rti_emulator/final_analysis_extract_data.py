@@ -20,6 +20,8 @@ import matplotlib.pyplot as plt
 # 'emulated_RTI_x250': 'outputs/test_rti_emulator-2025-09-05T085159Z'
 # 'no_RTI': 'outputs/test_rti_emulator-2025-08-13T143342Z'
 
+
+# Latest CTGAN runs + number of runs per scenario increased from 10 -> 50
 outputs = {
             'standard_RTI': {'results_folder' : Path('outputs/test_rti_emulator-2025-08-12T205454Z'), 'data': {}},
             'emulated_RTI': {'results_folder' : Path('outputs/test_rti_emulator-2025-08-13T080302Z'), 'data' : {}},
@@ -478,8 +480,11 @@ def compare_and_plot(outputs, first_scenario, second_scenario, target, factor=No
         ax_main.set_title(f'{target} due to {cause}')
         ax_main.legend(loc='lower right')
         ax_main.grid(True)
+        ax_main.set_ylim(0, 1.2e6)
+
 
         # % error panel
+        print("For cause ", cause, " and target ", target, " MEAN PERC ERROR +++++++", percent_error.mean())
         ax_error.plot(years, percent_error, color='red', marker='o', linestyle='-', label='Mean')
         ax_error.axhline(0, color='black', linestyle='--', linewidth=0.8)
         ax_error.set_ylabel('% Error')
