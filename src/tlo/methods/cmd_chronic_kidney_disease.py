@@ -250,6 +250,15 @@ class CMDChronicKidneyDiseasePollEvent(RegularEvent, PopulationScopeEventMixin):
         stage1_to_4_to_stage5_idx = df.index[np.where(stage1_to_4_to_stage5)[0]]
         df.loc[stage1_to_4_to_stage5_idx, 'ckd_status'] = 'stage5'
 
+        # ----------------------------SELECTING INDIVIDUALS FOR CKD Diagnosis by stage----------------------------#
+
+        eligible_population_ckd_screening = (
+            (df.is_alive & df.nc_chronic_kidney_disease) &
+            (df.ckd_status == 'pre_diagnosis') &
+            (df.age_years >= 20) &
+            (pd.isna(df.ckd_date_diagnosis))
+        )
+
 
     def do_at_generic_first_appt(
         self,
