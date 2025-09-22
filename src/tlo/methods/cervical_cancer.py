@@ -1379,13 +1379,13 @@ class HSI_CervicalCancer_Treatment_Start(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, 'ce_current_cc_diagnosed'] = False
                 df.at[person_id, 'ce_cured_date_cc'] = self.sim.date
 
-            # Schedule a post-treatment check for 3 months:
+            # Schedule a post-treatment check for 12 months:
             hs.schedule_hsi_event(
                 hsi_event=HSI_CervicalCancer_Treatment_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(months=3),
+                topen=self.sim.date + DateOffset(months=12),
                 tclose=None,
                 priority=0
             )
