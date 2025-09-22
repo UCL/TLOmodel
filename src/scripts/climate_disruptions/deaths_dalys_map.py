@@ -56,11 +56,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sum().sum(axis = 1)
 
     def get_population_for_year(_df):
-        """Returns the population per district from the filtered year(s) as a Series."""
-        return _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]\
-            .drop(columns=['female', 'male', 'total', 'date'], errors='ignore')['district_of_residence']  \
-            .apply(pd.Series) \
-            .iloc[0]
+        """Returns the population per district in the year of interest"""
+        _df['date'] = pd.to_datetime(_df['date'])
+
+        filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+        numeric_df = filtered_df.drop(columns=['female', 'male', 'date', 'total'], errors='ignore')
+
+        district_sums = pd.Series(numeric_df['district_of_residence'].sum())
+        return district_sums
 
     target_year_sequence = range(min_year, max_year, spacing_of_years)
 
