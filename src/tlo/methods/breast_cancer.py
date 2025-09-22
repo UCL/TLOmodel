@@ -444,32 +444,6 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
             )
         )
 
-        # todo: possibly un-comment out below when can discuss with Tim
-        """
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_breast_cancer_stage2=DxTest(
-                property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_stage2_breast_cancer'],
-                target_categories=["stage1", "stage2", "stage3", "stage4"]
-            )
-        )
-
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_breast_cancer_stage3=DxTest(
-                property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_stage3_breast_cancer'],
-                target_categories=["stage1", "stage2", "stage3", "stage4"]
-            )
-        )
-
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_breast_cancer_stage4=DxTest(
-                property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_stage4_breast_cancer'],
-                target_categories=["stage1", "stage2", "stage3", "stage4"]
-            )
-        )
-        """
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
             # For those with cancer (any stage prior to stage 4) and never treated
