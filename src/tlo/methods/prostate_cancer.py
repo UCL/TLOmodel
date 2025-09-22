@@ -1027,7 +1027,7 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
             )
 
         else:
-            # Schedule another HSI_ProstateCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_ProstateCancer_PostTreatmentCheck event in 12 months
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PostTreatmentCheck(
                     module=self.module,
