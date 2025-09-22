@@ -35,7 +35,7 @@
           ],
           "max_healthcare_seeking": [
             false,
-            true
+            false
           ],
           "year_of_switch": 2020
         },
@@ -85,7 +85,7 @@
           ],
           "max_healthcare_seeking": [
             false,
-            true
+            false
           ],
           "year_of_switch": 2020
         },
@@ -135,7 +135,7 @@
           ],
           "max_healthcare_seeking": [
             false,
-            true
+            false
           ],
           "year_of_switch": 2020
         },
@@ -185,7 +185,7 @@
           ],
           "max_healthcare_seeking": [
             false,
-            true
+            false
           ],
           "year_of_switch": 2020
         },
@@ -235,7 +235,7 @@
           ],
           "max_healthcare_seeking": [
             false,
-            true
+            false
           ],
           "year_of_switch": 2020
         },
@@ -285,7 +285,7 @@
           ],
           "max_healthcare_seeking": [
             false,
-            true
+            false
           ],
           "year_of_switch": 2020
         },
@@ -335,7 +335,7 @@
           ],
           "max_healthcare_seeking": [
             false,
-            true
+            false
           ],
           "year_of_switch": 2020
         },
@@ -385,7 +385,7 @@
           ],
           "max_healthcare_seeking": [
             false,
-            true
+            false
           ],
           "year_of_switch": 2020
         },
@@ -435,7 +435,7 @@
           ],
           "max_healthcare_seeking": [
             false,
-            true
+            false
           ],
           "year_of_switch": 2020
         },
@@ -485,7 +485,7 @@
           ],
           "max_healthcare_seeking": [
             false,
-            true
+            false
           ],
           "year_of_switch": 2020
         },
@@ -505,6 +505,6 @@
       "draw_name": "9"
     }
   ],
-  "commit": "cec80d5287820c5894045f520995e28ae583e59a",
-  "github": "https://github.com/UCL/TLOmodel/tree/cec80d5287820c5894045f520995e28ae583e59a"
+  "commit": "318ec50559c4d9e46650d9128eefd416b94a5276",
+  "github": "https://github.com/UCL/TLOmodel/tree/318ec50559c4d9e46650d9128eefd416b94a5276"
 }
