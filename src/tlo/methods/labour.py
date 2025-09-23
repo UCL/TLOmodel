@@ -2812,7 +2812,8 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.add_equipment({'Delivery set', 'Weighing scale', 'Stethoscope, foetal, monaural, Pinard, plastic',
                             'Resuscitaire', 'Sphygmomanometer', 'Tray, emergency', 'Suction machine',
                             'Thermometer', 'Drip stand', 'Infusion pump', 'Board for Cord Knotting',
-                            'Cot, baby (bassinet), hospital-type', 'Delivery Beds with Stirrups', 'Fetoscope'})
+                            'Cot, baby (bassinet), hospital-type', 'Delivery Beds with Stirrups', 'Fetoscope',
+                            'Mucous Extractor for neonates'})
 
         # ===================================== PROPHYLACTIC CARE ===================================================
         # The following function manages the consumables and administration of prophylactic interventions in labour
