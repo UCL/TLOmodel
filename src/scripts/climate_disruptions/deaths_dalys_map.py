@@ -28,8 +28,8 @@ district_colours = [
         'coral', 'salmon', 'khaki', 'plum', 'orchid', 'tan', 'wheat', 'azure'
     ]
 
-vmin = -600000
-vmax = 600000
+vmin = -100
+vmax = 100
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce a standard set of plots describing the effect of each climate scenario.
@@ -77,9 +77,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_scenarios_dalys_by_district_lower = {}
     all_scenarios_deaths_by_district_lower = {}
 
+    all_scenarios_dalys_by_district_per_1000 = {}
+    all_scenarios_deaths_by_district_per_1000 = {}
+
+    all_scenarios_dalys_by_district_upper_per_1000 = {}
+    all_scenarios_deaths_by_district_upper_per_1000 = {}
+
+    all_scenarios_dalys_by_district_lower_per_1000 = {}
+    all_scenarios_deaths_by_district_lower_per_1000 = {}
+
     for draw in range(len(scenario_names)):
         scenario_name = scenario_names[draw]
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
+
+        all_years_data_deaths_mean_per_1000 = {}
+        all_years_data_deaths_upper_per_1000= {}
+        all_years_data_deaths_lower_per_1000 = {}
+
+        all_years_data_dalys_mean_per_1000 = {}
+        all_years_data_dalys_upper_per_1000 = {}
+        all_years_data_dalys_lower_per_1000 = {}
 
         all_years_data_deaths_mean = {}
         all_years_data_deaths_upper= {}
@@ -127,14 +144,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 only_mean=True,
                 collapse_columns=True,
             )[draw]
-            all_years_data_dalys_mean[target_year] = result_data_dalys['mean']/result_data_population['mean'] * 1000
-            all_years_data_deaths_mean[target_year] = result_data_deaths['mean']/result_data_population['mean'] * 1000
+            all_years_data_dalys_mean_per_1000[target_year] = result_data_dalys['mean']/result_data_population['mean'] * 1000
+            all_years_data_deaths_mean_per_1000[target_year] = result_data_deaths['mean']/result_data_population['mean'] * 1000
 
-            all_years_data_dalys_lower[target_year] = result_data_dalys['lower']/result_data_population['lower'] * 1000
-            all_years_data_deaths_lower[target_year] = result_data_deaths['lower']/result_data_population['lower'] * 1000
+            all_years_data_dalys_lower_per_1000[target_year] = result_data_dalys['lower']/result_data_population['lower'] * 1000
+            all_years_data_deaths_lower_per_1000[target_year] = result_data_deaths['lower']/result_data_population['lower'] * 1000
 
             all_years_data_dalys_upper[target_year] = result_data_dalys['upper']/result_data_population['upper'] * 1000
             all_years_data_deaths_upper[target_year] = result_data_deaths['upper']/result_data_population['upper'] * 1000
+
+            all_years_data_dalys_mean[target_year] = result_data_dalys['mean']
+            all_years_data_deaths_mean[target_year] = result_data_deaths['mean']
+
+            all_years_data_dalys_lower[target_year] = result_data_dalys['lower']
+            all_years_data_deaths_lower[target_year] = result_data_deaths['lower']
+
+            all_years_data_dalys_upper[target_year] = result_data_dalys['upper']
+            all_years_data_deaths_upper[target_year] = result_data_deaths['upper']
 
         # Convert the accumulated data into a DataFrame for plotting
         df_all_years_DALYS_mean = pd.DataFrame(all_years_data_dalys_mean)
@@ -144,7 +170,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_deaths_lower = pd.DataFrame(all_years_data_deaths_lower)
         df_all_years_deaths_upper = pd.DataFrame(all_years_data_deaths_upper)
 
-#
+        df_all_years_DALYS_mean_per_1000 = pd.DataFrame(all_years_data_dalys_mean_per_1000)
+        df_all_years_DALYS_lower_per_1000 = pd.DataFrame(all_years_data_dalys_lower_per_1000)
+        df_all_years_DALYS_upper_per_1000 = pd.DataFrame(all_years_data_dalys_upper_per_1000)
+        df_all_years_deaths_mean_per_1000 = pd.DataFrame(all_years_data_deaths_mean_per_1000)
+        df_all_years_deaths_lower_per_1000 = pd.DataFrame(all_years_data_deaths_lower_per_1000)
+        df_all_years_deaths_upper_per_1000 = pd.DataFrame(all_years_data_deaths_upper_per_1000)
+
 
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))
@@ -218,14 +250,33 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Stacked'))
 
         print("df_all_years_DALYS_mean", df_all_years_DALYS_mean)
-        district_dalys_total = df_all_years_DALYS_mean.mean(axis=1)
-        district_deaths_total = df_all_years_deaths_mean.mean(axis=1)
 
-        district_deaths_upper = df_all_years_deaths_upper.mean(axis=1)
-        district_deaths_lower = df_all_years_deaths_lower.mean(axis=1)
+        district_dalys_total_per_1000 = df_all_years_DALYS_mean_per_1000.mean(axis=1)
+        district_deaths_total_per_1000 = df_all_years_deaths_mean_per_1000.mean(axis=1)
 
-        district_dalys_upper = df_all_years_DALYS_upper.mean(axis=1)
-        district_dalys_lower = df_all_years_DALYS_lower.mean(axis=1)
+        district_deaths_upper_per_1000 = df_all_years_deaths_upper_per_1000.mean(axis=1)
+        district_deaths_lower_per_1000 = df_all_years_deaths_lower_per_1000.mean(axis=1)
+
+        district_dalys_upper_per_1000 = df_all_years_DALYS_upper_per_1000.mean(axis=1)
+        district_dalys_lower_per_1000 = df_all_years_DALYS_lower_per_1000.mean(axis=1)
+
+        district_dalys_total = df_all_years_DALYS_mean.sum(axis=1)
+        district_deaths_total = df_all_years_deaths_mean.sum(axis=1)
+
+        district_deaths_upper = df_all_years_deaths_upper.sum(axis=1)
+        district_deaths_lower = df_all_years_deaths_lower.sum(axis=1)
+
+        district_dalys_upper = df_all_years_DALYS_upper.sum(axis=1)
+        district_dalys_lower = df_all_years_DALYS_lower.sum(axis=1)
+
+        all_scenarios_dalys_by_district_per_1000[scenario_name] = district_dalys_total_per_1000
+        all_scenarios_deaths_by_district_per_1000[scenario_name] = district_deaths_total_per_1000
+
+        all_scenarios_dalys_by_district_upper_per_1000[scenario_name] = district_dalys_upper_per_1000
+        all_scenarios_deaths_by_district_upper_per_1000[scenario_name] = district_deaths_upper_per_1000
+
+        all_scenarios_dalys_by_district_lower_per_1000[scenario_name] = district_dalys_lower_per_1000
+        all_scenarios_deaths_by_district_lower_per_1000[scenario_name] = district_deaths_lower_per_1000
 
         all_scenarios_dalys_by_district[scenario_name] = district_dalys_total
         all_scenarios_deaths_by_district[scenario_name] = district_deaths_total
@@ -236,6 +287,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_scenarios_dalys_by_district_lower[scenario_name] = district_dalys_lower
         all_scenarios_deaths_by_district_lower[scenario_name] = district_deaths_lower
 
+
     df_dalys_by_district_all_scenarios = pd.DataFrame(all_scenarios_dalys_by_district)
     df_deaths_by_district_all_scenarios = pd.DataFrame(all_scenarios_deaths_by_district)
     df_dalys_by_district_all_scenarios_upper = pd.DataFrame(all_scenarios_dalys_by_district_upper)
@@ -243,16 +295,40 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_dalys_by_district_all_scenarios_lower = pd.DataFrame(all_scenarios_dalys_by_district_lower)
     df_deaths_by_district_all_scenarios_lower = pd.DataFrame(all_scenarios_deaths_by_district_lower)
 
-    # Calculate means and error bars
-    deaths_means = df_deaths_by_district_all_scenarios.mean(axis=1)
-    deaths_upper = df_deaths_by_district_all_scenarios_upper.mean(axis=1)
-    deaths_lower = df_deaths_by_district_all_scenarios_lower.mean(axis=1)
+    df_dalys_by_district_all_scenarios_per_1000 = pd.DataFrame(all_scenarios_dalys_by_district_per_1000)
+    df_deaths_by_district_all_scenarios_per_1000 = pd.DataFrame(all_scenarios_deaths_by_district_per_1000)
+    df_dalys_by_district_all_scenarios_upper_per_1000 = pd.DataFrame(all_scenarios_dalys_by_district_upper_per_1000)
+    df_deaths_by_district_all_scenarios_upper_per_1000 = pd.DataFrame(all_scenarios_deaths_by_district_upper_per_1000)
+    df_dalys_by_district_all_scenarios_lower_per_1000 = pd.DataFrame(all_scenarios_dalys_by_district_lower_per_1000)
+    df_deaths_by_district_all_scenarios_lower_per_1000 = pd.DataFrame(all_scenarios_deaths_by_district_lower_per_1000)
 
-    dalys_means = df_dalys_by_district_all_scenarios.mean(axis=1)
-    dalys_upper = df_dalys_by_district_all_scenarios_upper.mean(axis=1)
-    dalys_lower = df_dalys_by_district_all_scenarios_lower.mean(axis=1)
+    # Calculate means and error bars
+    deaths_means_per_1000 = df_deaths_by_district_all_scenarios_per_1000.mean(axis=1)
+    deaths_upper_per_1000 = df_deaths_by_district_all_scenarios_upper_per_1000.mean(axis=1)
+    deaths_lower_per_1000 = df_deaths_by_district_all_scenarios_lower_per_1000.mean(axis=1)
+
+    dalys_means_per_1000 = df_dalys_by_district_all_scenarios_per_1000.mean(axis=1)
+    dalys_upper_per_1000 = df_dalys_by_district_all_scenarios_upper_per_1000.mean(axis=1)
+    dalys_lower_per_1000 = df_dalys_by_district_all_scenarios_lower_per_1000.mean(axis=1)
+
+    deaths_means = df_deaths_by_district_all_scenarios.mean(axis=0)
+    deaths_upper = df_deaths_by_district_all_scenarios_upper.mean(axis=0)
+    deaths_lower = df_deaths_by_district_all_scenarios_lower.mean(axis=0)
+
+    dalys_means = df_dalys_by_district_all_scenarios.mean(axis=0)
+    dalys_upper = df_dalys_by_district_all_scenarios_upper.mean(axis=0)
+    dalys_lower = df_dalys_by_district_all_scenarios_lower.mean(axis=0)
+
 
     # Calculate error bar values (difference from mean)
+    deaths_yerr_upper_per_1000 = deaths_upper_per_1000 - deaths_means_per_1000
+    deaths_yerr_lower_per_1000 = deaths_means_per_1000 - deaths_lower_per_1000
+    deaths_yerr_per_1000 = [deaths_yerr_lower_per_1000, deaths_yerr_upper_per_1000]
+
+    dalys_yerr_upper_per_1000 = dalys_upper_per_1000- dalys_means_per_1000
+    dalys_yerr_lower_per_1000= dalys_means_per_1000 - dalys_lower_per_1000
+    dalys_yerr_per_1000 = [dalys_yerr_lower_per_1000, dalys_yerr_upper_per_1000]
+
     deaths_yerr_upper = deaths_upper - deaths_means
     deaths_yerr_lower = deaths_means - deaths_lower
     deaths_yerr = [deaths_yerr_lower, deaths_yerr_upper]
@@ -265,6 +341,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, axes = plt.subplots(1, 2, figsize=(20, 10))
     print("deaths_means", deaths_means)
     # Panel A: Deaths by scenario with error bars
+    print("deaths_means", deaths_means)
     axes[0].bar(range(len(deaths_means)), deaths_means,
                 yerr=deaths_yerr,
                 capsize=5,
@@ -296,7 +373,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].legend().set_visible(False)
     axes[0].tick_params(axis='x', rotation=45)
     axes[0].grid(False)
-
+    df_dalys_by_district_all_scenarios_per_1000.to_csv(output_folder / "deaths_and_dalys_by_district_scenario.csv", index=False)
     fig.tight_layout()
     fig.savefig(output_folder / "deaths_and_dalys_total_all_scenarios.png", dpi=300, bbox_inches='tight')
     plt.close(fig)
@@ -338,16 +415,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes = axes.flatten()
     for i, scenario in enumerate(scenario_names[1:], start=1):
             i = i-1
-            difference_from_baseline = df_dalys_by_district_all_scenarios[scenario] - df_dalys_by_district_all_scenarios['Baseline']
-            malawi_admin2['DALY_Rate'] = malawi_admin2['ADM2_EN'].map(difference_from_baseline)
+            difference_from_baseline_per_1000 = df_dalys_by_district_all_scenarios_per_1000[scenario] - df_dalys_by_district_all_scenarios_per_1000['Baseline']
+            malawi_admin2['DALY_Rate'] = malawi_admin2['ADM2_EN'].map(difference_from_baseline_per_1000)
             print(malawi_admin2['DALY_Rate'] )
-            malawi_admin2.plot(column='DALY_Rate', ax=axes[i], legend=True, cmap='PiYG',edgecolor='black')#, vmin=vmin, vmax=vmax)
+            malawi_admin2.plot(column='DALY_Rate', ax=axes[i], legend=True, cmap='PiYG',edgecolor='black', vmin=vmin, vmax=vmax)
             axes[i].set_title(f'DALYs per 1000 - {scenario}')
             axes[i].axis('off')
             water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", alpha = 0.6, edgecolor="#999999", linewidth=0.5, hatch="xxx")
             water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", edgecolor="black", linewidth=1)
 
     fig.tight_layout()
+    df_dalys_by_district_all_scenarios_per_1000.to_csv(output_folder / "deaths_and_dalys_by_district_scenario.csv", index=False)
     fig.savefig(output_folder / "dalys_maps_all_scenarios_difference.png", dpi=300, bbox_inches='tight')
     plt.close(fig)
     # Save data as CSV

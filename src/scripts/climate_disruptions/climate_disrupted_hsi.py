@@ -558,7 +558,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_weather_delayed_all_draws_mean_1000 = pd.concat(all_draws_weather_delayed_mean_1000, axis=1)
     df_weather_cancelled_all_draws_mean_1000 = pd.concat(all_draws_weather_cancelled_mean_1000, axis=1)
 
-    # Final summary plots across all scenarios (Enhanced with Weather Data)
+    # Final summary plots across all scenarios
     treatments_totals_mean = df_treatments_all_draws_mean.sum()
     never_ran_totals_mean = df_never_ran_all_draws_mean.sum()
     weather_delayed_totals_mean = df_weather_delayed_all_draws_mean.sum()
