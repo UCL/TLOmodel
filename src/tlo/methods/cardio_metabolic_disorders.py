@@ -151,7 +151,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         'prob_care_provided_given_seek_emergency_care': Parameter(
             Types.REAL, "The probability that correct care is fully provided to persons that have sought emergency care"
                         " for a Cardio-metabolic disorder."),
-        'prob_ckd_patient_needs_dialysis': Parameter(
+        'prob_ckd_patient_gets_dialysis': Parameter(
             Types.REAL, "The probability that patient with ckd has disease progression ultimately needing dialysis")
     }
 
@@ -1632,7 +1632,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         #todo adjust the dosages for diabetes second and third dosage
         dose = {'diabetes': 30_500,
                 'hypertension': 610,
-                'chronic_kidney_disease': 12,  # 12 in a month: dialysis three times a week
+                'chronic_kidney_disease': 12,  # 8 in a month: dialysis two times a week
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
@@ -1659,7 +1659,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             # Schedule dialysis refill for those with chronic_kidney_disease and start
             # scheduling immediately, if possible
             if self.condition == "chronic_kidney_disease":
-                if self.module.rng.random_sample() < self.module.parameters["prob_ckd_patient_needs_dialysis"]:
+                if self.module.rng.random_sample() < self.module.parameters["prob_ckd_patient_gets_dialysis"]:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_CardioMetabolicDisorders_Dialysis_Refill(
                             module=self.module,
@@ -1725,7 +1725,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
         dose = {'diabetes': 30_500,
                 'hypertension': 610,
-                'chronic_kidney_disease': 12,  # 12 in a month: dialysis three times a week
+                'chronic_kidney_disease': 12,  # 8 in a month: dialysis two times a week
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
@@ -1767,8 +1767,8 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
 
 class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEventMixin):
-    """This is a Health System Interaction Event in which a person receives a dialysis session 3 times a week
-    adding up to 12 times a month."""
+    """This is a Health System Interaction Event in which a person receives a dialysis session 2 times a week
+    adding up to 8 times a month."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1795,9 +1795,9 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
         self.add_equipment({'Chair', 'Dialysis Machine', 'Dialyser (Artificial Kidney)',
                             'Bloodlines', 'Dialysate solution', 'Dialysis water treatment system'})
 
-        if df.at[person_id, 'ckd_dialysis_sessions_this_week'] < 3:
-            # 3 sessions per week (~every 2 days)
-            next_session_date = self.sim.date + pd.DateOffset(days=2)
+        if df.at[person_id, 'ckd_dialysis_sessions_this_week'] < 2:
+            # 2 sessions per week (~every 3 days)
+            next_session_date = self.sim.date + pd.DateOffset(days=3)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_Dialysis_Refill(
                     module=self.module,
