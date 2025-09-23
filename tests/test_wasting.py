@@ -483,13 +483,10 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     death_event = death_event_tuple[1]
     assert date_of_scheduled_death > sim.date
 
-    # Count how many Health System events scheduled for person before seeking care
-    nmb_hs_events = len(sim.modules["HealthSystem"].find_events_for_person(person_id))
-
+    # Run care seeking event and ensure HSI for uncomplicated SAM is scheduled
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
     hsp.run()
-
-    # Check non-emergency care event is scheduled
+    # check non-emergency care event is scheduled
     assert any(isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
                for ev in sim.modules['HealthSystem'].find_events_for_person(person_id))
     # run the created instance of HSI_GenericNonEmergencyFirstAppt
