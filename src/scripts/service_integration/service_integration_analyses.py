@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as st
 
+from scripts.epi.analysis_epi import fontsize
 # === Local / Project-Specific Imports ===
 from tlo import Date
 from tlo.analysis.utils import (
@@ -885,56 +886,46 @@ def figure_annual_hcw_time_use_over_annual_capabilities(data, tol=1e-9):
     ci_low_all = [min(lo, up) for lo, up in zip(lo_all, up_all)]
     ci_up_all  = [max(lo, up) for lo, up in zip(lo_all, up_all)]
 
-    # --- Mask: keep only CIs entirely above 1 or entirely below 1
-    keep_mask = [(u < 1 - tol) or (l > 1 + tol) for l, u in zip(ci_low_all, ci_up_all)]
+    # --- Check which bars have CI crossing 1
+    crosses_one = [(l <= 1 + tol) and (u >= 1 - tol) for l, u in zip(ci_low_all, ci_up_all)]
 
     # --- Fixed x positions for ALL scenarios
     x_all = np.arange(len(scenario_ids))
 
-    # --- Indices of scenarios to plot (bars shown)
-    kept_indices = [i for i, k in enumerate(keep_mask) if k]
-    kept_ids     = [scenario_ids[i] for i in kept_indices]
-    mean_kept    = [mean_all[i]   for i in kept_indices]
-    low_kept     = [ci_low_all[i] for i in kept_indices]
-    up_kept      = [ci_up_all[i]  for i in kept_indices]
-    x_kept       = [x_all[i]      for i in kept_indices]
-
-    # --- Error distances for kept bars
-    yerr_lower = [max(0.0, m - l) for m, l in zip(mean_kept, low_kept)]
-    yerr_upper = [max(0.0, u - m) for m, u in zip(mean_kept, up_kept)]
+    # --- Error distances for all bars
+    yerr_lower = [max(0.0, m - l) for m, l in zip(mean_all, ci_low_all)]
+    yerr_upper = [max(0.0, u - m) for m, u in zip(mean_all, ci_up_all)]
 
     # --- Color mapping (consistent across full set)
     scenarios_except_0 = [s for s in scenario_ids if s != 0]
     color_map_full = {s: spread_palette[i] for i, s in enumerate(scenarios_except_0)}
     if 0 in scenario_ids:
         color_map_full[0] = palette[-1]
-    colors_kept = [color_map_full[s] for s in kept_ids]
+    colors_all = [color_map_full[s] for s in scenario_ids]
 
     # --- Plot
     fig, ax = plt.subplots()
 
-    # Bars only for kept scenarios at their fixed x positions
-    if kept_indices:
-        bars = ax.bar(x_kept, mean_kept, yerr=[yerr_lower, yerr_upper],
-                      capsize=5, alpha=0.7, ecolor='black', color=colors_kept)
-        # Annotations for kept bars only
-        max_up_err = max(yerr_upper) if any(yerr_upper) else (0.05 * max(abs(m) for m in mean_kept))
-        offset = max_up_err * 0.5 if max_up_err > 0 else 0.05
-        for bar, value in zip(bars, mean_kept):
-            h = bar.get_height()
-            # Format: 3 dp for <1, 2 dp for >=1
-            txt = f"{value:.3f}" if value < 1 else f"{value:.2f}"
-            if h >= 0:
-                ax.text(bar.get_x() + bar.get_width()/2, h + offset, txt,
-                        ha='center', va='bottom', fontsize=7)
-            else:
-                ax.text(bar.get_x() + bar.get_width()/2, h - offset, txt,
-                        ha='center', va='top', fontsize=7)
-    else:
-        ax.text(0.5, 0.5, "No scenarios pass the CI filter (CI must not include 1).",
-                ha='center', va='center', fontsize=10, transform=ax.transAxes)
+    bars = ax.bar(x_all, mean_all, yerr=[yerr_lower, yerr_upper],
+                  capsize=5, alpha=0.7, ecolor='black', color=colors_all)
 
-    # --- X ticks: show ALL scenario labels (kept + excluded)
+    # --- Annotations
+    max_up_err = max(yerr_upper) if any(yerr_upper) else (0.05 * max(abs(m) for m in mean_all))
+    offset = max_up_err * 0.5 if max_up_err > 0 else 0.05
+    for bar, value, cross in zip(bars, mean_all, crosses_one):
+        h = bar.get_height()
+        # Format: 3 dp for <1, 2 dp for >=1
+        txt = f"{value:.3f}" if value < 1 else f"{value:.2f}"
+        if cross:
+            txt += "*"   # add asterisk if CI includes 1
+        if h >= 0:
+            ax.text(bar.get_x() + bar.get_width()/2, h + offset, txt,
+                    ha='center', va='bottom', fontsize=7)
+        else:
+            ax.text(bar.get_x() + bar.get_width()/2, h - offset, txt,
+                    ha='center', va='top', fontsize=7)
+
+    # --- X ticks
     ax.set_xticks(x_all)
     ax.set_xticklabels(labels_all, fontsize=7, rotation=90)
 
@@ -948,7 +939,7 @@ def figure_annual_hcw_time_use_over_annual_capabilities(data, tol=1e-9):
 
     # --- Reference line and formatting
     ax.axhline(y=1, color='grey', linestyle='--', linewidth=1, label='Status Quo = 1')
-    ax.set_ylabel('Relative change in HCW demand – HCW capacity ratio from SQ', fontsize=9)
+    ax.set_ylabel('Relative change in HCW demand – HCW capabilities compared to SQ', fontsize=9)
 
     # Legend (baseline line only)
     ax.legend(fontsize=8, loc='lower center', bbox_to_anchor=(0.5, 1.02),
@@ -1054,7 +1045,7 @@ def figure_all_cadre_bar_charts_color_coded(df, tol=1e-9):
         )
 
     plt.tight_layout(rect=[0.05, 0.02, 1, 0.97])
-    fig.text(0.01, 0.5, 'Relative change in HCW demand – HCW capacity ratio from SQ',
+    fig.text(0.01, 0.5, 'Relative change in HCW demand – HCW capabilities compared to SQ',
              va='center', rotation='vertical', fontsize=12)
     plt.savefig(f'{g_path}/hcw_time_ratios_by_cadre.png', bbox_inches='tight')
     plt.show()
@@ -1297,11 +1288,11 @@ def figure_adjusted_hcw_ratios(un_adj, adj_25, adj_50, adj_75):
             ix = index_map[present[-1]]
             ax.axvline(ix + 0.5, color='black', linestyle=':', linewidth=0.5)
 
-    ax.set_ylabel('Relative change in HCW demand – HCW capacity ratio from SQ')
+    ax.set_ylabel('Relative change in HCW demand – HCW capabilities compared to SQ')
 
     # === Hatch legend only
     hatch_handles, hatch_labels = zip(*hatch_patches)
-    hatch_legend = fig.legend(hatch_handles, hatch_labels, title="Adjustment level",
+    hatch_legend = fig.legend(hatch_handles, hatch_labels, title="Hypothetical Assumption on Improved HCW Efficiency",
                               loc="upper center", bbox_to_anchor=(0.5, 1.08), ncol=4)
 
     # --- Reference line and formatting
@@ -1483,7 +1474,7 @@ def figure_avg_difference_in_cost_from_status_quo_per_year(cost_data):
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
-    ax.set_ylabel('Difference in annual cost')
+    ax.set_ylabel('Difference in annual cost (USD) from SQ scenario', fontsize=7)
     ax.set_ylim(bottom=-0.25 * 1e9)
 
     fig.tight_layout(pad=2.0)
@@ -1588,7 +1579,7 @@ def figure_adjusted_avg_difference_in_cost_from_status_quo_per_year(un_adj, adj_
     ax.axhline(0, linewidth=1, linestyle='--', color='gray')
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=90, ha='right', fontsize=8)
-    ax.set_ylabel('Difference in annual cost (USD)')
+    ax.set_ylabel('Difference in annual cost (USD) from SQ scenario')
     ax.set_xlabel('Scenario')
     ax.margins(x=0.02)
 
@@ -1598,7 +1589,7 @@ def figure_adjusted_avg_difference_in_cost_from_status_quo_per_year(un_adj, adj_
 
     # === Legend: hatch only (adjustment levels)
     hatch_handles, hatch_labels = zip(*hatch_patches)
-    hatch_legend = fig.legend(hatch_handles, hatch_labels, title="Adjustment level",
+    hatch_legend = fig.legend(hatch_handles, hatch_labels, title="Hypothetical Assumption on Improved HCW Efficiency",
                               loc="upper center", bbox_to_anchor=(0.5, 1.08), ncol=4)
 
     # === Save without cropping legend
@@ -1644,7 +1635,7 @@ for cost_data in [total_inc_cost_unadj,
                   inc_cost_adj_75]:
     cost_per_daly_averted.append(get_cost_per_daly_averted(cost_data))
 cost_per_daly_averted_df = pd.concat(cost_per_daly_averted)
-cost_per_daly_averted_df.index = ['un_adj', 'adj_25', 'adj_50', 'adj_75']
+cost_per_daly_averted_df.index = ['Unadjusted', '25% adjusted', '50% adjusted', '75% adjusted']
 
 def figure_cost_per_daly_averted_group_bar_chart(cost_per_daly_averted_df):
     labels = [full_lab[scen_draws[sc]] for sc in ordered_scenario_ids_pathways]
@@ -1714,7 +1705,7 @@ def figure_cost_per_daly_averted_group_bar_chart(cost_per_daly_averted_df):
 
     # Hatch legend only
     hatch_handles, hatch_labels = zip(*hatch_patches)
-    hatch_legend = fig.legend(hatch_handles, hatch_labels, title="Assumption",
+    hatch_legend = fig.legend(hatch_handles, hatch_labels, title="Hypothetical Assumption on Improved HCW Efficiency",
                               loc="upper center", bbox_to_anchor=(0.5, 1.08), ncol=min(n_series, 5))
 
     # Nudge annotation positions slightly away from bars using a fraction of y-range
