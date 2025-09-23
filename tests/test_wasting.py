@@ -483,6 +483,9 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     death_event = death_event_tuple[1]
     assert date_of_scheduled_death > sim.date
 
+    # Count how many Health System events scheduled for person before seeking care
+    nmb_hs_events = len(sim.modules["HealthSystem"].find_events_for_person(person_id))
+
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
     hsp.run()
 
