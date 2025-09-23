@@ -2885,7 +2885,8 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             neo_resus_delivered = pregnancy_helper_functions.check_int_deliverable(
                 self.module, int_name='neo_resus', hsi_event=self,
                 q_param=[params['prob_hcw_avail_neo_resus'], params[f'mean_hcw_competence_{deliv_location}']],
-                cons=self.module.item_codes_lab_consumables['resuscitation'])
+                cons=self.module.item_codes_lab_consumables['resuscitation'],
+                equipment={'Ambu bag, infant with mask', 'Resuscitator, manual, infant'})
 
             if neo_resus_delivered:
                 mni[person_id]['neo_will_receive_resus_if_needed'] = True
