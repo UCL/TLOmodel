@@ -181,8 +181,11 @@ class HSI_Event:
         if sum(self.BEDDAYS_FOOTPRINT.values()) > 0:
             # Add to the internal record of equipment used anything to do with in-patients.
             # Note that adding this here means that these items are not used, but the bed-days can still be available
-            # even if these items are not.
-            self._EQUIPMENT |= self.healthcare_system.equipment.from_pkg_names('In-patient')
+            # even if these items are not all available.
+            # (Note that the list of equipment is the same as retrieved from
+            # `self.healthcare_system.equipment.from_pkg_names('In-patient')` but the result has been cached on the
+            # healthsystem module to save time as it is used a lot (every HSI that has any bed-days).
+            self._EQUIPMENT |= self.healthcare_system.in_patient_equipment_package
 
         if self.facility_info is not None:
             # If there is a facility_info (e.g., healthsystem not running in disabled mode), then record equipment used

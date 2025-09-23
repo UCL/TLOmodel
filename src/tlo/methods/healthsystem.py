@@ -692,6 +692,8 @@ class HealthSystem(Module):
             master_facilities_list=self.parameters['Master_Facilities_List'],
             availability=self.get_equip_availability(),
         )
+        # Cache the content of the in-patients equipment package, as this is used a lot
+        self.in_patient_equipment_package: set[int] = self.equipment.from_pkg_names('In-patient')
 
         self.tclose_overwrite = self.parameters['tclose_overwrite']
         self.tclose_days_offset_overwrite = self.parameters['tclose_days_offset_overwrite']
