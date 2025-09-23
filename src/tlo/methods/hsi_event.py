@@ -171,11 +171,18 @@ class HSI_Event:
         Do things following the event's `apply` and `post_apply_hook` functions running.
          * Impose the bed-days footprint
          * Record the equipment that has been added before and during the course of the HSI Event.
+         * Include in the equipment used those items associated with in-patient admissions if bed-days are used.
         """
 
         self.healthcare_system.bed_days.impose_beddays_footprint(
             person_id=self.target, footprint=self.bed_days_allocated_to_this_event
         )
+
+        if sum(self.BEDDAYS_FOOTPRINT.values()) > 0:
+            # Add to the internal record of equipment used anything to do with in-patients.
+            # Note that adding this here means that these items are not used, but the bed-days can still be available
+            # even if these items are not.
+            self._EQUIPMENT |= self.healthcare_system.equipment.from_pkg_names('In-patient')
 
         if self.facility_info is not None:
             # If there is a facility_info (e.g., healthsystem not running in disabled mode), then record equipment used
@@ -325,7 +332,7 @@ class HSI_Event:
         self.facility_info = health_system.get_facility_info(self)
 
         # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
-        # Types, and the associated equipement
+        # Types
         # (HSI that require a bed for one or more days always need such appointments, but this may have been
         # missed in the declaration of the `EXPECTED_APPT_FOOTPRINT` in the HSI.)
         # NB. The in-patient day Appointment time is automatically applied on subsequent days.
@@ -335,7 +342,6 @@ class HSI_Event:
                     self.EXPECTED_APPT_FOOTPRINT
                 )
             )
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('In-patient'))
 
         # Write the time requirements for staff of the appointments to the HSI:
         self.expected_time_requests = (
