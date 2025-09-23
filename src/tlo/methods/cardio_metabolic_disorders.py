@@ -1808,7 +1808,7 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
                 priority=1
             )
         else:
-            # Reset counter at the end of the month and schedule first session of next month
+            # Reset counter at the end of the week and schedule first session of next week
             df.at[person_id, 'ckd_dialysis_sessions_this_week'] = 0
             next_week_start = self.sim.date + pd.DateOffset(weeks=1)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
