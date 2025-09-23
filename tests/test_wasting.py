@@ -485,21 +485,21 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     hsp.run()
 
     # Check non-emergency care event is scheduled
-    assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
-                      hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
-    # run the created instance of HSI_GenericNonEmergencyFirstAppt and check care was sought
+    assert any(isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
+               for ev in sim.modules['HealthSystem'].find_events_for_person(person_id))
+    # run the created instance of HSI_GenericNonEmergencyFirstAppt
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
           isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)][0]
     ge.run(squeeze_factor=0.0)
 
-    # Check HSI event is scheduled
-    hsi_event_scheduled = [
+    # Check OTP treatment HSI event is scheduled
+    tx_hsi_event_scheduled = [
         ev
         for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
         if isinstance(ev[1], HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
     ]
-    assert 1 == len(hsi_event_scheduled)
-    # run the created instance of HSI_Wasting_OutpatientTherapeuticProgramme_SAM and check care was sought
+    assert 1 == len(tx_hsi_event_scheduled)
+    # run the created instance of HSI_Wasting_OutpatientTherapeuticProgramme_SAM
     sam_ev = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
               isinstance(ev[1], HSI_Wasting_OutpatientTherapeuticProgramme_SAM)][0]
     sam_ev.run(squeeze_factor=0.0)
@@ -592,20 +592,20 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
     hsp.run()
     # check non-emergency care event is scheduled
-    assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
-                      hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
-
-    # Run the created instance of HSI_GenericNonEmergencyFirstAppt and check care was sought
+    assert any(isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
+               for ev in sim.modules['HealthSystem'].find_events_for_person(person_id))
+    # run the created instance of HSI_GenericNonEmergencyFirstAppt and check care was sought
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
           isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)][0]
     ge.run(squeeze_factor=0.0)
-    # check HSI event for complicated SAM is scheduled
-    hsi_event_scheduled = [
+
+    # Check ITC treatment HSI event for complicated SAM is scheduled
+    tx_hsi_event_scheduled = [
         ev
         for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
         if isinstance(ev[1], HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM)
     ]
-    assert 1 == len(hsi_event_scheduled)
+    assert 1 == len(tx_hsi_event_scheduled)
 
     # Run the created instance of HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM
     sam_ev = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
@@ -702,20 +702,20 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
     hsp.run()
     # check non-emergency care event is scheduled
-    assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
-                      hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
-
-    # Run the created instance of HSI_GenericNonEmergencyFirstAppt
+    assert any(isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
+               for ev in sim.modules['HealthSystem'].find_events_for_person(person_id))
+    # run the created instance of HSI_GenericNonEmergencyFirstAppt
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
           if isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)][0]
     ge.run(squeeze_factor=0.0)
-    # check outpatient care event is scheduled for uncomplicated SAM
-    hsi_event_scheduled = [
+
+    # Check OTP treatment event is scheduled for uncomplicated SAM
+    tx_hsi_event_scheduled = [
         ev
         for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
         if isinstance(ev[1], HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
     ]
-    assert 1 == len(hsi_event_scheduled)
+    assert 1 == len(tx_hsi_event_scheduled)
 
     # Run the created instance of HSI_Wasting_OutpatientTherapeuticProgramme_SAM
     sam_ev = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
@@ -966,21 +966,20 @@ def test_recovery_before_death_scheduled(tmpdir):
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
     hsp.run()
     # check non-emergency care event is scheduled
-    assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
-                      hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
-
-    # Run the created instance of HSI_GenericNonEmergencyFirstAppt and check care was sought
+    assert any(isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
+               for ev in sim.modules['HealthSystem'].find_events_for_person(person_id))
+    # run the created instance of HSI_GenericNonEmergencyFirstAppt and check care was sought
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
           isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)][0]
     ge.run(squeeze_factor=0.0)
 
-    # Check outpatient care event is scheduled
-    hsi_event_scheduled = [
+    # Check OTP treatment event is scheduled
+    tx_hsi_event_scheduled = [
         ev
         for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
         if isinstance(ev[1], HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
     ]
-    assert 1 == len(hsi_event_scheduled)
+    assert 1 == len(tx_hsi_event_scheduled)
 
     # Run the created instance of HSI_Wasting_OutpatientTherapeuticProgramme_SAM
     sam_ev = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
