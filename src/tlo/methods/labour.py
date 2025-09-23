@@ -2068,7 +2068,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             q_param=[params['prob_hcw_avail_blood_tran'], params[f'mean_hcw_competence_{deliv_location}']],
             cons=self.item_codes_lab_consumables['blood_transfusion'],
             opt_cons=self.item_codes_lab_consumables['blood_test_equipment'],
-            equipment={'Drip stand', 'Infusion pump'})
+            equipment=hsi_event.healthcare_system.equipment.from_pkg_names('Blood Transfusion'))
 
         if blood_transfusion_delivered:
             mni[person_id]['received_blood_transfusion'] = True

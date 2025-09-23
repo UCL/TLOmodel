@@ -1217,7 +1217,7 @@ class CareOfWomenDuringPregnancy(Module):
             q_param=[l_params['prob_hcw_avail_blood_tran'], l_params['mean_hcw_competence_hp']],
             cons=self.item_codes_preg_consumables['blood_transfusion'],
             opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
-            equipment={'Drip stand', 'Infusion pump'})
+            equipment=hsi_event.healthcare_system.equipment.from_pkg_names('Blood Transfusion'))
 
         if blood_transfusion_delivered:
 

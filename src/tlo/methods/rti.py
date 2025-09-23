@@ -3990,6 +3990,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
                                 'Oxygen cylinder, with regulator',
                                 'Nasal Prongs',
                                 'Anti-shock garment',
+                                *self.healthcare_system.equipment.from_pkg_names('Blood Transfusion')
                                 })
         else:
             if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
