@@ -424,7 +424,7 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     # Get person to use:
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-    person_id = under5s.index[1]
+    person_id = under5s.index[0]
     # Manually set this individual properties to be well
     df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
     df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
@@ -558,7 +558,7 @@ def test_tx_complications_recovery_severe_acute_malnutrition_with_complications(
     # Get person to use:
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-    person_id = under5s.index[1]
+    person_id = under5s.index[0]
     # Manually set this individual properties to have SAM
     df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'
     df.at[person_id, 'un_last_wasting_date_of_onset'] = sim.date
@@ -676,7 +676,7 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     # Get person to use:
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-    person_id = under5s.index[1]
+    person_id = under5s.index[0]
     # Manually set this individual properties to have SAM due to severe wasting, hence natural death should be applied
     df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'
     df.at[person_id, 'un_last_wasting_date_of_onset'] = sim.date
@@ -915,7 +915,7 @@ def test_recovery_before_death_scheduled(tmpdir):
     # Get person to use
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-    person_id = under5s.index[1]
+    person_id = under5s.index[0]
     # Manually set this individual properties to be well
     df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
     df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
