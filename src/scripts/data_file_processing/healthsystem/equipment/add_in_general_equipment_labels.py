@@ -1,6 +1,10 @@
 """This script updates the existing ResourceFile_EquipmentCatalogue.csv file to include the following equipment items
 as having a general package label."""
 
+from pathlib import Path
+
+import pandas as pd
+
 things_which_are_general_at_level_2 = [
     'Air conditioner/fan',
     'Analytical software',
@@ -154,9 +158,7 @@ things_which_are_general_at_level_1a_and_1b = [
     'Room heater, electric, wall mounted',
 ]
 
-from pathlib import Path
 
-import pandas as pd
 
 the_equipment_resource_file = Path('resources/healthsystem/infrastructure_and_equipment/ResourceFile_EquipmentCatalogue.csv')
 
