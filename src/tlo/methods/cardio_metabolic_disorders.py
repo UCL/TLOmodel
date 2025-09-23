@@ -1791,7 +1791,6 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
         # Increment the session counter for the month
         df.at[person_id, 'ckd_dialysis_sessions_this_week'] += 1
 
-        # self.add_equipment({'Analyser, Haematology', 'Analyser, Combined Chemistry and Electrolytes'})
         self.add_equipment({'Chair', 'Dialysis Machine', 'Dialyser (Artificial Kidney)',
                             'Bloodlines', 'Dialysate solution', 'Dialysis water treatment system'})
 
