@@ -2,7 +2,7 @@
   "scenario_script_path": "src/scripts/climate_disruptions/climate_disruption_scenarios.py",
   "scenario_seed": 0,
   "arguments": [],
-  "runs_per_draw": 10,
+  "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
@@ -505,6 +505,6 @@
       "draw_name": "9"
     }
   ],
-  "commit": "271d47bd1aedeb68fd98db1866c6c9bea803a5da",
-  "github": "https://github.com/UCL/TLOmodel/tree/271d47bd1aedeb68fd98db1866c6c9bea803a5da"
+  "commit": "9218f9df2797ac7264d61025b437b66467a99140",
+  "github": "https://github.com/UCL/TLOmodel/tree/9218f9df2797ac7264d61025b437b66467a99140"
 }

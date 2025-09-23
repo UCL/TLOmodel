@@ -13,7 +13,7 @@ from tlo.analysis.utils import (
 import geopandas as gpd
 
 min_year = 2026
-max_year = 2044
+max_year = 2041
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
@@ -28,8 +28,8 @@ district_colours = [
         'coral', 'salmon', 'khaki', 'plum', 'orchid', 'tan', 'wheat', 'azure'
     ]
 
-vmin = -240
-vmax = 200
+vmin = -600000
+vmax = 600000
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce a standard set of plots describing the effect of each climate scenario.
@@ -144,6 +144,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_deaths_lower = pd.DataFrame(all_years_data_deaths_lower)
         df_all_years_deaths_upper = pd.DataFrame(all_years_data_deaths_upper)
 
+#
+
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))
 
@@ -216,14 +218,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Stacked'))
 
         print("df_all_years_DALYS_mean", df_all_years_DALYS_mean)
-        district_dalys_total = df_all_years_DALYS_mean.sum(axis=1)
-        district_deaths_total = df_all_years_deaths_mean.sum(axis=1)
+        district_dalys_total = df_all_years_DALYS_mean.mean(axis=1)
+        district_deaths_total = df_all_years_deaths_mean.mean(axis=1)
 
-        district_deaths_upper = df_all_years_deaths_upper.sum(axis=1)
-        district_deaths_lower = df_all_years_deaths_lower.sum(axis=1)
+        district_deaths_upper = df_all_years_deaths_upper.mean(axis=1)
+        district_deaths_lower = df_all_years_deaths_lower.mean(axis=1)
 
-        district_dalys_upper = df_all_years_DALYS_upper.sum(axis=1)
-        district_dalys_lower = df_all_years_DALYS_lower.sum(axis=1)
+        district_dalys_upper = df_all_years_DALYS_upper.mean(axis=1)
+        district_dalys_lower = df_all_years_DALYS_lower.mean(axis=1)
 
         all_scenarios_dalys_by_district[scenario_name] = district_dalys_total
         all_scenarios_deaths_by_district[scenario_name] = district_deaths_total
@@ -241,16 +243,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_dalys_by_district_all_scenarios_lower = pd.DataFrame(all_scenarios_dalys_by_district_lower)
     df_deaths_by_district_all_scenarios_lower = pd.DataFrame(all_scenarios_deaths_by_district_lower)
 
-
-    print(df_deaths_by_district_all_scenarios)
     # Calculate means and error bars
-    deaths_means = df_deaths_by_district_all_scenarios.sum(axis=1)
-    deaths_upper = df_deaths_by_district_all_scenarios_upper.sum(axis=1)
-    deaths_lower = df_deaths_by_district_all_scenarios_lower.sum(axis=1)
+    deaths_means = df_deaths_by_district_all_scenarios.mean(axis=1)
+    deaths_upper = df_deaths_by_district_all_scenarios_upper.mean(axis=1)
+    deaths_lower = df_deaths_by_district_all_scenarios_lower.mean(axis=1)
 
-    dalys_means = df_dalys_by_district_all_scenarios.sum(axis=1)
-    dalys_upper = df_dalys_by_district_all_scenarios_upper.sum(axis=1)
-    dalys_lower = df_dalys_by_district_all_scenarios_lower.sum(axis=1)
+    dalys_means = df_dalys_by_district_all_scenarios.mean(axis=1)
+    dalys_upper = df_dalys_by_district_all_scenarios_upper.mean(axis=1)
+    dalys_lower = df_dalys_by_district_all_scenarios_lower.mean(axis=1)
 
     # Calculate error bar values (difference from mean)
     deaths_yerr_upper = deaths_upper - deaths_means
@@ -263,7 +263,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Plot with error bars
     fig, axes = plt.subplots(1, 2, figsize=(20, 10))
-
+    print("deaths_means", deaths_means)
     # Panel A: Deaths by scenario with error bars
     axes[0].bar(range(len(deaths_means)), deaths_means,
                 yerr=deaths_yerr,
@@ -341,10 +341,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             difference_from_baseline = df_dalys_by_district_all_scenarios[scenario] - df_dalys_by_district_all_scenarios['Baseline']
             malawi_admin2['DALY_Rate'] = malawi_admin2['ADM2_EN'].map(difference_from_baseline)
             print(malawi_admin2['DALY_Rate'] )
-            malawi_admin2.plot(column='DALY_Rate', ax=axes[i], legend=True, cmap='PiYG',edgecolor='black', vmin=vmin, vmax=vmax)
+            malawi_admin2.plot(column='DALY_Rate', ax=axes[i], legend=True, cmap='PiYG',edgecolor='black')#, vmin=vmin, vmax=vmax)
             axes[i].set_title(f'DALYs per 1000 - {scenario}')
             axes[i].axis('off')
-            water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", edgecolor="#999999", linewidth=0.5, hatch="xxx")
+            water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", alpha = 0.6, edgecolor="#999999", linewidth=0.5, hatch="xxx")
             water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", edgecolor="black", linewidth=1)
 
     fig.tight_layout()
