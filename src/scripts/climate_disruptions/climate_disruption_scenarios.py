@@ -20,8 +20,8 @@ class ClimateDisruptionScenario(BaseScenario):
         self.number_of_draws = len(self._scenarios)
         self._parameter_grid = make_cartesian_parameter_grid({"HealthSystem": {
                 "scale_factor_delay_in_seeking_care_weather": range(0, 5, 1),
-                "rescaling_prob_seeking_after_disruption": np.linspace(0, 2.0, 20),  #rescaling of prob of seeking healthcare after disruption
-                "rescaling_prob_disruption": np.linspace(0, 2.0, 20)
+                "rescaling_prob_seeking_after_disruption": np.arange(0.25, 2.01, 0.25),  #rescaling of prob of seeking healthcare after disruption
+                "rescaling_prob_disruption": np.arange(0.25, 2.01, 0.25)
             }})
 
     def log_configuration(self):
