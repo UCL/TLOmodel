@@ -315,6 +315,7 @@ def redistribute_radius_lp(
     facility_col="fac_name",
     amc_col="amc",
     close_cols=("closing_bal","received","dispensed"),
+    return_edge_log: bool = True,
 ) -> pd.DataFrame:
     """
     Scenario 1 or 2: local swaps within a time radius.
@@ -324,18 +325,18 @@ def redistribute_radius_lp(
     Returns a copy of df with a new column 'available_prop_redis' for redistributed probability per row.
     """
     closing_bal, received, dispensed = close_cols
-    df = df.copy()
-    df["OB"] = compute_opening_balance(df)
-
-    # container for updated OB by (district, month, item, facility)
-    df["OB_prime"] = df["OB"]
+    out = df.copy()
+    out["OB"] =  compute_opening_balance(out).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    out["OB_prime"] = out["OB"] # container for updated OB by (district, month, item, facility)
 
     # iterate per (district, month, item)
     group_cols = list(id_cols)
     EPS = 1e-9
     EPS_AMC = 1e-6
 
-    for (d, m, i), g in df.groupby(group_cols):
+    edge_logs = []   # will log dicts with district, month, item_code, donor, receiver, units_moved, travel_minutes
+
+    for (d, m, i), g in out.groupby(group_cols, sort=False):
         # facilities in this slice
         g = g.copy()
 
@@ -461,16 +462,25 @@ def redistribute_radius_lp(
         if LpStatus[prob.status] not in ("Optimal", "Optimal Infeasible", "Not Solved"):
             continue
 
-        # ---------- (7) Apply transfers to OB' ----------
+        # apply transfers & LOG
         delta = {fac: 0.0 for fac in present}
         for (g_fac, f_fac), var in t.items():
             moved = float(value(var) or 0.0)
-            if moved:
+            if moved > EPS_AMC:
                 delta[g_fac] -= moved
                 delta[f_fac] += moved
+                if return_edge_log:
+                    edge_logs.append({
+                        "district": d, "month": m, "item_code": i,
+                        "donor_fac": g_fac, "receiver_fac": f_fac,
+                        "units_moved": moved,
+                        "travel_minutes": float(T_sub.loc[g_fac, f_fac]) if np.isfinite(
+                            T_sub.loc[g_fac, f_fac]) else np.nan
+                    })
 
-        sel = (df["district"].eq(d) & df["month"].eq(m) & df["item_code"].eq(i))
-        df.loc[sel, "OB_prime"] = df.loc[sel].apply(
+        # write OB'
+        sel = (out["district"].eq(d) & out["month"].eq(m) & out["item_code"].eq(i))
+        out.loc[sel, "OB_prime"] = out.loc[sel].apply(
             lambda r: (r["OB"] + delta.get(r[facility_col], 0.0)), axis=1
         )
 
@@ -480,30 +490,44 @@ def redistribute_radius_lp(
               "edges:", len(M_edge))
 
     # ---------- (8) Mechanistic availability after redistribution ----------
-    df["available_prop_redis"] = np.minimum(1.0, np.maximum(0.0, df["OB_prime"] / np.maximum(EPS_AMC,
-                                                                                             df[amc_col].astype(
-                                                                                                 float).values)))
-    return df
+    out["available_prop_redis"] = np.minimum(
+        1.0,
+        np.maximum(0.0, out["OB_prime"] / np.maximum(EPS_AMC, out[amc_col].astype(float).values))
+    )
+
+    # build log DataFrames
+    edge_log_df = pd.DataFrame(edge_logs,
+                               columns=["district", "month", "item_code", "donor_fac", "receiver_fac", "units_moved",
+                                        "travel_minutes"]) if return_edge_log else None
+
+    return out, edge_log_df
 
 def redistribute_pooling_lp(
     df: pd.DataFrame,
-    tau_min: float = 0.25,   # lower floor in "months of demand" (≈ 7–8 days)
+    tau_min: float = 0.25,   # lower floor in "months of demand" (≈ 7–8 days) - minimum transfer required
     tau_max: float = 3.0,    # upper ceiling (storage/policy max)
     id_cols=("district","month","item_code"),
     facility_col="fac_name",
     amc_col="amc",
     close_cols=("closing_bal","received","dispensed"),
     keep_baseline_for_amc0: bool = True,   # leave baseline availability where AMC≈0
-    amc_eps: float = 1e-6                  # threshold to treat AMC as "zero"
+    amc_eps: float = 1e-6,                  # threshold to treat AMC as "zero"
+    return_move_log: bool = True # return a detailed df showing net movement of consumables after redistribution
 ) -> pd.DataFrame:
     """
-    Scenario 3: district-level pooling/push (robust).
+    Scenario 3: district-level pooling/push .
     Maximizes total availability with:
       - NaN/inf guards on AMC/OB
       - duplicate facility IDs collapsed within group
       - floors scaled if total stock < sum floors
       - optional 'excess' sink if total stock > sum ceilings
       - availability computed safely; AMC≈0 rows keep baseline (optional)
+
+        Returns:
+      - out: original df plus columns:
+          OB, OB_prime, available_prop_redis, received_from_pool
+        where received_from_pool = OB_prime - OB (pos=received, neg=donated)
+      - (optional) move_log: per (district, month, item, facility) net movement summary
     """
     closing_bal, received, dispensed = close_cols
     out = df.copy()
@@ -519,6 +543,7 @@ def redistribute_pooling_lp(
     out["OB_prime"] = out["OB"]
 
     group_cols = list(id_cols)
+    move_rows = []  # optional movement log
 
     for (d, m, i), g in out.groupby(group_cols, sort=False):
         g = g.copy()
@@ -571,13 +596,13 @@ def redistribute_pooling_lp(
         prob = LpProblem(f"Pooling_{d}_{m}_{i}", LpMaximize)
 
         # Decision variables
-        x = {f: LpVariable(f"x_{f}", lowBound=0) for f in facs_pos}      # allocation
-        p = {f: LpVariable(f"p_{f}", lowBound=0, upBound=1) for f in facs_pos}  # availability
+        x = {f: LpVariable(f"x_{f}", lowBound=0) for f in facs_pos}      # how much stock to allocation to facility f
+        p = {f: LpVariable(f"p_{f}", lowBound=0, upBound=1) for f in facs_pos}  # Availability probability proxy for facility f
 
         excess = LpVariable("excess", lowBound=0) if allow_excess_sink else None
 
         # Objective: maximize total availability
-        prob += lpSum(p.values())
+        prob += lpSum(p.values()) # prioritize broad coverage—get as many facilities as possible to have stock
 
         # Conservation
         if excess is None:
@@ -590,7 +615,7 @@ def redistribute_pooling_lp(
             prob += x[f] >= float(lb.loc[f])
             prob += x[f] <= float(ub.loc[f])
 
-        # Linearization: AMC_f * p_f <= x_f (only for AMC>=amc_eps)
+        # Linearization: AMC_f * p_f <= x_f (only for AMC>=amc_eps), i.e p = x/AMC
         for f in facs_pos:
             prob += float(AMC_pos.loc[f]) * p[f] <= x[f]
 
@@ -602,20 +627,36 @@ def redistribute_pooling_lp(
         # Apply solution
         x_sol = {f: float(value(var) or 0.0) for f, var in x.items()}
 
-        sel = (out["district"].eq(d) & out["month"].eq(m) & out["item_code"].eq(i))
+        sel = (out["district"].eq(d) & out["month"].eq(m) & out["item_code"].eq(i)) # selection mask
+        # boolean filter that picks out the subset of rows in out corresponding to the current group (district, month, item)
         # Map allocation to rows with positive demand
-        mask_rows_pos = sel & out[facility_col].isin(facs_pos)
-        out.loc[mask_rows_pos, "OB_prime"] = out.loc[mask_rows_pos, facility_col].map(x_sol).values
+        mask_rows_pos = sel & out[facility_col].isin(facs_pos) # only those facilities with a positive demand/AMC
+        out.loc[mask_rows_pos, "OB_prime"] = out.loc[mask_rows_pos, facility_col].map(x_sol).values # assign new opening balance
 
         # Rows with AMC<eps donate to the pool; set OB' to 0 (availability handled below)
         mask_rows_zero = sel & ~out[facility_col].isin(facs_pos)
         out.loc[mask_rows_zero, "OB_prime"] = 0.0
 
+        if return_move_log:
+            # Build a per-facility movement summary for this group
+            # Note: for duplicate facility rows in the group, we report the same net value (x_f - OB0_f_agg)
+            #       OB0_agg is OB0 after deduplication (summing duplicates)
+            for f in AMC.index:  # all facilities (including amc≈0)
+                x_f = x_sol.get(f, 0.0) if f in facs_pos else 0.0
+                net = x_f - float(OB0.get(f, 0.0))  # positive=received, negative=donated
+                move_rows.append({
+                    "district": d, "month": m, "item_code": i,
+                    "facility": f,
+                    "received_from_pool": net,
+                    "x_allocated": x_f,
+                    "OB0_agg": float(OB0.get(f, 0.0))
+                })
+
     # ---------- Availability after redistribution (safe) ----------
-    amc_safe = out[amc_col].astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    amc_safe = out[amc_col].astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0) # returns a clean numeric AMC series with no weird values
     pos_mask = amc_safe >= amc_eps
 
-    p_mech = np.zeros(len(out), dtype=float)
+    p_mech = np.zeros(len(out), dtype=float) # Prepare an output array for the new availability (available_prop_redis), initialized to 0 for all rows.
     # Mechanistic availability for positive-demand rows
     denom = np.maximum(amc_eps, amc_safe[pos_mask].to_numpy())
     p_mech[pos_mask.values] = np.minimum(1.0, np.maximum(
@@ -634,7 +675,20 @@ def redistribute_pooling_lp(
         p_mech[~pos_mask.values] = (out.loc[~pos_mask, "OB_prime"].to_numpy() > 0.0).astype(float)
 
     out["available_prop_redis"] = p_mech
+    # NEW: per-row received_from_pool (using each row's OB)
+    out["received_from_pool"] = out["OB_prime"] - out["OB"]
+
+    if return_move_log:
+        move_log = pd.DataFrame(
+            move_rows,
+            columns=["district", "month", "item_code", "facility", "received_from_pool", "x_allocated", "OB0_agg"]
+        )
+        return out, move_log
+
     return out
+
+# pooled_df, pool_moves = redistribute_pooling_lp(lmis, tau_min=0.25, tau_max=3.0, return_move_log=True)
+
 
 # ------------------------
 # 4) HIGH-LEVEL DRIVER
@@ -696,6 +750,7 @@ def run_redistribution_scenarios(
             facility_col=facility_col,
             amc_col=amc_col,
             close_cols=close_cols,
+            return_move_log=False,
         )
     else:
         raise ValueError("scenario must be one of 'radius_30', 'radius_60', 'pooling'.")
