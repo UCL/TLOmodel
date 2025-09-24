@@ -347,13 +347,9 @@ class HealthSystem(Module):
 
         'scale_factor_delay_in_seeking_care_weather': Parameter(Types.INT,
                                                    'If faced with a climate disruption, and it is determined the individual will '
-                                                   'reseek healthcare, the scale factor for number of days of delay in seeking healthcare again if the HSI was urgent.'
+                                                   'reseek healthcare, the scale factor for number of days of delay in seeking healthcare.'
                                                    'Scale factor makes it proportional to the urgency.'),
 
-        'scale_factor_delay_in_seeking_care_weather_non_urgent': Parameter(Types.INT,
-                                                          'If faced with a climate disruption, and it is determined the individual will '
-                                                          'reseek healthcare, the scale factor number of days of delay in seeking healthcare again if the HSI was not urgent. '
-                                                          'Scale factor makes it proportional to priority.'),
 
         'rescaling_prob_seeking_after_disruption': Parameter(Types.INT,
                                                               'If faced with a climate disruption, and it is determined the individual will '
@@ -396,8 +392,7 @@ class HealthSystem(Module):
         climate_model_ensemble_model: Optional[str] = 'mean',
         services_affected_precip: Optional[str] = 'none',
         response_to_disruption: Optional[str] = 'delay',
-        scale_factor_delay_in_seeking_care_weather_urgent: Optional[int] = 4,
-        scale_factor_delay_in_seeking_care_weather_non_urgent: Optional[int] = 4,
+        scale_factor_delay_in_seeking_care_weather: Optional[int] = 4,
 
     ):
         """
@@ -2554,24 +2549,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         if np.random.binomial(1, prob_disruption) == 1:
                             climate_disrupted = True
                             if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
-                                    if item.priority == 1: # delay for high-priority HSI
                                         self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                             priority=item.priority,
-                                            topen=self.sim.date + DateOffset(days=self.module.parameters['scale_delay_in_seeking_care_weather_urgent']*item.priority + 1),
-                                            tclose=self.sim.date + DateOffset(days=self.module.parameters['scale_delay_in_seeking_care_weather_urgent']) + DateOffset((item.topen - item.tclose).days),
+                                            topen=self.sim.date + DateOffset(days=self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1),
+                                            tclose=self.sim.date + DateOffset(days=self.module.parameters['scale_factor_delay_in_seeking_care_weather']) + DateOffset((item.topen - item.tclose).days),
                                             hsi_event=item.hsi_event
                                         )
                                         self.module.call_and_record_weather_delayed_hsi_event(hsi_event=item.hsi_event,
                                                                                               priority=item.priority)
-                                    else: # delay for low-priority HSI
-                                        self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
-                                            priority=item.priority,
-                                            topen=self.sim.date + DateOffset(days=self.module.parameters['scale_delay_in_seeking_care_weather_non_urgent']*item.priority + 1),
-                                            tclose=self.sim.date + DateOffset(days=self.module.parameters['scale_delay_in_seeking_care_weather_non_urgent']*item.priority + 1) + DateOffset((item.topen - item.tclose).days),
-                                            hsi_event=item.hsi_event
-                                        )
-                                        self.module.call_and_record_weather_delayed_hsi_event(hsi_event=item.hsi_event,
-                                                                                              priority=item.priority)
+
 
                             else:
                                     patient =  self.sim.population.props.loc[[item.hsi_event.target]]
@@ -2590,32 +2576,18 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         care_seeking_odds_ratios=care_seeking_odds_ratios
                                     )
                                     if will_seek_care.iloc[0]:
-                                        if item.priority == 1:  # delay for high-priority HSI
                                             self.sim.modules[
                                                 'HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                                 priority=item.priority,
-                                                topen=self.sim.date + DateOffset(days=self.module.parameters['scale_delay_in_seeking_care_weather_urgent']*item.priority + 1),
-                                                tclose=self.sim.date + DateOffset(days=self.module.parameters['scale_delay_in_seeking_care_weather_urgent']*item.priority + 1) + DateOffset(
+                                                topen=self.sim.date + DateOffset(days=self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1), # makes it proportional to urgency. Most urgent are 0 and 1 (ped/adult)
+                                                tclose=self.sim.date + DateOffset(days=self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1) + DateOffset(
                                                     (item.topen - item.tclose).days),
                                                 hsi_event=item.hsi_event
                                             )
                                             self.module.call_and_record_weather_delayed_hsi_event(
                                                 hsi_event=item.hsi_event,
                                                 priority=item.priority)
-                                        else:  # delay for low-priority HSI
-                                            self.sim.modules[
-                                                'HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
-                                                priority=item.priority,
-                                                topen=self.sim.date + DateOffset(days=self.module.parameters[
-                                                    'scale_delay_in_seeking_care_weather_non_urgent']*item.priority + 1),
-                                                tclose=self.sim.date + DateOffset(days=self.module.parameters[
-                                                    'scale_delay_in_seeking_care_weather_non_urgent']*item.priority + 1) + DateOffset(
-                                                    (item.topen - item.tclose).days),
-                                                hsi_event=item.hsi_event
-                                            )
-                                            self.module.call_and_record_weather_delayed_hsi_event(
-                                                hsi_event=item.hsi_event,
-                                                priority=item.priority)
+
                                     else:
                                         self.module.call_and_record_weather_cancelled_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
 
