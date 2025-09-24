@@ -1,0 +1,110 @@
+{
+  "scenario_script_path": "src/scripts/hiv/mihpsa_runs/scenario_longterm_control.py",
+  "scenario_seed": 38610,
+  "arguments": [],
+  "runs_per_draw": 2,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 0,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "0"
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 1,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "1"
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 2,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "2"
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 3,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "3"
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 4,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "4"
+    },
+    {
+      "draw_number": 5,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 5,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "5"
+    },
+    {
+      "draw_number": 6,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 6,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "6"
+    },
+    {
+      "draw_number": 7,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 7,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "7"
+    },
+    {
+      "draw_number": 8,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 8,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "8"
+    },
+    {
+      "draw_number": 9,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 9,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "9"
+    }
+  ],
+  "commit": "bf002e4eccc05d306a68a997dc707bca272b9ffe",
+  "github": "https://github.com/UCL/TLOmodel/tree/bf002e4eccc05d306a68a997dc707bca272b9ffe"
+}

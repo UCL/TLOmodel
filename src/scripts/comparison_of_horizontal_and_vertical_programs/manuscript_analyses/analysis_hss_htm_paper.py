@@ -2,10 +2,10 @@
 scenarios (scenario_impact_of_healthsystem.py)
 
 job ID:
-/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-01-16T135243Z
+/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-09-16T141811Z
 
-results_folder=Path("/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-01-16T135243Z")
-output_folder=Path("/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-01-16T135243Z")
+results_folder=Path("/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-09-16T141811Z")
+output_folder=Path("/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-09-16T141811Z")
 
 
 """
@@ -280,14 +280,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'HRH Scale-up (1%)': '#d8434e',
         'HRH Scale-up (4%)': '#f36b48',
         'HRH Scale-up (6%)': '#fca45c',
-        'Increase Capacity at Primary Care Levels': '#fddc89',
+        # 'Increase Capacity at Primary Care Levels': '#fddc89',
         'Consumables Increased to 75th Percentile': '#e7f7a0',
         'Consumables Available at HIV levels': '#a5dc97',
         'Consumables Available at EPI levels': '#6dc0a6',
         'HSS Expansion Package': '#438fba',
         'HIV Program Scale-up Without HSS Expansion': '#5e4fa2',
-        'TB Program Scale-up Without HSS Expansion': '#3c71aa',  # New color
-        'Malaria Program Scale-up Without HSS Expansion': '#2f6094',  # New color
+        'TB Program Scale-up Without HSS Expansion': '#3c71aa',
+        'Malaria Program Scale-up Without HSS Expansion': '#2f6094',
     }
 
     # %% Define parameter names
@@ -300,7 +300,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'HRH Scale-up (1%)',
         'HRH Scale-up (4%)',
         'HRH Scale-up (6%)',
-        'Increase Capacity at Primary Care Levels',
+        # 'Increase Capacity at Primary Care Levels',
         'Consumables Increased to 75th Percentile',
         'Consumables Available at HIV levels',
         'Consumables Available at EPI levels',
@@ -313,7 +313,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'HIV Program Scale-up With HRH Scale-up (1%)',
         'HIV Program Scale-up With HRH Scale-up (4%)',
         'HIV Program Scale-up With HRH Scale-up (6%)',
-        'HIV Program Scale-up With Increased HRH at Primary Care Levels',
+        # 'HIV Program Scale-up With Increased HRH at Primary Care Levels',
         'HIV Program Scale-up With Consumables at 75th Percentile',
         'HIV Program Scale-up With Consumables at HIV levels',
         'HIV Program Scale-up With Consumables at EPI levels',
@@ -326,7 +326,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'TB Program Scale-up With HRH Scale-up (1%)',
         'TB Program Scale-up With HRH Scale-up (4%)',
         'TB Program Scale-up With HRH Scale-up (6%)',
-        'TB Program Scale-up With Increased HRH at Primary Care Levels',
+        # 'TB Program Scale-up With Increased HRH at Primary Care Levels',
         'TB Program Scale-up With Consumables at 75th Percentile',
         'TB Program Scale-up With Consumables at HIV levels',
         'TB Program Scale-up With Consumables at EPI levels',
@@ -339,7 +339,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Malaria Program Scale-up With HRH Scale-up (1%)',
         'Malaria Program Scale-up With HRH Scale-up (4%)',
         'Malaria Program Scale-up With HRH Scale-up (6%)',
-        'Malaria Program Scale-up With Increased HRH at Primary Care Levels',
+        # 'Malaria Program Scale-up With Increased HRH at Primary Care Levels',
         'Malaria Program Scale-up With Consumables at 75th Percentile',
         'Malaria Program Scale-up With Consumables at HIV levels',
         'Malaria Program Scale-up With Consumables at EPI levels',
@@ -352,7 +352,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'HTM Program Scale-up With HRH Scale-up (1%)',
         'HTM Program Scale-up With HRH Scale-up (4%)',
         'HTM Program Scale-up With HRH Scale-up (6%)',
-        'HTM Program Scale-up With Increased HRH at Primary Care Levels',
+        # 'HTM Program Scale-up With Increased HRH at Primary Care Levels',
         'HTM Program Scale-up With Consumables at 75th Percentile',
         'HTM Program Scale-up With Consumables at HIV levels',
         'HTM Program Scale-up With Consumables at EPI levels',
@@ -842,7 +842,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 'HIV Program Scale-up With Consumables at EPI levels',
                 'HIV Program Scale-up With Consumables at HIV levels',
                 'HIV Program Scale-up With Consumables at 75th Percentile',
-                'HIV Program Scale-up With Increased HRH at Primary Care Levels',
+                # 'HIV Program Scale-up With Increased HRH at Primary Care Levels',
                 'HIV Program Scale-up With HRH Scale-up (6%)',
                 'HIV Program Scale-up With HRH Scale-up (4%)',
                 'HIV Program Scale-up With HRH Scale-up (1%)',
@@ -853,7 +853,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 'TB Program Scale-up With Consumables at EPI levels',
                 'TB Program Scale-up With Consumables at HIV levels',
                 'TB Program Scale-up With Consumables at 75th Percentile',
-                'TB Program Scale-up With Increased HRH at Primary Care Levels',
+                # 'TB Program Scale-up With Increased HRH at Primary Care Levels',
                 'TB Program Scale-up With HRH Scale-up (6%)',
                 'TB Program Scale-up With HRH Scale-up (4%)',
                 'TB Program Scale-up With HRH Scale-up (1%)',
@@ -864,7 +864,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 'Malaria Program Scale-up With Consumables at EPI levels',
                 'Malaria Program Scale-up With Consumables at HIV levels',
                 'Malaria Program Scale-up With Consumables at 75th Percentile',
-                'Malaria Program Scale-up With Increased HRH at Primary Care Levels',
+                # 'Malaria Program Scale-up With Increased HRH at Primary Care Levels',
                 'Malaria Program Scale-up With HRH Scale-up (6%)',
                 'Malaria Program Scale-up With HRH Scale-up (4%)',
                 'Malaria Program Scale-up With HRH Scale-up (1%)',
@@ -875,7 +875,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 'HTM Program Scale-up With Consumables at EPI levels',
                 'HTM Program Scale-up With Consumables at HIV levels',
                 'HTM Program Scale-up With Consumables at 75th Percentile',
-                'HTM Program Scale-up With Increased HRH at Primary Care Levels',
+                # 'HTM Program Scale-up With Increased HRH at Primary Care Levels',
                 'HTM Program Scale-up With HRH Scale-up (6%)',
                 'HTM Program Scale-up With HRH Scale-up (4%)',
                 'HTM Program Scale-up With HRH Scale-up (1%)',
@@ -886,7 +886,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 'Consumables Available at EPI levels',
                 'Consumables Available at HIV levels',
                 'Consumables Increased to 75th Percentile',
-                'Increase Capacity at Primary Care Levels',
+                # 'Increase Capacity at Primary Care Levels',
                 'HRH Scale-up (6%)',
                 'HRH Scale-up (4%)',
                 'HRH Scale-up (1%)'
@@ -910,7 +910,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                          'Consumables increased to EPI levels',
                          'Consumables increased to HIV levels',
                          'Consumables increased to 75th Percentile',
-                         'Increase Capacity at Primary Care Levels',
+                         # 'Increase Capacity at Primary Care Levels',
                          'Optimistic HRH Scale-up',
                          'Historical HRH Scale-up',
                          'Pessimistic HRH Scale-up',
