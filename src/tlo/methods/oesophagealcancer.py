@@ -928,30 +928,17 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
             item_codes=self.module.item_codes_oesophageal_can['palliation'])
 
         if cons_available:
-            # If consumables are available and the treatment will go ahead - update the equipment
-            self.add_equipment({'Infusion pump', 'Drip stand'})
-
-            # Additional cancer palliative care equipment based on column H comments
-            # Pain management and comfort care equipment
-            if self.module.rng.random() < 0.70:  # 70% probability at level 2
-                self.add_equipment({221})  # Analyser, Haematology (for monitoring)
-
-            if self.module.rng.random() < 0.60:  # 60% probability at level 2
-                self.add_equipment({220})  # Analyser, Chemistry (for electrolyte monitoring)
-
-            # Basic imaging for symptom management
-            if self.module.rng.random() < 0.50:  # 50% probability at level 2
-                self.add_equipment({202})  # X-ray machine (for complications)
-
-            if self.module.rng.random() < 0.40:  # 40% probability at level 2
-                self.add_equipment({161})  # Ultrasound scanning machine
-
-            # Sample processing for monitoring
-            if self.module.rng.random() < 0.70:  # 70% probability for sample handling
-                self.add_equipment({334})  # Sample Rack
-
-            # Safety equipment
-            self.add_equipment({50})   # Safety Goggles
+            # Equipment for oesophageal cancer palliative care
+            self.add_equipment({
+                'Infusion pump',
+                'Drip stand',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):

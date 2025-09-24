@@ -942,11 +942,9 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
                 'Analyser, Chemistry',
                 'X-ray machine',
                 'Ultrasound scanning machine',
-                'Sample Rack'
+                'Sample Rack',
+                'Safety Goggles'
             })
-
-            # Safety equipment
-            self.add_equipment({50})   # Safety Goggles
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oac_date_palliative_care"]):

@@ -842,17 +842,12 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
                                                   'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_available:
-            # If consumables are available update the use of equipment and run the dx_test representing the biopsy
-            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
-
-            # Additional prostate cancer diagnostic equipment - facility level dependent
-            # Since this HSI runs at level 1b, moderate equipment availability
-
-            # Essential cancer laboratory equipment - "for cancers assume used for all hsi's"
-            self.add_equipment({221, 132})  # Analyser, Haematology and Analyzer, Clinical immunoassay
-
             # Equipment for prostate cancer biopsy and investigation
             self.add_equipment({
+                'Ultrasound scanning machine',
+                'Ordinary Microscope',
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
                 'Analyser, Hormones',
                 'Intravenous Pyelography set',
                 'Intravenous Pyrography set',
@@ -957,12 +952,13 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             # Additional prostate cancer treatment-specific equipment - facility level dependent
             # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
 
-            # Essential cancer laboratory equipment - "for cancers assume used for all hsi's"
-            # Prostate cancer specific hormone analysis, cell washing, and patient gowns
-            self.add_equipment({221, 132, 139, 141, 370})  # Analyser Haematology, Clinical immunoassay, Hormones, Cell washer, Gown
-
             # Equipment for prostate cancer treatment
             self.add_equipment({
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
+                'Analyser, Hormones',
+                'Automatic Cell washer',
+                'Backsplit cotton gown',
                 'Coagulation machine',
                 'Sterilizing unit, steam, medium, 240 litre',
                 'Magnetic Stirrer',
@@ -1019,11 +1015,10 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         # Equipment for prostate cancer follow-up monitoring - facility level dependent
         # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
 
-        # Essential cancer laboratory monitoring - "for cancers assume used for all hsi's"
-        self.add_equipment({221, 132})  # Analyser, Haematology and Analyzer, Clinical immunoassay
-
         # Equipment for prostate cancer post-treatment monitoring
         self.add_equipment({
+            'Analyser, Haematology',
+            'Analyzer, Clinical immunoassay',
             'Analyser, Hormones',
             'Coagulation machine',
             'Backsplit cotton gown',
@@ -1101,15 +1096,10 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
                 'Backsplit cotton gown',
                 'Coagulation machine',
                 'Automatic Cell washer',
-                'Sterilizing unit, steam, 39 ltr'
+                'Sterilizing unit, steam, 39 ltr',
+                'Safety Goggles',
+                'Sample Rack'
             })
-
-            # Safety equipment - "assumed used for all cancers"
-            self.add_equipment({50})   # Safety Goggles
-
-            # Sample processing if needed - "assumed used for all cancers"
-            if self.module.rng.random() < 0.40:  # 40% probability for basic lab support
-                self.add_equipment({334})  # Sample Rack
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "pc_date_palliative_care"]):
