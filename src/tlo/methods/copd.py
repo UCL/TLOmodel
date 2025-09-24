@@ -570,7 +570,7 @@ class HSI_Copd_TreatmentOnModerateExacerbation(HSI_Event, IndividualScopeEventMi
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "Copd_Treatment_Moderate"
+        self.TREATMENT_ID = "Copd_Treatment"
         self.ACCEPTED_FACILITY_LEVEL = "1a"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
 
