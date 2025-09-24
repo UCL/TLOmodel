@@ -12,8 +12,8 @@ class ClimateDisruptionScenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2041, 1, 12)
-        self.pop_size = 100_000
+        self.end_date = Date(2046, 1, 12)
+        self.pop_size = 100_00
         self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
@@ -52,7 +52,7 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
-        return {'Baseline': self._baseline(),
+        return {#'Baseline': self._baseline(),
                 'SSP 2.45 Mean': self._ssp245_mean(),
                 }
 
