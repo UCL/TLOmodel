@@ -348,16 +348,16 @@ class HealthSystem(Module):
         'scale_factor_delay_in_seeking_care_weather': Parameter(Types.INT,
                                                    'If faced with a climate disruption, and it is determined the individual will '
                                                    'reseek healthcare, the scale factor for number of days of delay in seeking healthcare.'
-                                                   'Scale factor makes it proportional to the urgency.'),
+                                                   'Scale factor makes it proportional to the urgency.'),# gamma in write yp
 
 
         'rescaling_prob_seeking_after_disruption': Parameter(Types.INT,
                                                               'If faced with a climate disruption, and it is determined the individual will '
-                                                              'reseek healthcare, scaling of their original probability of seeking care.'),
+                                                              'reseek healthcare, scaling of their original probability of seeking care.'), # beta in write yp
 
         'rescaling_prob_disruption': Parameter(Types.INT,
                                                       'Due to uknown behaviours (from patient and health practiciion), broken chains of events, etc, which cause discrepencies  '
-                                                             'between the estimated disruptions and those modelled in TLO, rescale the original probability of disruption.'),
+                                                             'between the estimated disruptions and those modelled in TLO, rescale the original probability of disruption.'), # alpha in write yp
         'services_affected_precip': Parameter(Types.STRING,
                                               'Which modelled services can be affected by weather. Options are all, none'),
 
