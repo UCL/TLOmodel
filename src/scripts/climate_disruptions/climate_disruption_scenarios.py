@@ -4,8 +4,8 @@ from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
-from tlo.scenario import BaseScenario
-
+from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
+import numpy as np
 
 class ClimateDisruptionScenario(BaseScenario):
     def __init__(self):
@@ -18,6 +18,11 @@ class ClimateDisruptionScenario(BaseScenario):
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
+        self._parameter_grid = make_cartesian_parameter_grid({"HealthSystem": {
+                "scale_factor_delay_in_seeking_care_weather": range(0, 5, 1),
+                "rescaling_prob_seeking_after_disruption": np.linspace(0, 2.0, 20),  #rescaling of prob of seeking healthcare after disruption
+                "rescaling_prob_disruption": np.linspace(0, 2.0, 20)
+            }})
 
     def log_configuration(self):
         return {
@@ -48,15 +53,7 @@ class ClimateDisruptionScenario(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {'Baseline': self._baseline(),
-                'SSP 1.26 High': self._ssp126_high(),
-                'SSP 1.26 Low': self._ssp126_low(),
-                'SSP 1.26 Mean': self._ssp126_mean(),
-                'SSP 2.45 High': self._ssp245_high(),
-                'SSP 2.45 Low': self._ssp245_low(),
                 'SSP 2.45 Mean': self._ssp245_mean(),
-                'SSP 5.85 High': self._ssp585_high(),
-                'SSP 5.85 Low': self._ssp585_low(),
-                'SSP 5.85 Mean': self._ssp585_mean()
                 }
 
     def _baseline(self) -> Dict:
@@ -80,8 +77,8 @@ class ClimateDisruptionScenario(BaseScenario):
                 "use_funded_or_actual_staffing": "funded_plus",
                  "climate_ssp": 'ssp245', #status quo
                  "climate_model_ensemble_model": 'mean',
-                 "services_affected_precip": 'none',
-                 "delay_in_seeking_care_weather": 4
+                 "services_affected_precip": 'none', # ensures no disruption
+                 "tclose_overwrite": 200 # days of t close overwrite
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
@@ -97,203 +94,6 @@ class ClimateDisruptionScenario(BaseScenario):
                     }
              },
         )
-
-    def _ssp126_high(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, False],
-                'year_of_switch': self.YEAR_OF_CHANGE
-                },
-             "HealthSystem": {
-                "mode_appt_constraints": 1,
-                "cons_availability": "default",
-                "cons_availability_postSwitch": "all",
-                "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                "beds_availability": "all",
-                "equip_availability": "default",
-                "equip_availability_postSwitch": "all",
-                "year_equip_availability_switch": self.YEAR_OF_CHANGE,
-                "use_funded_or_actual_staffing": "funded_plus",
-                "climate_ssp":'ssp126',
-                "climate_model_ensemble_model":'highest',
-                 "services_affected_precip":'all',
-                 "delay_in_seeking_care_weather": 4
-
-                },
-                "Malaria": {
-                    'type_of_scaleup': 'max',
-                    'scaleup_start_year': self.YEAR_OF_CHANGE,
-                },
-                "Tb": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    },
-                "Hiv": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    }
-             },
-        )
-
-    def _ssp126_low(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, False],
-                'year_of_switch': self.YEAR_OF_CHANGE
-                },
-             "HealthSystem": {
-                "mode_appt_constraints": 1,
-                "cons_availability": "default",
-                "cons_availability_postSwitch": "all",
-                "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                "beds_availability": "all",
-                "equip_availability": "default",
-                "equip_availability_postSwitch": "all",
-                "year_equip_availability_switch": self.YEAR_OF_CHANGE,
-                "use_funded_or_actual_staffing": "funded_plus",
-                "climate_ssp":'ssp126',
-                "climate_model_ensemble_model":'lowest',
-                "services_affected_precip":'all',
-                "delay_in_seeking_care_weather": 4
-                },
-                "Malaria": {
-                    'type_of_scaleup': 'max',
-                    'scaleup_start_year': self.YEAR_OF_CHANGE,
-                },
-                "Tb": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    },
-                "Hiv": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    }
-             },
-        )
-
-    def _ssp126_mean(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, False],
-                'year_of_switch': self.YEAR_OF_CHANGE
-                },
-             "HealthSystem": {
-                "mode_appt_constraints": 1,
-                "cons_availability": "default",
-                "cons_availability_postSwitch": "all",
-                "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                "beds_availability": "all",
-                "equip_availability": "default",
-                "equip_availability_postSwitch": "all",
-                "year_equip_availability_switch": self.YEAR_OF_CHANGE,
-                "use_funded_or_actual_staffing": "funded_plus",
-                "climate_ssp":'ssp126',
-                "climate_model_ensemble_model":'mean',
-                "services_affected_precip": 'all',
-                "delay_in_seeking_care_weather": 4
-                },
-                "Malaria": {
-                    'type_of_scaleup': 'max',
-                    'scaleup_start_year': self.YEAR_OF_CHANGE,
-                },
-                "Tb": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    },
-                "Hiv": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    }
-             },
-        )
-
-    def _ssp245_high(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, False],
-                'year_of_switch': self.YEAR_OF_CHANGE
-                },
-             "HealthSystem": {
-                "mode_appt_constraints": 1,
-                "cons_availability": "default",
-                "cons_availability_postSwitch": "all",
-                "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                "beds_availability": "all",
-                "equip_availability": "default",
-                "equip_availability_postSwitch": "all",
-                "year_equip_availability_switch": self.YEAR_OF_CHANGE,
-                "use_funded_or_actual_staffing": "funded_plus",
-                "climate_ssp":'ssp245',
-                "climate_model_ensemble_model":'highest',
-                "services_affected_precip":'all',
-                "delay_in_seeking_care_weather": 4
-                },
-                "Malaria": {
-                    'type_of_scaleup': 'max',
-                    'scaleup_start_year': self.YEAR_OF_CHANGE,
-                },
-                "Tb": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    },
-                "Hiv": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    }
-             },
-        )
-
-    def _ssp245_low(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, False],
-                'year_of_switch': self.YEAR_OF_CHANGE
-                },
-             "HealthSystem": {
-                "mode_appt_constraints": 1,
-                "cons_availability": "default",
-                "cons_availability_postSwitch": "all",
-                "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                "beds_availability": "all",
-                "equip_availability": "default",
-                "equip_availability_postSwitch": "all",
-                "year_equip_availability_switch": self.YEAR_OF_CHANGE,
-                "use_funded_or_actual_staffing": "funded_plus",
-                "climate_ssp":'ssp245',
-                "climate_model_ensemble_model":'lowest',
-                "services_affected_precip":'all',
-                "delay_in_seeking_care_weather": 4
-                },
-                "Malaria": {
-                    'type_of_scaleup': 'max',
-                    'scaleup_start_year': self.YEAR_OF_CHANGE,
-                },
-                "Tb": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    },
-                "Hiv": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    }
-             },
-        )
-
     def _ssp245_mean(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
         return mix_scenarios(
@@ -316,124 +116,7 @@ class ClimateDisruptionScenario(BaseScenario):
                 "climate_ssp":'ssp245',
                 "climate_model_ensemble_model":'mean',
                 "services_affected_precip":'all',
-                "delay_in_seeking_care_weather": 4
-                },
-                "Malaria": {
-                    'type_of_scaleup': 'max',
-                    'scaleup_start_year': self.YEAR_OF_CHANGE,
-                },
-                "Tb": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    },
-                "Hiv": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    }
-             },
-        )
-
-    def _ssp585_high(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, False],
-                'year_of_switch': self.YEAR_OF_CHANGE
-                },
-             "HealthSystem": {
-                "mode_appt_constraints": 1,
-                "cons_availability": "default",
-                "cons_availability_postSwitch": "all",
-                "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                "beds_availability": "all",
-                "equip_availability": "default",
-                "equip_availability_postSwitch": "all",
-                "year_equip_availability_switch": self.YEAR_OF_CHANGE,
-                "use_funded_or_actual_staffing": "funded_plus",
-                "climate_ssp":'ssp585',
-                "climate_model_ensemble_model":'highest',
-                "services_affected_precip":'all',
-                "delay_in_seeking_care_weather": 4
-                },
-                "Malaria": {
-                    'type_of_scaleup': 'max',
-                    'scaleup_start_year': self.YEAR_OF_CHANGE,
-                },
-                "Tb": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    },
-                "Hiv": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    }
-             },
-        )
-
-    def _ssp585_low(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, False],
-                'year_of_switch': self.YEAR_OF_CHANGE
-                },
-             "HealthSystem": {
-                "mode_appt_constraints": 1,
-                "cons_availability": "default",
-                "cons_availability_postSwitch": "all",
-                "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                "beds_availability": "all",
-                "equip_availability": "default",
-                "equip_availability_postSwitch": "all",
-                "year_equip_availability_switch": self.YEAR_OF_CHANGE,
-                "use_funded_or_actual_staffing": "funded_plus",
-                "climate_ssp":'ssp585',
-                "climate_model_ensemble_model":'lowest',
-                "services_affected_precip":'all',
-                "delay_in_seeking_care_weather": 4
-                },
-                "Malaria": {
-                    'type_of_scaleup': 'max',
-                    'scaleup_start_year': self.YEAR_OF_CHANGE,
-                },
-                "Tb": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    },
-                "Hiv": {
-                        'type_of_scaleup': 'max',
-                        'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    }
-             },
-        )
-
-    def _ssp585_mean(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                'max_healthsystem_function': [False, True],
-                'max_healthcare_seeking': [False, False],
-                'year_of_switch': self.YEAR_OF_CHANGE
-                },
-             "HealthSystem": {
-                "mode_appt_constraints": 1,
-                "cons_availability": "default",
-                "cons_availability_postSwitch": "all",
-                "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                "beds_availability": "all",
-                "equip_availability": "default",
-                "equip_availability_postSwitch": "all",
-                "year_equip_availability_switch": self.YEAR_OF_CHANGE,
-                "use_funded_or_actual_staffing": "funded_plus",
-                "climate_ssp":'ssp126',
-                "climate_model_ensemble_model":'mean',
-                "services_affected_precip":'all',
-                "delay_in_seeking_care_weather": 4
+                 "tclose_overwrite": 200 # days of t close overwrite
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
