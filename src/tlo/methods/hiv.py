@@ -3067,6 +3067,9 @@ class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         if df.at[person_id, "hv_art"] == "virally_suppressed":
             return hs.get_blank_appt_footprint()
 
+        # add general inpatient equipment
+        self.add_equipment({*self.healthcare_system.equipment.from_pkg_names('In-patient')})
+
         logger.debug(
             key="message",
             data=f"HSI_Hiv_EndOfLifeCare: inpatient admission for {person_id}",

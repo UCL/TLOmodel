@@ -1313,7 +1313,9 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
 
                 # Add used equipment
                 self.add_equipment({'Drip stand', 'Haemoglobinometer',
-                                       'Analyser, Combined Chemistry and Electrolytes'})
+                                       'Analyser, Combined Chemistry and Electrolytes',
+                                    *self.healthcare_system.equipment.from_pkg_names('In-patient'),
+                                    })
 
                 # rdt is offered as part of the treatment package
                 # Log the test: line-list of summary information about each test
