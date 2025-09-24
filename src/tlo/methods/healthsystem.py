@@ -748,10 +748,10 @@ class HealthSystem(Module):
             self.rng_for_hsi_queue.shuffle(providers)  # randomize tbe order of the list
             df["service_provider"] = providers
 
-        if self.arg_facility_type == "government":
-            df["is_alive"] &= (df["service_provider"] == "government")
-        elif self.arg_facility_type == "cham":
-            df["is_alive"] &= (df["service_provider"] == "cham")
+        if self.arg_facility_type in ("government", "cham"):
+            df["hs_access"] = df["is_alive"] & (df["service_provider"] == self.arg_facility_type)
+        else:  # both
+            df["hs_access"] = df["is_alive"]
 
         print(f"Facility type: {self.arg_facility_type} — Alive population: {df.is_alive.sum()}")
         print(df["service_provider"].value_counts())
@@ -1361,6 +1361,17 @@ class HealthSystem(Module):
 
         # Check that priority is in valid range
         assert priority >= 0
+
+        required_level = getattr(hsi_event, "ACCEPTED_FACILITY_LEVEL", None)
+
+        # Only apply referral if this HSI is individual-scoped
+        if required_level is not None and hasattr(hsi_event, "person_id"):
+            provider, facility_level = self.resolve_facility(
+                person_id=hsi_event.person_id,
+                required_level=required_level
+            )
+            hsi_event.service_provider = provider
+            hsi_event.facility_level = facility_level
 
         # If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling under mode 2
         if (self.mode_appt_constraints == 2) and (priority > self.lowest_priority_considered):
@@ -2242,6 +2253,33 @@ class HealthSystem(Module):
                     in self._never_ran_hsi_event_details.items()
                 }
             )
+
+    def resolve_facility(self, person_id: int, required_level: str) -> Tuple[str, str]:
+        """
+        Return (service_provider, facility_level) for a given HSI event.
+        Handles referrals: if CHAM cannot provide the required level, refer to government.
+        """
+        df = self.sim.population.props
+        provider = df.at[person_id, "service_provider"]
+
+        gov_levels = {"0", "1a", "1b", "2", "3"}
+        cham_levels = {"0", "1a", "1b", "2"}
+
+        if provider == "government":
+            if required_level in gov_levels:
+                return ("government", required_level)
+            else:
+                raise RuntimeError(f"Government does not support {required_level}")
+
+        elif provider == "cham":
+            if required_level in cham_levels:
+                return ("cham", required_level)
+            else:
+                # referral
+                return ("government", required_level)
+
+        else:  # fallback for 'both' or unknown
+            return ("government", required_level)
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
