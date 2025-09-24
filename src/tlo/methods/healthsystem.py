@@ -2533,7 +2533,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 # First, check for climate disruption
                 if year >= 2010: #2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] is not None:
-                    assert self.module.parameters['services_affected_precip'] == 'all'
                     fac_level = item.hsi_event.facility_info.level
                     facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_level}']
                     if facility_used in self.module.parameters['projected_precip_disruptions']['RealFacility_ID'].values:
@@ -2575,12 +2574,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         df = patient,
                                         subgroup=subgroup_name,
                                         care_seeking_odds_ratios=care_seeking_odds_ratios
-                                    ),1)
-                                    print(will_seek_care_prob)
+                                    ).iloc[0],1)
+
                                     will_seek_care = 0
-                                    if random < will_seek_care_prob:
+                                    if random.random() < will_seek_care_prob:
                                         will_seek_care = 1
-                                    if will_seek_care.iloc[0]:
+                                    if will_seek_care:
                                             self.sim.modules[
                                                 'HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                                 priority=item.priority,
