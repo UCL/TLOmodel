@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -44,9 +45,8 @@ class CareOfWomenDuringPregnancy(Module):
     Individual interventions are stored as functions within the module to prevent repetition.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # First we define dictionaries which will store the current parameters of interest (to allow parameters to
         # change between 2010 and 2020)
@@ -176,8 +176,8 @@ class CareOfWomenDuringPregnancy(Module):
                                                                    'caesarean_now', 'caesarean_future', 'avd_now']),
     }
 
-    def read_parameters(self, data_folder):
-        parameter_dataframe = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare',
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+        parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_AntenatalCare',
                                             files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
@@ -1258,7 +1258,7 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
 
         iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-            self, int_name='anti_htn_mgso4', hsi_event=hsi_event,
+            self, int_name='iv_antihypertensives', hsi_event=hsi_event,
             cons=self.item_codes_preg_consumables['iv_antihypertensives'],
             alt_con=self.item_codes_preg_consumables['iv_antihypertensives_other'],
             opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'],

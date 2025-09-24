@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -24,9 +24,8 @@ logger.setLevel(logging.INFO)
 
 
 class Epilepsy(Module, GenericFirstAppointmentsMixin):
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.item_codes = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthBurden', 'HealthSystem', 'SymptomManager'}
@@ -143,7 +142,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
     # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = 'antiepileptic'
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from file, if required.
 
         Here we just assign parameter values explicitly.
@@ -152,7 +151,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
           Typically modules would read a particular file within here.
         """
         # Update parameters from the resource dataframe
-        dfd = read_csv_files(Path(self.resourcefilepath) / 'epilepsy' / 'ResourceFile_Epilepsy',
+        dfd = read_csv_files(resourcefilepath / 'epilepsy' / 'ResourceFile_Epilepsy',
                             files='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 
@@ -629,7 +628,9 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
-        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters['max_num_of_failed_attempts_before_defaulting']
+        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters[
+            "max_num_of_failed_attempts_before_defaulting"
+        ]
         self._counter_of_failed_attempts_due_to_unavailable_medicines = 0
 
     def apply(self, person_id, squeeze_factor):
@@ -680,8 +681,10 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters['max_num_of_failed_attempts_before_defaulting']
-        self._DEFAULT_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters[
+            "max_num_of_failed_attempts_before_defaulting"
+        ]
+        self._DEFAULT_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self._REPEATED_APPT_FOOTPRINT = self.make_appt_footprint({'PharmDispensing': 1})
 
         self.TREATMENT_ID = "Epilepsy_Treatment_Followup"

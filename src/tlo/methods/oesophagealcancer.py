@@ -9,7 +9,7 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
@@ -37,9 +37,8 @@ logger.setLevel(logging.INFO)
 class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
     """Oesophageal Cancer Disease Module"""
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.linear_models_for_progession_of_oc_status = dict()
         self.lm_onset_dysphagia = None
         self.daly_wts = dict()
@@ -214,11 +213,11 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         ),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Setup parameters used by the module, register it with healthsystem and register symptoms"""
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            read_csv_files(Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer",
+            read_csv_files(resourcefilepath / "ResourceFile_Oesophageal_Cancer",
                            files="parameter_values")
         )
 
@@ -804,7 +803,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(years=12),
+                topen=self.sim.date + DateOffset(months=12),
                 tclose=None,
                 priority=0
             )
@@ -856,7 +855,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=1),
+                topen=self.sim.date + DateOffset(months=1),
                 tclose=None,
                 priority=0
             )

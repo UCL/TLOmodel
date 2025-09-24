@@ -7,7 +7,7 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
@@ -35,9 +35,8 @@ logger.setLevel(logging.INFO)
 class ProstateCancer(Module, GenericFirstAppointmentsMixin):
     """Prostate Cancer Disease Module"""
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.linear_models_for_progression_of_pc_status = dict()
         self.lm_prostate_ca_onset_urinary_symptoms = None
         self.lm_onset_pelvic_pain = None
@@ -197,12 +196,12 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Setup parameters used by the module, now including disability weights"""
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            read_csv_files(Path(self.resourcefilepath) / "ResourceFile_Prostate_Cancer",
+            read_csv_files(resourcefilepath / "ResourceFile_Prostate_Cancer",
                            files="parameter_values")
         )
 
@@ -976,13 +975,13 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
             )
 
         else:
-            # Schedule another HSI_ProstateCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_ProstateCancer_PostTreatmentCheck event in 12 months
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=1),
+                topen=self.sim.date + DateOffset(months=12),
                 tclose=None,
                 priority=0
             )
