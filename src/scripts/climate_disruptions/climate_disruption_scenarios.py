@@ -13,15 +13,16 @@ class ClimateDisruptionScenario(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2046, 1, 12)
-        self.pop_size = 100_00
+        self.pop_size = 100_000
         self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self._parameter_grid = make_cartesian_parameter_grid({"HealthSystem": {
-                "scale_factor_delay_in_seeking_care_weather": range(0, 5, 1),
-                "rescaling_prob_seeking_after_disruption": np.arange(0.25, 2.01, 0.25),  #rescaling of prob of seeking healthcare after disruption
-                "rescaling_prob_disruption": np.arange(0.25, 2.01, 0.25)
+                "scale_factor_delay_in_seeking_care_weather": range(0, 60, 2),
+                "rescaling_prob_seeking_after_disruption": np.arange(0.01, 1.51, 0.5),  #rescaling of prob of seeking healthcare after disruption
+                "rescaling_prob_disruption": np.arange(0.25, 2.01, 0.25),
+                "scale_factor_severity_disruption_and_delay": np.arange(0.11, 1.01, 0.1), # below 1 assumes that severity does not decrease the time in seeking healthcare: weather-independent conditions. Max 10 times longer
             }})
 
     def log_configuration(self):
