@@ -10,7 +10,7 @@ from typing import Literal, Optional, Dict, Tuple
 import requests
 
 from pulp import LpProblem, LpMaximize, LpVariable, LpBinary, LpStatus, value, lpSum, LpContinuous, PULP_CBC_CMD
-
+from math import ceil
 
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -295,6 +295,127 @@ def build_edges_within_radius_flat(T_by_dist: dict, max_minutes: float) -> dict[
 
 # a = build_edges_within_radius(T_car, max_minutes = 18)
 
+# Defining clusters of health facilities within district
+# This function helps find the facilities which would be appropriate cluster centers
+def _farthest_first_seeds(T: pd.DataFrame, k: int, big: float = 1e9) -> list:
+    """
+    Pick k seed medoids via farthest-first traversal on a travel-time matrix.
+    Treat inf/NaN distances as 'big' so disconnected components get separate seeds.
+    """
+    n = T.shape[0]
+    facs = T.index.tolist()
+    D = T.to_numpy().astype(float)
+    D[~np.isfinite(D)] = big
+
+    # Start at the row with largest average distance (covers sparse areas first)
+    start = int(np.nanargmax(np.nanmean(D, axis=1))) # the remotest facility
+    seeds_idx = [start]
+
+    # Iteratively add the point with max distance to its nearest seed
+    for _ in range(1, k):
+        # min distance to any existing seed for every point
+        min_to_seed = np.min(D[:, seeds_idx], axis=1) # this has a dimension of [facs, number of seeds]
+        next_idx = int(np.argmax(min_to_seed)) # for each facility find the distance to its nearest seed
+        # and the facility farthest from the nearest seed becomes the next seed
+        if next_idx in seeds_idx:
+            # Fallback: pick any non-seed with highest min_to_seed
+            candidates = [i for i in range(n) if i not in seeds_idx]
+            if not candidates:
+                break
+            next_idx = int(candidates[np.argmax(min_to_seed[candidates])])
+        seeds_idx.append(next_idx)
+
+    return [facs[i] for i in seeds_idx] # list of length k representing the clustering points
+
+# Assign each facility to its nearest seed subject to a hard cluster capacity (≤ X members)
+def _assign_to_cluster_with_fixed_capacity(T: pd.DataFrame, seeds: list, capacity: int, big: float = 1e9) -> Dict[str, int]:
+    """
+    Greedy assignment of facilities to nearest seed that still has capacity.
+    Returns: mapping facility -> seed_index (position in seeds list).
+    """
+    facs = T.index.tolist()
+    D = T.loc[facs, seeds].to_numpy().astype(float) # Distance of all facilities from the k seeds
+    D[~np.isfinite(D)] = big
+
+    # each facility: nearest distance to any seed (for stable ordering)
+    nearest = D.min(axis=1) # find the shortest distance to a cluster for each facility
+    order = np.argsort(nearest)  # sort all facilities in ascending order of their distance from the nearest facility
+
+    cap_left = {j: capacity for j in range(len(seeds))} # the capacity left for each seed
+    assign = {}
+
+    for idx in order:
+        f = facs[idx]
+        # try seeds in ascending distance
+        seq = np.argsort(D[idx, :]) # the sequence of seeds most suitable for idx
+        placed = False
+        for j in seq:
+            if cap_left[j] > 0:
+                assign[f] = j
+                cap_left[j] -= 1
+                placed = True
+                break
+        if not placed:
+            # total capacity >= n, so this should be rare; if it happens, put in least-loaded seed
+            j = min(cap_left, key=lambda jj: cap_left[jj])
+            assign[f] = j
+            cap_left[j] -= 1
+
+    return assign
+
+def capacity_clusters_for_district(
+    T_d: pd.DataFrame, cluster_size: int = 5, big: float = 1e9, refine_swaps: int = 0
+) -> Dict[str, str]:
+    """
+    Build ~equal-size clusters (size<=cluster_size) from a district's travel-time matrix via
+    capacity-constrained k-medoids (farthest-first seeds + greedy capacity assignment).
+
+    Returns: {facility_id -> cluster_id} (cluster ids like 'C00','C01',...)
+    """
+    facs = T_d.index.tolist()
+    n = len(facs)
+    if n == 0:
+        return {}
+    if n <= cluster_size:
+        return {f: "C00" for f in facs}
+
+    k = ceil(n / cluster_size)
+    seeds = _farthest_first_seeds(T_d, k=k, big=big)
+    assign_seed_idx = _assign_to_cluster_with_fixed_capacity(T_d, seeds=seeds, capacity=cluster_size, big=big)
+
+    # Optional tiny refinement: (off by default)
+    # You could add 1–2 passes of medoid swap within clusters to reduce intra-cluster travel.
+
+    # Build cluster ids in seed order
+    seed_to_cid = {j: f"C{j:02d}" for j in range(len(seeds))}
+    return {f: seed_to_cid[assign_seed_idx[f]] for f in facs}
+
+def build_capacity_clusters_all(
+    T_by_dist: Dict[str, pd.DataFrame], cluster_size: int = 5
+) -> pd.Series:
+    """
+    Apply capacity clustering to all districts.
+    Args:
+      T_by_dist: {'DistrictName': time_matrix (minutes, square DF with facility ids)}
+      cluster_size: desired max cluster size (e.g., 5)
+
+    Returns:
+      pd.Series mapping facility_id -> cluster_id names scoped by district, e.g. 'Nkhotakota#C03'
+    """
+    mappings = []
+    for d, T_d in T_by_dist.items():
+        if T_d is None or T_d.empty:
+            continue
+        local_map = capacity_clusters_for_district(T_d, cluster_size=cluster_size)
+        if not local_map:
+            continue
+        s = pd.Series(local_map, name="cluster_id")
+        s = s.map(lambda cid: f"{d}#{cid}")  # scope cluster name by district
+        mappings.append(s)
+    if not mappings:
+        return pd.Series(dtype=object)
+    return pd.concat(mappings)
+
 # -----------------------------------------------
 # 3) LP/MILP Redistribution
 # -----------------------------------------------
@@ -512,7 +633,9 @@ def redistribute_pooling_lp(
     close_cols=("closing_bal","received","dispensed"),
     keep_baseline_for_amc0: bool = True,   # leave baseline availability where AMC≈0
     amc_eps: float = 1e-6,                  # threshold to treat AMC as "zero"
-    return_move_log: bool = True # return a detailed df showing net movement of consumables after redistribution
+    return_move_log: bool = True, # return a detailed df showing net movement of consumables after redistribution
+    pooling_level: str = "district",  # "district" or "cluster"
+    cluster_map: pd.Series | None = None  # required if pooling_level=="cluster"; this specifes which cluster each facility belongs to
 ) -> pd.DataFrame:
     """
     Scenario 3: district-level pooling/push .
@@ -523,12 +646,21 @@ def redistribute_pooling_lp(
       - optional 'excess' sink if total stock > sum ceilings
       - availability computed safely; AMC≈0 rows keep baseline (optional)
 
+    Pooling redistribution that can operate at the district level (default)
+    or within fixed-size clusters inside districts.
+
+    If pooling_level == "cluster", you must pass cluster_map: Series mapping facility_id -> cluster_id
+    (cluster ids should already be district-scoped, e.g., "Dedza#C01").
+
         Returns:
       - out: original df plus columns:
           OB, OB_prime, available_prop_redis, received_from_pool
         where received_from_pool = OB_prime - OB (pos=received, neg=donated)
       - (optional) move_log: per (district, month, item, facility) net movement summary
     """
+    if pooling_level not in ("district", "cluster"):
+        raise ValueError("pooling_level must be 'district' or 'cluster'.")
+
     closing_bal, received, dispensed = close_cols
     out = df.copy()
 
@@ -542,147 +674,140 @@ def redistribute_pooling_lp(
     # Default (will overwrite per group)
     out["OB_prime"] = out["OB"]
 
+    # Attach cluster if needed
+    if pooling_level == "cluster":
+        if cluster_map is None:
+            raise ValueError("cluster_map is required when pooling_level='cluster'.")
+        # cluster_map: index = facility_id (facility_col), value = cluster_id (already district-scoped)
+        out = out.merge(
+            cluster_map.rename("cluster_id"),
+            how="left",
+            left_on=facility_col,
+            right_index=True,
+        )
+        if out["cluster_id"].isna().any():
+            # facilities missing a cluster—assign singleton clusters to keep them
+            out["cluster_id"] = out["cluster_id"].fillna(
+                out["district"].astype(str) + "#CXX_" + out[facility_col].astype(str))
+
     group_cols = list(id_cols)
+    node_label = "district"
+    if pooling_level == "cluster":
+        group_cols = ["cluster_id", "month", "item_code"]
+        node_label = "cluster_id"
     move_rows = []  # optional movement log
 
-    for (d, m, i), g in out.groupby(group_cols, sort=False):
+    for keys, g in out.groupby(group_cols, sort=False):
         g = g.copy()
+        node_val, m, i = keys if pooling_level == "cluster" else (g["district"].iloc[0], keys[1], keys[2])
 
-        # Clean AMC/OB and collapse duplicate facilities (unique index is required)
+        # Clean AMC/OB and dedupe
         AMC = (g.set_index(facility_col)[amc_col]
-                 .astype(float)
-                 .replace([np.inf, -np.inf], np.nan)
-                 .fillna(0.0))
+               .astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0))
         OB0 = (g.set_index(facility_col)["OB"]
-                 .astype(float)
-                 .replace([np.inf, -np.inf], np.nan)
-                 .fillna(0.0))
-
+               .astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0))
         if AMC.index.duplicated().any():
             AMC = AMC.groupby(level=0).first()
         if OB0.index.duplicated().any():
             OB0 = OB0.groupby(level=0).sum()
 
-        facs_all = AMC.index.tolist()
         total_stock = float(OB0.sum())
         if total_stock <= 1e-9:
             continue
 
-        # Positive-demand decision set
+        # Participants
         mask_pos = AMC >= amc_eps
         facs_pos = AMC.index[mask_pos].tolist()
-        if len(facs_pos) == 0:
-            # No demand nodes to allocate to; leave OB as-is (or zero them if you prefer)
+        if not facs_pos:
             continue
 
         AMC_pos = AMC.loc[facs_pos]
-        # Floors/ceilings
         lb = (tau_min * AMC_pos).astype(float)
         ub = (tau_max * AMC_pos).astype(float)
-
-        sum_lb = float(lb.sum())
+        sum_lb = float(lb.sum());
         sum_ub = float(ub.sum())
 
-        # Feasibility: scale floors if not enough stock
+        # Feasibility fixes
         if total_stock + 1e-9 < sum_lb:
             scale = max(1e-9, total_stock / max(1e-9, sum_lb))
             lb = lb * scale
             sum_lb = float(lb.sum())
-
-        # If stock exceeds ceilings, allow an excess sink to absorb leftovers
         allow_excess_sink = total_stock > sum_ub + 1e-9
 
         # ---------- LP ----------
-        prob = LpProblem(f"Pooling_{d}_{m}_{i}", LpMaximize)
+        prob = LpProblem(f"Pooling_{node_val}_{m}_{i}", LpMaximize)
 
-        # Decision variables
-        x = {f: LpVariable(f"x_{f}", lowBound=0) for f in facs_pos}      # how much stock to allocation to facility f
-        p = {f: LpVariable(f"p_{f}", lowBound=0, upBound=1) for f in facs_pos}  # Availability probability proxy for facility f
-
+        x = {f: LpVariable(f"x_{f}", lowBound=0) for f in facs_pos}
+        p = {f: LpVariable(f"p_{f}", lowBound=0, upBound=1) for f in facs_pos}
         excess = LpVariable("excess", lowBound=0) if allow_excess_sink else None
 
-        # Objective: maximize total availability
-        prob += lpSum(p.values()) # prioritize broad coverage—get as many facilities as possible to have stock
+        prob += lpSum(p.values())  # maximize total availability
 
-        # Conservation
         if excess is None:
             prob += lpSum(x.values()) == total_stock
         else:
             prob += lpSum(x.values()) + excess == total_stock
 
-        # Floors/ceilings (use scalar values to avoid float(Series) errors)
         for f in facs_pos:
             prob += x[f] >= float(lb.loc[f])
             prob += x[f] <= float(ub.loc[f])
-
-        # Linearization: AMC_f * p_f <= x_f (only for AMC>=amc_eps), i.e p = x/AMC
-        for f in facs_pos:
             prob += float(AMC_pos.loc[f]) * p[f] <= x[f]
 
-        # Solve
         prob.solve()
         if LpStatus[prob.status] != "Optimal":
             continue
 
-        # Apply solution
+        # Apply solution to OB'
         x_sol = {f: float(value(var) or 0.0) for f, var in x.items()}
 
-        sel = (out["district"].eq(d) & out["month"].eq(m) & out["item_code"].eq(i)) # selection mask
-        # boolean filter that picks out the subset of rows in out corresponding to the current group (district, month, item)
-        # Map allocation to rows with positive demand
-        mask_rows_pos = sel & out[facility_col].isin(facs_pos) # only those facilities with a positive demand/AMC
-        out.loc[mask_rows_pos, "OB_prime"] = out.loc[mask_rows_pos, facility_col].map(x_sol).values # assign new opening balance
+        # selection mask for this node-month-item
+        if pooling_level == "district":
+            sel = (out["district"].eq(node_val) & out["month"].eq(m) & out["item_code"].eq(i))
+        else:
+            sel = (out["cluster_id"].eq(node_val) & out["month"].eq(m) & out["item_code"].eq(i))
 
-        # Rows with AMC<eps donate to the pool; set OB' to 0 (availability handled below)
+        mask_rows_pos = sel & out[facility_col].isin(facs_pos)
+        out.loc[mask_rows_pos, "OB_prime"] = out.loc[mask_rows_pos, facility_col].map(x_sol).values
+
         mask_rows_zero = sel & ~out[facility_col].isin(facs_pos)
         out.loc[mask_rows_zero, "OB_prime"] = 0.0
 
         if return_move_log:
-            # Build a per-facility movement summary for this group
-            # Note: for duplicate facility rows in the group, we report the same net value (x_f - OB0_f_agg)
-            #       OB0_agg is OB0 after deduplication (summing duplicates)
-            for f in AMC.index:  # all facilities (including amc≈0)
+            for f in AMC.index:  # include amc≈0 facilities (x_f=0)
                 x_f = x_sol.get(f, 0.0) if f in facs_pos else 0.0
-                net = x_f - float(OB0.get(f, 0.0))  # positive=received, negative=donated
+                net = x_f - float(OB0.get(f, 0.0))
                 move_rows.append({
-                    "district": d, "month": m, "item_code": i,
+                    node_label: node_val,
+                    "month": m,
+                    "item_code": i,
                     "facility": f,
                     "received_from_pool": net,
                     "x_allocated": x_f,
-                    "OB0_agg": float(OB0.get(f, 0.0))
+                    "OB0_agg": float(OB0.get(f, 0.0)),
                 })
 
     # ---------- Availability after redistribution (safe) ----------
-    amc_safe = out[amc_col].astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0) # returns a clean numeric AMC series with no weird values
+    amc_safe = out[amc_col].astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0)
     pos_mask = amc_safe >= amc_eps
 
-    p_mech = np.zeros(len(out), dtype=float) # Prepare an output array for the new availability (available_prop_redis), initialized to 0 for all rows.
-    # Mechanistic availability for positive-demand rows
+    p_mech = np.zeros(len(out), dtype=float)
     denom = np.maximum(amc_eps, amc_safe[pos_mask].to_numpy())
-    p_mech[pos_mask.values] = np.minimum(1.0, np.maximum(
-        0.0, out.loc[pos_mask, "OB_prime"].to_numpy() / denom
-    ))
+    p_mech[pos_mask.values] = np.minimum(
+        1.0, np.maximum(0.0, out.loc[pos_mask, "OB_prime"].to_numpy() / denom)
+    )
 
     if keep_baseline_for_amc0:
-        # Keep baseline availability where AMC≈0
         base = (out.loc[~pos_mask, "available_prop"]
-                  .astype(float)
-                  .replace([np.inf, -np.inf], np.nan)
-                  .fillna(0.0)).to_numpy()
+                  .astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0)).to_numpy()
         p_mech[~pos_mask.values] = base
     else:
-        # Or: 1 if OB'>0 else 0 for AMC≈0 rows
         p_mech[~pos_mask.values] = (out.loc[~pos_mask, "OB_prime"].to_numpy() > 0.0).astype(float)
 
     out["available_prop_redis"] = p_mech
-    # NEW: per-row received_from_pool (using each row's OB)
     out["received_from_pool"] = out["OB_prime"] - out["OB"]
 
     if return_move_log:
-        move_log = pd.DataFrame(
-            move_rows,
-            columns=["district", "month", "item_code", "facility", "received_from_pool", "x_allocated", "OB0_agg"]
-        )
+        move_log = pd.DataFrame(move_rows)
         return out, move_log
 
     return out
@@ -812,13 +937,39 @@ plt.savefig(outputfilepath / "neighbour_count_by_max_travel_time")
 # A manual check shows that for distances greater than 60 minutes ORS underestimates the travel time a little
 # TODO consider using google maps API
 
-# 2) Run Scenario 1 (1-hour radius)
-
 #Drop NAs
 # TODO find a more generalisable solution for this issue (within the optimisation functions)
 #lmis = lmis[(lmis.amc != 0) & (lmis.amc.notna())]
 
 #lmis = lmis[lmis.district == 'Lilongwe']
+
+# Trying the updated pool-based redistribution
+# 1) Build clusters from your per-district travel-time matrices (minutes)
+#    T_car_by_dist: {"District A": DF(index=fac_ids, cols=fac_ids), ...}
+cluster_size = 3
+cluster_series = build_capacity_clusters_all(T_car, cluster_size=cluster_size)
+# cluster_series is a pd.Series: index=facility_id, value like "District A#C00", "District A#C01", ...
+
+# 2) Pool at the cluster level
+pooled_df, cluster_moves = redistribute_pooling_lp(
+    df=lmis,  # your LMIS dataframe
+    tau_min=0.25, tau_max=3.0,
+    pooling_level="cluster",
+    cluster_map=cluster_series,
+    return_move_log=True,
+)
+pooled_df.to_csv(outputfilepath/ 'clustering_n3_df.csv', index=False)
+
+# 3) Pool at the full district level (upper bound)
+pooled_district_df, district_moves = redistribute_pooling_lp(
+    df=lmis,
+    tau_min=0.25, tau_max=3.0,
+    pooling_level="district",
+    return_move_log=True,
+)
+pooled_df.to_csv(outputfilepath/ 'clustering_district_df.csv', index=False)
+
+# 2) Run Scenario 1 (1-hour radius)
 
 tlo_30 = run_redistribution_scenarios(
     lmis,
@@ -887,4 +1038,3 @@ print(comparison_df['available_prop'].mean(),comparison_df['available_prop_30min
 comparison_df['available_prop_60mins'].mean(), comparison_df['available_prop_pooling'].mean())
 
 # TODO keep only government facilities?
-
