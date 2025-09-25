@@ -1824,7 +1824,7 @@ class HealthSystem(Module):
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         # Debug logger gives simple line-list for every HSI event
-        logger.debug(
+        logger.summary(
             key="HSI_Event",
             data={
                 'Event_Name': event_details.event_name,
@@ -1937,7 +1937,7 @@ class HealthSystem(Module):
         priority: int,
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
-        logger.debug(
+        logger.summary(
             key="Never_ran_HSI_Event",
             data={
                 'Event_Name': event_details.event_name,
