@@ -731,6 +731,7 @@ class CareOfWomenDuringPregnancy(Module):
             self, int_name='urine_dipstick',
             hsi_event=hsi_event,
             q_param=[params['prob_intervention_delivered_urine_ds']],
+            equipment={'Urine dip Stick'},
             cons=self.item_codes_preg_consumables['urine_dipstick'],
             dx_test='urine_dipstick_protein')
 
@@ -1215,7 +1216,7 @@ class CareOfWomenDuringPregnancy(Module):
             q_param=[l_params['prob_hcw_avail_blood_tran'], l_params['mean_hcw_competence_hp']],
             cons=self.item_codes_preg_consumables['blood_transfusion'],
             opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
-            equipment={'Drip stand', 'Infusion pump'})
+            equipment=hsi_event.healthcare_system.equipment.from_pkg_names('Blood Transfusion'))
 
         if blood_transfusion_delivered:
 
@@ -1412,7 +1413,8 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
             self.add_equipment(
                 {'Height Pole (Stadiometer)', 'MUAC tape',
-                 'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
+                 'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ',
+                 'Ultrasound quality control'})
 
             # First all women, regardless of ANC contact or gestation, undergo urine and blood pressure measurement
             # and depression screening
@@ -1500,7 +1502,8 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             # Add equipment used during  ANC visit not directly related to interventions
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
             self.add_equipment(
-                {'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
+                {'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ',
+                 'Ultrasound quality control'})
 
             # First we administer the interventions all women will receive at this contact regardless of
             # gestational age
@@ -1732,7 +1735,8 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
             #  =================================== INTERVENTIONS ===================================================
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
             self.add_equipment(
-                {'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
+                {'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ',
+                 'Ultrasound quality control'})
 
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
@@ -2553,7 +2557,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             cons=pac_cons,
             alt_con=pac_cons_other,
             opt_cons=pac_opt_cons,
-            equipment={'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump'})
+            equipment={'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump', 'Evacuation set'})
 
         if pac_delivered:
             df.at[person_id, 'ac_received_post_abortion_care'] = True
