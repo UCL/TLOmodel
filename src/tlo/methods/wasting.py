@@ -153,13 +153,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         'care'),
         'tx_length_weeks_SuppFeedingMAM': Parameter(
             Types.REAL, 'number of weeks the patient receives treatment in the Supplementary Feeding '
-                        'Programme for MAM before being discharged'),
+                        'Programme (SFP) for MAM, including the final supply provided at discharge'),
         'tx_length_weeks_OutpatientSAM': Parameter(
             Types.REAL, 'number of weeks the patient receives treatment in the Outpatient Therapeutic '
-                        'Programme for uncomplicated SAM before being discharged if they do not die beforehand'),
+                        'Programme (OTP) for uncomplicated SAM, including the final supply provided at discharge'),
         'tx_length_weeks_InpatientSAM': Parameter(
-            Types.REAL, 'number of weeks the patient receives treatment in the Inpatient Care for complicated'
-                        ' SAM before being discharged if they do not die beforehand'),
+            Types.REAL, 'number of weeks the patient receives treatment in the Inpatient Therapeutic Care '
+                        '(ITC) for complicated SAM---modelled to include the Rehabilitation Phase, ie to cover OTP as '
+                        'well'),
         # treatment impacts
         'prob_death_after_SAMcare': Parameter(
             Types.REAL, 'probability of dying from SAM after receiving care if not fully recovered'),
