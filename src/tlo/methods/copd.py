@@ -229,6 +229,16 @@ class Copd(Module, GenericFirstAppointmentsMixin):
                 {self.item_codes["bronchodilater_inhaler"]: 1}
             ):
                 individual_properties["ch_has_inhaler"] = True
+
+            # Schedule moderate COPD treatment for moderate cases (to handle equipment)
+            if "breathless_moderate" in symptoms:
+                event = HSI_Copd_TreatmentOnModerateExacerbation(
+                    module=self, person_id=person_id
+                )
+                schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
+
             if "breathless_severe" in symptoms:
                 event = HSI_Copd_TreatmentOnSevereExacerbation(
                     module=self, person_id=person_id
@@ -541,8 +551,9 @@ class CopdDeath(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        df = self.sim.population.props
-        person = df.loc[person_id, ['is_alive', 'age_years', 'ch_will_die_this_episode', 'ch_lungfunction']]
+        person = self.sim.population.props.loc[
+            person_id, ['is_alive', 'age_years', 'ch_will_die_this_episode', 'ch_lungfunction']
+        ]
         # Check if an individual should still die and, if so, cause the death
         if person.is_alive and person.ch_will_die_this_episode:
             self.sim.modules['Demography'].do_death(
@@ -550,6 +561,30 @@ class CopdDeath(Event, IndividualScopeEventMixin):
                 cause=f'COPD_cat{person.ch_lungfunction}',
                 originating_module=self.module,
             )
+
+
+class HSI_Copd_TreatmentOnModerateExacerbation(HSI_Event, IndividualScopeEventMixin):
+    """HSI event for issuing treatment to individuals with moderate COPD exacerbation.
+    This represents community-based care for non-severe breathlessness."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = "Copd_Treatment"
+        self.ACCEPTED_FACILITY_LEVEL = "1a"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+
+    def apply(self, person_id, squeeze_factor):
+        """Treatment for moderate COPD exacerbation - community-based care."""
+
+        # Equipment for moderate COPD cases
+        self.add_equipment({
+            'Incentive spirometers',
+            'Analyser, Blood Gas'
+        })
+
+        # Give bronchodilator treatment if available
+        self.get_consumables({self.module.item_codes['bronchodilater_inhaler']: 1})
 
 
 class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):
@@ -590,7 +625,19 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
                 oxygen=self.get_consumables({self.module.item_codes['oxygen']: 23_040}),
                 aminophylline=self.get_consumables({self.module.item_codes['aminophylline']: 600})
             )
-            self.add_equipment({'Oxygen cylinder, with regulator', 'Nasal Prongs', 'Drip stand', 'Infusion pump'})
+
+            # Equipment for severe COPD exacerbations
+            self.add_equipment({
+                'Oxygen cylinder, with regulator',
+                'Nasal Prongs',
+                'Drip stand',
+                'Infusion pump',
+                'Incentive spirometers',
+                'Analyser, Blood Gas',
+                'Ambu bag, adult with mask',
+                'Postural Drainage Couch',
+                'Resuscitator'
+            })
 
             if prob_treatment_success:
                 df.at[person_id, 'ch_will_die_this_episode'] = False

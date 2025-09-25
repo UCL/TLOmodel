@@ -1845,10 +1845,21 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
 
         # Run a test to diagnose whether the person has condition:
         if _ev == 'ever_stroke':
-            self.add_equipment({'Computed Tomography (CT machine)', 'CT scanner accessories'})
+            self.add_equipment({'Computed Tomography (CT machine)',
+                                'CT scanner accessories',
+                                'Analyser, Blood Gas',
+                                'Knee continuous passive motion machine',
+                                'Knee continuous range of motion machine',
+                                'Dual ergometer',
+                                'Patellar reflex hammer',
+                                *self.healthcare_system.equipment.from_pkg_names('Emergency')
+                                })
 
         if _ev == 'ever_heart_attack':
-            self.add_equipment({'Electrocardiogram'})
+            self.add_equipment({'Electrocardiogram',
+                                'Analyser, Blood Gas',
+                                *self.healthcare_system.equipment.from_pkg_names('Emergency')})
+
 
         dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
             dx_tests_to_run=f'assess_{_ev}',
