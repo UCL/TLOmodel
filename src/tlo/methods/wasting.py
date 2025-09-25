@@ -439,7 +439,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         def get_monitoring_frequency_days(age):
             if age < 1:
                 return p["growth_monitoring_frequency_days_agecat"][0]
-            elif age <= 2:
+            elif age < 2:
                 return p["growth_monitoring_frequency_days_agecat"][1]
             else:
                 return p["growth_monitoring_frequency_days_agecat"][2]
@@ -1333,7 +1333,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         def get_attendance_prob(age):
             if age < 1:
                 return p["growth_monitoring_attendance_prob_agecat"][0]
-            if age <= 2:
+            if age < 2:
                 return p["growth_monitoring_attendance_prob_agecat"][1]
             else:
                 return p["growth_monitoring_attendance_prob_agecat"][2]
@@ -1377,7 +1377,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
                 # TODO: in future maybe 0-1 to be dealt with within epi module
                 if age < 1:
                     return p['growth_monitoring_frequency_days_agecat'][0]
-                elif age <= 2:
+                elif age < 2:
                     return p['growth_monitoring_frequency_days_agecat'][1]
                 else:
                     return p['growth_monitoring_frequency_days_agecat'][2]
