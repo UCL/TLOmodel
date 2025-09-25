@@ -23,12 +23,12 @@ def register_modules(sim):
     """Defines sim variable and registers all modules that can be called when running the full suite of pregnancy
     modules"""
 
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath),
-                  mnh_cohort_module.MaternalNewbornHealthCohort(resourcefilepath=resourcefilepath))
+    sim.register(*fullmodel(),
+                  mnh_cohort_module.MaternalNewbornHealthCohort())
 
 def test_run_sim_with_mnh_cohort(tmpdir, seed):
-    sim = Simulation(start_date=start_date, seed=12345, log_config={"filename": "log", "custom_levels":{
-                "*": logging.DEBUG},"directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=12345, resourcefilepath=resourcefilepath,
+                     log_config={"filename": "log", "custom_levels":{"*": logging.DEBUG},"directory": tmpdir})
 
     register_modules(sim)
     sim.make_initial_population(n=500)
@@ -66,7 +66,8 @@ def test_run_sim_with_mnh_cohort(tmpdir, seed):
 
 
 def test_mnh_cohort_module_updates_properties_as_expected(tmpdir, seed):
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath,
+                     log_config={"filename": "log", "directory": tmpdir})
 
     register_modules(sim)
     sim.make_initial_population(n=500)

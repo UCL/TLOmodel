@@ -1,6 +1,9 @@
 from pathlib import Path
 
 import pandas as pd
+
+from typing import Optional
+
 from tlo import Module, logging
 from tlo.methods import Metadata
 from tlo.events import IndividualScopeEventMixin
@@ -29,11 +32,11 @@ class MaternalNewbornHealthCohort(Module):
     PARAMETERS = {}
     PROPERTIES = {}
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
+        # self.resourcefilepath = resourcefilepath
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         pass
 
     def initialise_population(self, population):
@@ -47,7 +50,7 @@ class MaternalNewbornHealthCohort(Module):
         """
 
         # Read in excel sheet with cohort
-        all_preg_df = pd.read_excel(Path(f'{self.resourcefilepath}/maternal cohort') /
+        all_preg_df = pd.read_excel(Path(f'{self.sim.resourcefilepath}/maternal cohort') /
                                     'ResourceFile_All2024PregnanciesCohortModel.xlsx')
 
         # Only select rows equal to the desired population size
@@ -74,8 +77,9 @@ class MaternalNewbornHealthCohort(Module):
 
 
         # Set the dtypes and index of the cohort dataframe
-        props_dtypes = self.sim.population.props.dtypes
-        preg_pop_final = preg_pop.astype(props_dtypes.to_dict())
+        props_dtypes = self.sim.population.props.dtypes.to_dict()
+        common_dtypes = {col: props_dtypes[col] for col in preg_pop.columns if col in props_dtypes}
+        preg_pop_final = preg_pop.astype(common_dtypes)
         preg_pop_final.index.name = 'person'
 
         # For the below columns we manually overwrite the dtypes

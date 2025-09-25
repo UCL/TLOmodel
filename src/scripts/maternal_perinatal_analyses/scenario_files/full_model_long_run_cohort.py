@@ -9,7 +9,7 @@ class FullModelRunForCohort(BaseScenario):
         super().__init__()
         self.seed = 537184
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2025, 1, 1)
+        self.end_date = Date(2026, 1, 1)
         self.pop_size = 200_000
         self.number_of_draws = 1
         self.runs_per_draw = 1
