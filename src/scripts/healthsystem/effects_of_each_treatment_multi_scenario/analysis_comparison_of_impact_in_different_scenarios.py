@@ -6,10 +6,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from src.scripts.healthsystem.finding_effects_of_each_treatment.analysis_effect_of_each_treatment import (
+
+from src.scripts.healthsystem.effects_of_each_treatment_multi_scenario.analysis_effect_of_each_treatment_multiple_scenarios import (
     apply,
 )
-
 from tlo.analysis.utils import get_color_short_treatment_id
 
 outputs = Path("./outputs/tbh03@ic.ac.uk/")
