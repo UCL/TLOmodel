@@ -345,21 +345,24 @@ class HealthSystem(Module):
                                                   'Which model from the model ensemble for each climate ssp is under consideration.'
                                                   'Options are lowest, mean, and highest, based on total precipitation between 2025 and 2070.'),
 
-        'scale_factor_delay_in_seeking_care_weather': Parameter(Types.INT,
+        'scale_factor_delay_in_seeking_care_weather': Parameter(Types.REAL,
                                                    'If faced with a climate disruption, and it is determined the individual will '
                                                    'reseek healthcare, the scale factor for number of days of delay in seeking healthcare.'
                                                    'Scale factor makes it proportional to the urgency.'),# gamma in write yp
 
 
-        'rescaling_prob_seeking_after_disruption': Parameter(Types.INT,
+        'rescaling_prob_seeking_after_disruption': Parameter(Types.REAL,
                                                               'If faced with a climate disruption, and it is determined the individual will '
                                                               'reseek healthcare, scaling of their original probability of seeking care.'), # beta in write yp
 
-        'rescaling_prob_disruption': Parameter(Types.INT,
+        'rescaling_prob_disruption': Parameter(Types.REAL,
                                                       'Due to uknown behaviours (from patient and health practiciion), broken chains of events, etc, which cause discrepencies  '
                                                              'between the estimated disruptions and those modelled in TLO, rescale the original probability of disruption.'), # alpha in write yp
         'services_affected_precip': Parameter(Types.STRING,
                                               'Which modelled services can be affected by weather. Options are all, none'),
+
+        'scale_factor_delay_in_seeking_care_weather': Parameter(Types.INT,
+                                                      'Scale factor that changes the delay in reseeking healthcare to the severity of disruption (as measured by probability of disruption)')
 
     }
 
@@ -392,7 +395,8 @@ class HealthSystem(Module):
         climate_model_ensemble_model: Optional[str] = 'mean',
         services_affected_precip: Optional[str] = 'none',
         response_to_disruption: Optional[str] = 'delay',
-        scale_factor_delay_in_seeking_care_weather: Optional[int] = 4,
+        scale_factor_delay_in_seeking_care_weather: Optional[float] = 4,
+        scale_factor_severity_disruption_and_delay: Optional[float] = None,
 
     ):
         """
@@ -445,6 +449,7 @@ class HealthSystem(Module):
         :param scale_delay_in_seeking_care_weather_non_urgent: The scale factor number of days delay in reseeking healthcare after an non-urgent appointmnet has been delayed by weather. Unit is day.
         :param rescaling_prob_seeking_after_disruption: Rescaling of probability of seeking care after a disruption has occurred.
         :param rescaling_prob_disruption: To account for structural/behavioural assumptions in the TLO and limitations of DHIS2 dataset.
+        :param scale_factor_severity_disruption_and_delay: Scale on the delay in reseeking healthcare based on the "severity" of disruption.
 
         """
         super().__init__(name)
@@ -2550,8 +2555,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
                                         self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                             priority=item.priority,
-                                            topen=self.sim.date + DateOffset(days=self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1),
-                                            tclose=self.sim.date + DateOffset(days=self.module.parameters['scale_factor_delay_in_seeking_care_weather']) + DateOffset((item.topen - item.tclose).days),
+                                            topen=self.sim.date + DateOffset(days=(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1)* prob_disruption/self.module.parameters['scale_factor_severity_disruption_and_delay'], 1)),
+                                            tclose=self.sim.date + DateOffset(days=(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1)* prob_disruption/self.module.parameters['scale_factor_severity_disruption_and_delay'], 1)) + DateOffset((item.topen - item.tclose).days),
                                             hsi_event=item.hsi_event
                                         )
                                         self.module.call_and_record_weather_delayed_hsi_event(hsi_event=item.hsi_event,
@@ -2582,8 +2587,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                             self.sim.modules[
                                                 'HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                                 priority=item.priority,
-                                                topen=self.sim.date + DateOffset(days=self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1), # makes it proportional to urgency. Most urgent are 0 and 1 (ped/adult)
-                                                tclose=self.sim.date + DateOffset(days=self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1) + DateOffset(
+                                                topen=self.sim.date + DateOffset(days=(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1)* prob_disruption/self.module.parameters['scale_factor_severity_disruption_and_delay'], 1)), # makes it proportional to urgency. Most urgent are 0 and 1 (ped/adult)
+                                                tclose=self.sim.date + DateOffset(days=(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1)* prob_disruption/self.module.parameters['scale_factor_severity_disruption_and_delay'], 1))+ DateOffset(
                                                     (item.topen - item.tclose).days),
                                                 hsi_event=item.hsi_event
                                             )
