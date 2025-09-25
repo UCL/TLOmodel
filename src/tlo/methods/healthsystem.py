@@ -1971,7 +1971,7 @@ class HealthSystem(Module):
         ):
             """Write the log `HSI_Event` and add to the summary counter."""
             logger_summary.info(
-                key="Climate_cancelled_HSI_Event",
+                key="Weather_cancelled_HSI_Event_full_info",
             data = {
                 'Event_Name': event_details.event_name,
                 'TREATMENT_ID': event_details.treatment_id,
@@ -2004,7 +2004,7 @@ class HealthSystem(Module):
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         logger_summary.info(
-            key="Climate_delayed_HSI_Event",
+            key="Weather_delayed_HSI_Event_full_info",
         data = {
             'Event_Name': event_details.event_name,
             'TREATMENT_ID': event_details.treatment_id,
