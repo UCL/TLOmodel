@@ -53,7 +53,7 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
-        return {#'Baseline': self._baseline(),
+        return {'Baseline': self._baseline(),
                 'SSP 2.45 Mean': self._ssp245_mean(),
                 }
 
