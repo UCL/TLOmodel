@@ -1796,11 +1796,7 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
         if df.at[person_id, 'ckd_dialysis_sessions_this_week'] < 2:
             # 2 sessions per week (~every 3 days)
             next_session_date = self.sim.date + pd.DateOffset(days=3)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_Dialysis_Refill(
-                    module=self.module,
-                    person_id=person_id
-                ),
+            self.sim.modules['HealthSystem'].schedule_hsi_event(self,
                 topen=next_session_date,
                 tclose=next_session_date + pd.DateOffset(days=1),
                 priority=1
@@ -1809,11 +1805,7 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
             # Reset counter at the end of the week and schedule first session of next week
             df.at[person_id, 'ckd_dialysis_sessions_this_week'] = 0
             next_week_start = self.sim.date + pd.DateOffset(weeks=1)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_Dialysis_Refill(
-                    module=self.module,
-                    person_id=person_id
-                ),
+            self.sim.modules['HealthSystem'].schedule_hsi_event(self,
                 topen=next_week_start,
                 tclose=next_week_start + pd.DateOffset(days=1),
                 priority=1
