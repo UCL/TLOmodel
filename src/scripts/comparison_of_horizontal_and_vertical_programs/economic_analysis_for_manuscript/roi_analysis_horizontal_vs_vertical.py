@@ -51,13 +51,13 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 # Create folders to store results
 resourcefilepath = Path("./resources")
 outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
-main_figurespath = Path('./outputs/horizontal_v_vertical')
+main_figurespath = Path('./outputs/horizontal_v_vertical_firstrevision')
 if not os.path.exists(main_figurespath):
     os.makedirs(main_figurespath)
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('htm_and_hss_runs-2025-01-16T135243Z.py', outputfilepath)[0]
+results_folder = get_scenario_outputs('htm_and_hss_runs-2025-09-16T141811Z.py', outputfilepath)[0]
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
@@ -83,24 +83,54 @@ chosen_metric = 'median'
 
 # Scenarios
 # Full list of scenarios used in the manuscript
-all_manuscript_scenarios = {0: "Baseline", 1: "Pessimistic HRH Scale-up", 2: "Historical HRH Scale-up",
+main_manuscript_scenarios = {0: "Baseline",
+                            1: "Pessimistic HRH Scale-up", 2: "Historical HRH Scale-up",
                             3: "Optimistic HRH Scale-up",
-                            4: "Primary Healthcare Workforce Scale-up", 5: "Consumables Increased to 75th Percentile",
-                            6: "Consumables Increased to HIV levels", 7: "Consumables Increased to EPI Levels",
-                            8: "HSS Expansion Package",
-                            9: "HIV Program Scale-up Without HSS Expansion",
-                            17: "HIV Program Scale-up With HSS Expansion Package",
-                            18: "TB Program Scale-up Without HSS Expansion",
-                            26: "TB Program Scale-up With HSS Expansion Package",
-                            27: "Malaria Program Scale-up Without HSS Expansion",
-                            35: "Malaria Program Scale-up With HSS Expansion Package",
-                            36: "HTM Programs Scale-up Without HSS Expansion",
-                            44: "HTM Programs Scale-up With HSS Expansion Package"}
-# 39: "HTM Program Scale-up With HRH Scale-up (6%)", 41: "HTM Program Scale-up With Consumables at 75th Percentile",
+                            4: "Consumables Increased to 75th Percentile",
+                            5: "Consumables Increased to HIV levels", 6: "Consumables Increased to EPI Levels",
+                            7: "HSS Expansion Package",
+                            8: "HIV Program Scale-up Without HSS Expansion",
+                            15: "HIV Program Scale-up With HSS Expansion Package",
+                            16: "TB Program Scale-up Without HSS Expansion",
+                            23: "TB Program Scale-up With HSS Expansion Package",
+                            24: "Malaria Program Scale-up Without HSS Expansion",
+                            31: "Malaria Program Scale-up With HSS Expansion Package",
+                            32: "HTM Programs Scale-up Without HSS Expansion",
+                            39: "HTM Programs Scale-up With HSS Expansion Package"}
+
+frontier_scenarios = {40:"HIV + TB Scale-up Without HSS Expansion",
+                      41:"HIV + TB Scale-up With Historical HRH Scale-up",
+                      42:"HIV + TB Scale-up With Consumables Increased to 75th Percentile",
+                      43:"HIV + TB Scale-up With HSS Expansion",
+                      44:"HIV + Malaria Scale-up Without HSS Expansion",
+                      45:"HIV + Malaria Scale-up With Historical HRH Scale-up",
+                      46:"HIV + Malaria Scale-up With Consumables Increased to 75th Percentile",
+                      47:"HIV + Malaria Scale-up With HSS Expansion",
+                      48:"TB + Malaria Scale-up Without HSS Expansion",
+                      49:"TB + Malaria Scale-up With Historical HRH Scale-up",
+                      50:"TB + Malaria Scale-up With Consumables Increased to 75th Percentile",
+                      51:"TB + Malaria Scale-up With HSS Expansion"}
+
+all_manuscript_scenarios = {**main_manuscript_scenarios, **frontier_scenarios}
+
+all_manuscript_scenarios_reverse = {v: k for k, v in all_manuscript_scenarios.items()}
+
+baseline = all_manuscript_scenarios_reverse.get("Baseline")
+horizontal_hss = all_manuscript_scenarios_reverse.get("HSS Expansion Package")
+vertical_hiv = all_manuscript_scenarios_reverse.get("HIV Program Scale-up Without HSS Expansion")
+vertical_tb = all_manuscript_scenarios_reverse.get("TB Program Scale-up Without HSS Expansion")
+vertical_malaria = all_manuscript_scenarios_reverse.get("Malaria Program Scale-up Without HSS Expansion")
+vertical_htm = all_manuscript_scenarios_reverse.get("HTM Programs Scale-up Without HSS Expansion")
+diagonal_hiv = all_manuscript_scenarios_reverse.get("HIV Program Scale-up Without HSS Expansion")
+diagonal_tb = all_manuscript_scenarios_reverse.get("TB Program Scale-up Without HSS Expansion")
+diagonal_malaria = all_manuscript_scenarios_reverse.get("Malaria Program Scale-up Without HSS Expansion")
+diagonal_htm = all_manuscript_scenarios_reverse.get("HTM Programs Scale-up With HSS Expansion Package")
 
 # Use letters instead of full scenario name for figures
 all_manuscript_scenarios_substitutedict = {0: "0", 1: "A", 2: "B", 3: "C", 4: "D", 5: "E", 6: "F", 7: "G", 8: "H",
-                                           9: "I", 17: "J", 18: "K", 26: "L", 27: "M", 35: "N", 36: "O", 44: "P"}
+                                           15: "I", 16: "J", 23: "K", 24: "L", 31: "M", 32: "N", 39: "O",
+                                           40: "P", 41: "Q", 42: "R", 43: "S", 44: "T", 45: "U", 46: "V", 47: "W", 48: "X",
+                                           49: "Y", 50: "Z", 51: "2"}
 
 
 # Function to adjust color brightness (lighten/darken)
@@ -118,7 +148,6 @@ color_map = {
     "Pessimistic HRH Scale-up": adjust_color('#9e0142', 0.5),
     "Historical HRH Scale-up": adjust_color('#9e0142', 0.5),
     "Optimistic HRH Scale-up": adjust_color('#9e0142', 0.5),
-    "Primary Healthcare Workforce Scale-up": adjust_color('#9e0142', 0.5),
     # Consumables scenarios
     "Consumables Increased to 75th Percentile": adjust_color('#9e0142', 0.5),
     "Consumables Increased to HIV levels": adjust_color('#9e0142', 0.5),
@@ -468,139 +497,13 @@ for rates in alternative_discount_rates:
                                                                      _total_input_costs=input_costs,
                                                                      _relevant_period_for_costing=relevant_period_for_costing)
 
-
-    def estimate_xpert_costs(_results_folder, _relevant_period_for_costing):
-        # Load health spending projections
-        unit_costs = load_unit_cost_assumptions(resourcefilepath)
-        unit_price_consumable = unit_costs["consumables"]
-
-        # Read parameters for consumables costs
-        # Load consumables cost data
-        unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
-
-        # Add cost of Xpert consumables which was missed in the current analysis
-        def get_counts_of_items_requested(_df):
-            counts_of_used = defaultdict(lambda: defaultdict(int))
-            counts_of_available = defaultdict(lambda: defaultdict(int))
-            counts_of_not_available = defaultdict(lambda: defaultdict(int))
-
-            for _, row in _df.iterrows():
-                date = row['date']
-                for item, num in row['Item_Used'].items():
-                    counts_of_used[date][item] += num
-                for item, num in row['Item_Available'].items():
-                    counts_of_available[date][item] += num
-                for item, num in row['Item_NotAvailable'].items():
-                    counts_of_not_available[date][item] += num
-
-            used_df = pd.DataFrame(counts_of_used).fillna(0).astype(int).stack().rename('Used')
-            available_df = pd.DataFrame(counts_of_available).fillna(0).astype(int).stack().rename('Available')
-            not_available_df = pd.DataFrame(counts_of_not_available).fillna(0).astype(int).stack().rename(
-                'Not_Available')
-
-            # Combine the two dataframes into one series with MultiIndex (date, item, availability_status)
-            combined_df = pd.concat([used_df, available_df, not_available_df], axis=1).fillna(0).astype(int)
-
-            # Convert to a pd.Series, as expected by the custom_generate_series function
-            return combined_df.stack()
-
-        cons_req = extract_results(
-            _results_folder,
-            module='tlo.methods.healthsystem.summary',
-            key='Consumables',
-            custom_generate_series=get_counts_of_items_requested,
-            do_scaling=True)
-        keep_xpert = cons_req.index.get_level_values(0) == '187'
-        keep_instances_logged_as_not_available = cons_req.index.get_level_values(2) == 'Not_Available'
-        cons_req = cons_req[keep_xpert & keep_instances_logged_as_not_available]
-        cons_req = cons_req.reset_index()
-
-        # Keep only relevant draws
-        # Filter columns based on keys from all_manuscript_scenarios
-        col_subset = [col for col in cons_req.columns if
-                      ((col[0] in all_manuscript_scenarios.keys()) | (col[0] == 'level_1'))]
-        # Keep only the relevant columns
-        cons_req = cons_req[col_subset]
-
-        def transform_cons_requested_for_costing(_df, date_column):
-            _df['year'] = pd.to_datetime(_df[date_column]).dt.year
-
-            # Validate that all necessary years are in the DataFrame
-            if not set(_relevant_period_for_costing).issubset(_df['year'].unique()):
-                raise ValueError("Some years are not recorded in the dataset.")
-
-            # Filter for relevant years and return the total population as a Series
-            return _df.loc[
-                _df['year'].between(min(_relevant_period_for_costing), max(_relevant_period_for_costing))].drop(
-                columns=date_column).set_index(
-                'year')
-
-        xpert_cost_per_cartridge = unit_price_consumable[unit_price_consumable.Item_Code == 187][
-            'Price_per_unit']
-        xpert_availability_adjustment = 0.77
-        # note that as per 2018 Openlmis mean availability was 0.5, 0.77, 0.809, 0.861, 0.744 during Jul, Sep - Dec.
-        # The median value is 0.77 - for the rest of the months availability was close to 0
-
-        xpert_dispensed_cost = (transform_cons_requested_for_costing(_df=cons_req,
-                                                                     date_column=('level_1', ''))
-                                * xpert_availability_adjustment
-                                * xpert_cost_per_cartridge.iloc[0])
-        draws_with_positive_xpert_costs = (
-            input_costs[(input_costs.cost_subgroup == 'Xpert') & (input_costs.cost > 0)].groupby('draw')[
-                'cost'].sum().reset_index()['draw']
-            .unique()).tolist()
-
-        def melt_and_label_xpert_cost(_df):
-            multi_index = pd.MultiIndex.from_tuples(_df.columns)
-            _df.columns = multi_index
-
-            # reshape dataframe and assign 'draw' and 'run' as the correct column headers
-            melted_df = pd.melt(_df.reset_index(), id_vars=['year']).rename(
-                columns={'variable_0': 'draw', 'variable_1': 'run'})
-            # For draws where the costing is already correct, set additional costs to 0
-            melted_df.loc[melted_df.draw.isin(draws_with_positive_xpert_costs), 'value'] = 0
-            # Replace item_code with consumable_name_tlo
-            melted_df['cost_category'] = 'medical consumables'
-            melted_df['cost_subgroup'] = 'Xpert'
-            melted_df['Facility_Level'] = 'all'
-            melted_df = melted_df.rename(columns={'value': 'cost'})
-
-            # Replicate and estimate cost of consumables stocked and supply chain costs
-            df_with_all_cost_subcategories = pd.concat([melted_df] * 3, axis=0, ignore_index=True)
-            # Define cost subcategory values
-            cost_categories = ['cost_of_consumables_dispensed', 'cost_of_excess_consumables_stocked', 'supply_chain']
-            # Assign values to the new 'cost_subcategory' column
-            df_with_all_cost_subcategories['cost_subcategory'] = np.tile(cost_categories, len(melted_df))
-            # The excess stock ratio of Xpert as per 2018 LMIS data is 0.125833
-            df_with_all_cost_subcategories.loc[df_with_all_cost_subcategories[
-                                                   'cost_subcategory'] == 'cost_of_excess_consumables_stocked', 'cost'] *= 0.125833
-            # Supply chain costs are 0.12938884672119721 of the cost of dispensed + stocked
-            df_with_all_cost_subcategories.loc[
-                df_with_all_cost_subcategories['cost_subcategory'] == 'supply_chain', 'cost'] *= (
-                0.12938884672119721 * (1 + 0.125833))
-            return df_with_all_cost_subcategories
-
-        xpert_total_cost = melt_and_label_xpert_cost(xpert_dispensed_cost)
-        xpert_total_cost.to_csv('./outputs/horizontal_v_vertical/xpert_cost.csv')
-        xpert_total_cost_discounted = apply_discounting_to_cost_data(xpert_total_cost,
-                                                                     _discount_rate=discount_rate_cost,
-                                                                     _initial_year=_relevant_period_for_costing[0])
-        return xpert_total_cost_discounted
-
-
-    print("Appending Xpert costs")
-    xpert_total_cost = estimate_xpert_costs(_results_folder=results_folder,
-                                            _relevant_period_for_costing=relevant_period_for_costing)
-
-    # Update input costs to include Xpert costs
-    input_costs = pd.concat([input_costs, xpert_total_cost], ignore_index=True)
     input_costs = input_costs.groupby(['draw', 'run', 'year', 'cost_subcategory', 'Facility_Level',
                                        'cost_subgroup', 'cost_category'])['cost'].sum().reset_index()
 
     # Keep costs for relevant draws
     input_costs = input_costs[input_costs['draw'].isin(list(all_manuscript_scenarios.keys()))]
     # Extract input_costs for browsing
-    # input_costs.groupby(['draw', 'run', 'cost_category', 'cost_subcategory', 'cost_subgroup','year'])['cost'].sum().to_csv(figurespath / 'cost_detailed.csv')
+    #input_costs.groupby(['draw', 'run', 'cost_category', 'cost_subcategory', 'cost_subgroup','year'])['cost'].sum().to_csv(figurespath / 'cost_detailed.csv')
 
     # %%
     # Return on Invesment analysis
@@ -631,7 +534,7 @@ for rates in alternative_discount_rates:
             comparison=0)  # sets the comparator to draw 0 which is the Actual scenario
     ).T.iloc[0].unstack()).T
     incremental_scenario_cost_subset_for_figure = incremental_scenario_cost[
-        incremental_scenario_cost.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
+        incremental_scenario_cost.index.get_level_values('draw').isin(list(main_manuscript_scenarios.keys()))]
     incremental_scenario_cost_summarised = summarize_cost_data(incremental_scenario_cost_subset_for_figure,
                                                                _metric=chosen_metric)
 
@@ -677,7 +580,7 @@ for rates in alternative_discount_rates:
 
     # Plot DALYs
     num_dalys_averted_subset_for_figure = num_dalys_averted[
-        num_dalys_averted.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
+        num_dalys_averted.index.get_level_values('draw').isin(list(main_manuscript_scenarios.keys()))]
     num_dalys_averted_summarised = summarize_cost_data(num_dalys_averted_subset_for_figure, _metric=chosen_metric)
     name_of_plot = f'Incremental DALYs averted compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
     fig, ax = do_standard_bar_plot_with_ci(
@@ -712,7 +615,7 @@ for rates in alternative_discount_rates:
     dominated_scenarios = icers_summarized['median'] < 0
     icers_summarized[dominated_scenarios] = np.nan  # The dominanted scenarios are assigned as ICER of NaN
     icers_summarized_subset_for_figure = icers_summarized[
-        icers_summarized.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
+        icers_summarized.index.get_level_values('draw').isin(list(main_manuscript_scenarios.keys()))]
 
     # Plot ICERs
     annotations_icers = []
@@ -780,9 +683,9 @@ for rates in alternative_discount_rates:
         }
 
         # Assign scenario groups
-        horizontal_scenarios = [1, 2, 3, 4, 5, 6, 7, 8]
-        vertical_scenarios = [9, 18, 27, 36]
-        diagonal_scenarios = [17, 26, 35, 44]
+        horizontal_scenarios = [1, 2, 3, 4, 5, 6, 7]
+        vertical_scenarios = [8, 16, 24, 32]
+        diagonal_scenarios = [15, 23, 31, 39]
         darker_scenarios = {'HSS Expansion Package', 'HTM Programs Scale-up Without HSS Expansion',
                             'HTM Programs Scale-up With HSS Expansion Package'}
 
@@ -915,7 +818,7 @@ for rates in alternative_discount_rates:
 
     do_incremental_cost_and_health_plot(incremental_cost_df=incremental_scenario_cost_summarised,
                                         incremental_dalys_df=num_dalys_averted_summarised,
-                                        draws_with_icer_labels=[8, 36, 44],
+                                        draws_with_icer_labels=[7, 32, 39],
                                         figname='cea_plane.png')
 
     # 4. Return on Investment
@@ -1098,8 +1001,8 @@ for rates in alternative_discount_rates:
             monetary_benefit_df=get_monetary_value_of_incremental_health(num_dalys_averted, vsly),
             incremental_cost_df=incremental_scenario_cost,
             implementation_cost_df=0 * incremental_scenario_cost,
-            draw_target=44,
-            draw_compare=36
+            draw_target=diagonal_htm,
+            draw_compare=vertical_htm
         )
         # Breakeven implementation cost for joint HTM diagonal scenario (V joint HTM vertical scenario);
         # Implementation cost = 138% of Input costs
@@ -1108,8 +1011,8 @@ for rates in alternative_discount_rates:
             monetary_benefit_df=get_monetary_value_of_incremental_health(num_dalys_averted, vsly),
             incremental_cost_df=incremental_scenario_cost,
             implementation_cost_df=implementation_cost_upper_limit,
-            draw_target=44,
-            draw_compare=36
+            draw_target=diagonal_htm,
+            draw_compare=vertical_htm
         )
         # Breakeven implementation cost for joint HTM diagonal scenario (V horizontal scenario);
         # Implementation cost = 0
@@ -1118,8 +1021,8 @@ for rates in alternative_discount_rates:
             monetary_benefit_df=get_monetary_value_of_incremental_health(num_dalys_averted, vsly),
             incremental_cost_df=incremental_scenario_cost,
             implementation_cost_df=0 * incremental_scenario_cost,
-            draw_target=44,
-            draw_compare=8
+            draw_target=diagonal_htm,
+            draw_compare=horizontal_hss
         )
         # Breakeven implementation cost for joint HTM diagonal scenario (V horizontal scenario);
         # Implementation cost = 138% of Input costs
@@ -1128,8 +1031,8 @@ for rates in alternative_discount_rates:
             monetary_benefit_df=get_monetary_value_of_incremental_health(num_dalys_averted, vsly),
             incremental_cost_df=incremental_scenario_cost,
             implementation_cost_df=implementation_cost_upper_limit,
-            draw_target=44,
-            draw_compare=8
+            draw_target=diagonal_htm,
+            draw_compare=horizontal_hss
         )
 
         if (vsly_fig_suffixes[i] == 'MAIN') & (rates["discounting_scenario"] == 'MAIN (0.03,0.03)'):  # The breakeven
@@ -1137,7 +1040,7 @@ for rates in alternative_discount_rates:
             # Generate data for the representation of breakeven implementation costs on the ROI plots
             additional_horizontal_lines_for_interpretation = [
                 {
-                    'y_value': roi_at_0_implementation_cost_dict[36][chosen_metric],
+                    'y_value': roi_at_0_implementation_cost_dict[vertical_htm][chosen_metric],
                     'x_start': 0,
                     'x_end': breakeven_lower_v_htm[0],
                     # where the horizontal line intersects the ROI curve of the diagonal strategy
@@ -1146,8 +1049,8 @@ for rates in alternative_discount_rates:
                     'scenario_label': 'Diagonal versus Vertical (at ASC = 0)'
                 },
                 {
-                    'y_value': roi_at_upper_limit_implementation_cost_dict[36][chosen_metric],
-                    'x_start': implementation_cost_upper_limit_dict[36][chosen_metric] / 1e6,
+                    'y_value': roi_at_upper_limit_implementation_cost_dict[vertical_htm][chosen_metric],
+                    'x_start': implementation_cost_upper_limit_dict[vertical_htm][chosen_metric] / 1e6,
                     'x_end': breakeven_upper_v_htm[0],
                     # where the horizontal line intersects the ROI curve of the diagonal strategy
                     'label': f"b = ${breakeven_upper_v_htm[0]:.0f}M [${breakeven_upper_v_htm[1]:.0f}M–${breakeven_upper_v_htm[2]:.0f}M]",
@@ -1156,7 +1059,7 @@ for rates in alternative_discount_rates:
                     'y_label_offset': 0.25
                 },
                 {
-                    'y_value': roi_at_0_implementation_cost_dict[8][chosen_metric],
+                    'y_value': roi_at_0_implementation_cost_dict[horizontal_hss][chosen_metric],
                     'x_start': 0,
                     'x_end': breakeven_lower_v_hss[3],
                     # where the horizontal line intersects the ROI curve of the diagonal strategy
@@ -1166,8 +1069,8 @@ for rates in alternative_discount_rates:
                     'y_label_offset': -0.25
                 },
                 {
-                    'y_value': roi_at_upper_limit_implementation_cost_dict[8][chosen_metric],
-                    'x_start': implementation_cost_upper_limit_dict[8][chosen_metric] / 1e6,
+                    'y_value': roi_at_upper_limit_implementation_cost_dict[horizontal_hss][chosen_metric],
+                    'x_start': implementation_cost_upper_limit_dict[horizontal_hss][chosen_metric] / 1e6,
                     'x_end': breakeven_upper_v_hss[3],
                     # where the horizontal line intersects the ROI curve of the diagonal strategy
                     'label': f"d = ${breakeven_upper_v_hss[0]:.0f}M [${breakeven_upper_v_hss[1]:.0f}M–${breakeven_upper_v_hss[2]:.0f}M]",
@@ -1181,12 +1084,12 @@ for rates in alternative_discount_rates:
             additional_horizontal_lines_for_interpretation = None
             legend_switch_for_main_roi_plot = True
 
-        draw_colors = {8: '#9e0142', 36: '#fdae61', 44: '#66c2a5'}
+        draw_colors = {horizontal_hss: '#9e0142', vertical_htm: '#fdae61', diagonal_htm: '#66c2a5'}
         generate_multiple_scenarios_roi_plot(
             _monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted,
                                                                                            _chosen_value_of_life_year=vsly),
             _incremental_input_cost=incremental_scenario_cost,
-            _draws=[8, 36, 44],
+            _draws=[horizontal_hss, vertical_htm, diagonal_htm],
             _scenario_dict=all_manuscript_scenarios,
             _outputfilepath=figurespath,
             _value_of_life_suffix=vsly_fig_suffixes[i],
@@ -1205,15 +1108,15 @@ for rates in alternative_discount_rates:
           f"the diagonal approach provided a higher ROI up to an even higher threshold of "
           f"${breakeven_upper_v_htm[0]: .2f}[${breakeven_upper_v_htm[1]: .2f} - ${breakeven_upper_v_htm[2]: .2f}] million "
           f"incremental above service level costs in comparison with the vertical approach, or equal to "
-          f"{(breakeven_upper_v_htm[0] * 1e6) / incremental_scenario_cost_summarised[44][chosen_metric] * 100: .2f}% of its own incremental service level cost")
+          f"{(breakeven_upper_v_htm[0] * 1e6) / incremental_scenario_cost_summarised[diagonal_htm][chosen_metric] * 100: .2f}% of its own incremental service level cost")
 
     # HIV scenarios with and without HSS
-    draw_colors = {9: '#fdae61', 17: '#66c2a5'}
+    draw_colors = {vertical_hiv: '#fdae61', diagonal_hiv: '#66c2a5'}
     generate_multiple_scenarios_roi_plot(
         _monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted,
                                                                                        _chosen_value_of_life_year=chosen_value_of_statistical_life),
         _incremental_input_cost=incremental_scenario_cost,
-        _draws=[9, 17],
+        _draws=[vertical_hiv, diagonal_hiv],
         _scenario_dict=all_manuscript_scenarios,
         _metric=chosen_metric,
         _outputfilepath=figurespath,
@@ -1222,12 +1125,12 @@ for rates in alternative_discount_rates:
         _draw_colors=draw_colors)
 
     # TB scenarios with and without HSS
-    draw_colors = {18: '#fdae61', 26: '#66c2a5'}
+    draw_colors = {vertical_tb: '#fdae61', diagonal_tb: '#66c2a5'}
     generate_multiple_scenarios_roi_plot(
         _monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted,
                                                                                        _chosen_value_of_life_year=chosen_value_of_statistical_life),
         _incremental_input_cost=incremental_scenario_cost,
-        _draws=[18, 26],
+        _draws=[vertical_tb, diagonal_tb],
         _scenario_dict=all_manuscript_scenarios,
         _metric=chosen_metric,
         _outputfilepath=figurespath,
@@ -1237,12 +1140,12 @@ for rates in alternative_discount_rates:
         _y_axis_lim=30)
 
     # Malaria scenarios with and without HSS
-    draw_colors = {27: '#fdae61', 35: '#66c2a5'}
+    draw_colors = {vertical_malaria: '#fdae61', diagonal_malaria: '#66c2a5'}
     generate_multiple_scenarios_roi_plot(
         _monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted,
                                                                                        _chosen_value_of_life_year=chosen_value_of_statistical_life),
         _incremental_input_cost=incremental_scenario_cost,
-        _draws=[27, 35],
+        _draws=[vertical_malaria, diagonal_malaria],
         _scenario_dict=all_manuscript_scenarios,
         _metric=chosen_metric,
         _outputfilepath=figurespath,
@@ -1304,7 +1207,7 @@ for rates in alternative_discount_rates:
         lower=0.0)  # monetary value - change in costs
     max_ability_to_pay_for_implementation_subset_for_figure = max_ability_to_pay_for_implementation[
         max_ability_to_pay_for_implementation.index.get_level_values('draw').isin(
-            list(all_manuscript_scenarios.keys()))]
+            list(main_manuscript_scenarios.keys()))]
     max_ability_to_pay_for_implementation_summarized = summarize_cost_data(
         max_ability_to_pay_for_implementation_subset_for_figure, _metric=chosen_metric)
 
@@ -1485,25 +1388,25 @@ input_costs_for_plot_summarized_undiscounted = remove_discounting(input_costs_fo
 
 # Baseline
 do_line_plot_of_cost(_df=input_costs_for_plot_summarized, _cost_category='all',
-                     _year=list_of_relevant_years_for_costing, _draws=[0],
+                     _year=list_of_relevant_years_for_costing, _draws=[baseline],
                      disaggregate_by='cost_category',
                      _outputfilepath=figurespath)
 
 # HSS alone
 do_line_plot_of_cost(_df=input_costs_for_plot_summarized, _cost_category='all',
-                     _year=list_of_relevant_years_for_costing, _draws=[8],
+                     _year=list_of_relevant_years_for_costing, _draws=[horizontal_hss],
                      disaggregate_by='cost_category',
                      _outputfilepath=figurespath)
 
 # HTM without HSS
 do_line_plot_of_cost(_df=input_costs_for_plot_summarized, _cost_category='all',
-                     _year=list_of_relevant_years_for_costing, _draws=[36],
+                     _year=list_of_relevant_years_for_costing, _draws=[vertical_htm],
                      disaggregate_by='cost_category',
                      _outputfilepath=figurespath)
 
 # HTM with HSS
 do_line_plot_of_cost(_df=input_costs_for_plot_summarized, _cost_category='all',
-                     _year=list_of_relevant_years_for_costing, _draws=[44],
+                     _year=list_of_relevant_years_for_costing, _draws=[diagonal_htm],
                      disaggregate_by='cost_category',
                      _outputfilepath=figurespath)
 
@@ -1511,17 +1414,17 @@ do_line_plot_of_cost(_df=input_costs_for_plot_summarized, _cost_category='all',
 # --------------------------
 # ICER results
 icer_result = convert_results_to_dict(icers_summarized)
-hr_scenario_with_lowest_icer = min([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
-hr_scenario_with_highest_icer = max([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
-cons_scenario_with_lowest_icer = min([5, 6, 7], key=lambda k: icer_result[k][chosen_metric])
-cons_scenario_with_highest_icer = max([5, 6, 7], key=lambda k: icer_result[k][chosen_metric])
+hr_scenario_with_lowest_icer = min([1, 2, 3], key=lambda k: icer_result[k][chosen_metric])
+hr_scenario_with_highest_icer = max([1, 2, 3], key=lambda k: icer_result[k][chosen_metric])
+cons_scenario_with_lowest_icer = min([4, 5, 6], key=lambda k: icer_result[k][chosen_metric])
+cons_scenario_with_highest_icer = max([4, 5, 6], key=lambda k: icer_result[k][chosen_metric])
 
 # Get DALYs averted with vertical strategy as comparator
 num_dalys_averted_v_vertical = (-1.0 *
                                 pd.DataFrame(
                                     find_difference_relative_to_comparison(
                                         num_dalys.loc[0],
-                                        comparison=36)  # sets the comparator to 0 which is the Actual scenario
+                                        comparison=vertical_htm)  # sets the comparator to 0 which is the Actual scenario
                                 ).T.iloc[0].unstack(level='run'))
 num_dalys_averted_v_vertical = num_dalys_averted_v_vertical[
     num_dalys_averted_v_vertical.index.get_level_values('draw').isin(
@@ -1531,13 +1434,13 @@ num_dalys_averted_v_vertical_summarised = summarize_cost_data(num_dalys_averted_
 dalys_averted_v_vertical_result = convert_results_to_dict(num_dalys_averted_v_vertical_summarised)
 
 print(f"The ICER of vertical strategy relative to the baseline scenario was "
-      f"${icer_result[36][chosen_metric]:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}] "
+      f"${icer_result[vertical_htm][chosen_metric]:.2f} [${icer_result[vertical_htm]['lower']:.2f} - ${icer_result[vertical_htm]['upper']:.2f}] "
       f"per DALY averted, assuming no additional implementation costs. The ICER of the diagonal HTM with HSS strategy "
       f"relative to the baseline scenario was "
-      f"${icer_result[44][chosen_metric]:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}], "
+      f"${icer_result[diagonal_htm][chosen_metric]:.2f} [${icer_result[diagonal_htm]['lower']:.2f} - ${icer_result[diagonal_htm]['upper']:.2f}], "
       f"demonstrating that the diagonal strategy was more cost-effective than the vertical one. While the horizontal "
       f"strategy, HSS expansion, averted "
-      f"{dalys_averted_v_vertical_result[8][chosen_metric] / 1e6:.2f} [{dalys_averted_v_vertical_result[8]['lower'] / 1e6:.2f} - {dalys_averted_v_vertical_result[8]['upper'] / 1e6:.2f}] "
+      f"{dalys_averted_v_vertical_result[horizontal_hss][chosen_metric] / 1e6:.2f} [{dalys_averted_v_vertical_result[horizontal_hss]['lower'] / 1e6:.2f} - {dalys_averted_v_vertical_result[horizontal_hss]['upper'] / 1e6:.2f}] "
       f"million more DALYs than HTM expansion, it did so at a higher cost per DALY averted "
-      f"(${icer_result[8][chosen_metric]:.2f} [${icer_result[8]['lower']:.2f} - ${icer_result[8]['upper']:.2f}] versus "
-      f"${icer_result[36][chosen_metric]:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}]), meaning it was less cost-effective.")
+      f"(${icer_result[horizontal_hss][chosen_metric]:.2f} [${icer_result[horizontal_hss]['lower']:.2f} - ${icer_result[horizontal_hss]['upper']:.2f}] versus "
+      f"${icer_result[vertical_htm][chosen_metric]:.2f} [${icer_result[vertical_htm]['lower']:.2f} - ${icer_result[vertical_htm]['upper']:.2f}]), meaning it was less cost-effective.")
