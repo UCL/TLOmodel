@@ -1795,6 +1795,15 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
             priority=1
         )
 
+    def never_ran(self) -> None:
+        """What to do if the event is never run by the HealthSystem"""
+        # Reschedule this HSI to happen again 3 days time.
+        next_session_date = self.sim.date + pd.DateOffset(days=3)
+        self.sim.modules['HealthSystem'].schedule_hsi_event(self,
+            topen=next_session_date,
+            tclose=next_session_date + pd.DateOffset(days=1),
+            priority=1
+        )
 
 class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
     """
