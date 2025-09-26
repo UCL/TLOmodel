@@ -759,6 +759,9 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             df.at[child_id, f'nc_{event}_medication_prevents_death'] = False
         df.at[child_id, 'nc_risk_score'] = 0
 
+        df.at[child_id, 'ckd_dialysis_sessions_this_week'] = 0
+        df.at[child_id, 'ckd_total_dialysis_sessions'] = 0
+
     def update_risk_score(self):
         """
         Generates or updates the risk score for individuals at initialisation of population or at each polling event
