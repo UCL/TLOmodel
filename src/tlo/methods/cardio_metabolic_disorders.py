@@ -43,7 +43,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
     """
     CardioMetabolicDisorders module covers a subset of cardio-metabolic conditions and events. Conditions are binary
@@ -407,7 +406,6 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             # Men & women without condition
             men_wo_cond = men & ~df[f'nc_{condition}']
             women_wo_cond = women & ~df[f'nc_{condition}']
-
             for _age_range in self.age_cats:
                 # Select all eligible individuals (men & women w/o condition and in age range)
                 sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
@@ -435,7 +433,6 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             sample_eligible_treatment_success(on_med, p_treatment_works, condition)
 
             # ----- Impose the symptom on random sample of those with each condition to have:
-            #TODO: @britta make linear model data-specific and add in needed complexity
             for symptom in self.prob_symptoms[condition].keys():
                 lm_init_symptoms = LinearModel(
                     LinearModelType.MULTIPLICATIVE,
