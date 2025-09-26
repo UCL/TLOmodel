@@ -2097,6 +2097,16 @@ def test_mode_2_clinics(seed, tmpdir):
         ## Not specifying the dtype explicitly here made the col a string rather than a category
         ## and that caused problems later on.
         sim.population.props[col] = pd.Series(s.cat.categories[0], index=s.index, dtype=s.dtype)
+
+        sim.modules['HealthSystem'].parameters['Clinics_Capabilities'] = pd.DataFrame([
+            {"Facility_ID": 20.0,
+             "Officer_Type_Code": "DCSA",
+             "Fungible": 0.6,
+             'DummyModuleNonFungible': 0.4}
+        ])
+        sim.modules['HealthSystem'].modules_eligible_for_clinics = ['Fungible', 'DummyModuleNonFungible']
+        sim.modules['HealthSystem'].setup_daily_capabilities('funded_plus')
+
         sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
 
         return sim
@@ -2107,7 +2117,6 @@ def test_mode_2_clinics(seed, tmpdir):
                                 person_id=i,
                                 appt_type='MinorSurg',
                                 level='1a')
-            print(f"Scheduling fungible event {i} for person")
             sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi,
                 topen=sim.date,
@@ -2120,7 +2129,6 @@ def test_mode_2_clinics(seed, tmpdir):
                                 person_id=i,
                                 appt_type='MinorSurg',
                                 level='1a')
-            print(f"Scheduling non-fungible event {i} for person")
             sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi,
                 topen=sim.date,
@@ -2133,17 +2141,10 @@ def test_mode_2_clinics(seed, tmpdir):
     tot_population = 100
     sim = create_simulation(tmpdir, tot_population)
 
+
     ## Test that capabilities are split according the proportion specified
     ## 60% of capabilities are fungible and 40% non-fungible.
     ## Dummy Clinic capabilities
-    sim.modules['HealthSystem'].parameters['Clinics_Capabilities'] = pd.DataFrame([
-        {"Facility_ID": 20.0,
-         "Officer_Type_Code": "DCSA",
-         "Fungible": 0.6,
-         'DummyModuleNonFungible': 0.4}
-    ])
-    sim.modules['HealthSystem'].modules_eligible_for_clinics = ['Fungible', 'DummyModuleNonFungible']
-    sim.modules['HealthSystem'].setup_daily_capabilities('funded_plus')
     fungible = sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['Fungible']
     nonfungible = sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible']
 
@@ -2151,14 +2152,14 @@ def test_mode_2_clinics(seed, tmpdir):
     ratio = np.array([nonfungible[k] / v for k,v in nonzero.items()])
 
     assert all(abs(ratio - [0.4 / 0.6] < 1e-7)), "Fungible capabilities are not split correctly"
-    breakpoint()
 
-    # Schedule an identical appointment for all individuals, assigning clinc as follows:
+
+    # Schedule an identical appointment for all individuals, assigning clinic as follows:
     # half individuals have clinic_eligibility=Fungible and half clinic_eligibility=Hiv
     hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
                          person_id=0,  # Ensures call is on officers in first district
-                         appt_type='MinorSurg',
-                         level='1a')
+                         appt_type='ConWithDCSA',
+                         level='0')
     hsi1.initialise()
 
     # Now adjust capabilities available.
@@ -2168,8 +2169,8 @@ def test_mode_2_clinics(seed, tmpdir):
 
     hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
                          person_id=0,
-                         appt_type='MinorSurg',
-                         level='1a')
+                         appt_type='ConWithDCSA',
+                         level='0')
     hsi2.initialise()
 
     sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
@@ -2178,6 +2179,7 @@ def test_mode_2_clinics(seed, tmpdir):
 
     # Schedule 50 fungible and 50 non-fungible events
     sim = schedule_hsi_events(50, 50, sim)
+
     # Run healthsystemscheduler and read the results
     sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
 

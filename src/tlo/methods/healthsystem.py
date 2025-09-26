@@ -340,10 +340,7 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
-        'include_clinics': Parameter(
-            Types.BOOL, 'Implement ring-fencing of a portion of facility time for specific appointment types. This parameter is'
-            'only applicable if mode_appt_constraints is set to 2.'),
-        'Clinics_Capabilities': Parameter(Types.DATA_FRAME, 'Proportion facility time ringfenced for specific appointment types.'),
+        'clinics_configuration': Parameter(Types.STRING, 'Name of configuration of clinics to use.'),
     }
 
     PROPERTIES = {
@@ -368,8 +365,7 @@ class HealthSystem(Module):
         disable: bool = False,
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
-        hsi_event_count_log_period: Optional[str] = "month",
-        include_clinics: Optional[bool] = False,
+        hsi_event_count_log_period: Optional[str] = "month"
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -410,8 +406,6 @@ class HealthSystem(Module):
             end of each day, end of each calendar month, end of each calendar year or
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
-        :param include_clinics: Whether to implement ring-fencing of a portion of facility time for specific
-            appointment types. This parameter is only applicable if mode_appt_constraints is set to 2. Defaults to False.
         """
 
         super().__init__(name)
@@ -424,7 +418,6 @@ class HealthSystem(Module):
         assert not (ignore_priority and policy_name is not None), (
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
-
 
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
@@ -471,10 +464,6 @@ class HealthSystem(Module):
         # Save argument for assumptions to use for 'use_funded_or_actual_staffing`
         self.arg_use_funded_or_actual_staffing = use_funded_or_actual_staffing
         self._use_funded_or_actual_staffing = None  # <-- this is the private internal store of the value that is used.
-
-
-        assert isinstance(include_clinics, bool)
-        self.arg_include_clinics = include_clinics
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
@@ -558,24 +547,15 @@ class HealthSystem(Module):
         # Load basic information about the organization of the HealthSystem
         self.parameters['Master_Facilities_List'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
-        # If include_clinics is True, then read in the Resource file that contains the ringfenced clinics
 
-        print(f"HealthSystem: arg_include_clinics is {self.arg_include_clinics}")
-        ## Ensure include_clinicis is setup appropriately - either via resource file or argument
-        self.set_include_clinics()
-        if self.parameters['include_clinics']:
-            print("HealthSystem: include_clinics is True, so reading in ResourceFile_Clinics.csv")
-            df = pd.read_csv(
-                path_to_resourcefiles_for_healthsystem / 'human_resources' / 'clinics' / 'ResourceFile_Clinics.csv'
-            )
-            print("HealthSystem: Successfully read in ResourceFile_Clinics.csv")
-            self.validate_clinic_capabilities(df)
-            print("HealthSystem: Successfully validated ResourceFile_Clinics.csv")
-            ## If all ok, then update self
-            self.parameters['Clinics_Capabilities']  = df
-            self.modules_eligible_for_clinics = df.columns.difference(['Facility_ID', 'Officer_Type_Code'])
-        else:
-            self.parameters['Clinics_Capabilities'] = pd.DataFrame()
+        # Data on the clinics configurations and mappings to be used.
+        self.parameters['clinic_configuration'] = pd.read_csv(path_to_resourcefiles_for_healthsystem / 'clinics' /
+                                                         'ResourceFile_ClinicConfigurations',
+                                                              f("{self.parameters['clinics_configuration']}.csv"))
+        self.parameters['clinic_mapping'] = read_csv_files(path_to_resourcefiles_for_healthsystem / 'clinics' /
+                                                         'ResourceFile_ClinicMappings',
+                                                         f("{self.parameters['clinics_configuration']}.csv"))
+
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
@@ -760,6 +740,9 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
+
+        # Ensure that a valid clinic configuration has been specified
+        self.validate_clinic_capabilities(self.parameters['clinic_configuration'])
 
 
 
@@ -1056,19 +1039,19 @@ class HealthSystem(Module):
 
 
 
-    def get_clinic_eligibility(self, name):
+    def get_clinic_eligibility(self, hsi_event):
         """
         Returns the name of the module if the module is eligible for clinic access.
         If not, returns 'Fungible'. Notes for future implementation:
         this implementation is likely to change in the future to break the one-to-one relationship between
         modules and clinics.
         """
-        eligible = name in self.modules_eligible_for_clinics
+        eligible_treatment_ids = name in self.parameters['clinic_mapping']['Treatment'].tolist()
 
-        if eligible:
-            return name
+        if hsi_event.TREATMENT_ID not in eligible_treatment_ids:
+            return  self.parameters['clinic_mapping'].loc[self.parameters['clinic_mapping']['Treatment'] == hsi_event.TREATMENT_ID, 'Clinic'].squeeze()
         else:
-            return 'Fungible'
+            return 'OtherClinic'
 
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
@@ -2479,17 +2462,22 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
 
-        capabilities_monitor = Counter(self.module.capabilities_today.to_dict())
-        set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
 
-        clinic_capabilities_monitor = {k: Counter(v) for k, v in self.module._daily_clinics_capabilities_per_staff.items()}
-        set_cl_capabilities_still_available = defaultdict(set)
-        for outer_key, outer_val in clinic_capabilities_monitor.items():
-            for inner_key, inner_val in outer_val.items():
-                if inner_val > 0:
-                    set_cl_capabilities_still_available[outer_key].add(inner_key)
-
-
+        ## If there is no splitting of capabilities via include_clinics, then all capabilities are
+        ## fungible. Hence we put them in the same structure as we would use if include_clinics
+        ## were true.
+        if self.module.parameters['include_clinics']:
+            capabilities_monitor = {k: Counter(v) for k, v in self.module._daily_clinics_capabilities_per_staff.items()}
+            set_capabilities_still_available = defaultdict(set)
+            ## For each module, pull out the facility and officer type with non-zero capabilities.
+            for module_name, module_val in capabilities_monitor.items():
+                for facility_officer_id, facility_officer_id_capabilities in module_val.items():
+                    if facility_officer_id_capabilities > 0:
+                        set_capabilities_still_available[module_name].add(facility_officer_id)
+        else:
+            capabilities_monitor = Counter(self.module.capabilities_today.to_dict())
+            set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
+            set_capabilities_still_available = {'Fungible': set_capabilities_still_available}
 
         # Here use different approach for appt_mode_constraints = 2: rather than collecting events
         # due today all at once, run event immediately at time of querying. This ensures that no
@@ -2524,12 +2512,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Check the event's clinic eligibility; if not eligible for clinic,
                 # clinic name will be Fungible; otherwise it will be the clinic name
                 event_clinic = next_event_tuple.clinic_eligibility
-                if event_clinic == "Fungible":
-                    counter_to_use = capabilities_monitor
-                    capabilities_still_available = set_capabilities_still_available
-                else:
-                    counter_to_use = clinic_capabilities_monitor[event_clinic]
-                    capabilities_still_available = set_cl_capabilities_still_available[event_clinic]
+                capabilities_still_available = set_capabilities_still_available[event_clinic]
 
                 if self.sim.date > next_event_tuple.tclose:
                     # The event has expired (after tclose) having never been run. Call the 'never_ran' function
@@ -2654,12 +2637,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
 
                         # Subtract this from capabilities used so-far today
-                        counter_to_use.subtract(updated_call)
+                        capabilities_monitor[event_clinic].subtract(updated_call)
 
                         # If any of the officers have run out of time by performing this hsi,
                         # remove them from list of available officers.
+                        breakpoint()
                         for officer, call in updated_call.items():
-                            if counter_to_use[officer] <= 0:
+                            if capabilities_monitor[officer] <= 0:
                                 if officer in capabilities_still_available:
                                     capabilities_still_available.remove(officer)
                                 else:
