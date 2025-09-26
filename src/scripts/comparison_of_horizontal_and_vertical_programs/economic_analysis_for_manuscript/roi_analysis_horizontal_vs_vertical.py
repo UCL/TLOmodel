@@ -16,6 +16,7 @@ from typing import Optional
 import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from scipy.spatial import ConvexHull # for frontier plot
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -98,7 +99,31 @@ main_manuscript_scenarios = {0: "Baseline",
                             32: "HTM Programs Scale-up Without HSS Expansion",
                             39: "HTM Programs Scale-up With HSS Expansion Package"}
 
-frontier_scenarios = {40:"HIV + TB Scale-up Without HSS Expansion",
+frontier_scenarios = {9:"HIV Program Scale-up With Pessimistic HRH Scale-up",
+                      10:"HIV Program Scale-up With Historical HRH Scale-up",
+                      11:"HIV Program Scale-up With Historical HRH Scale-up",
+                      12:"HIV Program Scale-up With Consumables Increased to 75th Percentile",
+                      13:"HIV Program Scale-up With Consumables Increased to HIV levels",
+                      14:"HIV Program Scale-up With Consumables Increased to EPI Levels",
+                      17:"TB Program Scale-up With Pessimistic HRH Scale-up",
+                      18:"TB Program Scale-up With Historical HRH Scale-up",
+                      19:"TB Program Scale-up With Optimistic HRH Scale-up",
+                      20:"TB Program Scale-up With Consumables Increased to 75th Percentile",
+                      21:"TB Program Scale-up With Consumables Increased to HIV levels",
+                      22:"TB Program Scale-up With Consumables Increased to EPI Levels",
+                      25:"Malaria Program Scale-up With Pessimistic HRH Scale-up",
+                      26:"Malaria Program Scale-up With Historical HRH Scale-up",
+                      27:"Malaria Program Scale-up With Historical HRH Scale-up",
+                      28:"Malaria Program Scale-up With Consumables Increased to 75th Percentile",
+                      29:"Malaria Program Scale-up With Consumables Increased to HIV levels",
+                      30:"Malaria Program Scale-up With Consumables Increased to EPI Levels",
+                      33:"HTM Scale-up With Pessimistic HRH Scale-up",
+                      34:"HTM Scale-up With Historical HRH Scale-up",
+                      35:"HTM Scale-up With Optimistic HRH Scale-up",
+                      36:"HTM Scale-up With Consumables Increased to 75th Percentile",
+                      37:"HTM Scale-up With Consumables Increased to HIV levels",
+                      38:"HTM Scale-up With Consumables Increased to EPI Levels",
+                      40:"HIV + TB Scale-up Without HSS Expansion",
                       41:"HIV + TB Scale-up With Historical HRH Scale-up",
                       42:"HIV + TB Scale-up With Consumables Increased to 75th Percentile",
                       43:"HIV + TB Scale-up With HSS Expansion",
@@ -128,9 +153,7 @@ diagonal_htm = all_manuscript_scenarios_reverse.get("HTM Programs Scale-up With 
 
 # Use letters instead of full scenario name for figures
 all_manuscript_scenarios_substitutedict = {0: "0", 1: "A", 2: "B", 3: "C", 4: "D", 5: "E", 6: "F", 7: "G", 8: "H",
-                                           15: "I", 16: "J", 23: "K", 24: "L", 31: "M", 32: "N", 39: "O",
-                                           40: "P", 41: "Q", 42: "R", 43: "S", 44: "T", 45: "U", 46: "V", 47: "W", 48: "X",
-                                           49: "Y", 50: "Z", 51: "2"}
+                                           15: "I", 16: "J", 23: "K", 24: "L", 31: "M", 32: "N", 39: "O"}
 
 
 # Function to adjust color brightness (lighten/darken)
@@ -267,6 +290,83 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
 
     return fig, ax
 
+# Thi sis a helper function for the upper_convex_frontier_from_dict
+def prune_inward_tail(frontier_cd, frontier_draws, tol=1e-9):
+    """Remove any final points that violate the upper-hull orientation or reduce DALYs."""
+    keep = []
+    for i, (c, v) in enumerate(frontier_cd):
+        while len(keep) >= 2:
+            o = frontier_cd[keep[-2]]
+            a = frontier_cd[keep[-1]]
+            # same orientation test we used to build the hull
+            z = (a[0] - o[0]) * (v - a[1]) - (a[1] - o[1]) * (c - a[0])
+            if z > tol:  # concave upward -> drop 'a'
+                keep.pop()
+            else:
+                break
+        # also enforce non-decreasing DALYs with increasing cost
+        if not keep or v >= frontier_cd[keep[-1], 1] - tol:
+            keep.append(i)
+    return frontier_cd[keep], [frontier_draws[i] for i in keep]
+
+# The function below helps construct a frontier on a cost-effectiveness plane
+def upper_convex_frontier_from_dict(points_by_draw, include_collinear=False, tol=1e-12):
+    """
+    points_by_draw: dict[draw_id] -> (cost, dalys), both incremental vs the *same baseline*.
+    Returns:
+      draws_on_frontier (ascending cost), frontier_cd (Nx2 array of (cost, dalys)).
+    Removes strictly and extendedly dominated points (upper convex hull).
+    """
+    items = sorted(((int(d), float(c), float(v)) for d, (c, v) in points_by_draw.items()),
+                   key=lambda t: (t[1], -t[2]))  # Sort primarily by cost ascending (t[1]),
+    # and if two costs are equal, sort the one with higher DALYs first (-t[2]).
+
+    # collapse exact cost ties -> keep the one with max effect
+    # The monotone-chain hull expects strictly increasing x (cost).
+    # If two rows have (nearly) the same cost, keep only the one with greater DALYs.
+    dedup = []
+    for t in items:
+        if dedup and abs(t[1] - dedup[-1][1]) <= tol:
+            if t[2] > dedup[-1][2] + tol:
+                dedup[-1] = t
+        else:
+            dedup.append(t)
+
+    # Calculate the z component or 2D cross product to make sure that the next point involves a right turn
+    # (i.e. lower ICER than other subsequent options from the previous point)
+    def cross(o, a, b):
+        # cross of OA x AB in (x=cost, y=dalys)
+        return (a[0]-o[0])*(b[1]-a[1]) - (a[1]-o[1])*(b[0]-a[0])
+    # z > 0: the path o→a→b turns left (counter-clockwise).
+    # z < 0: it turns right (clockwise)
+    # z ≈ 0: the three points are collinear.
+
+    hull = []  # (cost, dalys, draw)
+    for d, c, v in dedup:
+        p = (c, v, d)
+        while len(hull) >= 2:
+            o = hull[-2]; a = hull[-1] # These the the two previous points on the hull
+            z = cross((o[0], o[1]), (a[0], a[1]), (c, v))
+            # For the UPPER hull we keep clockwise turns (z < 0).
+            # If z > 0 (concave) or (collinear and we don't include collinear), pop.
+            if z > tol or (not include_collinear and abs(z) <= tol):
+                hull.pop()
+            else:
+                break
+        hull.append(p)
+
+    draws_on_frontier = [d for (_, _, d) in hull]
+    frontier_cd = np.array([(c, v) for (c, v, _) in hull], dtype=float)
+
+    frontier_cd, draws_on_frontier = prune_inward_tail(frontier_cd, draws_on_frontier, tol=1e-9)
+
+    return draws_on_frontier, frontier_cd
+
+def incremental_icers(frontier_cd):
+    """Adjacent-segment ICERs along the convex frontier."""
+    dc = np.diff(frontier_cd[:, 0])
+    dv = np.diff(frontier_cd[:, 1])
+    return dc, dv, dc / dv
 
 # Define alternative discount rate sets as a list of dictionaries
 alternative_discount_rates = [
@@ -674,130 +774,146 @@ for rates in alternative_discount_rates:
     def do_incremental_cost_and_health_plot(incremental_cost_df,
                                             incremental_dalys_df,
                                             figname,
-                                            draws_with_icer_labels: Optional[list[int]] = None):
-        # Define colors
-        color_map_scatter = {
-            "Horizontal": "#9e0142",
-            "Vertical": "#fdae61",
-            "Diagonal": "#66c2a5"
-        }
+                                            draws_with_icer_labels: Optional[list[int]] = None,
+                                            horizontal_scenarios: Optional[list[int]] = None,
+                                            vertical_scenarios: Optional[list[int]] = None,
+                                            diagonal_scenarios: Optional[list[int]] = None,
+                                            scenario_dict: Optional[dict[int, str]] = None,
+                                            # NEW frontier options
+                                            overlay_frontier: bool = True,
+                                            plot_icers_on_frontier: bool = False,
+                                            icer_lookup: Optional[dict[int, str]] = None,
+                                            # needs to be provided if plot_icers_on_frontier = True
+                                            frontier_color: str = "black",
+                                            frontier_linewidth: float = 2.0):
 
-        # Assign scenario groups
-        horizontal_scenarios = [1, 2, 3, 4, 5, 6, 7]
-        vertical_scenarios = [8, 16, 24, 32]
-        diagonal_scenarios = [15, 23, 31, 39]
-        darker_scenarios = {'HSS Expansion Package', 'HTM Programs Scale-up Without HSS Expansion',
-                            'HTM Programs Scale-up With HSS Expansion Package'}
+        # Define colors for high level grouping of scenarios
+        color_map_scatter = {"HSS Investments": "#9e0142", "HTM-focussed Investments": "#fdae61",
+                             "Combined Investments": "#66c2a5"}
+        horizontal_scenarios = horizontal_scenarios
+        vertical_scenarios = vertical_scenarios
+        diagonal_scenarios = diagonal_scenarios
+        # Draws to highlight, if any
+        darker_draws = draws_with_icer_labels
+        darker_set = set(darker_draws)
 
-        # Reorder DataFrames
+        # Reorder
         new_order = horizontal_scenarios + vertical_scenarios + diagonal_scenarios
         incremental_dalys_df = incremental_dalys_df.loc[new_order]
         incremental_cost_df = incremental_cost_df.loc[new_order]
 
-        # Generate letter labels
-        scenario_labels = {draw: letter for draw, letter in zip(incremental_dalys_df.index, string.ascii_uppercase)}
+        # NUMERIC labels 1..N (based on the plotting order above)
+        scenario_labels = {draw: str(i + 1) for i, draw in enumerate(incremental_dalys_df.index)}
 
-        # Extract values for axes
+        # Extract stats for axes
         x_median = incremental_dalys_df['median'] / 1e6
         x_lower = incremental_dalys_df['lower'] / 1e6
         x_upper = incremental_dalys_df['upper'] / 1e6
-
         y_median = incremental_cost_df['median']
         y_lower = incremental_cost_df['lower']
         y_upper = incremental_cost_df['upper']
 
-        # Create scatter plot
-        plt.figure(figsize=(12, 7))
+        fig, ax = plt.subplots(figsize=(16, 9))
+        texts = []
 
-        # Loop through each draw to plot points with assigned colors
+        # Scatter + error bars + numeric tiles
         for draw in incremental_dalys_df.index:
-            scenario_name = all_manuscript_scenarios.get(draw, f"Scenario {draw}")
-
-            # Assign colors based on scenario category
             if draw in horizontal_scenarios:
-                color = color_map_scatter["Horizontal"]
+                color = color_map_scatter["HSS Investments"]
             elif draw in vertical_scenarios:
-                color = color_map_scatter["Vertical"]
+                color = color_map_scatter["HTM-focussed Investments"]
             elif draw in diagonal_scenarios:
-                color = color_map_scatter["Diagonal"]
+                color = color_map_scatter["Combined Investments"]
             else:
-                color = "gray"  # Default fallback color
+                color = "gray"
 
-            is_darker = scenario_name in darker_scenarios
+            is_darker = draw in darker_set
 
-            # Scatter plot with error bars
-            plt.scatter(
-                x_median[draw], y_median[draw], color=color,
-                edgecolor='black' if is_darker else 'none',
-                linewidth=3.5 if is_darker else 0,
-                label=scenario_labels[draw]
-            )
+            # Plot the central values
+            ax.scatter(x_median[draw], y_median[draw],
+                       s=36, color=color,
+                       edgecolor='black' if is_darker else 'none',
+                       linewidth=2.0 if is_darker else 0.0, zorder=3)
 
-            plt.errorbar(
-                x_median[draw], y_median[draw],
-                xerr=[[x_median[draw] - x_lower[draw]], [x_upper[draw] - x_median[draw]]],
-                yerr=[[y_median[draw] - y_lower[draw]], [y_upper[draw] - y_median[draw]]],
-                fmt='o', color=color, alpha=0.6, capsize=5, elinewidth=1
-            )
+            # Plot the error bars
+            ax.errorbar(x_median[draw], y_median[draw],
+                        xerr=[[x_median[draw] - x_lower[draw]], [x_upper[draw] - x_median[draw]]],
+                        yerr=[[y_median[draw] - y_lower[draw]], [y_upper[draw] - y_median[draw]]],
+                        fmt='none', color=color, alpha=0.6, capsize=4, elinewidth=1, zorder=2)
 
-            # Add letter labels above the dots
-            # Show the draw label (e.g., "A") above the dot
-            texts = []
-            # Add text with no manual offset
-
+            # Add number labels above the dots
             texts.append(
-                plt.text(
-                    x_median[draw],
-                    y_median[draw] + 3e7,  # adjust upward offset
-                    scenario_labels[draw],
-                    fontsize=8,
-                    ha='center',
-                    va='bottom',
-                    color='white',
-                    weight='bold',
-                    bbox=dict(facecolor=color, edgecolor='none', boxstyle='round,pad=0.2', alpha=0.9)
-                ))
+                ax.text(x_median[draw], y_median[draw] + 1e7,
+                        scenario_labels[draw],
+                        fontsize=8, ha='center', va='bottom', color='white', weight='bold',
+                        bbox=dict(facecolor=color, edgecolor='none', boxstyle='round,pad=0.2', alpha=0.9),
+                        zorder=4)
+            )
 
             # If this draw should show ICER, add it below the dot
-            if draws_with_icer_labels:
-                icer_label_offset = 1.2
-                if draw in draws_with_icer_labels:
-                    icer_text = icer_lookup.get(draw, "")
-                    texts.append(plt.text(
-                        x_median[draw] + icer_label_offset,
-                        y_median[draw] + 25e7,
-                        f"$ICER_{{{scenario_labels[draw]}}} =$\n{icer_text}",
-                        fontsize=7.5,
-                        weight='bold',
-                        ha='center',
-                        va='top',
-                        color='black'
-                    ))
-        adjust_text(texts, arrowprops=dict(arrowstyle='->'))
+            if draws_with_icer_labels and draw in draws_with_icer_labels:
+                icer_text = icer_lookup.get(draw, "")
+                texts.append(ax.text(
+                    x_median[draw] + 0.5, y_median[draw] + 0.1,
+                    f"$ICER_{{{scenario_labels[draw]}}} =$\n{icer_text}",
+                    fontsize=7.5, weight='bold', ha='center', va='top', color='black', zorder=4
+                ))
 
-        # Manually create legend
-        legend_labels = []
-        dummy_handles = []
+        if texts:
+            adjust_text(texts, arrowprops=dict(arrowstyle='->'))
+
+        # --- Frontier overlay (upper convex hull in (cost, dalys) vs baseline) ---
+        if overlay_frontier:
+            # Build dict in (cost, dalys) using *medians vs baseline*
+            points_by_draw = {
+                int(d): (float(y_median[d]), float(x_median[d] * 1e6))  # (cost, dalys)
+                for d in incremental_dalys_df.index
+            }
+            # add baseline origin because we're dealing with incremental costs
+            points_by_draw.setdefault(0, (0.0, 0.0))
+
+            frontier_draws, frontier_cd = upper_convex_frontier_from_dict(points_by_draw, include_collinear=False)
+
+            # convert for plotting on scaled axes (x=DALYs millions, y=cost billions)
+            fx = frontier_cd[:, 1] / 1e6
+            fy = frontier_cd[:, 0]
+            (frontier_line,) = ax.plot(fx, fy, '-', lw=frontier_linewidth,
+                                       color=frontier_color, label='Frontier (median)', zorder=5)
+            ax.scatter(fx, fy, s=24, facecolors='white', edgecolors=frontier_color,
+                       linewidths=1.5, zorder=6)
+
+            if plot_icers_on_frontier and len(frontier_cd) >= 2:
+                dc, dv, icers = incremental_icers(frontier_cd)
+                for i in range(len(icers)):
+                    mx = (fx[i] + fx[i + 1]) / 2 + 1.5
+                    my = (fy[i] + fy[i + 1]) / 2 - 0.5
+                    ax.text(mx, my, f"ICER compared to\n previous scenario = ${icers[i]:.2f}", fontsize=7, ha='center',
+                            va='bottom', color='black',
+                            bbox=dict(
+                                facecolor='white',  # background color
+                                edgecolor=frontier_color,
+                                boxstyle='round,pad=0.2',
+                                linewidth=0.8,
+                                alpha=0.9
+                            ),
+                            zorder=10)
+
+        # --- Legend using numeric labels ---
+        legend_labels, dummy_handles = [], []
         scenario_categories = {
-            "Horizontal Approach Scenarios": horizontal_scenarios,
-            "Vertical Approach Scenarios": vertical_scenarios,
-            "Diagonal Approach Scenarios": diagonal_scenarios
+            "HSS Investments": horizontal_scenarios,
+            "HTM-focussed Investments": vertical_scenarios,
+            "Combined Investments": diagonal_scenarios
         }
-
         for category, draws in scenario_categories.items():
-            legend_labels.append(category)  # Add category header
-            dummy_handles.append(mpatches.Patch(color="white", label=""))  # Invisible spacing patch
-
+            legend_labels.append(category)
+            dummy_handles.append(mpatches.Patch(color="white", label=""))
             for draw in draws:
-                scenario_name = all_manuscript_scenarios.get(draw, f"Scenario {draw}")
-                color = (
-                    color_map_scatter["Horizontal"] if draw in horizontal_scenarios else
-                    color_map_scatter["Vertical"] if draw in vertical_scenarios else
-                    color_map_scatter["Diagonal"] if draw in diagonal_scenarios else
-                    "gray"
-                )
-                is_darker = scenario_name in darker_scenarios
-
+                scenario_name = scenario_dict.get(draw, f"Scenario {draw}")
+                color = (color_map_scatter["HSS Investments"] if draw in horizontal_scenarios else
+                         color_map_scatter["HTM-focussed Investments"] if draw in vertical_scenarios else
+                         color_map_scatter["Combined Investments"] if draw in diagonal_scenarios else "gray")
+                is_darker = draw in darker_set
                 legend_labels.append(f"{scenario_labels[draw]}: {scenario_name}")
                 dummy_handles.append(
                     plt.Line2D([0], [0], marker='o', color='w',
@@ -805,21 +921,43 @@ for rates in alternative_discount_rates:
                                markersize=8, markeredgewidth=2 if is_darker else 0)
                 )
 
-        plt.legend(dummy_handles, legend_labels, loc='upper left', fontsize=8, title="Scenario Key", frameon=True)
+        ax.legend(dummy_handles, legend_labels, bbox_to_anchor=(1.1, 1), loc='upper left', fontsize=8,
+                  title="Scenario Key", frameon=True)
 
-        # Labels and title
-        plt.xlabel("DALYs Averted, millions")
-        plt.ylabel("Incremental Scenario Cost, billions (USD)")
-        plt.grid(True)
+        ax.set_xlabel("DALYs Averted, millions")
+        ax.set_ylabel("Incremental Scenario Cost, billions (USD)")
+        ax.grid(True)
+        fig.tight_layout()
+        plt.savefig(figurespath / figname, dpi=300)
+        plt.close(fig)
 
-        plt.savefig(figurespath / figname)
-        plt.close()
 
+    do_incremental_cost_and_health_plot(incremental_cost_df=summarize_cost_data(incremental_scenario_cost, chosen_metric),
+                                        incremental_dalys_df=summarize_cost_data(num_dalys_averted, chosen_metric),
+                                        draws_with_icer_labels=[1],
+                                        horizontal_scenarios=[2, 4, 7],
+                                        vertical_scenarios=[8, 16, 24, 32, 40, 44, 48],
+                                        diagonal_scenarios=[10, 12, 15,
+                                                            18, 20, 23,
+                                                            26, 28, 31,
+                                                            34, 36, 39,
+                                                            41, 42, 43, 45, 46, 47, 49, 50, 51],
+                                        plot_icers_on_frontier=True,
+                                        scenario_dict=all_manuscript_scenarios,
+                                        figname='cea_plane_frontier.png',
+                                        icer_lookup=icer_lookup,
+                                        overlay_frontier=True)
 
-    do_incremental_cost_and_health_plot(incremental_cost_df=incremental_scenario_cost_summarised,
-                                        incremental_dalys_df=num_dalys_averted_summarised,
+    do_incremental_cost_and_health_plot(incremental_cost_df=summarize_cost_data(incremental_scenario_cost, chosen_metric),
+                                        incremental_dalys_df=summarize_cost_data(num_dalys_averted, chosen_metric),
                                         draws_with_icer_labels=[7, 32, 39],
-                                        figname='cea_plane.png')
+                                        horizontal_scenarios=[1, 2, 3, 4, 5, 6, 7],
+                                        vertical_scenarios=[8, 16, 24, 32],
+                                        diagonal_scenarios=[15, 23, 31, 39],
+                                        scenario_dict=all_manuscript_scenarios,
+                                        figname='cea_plane.png',
+                                        icer_lookup=icer_lookup,
+                                        overlay_frontier=False)
 
     # 4. Return on Investment
     # ----------------------------------------------------
