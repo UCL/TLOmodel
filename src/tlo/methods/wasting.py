@@ -1475,16 +1475,18 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Do here whatever happens to an individual during the admission for the treatment
-        # ~~~~~~~~~~~~~~~~~~~~~~
-        # Perform measurements (height/length), weight, MUAC
-        self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
-
         # Check and log availability of consumables
         if self.get_consumables(item_codes=self.module.cons_codes['SFP']):
             logger.debug(key='debug', data='consumables are available')
+
+            # Admission for the treatment
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Perform measurements (height/length), weight, MUAC
+            self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape"})
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
+            # Perform the treatment: cancel natural recovery/progression,
+            # then determine and schedule the outcome following treatment
             self.module.do_when_am_treatment(person_id, treatment='SFP')
         else:
             logger.debug(key='debug',
@@ -1517,18 +1519,18 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Do here whatever happens to an individual during the admission for the treatment
-        # ~~~~~~~~~~~~~~~~~~~~~~
-        # Perform measurements (height/length), weight, MUAC
-        self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
-
         # Check and log availability of consumables
         if self.get_consumables(
             item_codes=self.module.cons_codes['OTP'], optional_item_codes=self.module.cons_codes['OTP_opt']
         ):
-            logger.debug(key='debug', data='consumables are available.')
+            # Admission for the treatment
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Perform measurements (height/length), weight, MUAC
+            self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape"})
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
+            # Perform the treatment: cancel natural recovery/progression,
+            # then determine and schedule the outcome following treatment
             self.module.do_when_am_treatment(person_id, treatment='OTP')
         else:
             logger.debug(key='debug',
@@ -1561,18 +1563,18 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Do here whatever happens to an individual during the admission for the treatment
-        # ~~~~~~~~~~~~~~~~~~~~~~
-        # Perform measurements (height/length, weight, MUAC)
-        self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
-
         # Check and log availability of consumables
         if self.get_consumables(
             item_codes=self.module.cons_codes['ITC'], optional_item_codes=self.module.cons_codes['ITC_opt']
         ):
-            logger.debug(key='debug', data='consumables available, so use it.')
+            # Admission for the treatment
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Perform measurements (height/length), weight, MUAC
+            self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape"})
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
+            # Perform the treatment: cancel natural recovery/progression,
+            # then determine and schedule the outcome following treatment
             self.module.do_when_am_treatment(person_id, treatment='ITC')
         else:
             logger.debug(key='debug',
