@@ -1414,7 +1414,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_last_growth_monitoring_appt_date'] = self.sim.date
 
         # Add required equipment
-        self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
+        self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape", "Development milestone charts"})
 
         def schedule_tx_by_diagnosis(hsi_event):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1481,8 +1481,9 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
 
             # Admission for the treatment
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Perform measurements (height/length), weight, MUAC
-            self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape"})
+            # Perform measurements (height/length), weight, MUAC and log equipment required for the treatment
+            self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape",
+                                "Development milestone charts", "Measuring Cup", "Mixing Bowls"})
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
             # Perform the treatment: cancel natural recovery/progression,
@@ -1526,7 +1527,8 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
             # Admission for the treatment
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Perform measurements (height/length), weight, MUAC
-            self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape"})
+            self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape",
+                                "Development milestone charts"})
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
             # Perform the treatment: cancel natural recovery/progression,
@@ -1570,7 +1572,8 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
             # Admission for the treatment
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Perform measurements (height/length), weight, MUAC
-            self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape"})
+            self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape",
+                                "Development milestone charts"})
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
             # Perform the treatment: cancel natural recovery/progression,
