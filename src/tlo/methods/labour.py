@@ -590,14 +590,14 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             Types.INT, 'Birth weight threshold for very low vs extremely low birth weight classification (grams)'),
 
         # EVENT SCHEDULING DELAYS (in days)
-        'hsi_event_delay_standard': Parameter(
-            Types.INT, 'Standard delay in days for scheduling HSI events'),
-        'delivery_event_delay': Parameter(
-            Types.INT, 'Delay in days for scheduling delivery events'),
+        'hsi_event_standard_delay_window': Parameter(
+            Types.INT, 'Standard delay window in days for scheduling HSI events'),
+        'delivery_event_delay_window': Parameter(
+            Types.INT, 'Delay window in days for scheduling delivery events'),
         'death_stillbirth_event_delay': Parameter(
             Types.INT, 'Delay in days for scheduling death and stillbirth events'),
-        'birth_outcomes_event_delay': Parameter(
-            Types.INT, 'Delay in days for scheduling birth and postnatal outcomes events'),
+        'birth_event_delay': Parameter(
+            Types.INT, 'Delay in days for scheduling birth event'),
 
         # PREGNANCY DURATION CHECK
         'max_estimated_pregnancy_duration_days': Parameter(
@@ -2295,7 +2295,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                     priority=0,
                     topen=self.sim.date,
                     tclose=self.sim.date + pd.DateOffset(
-                        days=self.current_parameters['hsi_event_delay_standard']),
+                        days=self.current_parameters['hsi_event_standard_delay_window']),
                 )
 
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
@@ -2481,7 +2481,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(health_centre_delivery, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date +
-                                                                    DateOffset(days=params['delivery_event_delay']))
+                                                                    DateOffset(days=params['delivery_event_delay_window']))
 
             elif mni[individual_id]['delivery_setting'] == 'hospital':
                 facility_level = self.module.rng.choice(['1b', '2'])
@@ -2490,7 +2490,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hospital_delivery, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date +
-                                                                    DateOffset(days=params['delivery_event_delay']))
+                                                                    DateOffset(days=params['delivery_event_delay_window']))
 
             # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ============================
             # We schedule all women to move through both the death and birth event.
@@ -2503,7 +2503,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # After the death event women move to the Birth Event where, for surviving women and foetus, birth occurs
             # in the simulation
             self.sim.schedule_event(BirthAndPostnatalOutcomesEvent(self.module, individual_id), self.module.sim.date +
-                                    DateOffset(days=params['birth_outcomes_event_delay']))
+                                    DateOffset(days=params['birth_event_delay']))
 
 
 class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
@@ -2575,7 +2575,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                                                                         priority=0,
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date +
-                                                                        DateOffset(days=params['hsi_event_delay_standard']))
+                                                                        DateOffset(days=params['hsi_event_standard_delay_window']))
                 else:
                     mni[individual_id]['didnt_seek_care'] = True
 
