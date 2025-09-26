@@ -13,8 +13,8 @@ class ClimateDisruptionScenario(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2046, 1, 12)
-        self.pop_size = 100_000
-        self.runs_per_draw = 10
+        self.pop_size = 1000
+        self.runs_per_draw = 1
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -79,7 +79,7 @@ class ClimateDisruptionScenario(BaseScenario):
                  "climate_ssp": 'ssp245', #status quo
                  "climate_model_ensemble_model": 'mean',
                  "services_affected_precip": 'none', # ensures no disruption
-                 "tclose_overwrite": 200 # days of t close overwrite
+                 "tclose_overwrite": 1000 # days of t close overwrite
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
@@ -117,7 +117,7 @@ class ClimateDisruptionScenario(BaseScenario):
                 "climate_ssp":'ssp245',
                 "climate_model_ensemble_model":'mean',
                 "services_affected_precip":'all',
-                 "tclose_overwrite": 200 # days of t close overwrite
+                 "tclose_overwrite": 1000 # days of t close overwrite
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
