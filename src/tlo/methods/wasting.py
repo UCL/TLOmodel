@@ -1086,7 +1086,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 else:  # complications persist hence send for another round of ITC
                     df.at[person_id, 'un_am_discharge_date'] = outcome_date
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event=HSI_Wasting_OutpatientTherapeuticProgramme_SAM(module=self, person_id=person_id),
+                        hsi_event=HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(module=self, person_id=person_id),
                         priority=0, topen=outcome_date)
 
             log_tx_outcome()
