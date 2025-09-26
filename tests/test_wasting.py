@@ -27,6 +27,8 @@ from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.wasting import (
     HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM,
     HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
+    Wasting_ActivateInterventionsEvent,
+    Wasting_ComplicationsRecovery_Event,
     Wasting_FullRecovery_Event,
     Wasting_IncidencePoll,
     Wasting_ProgressionToSevere_Event,
@@ -402,7 +404,7 @@ def test_nat_recovery_moderate_wasting(tmpdir):
 
 def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpdir):
     """ Assume: untreated SAM causes certain death, no complications occur, incidence and progression to severe wasting
-    are certain, and treatment prevents death.
+    are certain, and no full recovery neither death occurs with treatment
     Check: child progresses to SAM without complications, death is scheduled but cancelled by treatment, and recovery to
     MAM follows treatment. """
     popsize = 1000
@@ -440,7 +442,7 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     # Set complete recovery from SAM to zero. We want those with SAM to recover to MAM with treatment
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
     # Set probability of death after treatment at 0% (hence recovery to MAM with treatment at 100%)
-    p['prob_death_after_SAMcare'] = 0.0
+    p['prob_death_after_OutpatientSAMcare'] = 0.0
 
     # Run Wasting Polling event to get new incident cases:
     polling = Wasting_IncidencePoll(module=wmodule)
@@ -481,10 +483,10 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     death_event = death_event_tuple[1]
     assert date_of_scheduled_death > sim.date
 
+    # Run care seeking event and ensure HSI for uncomplicated SAM is scheduled
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
     hsp.run()
-
-    # Check non-emergency care event is scheduled
+    # check non-emergency care event is scheduled
     assert any(isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
                for ev in sim.modules['HealthSystem'].find_events_for_person(person_id))
     # run the created instance of HSI_GenericNonEmergencyFirstAppt
@@ -532,13 +534,13 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     assert person['is_alive']
     assert pd.isnull(person['un_sam_death_date'])
     assert person['un_clinical_acute_malnutrition'] == 'MAM'
-    # check they have no symptoms:
-    assert 0 == len(sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=wmodule))
+    # weight_loss should not be assigned as a symptom
+    assert 'weight_loss' not in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
 
-def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
-    """ Check the onset of symptoms with complicated SAM, check full recovery with treatment when the natural death due
-    to SAM is certain but canceled with treatment, and symptoms resolved when fully recovered with treatment. """
+def test_tx_complications_recovery_severe_acute_malnutrition_with_complications(tmpdir):
+    """ Check the onset of symptoms with complicated SAM, check complications recovery with treatment when the natural
+    death due to SAM is certain but canceled with treatment, and complications resolved when recovered with ITC. """
     popsize = 1000
     sim = get_sim(tmpdir)
     # get wasting module
@@ -563,7 +565,7 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
 
     # Ensure the individual has complications due to SAM
     p['prob_complications_in_SAM'] = 1.0
-    # Set full recovery rate to 100% so that this individual should fully recover with treatment
+    # Set recovery rate to 100% so that this individual should recover with treatment
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel.multiplicative()
 
     # Assign diagnosis
@@ -575,8 +577,8 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     assert person['un_clinical_acute_malnutrition'] == 'SAM'
     # should have complications
     assert person['un_sam_with_complications']
-    # symptoms should be applied
-    assert person_id in set(sim.modules['SymptomManager'].who_has('weight_loss'))
+    # weight_loss should be assigned as a symptom
+    assert 'weight_loss' in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # Check death is scheduled
     assert isinstance(sim.find_events_for_person(person_id)[0][1], Wasting_SevereAcuteMalnutritionDeath_Event)
@@ -615,37 +617,34 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     # Check scheduled death was canceled due to treatment
     assert pd.isnull(df.at[person_id, 'un_sam_death_date'])
 
-    # Check full recovery due to treatment is scheduled
-    assert isinstance(sim.find_events_for_person(person_id)[1][1], Wasting_FullRecovery_Event)
-    # get date of full recovery and the recovery event
+    # Check complications recovery due to treatment is scheduled
+    assert isinstance(sim.find_events_for_person(person_id)[1][1], Wasting_ComplicationsRecovery_Event)
+    # get date of complications recovery and the recovery event
     sam_recovery_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-                                isinstance(event_tuple[1], Wasting_FullRecovery_Event)][0]
-    date_of_scheduled_full_recovery = sam_recovery_event_tuple[0]
+                                isinstance(event_tuple[1], Wasting_ComplicationsRecovery_Event)][0]
+    date_of_scheduled_complications_recovery = sam_recovery_event_tuple[0]
     sam_recovery_event = sam_recovery_event_tuple[1]
-    assert date_of_scheduled_full_recovery > sim.date
+    assert date_of_scheduled_complications_recovery > sim.date
 
-    # Run death event (death should not happen) & full recovery in correct order
-    sim.date = min(date_of_scheduled_death, date_of_scheduled_full_recovery)
+    # Run death event (death should not happen) & complications recovery in correct order
+    sim.date = min(date_of_scheduled_death, date_of_scheduled_complications_recovery)
     if sim.date == date_of_scheduled_death:
         death_event.apply(person_id)
-        sim.date = date_of_scheduled_full_recovery
+        sim.date = date_of_scheduled_complications_recovery
         sam_recovery_event.apply(person_id)
     else:
         sam_recovery_event.apply(person_id)
         sim.date = date_of_scheduled_death
         death_event.apply(person_id)
 
-    # Check properties of this individual. Should now be well and alive
+    # Check properties of this individual. Should now be SAM, with no complications, and still alive
     person = df.loc[person_id]
-    assert person['un_WHZ_category'] == 'WHZ>=-2'
-    assert person['un_am_MUAC_category'] == '>=125mm'
-    assert not person['un_am_nutritional_oedema']
-    assert person['un_clinical_acute_malnutrition'] == 'well'
+    assert person['un_clinical_acute_malnutrition'] == 'SAM'
+    assert not person['un_sam_with_complications']
     assert pd.isnull(person['un_sam_death_date'])
     assert person['is_alive']
-
-    # check they have no symptoms:
-    assert 0 == len(sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=wmodule))
+    # check the child still has the weight_loss symptom
+    assert "weight_loss" in sim.modules["SymptomManager"].has_what(person_id=person_id, disease_module=wmodule)
 
 
 def test_nat_death_overwritten_by_tx_death(tmpdir):
@@ -670,7 +669,7 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     # Set full recovery with treatment at 0%
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
     # Set death rate with treatment at 100%, hence all SAM cases should die with treatment
-    p['prob_death_after_SAMcare'] = 1.0
+    p['prob_death_after_OutpatientSAMcare'] = 1.0
     # Ensure the individual has no complications when SAM occurs
     p['prob_complications_in_SAM'] = 0.0
 
@@ -689,8 +688,8 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     person = df.loc[person_id]
     # should be diagnosed as SAM due to severe wasting
     assert person['un_clinical_acute_malnutrition'] == 'SAM'
-    # symptoms should be applied
-    assert person_id in set(sim.modules['SymptomManager'].who_has('weight_loss'))
+    # weight_loss should be assigned as a symptom
+    assert 'weight_loss' in sim.modules['SymptomManager'].has_what(person_id=person_id)
     # natural death should be scheduled
     assert not pd.isnull(person['un_sam_death_date'])
 
@@ -761,8 +760,7 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
 def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
     """ Show that if recovered with a treatment event before the person was going to recover naturally from moderate
     wasting with moderate or severe acute malnutrition, it causes the episode to end earlier, natural recovery is
-    cancelled.
-    Test for MAM and complicated SAM. """
+    cancelled. Test for MAM and uncomplicated SAM. """
     for am_state_expected in ['MAM', 'SAM']:
         popsize = 1000
         sim = get_sim(tmpdir)
@@ -803,8 +801,8 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
         else:  # am_state_expected == 'SAM'
             # Set probability of oedema with moderate wasting at 100% in order to have SAM with onset of wasting
             p['proportion_WHZ<-2_with_oedema'] = 1.0
-            # Ensure the individual has always complications when SAM occurs
-            p['prob_complications_in_SAM'] = 1.0
+            # Ensure the individual have no complications when SAM occurs
+            p['prob_complications_in_SAM'] = 0.0
 
         # Run Wasting Polling event to get new incident cases:
         polling = Wasting_IncidencePoll(module=wmodule)
@@ -813,27 +811,32 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
         # Check that there is a natural recovery event scheduled:
         #  Wasting_FullRecovery_Event if this person has MAM, Wasting_RecoveryToMAM_Event if this person has SAM
         if am_state_expected == 'MAM':
-            recov_event_type = Wasting_FullRecovery_Event
+            nat_recov_event_type = Wasting_FullRecovery_Event
         else:  # am_state_expected == 'SAM'
-            recov_event_type = Wasting_RecoveryToMAM_Event
+            nat_recov_event_type = Wasting_RecoveryToMAM_Event
         nat_recov_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
-                             if isinstance(event_tuple[1], recov_event_type)][0]
+                             if isinstance(event_tuple[1], nat_recov_event_type)][0]
         date_of_scheduled_nat_recov = nat_recov_event_tuple[0]
         nat_recov_event = nat_recov_event_tuple[1]
 
-        # Start appropriate treatment
+        # Start appropriate treatment and set correct number of full recovery events to be scheduled after enrolment
         if am_state_expected == 'MAM':
             wmodule.do_when_am_treatment(person_id, treatment='SFP')
+            nmb_full_recov_events = 2  # the natural full recovery, and full recovery with treatment
         else: # complicated SAM
-            wmodule.do_when_am_treatment(person_id, treatment='ITC')
+            wmodule.do_when_am_treatment(person_id, treatment='OTP')
+            nmb_full_recov_events = 1  # only full recovery with treatment
         assert df.at[person_id, 'un_am_tx_start_date'] == sim.date
 
         # Check full recovery with treatment is scheduled before the natural recovery
         full_recov_events = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
                                  if isinstance(event_tuple[1], Wasting_FullRecovery_Event)]
+        assert len(full_recov_events) == nmb_full_recov_events, (
+            f"{nmb_full_recov_events} full recovery event(s) should be scheduled, but {len(full_recov_events)} is/are "
+            "scheduled."
+        )
+
         if am_state_expected == 'MAM':
-            assert len(full_recov_events) == 2, (f"Two full recovery events should be scheduled (natural and following "
-                                                 f"treatment), but {len(full_recov_events)} is/are scheduled.")
             # check the natural full recovery is at position 1;
             # hence full recovery following treatment will always be at position 0
             nat_recov_event_tuple = full_recov_events[1]
@@ -852,7 +855,7 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
         # Run a recovery event due to treatment first
         sim.date = date_of_scheduled_tx_recov
         tx_recov_event.apply(person_id)
-        # check properties of this individual, should have recovered today, is not wasted, is well-nourished and alive
+        # check properties of this individual: should have recovered today, is not wasted, is well-nourished, is alive
         person = df.loc[person_id]
         assert person['un_am_recovery_date'] == sim.date
         assert person['un_WHZ_category'] == 'WHZ>=-2'
@@ -902,7 +905,7 @@ def test_recovery_before_death_scheduled(tmpdir):
     # Set moderate wasting incidence, progression to severe wasting, and death rate after SAM care at 100%
     wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
     wmodule.wasting_models.severe_wasting_progression_lm = LinearModel.multiplicative()
-    p['prob_death_after_SAMcare'] = 1.0
+    p['prob_death_after_OutpatientSAMcare'] = 1.0
     # Set full recovery with SAM care at 0%. With a 100% death rate after SAM care, there will be no recovery to MAM;
     # all individuals will die after receiving SAM care.
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
@@ -1033,6 +1036,7 @@ def test_no_wasting_after_recent_recovery(tmpdir):
     used as an example within the assumed min_days_to_relapse-day relapse-free window.) """
     popsize = 1000
     sim = get_sim(tmpdir)
+    # get wasting module
     wmodule = sim.modules['Wasting']
     p = wmodule.parameters
 
@@ -1063,3 +1067,111 @@ def test_no_wasting_after_recent_recovery(tmpdir):
 
     # Check properties of this individual: should still be well
     assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well'
+
+def test_default_interv_pars(tmpdir):
+    """
+    Test the default values of intervention parameters:
+    - The probabilities for growth monitoring attendance and MAM (Moderate Acute Malnutrition) cases seeking care should
+      remain unchanged from the values prior to the intervention.
+    - No food supplement intervention that assigns fixed availability probabilities should be applied.
+    - By default, when a food supplement intervention that assigns fixed availability probabilities is implemented, full
+      availability is assumed for all food supplements.
+    """
+    sim = get_sim(tmpdir)
+    # get wasting module
+    wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
+
+    assert p['growth_monitoring_attendance_prob_agecat'] == p['interv_growth_monitoring_attendance_prob_agecat'], \
+        ("The parameters 'growth_monitoring_attendance_prob_agecat' and "
+         "'interv_growth_monitoring_attendance_prob_agecat' do not match.")
+
+    assert p['awareness_MAM_prob'] == p['interv_awareness_MAM_prob'], \
+        "The parameters 'awareness_MAM_prob' and 'interv_awareness_MAM_prob' do not match."
+
+    assert not p['interv_food_supplements_avail_bool'], \
+        "The parameters 'interv_food_supplements_avail_bool' should be False by default but it is not."
+
+    assert p['interv_avail_F75milk'] == p['interv_avail_RUTF'] == p['interv_avail_RUTF'] == 1.0, \
+        ("At least one of the food supplement availability probabilities 'interv_avail_' does not assume full "
+         "availability (1.0).")
+
+def test_interventions_activation(tmpdir):
+    """ Test that Wasting_ActivateInterventionsEvent correctly overwrites parameters. """
+    sim = get_sim(tmpdir)
+    # get wasting module
+    wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
+
+    # Ensure the parameters differ from original value to test overwriting
+    p['interv_growth_monitoring_attendance_prob_agecat'] = [0.9, 0.8, 0.7]
+    assert p['growth_monitoring_attendance_prob_agecat'] != p['interv_growth_monitoring_attendance_prob_agecat']
+
+    # Apply the interventions activation event
+    activation_event = Wasting_ActivateInterventionsEvent(wmodule)
+    activation_event.apply(sim.population)
+
+    # Verify that the parameters have been overwritten
+    assert p['growth_monitoring_attendance_prob_agecat'] == p['interv_growth_monitoring_attendance_prob_agecat'], \
+        ("The parameter 'growth_monitoring_attendance_prob_agecat' was not correctly overwritten by the activation "
+         "event.")
+
+def test_symptoms_with_MAM(tmpdir):
+    """ Before intervention, MAM cases do not seek care, assuming they do not recognise symptoms of weight loss, hence
+    the weight_loss symptom is not assigned. After activation, if care-seeking for MAM cases is set to 100%, the symptom
+     is always assigned; if set to 0%, the weight_loss symptom remains unassigned for MAM cases. """
+    dur = pd.DateOffset(days=1)
+    popsize = 1000
+    sim = get_sim(tmpdir)
+    # get wasting module
+    wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+
+    # Get person to use and set their acute malnutrtion indicators to MAM:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    df.loc[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2' # moderately wasted
+    df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
+    df.loc[person_id, 'un_am_nutritional_oedema'] = False
+
+    # ### Before the intervention is activated, symptoms are never assigned to MAM cases
+    # This part of the test only makes sense when awareness_MAM_prob is set to 0.0 by default.
+    assert p['awareness_MAM_prob'] == 0.0
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
+    assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
+    # weight_loss should not be assigned as a symptom
+    assert 'weight_loss' not in sim.modules['SymptomManager'].has_what(
+        person_id=person_id, disease_module=wmodule
+    )
+
+    # ### If all MAM cases are seeking care, the symptoms are always assigned to them
+    p['interv_awareness_MAM_prob'] = 1.0
+    activation_event = Wasting_ActivateInterventionsEvent(wmodule)
+    activation_event.apply(sim.population)
+    assert p['awareness_MAM_prob'] == p['interv_awareness_MAM_prob'], \
+        "The parameter 'awareness_MAM_prob' was not correctly overwritten by the activation event."
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
+    assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
+    # weight_loss should be assigned as a symptom
+    assert 'weight_loss' in sim.modules['SymptomManager'].has_what(person_id=person_id)
+
+    # reset symptoms
+    sim.modules["SymptomManager"].clear_symptoms(
+        person_id=person_id, disease_module=wmodule
+    )
+    assert 'weight_loss' not in sim.modules['SymptomManager'].has_what(person_id=person_id)
+
+    # ### If no MAM cases are seeking care, the symptoms are never assigned to them
+    p['interv_awareness_MAM_prob'] = 0.0
+    activation_event = Wasting_ActivateInterventionsEvent(wmodule)
+    activation_event.apply(sim.population)
+    assert p['awareness_MAM_prob'] == p['interv_awareness_MAM_prob'], \
+        "The parameter 'awareness_MAM_prob' was not correctly overwritten by the activation event."
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
+    assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
+    # weight_loss should not be assigned as a symptom
+    assert 'weight_loss' not in sim.modules['SymptomManager'].has_what(person_id=person_id)
