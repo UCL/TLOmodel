@@ -53,14 +53,30 @@ def generate_mnh_outcome_counter():
                     'early_onset_sepsis_n_death', 'late_onset_sepsis_n_death', 'encephalopathy_n_death',
                     'neonatal_respiratory_depression_n_death', 'preterm_other_n_death',
                     'respiratory_distress_syndrome_n_death', 'congenital_heart_anomaly_n_death',
-                    'limb_or_musculoskeletal_anomaly_n_death', 'urogenital_anomaly_n_death',
-                    'digestive_anomaly_n_death', 'other_anomaly_n_death',
+                    'limb_or_musculoskeletal_anomaly_n_death', 'urogenital_anomaly_n_death', 'digestive_anomaly_n_death',
+                    'other_anomaly_n_death',
 
                     # service coverage outcomes
                     'anc0', 'anc1', 'anc2', 'anc3', 'anc4', 'anc5', 'anc6', 'anc7', 'anc8', 'anc8+',
                     'home_birth_delivery', 'hospital_delivery', 'health_centre_delivery',
                     'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+']
 
+    all_ints = ["urine_dipstick", "bp_measurement", "iron_folic_acid", "protein_supplement", "calcium_supplement",
+                "hb_test", "syphilis_test", "syphilis_treatment", "gdm_test", "full_blood_count", "blood_transfusion",
+                "anti_htn_mgso4", "abx_for_prom", "gdm_treatment_diet",
+                "gdm_treatment_orals", "gdm_treatment_insulin", "post_abortion_care_core",
+                "ectopic_pregnancy_treatment", "antenatal_corticosteroids", "birth_kit", "avd",
+                "sepsis_treatment", "amtsl", "pph_treatment_uterotonics", "pph_treatment_mrrp",
+                "caesarean_section_oth_surg", "fistula_treatment", "neo_resus", "kmc",
+                "neo_sepsis_treatment"]
+
+    interventions = []
+
+    for i in all_ints:
+        interventions.append(f'{i}_req')
+        interventions.append(f'{i}_deliv')
+
+    outcome_list.extend(interventions)
     mnh_outcome_counter = {k: 0 for k in outcome_list}
 
     return {'counter': mnh_outcome_counter,
@@ -78,7 +94,7 @@ def get_list_of_items(self, item_list):
     return codes
 
 def check_int_deliverable(self, int_name, hsi_event,
-                          q_param=None, cons=None, opt_cons=None, equipment=None, dx_test=None):
+                          q_param=None, cons=None, alt_con=None, opt_cons=None, equipment=None, dx_test=None):
     """
     This function is called to determine if an intervention within the MNH modules can be delivered to an individual
     during a given HSI. This applied to all MNH interventions. If analyses are being conducted in which the probability
@@ -100,8 +116,13 @@ def check_int_deliverable(self, int_name, hsi_event,
     individual_id = hsi_event.target
     p_params = self.sim.modules['PregnancySupervisor'].current_parameters
     l_params = self.sim.modules['Labour'].current_parameters
+    c = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
 
-    # assert int_name in p_params['all_interventions']
+    print(int_name)
+    assert int_name in p_params['all_interventions']
+
+    int_will_run = None
+    c[f'{int_name}_req'] += 1
 
     # Firstly, we determine if an analysis is currently being conducted during which the probability of intervention
     # delivery is being overridden
@@ -114,7 +135,7 @@ def check_int_deliverable(self, int_name, hsi_event,
 
         # The intervention has no effect
         if not can_int_run_analysis:
-            return False
+            int_will_run = False
 
         else:
             # The intervention will have an effect. If this is an intervention which leads to an outcome dependent on
@@ -123,17 +144,17 @@ def check_int_deliverable(self, int_name, hsi_event,
                 test = self.sim.modules['HealthSystem'].dx_manager.dx_tests[dx_test]
 
                 if test[0].target_categories is None and (df.at[individual_id, test[0].property]):
-                    return True
+                    int_will_run = True
 
                 elif ((test[0].target_categories is not None) and
                       (df.at[individual_id, test[0].property] in test[0].target_categories)):
-                    return True
+                    int_will_run = True
 
                 else:
-                    return False
+                    int_will_run = False
 
             else:
-                return True
+                int_will_run = True
 
     elif (l_params['la_analysis_in_progress'] or
           (p_params['ps_analysis_in_progress'] and not p_params['interventions_under_analysis'])):
@@ -159,10 +180,10 @@ def check_int_deliverable(self, int_name, hsi_event,
             # probability of intervention delivery is determined by an analysis parameter
             if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]]:
                 if self.rng.random_sample() < params[analysis_dict[k][1]]:
-                    return True
+                    int_will_run = True
 
                 else:
-                    return False
+                    int_will_run = False
 
     else:
 
@@ -180,23 +201,32 @@ def check_int_deliverable(self, int_name, hsi_event,
             if equipment is not None:
                 hsi_event.add_equipment(equipment)
 
-        if ((cons is None) or
-            (hsi_event.get_consumables(item_codes=cons if not None else [],
-                                       optional_item_codes=opt_cons if not None else []))):
+        if (cons is None) or hsi_event.get_consumables(item_codes=cons if not None else {},
+                                     to_log=True if cons is not None else False):
             consumables = True
 
-        if cons is None and opt_cons is not None:
-            hsi_event.get_consumables(item_codes=[], optional_item_codes=opt_cons)
+        elif (alt_con is not None) and (hsi_event.get_consumables(item_codes=alt_con)):
+            consumables = True
+
+        hsi_event.get_consumables(optional_item_codes=opt_cons if not None else {},
+                                  to_log=True if opt_cons is not None else False)
 
         if ((dx_test is None) or
             (self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=dx_test, hsi_event=hsi_event))):
             test = True
 
         if quality and consumables and test:
-            return True
+            int_will_run = True
 
         else:
-            return False
+            int_will_run = False
+
+    assert int_will_run is not None
+
+    if int_will_run:
+        c[f'{int_name}_deliv'] += 1
+
+    return int_will_run
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):
