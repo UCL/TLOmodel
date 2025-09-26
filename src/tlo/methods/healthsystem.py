@@ -2555,8 +2555,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
                                         self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                             priority=item.priority,
-                                            topen=self.sim.date + DateOffset(days=(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1)* prob_disruption/self.module.parameters['scale_factor_severity_disruption_and_delay'], 1)),
-                                            tclose=self.sim.date + DateOffset(days=(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1)* prob_disruption/self.module.parameters['scale_factor_severity_disruption_and_delay'], 1)) + DateOffset((item.topen - item.tclose).days),
+                                            topen=self.sim.date + DateOffset(days=(int(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather'] * item.priority + 1, 1) * prob_disruption /self.module.parameters['scale_factor_severity_disruption_and_delay']))),
+                                            tclose=self.sim.date + DateOffset(days=(int(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather'] * item.priority + 1, 1) * prob_disruption /self.module.parameters['scale_factor_severity_disruption_and_delay']))) + DateOffset((item.topen - item.tclose).days),
                                             hsi_event=item.hsi_event
                                         )
                                         self.module.call_and_record_weather_delayed_hsi_event(hsi_event=item.hsi_event,
@@ -2587,8 +2587,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                             self.sim.modules[
                                                 'HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                                 priority=item.priority,
-                                                topen=self.sim.date + DateOffset(days=(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1)* prob_disruption/self.module.parameters['scale_factor_severity_disruption_and_delay'], 1)), # makes it proportional to urgency. Most urgent are 0 and 1 (ped/adult)
-                                                tclose=self.sim.date + DateOffset(days=(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather']*item.priority + 1)* prob_disruption/self.module.parameters['scale_factor_severity_disruption_and_delay'], 1))+ DateOffset(
+                                                topen=self.sim.date + DateOffset(days=(int(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather'] * item.priority + 1, 1) * prob_disruption /self.module.parameters['scale_factor_severity_disruption_and_delay']))), # makes it proportional to urgency. Most urgent are 0 and 1 (ped/adult)
+                                                tclose=self.sim.date + DateOffset(days=(int(max(self.module.parameters['scale_factor_delay_in_seeking_care_weather'] * item.priority + 1, 1) * prob_disruption /self.module.parameters['scale_factor_severity_disruption_and_delay']))) + DateOffset(
                                                     (item.topen - item.tclose).days),
                                                 hsi_event=item.hsi_event
                                             )
