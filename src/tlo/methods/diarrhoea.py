@@ -449,6 +449,12 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         'rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo':
             Parameter(Types.REAL,
                       'relative risk of severe dehydration with rotavirus vaccine, for those aged 1 year and older.'),
+
+        # Parameters describing thresholds for severity of diarrhoea
+        'persistent_diarrhoea_threshold_days':
+            Parameter(Types.REAL,
+                      'Days of symptoms after which classification is persistent diarrhoea.'),
+
     }
 
     PROPERTIES = {
@@ -472,9 +478,10 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
                                                'some',  # <-- this level is not used currently.
                                                'severe'
                                                ]),
-        'gi_duration_longer_than_13days': Property(Types.BOOL,
+        'persistent_diarrhoea_status': Property(Types.BOOL,
                                                    'Whether the duration of the current episode would last longer than '
-                                                   '13 days if untreated. (False if does not have current episode)'),
+                                                   'days set as threshold if untreated. '
+                                                   '(False if does not have current episode)'),
         'gi_number_of_episodes': Property(Types.INT,
                                           "Number of episodes of diarrhoea caused by a pathogen"),
 
@@ -541,7 +548,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, 'gi_pathogen'] = np.nan
         df.loc[df.is_alive, 'gi_type'] = np.nan
         df.loc[df.is_alive, 'gi_dehydration'] = np.nan
-        df.loc[df.is_alive, 'gi_duration_longer_than_13days'] = False
+        df.loc[df.is_alive, 'persistent_diarrhoea_status'] = False
         df.loc[df.is_alive, 'gi_number_of_episodes'] = 0
 
         # ---- Internal values ----
@@ -605,7 +612,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, 'gi_pathogen'] = np.nan
         df.at[child_id, 'gi_type'] = np.nan
         df.at[child_id, 'gi_dehydration'] = np.nan
-        df.at[child_id, 'gi_duration_longer_than_13days'] = False
+        df.at[child_id, 'persistent_diarrhoea_status'] = False
         df.at[child_id, 'gi_number_of_episodes'] = 0
 
         # ---- Internal values ----
@@ -750,7 +757,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
             if self.models.does_treatment_prevent_death(
                 pathogen=person.gi_pathogen,
                 type=(person.gi_type, type_after_treatment),  # <-- type may have changed
-                duration_longer_than_13days=person.gi_duration_longer_than_13days,
+                duration_longer_than_13days=person.persistent_diarrhoea_status,
                 dehydration=(person.gi_dehydration, dehydration_after_treatment),  # <-- dehydration may have changed
                 age_exact_years=person.age_exact_years,
                 ri_current_infection_status=person.ri_current_infection_status,
@@ -836,7 +843,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
                 'gi_pathogen',
                 'gi_type',
                 'gi_dehydration',
-                'gi_duration_longer_than_13days',
+                'persistent_diarrhoea_status',
                 'gi_date_of_onset',
                 'gi_scheduled_date_recovery',
                 'gi_scheduled_date_death',
@@ -867,7 +874,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
             'gi_type',
             'gi_dehydration']
                          ]).all().all()
-        assert not df.loc[not_in_current_episode, 'gi_duration_longer_than_13days'].any()
+        assert not df.loc[not_in_current_episode, 'persistent_diarrhoea_status'].any()
         assert pd.isnull(df.loc[not_in_current_episode, [
             'gi_date_of_onset',
             'gi_scheduled_date_recovery',
@@ -1359,7 +1366,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             'gi_dehydration': m.models.get_dehydration(pathogen=self.pathogen,
                                                        va_rota_all_doses=person.va_rota_all_doses,
                                                        age_years=person.age_years),
-            'gi_duration_longer_than_13days': duration_in_days >= 13,
+            'persistent_diarrhoea_status': duration_in_days >= p['persistent_diarrhoea_threshold_days'],
             'gi_date_of_onset': self.sim.date,
             'gi_date_end_of_last_episode': date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure']),
             'gi_scheduled_date_recovery': pd.NaT,   # <-- determined below
@@ -1371,7 +1378,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         if m.models.will_die(
             pathogen=props_new['gi_pathogen'],
             type=props_new['gi_type'],
-            duration_longer_than_13days=props_new['gi_duration_longer_than_13days'],
+            duration_longer_than_13days=props_new['persistent_diarrhoea_status'],
             dehydration=props_new['gi_dehydration'],
             age_exact_years=person['age_exact_years'],
             ri_current_infection_status=person['ri_current_infection_status'],
@@ -1406,7 +1413,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 'pathogen': props_new['gi_pathogen'],
                 'type': props_new['gi_type'],
                 'dehydration': props_new['gi_dehydration'],
-                'duration_longer_than_13days': props_new['gi_duration_longer_than_13days'],
+                'duration_longer_than_13days': props_new['persistent_diarrhoea_status'],
                 'date_of_outcome': date_of_outcome,
                 'will_die': pd.isnull(props_new['gi_scheduled_date_recovery'])
             },
