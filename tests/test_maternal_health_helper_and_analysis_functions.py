@@ -120,8 +120,8 @@ def test_interventions_are_delivered_as_expected_not_during_analysis(seed):
 
 
 def test_interventions_are_delivered_as_expected_during_analysis(seed):
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
     sim.make_initial_population(n=100)
 
     pparams = sim.modules['PregnancySupervisor'].parameters
@@ -336,7 +336,6 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     cparams['sensitivity_blood_test_syphilis'] = [1.0, 1.0]
     cparams['specificity_blood_test_syphilis'] = [1.0, 1.0]
 
-    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
 
     # check the event ran
@@ -613,8 +612,9 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
     sim.make_initial_population(n=100)
-
+    sim.simulate(end_date=Date(2010, 1, 2))
     # Set the analysis event to run at simulation start
+
     lparams = sim.modules['Labour'].parameters
     lparams['analysis_date'] = Date(2010, 1, 1)
     lparams['alternative_bemonc_availability'] = True
@@ -624,9 +624,6 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     # Set availability
     lparams['pnc_availability_probability'] = 1.0
     lparams['bemonc_availability'] = 1.0
-
-    sim.make_initial_population(n=100)
-    sim.simulate(end_date=Date(2010, 1, 2))
 
     df = sim.population.props
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
