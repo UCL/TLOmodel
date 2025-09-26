@@ -2,10 +2,60 @@
   "scenario_script_path": "src/scripts/climate_disruptions/climate_disruption_scenarios.py",
   "scenario_seed": 0,
   "arguments": [],
-  "runs_per_draw": 1,
+  "runs_per_draw": 10,
   "draws": [
     {
       "draw_number": 0,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "funded_plus",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "default",
+          "cons_availability_postSwitch": "all",
+          "year_cons_availability_switch": 2020,
+          "equip_availability_postSwitch": "all",
+          "year_equip_availability_switch": 2020,
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "services_affected_precip": "none",
+          "tclose_overwrite": 1000
+        },
+        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
+          "max_healthsystem_function": [
+            false,
+            true
+          ],
+          "max_healthcare_seeking": [
+            false,
+            false
+          ],
+          "year_of_switch": 2020
+        },
+        "Malaria": {
+          "type_of_scaleup": "max",
+          "scaleup_start_year": 2020
+        },
+        "Tb": {
+          "type_of_scaleup": "max",
+          "scaleup_start_year": 2020
+        },
+        "Hiv": {
+          "type_of_scaleup": "max",
+          "scaleup_start_year": 2020
+        }
+      },
+      "draw_name": "0"
+    },
+    {
+      "draw_number": 1,
       "parameters": {
         "SymptomManager": {
           "spurious_symptoms": true
@@ -52,9 +102,9 @@
           "scaleup_start_year": 2020
         }
       },
-      "draw_name": "0"
+      "draw_name": "1"
     }
   ],
-  "commit": "1c78842527dfc289ca3089f32d94a1b9d2a27091",
-  "github": "https://github.com/UCL/TLOmodel/tree/1c78842527dfc289ca3089f32d94a1b9d2a27091"
+  "commit": "831a4ee4e0cc32fc94c936a983d41e67fa177b10",
+  "github": "https://github.com/UCL/TLOmodel/tree/831a4ee4e0cc32fc94c936a983d41e67fa177b10"
 }
