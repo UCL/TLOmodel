@@ -919,14 +919,15 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
         self.get_and_store_labour_item_codes()
+        params = self.current_parameters
 
         # We set the LoggingEvent to run on the last day of each year to produce statistics for that year
         sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Schedule analysis event
-        if self.sim.date.year <= self.current_parameters['analysis_year']:
+        if self.sim.date.year <= params['analysis_year']:
             sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self),
-                               Date(self.current_parameters['analysis_year'], 1, 1))
+                               Date(params['analysis_year'], 1, 1))
 
         # This list contains all the women who are currently in labour and is used for checks/testing
         self.women_in_labour = []
@@ -947,13 +948,12 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             full_blood_count_hb_pn=DxTest(
                 property='pn_anaemia_following_pregnancy',
                 target_categories=['mild', 'moderate', 'severe'],
-                sensitivity=1.0),
+                sensitivity=params['anemia_diagnostic_sensitivity']),
         )
 
         # ======================================= LINEAR MODEL EQUATIONS ==============================================
         # Here we define the equations that will be used throughout this module using the linear
         # model and stored them as a parameter
-        params = self.current_parameters
         self.la_linear_models = {
 
             # This equation predicts the parity of each woman at baseline (who is of reproductive age)
