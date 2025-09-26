@@ -7,7 +7,7 @@ from tlo.scenario import BaseScenario
 class FullModelRunForCohort(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 537184
+        self.seed = 562661
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2026, 1, 1)
         self.pop_size = 200_000
@@ -24,7 +24,7 @@ class FullModelRunForCohort(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
         return {}
