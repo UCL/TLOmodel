@@ -48,6 +48,10 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
         Metadata.USES_HEALTHSYSTEM,
     }
 
+    # No CAUSES_OF_DEATH or CAUSES_OF_DISABILITY assigned as per GBD 2019
+    # (impact captured indirectly, through increased risk of diarrhoea and obstructed labour
+    # — see diarrhoea and labour modules)
+
     PARAMETERS = {
         # Prevalence of stunting by age group at initiation
         'prev_HAZ_distribution_age_0_5mo': Parameter(
