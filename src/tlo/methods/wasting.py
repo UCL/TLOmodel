@@ -1697,7 +1697,8 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
 
             # Admission for the treatment
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Perform acute malnutrition assessment based on measurements (height/length, weight, MUAC) and log equipment required for the treatment
+            # Perform acute malnutrition assessment based on measurements (height/length, weight, MUAC)
+            # and log equipment required for the treatment
             self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape",
                                 "Development milestone charts", "Measuring Cup", "Mixing Bowls"})
             # Record that the treatment is provided:
