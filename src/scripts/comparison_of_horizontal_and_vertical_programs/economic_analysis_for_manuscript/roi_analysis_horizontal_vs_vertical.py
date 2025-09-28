@@ -785,7 +785,8 @@ for rates in alternative_discount_rates:
                                             icer_lookup: Optional[dict[int, str]] = None,
                                             # needs to be provided if plot_icers_on_frontier = True
                                             frontier_color: str = "black",
-                                            frontier_linewidth: float = 2.0):
+                                            frontier_linewidth: float = 2.0,
+                                            legend_position: Literal['inset', 'offset'] = "offset"):
 
         # Define colors for high level grouping of scenarios
         color_map_scatter = {"HSS Investments": "#9e0142", "HTM-focussed Investments": "#fdae61",
@@ -885,10 +886,10 @@ for rates in alternative_discount_rates:
             if plot_icers_on_frontier and len(frontier_cd) >= 2:
                 dc, dv, icers = incremental_icers(frontier_cd)
                 for i in range(len(icers)):
-                    mx = (fx[i] + fx[i + 1]) / 2 + 1.5
-                    my = (fy[i] + fy[i + 1]) / 2 - 0.5
-                    ax.text(mx, my, f"ICER compared to\n previous scenario = ${icers[i]:.2f}", fontsize=7, ha='center',
-                            va='bottom', color='black',
+                    mx = (fx[i] + fx[i + 1]) / 2
+                    my = (fy[i] + fy[i + 1]) / 2 + 0.7
+                    ax.text(mx, my, f"ICER = ${icers[i]:.2f} \nper DALY averted", fontsize=7, ha='center', va='bottom',
+                            color='black',
                             bbox=dict(
                                 facecolor='white',  # background color
                                 edgecolor=frontier_color,
@@ -921,7 +922,14 @@ for rates in alternative_discount_rates:
                                markersize=8, markeredgewidth=2 if is_darker else 0)
                 )
 
-        ax.legend(dummy_handles, legend_labels, bbox_to_anchor=(1.1, 1), loc='upper left', fontsize=8,
+        if (legend_position == "inset"):
+            bbox_to_anchor = (0, 1)
+        elif (legend_position == "offset"):
+            bbox_to_anchor = (1.1, 1)
+        else:
+            bbox_to_anchor = (0, 1)
+
+        ax.legend(dummy_handles, legend_labels, bbox_to_anchor=bbox_to_anchor, loc='upper left', fontsize=8,
                   title="Scenario Key", frameon=True)
 
         ax.set_xlabel("DALYs Averted, millions")
@@ -946,7 +954,8 @@ for rates in alternative_discount_rates:
                                         scenario_dict=all_manuscript_scenarios,
                                         figname='cea_plane_frontier.png',
                                         icer_lookup=icer_lookup,
-                                        overlay_frontier=True)
+                                        overlay_frontier=True,
+                                        legend_position="offset")
 
     do_incremental_cost_and_health_plot(incremental_cost_df=summarize_cost_data(incremental_scenario_cost, chosen_metric),
                                         incremental_dalys_df=summarize_cost_data(num_dalys_averted, chosen_metric),
@@ -957,7 +966,8 @@ for rates in alternative_discount_rates:
                                         scenario_dict=all_manuscript_scenarios,
                                         figname='cea_plane.png',
                                         icer_lookup=icer_lookup,
-                                        overlay_frontier=False)
+                                        overlay_frontier=False,
+                                        legend_position="inset")
 
     # 4. Return on Investment
     # ----------------------------------------------------
