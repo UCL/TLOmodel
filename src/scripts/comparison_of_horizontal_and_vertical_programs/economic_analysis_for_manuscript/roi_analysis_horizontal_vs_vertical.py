@@ -101,7 +101,7 @@ main_manuscript_scenarios = {0: "Baseline",
 
 frontier_scenarios = {9:"HIV Program Scale-up With Pessimistic HRH Scale-up",
                       10:"HIV Program Scale-up With Historical HRH Scale-up",
-                      11:"HIV Program Scale-up With Historical HRH Scale-up",
+                      11:"HIV Program Scale-up With Optimistic HRH Scale-up",
                       12:"HIV Program Scale-up With Consumables Increased to 75th Percentile",
                       13:"HIV Program Scale-up With Consumables Increased to HIV levels",
                       14:"HIV Program Scale-up With Consumables Increased to EPI Levels",
@@ -113,7 +113,7 @@ frontier_scenarios = {9:"HIV Program Scale-up With Pessimistic HRH Scale-up",
                       22:"TB Program Scale-up With Consumables Increased to EPI Levels",
                       25:"Malaria Program Scale-up With Pessimistic HRH Scale-up",
                       26:"Malaria Program Scale-up With Historical HRH Scale-up",
-                      27:"Malaria Program Scale-up With Historical HRH Scale-up",
+                      27:"Malaria Program Scale-up With Optimistic HRH Scale-up",
                       28:"Malaria Program Scale-up With Consumables Increased to 75th Percentile",
                       29:"Malaria Program Scale-up With Consumables Increased to HIV levels",
                       30:"Malaria Program Scale-up With Consumables Increased to EPI Levels",
@@ -146,9 +146,9 @@ vertical_hiv = all_manuscript_scenarios_reverse.get("HIV Program Scale-up Withou
 vertical_tb = all_manuscript_scenarios_reverse.get("TB Program Scale-up Without HSS Expansion")
 vertical_malaria = all_manuscript_scenarios_reverse.get("Malaria Program Scale-up Without HSS Expansion")
 vertical_htm = all_manuscript_scenarios_reverse.get("HTM Programs Scale-up Without HSS Expansion")
-diagonal_hiv = all_manuscript_scenarios_reverse.get("HIV Program Scale-up Without HSS Expansion")
-diagonal_tb = all_manuscript_scenarios_reverse.get("TB Program Scale-up Without HSS Expansion")
-diagonal_malaria = all_manuscript_scenarios_reverse.get("Malaria Program Scale-up Without HSS Expansion")
+diagonal_hiv = all_manuscript_scenarios_reverse.get("HIV Program Scale-up With HSS Expansion Package")
+diagonal_tb = all_manuscript_scenarios_reverse.get("TB Program Scale-up With HSS Expansion Package")
+diagonal_malaria = all_manuscript_scenarios_reverse.get("Malaria Program Scale-up With HSS Expansion Package")
 diagonal_htm = all_manuscript_scenarios_reverse.get("HTM Programs Scale-up With HSS Expansion Package")
 
 # Use letters instead of full scenario name for figures
