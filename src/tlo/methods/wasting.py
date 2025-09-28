@@ -631,6 +631,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     date=outcome_date
                 )
                 df.at[person_id, 'un_sam_death_date'] = outcome_date
+                df.at[person_id, 'un_progression_date'] = pd.NaT
 
         else:
             df.at[person_id, 'un_sam_with_complications'] = False
