@@ -223,8 +223,15 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
 
     xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
-    if set_colors:
-        colors = [color_map.get(series, 'grey') for series in _df.index]
+    if set_colors is not None:
+        # dict mapping -> use index keys; list/tuple/Series -> use as-is
+        if isinstance(set_colors, dict):
+            colors = [set_colors.get(k, 'grey') for k in _df.index]
+            # Optional debug:
+            # missing = [k for k in _df.index if k not in set_colors]
+            # if missing: print("No color for:", missing)
+        else:
+            colors = list(set_colors)
     else:
         cmap = sns.color_palette('Spectral', as_cmap=True)
         rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
@@ -1078,8 +1085,8 @@ for rates in alternative_discount_rates:
                                                       - implementation_cost_upper_limit)
         roi_at_upper_limit_implementation_cost = benefit_at_0_implementation_cost.div(
             abs(incremental_scenario_cost + implementation_cost_upper_limit))
-        roi_at_upper_limit_implementation_cost_dict = convert_results_to_dict(
-            summarize_cost_data(roi_at_upper_limit_implementation_cost, _metric=chosen_metric))
+        roi_at_upper_limit_implementation_cost_summarized = summarize_cost_data(roi_at_upper_limit_implementation_cost, _metric=chosen_metric)
+        roi_at_upper_limit_implementation_cost_dict = convert_results_to_dict(roi_at_upper_limit_implementation_cost_summarized)
 
 
         # Create a function to generate threshold (or maximum) implementation costs which the scneario with the higher ROI
@@ -1347,6 +1354,50 @@ for rates in alternative_discount_rates:
         roi_table_small = roi_table_small[cols]
         roi_table_small.to_csv(figurespath / f'tabulated_roi_for_manuscript_{roi_table_label[i]}.csv', index=False)
         i += 1
+
+    # ROI Bar plots
+    chosen_draws = [horizontal_hss, vertical_htm, diagonal_htm]
+    roi_at_0_implementation_cost_for_figure = roi_at_0_implementation_cost_summarized[roi_at_0_implementation_cost_summarized.index.isin(chosen_draws)]
+    roi_at_upper_limit_implementation_cost_for_figure = roi_at_upper_limit_implementation_cost_summarized[roi_at_upper_limit_implementation_cost_summarized.index.isin(chosen_draws)]
+    draw_colors = {horizontal_hss: '#9e0142', vertical_htm: '#fdae61', diagonal_htm: '#66c2a5'}
+
+    name_of_plot = f'ROI assuming zero implementation costs {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+    fig, ax = do_standard_bar_plot_with_ci(
+        (roi_at_0_implementation_cost_for_figure),
+        annotations=[
+            f"{row['median']:.2f} ({row['lower'] :.2f}- {row['upper']:.2f})"
+            for _, row in roi_at_0_implementation_cost_for_figure.iterrows()
+        ],
+        xticklabels_horizontal_and_wrapped=False,
+        put_labels_in_legend=True,
+        offset=0.2,
+        set_colors = draw_colors
+    )
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('Return on Investment')
+    ax.set_ylim(bottom=0)
+    fig.tight_layout()
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+    plt.close(fig)
+
+    name_of_plot = f'ROI assuming non-zero implementation costs {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+    fig, ax = do_standard_bar_plot_with_ci(
+        (roi_at_upper_limit_implementation_cost_for_figure),
+        annotations=[
+            f"{row['median']:.2f} ({row['lower'] :.2f}- {row['upper']:.2f})"
+            for _, row in roi_at_upper_limit_implementation_cost_for_figure.iterrows()
+        ],
+        xticklabels_horizontal_and_wrapped=False,
+        put_labels_in_legend=True,
+        offset=0.2,
+        set_colors = draw_colors
+    )
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('Return on Investment')
+    ax.set_ylim(bottom=0)
+    fig.tight_layout()
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+    plt.close(fig)
 
     # 5. Plot Maximum ability-to-pay at CET
     # ----------------------------------------------------
