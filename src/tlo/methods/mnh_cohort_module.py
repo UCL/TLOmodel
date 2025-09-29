@@ -51,7 +51,7 @@ class MaternalNewbornHealthCohort(Module):
 
         # Read in excel sheet with cohort
         all_preg_df = pd.read_excel(Path(f'{self.sim.resourcefilepath}/maternal cohort') /
-                                    'ResourceFile_All2024PregnanciesCohortModel.xlsx')
+                                    'ResourceFile_All2025PregnanciesCohortModel.xlsx')
 
         # Only select rows equal to the desired population size
         if len(self.sim.population.props) <= len(all_preg_df):

@@ -9,7 +9,7 @@ from scipy.stats import t
 import pandas as pd
 from tableone import TableOne
 
-from tlo.analysis.utils import extract_results, get_scenario_outputs, get_scenario_info
+from tlo.analysis.utils import extract_results, get_scenario_outputs, get_scenario_info, parse_log_file
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 

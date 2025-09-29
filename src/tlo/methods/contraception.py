@@ -1110,7 +1110,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
             logger.debug(key='properties_of_pregnant_person',
                          data=person.to_dict(),
-                         description='values of all properties at the time of pregnancy for newwly pregnany persons')
+                         description='values of all properties at the time of pregnancy for newly pregnant persons')
 
 
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
