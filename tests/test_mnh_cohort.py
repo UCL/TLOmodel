@@ -16,7 +16,7 @@ except NameError:
     # running interactively
     resourcefilepath = Path('./resources')
 
-start_date = Date(2024, 1, 1)
+start_date = Date(2025, 1, 1)
 
 
 def register_modules(sim):
@@ -32,9 +32,9 @@ def test_run_sim_with_mnh_cohort(tmpdir, seed):
 
     register_modules(sim)
     sim.make_initial_population(n=500)
-    sim.simulate(end_date=Date(2025, 1, 2))
+    sim.simulate(end_date=Date(2026, 1, 2))
 
-    output= parse_log_file(sim.log_filepath)
+    output= parse_log_file(sim.log_filepath, level=logging.DEBUG)
     live_births = len(output['tlo.methods.demography']['on_birth'])
 
     deaths_df = output['tlo.methods.demography']['death']
