@@ -109,8 +109,8 @@ def test_ch_lungfunction():
     df.loc[df.index, 'age_years'] = np.random.choice(range(20, 50), len(df))
 
     # check they're all eligible to progress to the next lung function
-    assert all(copd.eligible_to_progress_to_next_lung_function(df)), 'some are still not eligible to progress to ' \
-                                                                     'next lung function'
+    assert all(copd_module.models.eligible_to_progress_to_next_lung_function(df)), \
+        'some are still not eligible to progress to next lung function'
 
     # set probability of progressing to next lung function to 1. This will ensure everyone progresses
     # to the next lung function
