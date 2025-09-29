@@ -35,7 +35,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2014, 1, 1)
-popsize = 25000
+popsize = 5000
 
 # scenario = 1
 
@@ -90,6 +90,10 @@ sim.register(
 sim.modules["Hiv"].parameters["do_scaleup"] = True
 sim.modules["Hiv"].parameters["scaleup_start_year"] = 2019
 sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
+sim.modules['HealthSystem'].parameters['cons_availability_postSwitch'] = 'scenario6'
+sim.modules['HealthSystem'].parameters['year_mode_switch'] = 2010
+
+
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
 # sim.modules["Tb"].parameters["scenario_SI"] = "z"
 

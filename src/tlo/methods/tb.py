@@ -1417,6 +1417,11 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=1))
 
     def apply(self, population):
+
+        # todo this is a temp solution to stop consumables scenarios over-riding xpert to availability=0
+        self.sim.modules['HealthSystem'].override_availability_of_consumables(
+            {187: 0.857})
+
         p = self.module.parameters
 
         current_year = min(self.sim.date.year, p["data_end"])
