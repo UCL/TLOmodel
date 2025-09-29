@@ -846,8 +846,8 @@ for rates in alternative_discount_rates:
             texts.append(
                 ax.text(x_median[draw], y_median[draw] + 1e7,
                         scenario_labels[draw],
-                        fontsize=8, ha='center', va='bottom', color='white', weight='bold',
-                        bbox=dict(facecolor=color, edgecolor='none', boxstyle='round,pad=0.2', alpha=0.9),
+                        fontsize=12, ha='center', va='bottom', color='white', weight='bold',
+                        bbox=dict(facecolor=color, edgecolor='none', boxstyle='round,pad=0.3', alpha=0.9),
                         zorder=4)
             )
 
@@ -857,7 +857,7 @@ for rates in alternative_discount_rates:
                 texts.append(ax.text(
                     x_median[draw] + 0.5, y_median[draw] + 0.1,
                     f"$ICER_{{{scenario_labels[draw]}}} =$\n{icer_text}",
-                    fontsize=7.5, weight='bold', ha='center', va='top', color='black', zorder=4
+                    fontsize=12, weight='bold', ha='center', va='top', color='black', zorder=4
                 ))
 
         if texts:
@@ -929,7 +929,7 @@ for rates in alternative_discount_rates:
         else:
             bbox_to_anchor = (0, 1)
 
-        ax.legend(dummy_handles, legend_labels, bbox_to_anchor=bbox_to_anchor, loc='upper left', fontsize=8,
+        ax.legend(dummy_handles, legend_labels, bbox_to_anchor=bbox_to_anchor, loc='upper left', fontsize=9.2,
                   title="Scenario Key", frameon=True)
 
         ax.set_xlabel("DALYs Averted, millions")
@@ -1244,7 +1244,7 @@ for rates in alternative_discount_rates:
             _metric=chosen_metric,
             _year_suffix=f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
             _projected_health_spending=projected_health_spending_baseline,
-            _additional_horizontal_lines_for_interpretation=additional_horizontal_lines_for_interpretation,
+            _additional_horizontal_lines_for_interpretation=None,
             _draw_colors=draw_colors,
             show_title_and_legend=legend_switch_for_main_roi_plot)
 
