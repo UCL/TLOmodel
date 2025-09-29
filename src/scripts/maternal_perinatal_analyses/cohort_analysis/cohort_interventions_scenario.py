@@ -11,9 +11,9 @@ class BaselineScenario(BaseScenario):
         self.seed = 790213
         self.start_date = Date(2024, 1, 1)
         self.end_date = Date(2025, 1, 2)
-        self.pop_size = 40_000
-        self.number_of_draws = 6
-        self.runs_per_draw = 60
+        self.pop_size = 15_000
+        self.number_of_draws = 1
+        self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
@@ -35,31 +35,31 @@ class BaselineScenario(BaseScenario):
         }
 
     def modules(self):
-        return [*fullmodel(resourcefilepath=self.resources,
-                           module_kwargs={'Schisto': {'mda_execute': False}}),
-                 mnh_cohort_module.MaternalNewbornHealthCohort(resourcefilepath=self.resources)]
+        return [*fullmodel(module_kwargs={'Schisto': {'mda_execute': False}}),
+                 mnh_cohort_module.MaternalNewbornHealthCohort()]
 
     def draw_parameters(self, draw_number, rng):
+        return ()
 
         # if draw_number == 0:
         #     return {'PregnancySupervisor': {
         #             'analysis_year': 2024}}
         #
         # else:
-        interventions_for_analysis = ['blood_transfusion', 'blood_transfusion',
-                                      'anti_htn_mgso4', 'anti_htn_mgso4',
-                                      'post_abortion_care_core', 'post_abortion_care_core']
-
-        avail_for_draw = [0.0, 1.0,
-                          0.0, 1.0,
-                          0.0, 1.0,
-                          ]
-
-        return {'PregnancySupervisor': {
-                'analysis_year': 2024,
-                'interventions_analysis': True,
-                'interventions_under_analysis': [interventions_for_analysis[draw_number]],
-                'intervention_analysis_availability': avail_for_draw[draw_number]}}
+        # interventions_for_analysis = ['blood_transfusion', 'blood_transfusion',
+        #                               'anti_htn_mgso4', 'anti_htn_mgso4',
+        #                               'post_abortion_care_core', 'post_abortion_care_core']
+        #
+        # avail_for_draw = [0.0, 1.0,
+        #                   0.0, 1.0,
+        #                   0.0, 1.0,
+        #                   ]
+        #
+        # return {'PregnancySupervisor': {
+        #         'analysis_year': 2024,
+        #         'interventions_analysis': True,
+        #         'interventions_under_analysis': [interventions_for_analysis[draw_number]],
+        #         'intervention_analysis_availability': avail_for_draw[draw_number]}}
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
