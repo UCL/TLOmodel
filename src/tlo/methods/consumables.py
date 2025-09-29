@@ -224,29 +224,16 @@ class Consumables:
         :return: None
         """
 
-        assert all([0.0 <= x <= 1.0 for x in list(item_codes.values())]), 'Probability of availability must be ' \
+        def check_item_codes_argument_is_valid(_item_codes):
+            assert set(_item_codes.keys()).issubset(self.item_codes), 'Some item_codes not recognised.'
+            assert all([0.0 <= x <= 1.0 for x in list(_item_codes.values())]), 'Probability of availability must be ' \
                                                                                'between 0.0 and 1.0'
+
+        check_item_codes_argument_is_valid(item_codes)
 
         # Update the internally-held data on availability for these item_codes (for all months and at all facilities)
         for item, prob in item_codes.items():
-            if item not in self.item_codes:
-                # Create a MultiIndex for the item with missing availability data
-                index = pd.MultiIndex.from_product(
-                    [self._prob_item_codes_available.index.levels[0],  # months
-                     self._prob_item_codes_available.index.levels[1],  # facility IDs
-                     [item]],  # new item code
-                    names=self._prob_item_codes_available.index.names
-                )
-                # Generate data for the new item
-                data = [prob] * len(index)
-                # Append the new item data to the existing DataFrame
-                self._prob_item_codes_available = pd.concat([
-                    self._prob_item_codes_available,
-                    pd.Series(data, index=index, name='available_prop')
-                ])
-            else:
-                # Update the probability for the existing item
-                self._prob_item_codes_available.loc[(slice(None), slice(None), item)] = prob
+            self._prob_item_codes_available.loc[(slice(None), slice(None), item)] = prob
 
     @staticmethod
     def _determine_default_return_value(cons_availability, default_return_value):
