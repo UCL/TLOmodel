@@ -213,7 +213,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                   'nc_weight_loss_worked': Property(Types.BOOL,
                                                     'whether or not weight loss treatment worked'),
                   'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has'),
-                  'ckd_total_dialysis_sessions': Property(Types.INT,
+                  'nc_ckd_total_dialysis_sessions': Property(Types.INT,
                                                           'total number of dialysis sessions the person has ever had'),
                   }
 
@@ -1716,18 +1716,17 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         # Monthly doses of medications as follows. Diabetes - 1000mg metformin daily (1000*30.5),
-        # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 1 dialysis bag (estimate),
+        # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 2 dialysis sessions per week (8 sessions in a month),
         # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
         dose = {'diabetes': 30_500,
                 'hypertension': 610,
-                'chronic_kidney_disease': 12,  # 8 in a month: dialysis two times a week
+                'chronic_kidney_disease': 8,  # 8 in a month: dialysis two times a week
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
                 'ever_heart_attack': 2288}
 
-        #todo update the refill to be the same medication(s) as that in
-        #  the functino HSI_CardioMetabolicDisorders_StartWeightLossAndMedication
+
 
         # Check availability of medication for condition
         if self.get_consumables(
