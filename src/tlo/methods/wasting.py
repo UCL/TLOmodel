@@ -136,6 +136,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'proportion_normal_whz': Parameter(
             Types.REAL, 'proportion of children under 5 with no wasting (WHZ >= -2)'),
         # detection
+        'growth_monitoring_first': Parameter(
+            Types.INT, 'recommended age (in days) for first growth monitoring visit'),
         'growth_monitoring_frequency_days_agecat': Parameter(
             Types.LIST, 'growth monitoring frequency (days) for age categories '),
         'growth_monitoring_attendance_prob_agecat': Parameter(
@@ -400,6 +402,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         :param child_id: the id of the newborn child
         """
         df = self.sim.population.props
+        p = self.parameters
 
         # Set initial properties
         df.at[child_id, 'un_ever_wasted'] = False
@@ -419,10 +422,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # df.at[child_id, 'un_last_nonemergency_appt_date']= pd.NaT
         # df.at[child_id, 'un_last_growth_monitoring_appt_date']= pd.NaT
 
-        # initiate growth monitoring from day 1
+        # initiate growth monitoring
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             hsi_event=HSI_Wasting_GrowthMonitoring(module=self, person_id=child_id),
-            priority=2, topen=self.sim.date + pd.DateOffset(days=1)
+            priority=2, topen=self.sim.date + pd.DateOffset(days=p['growth_monitoring_first'])
         )
 
     def schedule_growth_monitoring_on_initiation(self):
