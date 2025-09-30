@@ -93,8 +93,6 @@ class HIV_Progam_Elements(BaseScenario):
 
             "Remove VMMC": scenario_definitions.remove_vmmc(),
 
-            "Increase 6-monthly Dispensing": scenario_definitions.increase_6MMD(),
-
             "Reduce All Elements": scenario_definitions.remove_all(),
 
             "Program Scale-up": scenario_definitions.scaleup(),

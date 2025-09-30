@@ -118,9 +118,15 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "Whether the person is currently taking and receiving a malaria-protective effect from cotrimoxazole",
         ),
-        "hv_is_on_prep": Property(
+        "hv_is_on_prep_oral": Property(
             Types.BOOL,
-            "Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis",
+            "Whether the person is currently taking and receiving a protective effect "
+            "from oral Pre-Exposure Prophylaxis",
+        ),
+        "hv_is_on_prep_inj": Property(
+            Types.BOOL,
+            "Whether the person is currently taking and receiving a protective effect "
+            "from injectable Pre-Exposure Prophylaxis",
         ),
         "hv_behaviour_change": Property(
             Types.BOOL,
@@ -139,8 +145,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         "hv_date_last_ART": Property(Types.DATE, "date of last ART dispensation"),
         # --- Counters for logging:
         "hv_VMMC_in_last_year": Property(Types.BOOL, "whether VMMC was performed in the last year"),
-        "hv_days_on_prep_AGYW": Property(Types.INT, "number of days spent on prep per logger time interval for AGYW"),
-        "hv_days_on_prep_FSW": Property(Types.INT, "number of days spent on prep per logger time interval for FSW"),
+        "hv_days_on_oral_prep_AGYW": Property(Types.INT,
+                                              "number of days spent on oral prep per "
+                                              "logger time interval for AGYW"),
+        "hv_days_on_oral_prep_FSW": Property(Types.INT,
+                                             "number of days spent on oral prep per "
+                                             "logger time interval for FSW"),
+        "hv_days_on_inj_prep_AGYW": Property(Types.INT, "number of days spent on inj prep per "
+                                                        "logger time interval for AGYW"),
+        "hv_days_on_inj_prep_FSW": Property(Types.INT, "number of days spent on inj prep per "
+                                                       "logger time interval for FSW"),
     }
 
     PARAMETERS = {
@@ -208,9 +222,15 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         "rr_behaviour_change": Parameter(
             Types.REAL, "Relative risk of HIV with behaviour modification"
         ),
-        "proportion_reduction_in_risk_of_hiv_aq_if_on_prep": Parameter(
+        "proportion_reduction_in_risk_of_hiv_aq_if_on_oral_prep": Parameter(
             Types.REAL,
-            "Proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; 1.0 for perfect efficacy.",
+            "Proportion reduction in risk of HIV acquisition if on oral PrEP. "
+            "0 for no efficacy; 1.0 for perfect efficacy.",
+        ),
+        "proportion_reduction_in_risk_of_hiv_aq_if_on_inj_prep": Parameter(
+            Types.REAL,
+            "Proportion reduction in risk of HIV acquisition if on inj PrEP. "
+            "0 for no efficacy; 1.0 for perfect efficacy.",
         ),
         # Natural history - survival (adults)
         "mean_months_between_aids_and_death": Parameter(
@@ -457,6 +477,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "whether TDF urine test is being used in place of VL testing"
         ),
+        "injectable_prep_allowed": Parameter(
+            Types.BOOL,
+            "whether injectable prep is allowed"
+        ),
     }
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
@@ -542,8 +566,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Predictor("age_years").when("<15", 0.0).when("<49", 1.0).otherwise(0.0),
             Predictor("sex").when("F", p["rr_sex_f"]),
             Predictor("li_is_circ").when(True, p["rr_circumcision"]),
-            Predictor("hv_is_on_prep").
-            when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]),
+            Predictor("hv_is_on_prep_oral").
+            when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_oral_prep"]),
+            Predictor("hv_is_on_prep_inj").
+            when(True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_inj_prep"]),
             Predictor("li_urban").when(False, p["rr_rural"]),
             Predictor("li_wealth", conditions_are_mutually_exclusive=True)
             .when(2, p["rr_windex_poorer"])
@@ -708,8 +734,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # --- Counters
         df.loc[df.is_alive, "hv_VMMC_in_last_year"] = False
-        df.loc[df.is_alive, "hv_days_on_prep_AGYW"] = 0
-        df.loc[df.is_alive, "hv_days_on_prep_FSW"] = 0
+        df.loc[df.is_alive, "hv_days_on_oral_prep_AGYW"] = 0
+        df.loc[df.is_alive, "hv_days_on_oral_prep_FSW"] = 0
+        df.loc[df.is_alive, "hv_days_on_inj_prep_AGYW"] = 0
+        df.loc[df.is_alive, "hv_days_on_inj_prep_FSW"] = 0
 
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
@@ -1318,13 +1346,20 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # increase retention to 75% for FSW and AGYW
             p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
             p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
-                "probability_of_being_retained_on_prep_every_3_months"
-            ]
+                "probability_of_being_retained_on_prep_every_3_months"]
+
+            # prep poll for AGYW - target to the highest risk
+            # increase retention to 75% for FSW and AGYW
+            p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
+            p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
+                "probability_of_being_retained_on_prep_every_3_months"]
 
             # perfect retention on ART
             p["probability_of_being_retained_on_art_every_3_months"] = scaled_params[
-                "probability_of_being_retained_on_art_every_3_months"
-            ]
+                "probability_of_being_retained_on_art_every_3_months"]
+            # perfect retention on ART
+            p["probability_of_being_retained_on_art_every_3_months"] = scaled_params[
+                "probability_of_being_retained_on_art_every_3_months"]
 
             # increase probability of VMMC after hiv test
             p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
@@ -1358,7 +1393,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "hv_inf"] = False
         df.at[child_id, "hv_art"] = "not"
         df.at[child_id, "hv_on_cotrimoxazole"] = False
-        df.at[child_id, "hv_is_on_prep"] = False
+        df.at[child_id, "hv_is_on_prep_oral"] = False
+        df.at[child_id, "hv_is_on_prep_inj"] = False
         df.at[child_id, "hv_behaviour_change"] = False
         df.at[child_id, "hv_diagnosed"] = False
         df.at[child_id, "hv_number_tests"] = 0
@@ -1372,8 +1408,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # --- Counters
         df.at[child_id, "hv_VMMC_in_last_year"] = False
-        df.at[child_id, "hv_days_on_prep_AGYW"] = 0
-        df.at[child_id, "hv_days_on_prep_FSW"] = 0
+        df.at[child_id, "hv_days_on_oral_prep_AGYW"] = 0
+        df.at[child_id, "hv_days_on_oral_prep_FSW"] = 0
+        df.at[child_id, "hv_days_on_inj_prep_AGYW"] = 0
+        df.at[child_id, "hv_days_on_inj_prep_FSW"] = 0
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
@@ -1673,6 +1711,18 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         return return_prob
 
+    def update_viral_suppression_status(self):
+        """Helper function to determine whether person who is currently not virally suppressed
+        will become virally suppressed following viral load test."
+        """
+        p = self.parameters
+
+        return (
+            "on_VL_suppressed"
+            if self.rng.random_sample() < p["prob_of_viral_suppression_following_VL_test"]
+            else "on_not_VL_suppressed"
+        )
+
     def setup_art_dispensation_lookup(self):
         """Preprocess the dispensation probability table into a nested dict for fast lookup."""
         df = self.parameters["dispensation_period_months"]
@@ -1922,6 +1972,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             )
             schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
+
 # ---------------------------------------------------------------------------
 #   Main Polling Event
 # ---------------------------------------------------------------------------
@@ -1997,7 +2048,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         df.is_alive
                         & ~df.hv_inf
                         & df.li_is_sexworker
-                        & ~df.hv_is_on_prep
+                        & ~(df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
                         & df.age_years.between(15, 80)
                         ].index
 
@@ -2094,41 +2145,50 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         ),  # (to occur before next polling)
                     )
 
-        # ----------------------------------- PrEP poll for AGYW -----------------------------------
+        # ----------------------------------- PrEP poll for AGYW and pregnant women -----------------------------------
         def prep_for_agyw():
 
             if self.sim.date.year >= p["prep_start_year"]:
 
                 # select highest risk agyw
-                agyw_idx = df.loc[
+                # Common mask for alive, undiagnosed, female, not on PrEP
+                common = (
                     df.is_alive
                     & ~df.hv_diagnosed
-                    & df.age_years.between(15, 25)
                     & (df.sex == "F")
-                    & ~df.hv_is_on_prep
-                    ].index
+                    & ~(df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
+                )
 
-                if len(agyw_idx) == 0:
+                # AGYW 15–25
+                agyw_idx = df.loc[common & df.age_years.between(15, 25)].index
+
+                # Pregnant women (any age)
+                pregnant_idx = df.loc[common & df.is_pregnant].index
+
+                # Combine and drop duplicates
+                eligible_idx = agyw_idx.union(pregnant_idx)
+
+                if len(eligible_idx) == 0:
                     return  # no eligible AGYW
 
                 # calculate relative risk of infection
-                rr_of_infection = self.module.lm["rr_of_infection"].predict(df.loc[agyw_idx])
+                rr_of_infection = self.module.lm["rr_of_infection"].predict(df.loc[eligible_idx])
                 mean_risk = rr_of_infection.mean()
                 scaled_risk = rr_of_infection / mean_risk
 
                 # get probabilities for receiving prep from linear model
-                prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[agyw_idx],
+                prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[eligible_idx],
                                                                    year=self.sim.date.year,
                 )
 
                 # number of AGYW expected to get PrEP = mean(prob_prep) * total AGYW
-                expected_n = int(round(prob_prep.mean() * len(agyw_idx)))
+                expected_n = int(round(prob_prep.mean() * len(eligible_idx)))
 
                 # subset to top 50% by risk
                 top_risk_threshold = np.percentile(scaled_risk, 50)
                 high_risk_mask = scaled_risk >= top_risk_threshold
 
-                high_risk_idx = agyw_idx[high_risk_mask]
+                high_risk_idx = eligible_idx[high_risk_mask]
                 high_risk_probs = prob_prep[high_risk_mask]
 
                 if len(high_risk_idx) == 0:
@@ -2148,14 +2208,25 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 give_prep = high_risk_idx[
                     self.module.rng.random_sample(len(high_risk_idx)) < rescaled_probs
                     ]
-
+                # todo dates should be scattered throughout year
                 for person in give_prep:
+                    if (self.module.parameters['injectable_prep_allowed'] &
+                        (self.sim.date.year >= 2025)):
+                        type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
+                    else:
+                        type_of_prep = 'oral'
+
+                    date_prep = self.sim.date + pd.DateOffset(
+                        days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
+                    )
+
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
-                                                                module=self.module),
+                                                                module=self.module,
+                                                                type_of_prep=type_of_prep),
                         priority=1,
-                        topen=self.sim.date,
-                        tclose=self.sim.date + pd.DateOffset(
+                        topen=date_prep,
+                        tclose=date_prep + pd.DateOffset(
                             months=self.frequency.months
                         )
                     )
@@ -2168,16 +2239,26 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 eligible_fsw_idx = df.loc[df.is_alive &
                                           ~df.hv_diagnosed &
                                           df.li_is_sexworker &
-                                          ~df.hv_is_on_prep &
+                                          ~(df.hv_is_on_prep_oral | df.hv_is_on_prep_inj) &
                                           (random_draw < p["prob_prep_for_fsw_after_hiv_test"])].index
 
                 for person in eligible_fsw_idx:
+                    if self.module.parameters['injectable_prep_allowed']:
+                        type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
+                    else:
+                        type_of_prep = 'oral'
+
+                    date_prep = self.sim.date + pd.DateOffset(
+                        days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
+                    )
+
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
-                                                                module=self.module),
+                                                                module=self.module,
+                                                                type_of_prep=type_of_prep),
                         priority=1,
-                        topen=self.sim.date,
-                        tclose=self.sim.date + pd.DateOffset(
+                        topen=date_prep,
+                        tclose=date_prep + pd.DateOffset(
                             months=self.frequency.months
                         )
                     )
@@ -2287,7 +2368,7 @@ class HivInfectionDuringBreastFeedingEvent(Event, IndividualScopeEventMixin):
 
         # If child is on NVP for HIV prophylaxis, then do not let the infection occur
         # (the prophylaxis is assumed to be perfectly effective in blocking transmission)
-        if df.at[person_id, "hv_is_on_prep"]:
+        if df.at[person_id, "hv_is_on_prep_oral"]:
             return
 
         # Onset the infection for this person (which will schedule progression etc)
@@ -2490,7 +2571,7 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
                 if df.at[person_id, "nc_diabetes"]:
                     risk_of_death *= self.sim.modules["Tb"].parameters["rr_death_diabetes"]
 
-                # treatment adjustment reduces probability of death
+            # treatment adjustment reduces probability of death
             if self.module.rng.rand() < risk_of_death:
                 self.sim.modules["Demography"].do_death(
                     individual_id=person_id,
@@ -2528,7 +2609,7 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
                     tclose=date_of_aids_death,
                 )
 
-                # aids-tb and not on tb treatment
+        # aids-tb and not on tb treatment
         elif not df.at[person_id, 'tb_on_treatment']:
             risk_of_death = p["aids_tb_death_rate_no_tb_treatment"]
             if self.module.rng.rand() < risk_of_death:
@@ -2543,13 +2624,15 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
     This event is scheduled by 'HSI_Hiv_StartOrContinueOnPrep' 3 months after it is run.
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, type_of_prep):
         super().__init__(module, person_id=person_id)
+        self.type_of_prep=type_of_prep
 
     def apply(self, person_id):
         df = self.sim.population.props
         person = df.loc[person_id]
         m = self.module
+        property = 'hv_is_on_prep_oral' if self.type_of_prep=='oral' else 'hv_is_on_prep_inj'
 
         # If the person is no longer alive or has been diagnosed with hiv, they will not continue on PrEP
         if (
@@ -2559,7 +2642,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             return
 
         # Check that they are on PrEP currently:
-        if not person["hv_is_on_prep"]:
+        if not person[property]:
             logger.warning(
                 key="message",
                 data="This event should not be running: Hiv_DecisionToContinueOnPrEP is for those currently on prep")
@@ -2574,7 +2657,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             ):
                 # Continue on PrEP - and schedule an HSI for a refill appointment today
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=m),
+                    HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=m, type_of_prep=self.type_of_prep),
                     topen=self.sim.date,
                     tclose=self.sim.date + pd.DateOffset(days=7),
                     priority=0,
@@ -2582,7 +2665,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
 
             else:
                 # Defaults to being off PrEP - reset flag and take no further action
-                df.at[person_id, "hv_is_on_prep"] = False
+                df.at[person_id, property] = False
 
 
 class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
@@ -2641,6 +2724,25 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             )
 
 
+class Hiv_AdherenceCounselling(Event, IndividualScopeEventMixin):
+    """Helper event that is used to 'decide' if someone on Treatment who is not currently
+    virally suppressed will become suppressed
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        if not person["is_alive"]:
+            return
+
+        df.at[person_id, "hv_art"] = self.module.update_viral_suppression_status()
+
+
+
 class HivScaleUpEvent(Event, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
@@ -2652,14 +2754,14 @@ class HivScaleUpEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
 
     def apply(self, population):
-        self.module.update_parameters_for_program_scaleup()
+
+        if self.module.parameters['type_of_scaleup'] != 'none':
+            self.module.update_parameters_for_program_scaleup()
 
 
 # ---------------------------------------------------------------------------
 #   Health System Interactions (HSI)
 # ---------------------------------------------------------------------------
-
-
 class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
     This is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to
@@ -2764,7 +2866,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                         df.at[person_id, "hv_behaviour_change"] = True
 
                     # If person is a man, and not circumcised, then consider referring to VMMC
-                    if (person["sex"] == "M") & (~person["li_is_circ"]):
+                    if (person["sex"] == "M") and (not person["li_is_circ"]):
                         x = self.module.lm["lm_circ"].predict(
                             df.loc[[person_id]], self.module.rng,
                             year=self.sim.date.year,
@@ -2781,15 +2883,21 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # available 2018 onwards
                     if (
                         (person["sex"] == "F")
-                        & person["li_is_sexworker"]
-                        & ~person["hv_is_on_prep"]
-                        & (self.sim.date.year >= self.module.parameters["prep_start_year"])
+                        and person["li_is_sexworker"]
+                        and not (person["hv_is_on_prep_oral"] or person["hv_is_on_prep_inj"])
+                        and (self.sim.date.year >= self.module.parameters["prep_start_year"])
                     ):
-                        if self.module.lm["lm_prep"].predict(df.loc[[person_id]], self.module.rng
+                         if self.module.lm["lm_prep"].predict(df.loc[[person_id]], self.module.rng
                                                              ):
+                            if (self.module.parameters['injectable_prep_allowed'] &
+                                (self.sim.date.year >= 2025)):
+                                type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
+                            else:
+                                type_of_prep = 'oral'
+
                             self.sim.modules["HealthSystem"].schedule_hsi_event(
                                 HSI_Hiv_StartOrContinueOnPrep(
-                                    person_id=person_id, module=self.module
+                                    person_id=person_id, module=self.module, type_of_prep=type_of_prep
                                 ),
                                 topen=self.sim.date,
                                 tclose=None,
@@ -2801,7 +2909,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             # set cap for number of repeat tests
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.
-
 
             if (
                 self.counter_for_test_not_available
@@ -2926,7 +3033,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         if self.get_consumables(
             item_codes={self.module.item_codes_for_consumables_required['infant_prep']: 63}
         ):
-            df.at[person_id, "hv_is_on_prep"] = True
+            df.at[person_id, "hv_is_on_prep_oral"] = True
 
             # Schedule follow-up visit for 3 months time
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2942,7 +3049,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
 
         else:
             # infant does not get NVP now but has repeat visit scheduled up to 5 times
-            df.at[person_id, "hv_is_on_prep"] = False
+            df.at[person_id, "hv_is_on_prep_oral"] = False
 
             if (
                 self.repeat_visits
@@ -2965,11 +3072,11 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
     def never_ran(self, *args, **kwargs):
         """This is called if this HSI was never run.
         Default the person to being off PrEP"""
-        self.sim.population.props.at[self.target, "hv_is_on_prep"] = False
+        self.sim.population.props.at[self.target, "hv_is_on_prep_oral"] = False
 
 
 class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, type_of_prep):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
@@ -2977,12 +3084,15 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"PharmDispensing": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.counter_for_drugs_not_available = 0
+        self.type_of_prep = type_of_prep
 
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for this person; or continue them on PrEP for 3 more months"""
 
         df = self.sim.population.props
         person = df.loc[person_id]
+        property = 'hv_is_on_prep_oral' if self.type_of_prep=='oral' else 'hv_is_on_prep_inj'
+        days_on_prep_property = 'hv_days_on_oral_prep' if self.type_of_prep=='oral' else 'hv_days_on_inj_prep'
 
         # Do not run if the person is not alive or is diagnosed with hiv
         if (
@@ -3010,27 +3120,29 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
         # HIV test is negative - check that PrEP is available and if it is, initiate or continue PrEP:
         else:
-            days_on_prep = self.module.parameters['initial_dispensation_period_months'] * 30
+            days_on_prep = self.module.parameters['initial_dispensation_period_months'] * 30 if self.type_of_prep=='oral' else 56
             if self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['prep']: days_on_prep}
             ):
-                df.at[person_id, "hv_is_on_prep"] = True
+                df.at[person_id, property] = True
+                # print(self.type_of_prep, self.sim.date, person_id)  # todo this is person actually getting PrEP
 
                 if df.at[person_id, "li_is_sexworker"]:
-                    df.at[person_id, 'hv_days_on_prep_FSW'] += days_on_prep
+                    df.at[person_id, f'{days_on_prep_property}_FSW'] += days_on_prep
 
                 elif (df.at[person_id, "sex"] == "F") and (15 <= df.at[person_id, "age_years"] <= 24):
-                    df.at[person_id, 'hv_days_on_prep_AGYW'] += days_on_prep
+                    df.at[person_id, f'{days_on_prep_property}_AGYW'] += days_on_prep
 
                 # Schedule 'decision about whether to continue on PrEP' for 3 months time
                 self.sim.schedule_event(
-                    Hiv_DecisionToContinueOnPrEP(person_id=person_id, module=self.module),
-                    self.sim.date + pd.DateOffset(months=self.module.parameters['initial_dispensation_period_months']),
+                    Hiv_DecisionToContinueOnPrEP(person_id=person_id, module=self.module,
+                                                 type_of_prep=self.type_of_prep),
+                    self.sim.date + pd.DateOffset(days=days_on_prep),
                 )
 
             else:
                 # If PrEP is not available, the person will default and not be on PrEP
-                df.at[person_id, "hv_is_on_prep"] = False
+                df.at[person_id, property] = False
 
                 self.counter_for_drugs_not_available += (
                     1  # The current appointment is included in the count.
@@ -3048,11 +3160,10 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                         tclose=None,
                     )
 
-
-def never_ran(self):
-        """This is called if this HSI was never run.
-        Default the person to being off PrEP"""
-        self.sim.population.props.at[self.target, "hv_is_on_prep"] = False
+    def never_ran(self):
+            """This is called if this HSI was never run.
+            Default the person to being off PrEP"""
+            self.sim.population.props.at[self.target, property] = False
 
 
 class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -3117,15 +3228,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # ------------------------- if ART not available ------------------------- #
 
             # logger for drugs not available
-            person_details_for_tx = {
-                'age': person['age_years'],
-                'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-                'number_appts': self.counter_for_drugs_not_available,
-                'district': person['district_of_residence'],
-                'person_id': person_id,
-                'drugs_available': drugs_were_available,
-            }
-            logger.info(key='hiv_arv_NA', data=person_details_for_tx)
+            # person_details_for_tx = {
+            #     'age': person['age_years'],
+            #     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+            #     'number_appts': self.counter_for_drugs_not_available,
+            #     'district': person['district_of_residence'],
+            #     'person_id': person_id,
+            #     'drugs_available': drugs_were_available,
+            # }
+            # logger.info(key='hiv_arv_NA', data=person_details_for_tx)
 
             # As drugs were not available, the person will default to being off ART (...if they were on ART at the
             # beginning of the HSI.)
@@ -3311,16 +3422,33 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     if tdf_result == 'negative':
                         # intervention triggered to increase chance of suppression
                         if person["hv_art"] == "on_not_VL_suppressed":
-                            df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
+                            # todo schedule Adherence Counselling - no delay
+                            self.sim.schedule_event(
+                                Hiv_AdherenceCounselling(
+                                    person_id=person_id, module=self.module
+                                ),
+                                self.sim.date ,
+                            )
                         self.module.stored_tdf_numbers += 1
 
                 # Else, use VL test
                 elif not p["switch_vl_test_to_tdf"] and self.get_consumables(
                     item_codes=self.module.item_codes_for_consumables_required['vl_measurement']):
 
+                    # todo add logic around unsuppressed person receiving and acting on result
                     if person["hv_art"] == "on_not_VL_suppressed":
-                        # intervention triggered to increase chance of suppression
-                        df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
+                        # Only some people get their result
+                        if self.module.rng.random_sample() < 0.6:  # ~0.6
+                            # Only some true high-VL are identified as such (PPV)
+                            if self.module.rng.random_sample() < 0.6:  # ~0.5–0.6
+                                # Apply adherence counselling after 3–6 month delay
+                                delay_months = self.module.rng.randint(3, 7)
+                                self.sim.schedule_event(
+                                    Hiv_AdherenceCounselling(
+                                        person_id=person_id, module=self.module
+                                    ),
+                                    self.sim.date + pd.DateOffset(months=delay_months),
+                                )
 
                     logger.info(
                         key='hiv_VLtest',
@@ -3344,18 +3472,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         return (
             "on_VL_suppressed"
             if (self.module.rng.random_sample() < prob_vs)
-            else "on_not_VL_suppressed"
-        )
-
-    def update_viral_suppression_status(self):
-        """Helper function to determine whether person who is currently not virally suppressed
-        will become virally suppressed following viral load test."
-        """
-        p = self.module.parameters
-
-        return (
-            "on_VL_suppressed"
-            if self.module.rng.random_sample() < p["prob_of_viral_suppression_following_VL_test"]
             else "on_not_VL_suppressed"
         )
 
@@ -4763,25 +4879,39 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         DALYs_Undiscounted = 0
         TotalCost_Undiscounted = 0
 
-        Percent_circumcised = prop_men_circ
+        PY_PREP_ORAL_AGYW = df["hv_days_on_oral_prep_AGYW"].sum() / 365
+        PY_PREP_ORAL_FSW = df["hv_days_on_oral_prep_FSW"].sum() / 365
+
+        PY_PREP_INJECT_AGYW = df["hv_days_on_inj_prep_AGYW"].sum() / 365
+        PY_PREP_INJECT_FSW = df["hv_days_on_inj_prep_FSW"].sum() / 365
+
+        prop_men_circ = len(
+            df[df.is_alive & (df.sex == "M") & (df.age_years.between(15,49)) & df.li_is_circ]
+        ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years.between(15,49))]) if len(
+            df[df.is_alive & (df.sex == "M") & (df.age_years.between(15,49))]) else 0
+
+
+        Percent_circumcised = prop_men_circ * 100
         Percent_condom_use_GP = 0
-        PrEP_FSW = PY_PREP_ORAL_FSW
+        PrEP_FSW = PY_PREP_ORAL_FSW + PY_PREP_INJECT_FSW
         PrEP_MSM = 0
-        PrEP_GP = PY_PREP_ORAL_AGYW
+        PrEP_GP = 0
         PrEP_Pop_GP = 0
         NewHIV_PrEP_Pop_GP = 0
-        Percent_FSW_reached = len(
-            df.loc[
-                df.li_is_sexworker
-                & (df.sex == 'F')
-                & (df.hv_is_on_prep)
-                ]) / len(
-            df.loc[
-                df.li_is_sexworker
-                & (df.sex == 'F')
-                ])
-
+        Percent_FSW_reached = 0  # this is outreach
         Percent_MSM_reached = 0
+
+        num_men_circ_15_24 = len(
+            df[df.is_alive & (df.sex == "M") & df.age_years.between(15,24) & df.li_is_circ]
+        )
+        # todo this should include pregnant women (included in PrEP AGYW)
+        PrEP_AGYW_PG = PY_PREP_ORAL_AGYW + PY_PREP_INJECT_AGYW
+        TOTAL_AGYW = len(
+            df[df.is_alive & (df.sex == "F") & df.age_years.between(15,24)])
+        TOTAL_PG = len(
+            df[df.is_alive & (df.sex == "F") & df.is_pregnant & ~df.age_years.between(15,24)])
+        Total_AGYW_PG = TOTAL_AGYW + TOTAL_PG
+
 
         logger.info(
             key="long_term_mihpsa",
@@ -4876,13 +5006,18 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "NewHIV_PrEP_Pop_GP": NewHIV_PrEP_Pop_GP,
                 "Percent_FSW reached": Percent_FSW_reached,
                 "Percent_MSM reached": Percent_MSM_reached,
+                "N_circumcised_15_24_M": num_men_circ_15_24,
+                "PrEP_AGYW_PG": PrEP_AGYW_PG,
+                "Total_AGYW_PG": Total_AGYW_PG,
             },
         )
 
         # after logger, reset yearly logged properties
         df["hv_VMMC_in_last_year"] = False
-        df["hv_days_on_prep_AGYW"] = 0
-        df["hv_days_on_prep_FSW"] = 0
+        df["hv_days_on_oral_prep_AGYW"] = 0
+        df["hv_days_on_oral_prep_FSW"] = 0
+        df["hv_days_on_inj_prep_AGYW"] = 0
+        df["hv_days_on_inj_prep_FSW"] = 0
 
 
 # ---------------------------------------------------------------------------
