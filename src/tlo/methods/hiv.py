@@ -457,6 +457,18 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "whether self-tests for HIV are available from the scale-up start date"
         ),
+        "young_adult_vls_factor": Parameter(
+            Types.REAL,
+            "adjustment factor for viral load suppression probability for young adults compared to older adults"
+        ),
+        "prob_receive_viral_load_test_result": Parameter(
+            Types.REAL,
+            "the probability of receving viral load test result"
+        ),
+        "positive_predictive_value_viral_load_test": Parameter(
+            Types.REAL,
+            "positive predictive value of a viral load test"
+        ),
         "prob_of_viral_suppression_following_VL_test": Parameter(
             Types.REAL,
             "the probability of viral suppression following a viral load test"
@@ -511,6 +523,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # Load probability of art / viral suppression start after positive HIV test
         p["prob_start_art_or_vs"] = workbook["spectrum_treatment_cascade"]
+        # adjust the reported viral suppression rates for historical impact of VL testing
+        self.adjust_viral_load_suppression_rates()
 
         # Load ARV dispensation schedule
         p["dispensation_period_months"] = workbook["arv_dispensation_schedule"]
@@ -547,6 +561,25 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                 odds_ratio_health_seeking_in_adults=10.0,  # High chance of seeking care when aids_symptoms onset
                 odds_ratio_health_seeking_in_children=10.0,
             )
+        )
+
+    def adjust_viral_load_suppression_rates(self):
+        """
+        Adjusts the 'virally_suppressed_on_art' column in a DataFrame
+        using the VL testing adjustment formula.
+        """
+        p = self.parameters
+        ptest = 12 / p["interval_for_viral_load_measurement_months"]
+
+        def adjust_vls_probability(p_base):
+            if pd.isna(p_base):
+                return None
+            p_base = p_base / 100.0  # convert percent to proportion
+            f_benefit = ptest * p["prob_receive_viral_load_test_result"]
+            return (1 - f_benefit) * p_base + f_benefit * p["prob_of_viral_suppression_following_VL_test"]
+
+        p["prob_start_art_or_vs"]["adjusted_viral_suppression_on_art"] = (
+            p["prob_start_art_or_vs"]["virally_suppressed_on_art"].apply(adjust_vls_probability)
         )
 
     def pre_initialise_population(self):
@@ -1374,7 +1407,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # viral suppression rates
             # adults already at 95% by 2020
             # change all column values
+            # todo should this be the adjusted values
             p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
+            self.adjust_viral_load_suppression_rates()  # then adjust these rates for VL testing effects
 
         # update exising linear models to use new scaled-up parameters
         self._build_linear_models()
@@ -1693,27 +1728,30 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
     def prob_viral_suppression(self, year, age_of_person):
         """ returns the probability of viral suppression once on ART
-        data from 2012 - 2020 from spectrum
-        assume constant values 2010-2012 and 2020 on
+        data from 2010-2025 from spectrum
         time-series ends at 2025
         """
         prob_vs = self.parameters["prob_start_art_or_vs"]
-        current_year = year if year <= 2025 else 2025
+        current_year = min(year, 2025)
         age_of_person = age_of_person
         age_group = "adults" if age_of_person >= 15 else "children"
 
         return_prob = prob_vs.loc[
             (prob_vs.year == current_year) &
             (prob_vs.age == age_group),
-            "overall_adjusted_viral_suppression_on_art"].values[0]
+            "adjusted_viral_suppression_on_art"].values[0]
 
         assert return_prob is not None
+
+        # Apply adjustment for young adults (15–29)
+        if 15 <= age_of_person <= 29:
+            return_prob *= self.parameters["young_adult_vls_factor"]
 
         return return_prob
 
     def update_viral_suppression_status(self):
         """Helper function to determine whether person who is currently not virally suppressed
-        will become virally suppressed following viral load test."
+        will become virally suppressed following viral load test"
         """
         p = self.parameters
 
@@ -3437,9 +3475,9 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     # add logic around unsuppressed person receiving and acting on result
                     if person["hv_art"] == "on_not_VL_suppressed":
                         # Only some people get their result
-                        if self.module.rng.random_sample() < 0.6:  # ~0.6
+                        if self.module.rng.random_sample() < p["prob_receive_viral_load_test_result"]:  # ~0.6
                             # Only some true high-VL are identified as such (PPV)
-                            if self.module.rng.random_sample() < 0.6:  # ~0.5–0.6
+                            if self.module.rng.random_sample() < p["positive_predictive_value_viral_load_test"]:  # ~0.5–0.6
                                 # Apply adherence counselling after 3–6 month delay
                                 delay_months = self.module.rng.randint(3, 7)
                                 self.sim.schedule_event(
