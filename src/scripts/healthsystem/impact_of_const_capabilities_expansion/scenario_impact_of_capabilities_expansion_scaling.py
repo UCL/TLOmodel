@@ -71,7 +71,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         """
         
-        self.YEAR_OF_CHANGE = 2019
+        self.YEAR_OF_CHANGE = 2025
 
 
 
