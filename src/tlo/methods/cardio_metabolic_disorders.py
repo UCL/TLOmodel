@@ -1716,8 +1716,9 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         # Monthly doses of medications as follows. Diabetes - 1000mg metformin daily (1000*30.5),
-        # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 2 dialysis sessions per week (8 sessions in a month),
-        # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
+        # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 2 dialysis sessions per week
+        # (8 sessions in a month),lower back pain - 2400mg aspirin daily  (2400*30.5),
+        # CIHD - 75mg aspirin daily (75*30.5)
         dose = {'diabetes': 30_500,
                 'hypertension': 610,
                 'chronic_kidney_disease': 8,  # 8 in a month: dialysis two times a week
