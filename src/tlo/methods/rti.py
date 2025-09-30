@@ -1020,6 +1020,43 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         'maximum_number_of_times_HSI_events_should_run': Parameter(
             Types.INT,
             "limit on the number of times an HSI event can run"
+        ),
+        'hsi_schedule_window_days': Parameter(
+            Types.INT,
+            'Number of days window to schedule HSI appointment'
+        ),
+        'main_polling_frequency': Parameter(
+            Types.INT,
+            'Frequency in months for RTI polling events that determine new injuries'
+        ),
+        'incidence_rate_frequency': Parameter(
+            Types.INT,
+            'Number of months per year for rate conversion calculations'
+        ),
+        'incidence_rate_per_population': Parameter(
+            Types.INT,
+            'Population base for incidence rate calculations'
+        ),
+        'days_to_death_without_treatment': Parameter(
+            Types.INT,
+            'Number of days until death for untreated RTI patients'
+        ),
+        'max_treatment_duration_days': Parameter(
+            Types.INT,
+            'Maximum number of days for RTI treatment duration'
+        ),
+        'intervention_incidence_reduction_factor': Parameter(
+            Types.REAL,
+            'Factor by which interventions reduce RTI incidence '
+            '(applied when reduce_incidence in allowed_interventions)'
+        ),
+        'laceration_recovery_days': Parameter(
+            Types.INT,
+            'Number of days for recovery assessment period'
+        ),
+        'hsi_opening_delay_days': Parameter(
+            Types.INT,
+            'Number of days delay before HSI appointments can be scheduled'
         )
 
     }
@@ -1633,14 +1670,16 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                                                       person_id=person_id),
                     priority=0,
                     topen=self.sim.date + DateOffset(days=count),
-                    tclose=self.sim.date + DateOffset(days=15))
+                    tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days']))
             else:
                 if count == 0:
                     df.at[person_id, 'rt_injuries_left_untreated'] = df.at[person_id, 'rt_injuries_for_major_surgery']
                     # remove the injury code from this treatment option
                     df.at[person_id, 'rt_injuries_for_major_surgery'] = []
                     # reset the time to check whether the person has died from their injuries
-                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
+                    df.loc[person_id, 'rt_date_death_no_med'] = (
+                        self.sim.date + DateOffset(days=p['hsi_opening_delay_days'])
+                    )
 
     def rti_do_for_minor_surgeries(self, person_id, count):
         """
@@ -1655,6 +1694,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         :return:
         """
         df = self.sim.population.props
+        p = self.parameters
+
         # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't been killed by the
         # RTI module
         assert df.at[person_id, 'rt_med_int'], 'Person sent for treatment did not go through rti med int'
@@ -1698,14 +1739,16 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                                                       person_id=person_id),
                     priority=0,
                     topen=self.sim.date + DateOffset(days=count),
-                    tclose=self.sim.date + DateOffset(days=15))
+                    tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days']))
             else:
                 if count == 0:
                     df.at[person_id, 'rt_injuries_left_untreated'] = df.at[person_id, 'rt_injuries_for_minor_surgery']
                     # remove the injury code from this treatment option
                     df.at[person_id, 'rt_injuries_for_minor_surgery'] = []
                     # reset the time to check whether the person has died from their injuries
-                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
+                    df.loc[person_id, 'rt_date_death_no_med'] = (
+                        self.sim.date + DateOffset(days=p['hsi_opening_delay_days'])
+                    )
 
     def rti_acute_pain_management(self, person_id):
         """
@@ -1716,6 +1759,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         :return: n/a
         """
         df = self.sim.population.props
+        p = self.parameters
 
         if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
@@ -1735,8 +1779,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                 hsi_event=HSI_RTI_Acute_Pain_Management(module=self,
                                                         person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(days=1),
-                tclose=self.sim.date + DateOffset(days=15))
+                topen=self.sim.date + DateOffset(days=p['hsi_opening_delay_days']),
+                tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days']))
 
     def rti_ask_for_suture_kit(self, person_id):
         """
@@ -1747,6 +1791,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         :return: n/a
         """
         df = self.sim.population.props
+        p = self.parameters
+
         if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
             # rti
@@ -1765,8 +1811,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                 hsi_event=HSI_RTI_Suture(module=self,
                                          person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(days=1),
-                tclose=self.sim.date + DateOffset(days=15)
+                topen=self.sim.date + DateOffset(days=p['hsi_opening_delay_days']),
+                tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days'])
             )
 
     def rti_ask_for_shock_treatment(self, person_id):
@@ -1776,6 +1822,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         :return:
         """
         df = self.sim.population.props
+        p = self.parameters
+
         if df.at[person_id, 'is_alive']:
             assert df.at[person_id, 'rt_in_shock'], 'person requesting shock treatment is not in shock'
 
@@ -1783,8 +1831,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                 hsi_event=HSI_RTI_Shock_Treatment(module=self,
                                                   person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(days=1),
-                tclose=self.sim.date + DateOffset(days=15)
+                topen=self.sim.date + DateOffset(days=p['hsi_opening_delay_days']),
+                tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days'])
             )
 
     def rti_ask_for_burn_treatment(self, person_id):
@@ -1796,6 +1844,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         :return: n/a
         """
         df = self.sim.population.props
+        p = self.parameters
 
         if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
@@ -1815,8 +1864,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                 hsi_event=HSI_RTI_Burn_Management(module=self,
                                                   person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(days=1),
-                tclose=self.sim.date + DateOffset(days=15)
+                topen=self.sim.date + DateOffset(days=p['hsi_opening_delay_days']),
+                tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days'])
             )
 
     def rti_ask_for_fracture_casts(self, person_id):
@@ -1829,6 +1878,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         :return: n/a
         """
         df = self.sim.population.props
+        p = self.parameters
+
         if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
             # rti
@@ -1852,14 +1903,14 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                     hsi_event=HSI_RTI_Fracture_Cast(module=self,
                                                     person_id=person_id),
                     priority=0,
-                    topen=self.sim.date + DateOffset(days=1),
-                    tclose=self.sim.date + DateOffset(days=15)
+                    topen=self.sim.date + DateOffset(days=p['hsi_opening_delay_days']),
+                    tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days'])
                 )
             else:
                 df.at[person_id, 'rt_injuries_left_untreated'] = df.at[person_id, 'rt_injuries_to_cast']
                 df.at[person_id, 'rt_injuries_to_cast'] = []
                 # reset the time to check whether the person has died from their injuries
-                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=1)
+                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=p['hsi_opening_delay_days'])
 
     def rti_ask_for_open_fracture_treatment(self, person_id, counts):
         """Function called by HSI_RTI_MedicalIntervention to centralise open fracture treatment requests. This function
@@ -1871,6 +1922,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         :return: n/a
         """
         df = self.sim.population.props
+        p = self.parameters
+
         if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and are haven't died due to rti
             assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
@@ -1891,7 +1944,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                     hsi_event=HSI_RTI_Open_Fracture_Treatment(module=self, person_id=person_id),
                     priority=0,
                     topen=self.sim.date + DateOffset(days=0 + i),
-                    tclose=self.sim.date + DateOffset(days=15 + i)
+                    tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days'] + i)
                 )
 
     def rti_ask_for_tetanus(self, person_id):
@@ -1904,6 +1957,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         :return: n/a
         """
         df = self.sim.population.props
+        p = self.parameters
+
         if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and are haven't died due to rti
             assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
@@ -1924,8 +1979,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                 hsi_event=HSI_RTI_Tetanus_Vaccine(module=self,
                                                   person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(days=1),
-                tclose=self.sim.date + DateOffset(days=15)
+                topen=self.sim.date + DateOffset(days=p['hsi_opening_delay_days']),
+                tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days'])
             )
 
     def schedule_hsi_event_for_tomorrow(self, hsi_event: HSI_Event = None):
@@ -1933,8 +1988,14 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         A function to reschedule requested events for the following day if they have failed to run
         :return:
         """
-        self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event, topen=self.sim.date + DateOffset(days=1),
-                                                            tclose=self.sim.date + DateOffset(days=15), priority=0)
+        p = self.parameters
+
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi_event,
+            topen=self.sim.date + DateOffset(days=p['hsi_opening_delay_days']),
+            tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days']),
+            priority=0
+        )
 
     def rti_find_injury_column(self, person_id, codes):
         """
@@ -2189,8 +2250,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         else:
             days_until_treatment_end = 0
         # Make sure inpatient days is less that max available
-        if days_until_treatment_end > 150:
-            days_until_treatment_end = 150
+        if days_until_treatment_end > p['max_treatment_duration_days']:
+            days_until_treatment_end = p['max_treatment_duration_days']
         # Return the LOS
         return max(days_until_treatment_end, 0)
 
@@ -2563,13 +2624,20 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         # calculate the incidence of this injury in the population
         df = self.sim.population.props
         n_alive = len(df.is_alive)
-        inc_amputations = amputationcounts / ((n_alive - amputationcounts) * 1 / 12) * 100000
-        inc_burns = burncounts / ((n_alive - burncounts) * 1 / 12) * 100000
-        inc_fractures = fraccounts / ((n_alive - fraccounts) * 1 / 12) * 100000
-        inc_tbi = tbicounts / ((n_alive - tbicounts) * 1 / 12) * 100000
-        inc_sci = spinalcordinjurycounts / ((n_alive - spinalcordinjurycounts) * 1 / 12) * 100000
-        inc_minor = minorinjurycounts / ((n_alive - minorinjurycounts) * 1 / 12) * 100000
-        inc_other = other_counts / ((n_alive - other_counts) * 1 / 12) * 100000
+        inc_amputations = (amputationcounts / ((n_alive - amputationcounts) * 1 / p['incidence_rate_frequency']) *
+                           p['incidence_rate_per_population'])
+        inc_burns = (burncounts / ((n_alive - burncounts) * 1 / p['incidence_rate_frequency']) *
+                     p['incidence_rate_per_population'])
+        inc_fractures = (fraccounts / ((n_alive - fraccounts) * 1 / p['incidence_rate_frequency']) *
+                         p['incidence_rate_per_population'])
+        inc_tbi = (tbicounts / ((n_alive - tbicounts) * 1 / p['incidence_rate_frequency']) *
+                   p['incidence_rate_per_population'])
+        inc_sci = (spinalcordinjurycounts / ((n_alive - spinalcordinjurycounts) * 1 / p['incidence_rate_frequency']) *
+                   p['incidence_rate_per_population'])
+        inc_minor = (minorinjurycounts / ((n_alive - minorinjurycounts) * 1 / p['incidence_rate_frequency']) *
+                     p['incidence_rate_per_population'])
+        inc_other = (other_counts / ((n_alive - other_counts) * 1 / p['incidence_rate_frequency']) *
+                     p['incidence_rate_per_population'])
         tot_inc_all_inj = inc_amputations + inc_burns + inc_fractures + inc_tbi + inc_sci + inc_minor + inc_other
         if number > 0:
             number_of_injuries = int(inj_df['Number_of_injuries'].iloc[0])
@@ -2634,6 +2702,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         """
         # Things to do upon a person presenting at a Non-Emergency Generic
         # HSI if they have an injury.
+        p = self.parameters
         persons_injuries = [
             individual_properties[injury] for injury in RTI.INJURY_COLUMNS
         ]
@@ -2647,8 +2716,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                     schedule_hsi_event(
                         event,
                         priority=0,
-                        topen=self.sim.date + DateOffset(days=1),
-                        tclose=self.sim.date + DateOffset(days=15),
+                        topen=self.sim.date + DateOffset(days=p['hsi_opening_delay_days']),
+                        tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days']),
                     )
             individual_properties["rt_diagnosed"] = True
 
@@ -2692,8 +2761,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                 schedule_hsi_event(
                     event,
                     priority=0,
-                    topen=self.sim.date + DateOffset(days=1),
-                    tclose=self.sim.date + DateOffset(days=15),
+                    topen=self.sim.date + DateOffset(days=p['hsi_opening_delay_days']),
+                    tclose=self.sim.date + DateOffset(days=p['hsi_schedule_window_days']),
                 )
 
     def do_at_generic_first_appt(
@@ -2774,14 +2843,14 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        """Schedule to take place every month
+        """Schedule to take place
         """
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['main_polling_frequency']))
         p = module.parameters
         # Parameters which transition the model between states
         self.base_1m_prob_rti = (p['base_rate_injrti'] / 12)
         if 'reduce_incidence' in p['allowed_interventions']:
-            self.base_1m_prob_rti = self.base_1m_prob_rti * 0.335
+            self.base_1m_prob_rti = self.base_1m_prob_rti * p['intervention_incidence_reduction_factor']
         self.rr_injrti_age04 = p['rr_injrti_age04']
         self.rr_injrti_age59 = p['rr_injrti_age59']
         self.rr_injrti_age1017 = p['rr_injrti_age1017']
@@ -2804,6 +2873,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         df = population.props
         now = self.sim.date
+        p = self.module.parameters
         # Reset injury properties after death, get an index of people who have died due to RTI, all causes
         diedfromrtiidx = df.index[df.rt_imm_death | df.rt_post_med_death | df.rt_no_med_death | df.rt_death_from_shock |
                                   df.rt_unavailable_med_death]
@@ -2931,9 +3001,12 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         internal_bleeding_codes = ['361', '363', '461', '463', '813bo', '813co', '813do', '813eo']
         df = self.sim.population.props
 
-        potential_shock_index, _ = \
-            road_traffic_injuries.rti_find_and_count_injuries(df.loc[df.rt_road_traffic_inc, RTI.INJURY_COLUMNS],
-                                                              internal_bleeding_codes)
+        potential_shock_index, _ = (
+            road_traffic_injuries.rti_find_and_count_injuries(
+                df.loc[df.rt_road_traffic_inc, RTI.INJURY_COLUMNS],
+                internal_bleeding_codes
+            )
+        )
         rand_for_shock = self.module.rng.random_sample(len(potential_shock_index))
         shock_index = potential_shock_index[self.prob_bleeding_leads_to_shock > rand_for_shock]
         df.loc[shock_index, 'rt_in_shock'] = True
@@ -2947,7 +3020,8 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: find better time for survival data without med int for ISS scores
         # Assign a date in the future for which when the simulation reaches that date, the person's mortality will be
         # checked if they haven't sought care
-        df.loc[selected_for_rti_inj.index, 'rt_date_death_no_med'] = now + DateOffset(days=7)
+        df.loc[selected_for_rti_inj.index, 'rt_date_death_no_med'] = (now +
+                                                            DateOffset(days = p['days_to_death_without_treatment']))
         # ============================ Injury severity classification =================================================
         # Find those with mild injuries and update the rt_inj_severity property so they have a mild injury
         injured_this_month = df.loc[selected_for_rti_inj.index]
@@ -4157,7 +4231,8 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                 self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                df.loc[person_id, 'rt_date_death_no_med'] = (self.sim.date +
+                                        DateOffset(days=self.module.parameters['days_to_death_without_treatment']))
             logger.debug(key='rti_general_message',
                          data=f"Person {person_id} has {fracturecastcounts + slingcounts} fractures without treatment"
                          )
@@ -4269,7 +4344,8 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                 self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                df.loc[person_id, 'rt_date_death_no_med'] = (self.sim.date +
+                                        DateOffset(days=self.module.parameters['days_to_death_without_treatment']))
             logger.debug(key='rti_general_message',
                          data=f"Person {person_id}'s has {open_fracture_counts} open fractures without treatment",
                          )
@@ -4316,6 +4392,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        p = self.module.parameters
         self._number_of_times_this_event_has_run += 1
 
         if not df.at[person_id, 'is_alive']:
@@ -4352,7 +4429,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                     # wound%20and%20your%20general,have%20a%20weakened%20immune%20system.
                     date_to_remove_daly_column = RTI.INJURY_DATE_COLUMN_MAP[injury_column]
                     df.loc[person_id, date_to_remove_daly_column] = (
-                        self.sim.date + DateOffset(days=14)
+                        self.sim.date + DateOffset(days=p['laceration_recovery_days'])
                     )
                     assert df.loc[person_id, date_to_remove_daly_column] > self.sim.date
                 df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
@@ -4360,7 +4437,8 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                 if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                     self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
                 if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                    df.loc[person_id, 'rt_date_death_no_med'] = (self.sim.date +
+                                                                 DateOffset(days=p['days_to_death_without_treatment']))
                 logger.debug(key='rti_general_message',
                              data="This facility has no treatment for open wounds available.")
                 return self.make_appt_footprint({})
@@ -4411,6 +4489,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        p = self.module.parameters
         self._number_of_times_this_event_has_run += 1
 
         if not df.at[person_id, 'is_alive']:
@@ -4488,7 +4567,8 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                     self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
                 if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                    df.loc[person_id, 'rt_date_death_no_med'] = (self.sim.date +
+                                                                DateOffset(days= p['days_to_death_without_treatment']))
                 logger.debug(key='rti_general_message',
                              data="This facility has no treatment for burns available.")
 
@@ -4877,6 +4957,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self._number_of_times_this_event_has_run += 1
         df = self.sim.population.props
         rng = self.module.rng
+        p = self.module.parameters
+
         road_traffic_injuries = self.sim.modules['RTI']
 
         # Request first draft of consumables used in major surgery
@@ -5125,7 +5207,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                 self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                df.loc[person_id, 'rt_date_death_no_med'] = (self.sim.date +
+                                                             DateOffset(days=p['days_to_death_without_treatment']))
             return self.make_appt_footprint({})
 
     def did_not_run(self):
@@ -5196,6 +5279,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         self._number_of_times_this_event_has_run += 1
         df = self.sim.population.props
+        p = self.module.parameters
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
 
@@ -5291,7 +5375,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                 self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
+                df.loc[person_id, 'rt_date_death_no_med'] = (self.sim.date +
+                                                             DateOffset(days=p['days_to_death_without_treatment']))
             logger.debug(key='rti_general_message',
                          data=f"This is RTI_Minor_Surgeries failing to provide minor surgeries for person {person_id} "
                               f"on date {self.sim.date}!!!!!!")
