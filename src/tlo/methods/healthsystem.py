@@ -651,7 +651,7 @@ class HealthSystem(Module):
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
 
-    def validate_clinic_capabilities(self, clinic_capabilities_df: pd.DataFrame):
+    def validate_clinic_configuration(self, clinic_capabilities_df: pd.DataFrame):
         """Validate the contents of the clinics capabilities dataframe.
         :param clinic_capabilities_df: DataFrame read from ResourceFile_Clinics.csv
         Checks that a) no level 2 facilities are included, and b) that the fractions sum to 1 for each row.
@@ -743,7 +743,7 @@ class HealthSystem(Module):
         self.setup_priority_policy()
 
         # Ensure that a valid clinic configuration has been specified
-        self.validate_clinic_capabilities(self.parameters['clinic_configuration'])
+        self.validate_clinic_configuration(self.parameters['clinic_configuration'])
 
 
 
@@ -1519,7 +1519,7 @@ class HealthSystem(Module):
         else:
             rand_queue = self.hsi_event_queue_counter
 
-        clinic_eligibility = self.get_clinic_eligibility(hsi_event.module.name)
+        clinic_eligibility = self.get_clinic_eligibility(hsi_event)
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
             clinic_eligibility, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
 
@@ -2461,19 +2461,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
 
-
-        if self.module.parameters['include_clinics']:
-            capabilities_monitor = {k: Counter(v) for k, v in self.module._daily_clinics_capabilities_per_staff.items()}
-            set_capabilities_still_available = defaultdict(set)
-            ## For each module, pull out the facility and officer type with non-zero capabilities.
-            for module_name, module_val in capabilities_monitor.items():
-                for facility_officer_id, facility_officer_id_capabilities in module_val.items():
-                    if facility_officer_id_capabilities > 0:
-                        set_capabilities_still_available[module_name].add(facility_officer_id)
-        else:
-            capabilities_monitor = Counter(self.module.capabilities_today.to_dict())
-            set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
-            set_capabilities_still_available = {'Fungible': set_capabilities_still_available}
+        capabilities_monitor = {k: Counter(v) for k, v in self.module._daily_capabilities_per_staff.items()}
+        set_capabilities_still_available = defaultdict(set)
+        ## For each clinic, pull out the facility and officer type with non-zero capabilities.
+        for clinic_name, clinic_val in capabilities_monitor.items():
+            for facility_officer_id, facility_officer_id_capabilities in clinic_val.items():
+                if facility_officer_id_capabilities > 0:
+                    set_capabilities_still_available[clinic_name].add(facility_officer_id)
 
         # Here use different approach for appt_mode_constraints = 2: rather than collecting events
         # due today all at once, run event immediately at time of querying. This ensures that no
@@ -2505,8 +2499,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
 
                 event = next_event_tuple.hsi_event
-                # Check the event's clinic eligibility; if not eligible for clinic,
-                # clinic name will be Fungible; otherwise it will be the clinic name
+                # Check the clinic for event's treatment-id
                 event_clinic = next_event_tuple.clinic_eligibility
                 capabilities_still_available = set_capabilities_still_available[event_clinic]
 
@@ -2637,7 +2630,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                         # If any of the officers have run out of time by performing this hsi,
                         # remove them from list of available officers.
-                        breakpoint()
                         for officer, call in updated_call.items():
                             if capabilities_monitor[officer] <= 0:
                                 if officer in capabilities_still_available:
