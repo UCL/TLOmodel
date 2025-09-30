@@ -461,6 +461,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "adjustment factor for viral load suppression probability for young adults compared to older adults"
         ),
+        "proportion_young_adult_on_art": Parameter(
+            Types.REAL,
+            "proportion of adults on ART who are aged 15-29"
+        ),
         "prob_receive_viral_load_test_result": Parameter(
             Types.REAL,
             "the probability of receving viral load test result"
@@ -569,17 +573,18 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         using the VL testing adjustment formula.
         """
         p = self.parameters
-        ptest = 12 / p["interval_for_viral_load_measurement_months"]
+        tests_per_year = min(1.0, 12.0 / p["interval_for_viral_load_measurement_months"])
+        f_benefit = tests_per_year * p["prob_receive_viral_load_test_result"]
 
-        def adjust_vls_probability(p_base):
-            if pd.isna(p_base):
-                return None
-            p_base = p_base / 100.0  # convert percent to proportion
-            f_benefit = ptest * p["prob_receive_viral_load_test_result"]
-            return (1 - f_benefit) * p_base + f_benefit * p["prob_of_viral_suppression_following_VL_test"]
+        def adjust(pct):
+            if pd.isna(pct):
+                return np.nan
+            p_base = pct / 100.0
+            p_adj = p_base + f_benefit * (1 - p_base) * p["prob_of_viral_suppression_following_VL_test"]
+            return max(0.0, min(1.0, p_adj))
 
         p["prob_start_art_or_vs"]["adjusted_viral_suppression_on_art"] = (
-            p["prob_start_art_or_vs"]["virally_suppressed_on_art"].apply(adjust_vls_probability)
+            p["prob_start_art_or_vs"]["virally_suppressed_on_art"].apply(adjust)
         )
 
     def pre_initialise_population(self):
@@ -927,8 +932,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             notsuppr.extend(all_idx[~vl_suppr])
 
         # get expected viral suppression rates by age and year
-        prob_vs_adult = self.prob_viral_suppression(self.sim.date.year, age_of_person=20)
-        prob_vs_child = self.prob_viral_suppression(self.sim.date.year, age_of_person=5)
+        prob_vs_adult = self.prob_viral_suppression(year=self.sim.date.year, age_of_person=20, df=df)
+        prob_vs_child = self.prob_viral_suppression(year=self.sim.date.year, age_of_person=5, df=df)
 
         split_into_vl_and_notvl(adult_f_art_idx, prob_vs_adult)
         split_into_vl_and_notvl(adult_m_art_idx, prob_vs_adult)
@@ -1726,7 +1731,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         return return_prob
 
-    def prob_viral_suppression(self, year, age_of_person):
+    def prob_viral_suppression(self, df, year, age_of_person):
         """ returns the probability of viral suppression once on ART
         data from 2010-2025 from spectrum
         time-series ends at 2025
@@ -1736,18 +1741,42 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         age_of_person = age_of_person
         age_group = "adults" if age_of_person >= 15 else "children"
 
-        return_prob = prob_vs.loc[
+        base = prob_vs.loc[
             (prob_vs.year == current_year) &
             (prob_vs.age == age_group),
             "adjusted_viral_suppression_on_art"].values[0]
 
-        assert return_prob is not None
+        assert base is not None
 
-        # Apply adjustment for young adults (15–29)
+        # Children: return baseline
+        if age_of_person < 15:
+            return max(0.0, min(1.0, base))
+
+        # Adults: apply young adult gap and rebalance 30+ to preserve adult average
+        gap = self.parameters["young_adult_vls_factor"]  # absolute fraction, e.g. 0.08
+        # w = self.parameters["proportion_young_adult_on_art"]  # share of 15–29 among adults on ART
+
+        # Adults (15+) currently on ART
+        mask_adult_on_art = (df["age_years"] >= 15) & (df["hv_art"].ne("not"))
+        den = mask_adult_on_art.sum()
+
+        # Proportion of young adults (15–29) among adults on ART
+        if den:
+            w = df.loc[mask_adult_on_art, "age_years"].between(15, 29, inclusive="both").mean()
+        else:
+            w = self.parameters["proportion_young_adult_on_art"]
+
+        # Feasibility so both strata remain in [0,1]
+        # young = base - gap >= 0 → gap ≤ base
+        # old = base + (w/(1-w))·gap ≤ 1 → gap ≤ (1-w)(1-base)/w
+        max_gap_young = base
+        max_gap_old = ((1.0 - w) * (1.0 - base)) / w
+        gap = max(0.0, min(gap, max_gap_young, max_gap_old))
+
         if 15 <= age_of_person <= 29:
-            return_prob *= self.parameters["young_adult_vls_factor"]
-
-        return return_prob
+            return max(0.0, min(1.0, base - gap))
+        else:
+            return max(0.0, min(1.0, base + (w / (1.0 - w)) * gap))
 
     def update_viral_suppression_status(self):
         """Helper function to determine whether person who is currently not virally suppressed
@@ -2281,7 +2310,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                                           (random_draw < p["prob_prep_for_fsw_after_hiv_test"])].index
 
                 for person in eligible_fsw_idx:
-                    if self.module.parameters['injectable_prep_allowed']:
+                    if (self.module.parameters['injectable_prep_allowed'] &
+                        (self.sim.date.year >= 2025)):
                         type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
                     else:
                         type_of_prep = 'oral'
@@ -3366,7 +3396,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
             # onset)
             vl_status = self.determine_vl_status(
-                age_of_person=person["age_years"]
+                age_of_person=person["age_years"], df=df
             )
 
             df.at[person_id, "hv_art"] = vl_status
@@ -3500,11 +3530,11 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         return drugs_available
 
-    def determine_vl_status(self, age_of_person):
+    def determine_vl_status(self, age_of_person, df):
         """Helper function to determine the VL status that the person will have.
         Return what will be the status of "hv_art"
         """
-        prob_vs = self.module.prob_viral_suppression(self.sim.date.year, age_of_person)
+        prob_vs = self.module.prob_viral_suppression(year=self.sim.date.year, age_of_person=age_of_person, df=df)
 
         return (
             "on_VL_suppressed"
