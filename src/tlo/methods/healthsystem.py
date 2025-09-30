@@ -340,7 +340,7 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
-        'clinics_configuration': Parameter(Types.STRING, 'Name of configuration of clinics to use.'),
+        'clinic_configuration_name': Parameter(Types.STRING, 'Name of configuration of clinics to use.'),
     }
 
     PROPERTIES = {
@@ -551,10 +551,10 @@ class HealthSystem(Module):
         # Data on the clinics configurations and mappings to be used.
         self.parameters['clinic_configuration'] = pd.read_csv(path_to_resourcefiles_for_healthsystem / 'clinics' /
                                                          'ResourceFile_ClinicConfigurations',
-                                                              f("{self.parameters['clinics_configuration']}.csv"))
+                                                              f("{self.parameters['clinic_configuration_name']}.csv"))
         self.parameters['clinic_mapping'] = read_csv_files(path_to_resourcefiles_for_healthsystem / 'clinics' /
                                                          'ResourceFile_ClinicMappings',
-                                                         f("{self.parameters['clinics_configuration']}.csv"))
+                                                         f("{self.parameters['clinic_configuration_name']}.csv"))
 
 
         # Load ResourceFiles that define appointment and officer types
@@ -1001,19 +1001,17 @@ class HealthSystem(Module):
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
         and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
-
-        self._daily_fungible_capabilities, self._daily_fungible_capabilities_per_staff = self.format_daily_capabilities(use_funded_or_actual_staffing)
+        self._daily_capabilities, self._daily_capabilities_per_staff = (
+            self.format_daily_capabilities(use_funded_or_actual_staffing)
+        )
 
         # Also, store the set of officers with non-zero daily availability
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
-        self._officers_with_availability = set(self._daily_fungible_capabilities.index[self._daily_fungible_capabilities > 0])
-        # If include_clinics is True, then redefine daily_capabilities
-        if self.parameters['include_clinics']:
-            self.adjust_clinics_capabilities()
-        else:
-            self._daily_clinics_capabilities = {}
-            self._daily_clinics_capabilities_per_staff = {}
+        self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
+        # Now adjust it according to the clinic configuration specified. Capabilities will be split between clinics
+        # specified. In the "Default" configuration, this means assigning all capabilities to "OtherClinic"
+        self.adjust_clinics_capabilities()
 
 
     def adjust_clinics_capabilities(self):
@@ -1021,7 +1019,7 @@ class HealthSystem(Module):
         This is done by splitting the capabilities into fungible and non-fungible components as specified in the
         ResourceFile_Clinics.csv file.
         """
-        module_cols = self.modules_eligible_for_clinics
+
         self.parameters['Clinics_Capabilities'] = self.format_clinic_capabilities()
 
         updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities)
@@ -1041,17 +1039,14 @@ class HealthSystem(Module):
 
     def get_clinic_eligibility(self, hsi_event):
         """
-        Returns the name of the module if the module is eligible for clinic access.
-        If not, returns 'Fungible'. Notes for future implementation:
-        this implementation is likely to change in the future to break the one-to-one relationship between
-        modules and clinics.
+        Determine the clinic mapped to the HSI Event treatment ID. If no clinic is mapped, then a default value of
+        'OtherClinic' is returned. Note that we assume that a treatment ID is mapped to at most one clinic, returning
+        the first match regardless of the number of matches.
         """
-        eligible_treatment_ids = name in self.parameters['clinic_mapping']['Treatment'].tolist()
+        eligible_treatment_ids = self.parameters['clinic_mapping'].loc[self.parameters['clinic_mapping']['Treatment'] == hsi_event.TREATMENT_ID, 'Clinic']
+        clinic = matches.iloc[0] if not matches.empty else 'OtherClinic'
+        return clinic
 
-        if hsi_event.TREATMENT_ID not in eligible_treatment_ids:
-            return  self.parameters['clinic_mapping'].loc[self.parameters['clinic_mapping']['Treatment'] == hsi_event.TREATMENT_ID, 'Clinic'].squeeze()
-        else:
-            return 'OtherClinic'
 
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
@@ -1145,13 +1140,13 @@ class HealthSystem(Module):
 
     def format_clinic_capabilities(self) -> pd.DataFrame:
         """
-        The breakdown of capabilities between non-fungible and fungible clinics is available in the Clinics_Capabilities
-        read in from the ResourceFile_Clinics.csv file. This function will fill out the capabilities dataframe
-        so that for facility, officer type combinations that are not present in the file, the proportion of fungible
-        is set to 1, and the non-fungible capabilities are set to 0.
+        The breakdown of capabilities across clinics and a catch-all OtherClinic is read in from the
+        resource file in ResourceFile_ClinicConfigurations. This function will fill out the capabilities dataframe
+        so that for facility, officer type combinations that are not present in the file, the proportion of OtherClinic
+        is set to 1, and capabilities for all other clinics are set to 0.
         """
 
-        capabilities_cl = self.parameters['Clinics_Capabilities']
+        capabilities_cl = self.parameters['clinic_configuration']
         # Create dataframe containing background information about facility and officer types
         facility_ids = set(self._facility_by_facility_id.keys())
         officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
@@ -1173,7 +1168,7 @@ class HealthSystem(Module):
             how='left',
         )
         ## Fungible set to 1 for missing facility/office_code combinations
-        capabilities_ex['Fungible'] = capabilities_ex['Fungible'].fillna(1)
+        capabilities_ex['OtherClinic'] = capabilities_ex['OtherClinic'].fillna(1)
         ## All other columns are set to 0
         other_cols = capabilities_ex.columns.difference(['Facility_ID', 'Officer_Type_Code', 'Fungible'])
         capabilities_ex[other_cols] = capabilities_ex[other_cols].fillna(0)
