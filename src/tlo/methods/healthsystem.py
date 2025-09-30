@@ -555,6 +555,7 @@ class HealthSystem(Module):
         self.parameters['clinic_mapping'] = read_csv_files(path_to_resourcefiles_for_healthsystem / 'clinics' /
                                                          'ResourceFile_ClinicMappings',
                                                          f("{self.parameters['clinic_configuration_name']}.csv"))
+        self.clinic_names = self.parameters['clinic_configuration'].columns.difference(['Facility_ID', 'Officer_Type_Code'])
 
 
         # Load ResourceFiles that define appointment and officer types
@@ -997,7 +998,7 @@ class HealthSystem(Module):
 
 
     def setup_daily_capabilities(self, use_funded_or_actual_staffing):
-        """Set up `self._daily_fungible_capabilities` and `self._officers_with_availability`.
+        """Set up `self._daily_capabilities` and `self._officers_with_availability`.
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
         and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
@@ -1015,26 +1016,27 @@ class HealthSystem(Module):
 
 
     def adjust_clinics_capabilities(self):
-        """Adjust the capabilities to account for ringfenced clinics if include_clinics is True.
-        This is done by splitting the capabilities into fungible and non-fungible components as specified in the
-        ResourceFile_Clinics.csv file.
+        """Adjust the capabilities to account for ringfenced clinics according to the configuration specified.
+        This is done by splitting the capabilities into separate clinics with OtherClinic serving as the
+        catch-all clinic. The specified configuration is filled in so that all facilities and officer types
+        are included. For combinations of facility and officer type not included in the configuration, all
+        capabilities are assigned to OtherClinic.
         """
 
-        self.parameters['Clinics_Capabilities'] = self.format_clinic_capabilities()
+        clinic_names = self.parameters['clinic_names']
+        self.parameters['clinic_configuration'] = self.format_clinic_capabilities()
 
-        updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities)
-        ## New capabilities are old_capabilities * proportions specified; modules includes fungible
+        updated_capabilities = self.parameters['clinic_configuration'].join(self._daily_capabilities)
+        ## New capabilities are old_capabilities * proportions specified;
 
-        updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Minutes_Per_Day'], axis =  0)
-        self._daily_clinics_capabilities = updated_capabilities[module_cols].to_dict()
-
-
-        updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities_per_staff)
-        ## New capabilities are old_capabilities * proportions specified; modules includes fungible
-        updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis =  0)
-        self._daily_clinics_capabilities_per_staff = updated_capabilities[module_cols].to_dict()
+        updated_capabilities[clinic_names] = updated_capabilities[clinic_names].multiply(updated_capabilities['Total_Minutes_Per_Day'], axis =  0)
+        self._daily_capabilities = updated_capabilities[clinic_names].to_dict()
 
 
+        updated_capabilities = self.parameters['clinic_configuration'].join(self._daily_capabilities_per_staff)
+        ## New capabilities are old_capabilities * proportions specified;
+        updated_capabilities[clinic_names] = updated_capabilities[clinic_names].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis =  0)
+        self._daily_capabilities_per_staff = updated_capabilities[clinic_names].to_dict()
 
 
     def get_clinic_eligibility(self, hsi_event):
@@ -1146,7 +1148,7 @@ class HealthSystem(Module):
         is set to 1, and capabilities for all other clinics are set to 0.
         """
 
-        capabilities_cl = self.parameters['clinic_configuration']
+        capabilities_cl = self.parameters['clinics_configuration']
         # Create dataframe containing background information about facility and officer types
         facility_ids = set(self._facility_by_facility_id.keys())
         officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
@@ -1167,10 +1169,10 @@ class HealthSystem(Module):
             on=['Facility_ID', 'Officer_Type_Code'],
             how='left',
         )
-        ## Fungible set to 1 for missing facility/office_code combinations
+        ## OtherClinic set to 1 for missing facility/office_code combinations
         capabilities_ex['OtherClinic'] = capabilities_ex['OtherClinic'].fillna(1)
         ## All other columns are set to 0
-        other_cols = capabilities_ex.columns.difference(['Facility_ID', 'Officer_Type_Code', 'Fungible'])
+        other_cols = capabilities_ex.columns.difference(['Facility_ID', 'Officer_Type_Code', 'OtherClinic'])
         capabilities_ex[other_cols] = capabilities_ex[other_cols].fillna(0)
 
         # Give the standard index:
@@ -1193,7 +1195,7 @@ class HealthSystem(Module):
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
-        for officer in self._daily_fungible_capabilities.keys():
+        for officer in self._daily_capabilities.keys():
             matches = re.match(pattern, officer)
             # Extract ID and officer type from
             facility_id = int(matches.group(1))
@@ -1205,11 +1207,11 @@ class HealthSystem(Module):
                 officer_type=officer_type, level=level
             )
             if rescaling_factor > 1 and rescaling_factor != float("inf"):
-                self._daily_fungible_capabilities[officer] *= rescaling_factor
+                self._daily_capabilities[officer] *= rescaling_factor
                 # We assume that increased daily capabilities is a result of each staff performing more
                 # daily patient facing time per day than contracted (or equivalently performing appts more
                 # efficiently).
-                self._daily_fungible_capabilities_per_staff[officer] *= rescaling_factor
+                self._daily_capabilities_per_staff[officer] *= rescaling_factor
                 for k, v in self._daily_clinics_capabilities.items():
                     for inner_k, inner_v in v.items():
                         inner_v[officer] *= rescaling_factor
@@ -1698,6 +1700,7 @@ class HealthSystem(Module):
         """
         Returns the capabilities of the health system today.
         returns: pd.Series giving minutes available for each officer type in each facility type
+        ### TODO: Update this docstring
 
         Functions can go in here in the future that could expand the time available,
         simulating increasing efficiency (the concept of a productivity ratio raised
@@ -1706,7 +1709,8 @@ class HealthSystem(Module):
         For now this method only multiplies the estimated minutes available by the `capabilities_coefficient` scale
         factor.
         """
-        return self._daily_fungible_capabilities * self.capabilities_coefficient
+        scaled = {k: v * self.capabilities_coefficient for k, v in self._daily_capabilities.items()}
+        return scaled
 
     def get_blank_appt_footprint(self):
         """
@@ -2458,9 +2462,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
 
 
-        ## If there is no splitting of capabilities via include_clinics, then all capabilities are
-        ## fungible. Hence we put them in the same structure as we would use if include_clinics
-        ## were true.
         if self.module.parameters['include_clinics']:
             capabilities_monitor = {k: Counter(v) for k, v in self.module._daily_clinics_capabilities_per_staff.items()}
             set_capabilities_still_available = defaultdict(set)
@@ -3064,14 +3065,14 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
         config = self.scaling_values.get(self._get_most_recent_year_specified_for_a_change_in_configuration())
 
         # ... Do the rescaling specified for this year by the specified factor
-        self.module._daily_fungible_capabilities *= config['dynamic_HR_scaling_factor']
-        ## {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
+        self.module.__daily_capabilities *= config['dynamic_HR_scaling_factor']
+        ## {col: updated_capabilities[col].to_dict() for col in updated_capabilities[clinic_names]}
         for k, v in self.module._daily_clinics_capabilities.items():
             v.update({inner_k: inner_v * config['dynamic_HR_scaling_factor'] for inner_k, inner_v in v.items()})
 
         # ... If requested, also do the scaling for the population growth that has occurred since the last year
         if config['scale_HR_by_popsize']:
-            self.module._daily_fungible_capabilities *= this_year_pop_size / self.last_year_pop_size
+            self.module.__daily_capabilities *= this_year_pop_size / self.last_year_pop_size
             for k, v in self.module._daily_clinics_capabilities.items():
                 v.update({inner_k: inner_v * this_year_pop_size / self.last_year_pop_size for inner_k, inner_v in v.items()})
 
@@ -3097,13 +3098,13 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
 
-        for officer in self.module._daily_fungible_capabilities.keys():
+        for officer in self.module.__daily_capabilities.keys():
             matches = re.match(pattern, officer)
             # Extract ID and officer type from
             facility_id = int(matches.group(1))
             officer_type = matches.group(2)
             level = self.module._facility_by_facility_id[facility_id].level
-            self.module._daily_fungible_capabilities[officer] *= \
+            self.module.__daily_capabilities[officer] *= \
                 HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
 
 
@@ -3122,13 +3123,13 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
 
-        for officer in self.module._daily_fungible_capabilities.keys():
+        for officer in self.module.__daily_capabilities.keys():
             matches = re.match(pattern, officer)
             # Extract ID and officer type from
             facility_id = int(matches.group(1))
             district = self.module._facility_by_facility_id[facility_id].district
             if district in HR_scaling_factor_by_district:
-                self.module._daily_fungible_capabilities[officer] *= HR_scaling_factor_by_district[district]
+                self.module.__daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
@@ -3209,7 +3210,7 @@ class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
         # Compute staff counts from available capabilities (hs.capabilities_today) and daily capabilities per staff,
         # both of which would have been rescaled to current efficiency levels if scale_to_effective_capabilities=True
         # This returns the number of staff counts normalised by the self.capabilities_coefficient parameter
-        current_staff_count = dict((hs.capabilities_today/hs._daily_fungible_capabilities_per_staff).sort_index())
+        current_staff_count = dict((hs.capabilities_today/hs._daily_capabilities_per_staff).sort_index())
 
         logger_summary.info(
             key="number_of_hcw_staff",
