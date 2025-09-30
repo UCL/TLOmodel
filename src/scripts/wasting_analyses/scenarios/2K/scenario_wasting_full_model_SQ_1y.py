@@ -30,7 +30,7 @@ class WastingAnalysis(BaseScenario):
             end_date=Date(year=2011, month=1, day=2),
             initial_population_size=2_000,
             number_of_draws=1,
-            runs_per_draw=10,
+            runs_per_draw=4,
         )
 
     def log_configuration(self):
