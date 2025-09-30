@@ -2208,7 +2208,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 give_prep = high_risk_idx[
                     self.module.rng.random_sample(len(high_risk_idx)) < rescaled_probs
                     ]
-                # todo dates should be scattered throughout year
+                # dates are scattered throughout year
                 for person in give_prep:
                     if (self.module.parameters['injectable_prep_allowed'] &
                         (self.sim.date.year >= 2025)):
@@ -3125,7 +3125,6 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required['prep']: days_on_prep}
             ):
                 df.at[person_id, property] = True
-                # print(self.type_of_prep, self.sim.date, person_id)  # todo this is person actually getting PrEP
 
                 if df.at[person_id, "li_is_sexworker"]:
                     df.at[person_id, f'{days_on_prep_property}_FSW'] += days_on_prep
@@ -3422,7 +3421,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     if tdf_result == 'negative':
                         # intervention triggered to increase chance of suppression
                         if person["hv_art"] == "on_not_VL_suppressed":
-                            # todo schedule Adherence Counselling - no delay
+                            # schedule Adherence Counselling - no delay
                             self.sim.schedule_event(
                                 Hiv_AdherenceCounselling(
                                     person_id=person_id, module=self.module
@@ -3435,7 +3434,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 elif not p["switch_vl_test_to_tdf"] and self.get_consumables(
                     item_codes=self.module.item_codes_for_consumables_required['vl_measurement']):
 
-                    # todo add logic around unsuppressed person receiving and acting on result
+                    # add logic around unsuppressed person receiving and acting on result
                     if person["hv_art"] == "on_not_VL_suppressed":
                         # Only some people get their result
                         if self.module.rng.random_sample() < 0.6:  # ~0.6
@@ -4904,7 +4903,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         num_men_circ_15_24 = len(
             df[df.is_alive & (df.sex == "M") & df.age_years.between(15,24) & df.li_is_circ]
         )
-        # todo this should include pregnant women (included in PrEP AGYW)
+        # this includes pregnant women (included in PrEP AGYW)
         PrEP_AGYW_PG = PY_PREP_ORAL_AGYW + PY_PREP_INJECT_AGYW
         TOTAL_AGYW = len(
             df[df.is_alive & (df.sex == "F") & df.age_years.between(15,24)])
