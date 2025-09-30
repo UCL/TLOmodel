@@ -239,6 +239,8 @@ class HSI_Event:
             to_log=_to_log,
             facility_info=self.facility_info,
             treatment_id=self.TREATMENT_ID,
+            FS_interv_ON=self.sim.modules['Wasting'].FS_interv_ON,
+            CSB_avail_prob_with_FS_interv=self.sim.modules['Wasting'].parameters['interv_avail_CSB++']
         )
 
         # Return result in expected format:

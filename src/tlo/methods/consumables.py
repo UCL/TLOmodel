@@ -250,6 +250,8 @@ class Consumables:
                              optional_item_codes: Optional[dict] = None,
                              to_log: bool = True,
                              treatment_id: Optional[str] = None,
+                             FS_interv_ON: bool = False,
+                             CSB_avail_prob_with_FS_interv: float = None
                              ) -> dict:
         """This is a private function called by 'get_consumables` in the `HSI_Event` base class. It queries whether
         item_codes are currently available at a particular Facility_ID and logs the request.
@@ -280,6 +282,10 @@ class Consumables:
         available = self._lookup_availability_of_consumables(item_codes=_all_item_codes,
                                                              facility_info=facility_info,
                                                              override_probability=override_probability)
+        # tmp hack: overriding CSB++ availability to the required prob for FS interv
+        if 208 in _all_item_codes:
+            if FS_interv_ON:
+                available[208] = self._rng.random_sample() < CSB_avail_prob_with_FS_interv
 
         # Log the request and the outcome:
         if to_log:

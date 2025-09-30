@@ -315,6 +315,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             agegp_i = f'{low_bound_mos}_{high_bound_mos}mo'
             self.age_gps_range_mo.append(agegp_i)
 
+        self.FS_interv_ON = False
+
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """
         * 1) Reads the ResourceFile
@@ -2276,13 +2278,14 @@ class Wasting_ActivateInterventionsEvent(Event, PopulationScopeEventMixin):
         )
         # If FS intervention is ON, override the probabilities
         if p['interv_food_supplements_avail_bool']:
+            self.module.FS_interv_ON = True
             get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
             item_code_F75milk = get_item_code("F-75 therapeutic milk, 102.5 g")
             item_code_RUTF = get_item_code("Therapeutic spread, sachet 92g/CAR-150")
-            item_code_CSB = get_item_code("Corn Soya Blend (or Supercereal - CSB++)")
+            # item_code_CSB = get_item_code("Corn Soya Blend (or Supercereal - CSB++)")
 
             self.sim.modules['HealthSystem'].override_availability_of_consumables({
                 item_code_F75milk: p['interv_avail_F75milk'],
                 item_code_RUTF: p['interv_avail_RUTF'],
-                item_code_CSB: p['interv_avail_CSB++'],
+                # item_code_CSB: p['interv_avail_CSB++'],
             })
