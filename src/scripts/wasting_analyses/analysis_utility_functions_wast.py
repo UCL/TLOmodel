@@ -41,7 +41,7 @@ def return_mean_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
 
 def return_sum_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Returns a DataFrame with sum, lower CI, and upper CI for each draw across runs.
+    Returns a DataFrame with sum, lower CI, and upper CI for each draw, mean across runs.
     The output DataFrame is structured with column index ['draw'], where each cell contains
     a list of [sum, lower_ci, upper_ci].
     """
@@ -181,7 +181,7 @@ def extract_death_data_frames_and_outcomes(
     interv_neo_ALRI_deaths_with_SAM_df = neonatal_ALRI_deaths_with_SAM_df.loc[intervention_years]
     interv_neo_Diarrhoea_deaths_with_SAM_df = neonatal_Diarrhoea_deaths_with_SAM_df.loc[intervention_years]
 
-    # sum of neo deaths over intervention period
+    # sum and CI of neo deaths over intervention period, mean across runs
     interv_neo_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_deaths_df)
     interv_neo_SAM_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_SAM_deaths_df)
     interv_neo_ALRI_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_ALRI_deaths_df)
@@ -255,7 +255,7 @@ def extract_death_data_frames_and_outcomes(
     interv_under5_ALRI_deaths_with_SAM_df = under5_ALRI_deaths_with_SAM_df.loc[intervention_years]
     interv_under5_Diarrhoea_deaths_with_SAM_df = under5_Diarrhoea_deaths_with_SAM_df.loc[intervention_years]
 
-    # sum of under 5 deaths over intervention period
+    # sum and CI of under 5 deaths over intervention period, mean across runs
     interv_under5_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_deaths_df)
     interv_under5_SAM_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_SAM_deaths_df)
     interv_under5_ALRI_deaths_sum_per_draw_CI_across_runs_df = \
@@ -420,7 +420,7 @@ def extract_daly_data_frames_and_outcomes(
     interv_under5_ALRI_dalys_df = under5_ALRI_dalys_df.loc[intervention_years]
     interv_under5_Diarrhoea_dalys_df = under5_Diarrhoea_dalys_df.loc[intervention_years]
 
-    # sum of under 5 DALYs over intervention period
+    # sum and CI of under 5 DALYs over intervention period, mean across runs
     interv_under5_dalys_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_dalys_df)
     interv_under5_SAM_dalys_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_SAM_dalys_df)
     interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_ALRI_dalys_df)
@@ -821,8 +821,8 @@ def plot_sum_outcome_and_CIs__intervention_period(
     interv_timestamps_dict: dict = None
 ) -> None:
     """
-    Plots sum of deaths or DALYs and confidence intervals over the intervention period for the specified cohort for
-    multiple scenarios.
+    Plots sum of deaths or DALYs and confidence intervals (mean across runs) over the intervention period for the
+    specified cohort for multiple scenarios.
     :param cohort: 'Neonatal' or 'Under-5'
     :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
     :param scenarios_to_compare: List of scenarios to plot
