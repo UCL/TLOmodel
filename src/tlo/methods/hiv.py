@@ -77,7 +77,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.daly_wts = dict()
         self.lm = dict()
         self.item_codes_for_consumables_required = dict()
-        self.vl_testing_available_by_year: int|None = None
+        self.vl_testing_available_by_year: int | None = None
 
     INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager"}
 
@@ -137,7 +137,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ),
         "hv_number_tests": Property(Types.INT, "Number of HIV tests ever taken"),
         "hv_arv_dispensing_interval": Property(Types.REAL,
-                                              "Number of months of ARVs dispensed in current prescription"),
+                                               "Number of months of ARVs dispensed in current prescription"),
         # --- Dates on which things have happened:
         "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
         "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
@@ -467,11 +467,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ),
         "prob_receive_viral_load_test_result": Parameter(
             Types.REAL,
-            "the probability of receving viral load test result"
+            "the probability of receiving viral load test result"
         ),
-        "positive_predictive_value_viral_load_test": Parameter(
+        "sensitivity_viral_load_test": Parameter(
             Types.REAL,
-            "positive predictive value of a viral load test"
+            "sensitivity of a viral load test"
         ),
         "prob_of_viral_suppression_following_VL_test": Parameter(
             Types.REAL,
@@ -506,7 +506,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Shortcut to parameters dict
         p = self.parameters
 
-        workbook = read_csv_files(resourcefilepath/'ResourceFile_HIV', files=None)
+        workbook = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         # Load data on HIV prevalence
@@ -951,7 +951,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # all those on ART need to have event scheduled for continuation/cessation of treatment
         # this window is 1-90 days (3-monthly prescribing)
         for person in art_idx:
-            days = self.rng.randint(low=1, high=self.parameters['initial_dispensation_period_months'] * 30.5, dtype=np.int64)
+            days = self.rng.randint(low=1, high=self.parameters['initial_dispensation_period_months'] * 30.5,
+                                    dtype=np.int64)
 
             date_treated = (params['initial_dispensation_period_months'] * 30.5) - days
             df.at[person, "hv_date_treated"] = self.sim.date - pd.to_timedelta(date_treated, unit="days")
@@ -1266,11 +1267,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0})
 
-        # todo target VL
-        if p['type_of_scaleup'] == 'remove_VL':
+        if p['type_of_scaleup'] == 'target_VL':
+            # this is enacted within the HSI_Start_Or_Continue_Treatment
+            # and limits VL to young people and/or pregnant women
             return
-
-
 
         if p['type_of_scaleup'] == 'replace_VL_with_TDF':
             # update consumables availability (item 190 viral load test) to 0
@@ -1368,7 +1368,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
                 # Update the dictionary
                 self._art_dispensation_lookup[key] = (durations, new_probs)
-
 
         # ------------------- SCALE-UP -----------------------
         if p['type_of_scaleup'] == 'target':
@@ -1727,9 +1726,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # use iloc to index by position as index will change by year
         return_prob = prob_art.loc[
-                          (prob_art.year == current_year) &
-                          (prob_art.age == "adults"),
-                          "prob_art_if_dx"].values[0]
+            (prob_art.year == current_year) &
+            (prob_art.age == "adults"),
+            "prob_art_if_dx"].values[0]
 
         return return_prob
 
@@ -2247,7 +2246,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 # get probabilities for receiving prep from linear model
                 prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[eligible_idx],
                                                                    year=self.sim.date.year,
-                )
+                                                                   )
 
                 # number of AGYW expected to get PrEP = mean(prob_prep) * total AGYW
                 expected_n = int(round(prob_prep.mean() * len(eligible_idx)))
@@ -2695,13 +2694,13 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id, type_of_prep):
         super().__init__(module, person_id=person_id)
-        self.type_of_prep=type_of_prep
+        self.type_of_prep = type_of_prep
 
     def apply(self, person_id):
         df = self.sim.population.props
         person = df.loc[person_id]
         m = self.module
-        property = 'hv_is_on_prep_oral' if self.type_of_prep=='oral' else 'hv_is_on_prep_inj'
+        property = 'hv_is_on_prep_oral' if self.type_of_prep == 'oral' else 'hv_is_on_prep_inj'
 
         # If the person is no longer alive or has been diagnosed with hiv, they will not continue on PrEP
         if (
@@ -2764,7 +2763,8 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
 
         # Convert 3-month retention probability to equivalent retention over a different number of months,
         # assuming constant hazard (i.e.exponential decay)
-        prob_retention = m.parameters["probability_of_being_retained_on_art_every_3_months"] ** (length_of_current_dispensation / 3)
+        prob_retention = m.parameters["probability_of_being_retained_on_art_every_3_months"] ** (
+                length_of_current_dispensation / 3)
 
         if (
             m.rng.random_sample()
@@ -2811,7 +2811,6 @@ class Hiv_AdherenceCounselling(Event, IndividualScopeEventMixin):
         df.at[person_id, "hv_art"] = self.module.update_viral_suppression_status()
 
 
-
 class HivScaleUpEvent(Event, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
@@ -2823,7 +2822,6 @@ class HivScaleUpEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
 
     def apply(self, population):
-
         if self.module.parameters['type_of_scaleup'] != 'none':
             self.module.update_parameters_for_program_scaleup()
 
@@ -2956,7 +2954,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                         and not (person["hv_is_on_prep_oral"] or person["hv_is_on_prep_inj"])
                         and (self.sim.date.year >= self.module.parameters["prep_start_year"])
                     ):
-                         if self.module.lm["lm_prep"].predict(df.loc[[person_id]], self.module.rng
+                        if self.module.lm["lm_prep"].predict(df.loc[[person_id]], self.module.rng
                                                              ):
                             if (self.module.parameters['injectable_prep_allowed'] &
                                 (self.sim.date.year >= 2025)):
@@ -3038,7 +3036,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
                 # Add used equipment
                 self.add_equipment({'Drip stand', 'Stool, adjustable height', 'Autoclave',
-                                       'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
+                                    'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
 
                 # Schedule follow-up appts
                 # schedule first follow-up appt, 3 days from procedure;
@@ -3160,8 +3158,8 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         person = df.loc[person_id]
-        property = 'hv_is_on_prep_oral' if self.type_of_prep=='oral' else 'hv_is_on_prep_inj'
-        days_on_prep_property = 'hv_days_on_oral_prep' if self.type_of_prep=='oral' else 'hv_days_on_inj_prep'
+        property = 'hv_is_on_prep_oral' if self.type_of_prep == 'oral' else 'hv_is_on_prep_inj'
+        days_on_prep_property = 'hv_days_on_oral_prep' if self.type_of_prep == 'oral' else 'hv_days_on_inj_prep'
 
         # Do not run if the person is not alive or is diagnosed with hiv
         if (
@@ -3189,7 +3187,8 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
         # HIV test is negative - check that PrEP is available and if it is, initiate or continue PrEP:
         else:
-            days_on_prep = self.module.parameters['initial_dispensation_period_months'] * 30 if self.type_of_prep=='oral' else 56
+            days_on_prep = self.module.parameters[
+                               'initial_dispensation_period_months'] * 30 if self.type_of_prep == 'oral' else 56
             if self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['prep']: days_on_prep}
             ):
@@ -3229,9 +3228,9 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                     )
 
     def never_ran(self):
-            """This is called if this HSI was never run.
-            Default the person to being off PrEP"""
-            self.sim.population.props.at[self.target, property] = False
+        """This is called if this HSI was never run.
+        Default the person to being off PrEP"""
+        self.sim.population.props.at[self.target, property] = False
 
 
 class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -3380,7 +3379,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Check if drugs are available, and provide drugs
         # this will return a dict where the first item is ART and the second is cotrimoxazole
-        drugs_available = self.get_drugs(age_of_person=person["age_years"], dispensation_interval=self.dispensation_interval)
+        drugs_available = self.get_drugs(age_of_person=person["age_years"],
+                                         dispensation_interval=self.dispensation_interval)
 
         # ART is first item in drugs_available dict
         if drugs_available.get('art', False):
@@ -3460,10 +3460,11 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             self.dispensation_interval = self.module.get_art_dispensation_length(
                 year=self.sim.date.year,
                 person=person,
-            currently_breastfeeding=currently_breastfeeding)
+                currently_breastfeeding=currently_breastfeeding)
 
         # Check if drugs are available and provide drugs:
-        drugs_available = self.get_drugs(age_of_person=person["age_years"], dispensation_interval=self.dispensation_interval)
+        drugs_available = self.get_drugs(age_of_person=person["age_years"],
+                                         dispensation_interval=self.dispensation_interval)
 
         if not drugs_available.get('art', False):
             # if ART not available for full dispensation length, check if one month available
@@ -3489,7 +3490,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     tdf_result = self.module.perform_tdf_test(is_suppressed=is_suppressed)
 
                     if tdf_result == 'negative' and person["hv_art"] == "on_not_VL_suppressed":
-
                         # schedule Adherence Counselling - no delay
                         self.sim.schedule_event(
                             Hiv_AdherenceCounselling(person_id=person_id, module=self.module),
@@ -3497,11 +3497,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                         )
                     self.module.stored_tdf_numbers += 1
 
-                elif test_type == 'VL' and self.get_consumables(self.module.item_codes_for_consumables_required['vl_measurement']):
+                elif test_type == 'VL' and self.get_consumables(
+                    self.module.item_codes_for_consumables_required['vl_measurement']):
 
                     if person["hv_art"] == "on_not_VL_suppressed":
 
-                        q = p["prob_receive_viral_load_test_result"] * p["positive_predictive_value_viral_load_test"]
+                        q = p["prob_receive_viral_load_test_result"] * p["sensitivity_viral_load_test"]
 
                         if self.module.rng.random_sample() < q:
                             delay_months = self.module.rng.randint(3, 7)
@@ -3512,12 +3513,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                             )
 
                     logger.info(
-                            key='hiv_VLtest',
-                            data={
-                                'adult': person['age_years'] >= 15,
-                                'person_id': person_id
-                            }
-                        )
+                        key='hiv_VLtest',
+                        data={
+                            'adult': person['age_years'] >= 15,
+                            'person_id': person_id
+                        }
+                    )
 
         return drugs_available
 
@@ -3574,13 +3575,13 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     self.module.item_codes_for_consumables_required[
                         "First line ART regimen: young child"
                     ]: dispensation_days
-                    * 2
+                       * 2
                 },
                 optional_item_codes={
                     self.module.item_codes_for_consumables_required[
                         "First line ART regimen: young child: cotrimoxazole"
                     ]: dispensation_days
-                    * 240
+                       * 240
                 },
                 return_individual_results=True,
             )
@@ -3591,7 +3592,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First line ART regimen: older child']: dispensation_days * 3},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
+                                         'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
                 return_individual_results=True)
 
         else:
@@ -3600,7 +3601,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First-line ART regimen: adult']: dispensation_days},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                    'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
+                                         'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
                 return_individual_results=True)
 
         # add drug names to dict
