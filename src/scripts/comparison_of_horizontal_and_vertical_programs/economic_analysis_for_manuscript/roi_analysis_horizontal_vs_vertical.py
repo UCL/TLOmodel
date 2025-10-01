@@ -9,15 +9,13 @@ import datetime
 import os
 import textwrap
 from pathlib import Path
-from typing import Optional, Literal, Callable, Iterable
-from dataclasses import dataclass
+from typing import Optional, Literal
 
 import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from pandas import DataFrame, Series
 import seaborn as sns
 from adjustText import adjust_text  # For the CEA plane figure to avoid overlaps in data labels
 
