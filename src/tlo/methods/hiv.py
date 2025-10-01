@@ -1368,8 +1368,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         if p['type_of_scaleup'] == 'target_all':
 
-            # target testing rates
-            # todo
+            # reduce testing rates
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
 
