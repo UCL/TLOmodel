@@ -506,9 +506,15 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "sensitivity of an HIV self-test"
         ),
-        "delay_from_selftest_to_facility": Parameter(
+        "delay_from_selftest_to_facility_shape": Parameter(
             Types.REAL,
-            "mean number of days between a positive self-test result and presenting at a facility for confirmatory testing"
+            "Weibull distribution shape parameter for number of days between a self-test result and "
+            "confirmatory test"
+        ),
+        "delay_from_selftest_to_facility_scale": Parameter(
+            Types.REAL,
+            "Weibull distribution scale parameter for number of days between a self-test result and "
+            "confirmatory test"
         ),
     }
 
