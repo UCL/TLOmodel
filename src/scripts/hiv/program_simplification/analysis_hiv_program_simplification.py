@@ -42,7 +42,7 @@ class HIV_Progam_Elements(BaseScenario):
         self.pop_size = 120_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
@@ -94,6 +94,8 @@ class HIV_Progam_Elements(BaseScenario):
             "Targeted IPT": scenario_definitions.target_IPT(),
 
             "Remove VMMC": scenario_definitions.remove_vmmc(),
+
+            "Target All Elements": scenario_definitions.target_all(),
 
             "Reduce All Elements": scenario_definitions.remove_all(),
 
