@@ -495,7 +495,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         df.selected_for_eye_exam = False
 
         eligible_population_for_eye_exam = (
-            (df.is_alive & df.nc_diabetes) & #todo add condition for people do not be selected again witin 1 year
+            (df.is_alive & df.nc_diabetes) & #todo add condition for people not to be selected again witin 1 year
             (df.dr_status == 'none') &
             (df.dmo_status == 'none') &
             (df.age_years >= 20) &
@@ -531,7 +531,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
             return
 
         elif dr_stage == 'mild_or_moderate':
-            # schedule HSI for mild_or_moderate and moderate
+            # schedule HSI for mild_or_moderate
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
                     person_id=person_id,
@@ -597,7 +597,19 @@ class HSI_Dr_Eye_Examination(HSI_Event, IndividualScopeEventMixin):
             self.add_equipment({'Silt lamp', 'Optical coherence tomography device',
                                 'Ophthalmoscope/Fundus camera', 'Amsler grid'})
 
-            if person.dr_status == 'severe':
+            if person.dr_status == 'mild_or_moderate':
+                # schedule HSI_CardioMetabolicDisorders_StartWeightLossAndMedication and repeat HSI_DR_Eye_Examination in 1 year
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                        person_id=person_id,
+                        module=self.sim.modules["CardioMetabolicDisorders"],
+                        condition='diabetes',
+                    ),
+                    priority=0,
+                    topen=self.sim.date
+                )
+            elif person.dr_status == 'proliferative':
+                # schedule HSI_Dr_Laser_Pan_Retinal_Coagulation (treat in 2 sessions that are 1 week apart) and then review after 3 months
                 pass
 
 
