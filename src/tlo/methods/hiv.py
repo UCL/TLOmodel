@@ -78,6 +78,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.lm = dict()
         self.item_codes_for_consumables_required = dict()
         self.vl_testing_available_by_year: int | None = None
+        self.selftests_performed: int | None = None
 
     INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager"}
 
@@ -453,6 +454,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "the annual rate of having an HIV self-test for those not on ART"
         ),
+        "selftest_start_year": Parameter(
+            Types.REAL,
+            "the year in which HIV self-tests become available"
+        ),
         "selftest_available": Parameter(
             Types.BOOL,
             "whether self-tests for HIV are available from the scale-up start date"
@@ -492,6 +497,18 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         "injectable_prep_allowed": Parameter(
             Types.BOOL,
             "whether injectable prep is allowed"
+        ),
+        "linked_to_care_after_selftest": Parameter(
+            Types.REAL,
+            "probability a person who has had a self-test will be linked to care"
+        ),
+        "selftest_sensitivity": Parameter(
+            Types.REAL,
+            "sensitivity of an HIV self-test"
+        ),
+        "delay_from_selftest_to_facility": Parameter(
+            Types.REAL,
+            "mean number of days between a positive self-test result and presenting at a facility for confirmatory testing"
         ),
     }
 
@@ -2181,7 +2198,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # can be a repeat test if diagnosed already
             # the same people may have been selected from general testing above
 
-            if p["selftest_available"] & (self.sim.date.year >= p["scaleup_start_year"]):
+            if p["selftest_available"] & (self.sim.date.year >= p["selftest_start_year"]):
 
                 test_rates = p["annual_rate_selftest"]
 
@@ -2202,9 +2219,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id,
-                                                       module=self.module,
-                                                       referred_from='HIV_poll_self_test'),
+                        hsi_event=HSI_Hiv_SelfTest(person_id=person_id,
+                                                       module=self.module),
                         priority=1,
                         topen=date_test,
                         tclose=date_test + pd.DateOffset(
@@ -2829,6 +2845,56 @@ class HivScaleUpEvent(Event, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Health System Interactions (HSI)
 # ---------------------------------------------------------------------------
+
+class HSI_Hiv_SelfTest(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is the HIV Self-test HSI.
+    No consumables currently logged for HIV self-tests so counter can record numbers of tests given
+
+    Self-tests are available from 2023 onwards and can be switched off via parameter selfttest_available
+    Self-testing is scheduled via the regular poll and a positive result prompts a referral for a
+    confirmatory test at a facility
+    """
+
+    def __init__(
+        self, module, person_id,
+    ):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Hiv)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "Hiv_Test_Selftest"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConsWithDCSA": 1})
+        self.ACCEPTED_FACILITY_LEVEL = "0"
+
+    def apply(self, person_id, squeeze_factor):
+        """Do the testing and referring to other services"""
+
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        p = self.module.parameters
+
+        if not person["is_alive"]:
+            return
+
+        self.module.selftests_performed += 1
+
+        # refer for confirmatory test if positive
+        if person["hv_inf"] and p["selftest_sensitivity"] and p["linked_to_care_after_selftest"]:
+
+            delay_days = round(int((
+                self.module.rng.weibull(p["delay_from_selftest_to_facility_weibull_shape"]) * p[
+                "delay_from_selftest_to_facility_weibull_scale"])))
+
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_TestAndRefer(
+                    person_id=person_id, module=self, referred_from="selftest"),
+                topen=self.sim.date + delay_days,
+                tclose=None,
+                priority=0,
+            )
+
+
 class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
     This is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to
@@ -4136,6 +4202,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "n_on_art_female_15plus": n_on_art_female_15plus,
                 "n_on_art_children": n_on_art_children,
                 "n_tdf_tests_performed": self.module.stored_tdf_numbers,
+                "n_selftests_performed": self.module.stored_selftest_numbers,
                 "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
                 "prop_fsw_on_prep": prop_fsw_on_prep,
                 "PY_PREP_ORAL_AGYW": PY_PREP_ORAL_AGYW,
@@ -4153,6 +4220,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df["hv_days_on_inj_prep_AGYW"] = 0
         df["hv_days_on_inj_prep_AGYW"] = 0
         self.module.stored_tdf_numbers = 0
+        self.module.stored_selftest_numbers = 0
 
         # ------------------------------------ Multi-month dispensing ------------------------------------
         # Filter denominator: alive, HIV-infected, and on ART
