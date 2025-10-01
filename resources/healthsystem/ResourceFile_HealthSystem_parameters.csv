@@ -24,5 +24,4 @@ use_funded_or_actual_staffing_postSwitch,funded_plus
 year_use_funded_or_actual_staffing_switch,2100
 cons_override_treatment_ids,[]
 cons_override_treatment_ids_prob_avail,1.0
-include_clinics,FALSE
-clinics_configuration,default
+clinic_configuration_name,Test

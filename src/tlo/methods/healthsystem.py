@@ -549,13 +549,25 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
 
         # Data on the clinics configurations and mappings to be used.
-        self.parameters['clinic_configuration'] = pd.read_csv(path_to_resourcefiles_for_healthsystem / 'clinics' /
-                                                         'ResourceFile_ClinicConfigurations',
-                                                              f("{self.parameters['clinic_configuration_name']}.csv"))
-        self.parameters['clinic_mapping'] = read_csv_files(path_to_resourcefiles_for_healthsystem / 'clinics' /
-                                                         'ResourceFile_ClinicMappings',
-                                                         f("{self.parameters['clinic_configuration_name']}.csv"))
-        self.clinic_names = self.parameters['clinic_configuration'].columns.difference(['Facility_ID', 'Officer_Type_Code'])
+        filepath = (
+            path_to_resourcefiles_for_healthsystem
+            / 'human_resources'
+            / 'clinics'
+            / 'ResourceFile_ClinicConfigurations'
+            / f"{self.parameters['clinic_configuration_name']}.csv"
+        )
+
+        self.parameters['clinic_configuration'] = pd.read_csv(filepath)
+        filepath = (
+            path_to_resourcefiles_for_healthsystem
+            / 'human_resources'
+            / 'clinics'
+            / 'ResourceFile_ClinicMappings'
+            / f"{self.parameters['clinic_configuration_name']}.csv"
+        )
+
+        self.parameters['clinic_mapping'] = pd.read_csv(filepath)
+        self.parameters['clinic_names'] = self.parameters['clinic_configuration'].columns.difference(['Facility_ID', 'Officer_Type_Code'])
 
 
         # Load ResourceFiles that define appointment and officer types
@@ -1148,7 +1160,7 @@ class HealthSystem(Module):
         is set to 1, and capabilities for all other clinics are set to 0.
         """
 
-        capabilities_cl = self.parameters['clinics_configuration']
+        capabilities_cl = self.parameters['clinic_configuration']
         # Create dataframe containing background information about facility and officer types
         facility_ids = set(self._facility_by_facility_id.keys())
         officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
@@ -1407,17 +1419,6 @@ class HealthSystem(Module):
             )
             del self.priority_rank_dict["lowest_priority_considered"]
 
-    def get_include_clinics(self) -> bool:
-        """Returns `include_clinics`. This is equal to what is specified in the Resource file, but
-        can be overwritten with the argument supplied at initialisation if one is provided."""
-        return self.parameters['include_clinics'] \
-            if self.arg_include_clinics is None \
-            else self.arg_include_clinics
-
-    def set_include_clinics(self):
-        """Sets `include_clinics`. This is equal to what is specified in the Resource file, but
-       is  overwritten with the argument supplied at initialisation if one is provided."""
-        self.parameters['include_clinics'] = self.get_include_clinics()
 
     def schedule_hsi_event(
         self,

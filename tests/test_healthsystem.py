@@ -2078,8 +2078,7 @@ def test_mode_2_clinics(seed, tmpdir):
                                                ignore_priority=False,
                                                randomise_queue=True,
                                                policy_name="",
-                                               use_funded_or_actual_staffing='funded_plus',
-                                               clinic_configuration_name = 'Test'
+                                               use_funded_or_actual_staffing='funded_plus'
                                                ),
                      DummyModuleOtherClinic(),
                      DummyModuleClinic1()
@@ -2128,7 +2127,7 @@ def test_mode_2_clinics(seed, tmpdir):
     tot_population = 100
     sim = create_simulation(tmpdir, tot_population)
 
-
+    breakpoint()
     ## Test that capabilities are split according the proportion specified
     ## 60% of capabilities are fungible and 40% non-fungible.
     ## Dummy Clinic capabilities
