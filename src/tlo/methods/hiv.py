@@ -489,10 +489,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "probability of a urine TDF test returning positive if person not virally suppressed"
         ),
-        "switch_vl_test_to_tdf": Parameter(
-            Types.BOOL,
-            "whether TDF urine test is being used in place of VL testing"
-        ),
         "injectable_prep_allowed": Parameter(
             Types.BOOL,
             "whether injectable prep is allowed"
@@ -1270,6 +1266,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0})
 
+        # todo target VL
+        if p['type_of_scaleup'] == 'remove_VL':
+            return
+
+
+
         if p['type_of_scaleup'] == 'replace_VL_with_TDF':
             # update consumables availability (item 190 viral load test) to 0
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
@@ -1754,7 +1756,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # Adults: apply young adult gap and rebalance 30+ to preserve adult average
         gap = self.parameters["young_adult_vls_factor"]  # absolute fraction, e.g. 0.08
-        # w = self.parameters["proportion_young_adult_on_art"]  # share of 15–29 among adults on ART
 
         # Adults (15+) currently on ART
         mask_adult_on_art = (df["age_years"] >= 15) & (df["hv_art"].ne("not"))
@@ -3474,59 +3475,49 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if drugs_available.get('cotrim', False):
             df.at[person_id, "hv_on_cotrimoxazole"] = True
 
+        # store new dispensation length for person
+        df.at[person_id, 'hv_arv_dispensing_interval'] = self.dispensation_interval
+
         # Viral Load Monitoring (or TDF test if switching)
         if drugs_available.get('art', False) and self.module.vl_testing_available_by_year[self.sim.date.year]:
-            # Attempt viral load test only at appropriate interval
-            test_probability = df.at[person_id, 'hv_arv_dispensing_interval'] / p[
-                'interval_for_viral_load_measurement_months']
+
+            test_probability, test_type = self.decide_test_policy(person_id)
 
             if self.module.rng.random_sample() < test_probability:
 
-                # If using TDF test instead of VL
-                if p["switch_vl_test_to_tdf"]:
+                if test_type == 'TDF':
                     tdf_result = self.module.perform_tdf_test(is_suppressed=is_suppressed)
 
-                    if tdf_result == 'negative':
-                        # intervention triggered to increase chance of suppression
-                        if person["hv_art"] == "on_not_VL_suppressed":
-                            # schedule Adherence Counselling - no delay
-                            self.sim.schedule_event(
-                                Hiv_AdherenceCounselling(
-                                    person_id=person_id, module=self.module
-                                ),
-                                self.sim.date ,
-                            )
-                        self.module.stored_tdf_numbers += 1
+                    if tdf_result == 'negative' and person["hv_art"] == "on_not_VL_suppressed":
 
-                # Else, use VL test
-                elif not p["switch_vl_test_to_tdf"] and self.get_consumables(
-                    item_codes=self.module.item_codes_for_consumables_required['vl_measurement']):
+                        # schedule Adherence Counselling - no delay
+                        self.sim.schedule_event(
+                            Hiv_AdherenceCounselling(person_id=person_id, module=self.module),
+                            self.sim.date,
+                        )
+                    self.module.stored_tdf_numbers += 1
 
-                    # add logic around unsuppressed person receiving and acting on result
+                elif test_type == 'VL' and self.get_consumables(self.module.item_codes_for_consumables_required['vl_measurement']):
+
                     if person["hv_art"] == "on_not_VL_suppressed":
-                        # Only some people get their result
-                        if self.module.rng.random_sample() < p["prob_receive_viral_load_test_result"]:  # ~0.6
-                            # Only some true high-VL are identified as such (PPV)
-                            if self.module.rng.random_sample() < p["positive_predictive_value_viral_load_test"]:  # ~0.5–0.6
-                                # Apply adherence counselling after 3–6 month delay
-                                delay_months = self.module.rng.randint(3, 7)
-                                self.sim.schedule_event(
-                                    Hiv_AdherenceCounselling(
-                                        person_id=person_id, module=self.module
-                                    ),
-                                    self.sim.date + pd.DateOffset(months=delay_months),
-                                )
+
+                        q = p["prob_receive_viral_load_test_result"] * p["positive_predictive_value_viral_load_test"]
+
+                        if self.module.rng.random_sample() < q:
+                            delay_months = self.module.rng.randint(3, 7)
+
+                            self.sim.schedule_event(
+                                Hiv_AdherenceCounselling(person_id=person_id, module=self.module),
+                                self.sim.date + pd.DateOffset(months=delay_months),
+                            )
 
                     logger.info(
-                        key='hiv_VLtest',
-                        data={
-                            'adult': person['age_years'] >= 15,
-                            'person_id': person_id
-                        }
-                    )
-
-        # store new dispensation length for person
-        df.at[person_id, 'hv_arv_dispensing_interval'] = self.dispensation_interval
+                            key='hiv_VLtest',
+                            data={
+                                'adult': person['age_years'] >= 15,
+                                'person_id': person_id
+                            }
+                        )
 
         return drugs_available
 
@@ -3541,6 +3532,33 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             if (self.module.rng.random_sample() < prob_vs)
             else "on_not_VL_suppressed"
         )
+
+    def decide_test_policy(self, person_id):
+        """
+        Decide (a) the probability a person is offered a VL test this encounter,
+        and (b) which test ('VL', 'TDF').
+        """
+
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        p = self.module.parameters
+
+        # 1) Choose test type
+        test_type = 'TDF' if p['type_of_scaleup'] == 'replace_VL_with_TDF' else 'VL'
+
+        # 2) Base probability from dispensing / VL interval
+        test_prob = person['hv_arv_dispensing_interval'] / p['interval_for_viral_load_measurement_months']
+        # Clamp to [0,1]
+        if test_prob < 0.0: test_prob = 0.0
+        if test_prob > 1.0: test_prob = 1.0
+
+        if p['type_of_scaleup'] == 'target_VL':
+            if person['age_years'] < 30 or person['is_pregnant']:
+                test_prob = test_prob
+            else:
+                test_prob = 0
+
+        return test_prob, test_type
 
     def get_drugs(self, age_of_person, dispensation_interval):
         """Helper function to get the ART according to the age of the person being treated. Returns dict to indicate

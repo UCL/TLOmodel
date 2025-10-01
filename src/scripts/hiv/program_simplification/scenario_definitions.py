@@ -25,6 +25,12 @@ class ScenarioDefinitions:
                 'type_of_scaleup': 'remove_VL',
             }
         }
+    # todo
+    def target_VL(self) -> Dict:
+        return {
+            'Hiv': {
+                'type_of_scaleup': 'target_VL', }
+        }
 
     def replace_VL_with_TDF(self) -> Dict:
         return {
