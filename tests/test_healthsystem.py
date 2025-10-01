@@ -2018,21 +2018,15 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
 
 def test_mode_2_clinics(seed, tmpdir):
     """Test that clinics work as expected in mode_appt_constraints=2. Specifically:
-    - If non-fungible capabilities are available, an event eligible for those
-    capabilities runs;
-    - If non-fungible capabilities run out, the event does not run even if
-    fungible capabilities are available; this test checks that that events query
+    - An HSI Event whose treatment id is mapped to a specific clinic runs if corresponding
+    clinic capabilities are available;
+    - Conversely, if the clinic specific capabilities run out, then the event DOES NOT run even if
+    OtherClinic capabilities are available; this test checks that that events query
     the correct capabilities and that correct counters are run down;
-    - If fungible capabilities are available, an event eligible for those
-    capabilities runs;
-    - If fungible capabilities are not available, the event does not run even if
-    non-fungible capabilities are available;
-    - The fungible events in the following sequence run:
-    fungible/non-fungible/fungible if non-fungible capabilities are not
-    available but fungible are.
-    - Conversely, the non-fungible events in the following sequence run:
-    fungible/non-fungible/fungible even if non-fungible capabilities are not available
-    but fungible are;
+    - An event whose treatment id is not mapped to a specific clinic runs if OtherClinic
+    capabilities are available;
+    - Conversely, an event whose treatment id is not mapped to a specific clinic does not run
+    if OtherClinic capabilities are not available;
     """
     # Create a dummy HSI event class
     class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
@@ -2049,7 +2043,7 @@ def test_mode_2_clinics(seed, tmpdir):
 
     def create_simulation(tmpdir: Path, tot_population) -> dict:
 
-        class DummyModuleFungible(Module):
+        class DummyModuleOtherClinic(Module):
             METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
 
             def read_parameters(self, data_folder):
@@ -2062,7 +2056,7 @@ def test_mode_2_clinics(seed, tmpdir):
                 pass
 
 
-        class DummyModuleNonFungible(Module):
+        class DummyModuleClinic1(Module):
             METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
 
             def read_parameters(self, data_folder):
@@ -2085,10 +2079,10 @@ def test_mode_2_clinics(seed, tmpdir):
                                                randomise_queue=True,
                                                policy_name="",
                                                use_funded_or_actual_staffing='funded_plus',
-                                               include_clinics = True
+                                               clinic_configuration_name = 'Test'
                                                ),
-                     DummyModuleFungible(),
-                     DummyModuleNonFungible()
+                     DummyModuleOtherClinic(),
+                     DummyModuleClinic1()
                      )
         sim.make_initial_population(n=tot_population)
         # Assign the entire population to the first district, so that all events are run in the same district
@@ -2098,13 +2092,6 @@ def test_mode_2_clinics(seed, tmpdir):
         ## and that caused problems later on.
         sim.population.props[col] = pd.Series(s.cat.categories[0], index=s.index, dtype=s.dtype)
 
-        sim.modules['HealthSystem'].parameters['Clinics_Capabilities'] = pd.DataFrame([
-            {"Facility_ID": 20.0,
-             "Officer_Type_Code": "DCSA",
-             "Fungible": 0.6,
-             'DummyModuleNonFungible': 0.4}
-        ])
-        sim.modules['HealthSystem'].modules_eligible_for_clinics = ['Fungible', 'DummyModuleNonFungible']
         sim.modules['HealthSystem'].setup_daily_capabilities('funded_plus')
 
         sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
@@ -2113,7 +2100,7 @@ def test_mode_2_clinics(seed, tmpdir):
 
     def schedule_hsi_events(nfungible, nnonfungible, sim):
         for i in range(0, nfungible):
-            hsi = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
+            hsi = DummyHSIEvent(module=sim.modules['DummyModuleOtherClinic'],
                                 person_id=i,
                                 appt_type='MinorSurg',
                                 level='1a')
@@ -2125,7 +2112,7 @@ def test_mode_2_clinics(seed, tmpdir):
             )
 
         for i in range(nfungible, nfungible + nnonfungible):
-            hsi = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
+            hsi = DummyHSIEvent(module=sim.modules['DummyModuleClinic1'],
                                 person_id=i,
                                 appt_type='MinorSurg',
                                 level='1a')
@@ -2145,18 +2132,18 @@ def test_mode_2_clinics(seed, tmpdir):
     ## Test that capabilities are split according the proportion specified
     ## 60% of capabilities are fungible and 40% non-fungible.
     ## Dummy Clinic capabilities
-    fungible = sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['Fungible']
-    nonfungible = sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible']
+    other_clinic = sim.modules['HealthSystem']._daily_capabilities_per_staff['OtherClinic']
+    clinic1 = sim.modules['HealthSystem']._daily_capabilities_per_staff['DummyModuleClinic1']
 
-    nonzero = {k: v for k, v in fungible.items() if v > 0.0}
-    ratio = np.array([nonfungible[k] / v for k,v in nonzero.items()])
+    nonzero = {k: v for k, v in other_clinic.items() if v > 0.0}
+    ratio = np.array([clinic1[k] / v for k,v in nonzero.items()])
 
-    assert all(abs(ratio - [0.4 / 0.6] < 1e-7)), "Fungible capabilities are not split correctly"
+    assert all(abs(ratio - [0.4 / 0.6] < 1e-7)), "OtherClinic capabilities are not split correctly"
 
 
     # Schedule an identical appointment for all individuals, assigning clinic as follows:
-    # half individuals have clinic_eligibility=Fungible and half clinic_eligibility=Hiv
-    hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
+    # half individuals have clinic_eligibility=OtherClinic and half clinic_eligibility=Hiv
+    hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleOtherClinic'],
                          person_id=0,  # Ensures call is on officers in first district
                          appt_type='ConWithDCSA',
                          level='0')
@@ -2165,19 +2152,19 @@ def test_mode_2_clinics(seed, tmpdir):
     # Now adjust capabilities available.
     # We first want to make sure there is enough capabilities available to run all events
     for k, v in hsi1.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_fungible_capabilities[k] = v*(tot_population/2)
+        sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/2)
 
-    hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
+    hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleClinic1'],
                          person_id=0,
                          appt_type='ConWithDCSA',
                          level='0')
     hsi2.initialise()
 
-    sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
+    sim.modules['HealthSystem']._daily_capabilities_per_staff['DummyModuleClinic1'] = {}
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = v*(tot_population/2)
+        sim.modules['HealthSystem']._daily_capabilities_per_staff['DummyModuleClinic1'][k] = v*(tot_population/2)
 
-    # Schedule 50 fungible and 50 non-fungible events
+    # Schedule 50 OtherClinic and 50 non-fungible events
     sim = schedule_hsi_events(50, 50, sim)
 
     # Run healthsystemscheduler and read the results
@@ -2188,25 +2175,25 @@ def test_mode_2_clinics(seed, tmpdir):
     ## All events should have run
     assert hs_output['did_run'].sum() == tot_population, "All events did not run!!"
     Nevents = hs_output.groupby('Clinic')['did_run'].value_counts()
-    assert Nevents.loc[('DummyModuleNonFungible', True)] == tot_population // 2, "Unexpected count of nonfungible events"
-    assert Nevents.loc[('Fungible', True)] == tot_population // 2, "Unexpected count of fungible events"
+    assert Nevents.loc[('DummyModuleClinic1', True)] == tot_population // 2, "Unexpected count of nonfungible events"
+    assert Nevents.loc[('OtherClinic', True)] == tot_population // 2, "Unexpected count of fungible events"
 
 
-    ## Test 2: Events requiring fungible capabilities do not run if those capabilities are available
+    ## Test 2: Events requiring OtherClinic capabilities do not run if those capabilities are available
     ## Update the capabilties so that only Non-fungible events can run
     sim = create_simulation(tmpdir, tot_population)
     sim = schedule_hsi_events(tot_population // 2, tot_population // 2, sim)
 
     sim.modules['HealthSystem']._daily_fungible_capabilities[:] = 0
-    hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
+    hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleClinic1'],
                          person_id=0,
                          appt_type='MinorSurg',
                          level='1a')
     hsi2.initialise()
 
-    sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
+    sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleClinic1'] = {}
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = v*(tot_population/2)
+        sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleClinic1'][k] = v*(tot_population/2)
 
 
     sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
@@ -2216,15 +2203,15 @@ def test_mode_2_clinics(seed, tmpdir):
 
     assert hs_output['did_run'].sum() == tot_population // 2, "Half of the events ran"
     Nevents = hs_output.groupby('Clinic')['did_run'].value_counts()
-    ## No fungible events should have run, but all non-fungible ones should have
-    assert Nevents.loc[('DummyModuleNonFungible', True)] == tot_population // 2 , "Another half were NonFungible"
-    assert Nevents.loc[('Fungible', False)] == tot_population // 2, "No additional Fungible events ran"
+    ## No OtherClinic events should have run, but all non-fungible ones should have
+    assert Nevents.loc[('DummyModuleClinic1', True)] == tot_population // 2 , "Another half were NonFungible"
+    assert Nevents.loc[('OtherClinic', False)] == tot_population // 2, "No additional OtherClinic events ran"
 
     ## Test 3: Events requiring non-fungible capabilities do not run if those capabilities are available
     ## Mirror of test 2 above
     sim = create_simulation(tmpdir, tot_population)
     sim = schedule_hsi_events(tot_population // 2, tot_population // 2, sim)
-    hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
+    hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleOtherClinic'],
                          person_id=0,  # Ensures call is on officers in first district
                          appt_type='MinorSurg',
                          level='1a')
@@ -2235,15 +2222,15 @@ def test_mode_2_clinics(seed, tmpdir):
     for k, v in hsi1.expected_time_requests.items():
         sim.modules['HealthSystem']._daily_fungible_capabilities[k] = v*(tot_population/2)
 
-    hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
+    hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleClinic1'],
                          person_id=0,
                          appt_type='MinorSurg',
                          level='1a')
     hsi2.initialise()
 
-    sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
+    sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleClinic1'] = {}
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = 0
+        sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleClinic1'][k] = 0
 
     sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
 
@@ -2252,20 +2239,20 @@ def test_mode_2_clinics(seed, tmpdir):
 
     assert hs_output['did_run'].sum() == tot_population // 2, "Half of the events ran"
     Nevents = hs_output.groupby('Clinic')['did_run'].value_counts()
-    ## No more non-fungible events should have run, but all fungible ones should have
-    assert Nevents.loc[('DummyModuleNonFungible', False)] == tot_population // 2, "No additional NonFungible events ran"
-    assert Nevents.loc[('Fungible', True)] == tot_population // 2, "Scheduled fungible events ran"
+    ## No more non-fungible events should have run, but all OtherClinic ones should have
+    assert Nevents.loc[('DummyModuleClinic1', False)] == tot_population // 2, "No additional NonFungible events ran"
+    assert Nevents.loc[('OtherClinic', True)] == tot_population // 2, "Scheduled OtherClinic events ran"
 
 
-    ## Test 4: Queue up fungible/non-fungible/fungible; have non-fungible capabilities run out
-    ## and ensure fungible events still run.
+    ## Test 4: Queue up OtherClinic/non-fungible/fungible; have non-fungible capabilities run out
+    ## and ensure OtherClinic events still run.
     sim = create_simulation(tmpdir, tot_population)
     sim = schedule_hsi_events(25, 0, sim)
     sim = schedule_hsi_events(0, 25, sim)
     sim = schedule_hsi_events(25, 0, sim)
     sim = schedule_hsi_events(0, 25, sim)
 
-    hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
+    hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleOtherClinic'],
                          person_id=0,  # Ensures call is on officers in first district
                          appt_type='MinorSurg',
                          level='1a')
@@ -2273,10 +2260,10 @@ def test_mode_2_clinics(seed, tmpdir):
 
     # Now adjust capabilities available.
     # We first want to make sure there is enough capabilities available to run all fungible events
-    sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
+    sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleClinic1'] = {}
     for k, v in hsi1.expected_time_requests.items():
         sim.modules['HealthSystem']._daily_fungible_capabilities[k] = v*(tot_population/2)
-        sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = 0
+        sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleClinic1'][k] = 0
 
     sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
 
@@ -2285,9 +2272,9 @@ def test_mode_2_clinics(seed, tmpdir):
 
     assert hs_output['did_run'].sum() == tot_population // 2, "Unexpected number of events"
     Nevents = hs_output.groupby('Clinic')['did_run'].value_counts()
-    ## No more non-fungible events should have run, but all fungible ones should have
-    assert Nevents.loc[('DummyModuleNonFungible', False)] == tot_population // 2, "No additional NonFungible events ran"
-    assert Nevents.loc[('Fungible', True)] == tot_population // 2, "Scheduled fungible events ran"
+    ## No more non-fungible events should have run, but all OtherClinic ones should have
+    assert Nevents.loc[('DummyModuleClinic1', False)] == tot_population // 2, "No additional NonFungible events ran"
+    assert Nevents.loc[('OtherClinic', True)] == tot_population // 2, "Scheduled OtherClinic events ran"
 
 
 @pytest.mark.slow
