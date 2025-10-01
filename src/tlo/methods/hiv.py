@@ -63,6 +63,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         self.stored_test_numbers = []  # create empty list for storing hiv test numbers
         self.stored_tdf_numbers = 0
+        self.stored_selftest_numbers = 0
+
 
         # hiv outputs needed for calibration
         keys = ["date",
@@ -78,7 +80,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.lm = dict()
         self.item_codes_for_consumables_required = dict()
         self.vl_testing_available_by_year: int | None = None
-        self.selftests_performed: int | None = None
 
     INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager"}
 
@@ -506,12 +507,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "sensitivity of an HIV self-test"
         ),
-        "delay_from_selftest_to_facility_shape": Parameter(
+        "delay_from_selftest_to_facility_weibull_shape": Parameter(
             Types.REAL,
             "Weibull distribution shape parameter for number of days between a self-test result and "
             "confirmatory test"
         ),
-        "delay_from_selftest_to_facility_scale": Parameter(
+        "delay_from_selftest_to_facility_weibull_scale": Parameter(
             Types.REAL,
             "Weibull distribution scale parameter for number of days between a self-test result and "
             "confirmatory test"
@@ -1274,16 +1275,17 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         }
 
     def update_parameters_for_program_scaleup(self):
-        """ options for program scale-up are 'target' or 'max' """
+        """
+        options for program scale-up are 'target' or 'max'
+        other options switch on / off various interventions
+        """
+
         p = self.parameters
 
         if p['type_of_scaleup'] == 'reduce_HIV_test':
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
-
-            # ANC testing - value for mothers and infants testing
-            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75
-            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75
+            p["selftest_available"] = False
 
         if p['type_of_scaleup'] == 'remove_VL':
             # update consumables availability (item 190 viral load test) to 0
@@ -1321,42 +1323,35 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_after_hiv_test"] = 0
             p["prob_circ_for_child_from_2020"] = 0
 
-        if p['type_of_scaleup'] == 'increase_6MMD':
-            # leave those with 1 month dispensations
-            # anyone scheduled for 3 months, now has 6 months
-            for key, (durations, probs) in self._art_dispensation_lookup.items():
-                # Get indices for 3-month and 6-month options
-                idx_4 = list(durations).index(4)
-                idx_6 = list(durations).index(6)
-
-                # Copy probabilities to avoid mutating the original directly
-                new_probs = probs.copy()
-
-                # Reallocate 3-month prob to 6-month, zero out 3-month
-                new_probs[idx_6] += new_probs[idx_4]
-                new_probs[idx_4] = 0.0
-
-                # Normalise so probabilities sum to 1
-                new_probs /= new_probs.sum()
-
-                # Update the dictionary
-                self._art_dispensation_lookup[key] = (durations, new_probs)
+        # if p['type_of_scaleup'] == 'increase_6MMD':
+        #     # leave those with 1 month dispensations
+        #     # anyone scheduled for 3 months, now has 6 months
+        #     for key, (durations, probs) in self._art_dispensation_lookup.items():
+        #         # Get indices for 3-month and 6-month options
+        #         idx_4 = list(durations).index(4)
+        #         idx_6 = list(durations).index(6)
+        #
+        #         # Copy probabilities to avoid mutating the original directly
+        #         new_probs = probs.copy()
+        #
+        #         # Reallocate 3-month prob to 6-month, zero out 3-month
+        #         new_probs[idx_6] += new_probs[idx_4]
+        #         new_probs[idx_4] = 0.0
+        #
+        #         # Normalise so probabilities sum to 1
+        #         new_probs /= new_probs.sum()
+        #
+        #         # Update the dictionary
+        #         self._art_dispensation_lookup[key] = (durations, new_probs)
 
         if p['type_of_scaleup'] == 'remove_all':
             # testing rates
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
 
-            # ANC testing - value for mothers and infants testing
-            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75
-            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75
-
             # remove VL
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0})
-
-            # replace VL with TDF urine test
-            p["switch_vl_test_to_tdf"] = True
 
             # remove IPT
             self.sim.modules['Tb'].parameters['ipt_coverage']['coverage_plhiv'] = 0
@@ -1371,26 +1366,25 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_after_hiv_test"] = 0
             p["prob_circ_for_child_from_2020"] = 0
 
-            # switch to 6MMD
-            # leave those with 1 month dispensations
-            # anyone scheduled for 3 months, now has 6 months
-            for key, (durations, probs) in self._art_dispensation_lookup.items():
-                # Get indices for 3-month and 6-month options
-                idx_4 = list(durations).index(4)
-                idx_6 = list(durations).index(6)
+        if p['type_of_scaleup'] == 'target_all':
 
-                # Copy probabilities to avoid mutating the original directly
-                new_probs = probs.copy()
+            # target testing rates
+            # todo
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
 
-                # Reallocate 3-month prob to 6-month, zero out 3-month
-                new_probs[idx_6] += new_probs[idx_4]
-                new_probs[idx_4] = 0.0
+            # target VL - done in HSI HIV tx
 
-                # Normalise so probabilities sum to 1
-                new_probs /= new_probs.sum()
+            # target IPT - done in HSI HIV tx
 
-                # Update the dictionary
-                self._art_dispensation_lookup[key] = (durations, new_probs)
+            # allow PrEP for FSW
+
+            # remove PrEP for AGYW
+            p["prob_prep_for_agyw"] = 0
+
+            # remove VMMC
+            p["prob_circ_after_hiv_test"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
 
         # ------------------- SCALE-UP -----------------------
         if p['type_of_scaleup'] == 'target':
@@ -1777,7 +1771,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             return max(0.0, min(1.0, base))
 
         # Adults: apply young adult gap and rebalance 30+ to preserve adult average
-        gap = self.parameters["young_adult_vls_factor"]  # absolute fraction, e.g. 0.08
+        gap = self.parameters["young_adult_vls_factor"]  # absolute fraction, 0.08
 
         # Adults (15+) currently on ART
         mask_adult_on_art = (df["age_years"] >= 15) & (df["hv_art"].ne("not"))
@@ -2870,7 +2864,7 @@ class HSI_Hiv_SelfTest(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Hiv_Test_Selftest"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConsWithDCSA": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
         self.ACCEPTED_FACILITY_LEVEL = "0"
 
     def apply(self, person_id, squeeze_factor):
@@ -2883,7 +2877,7 @@ class HSI_Hiv_SelfTest(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
-        self.module.selftests_performed += 1
+        self.module.stored_selftest_numbers += 1
 
         # refer for confirmatory test if positive
         if person["hv_inf"] and p["selftest_sensitivity"] and p["linked_to_care_after_selftest"]:
@@ -2894,8 +2888,8 @@ class HSI_Hiv_SelfTest(HSI_Event, IndividualScopeEventMixin):
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_TestAndRefer(
-                    person_id=person_id, module=self, referred_from="selftest"),
-                topen=self.sim.date + delay_days,
+                    person_id=person_id, module=self.module, referred_from="selftest"),
+                topen=self.sim.date + pd.DateOffset(days=delay_days),
                 tclose=None,
                 priority=0,
             )
@@ -3490,7 +3484,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         self.consider_tb(person_id)
 
         # Program simplification scenario: targeted IPT
-        if self.sim.modules['Hiv'].parameters['type_of_scaleup'] == 'target_IPT':
+        if self.sim.modules['Hiv'].parameters['type_of_scaleup'] in ('target_IPT', 'target_all'):
             # Check if CardioMetabolicDisorders module is loaded
             diabetes = False
             if "CardioMetabolicDisorders" in self.sim.modules:
@@ -3625,7 +3619,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if test_prob < 0.0: test_prob = 0.0
         if test_prob > 1.0: test_prob = 1.0
 
-        if p['type_of_scaleup'] == 'target_VL':
+        if p['type_of_scaleup'] in ('target_VL', 'target_all'):
             if person['age_years'] < 30 or person['is_pregnant']:
                 test_prob = test_prob
             else:

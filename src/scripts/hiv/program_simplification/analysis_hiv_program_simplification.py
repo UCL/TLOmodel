@@ -81,6 +81,8 @@ class HIV_Progam_Elements(BaseScenario):
 
             "Remove Viral Load Testing": scenario_definitions.remove_VL(),
 
+            "Target Viral Load Testing": scenario_definitions.target_VL(),
+
             "Replace Viral Load Testing": scenario_definitions.replace_VL_with_TDF(),
 
             "Remove PrEP for FSW": scenario_definitions.remove_prep_fsw(),
