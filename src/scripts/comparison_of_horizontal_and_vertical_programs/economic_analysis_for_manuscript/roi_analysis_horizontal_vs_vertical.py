@@ -601,6 +601,15 @@ def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_o
     monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year).clip(lower=0.0)
     return monetary_value_of_incremental_health
 
+def reorder_rows_for_csv(_df, desired_order):
+    if desired_order is None:
+        return _df
+    else:
+        present = [s for s in desired_order if s in _df['scenario'].unique()]
+        _df['scenario'] = pd.Categorical(_df['scenario'], categories=present, ordered=True)
+        df = _df.sort_values('scenario')
+        return df
+
 # %% CONFIG
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
@@ -697,6 +706,10 @@ diagonal_hiv = all_manuscript_scenarios_reverse.get("HIV Program Scale-up With H
 diagonal_tb = all_manuscript_scenarios_reverse.get("TB Program Scale-up With HSS Expansion Package")
 diagonal_malaria = all_manuscript_scenarios_reverse.get("Malaria Program Scale-up With HSS Expansion Package")
 diagonal_htm = all_manuscript_scenarios_reverse.get("HTM Programs Scale-up With HSS Expansion Package")
+
+# Desired order of scenarios for tables
+ordered_ids = [1,2,3,4,5,6,7,8,16,24,32,15,23,31,39]
+desired_order = [all_manuscript_scenarios[i] for i in ordered_ids]
 
 # Use letters instead of full scenario name for figures
 all_manuscript_scenarios_substitutedict = {0: "0", 1: "A", 2: "B", 3: "C", 4: "D", 5: "E", 6: "F", 7: "G", 8: "H",
@@ -1089,7 +1102,7 @@ for rates in alternative_discount_rates:
         ),
         axis=1
     )
-    icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']].to_csv(figurespath / 'tabulated_icers.csv',
+    reorder_rows_for_csv(icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']], desired_order).to_csv(figurespath / 'tabulated_icers.csv',
                                                                               index=False)
 
     # Create a lookup from draw to formatted ICER string
@@ -1352,7 +1365,7 @@ for rates in alternative_discount_rates:
             _monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted,
                                                                                            _chosen_value_of_life_year=vsly),
             _incremental_input_cost=incremental_scenario_cost,
-            _draws=list(all_manuscript_scenarios.keys()),
+            _draws=list(main_manuscript_scenarios.keys()),
             _metric='median')
 
         # Extract ROIs into a table for manuscript
@@ -1371,8 +1384,8 @@ for rates in alternative_discount_rates:
         # Reset index to move 'implementation_cost' to columns and reshape for the manuscript
         roi_pivot_table = roi_pivot_table['ROI at VSLY = $834'].unstack(level='implementation_cost')
         roi_pivot_table.columns.name = None  # Remove multi-index column name
-        roi_pivot_table.index.name = 'Scenario'
-        roi_pivot_table.reset_index().drop(columns='draw').to_csv(
+        roi_pivot_table.index.name = 'scenario'
+        reorder_rows_for_csv(roi_pivot_table.reset_index(), desired_order).reset_index().drop(columns='draw').to_csv(
             figurespath / f'tabulated_roi_for_all_implementation_costs_{roi_table_label[i]}.csv', index=False)
 
         roi_table_small = extract_roi_at_specific_implementation_costs(
@@ -1387,7 +1400,7 @@ for rates in alternative_discount_rates:
         roi_table_small = roi_table_small.drop(columns='draw')
         cols = ['scenario'] + [col for col in roi_table_small.columns if col != 'scenario']
         roi_table_small = roi_table_small[cols]
-        roi_table_small.to_csv(figurespath / f'tabulated_roi_for_manuscript_{roi_table_label[i]}.csv', index=False)
+        reorder_rows_for_csv(roi_table_small.reset_index(), desired_order).to_csv(figurespath / f'tabulated_roi_for_manuscript_{roi_table_label[i]}.csv', index=False)
         i += 1
 
     # ROI Bar plots
