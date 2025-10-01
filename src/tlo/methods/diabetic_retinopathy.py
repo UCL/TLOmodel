@@ -763,7 +763,7 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
         assert isinstance(module, DiabeticRetinopathy)
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Dr_Laser_Pan_Retinal_Coagulation'
+        self.TREATMENT_ID = 'Dr_Laser_Pan_Retinal_Coagulation_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.ALERT_OTHER_DISEASES = []
