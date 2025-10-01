@@ -568,6 +568,9 @@ class HealthSystem(Module):
 
         self.parameters['clinic_mapping'] = pd.read_csv(filepath)
         self.parameters['clinic_names'] = self.parameters['clinic_configuration'].columns.difference(['Facility_ID', 'Officer_Type_Code'])
+        # Ensure that a valid clinic configuration has been specified
+        self.validate_clinic_configuration(self.parameters['clinic_configuration'])
+
 
 
         # Load ResourceFiles that define appointment and officer types
@@ -671,6 +674,7 @@ class HealthSystem(Module):
         carried out if level 2 facilities are included. That is, users will only get to know about the
         errors one at a time.
         """
+
         all_level2_facilities = self.parameters['Master_Facilities_List'][self.parameters['Master_Facilities_List']['Facility_Level'] == '2']
         cl_level2_facilities = clinic_capabilities_df[clinic_capabilities_df['Facility_ID'].isin(all_level2_facilities['Facility_ID'])]
         if not cl_level2_facilities.empty:
@@ -754,8 +758,6 @@ class HealthSystem(Module):
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
 
-        # Ensure that a valid clinic configuration has been specified
-        self.validate_clinic_configuration(self.parameters['clinic_configuration'])
 
 
 
@@ -1710,7 +1712,10 @@ class HealthSystem(Module):
         For now this method only multiplies the estimated minutes available by the `capabilities_coefficient` scale
         factor.
         """
-        scaled = {k: v * self.capabilities_coefficient for k, v in self._daily_capabilities.items()}
+        scaled = {
+            clinic_name: {fid: cl * self.capabilities_coefficient for fid, cl in clinic_cl.items()}
+            for clinic_name, clinic_cl in self._daily_capabilities.items()
+        }
         return scaled
 
     def get_blank_appt_footprint(self):
@@ -3058,16 +3063,16 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
         config = self.scaling_values.get(self._get_most_recent_year_specified_for_a_change_in_configuration())
 
         # ... Do the rescaling specified for this year by the specified factor
-        self.module.__daily_capabilities *= config['dynamic_HR_scaling_factor']
-        ## {col: updated_capabilities[col].to_dict() for col in updated_capabilities[clinic_names]}
-        for k, v in self.module._daily_clinics_capabilities.items():
-            v.update({inner_k: inner_v * config['dynamic_HR_scaling_factor'] for inner_k, inner_v in v.items()})
+        for clinic_name, clinic_cl in self.module._daily_capabilities.items():
+            for cl in clinic_cl:
+                clinic_cl[cl] *= config['dynamic_HR_scaling_factor']
+
 
         # ... If requested, also do the scaling for the population growth that has occurred since the last year
         if config['scale_HR_by_popsize']:
-            self.module.__daily_capabilities *= this_year_pop_size / self.last_year_pop_size
-            for k, v in self.module._daily_clinics_capabilities.items():
-                v.update({inner_k: inner_v * this_year_pop_size / self.last_year_pop_size for inner_k, inner_v in v.items()})
+            for clinic_name, clinic_cl in self.module._daily_capabilities.items():
+                for cl in clinic_cl:
+                    clinic_cl[cl] *= this_year_pop_size / self.last_year_pop_size
 
         # Save current population size as that for 'last year'.
         self.last_year_pop_size = this_year_pop_size
@@ -3091,13 +3096,13 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
 
-        for officer in self.module.__daily_capabilities.keys():
+        for officer in self.module._daily_capabilities.keys():
             matches = re.match(pattern, officer)
             # Extract ID and officer type from
             facility_id = int(matches.group(1))
             officer_type = matches.group(2)
             level = self.module._facility_by_facility_id[facility_id].level
-            self.module.__daily_capabilities[officer] *= \
+            self.module._daily_capabilities[officer] *= \
                 HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
 
 
@@ -3116,13 +3121,13 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
 
-        for officer in self.module.__daily_capabilities.keys():
+        for officer in self.module._daily_capabilities.keys():
             matches = re.match(pattern, officer)
             # Extract ID and officer type from
             facility_id = int(matches.group(1))
             district = self.module._facility_by_facility_id[facility_id].district
             if district in HR_scaling_factor_by_district:
-                self.module.__daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
+                self.module._daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
