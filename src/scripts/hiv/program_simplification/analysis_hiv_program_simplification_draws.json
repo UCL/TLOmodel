@@ -2,7 +2,7 @@
   "scenario_script_path": "src/scripts/hiv/program_simplification/analysis_hiv_program_simplification.py",
   "scenario_seed": 0,
   "arguments": [],
-  "runs_per_draw": 10,
+  "runs_per_draw": 2,
   "draws": [
     {
       "draw_number": 0,
@@ -35,7 +35,7 @@
       "draw_number": 3,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "replace_VL_with_TDF"
+          "type_of_scaleup": "target_VL"
         }
       },
       "draw_name": "3"
@@ -44,7 +44,7 @@
       "draw_number": 4,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "remove_prep_fsw"
+          "type_of_scaleup": "replace_VL_with_TDF"
         }
       },
       "draw_name": "4"
@@ -53,7 +53,7 @@
       "draw_number": 5,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "remove_prep_agyw"
+          "type_of_scaleup": "remove_prep_fsw"
         }
       },
       "draw_name": "5"
@@ -62,7 +62,7 @@
       "draw_number": 6,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "remove_IPT"
+          "type_of_scaleup": "remove_prep_agyw"
         }
       },
       "draw_name": "6"
@@ -71,7 +71,7 @@
       "draw_number": 7,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "target_IPT"
+          "type_of_scaleup": "remove_IPT"
         }
       },
       "draw_name": "7"
@@ -80,7 +80,7 @@
       "draw_number": 8,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "remove_vmmc"
+          "type_of_scaleup": "target_IPT"
         }
       },
       "draw_name": "8"
@@ -89,7 +89,7 @@
       "draw_number": 9,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "increase_6MMD"
+          "type_of_scaleup": "remove_vmmc"
         }
       },
       "draw_name": "9"
@@ -98,7 +98,7 @@
       "draw_number": 10,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "remove_all"
+          "type_of_scaleup": "target_all"
         }
       },
       "draw_name": "10"
@@ -107,12 +107,21 @@
       "draw_number": 11,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "target"
+          "type_of_scaleup": "remove_all"
         }
       },
       "draw_name": "11"
+    },
+    {
+      "draw_number": 12,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "target"
+        }
+      },
+      "draw_name": "12"
     }
   ],
-  "commit": "4fb9bf87d34b20110e9b427bed3647ad418072a1",
-  "github": "https://github.com/UCL/TLOmodel/tree/4fb9bf87d34b20110e9b427bed3647ad418072a1"
+  "commit": "a0a7f5c75773d66f2a2123cb8de592e9a1ae5d82",
+  "github": "https://github.com/UCL/TLOmodel/tree/a0a7f5c75773d66f2a2123cb8de592e9a1ae5d82"
 }
