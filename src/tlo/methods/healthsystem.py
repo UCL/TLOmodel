@@ -1060,7 +1060,7 @@ class HealthSystem(Module):
         the first match regardless of the number of matches.
         """
         eligible_treatment_ids = self.parameters['clinic_mapping'].loc[self.parameters['clinic_mapping']['Treatment'] == hsi_event.TREATMENT_ID, 'Clinic']
-        clinic = matches.iloc[0] if not matches.empty else 'OtherClinic'
+        clinic = eligible_treatment_ids.iloc[0] if not  eligible_treatment_ids.empty else 'OtherClinic'
         return clinic
 
 
@@ -1699,7 +1699,7 @@ class HealthSystem(Module):
         )
 
     @property
-    def capabilities_today(self) -> pd.Series:
+    def capabilities_today(self) -> dict:
         """
         Returns the capabilities of the health system today.
         returns: pd.Series giving minutes available for each officer type in each facility type
@@ -2015,11 +2015,12 @@ class HealthSystem(Module):
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
         `runnning_total_footprint`. This runs every day.
         """
-        current_capabilities = self.capabilities_today
+        ## TODO Check how we want to handle this
+        current_capabilities = self.capabilities_today['OtherClinic']
         total_footprint = self.running_total_footprint
 
         # Combine the current_capabilities and total_footprint per-officer totals
-        comparison = pd.DataFrame(index=current_capabilities.index)
+        comparison = pd.DataFrame(index=current_capabilities.keys())
         comparison['Total_Minutes_Per_Day'] = current_capabilities
         comparison['Minutes_Used'] = pd.Series(total_footprint, dtype='float64')
         comparison['Minutes_Used'] = comparison['Minutes_Used'].fillna(0.0)
@@ -3208,7 +3209,16 @@ class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
         # Compute staff counts from available capabilities (hs.capabilities_today) and daily capabilities per staff,
         # both of which would have been rescaled to current efficiency levels if scale_to_effective_capabilities=True
         # This returns the number of staff counts normalised by the self.capabilities_coefficient parameter
-        current_staff_count = dict((hs.capabilities_today/hs._daily_capabilities_per_staff).sort_index())
+        current_staff_count = {}
+        for clinic in sorted(hs.capabilities_today):
+            current_staff_count[clinic] = {}
+            for fid in sorted(hs.capabilities_today[clinic]):
+                denom = hs._daily_capabilities_per_staff[clinic][fid]
+                if denom == 0:
+                    current_staff_count[clinic][fid] = 0
+                else:
+                    current_staff_count[clinic][fid] = hs.capabilities_today[clinic][fid] / denom
+
 
         logger_summary.info(
             key="number_of_hcw_staff",

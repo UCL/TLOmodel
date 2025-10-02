@@ -2127,17 +2127,18 @@ def test_mode_2_clinics(seed, tmpdir):
     tot_population = 100
     sim = create_simulation(tmpdir, tot_population)
 
-    breakpoint()
-    ## Test that capabilities are split according the proportion specified
-    ## 60% of capabilities are fungible and 40% non-fungible.
+
+    ## Test that capabilities are split according the proportion specified for the Facility Id
+    ## and officer combination in the Resource file.
+    ## 40% of capabilities are OtherClinic and 60% Clinic1
     ## Dummy Clinic capabilities
     other_clinic = sim.modules['HealthSystem']._daily_capabilities_per_staff['OtherClinic']
-    clinic1 = sim.modules['HealthSystem']._daily_capabilities_per_staff['DummyModuleClinic1']
+    clinic1 = sim.modules['HealthSystem']._daily_capabilities_per_staff['Clinic1']
 
-    nonzero = {k: v for k, v in other_clinic.items() if v > 0.0}
-    ratio = np.array([clinic1[k] / v for k,v in nonzero.items()])
-
-    assert all(abs(ratio - [0.4 / 0.6] < 1e-7)), "OtherClinic capabilities are not split correctly"
+    # 'FacilityID_20_Officer_DCSA' is coming from the resource file
+    ratio = clinic1['FacilityID_20_Officer_DCSA'] / other_clinic['FacilityID_20_Officer_DCSA']
+    expect = 0.6 / 0.4
+    assert abs(ratio - expect) < 1e-7, "OtherClinic capabilities are not split correctly"
 
 
     # Schedule an identical appointment for all individuals, assigning clinic as follows:
@@ -2159,9 +2160,9 @@ def test_mode_2_clinics(seed, tmpdir):
                          level='0')
     hsi2.initialise()
 
-    sim.modules['HealthSystem']._daily_capabilities_per_staff['DummyModuleClinic1'] = {}
+    sim.modules['HealthSystem']._daily_capabilities_per_staff['Clinic1'] = {}
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_capabilities_per_staff['DummyModuleClinic1'][k] = v*(tot_population/2)
+        sim.modules['HealthSystem']._daily_capabilities_per_staff['Clinic1'][k] = v*(tot_population/2)
 
     # Schedule 50 OtherClinic and 50 non-fungible events
     sim = schedule_hsi_events(50, 50, sim)
@@ -2174,7 +2175,7 @@ def test_mode_2_clinics(seed, tmpdir):
     ## All events should have run
     assert hs_output['did_run'].sum() == tot_population, "All events did not run!!"
     Nevents = hs_output.groupby('Clinic')['did_run'].value_counts()
-    assert Nevents.loc[('DummyModuleClinic1', True)] == tot_population // 2, "Unexpected count of nonfungible events"
+    assert Nevents.loc[('Clinic1', True)] == tot_population // 2, "Unexpected count of nonfungible events"
     assert Nevents.loc[('OtherClinic', True)] == tot_population // 2, "Unexpected count of fungible events"
 
 
