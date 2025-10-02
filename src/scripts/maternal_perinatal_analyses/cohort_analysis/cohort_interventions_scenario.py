@@ -9,8 +9,8 @@ class BaselineScenario(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 790213
-        self.start_date = Date(2024, 1, 1)
-        self.end_date = Date(2025, 1, 2)
+        self.start_date = Date(2025, 1, 1)
+        self.end_date = Date(2026, 1, 2)
         self.pop_size = 15_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
@@ -39,7 +39,7 @@ class BaselineScenario(BaseScenario):
                  mnh_cohort_module.MaternalNewbornHealthCohort()]
 
     def draw_parameters(self, draw_number, rng):
-        return ()
+        return {}
 
         # if draw_number == 0:
         #     return {'PregnancySupervisor': {
