@@ -457,7 +457,6 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         diabetes_and_alive_nodr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'none')]
         diabetes_and_alive_mild_moderate_dr = df.loc[
             df.is_alive & df.nc_diabetes & (df.dr_status == 'mild_or_moderate')]
-        diabetes_and_alive_moderatedr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'moderate')]
         diabetes_and_alive_severedr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'severe')]
 
         will_progress = self.module.lm['onset_mild_or_moderate_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
@@ -672,7 +671,7 @@ class HSI_Dr_Focal_Laser(HSI_Event, IndividualScopeEventMixin):
                      data=f'This is HSI_Dr_Focal_Laser: initiating laser treatment for person {person_id}')
         df = self.sim.population.props
         person = df.loc[person_id]
-        hs = self.sim.modules["HealthSystem"]
+        # hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
