@@ -1028,15 +1028,62 @@ def plot_sum_outcome_and_CIs__intervention_period(
                     if scen != 'SQ':
                         incremental_costs[scen] = \
                             output_costs_medical_df.loc[scen, 'total'] - output_costs_medical_df.loc['SQ', 'total']
-                print(f"\naverted_DALYs:\n{averted_DALYs}")
-                print(f"\nincremental_costs:\n{incremental_costs}")
-                net_health_benefit = {scen: averted_DALYs[scen][0] - (incremental_costs.get(scen, 0) / 80) for scen in averted_DALYs}
-                print(f"\nnet_health_benefit:\n{net_health_benefit}")
-                net_monetary_benefit = {
-                    scen: (averted_DALYs[scen][0] * 80) - incremental_costs.get(scen, 0) for scen in averted_DALYs
+                # TODO: use also incremental_costs CIs
+                #  (saved as output_costs_medical_df.loc[scen, ['lower_bound', 'upper_bound']])
+                #  How the net_health_benefit & net_monetary_benefit then will need to account for both uncertainty
+                #  around Averted DALYs and around Incremental Costs (hence similar calculation as when calculated CI
+                #  for Averted DALYs)
+
+                # cost-effectiveness threshold (CET) = willingness to pay
+                CET = 83
+                net_health_benefit = {
+                    scen: [
+                        averted_DALYs[scen][0] - (incremental_costs.get(scen, 0) / CET),  # mean
+                        averted_DALYs[scen][1] - (incremental_costs.get(scen, 0) / CET),  # low
+                        averted_DALYs[scen][2] - (incremental_costs.get(scen, 0) / CET),  # upp
+                    ]
+                    for scen in averted_DALYs
                 }
+
+                # max_implementation_costs ~ net_monetary_benefit
+                net_monetary_benefit = {
+                    scen: [
+                        (averted_DALYs[scen][0] * CET) - incremental_costs.get(scen, 0),  # mean
+                        (averted_DALYs[scen][1] * CET) - incremental_costs.get(scen, 0),  # low
+                        (averted_DALYs[scen][2] * CET) - incremental_costs.get(scen, 0),  # upp
+                    ]
+                    for scen in averted_DALYs
+                }
+
+                # # In below prints not rounded values
+                # print(f"\naverted_DALYs:\n{averted_DALYs}")
+                # print(f"\nincremental_costs:\n{incremental_costs}")
+                # print(f"\nnet_health_benefit:\n{net_health_benefit}")
                 print(f"\nnet_monetary_benefit:\n{net_monetary_benefit}")
-                # TODO: add CIs
+
+                cost_eff_table = pd.DataFrame(
+                    {
+                        "Intervention": list(averted_DALYs.keys()),
+                        "Averted DALYs": [
+                            f"{int(round(vals[0])):,} ({int(round(vals[1])):,}; {int(round(vals[2])):,})"
+                            for vals in averted_DALYs.values()
+                        ],
+                        "Incremental Costs (2023 USD)": [
+                            f"{int(round(incremental_costs.get(interv, 0))):,}" for interv in averted_DALYs.keys()
+                        ],
+                        "Incremental net health benefit (DALYS averted)": [
+                            f"{int(round(nhb[0])):,} ({int(round(nhb[1])):,}; {int(round(nhb[2])):,})"
+                            for nhb in net_health_benefit.values()
+                        ],
+                        "Incremental net monetary benefit (DALYs averted)": [
+                            # round down to ensure CET is not exceeded
+                            f"{int(nmb[0]):,} ({int(nmb[1]):,}; {int(nmb[2]):,})"
+                            # f"{int(round(nmb[0])):,} ({int(round(nmb[1])):,}; {int(round(nmb[2])):,})"
+                            for nmb in net_monetary_benefit.values()
+                        ],
+                    }
+                )
+                print(f"\ncost_eff_table:\n{cost_eff_table}")
 
                 # Plot cost-effectiveness scatter plot
                 fig_ce, ax_ce = plt.subplots()
@@ -1067,13 +1114,15 @@ def plot_sum_outcome_and_CIs__intervention_period(
 
                 ax_ce.set_xlabel('DALYs Averted')
                 ax_ce.set_ylabel('Incremental Costs (2023 USD)')
-                ax_ce.set_title('Cost-Effectiveness: DALYs Averted vs Incremental Costs')
+                ax_ce.set_title('Cost-Effectiveness: DALYs Averted vs Incremental Costs', pad=12)
 
-                # Add dashed black line for 1 DALY averted per 80 USD
+                # Add dashed black line for 1 DALY averted per CET
                 x_vals = np.array(ax_ce.get_xlim())
-                y_vals = x_vals * 80
+                y_vals = x_vals * CET
                 ax_ce.plot(x_vals, y_vals, color='black', linestyle='--')
-                ax_ce.text(x_vals[-1], y_vals[-1], 'ICER = $80/DALY', color='black', fontsize=9, ha='right', va='bottom')
+                ax_ce.text(
+                    x_vals[-1], y_vals[-1], f"ICER = ${CET}/DALY", color="black", fontsize=9, ha="right", va="bottom"
+                )
 
                 plt.tight_layout()
                 plt.savefig(
