@@ -103,8 +103,19 @@ def process_era5_data(dewpoint_dir, temp_dir, output_dir, years):
 
     # Open combined datasets
     ds_dewpoint = xr.open_mfdataset(all_dewpoint_files, combine='by_coords')
+
     ds_temp = xr.open_mfdataset(all_temp_files, combine='by_coords')
 
+    # Extract monthly timestamps from each dataset
+    months_dewpoint = np.unique(ds_dewpoint['valid_time'].to_pandas().to_period("M"))
+    months_temp = np.unique(ds_temp['valid_time'].to_pandas().to_period("M"))
+
+    # Find mismatches
+    missing_in_temp = set(months_dewpoint) - set(months_temp)
+    missing_in_dewpoint = set(months_temp) - set(months_dewpoint)
+
+    print("Months in dewpoint but missing in temp:", sorted(missing_in_temp))
+    print("Months in temp but missing in dewpoint:", sorted(missing_in_dewpoint))
     # Get variable names
     dewpoint_var = [v for v in ds_dewpoint.data_vars if 'd2m' in v or '2d' in v.lower()][0]
     temp_var = [v for v in ds_temp.data_vars if 't2m' in v or '2t' in v.lower()][0]
