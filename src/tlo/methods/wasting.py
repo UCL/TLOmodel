@@ -1342,17 +1342,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
             else:
                 return p["growth_monitoring_attendance_prob_agecat"][2]
         self.attendance = rng.random_sample() < get_attendance_prob(person_age)
-
-    @property
-    def EXPECTED_APPT_FOOTPRINT(self):
-        """Return the expected appointment footprint based on attendance at the HSI event."""
-        # TODO: for now assumed general attendance prob for <1 y old,
-        #  later may be excluded from here and be dealt with within epi module
-        # perform growth monitoring if attending
-        if self.attendance:
-            return self.make_appt_footprint({'Under5OPD': 1})
-        else:
-            return self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='debug', data='This is HSI_Wasting_GrowthMonitoring')
@@ -1374,7 +1364,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'age_exact_years'] >= 5):
             # or
             # df.at[person_id, 'un_am_treatment_type'].isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
-            return
+            return self.make_appt_footprint({})
 
         def schedule_next_monitoring():
             def get_monitoring_frequency_days(age):
@@ -1402,7 +1392,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         # the person may not attend the appt
         if not self.attendance:
-            return
+            return self.make_appt_footprint({})
 
         # if person currently treated, or acute malnutrition already assessed,
         # acute malnutrition will not be assessed (again)
