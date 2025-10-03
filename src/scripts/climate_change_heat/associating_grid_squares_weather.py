@@ -52,25 +52,17 @@ for month in months:
 monthly_reporting_by_facility = pd.DataFrame(monthly_reporting_data_by_facility)
 monthly_reporting_by_facility["facility"] = reporting_data["organisationunitname"].values
 
-# Load relative humidity data
-wbgt_directory = "/Users/rem76/Desktop/Climate_change_health/Data/Temperature_data/relative_humidity/Historical/"
+# Load WBGT data
+wbgt_directory = "/Users/rem76/Desktop/Climate_change_health/Data/Temperature_data/WBGT/Historical/"
 wbgt_files = [f for f in os.listdir(wbgt_directory) if f.startswith('wbgt_monthly_') and f.endswith('.nc')]
 
-if not wbgt_files:
-    raise FileNotFoundError(f"No wbgt monthly files found in {wbgt_directory}")
-
 wbgt_file_path = os.path.join(wbgt_directory, wbgt_files[0])
-print(f"Loading wbgt data from {wbgt_file_path}")
 
-# Open wbgt dataset
 ds_wbgt = xr.open_dataset(wbgt_file_path)
 wbgt_data = ds_wbgt['wbgt'].values  # shape: (time, lat, lon)
 lat_data = ds_wbgt['latitude'].values
 long_data = ds_wbgt['longitude'].values
-time_data = pd.to_datetime(ds_wbgt['time'].values)
-
-print(f"wbgt data shape: {wbgt_data.shape}")
-print(f"Time range: {time_data[0]} to {time_data[-1]}")
+time_data = pd.to_datetime(ds_wbgt['valid_time'].values)
 
 # Load Malawi grid
 malawi_grid = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/malawi_grid.shp")
@@ -88,7 +80,6 @@ for grid_idx, polygon in enumerate(malawi_grid["geometry"]):
     wbgt_data_for_grid = wbgt_data[:, index_for_y_min, index_for_x_min]
     wbgt_by_grid[grid_idx] = wbgt_data_for_grid.tolist()
 
-print(f"Extracted wbgt data for {len(wbgt_by_grid)} grid squares")
 
 # Load facility location data
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
@@ -145,7 +136,6 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
     else:
         continue
 
-print(f"Matched {len(facilities_with_location)} facilities to wbgt data")
 
 # Create DataFrame with wbgt data
 wbgt_df = pd.DataFrame.from_dict(wbgt_data_by_facility, orient='index').T
@@ -206,26 +196,23 @@ expanded_facility_info = expanded_facility_info.reindex(columns=facilities_with_
 output_dir = "/Users/rem76/Desktop/Climate_change_health/Data/"
 
 if ANC:
-    wbgt_df.to_csv(os.path.join(output_dir, "historical_wbgt_by_smaller_facilities_with_ANC_lm.csv"))
+    wbgt_df.to_csv(os.path.join(output_dir, "Temperature_data/WBGT/historical_wbgt_by_smaller_facilities_with_ANC_lm.csv"))
     expanded_facility_info.to_csv(
-        os.path.join(output_dir, "expanded_facility_info_wbgt_by_smaller_facility_lm_with_ANC.csv"))
+        os.path.join(output_dir, "Temperature_data/WBGT/expanded_facility_info_wbgt_by_smaller_facility_lm_with_ANC.csv"))
     monthly_reporting_by_facility.to_csv(
-        os.path.join(output_dir, "monthly_reporting_ANC_by_smaller_facility_lm_wbgt.csv"))
+        os.path.join(output_dir, "Temperature_data/WBGT/monthly_reporting_ANC_by_smaller_facility_lm_wbgt.csv"))
     print("Saved ANC outputs")
 
 elif Inpatient:
-    wbgt_df.to_csv(os.path.join(output_dir, "historical_wbgt_by_smaller_facilities_with_Inpatient_lm.csv"))
+    wbgt_df.to_csv(os.path.join(output_dir, "Temperature_data/WBGT/historical_wbgt_by_smaller_facilities_with_Inpatient_lm.csv"))
     expanded_facility_info.to_csv(
-        os.path.join(output_dir, "expanded_facility_info_wbgt_by_smaller_facility_lm_with_Inpatient.csv"))
+        os.path.join(output_dir, "Temperature_data/WBGT/expanded_facility_info_wbgt_by_smaller_facility_lm_with_Inpatient.csv"))
     monthly_reporting_by_facility.to_csv(
-        os.path.join(output_dir, "monthly_reporting_Inpatient_by_smaller_facility_lm_wbgt.csv"))
-    print("Saved Inpatient outputs")
-
+        os.path.join(output_dir, "Temperature_data/WBGT/monthly_reporting_Inpatient_by_smaller_facility_lm_wbgt.csv"))
 else:
-    wbgt_df.to_csv(os.path.join(output_dir, "historical_wbgt_by_smaller_facility_lm.csv"))
-    expanded_facility_info.to_csv(os.path.join(output_dir, "expanded_facility_info_wbgt_by_smaller_facility_lm.csv"))
-    monthly_reporting_by_facility.to_csv(os.path.join(output_dir, "monthly_reporting_by_smaller_facility_lm_wbgt.csv"))
-    print("Saved reporting rate outputs")
+    wbgt_df.to_csv(os.path.join(output_dir, "Temperature_data/WBGT/historical_wbgt_by_smaller_facility_lm.csv"))
+    expanded_facility_info.to_csv(os.path.join(output_dir, "Temperature_data/WBGT/expanded_facility_info_wbgt_by_smaller_facility_lm.csv"))
+    monthly_reporting_by_facility.to_csv(os.path.join(output_dir, "Temperature_data/WBGT/monthly_reporting_by_smaller_facility_lm_wbgt.csv"))
 
 print("\nProcessing complete!")
 print(f"wbgt data saved with {len(facilities_with_location)} facilities")
