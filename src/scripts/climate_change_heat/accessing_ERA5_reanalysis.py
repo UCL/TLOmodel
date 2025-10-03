@@ -2,9 +2,9 @@ import os
 
 import cdsapi
 
-years = [str(year) for year in range(2011, 2024)]
+years = [str(year) for year in range(2024, 2025)]
 
-base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Temperature_data/2m_dewpoint/Historical/hourly/"
+base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Temperature_data/2m/Historical/hourly/"
 
 for year in years:
     year_dir = os.path.join(base_dir, year)
@@ -15,7 +15,7 @@ for year in years:
     request = {
         "product_type": ["reanalysis"],
         "variable": [
-        "2m_dewpoint_temperature",
+        "2m_temperature",
     ],
         "year": year,
         "month": ["1", "2", "3", "4", "5", "6", "7", "8", "9",
