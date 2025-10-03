@@ -347,7 +347,9 @@ class Module:
             # For each parameter, raise error if the value can't be coerced
             parameter_value, prior_min, prior_max = resource.loc[parameter_name, ['value', 'prior_min', 'prior_max']]
             parameter_label = resource.at[parameter_name, 'param_label']
-            assert parameter_label in acceptable_labels, f'unrecognised parameter label for {parameter_name}: {parameter_label}'
+            assert parameter_label in acceptable_labels, (
+                f'unrecognised parameter label for {parameter_name}: {parameter_label}'
+            )
 
             error_message = (
                 f"some values are not of type {parameter_definition.type_.name} and "
