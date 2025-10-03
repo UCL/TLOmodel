@@ -2101,8 +2101,8 @@ def test_mode_2_clinics(seed, tmpdir):
         for i in range(0, nfungible):
             hsi = DummyHSIEvent(module=sim.modules['DummyModuleOtherClinic'],
                                 person_id=i,
-                                appt_type='MinorSurg',
-                                level='1a')
+                                appt_type='ConWithDCSA',
+                                level='0')
             sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi,
                 topen=sim.date,
@@ -2113,8 +2113,8 @@ def test_mode_2_clinics(seed, tmpdir):
         for i in range(nfungible, nfungible + nnonfungible):
             hsi = DummyHSIEvent(module=sim.modules['DummyModuleClinic1'],
                                 person_id=i,
-                                appt_type='MinorSurg',
-                                level='1a')
+                                appt_type='ConWithDCSA',
+                                level='0')
             sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi,
                 topen=sim.date,
@@ -2152,7 +2152,7 @@ def test_mode_2_clinics(seed, tmpdir):
     # Now adjust capabilities available.
     # We first want to make sure there is enough capabilities available to run all events
     for k, v in hsi1.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/2)
+        sim.modules['HealthSystem']._daily_capabilities['OtherClinic'][k] = v*(tot_population/2)
 
     hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleClinic1'],
                          person_id=0,

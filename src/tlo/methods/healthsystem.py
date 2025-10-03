@@ -1,4 +1,3 @@
-
 import datetime
 import heapq as hp
 import itertools
@@ -1209,26 +1208,25 @@ class HealthSystem(Module):
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
-        for officer in self._daily_capabilities.keys():
-            matches = re.match(pattern, officer)
-            # Extract ID and officer type from
-            facility_id = int(matches.group(1))
-            officer_type = matches.group(2)
-            level = self._facility_by_facility_id[facility_id].level
-            # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
-            # available capabilities if these were under-used the previous year).
-            rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
-                officer_type=officer_type, level=level
-            )
-            if rescaling_factor > 1 and rescaling_factor != float("inf"):
-                self._daily_capabilities[officer] *= rescaling_factor
-                # We assume that increased daily capabilities is a result of each staff performing more
-                # daily patient facing time per day than contracted (or equivalently performing appts more
-                # efficiently).
-                self._daily_capabilities_per_staff[officer] *= rescaling_factor
-                for k, v in self._daily_clinics_capabilities.items():
-                    for inner_k, inner_v in v.items():
-                        inner_v[officer] *= rescaling_factor
+        for clinic, clinic_cl in self._daily_capabilities.keys():
+            for officer in clinic_cl.keys():
+                matches = re.match(pattern, officer)
+                # Extract ID and officer type from
+                facility_id = int(matches.group(1))
+                officer_type = matches.group(2)
+                level = self._facility_by_facility_id[facility_id].level
+                # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
+                # available capabilities if these were under-used the previous year).
+                rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
+                    officer_type=officer_type, level=level
+                )
+                if rescaling_factor > 1 and rescaling_factor != float("inf"):
+                    # We assume that increased daily capabilities is a result of each staff performing more
+                    # daily patient facing time per day than contracted (or equivalently performing appts more
+                    # efficiently).
+                    self._daily_capabilities_per_staff[clinic][officer] *= rescaling_factor
+                    self._daily_capabilities[clinic][officer] *= rescaling_factor
+
 
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
@@ -1702,8 +1700,7 @@ class HealthSystem(Module):
     def capabilities_today(self) -> dict:
         """
         Returns the capabilities of the health system today.
-        returns: pd.Series giving minutes available for each officer type in each facility type
-        ### TODO: Update this docstring
+        returns: a nested series giving minutes available in each clinic for each officer type in each facility type
 
         Functions can go in here in the future that could expand the time available,
         simulating increasing efficiency (the concept of a productivity ratio raised
@@ -1716,6 +1713,10 @@ class HealthSystem(Module):
             clinic_name: {fid: cl * self.capabilities_coefficient for fid, cl in clinic_cl.items()}
             for clinic_name, clinic_cl in self._daily_capabilities.items()
         }
+        print("***********************")
+        for clinic_name, clinic_cl in self._daily_capabilities.items():
+            print(clinic_name, type(clinic_cl))
+        print("***********************")
         return scaled
 
     def get_blank_appt_footprint(self):
@@ -2010,13 +2011,19 @@ class HealthSystem(Module):
             level=event_details.facility_level,
         )
 
+
     def log_current_capabilities_and_usage(self):
+        for clinic_name in self.parameters['clinic_names']:
+            self.log_clinic_current_capabilities_and_usage(clinic_name)
+
+
+
+    def log_clinic_current_capabilities_and_usage(self, clinic_name):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
         `runnning_total_footprint`. This runs every day.
         """
-        ## TODO Check how we want to handle this
-        current_capabilities = self.capabilities_today['OtherClinic']
+        current_capabilities = self.capabilities_today[clinic_name]
         total_footprint = self.running_total_footprint
 
         # Combine the current_capabilities and total_footprint per-officer totals
@@ -2051,6 +2058,7 @@ class HealthSystem(Module):
 
         logger.info(key='Capacity',
                     data={
+                        'Clinic': clinic_name,
                         'Frac_Time_Used_Overall': fraction_time_used_overall,
                         'Frac_Time_Used_By_Facility_ID': summary_by_fac_id['Fraction_Time_Used'].to_dict(),
                         'Frac_Time_Used_By_OfficerType':  flatten_multi_index_series_into_dict_for_logging(
@@ -2638,7 +2646,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # If any of the officers have run out of time by performing this hsi,
                         # remove them from list of available officers.
                         for officer, call in updated_call.items():
-                            if capabilities_monitor[officer] <= 0:
+                            if capabilities_monitor[event_clinic][officer] <= 0:
                                 if officer in capabilities_still_available:
                                     capabilities_still_available.remove(officer)
                                 else:
@@ -3097,14 +3105,16 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
 
-        for officer in self.module._daily_capabilities.keys():
-            matches = re.match(pattern, officer)
-            # Extract ID and officer type from
-            facility_id = int(matches.group(1))
-            officer_type = matches.group(2)
-            level = self.module._facility_by_facility_id[facility_id].level
-            self.module._daily_capabilities[officer] *= \
-                HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
+        for clinic, clinic_cl in self.module._daily_capabilities.items():
+            for officer in clinic_cl.keys():
+                matches = re.match(pattern, officer)
+                # Extract ID and officer type from
+                facility_id = int(matches.group(1))
+                officer_type = matches.group(2)
+                level = self.module._facility_by_facility_id[facility_id].level
+                self.module._daily_capabilities[clinic][officer] *= \
+                    HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
+
 
 
 
@@ -3121,14 +3131,15 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
         ].set_index('District').to_dict()
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+        for clinic, clinic_cl in self.module._daily_capabilities.items():
+            for officer in clinic_cl.keys():
+                matches = re.match(pattern, officer)
+                # Extract ID and officer type from
+                facility_id = int(matches.group(1))
+                district = self.module._facility_by_facility_id[facility_id].district
+                if district in HR_scaling_factor_by_district:
+                    self.module._daily_capabilities[clinic][officer] *= HR_scaling_factor_by_district[district]
 
-        for officer in self.module._daily_capabilities.keys():
-            matches = re.match(pattern, officer)
-            # Extract ID and officer type from
-            facility_id = int(matches.group(1))
-            district = self.module._facility_by_facility_id[facility_id].district
-            if district in HR_scaling_factor_by_district:
-                self.module._daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
