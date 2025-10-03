@@ -459,8 +459,7 @@ def format_summary_for_output(
 
 
 
-import numpy as np
-import pandas as pd
+
 
 def compute_icer_district(
     dalys_averted: pd.DataFrame,
@@ -1185,21 +1184,79 @@ prev_mansoni_national_heavy_summary.to_excel(results_folder / (f'prev_mansoni_na
 # %%  YEAR REACHING EPHP
 ####################################################################################
 
+
+
+
 def get_first_years_below_threshold(
     df: pd.DataFrame,
-    threshold: float = 0.01,
-    year_range: tuple = (2024, 2050)
+    threshold: float = 0.02,
+    year_range: tuple[int, int] = (2010, 2050),
+    agg: str = "mean",   # mean across runs (default); can set to "median" if preferred
 ) -> pd.DataFrame:
-    """Return the first year each district drops below the threshold for each strategy."""
-    df = df.loc[df.index.get_level_values("year") >= year_range[0]]
-    df_mean_runs = df.groupby(axis=1, level="draw").mean()
+    """
+    Parameters
+    ----------
+    df : DataFrame
+        Index = MultiIndex ['year','district']; Columns = MultiIndex ['draw','run'].
+    threshold : float
+        Prevalence threshold to test against.
+    year_range : (int,int)
+        Inclusive [start, end] range of years to consider.
+    agg : {'mean','median'}
+        How to aggregate over runs within a draw.
 
-    below = (df_mean_runs < threshold).reset_index()
-    long_format = below.melt(id_vars=["year", "district"], var_name="draw", value_name="below_threshold")
-    below_threshold = long_format[long_format["below_threshold"]]
+    Returns
+    -------
+    DataFrame (long)
+        Columns: ['district','draw','year_ephp'] with -99 where threshold is never reached.
+    """
 
-    first_years = below_threshold.groupby(["district", "draw"])["year"].min().reset_index(name="year_ephp")
-    return first_years
+    # --- subset to requested years (inclusive) ---
+    years = df.index.get_level_values("year")
+    mask_years = (years >= year_range[0]) & (years <= year_range[1])
+    sub = df.loc[mask_years].copy()
+
+    # --- aggregate runs within each draw ---
+    if agg == "mean":
+        by_draw = sub.groupby(axis=1, level="draw").mean()
+    elif agg == "median":
+        by_draw = sub.groupby(axis=1, level="draw").median()
+    else:
+        raise ValueError("agg must be 'mean' or 'median'.")
+
+    # --- compute first year < threshold for every district × draw ---
+    # Work draw-by-draw on a Year×District matrix for vectorised logic.
+    out_records = []
+    all_districts = by_draw.index.get_level_values("district").unique()
+
+    for draw in by_draw.columns:
+        # reshape to Year (index) × District (columns)
+        wide = by_draw[draw].unstack("district")  # rows: years, cols: districts
+        below = wide.lt(threshold)
+
+        # find first True index per column
+        def first_true_year(mask_col: pd.Series):
+            idx = np.flatnonzero(mask_col.to_numpy())
+            return mask_col.index[idx[0]] if idx.size else pd.NA
+
+        first_year = below.apply(first_true_year, axis=0)  # Series indexed by district
+        # ensure all districts are present even if entirely missing in this draw
+        first_year = first_year.reindex(all_districts)
+
+        rec = (
+            first_year.reset_index()
+            .rename(columns={"index": "district", 0: "year_ephp"})
+            .assign(draw=draw)
+        )
+        out_records.append(rec)
+
+    res = pd.concat(out_records, ignore_index=True)[["district", "draw", "year_ephp"]]
+
+    # --- fill never-below cases with -99 (keep as int) ---
+    res["year_ephp"] = res["year_ephp"].astype("Int64").fillna(-99).astype(int)
+
+    return res
+
 
 
 # prevalence <1% heavy infection
@@ -1212,6 +1269,7 @@ first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_H_All
                                                            threshold=0.01)
 first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni H_1percent {target_period()}.xlsx'))
 
+
 # prevalence <1% any infection
 first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_HML_All_district,
                                                            threshold=0.01)
@@ -1221,6 +1279,7 @@ first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HML_1perc
 first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_HML_All_district,
                                                            threshold=0.01)
 first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HML_1percent {target_period()}.xlsx'))
+
 
 
 # prevalence <2% any infection - for maps
@@ -1233,7 +1292,7 @@ first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HML_2perc
 first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_HML_All_district,
                                                            threshold=0.02,
                                                               year_range=(2010, 2050))
-first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HML_2percent {target_period()}.xlsx'))
+first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni_HML_2percent {target_period()}.xlsx'))
 
 
 
@@ -1246,6 +1305,9 @@ first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HM_1perce
 first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_HM_All_district,
                                                            threshold=0.001)
 first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HM_1percent {target_period()}.xlsx'))
+
+
+
 
 
 #################################################################################
@@ -1428,6 +1490,9 @@ def get_numbers_infected_any_species(_df):
 
 total_number_infected = get_numbers_infected_any_species(number_infected)
 total_number_in_district = get_numbers_infected_any_species(number_in_district)
+
+
+
 
 if total_number_infected.columns.equals(total_number_in_district.columns):
     # Perform element-wise division for matching columns
@@ -2514,6 +2579,13 @@ max_costs.to_csv(results_folder / f'max_costs_comparedSAC{target_period()}.csv')
 
 
 
+max_costs_noMDA = calculate_max_hr_costs(dalys_df=dalys_averted_district_compared_noMDA,
+                                   cons_costs_df=cons_costs_relative_noMDA_district,
+                                   cet=61,
+                                   start_year=2024,
+                                   end_year=2050)
+
+max_costs_noMDA.to_csv(results_folder / f'max_costs_compared_noMDA{target_period()}.csv')
 
 
 

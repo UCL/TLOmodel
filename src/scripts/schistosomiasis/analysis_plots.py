@@ -17,6 +17,7 @@ from collections import defaultdict
 import textwrap
 from typing import Tuple
 from matplotlib.lines import Line2D
+from typing import Iterable
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
@@ -456,7 +457,7 @@ plt.show()
 #################################################################################
 
 
-def plot_prevalence_heatmap(df, year=2050, threshold=1.5, filename=None):
+def plot_prevalence_heatmap(df, year=2050, threshold=2, filename=None, title=None):
     # Extract data for the given year
     df_year = df.loc[year]
 
@@ -504,7 +505,7 @@ def plot_prevalence_heatmap(df, year=2050, threshold=1.5, filename=None):
     mean_df = mean_df[col_df['orig']]
     mean_df.columns = multi_cols
 
-    plt.figure(figsize=(14, 10))
+    plt.figure(figsize=(7, 10))
     ax = sns.heatmap(
         mean_df,
         cmap='coolwarm',
@@ -530,7 +531,7 @@ def plot_prevalence_heatmap(df, year=2050, threshold=1.5, filename=None):
                 )
 
     ax.set_ylabel('District')
-    plt.title(f'Mean Prevalence by District, Year {year}')
+    plt.title(f'{title}, Year {year}')
 
     # ----------- X-axis labels ------------------
     tick_positions = [i + 0.5 for i in range(len(mean_df.columns))]
@@ -581,8 +582,13 @@ path2 = Path(results_folder / 'prev_mansoni_HML_All_district 2024-2050.xlsx')
 prev_mansoni_HML_All_district = pd.read_excel(path2, index_col=[0, 1])  # assuming first two columns are index
 
 
-plot_prevalence_heatmap(prev_haem_HML_All_district, year=2050, threshold=0.01, filename='prev_haem_HML_district2050.png')
-plot_prevalence_heatmap(prev_mansoni_HML_All_district, year=2050, threshold=0.01, filename='prev_mansoni_HML_district2050.png')
+plot_prevalence_heatmap(prev_haem_HML_All_district, year=2050, threshold=0.02,
+                        filename='prev_haem_HML_district2050.png',
+                        title="S. haematobium")
+
+plot_prevalence_heatmap(prev_mansoni_HML_All_district, year=2050, threshold=0.02,
+                        filename='prev_mansoni_HML_district2050.png',
+                        title="S. mansoni")
 
 
 
@@ -958,11 +964,10 @@ plot_dalys_vs_costs_by_district_with_thresholds(
     wash_strategy='Continue WASH',
     comparison='MDA SAC vs no MDA',
     plot_summary=True,
-    thresholds=[5,10,20,50,61],
+    thresholds=[5,10,20,50,61,120,500],
     scale_x=0.5,
     scale_y=0.5,
 )
-
 
 
 plot_dalys_vs_costs_by_district_with_thresholds(
@@ -971,12 +976,10 @@ plot_dalys_vs_costs_by_district_with_thresholds(
     wash_strategy='Continue WASH',
     comparison='MDA PSAC+SAC vs MDA SAC',
     plot_summary=True,
-    thresholds=[5,10,20,50,61],
+    thresholds=[5,10,20,50,61,120,500],
     scale_x=0.5,
     scale_y=0.5,
 )
-
-
 
 
 plot_dalys_vs_costs_by_district_with_thresholds(
@@ -985,7 +988,7 @@ plot_dalys_vs_costs_by_district_with_thresholds(
     wash_strategy='Continue WASH',
     comparison='MDA All vs MDA PSAC+SAC',
     plot_summary=True,
-    thresholds=[5,10,20,50,61],
+    thresholds=[5,10,20,50,61,120,500],
     scale_x=0.5,
     scale_y=0.5,
 )
@@ -1187,248 +1190,341 @@ def plot_ephp_km_continue(
 
 
 
-#
-# plot_ephp_km_continue(prev_haem_H_All_district, species='haem', threshold=0.01)
-#
-# plot_ephp_km_continue(prev_mansoni_H_All_district, species='mansoni', threshold=0.001)
-#
-
-
-
 plot_ephp_km_continue(prev_haem_HML_All_district, species='haem', threshold=0.02)
 
 
 plot_ephp_km_continue(prev_mansoni_HML_All_district, species='mansoni', threshold=0.02)
 
 
-# todo this should be updated as function above
-# # get the figures for the SI separately
-# def plot_ephp_km_pause(
-#     df: pd.DataFrame,
-#     threshold: float = 0.015,
-#     year_range: tuple = (2024, 2040),
-#     alpha: float = 1.0,
-#     figsize: tuple = (10, 6),
-#         species=None
-# ):
-#     """
-#     Plot Kaplan-Meier style curves in a single panel showing the proportion of districts
-#     reaching prevalence < threshold by year, for:
-#         - Each MDA strategy under 'Continue WASH'
-#         - 'no MDA' under 'Scale-up WASH' as 'WASH only'
-#     """
-#
-#     mda_colours = {
-#         'no MDA': '#1b9e77',  # Teal
-#         'MDA SAC': '#d95f02',  # Orange
-#         'MDA PSAC': '#7570b3',  # Purple
-#         'MDA All': '#e7298a',  # Pink
-#         'WASH only': '#e6ab02'  # Mustard Yellow – distinct from teal
-#     }
-#
-#     def extract_mda_label(draw_name: str) -> str:
-#         """Extract MDA category for legend from draw name."""
-#         mda_labels = ["no MDA", "MDA SAC", "MDA PSAC", "MDA All"]
-#         for label in mda_labels:
-#             if label in draw_name:
-#                 return label
-#         return "Other"
-#
-#     df = df.loc[df.index.get_level_values("year") >= year_range[0]]
-#
-#     # Mean across runs per draw
-#     df_mean_runs = df.groupby(axis=1, level="draw").mean()
-#
-#     # Identify threshold crossing
-#     below = (df_mean_runs < threshold).reset_index()
-#     long_format = below.melt(id_vars=["year", "district"], var_name="draw", value_name="below_threshold")
-#     below_threshold = long_format[long_format["below_threshold"]]
-#
-#     # First year reaching threshold by draw
-#     first_years = below_threshold.groupby(["district", "draw"])["year"].min().reset_index(name="year_ephp")
-#
-#     total_districts = df.index.get_level_values("district").nunique()
-#
-#     # Cumulative count of districts reaching EPHP
-#     ephp_counts = (
-#         first_years.groupby(["draw", "year_ephp"])
-#         .size()
-#         .groupby(level=0)
-#         .cumsum()
-#         .reset_index(name="num_districts")
-#     )
-#     ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
-#     ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
-#     ephp_counts.to_excel(
-#         results_folder / f'ephp_counts{species}.xlsx')
-#
-#     # Draws to plot
-#     draw_labels = {
-#         'Pause WASH, no MDA': 'no MDA',
-#         'Pause WASH, MDA SAC': 'MDA SAC',
-#         'Pause WASH, MDA PSAC': 'MDA PSAC',
-#         'Pause WASH, MDA All': 'MDA All',
-#         'Scale-up WASH, no MDA': 'WASH only',
-#     }
-#
-#     plt.figure(figsize=figsize)
-#     for draw, label in draw_labels.items():
-#         if draw in ephp_counts["draw"].unique():
-#             data = ephp_counts[ephp_counts["draw"] == draw]
-#             plt.step(
-#                 data["year_ephp"],
-#                 data["prop_districts"],
-#                 where="post",
-#                 label=label,
-#                 color=mda_colours.get(label, "grey"),
-#                 linewidth=1.8,
-#                 alpha=alpha,
-#             )
-#         else:
-#             # Offset zero-line slightly to avoid overlap
-#             y_offset = {
-#                 'no MDA': -0.001,
-#                 'WASH only': 0.001
-#             }.get(label, 0)
-#
-#             plt.step(
-#                 [year_range[0], year_range[1]],
-#                 [y_offset, y_offset],
-#                 where="post",
-#                 label=label,
-#                 color=mda_colours.get(label, "grey"),
-#                 linestyle="--" if label == "WASH only" else "--",
-#                 linewidth=1.5,
-#                 alpha=alpha,
-#             )
-#
-#     plt.title("")
-#     plt.ylabel(f"Proportion < {threshold * 100:.1f}%")
-#     plt.xlabel("Year")
-#     plt.ylim(-0.05, 1)
-#     plt.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
-#     plt.legend(title="Strategy", loc="upper left", fontsize="small")
-#     plt.tight_layout()
-#     plt.savefig(results_folder / f"ephp_km_plot_{species}_pause.png", dpi=300)
-#     plt.show()
-#
-#
-# plot_ephp_km_pause(prev_haem_H_All_district, species='haem')
-#
-# plot_ephp_km_pause(prev_mansoni_H_All_district, species='mansoni')
-#
-#
-# # get the figures for the SI separately
-# def plot_ephp_km_scaleup(
-#     df: pd.DataFrame,
-#     threshold: float = 0.015,
-#     year_range: tuple = (2024, 2040),
-#     alpha: float = 1.0,
-#     figsize: tuple = (10, 6),
-#         species=None
-# ):
-#     """
-#     Plot Kaplan-Meier style curves in a single panel showing the proportion of districts
-#     reaching prevalence < threshold by year, for:
-#         - Each MDA strategy under 'Continue WASH'
-#         - 'no MDA' under 'Scale-up WASH' as 'WASH only'
-#     """
-#
-#     mda_colours = {
-#         'no MDA': '#1b9e77',  # Teal
-#         'MDA SAC': '#d95f02',  # Orange
-#         'MDA PSAC': '#7570b3',  # Purple
-#         'MDA All': '#e7298a',  # Pink
-#         'WASH only': '#e6ab02'  # Mustard Yellow – distinct from teal
-#     }
-#
-#     def extract_mda_label(draw_name: str) -> str:
-#         """Extract MDA category for legend from draw name."""
-#         mda_labels = ["no MDA", "MDA SAC", "MDA PSAC", "MDA All"]
-#         for label in mda_labels:
-#             if label in draw_name:
-#                 return label
-#         return "Other"
-#
-#     df = df.loc[df.index.get_level_values("year") >= year_range[0]]
-#
-#     # Mean across runs per draw
-#     df_mean_runs = df.groupby(axis=1, level="draw").mean()
-#
-#     # Identify threshold crossing
-#     below = (df_mean_runs < threshold).reset_index()
-#     long_format = below.melt(id_vars=["year", "district"], var_name="draw", value_name="below_threshold")
-#     below_threshold = long_format[long_format["below_threshold"]]
-#
-#     # First year reaching threshold by draw
-#     first_years = below_threshold.groupby(["district", "draw"])["year"].min().reset_index(name="year_ephp")
-#
-#     total_districts = df.index.get_level_values("district").nunique()
-#
-#     # Cumulative count of districts reaching EPHP
-#     ephp_counts = (
-#         first_years.groupby(["draw", "year_ephp"])
-#         .size()
-#         .groupby(level=0)
-#         .cumsum()
-#         .reset_index(name="num_districts")
-#     )
-#     ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
-#     ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
-#     ephp_counts.to_excel(
-#         results_folder / f'ephp_counts{species}_scaleup.xlsx')
-#
-#     # Draws to plot
-#     draw_labels = {
-#         'Scale-up WASH, no MDA': 'no MDA',
-#         'Scale-up WASH, MDA SAC': 'MDA SAC',
-#         'Scale-up WASH, MDA PSAC': 'MDA PSAC',
-#         'Scale-up WASH, MDA All': 'MDA All',
-#     }
-#
-#     plt.figure(figsize=figsize)
-#     for draw, label in draw_labels.items():
-#         if draw in ephp_counts["draw"].unique():
-#             data = ephp_counts[ephp_counts["draw"] == draw]
-#             plt.step(
-#                 data["year_ephp"],
-#                 data["prop_districts"],
-#                 where="post",
-#                 label=label,
-#                 color=mda_colours.get(label, "grey"),
-#                 linewidth=1.8,
-#                 alpha=alpha,
-#             )
-#         else:
-#             # Offset zero-line slightly to avoid overlap
-#             y_offset = {
-#                 'no MDA': -0.001,
-#                 'WASH only': 0.001
-#             }.get(label, 0)
-#
-#             plt.step(
-#                 [year_range[0], year_range[1]],
-#                 [y_offset, y_offset],
-#                 where="post",
-#                 label=label,
-#                 color=mda_colours.get(label, "grey"),
-#                 linestyle="--" if label == "WASH only" else "--",
-#                 linewidth=1.5,
-#                 alpha=alpha,
-#             )
-#
-#     plt.title("")
-#     plt.ylabel(f"Proportion < {threshold * 100:.1f}%")
-#     plt.xlabel("Year")
-#     plt.ylim(-0.05, 1)
-#     plt.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
-#     plt.legend(title="Strategy", loc="upper left", fontsize="small")
-#     plt.tight_layout()
-#     plt.savefig(results_folder / f"ephp_km_plot_{species}_scaleup.png", dpi=300)
-#     plt.show()
-#
-#
-# plot_ephp_km_scaleup(prev_haem_H_All_district)
-# plot_ephp_km_scaleup(prev_mansoni_H_All_district)
-#
 
+#%%
+# plot ICERs per WASH strategy
+
+file_path = results_folder / f'icer_district_cons_only_2024-2050.xlsx'
+icer_district_df = pd.read_excel(file_path)
+
+
+
+def plot_ce_two_class_overview(df: pd.DataFrame,
+                                       wash_order=("Continue WASH","Scale-up WASH"),
+                                       strategies=("SAC","PSAC+SAC","All")):
+    # Minimal normalisation
+    d = df.copy()
+    cols = {c.lower(): c for c in d.columns}
+    need = ["district","wash_strategy","comparison","n_runs","n_valid",
+            "n_dominated_no_benefit","prop_valid_below_61"]
+    # map lower→actual
+    d = d.rename(columns={cols[c]: c for c in need if c in cols})
+
+    # Compute counts of “valid <61”
+    d["n_valid_below"] = d["n_valid"] * d["prop_valid_below_61"].fillna(0.0)
+
+    # Aggregate to (wash, strategy)
+    agg = (d.groupby(["wash_strategy","comparison"], as_index=False)
+             .agg(total_runs=("n_runs","sum"),
+                  total_valid_below=("n_valid_below","sum"),
+                  total_dom_noben=("n_dominated_no_benefit","sum")))
+
+    # Shares (two classes only)
+    prop = agg.assign(
+        valid_share = agg["total_valid_below"] / agg["total_runs"],
+        dom_share   = agg["total_dom_noben"] / agg["total_runs"]
+    )[["wash_strategy","comparison","valid_share","dom_share"]]
+
+    # Ensure uniqueness (as claimed); raise if violated
+    if prop.duplicated(["wash_strategy","comparison"]).any():
+        raise ValueError("Duplicate (wash_strategy, comparison) pairs detected.")
+
+    # Δ valid pp (Scale-up − Continue) via strict pivot
+    vs = prop.pivot(index="comparison", columns="wash_strategy", values="valid_share")
+    have_both = all(w in vs.columns for w in wash_order)
+    delta_pp = (100.0 * (vs[wash_order[1]] - vs[wash_order[0]])) if have_both else pd.Series(dtype=float)
+
+    # Build plotting vectors in requested order
+    vals_valid, vals_dom, xticks, xpos, centres = [], [], [], [], []
+    k = 0
+    for s in strategies:
+        pair = []
+        for w in wash_order:
+            row = prop[(prop["comparison"]==s) & (prop["wash_strategy"]==w)]
+            if row.empty:
+                continue
+            r = row.iloc[0]
+            vals_valid.append(float(r["valid_share"]))
+            vals_dom.append(float(r["dom_share"]))
+            xpos.append(k)
+            xticks.append(f"{s}\n{w.replace(' WASH','')}")
+            pair.append(k); k += 1
+        if pair:
+            centres.append(np.mean(pair))
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(9, 4.6))
+    bottoms = np.zeros(len(xpos))
+    ax.bar(xpos, vals_valid, bottom=bottoms, label="ICER valid (<61)")
+    bottoms += np.array(vals_valid)
+    ax.bar(xpos, vals_dom,   bottom=bottoms, label="Dominated—no additional benefit")
+
+    ax.set_ylim(0, 1.05)
+    ax.set_ylabel("Proportion of runs (aggregated across districts)")
+    ax.set_xticks(xpos, xticks)
+    ax.set_title("Classification overview (two-class): MDA scope × WASH context")
+    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.02, 1.0))
+    ax.axhline(1.0, color="0.85", lw=0.8)
+    for c in centres[:-1]:
+        ax.axvline(c + 1.0, color="0.9", ls="--", lw=0.8)
+
+    # Annotate Δ valid (pp) if both contexts present
+    if not delta_pp.empty:
+        for s, c in zip(strategies, centres):
+            if s in delta_pp.index and pd.notna(delta_pp.loc[s]):
+                ax.text(c, 1.02, f"Δ valid: {delta_pp.loc[s]:+.1f} pp",
+                        ha="center", va="bottom", fontsize=9)
+
+    plt.tight_layout()
+    plt.savefig(results_folder / f"ICER_WASH_comparison.png", dpi=300)
+    plt.show()
+    return fig, ax, delta_pp, prop
+
+
+import re
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from pathlib import Path
+
+def plot_ce_two_class_from_pairwise(df: pd.DataFrame,
+                                    include_wash=("Continue WASH","Scale-up WASH"),
+                                    outfile: str | Path | None = None):
+    """
+    df must contain (any case/spacing): district, wash_strategy, comparison,
+    n_runs, n_valid, n_dominated_no_benefit, prop_valid_below_61.
+    Assumes no cost-saving and no 'worse health' classes.
+    """
+
+    # --- normalise columns and strings ---
+    d = df.copy()
+    d.columns = [str(c).strip().lower() for c in d.columns]
+    need = {"district","wash_strategy","comparison","n_runs","n_valid",
+            "n_dominated_no_benefit","prop_valid_below_61"}
+    miss = need - set(d.columns)
+    if miss:
+        raise ValueError(f"Missing columns: {miss}")
+    for c in ["district","wash_strategy","comparison"]:
+        d[c] = d[c].astype(str).str.strip()
+
+    # --- restrict to requested WASH contexts (drop Pause WASH) ---
+    if isinstance(include_wash, str):
+        include_wash = [include_wash]
+    d = d[d["wash_strategy"].isin(include_wash)].copy()
+    if d.empty:
+        raise ValueError("No rows after wash_strategy filter.")
+
+    # --- derive MDA scope from pairwise comparison text ---
+    def parse_scope(s: str) -> str | None:
+        s = s.lower().replace("mda ", "mda ")
+        if re.search(r"mda\s+sac\s+vs\s+no\s+mda", s):             return "SAC"
+        if re.search(r"mda\s+psac\+sac\s+vs\s+mda\s+sac", s):      return "PSAC+SAC"
+        if re.search(r"mda\s+all\s+vs\s+mda\s+psac\+sac", s):      return "All-ages"
+        return None  # ignore anything else
+
+    d["scope"] = d["comparison"].apply(parse_scope)
+    d = d.dropna(subset=["scope"])
+    if d.empty:
+        raise ValueError("No rows matched the expected comparisons.")
+
+    # --- counts → proportions by (wash, scope) ---
+    d["n_valid_below"] = d["n_valid"] * d["prop_valid_below_61"].fillna(0.0)
+    agg = (d.groupby(["wash_strategy","scope"], as_index=False)
+             .agg(total_runs=("n_runs","sum"),
+                  total_valid_below=("n_valid_below","sum"),
+                  total_dom_noben=("n_dominated_no_benefit","sum")))
+    prop = agg.assign(
+        valid_share = agg["total_valid_below"] / agg["total_runs"],
+        dom_share   = agg["total_dom_noben"] / agg["total_runs"]
+    )[["wash_strategy","scope","valid_share","dom_share"]]
+
+    # --- Δ valid (Scale-up − Continue) in percentage points, if both present ---
+    scopes = ["SAC","PSAC+SAC","All-ages"]
+    prop["scope"] = pd.Categorical(prop["scope"], categories=scopes, ordered=True)
+    have_both = {"Continue WASH","Scale-up WASH"}.issubset(prop["wash_strategy"].unique())
+    if have_both:
+        vs = prop.pivot(index="scope", columns="wash_strategy", values="valid_share")
+        delta_pp = 100.0 * (vs["Scale-up WASH"] - vs["Continue WASH"])
+    else:
+        delta_pp = pd.Series(dtype=float)
+
+    # --- assemble bars (Continue then Scale-up per scope) ---
+    wash_order = [w for w in ("Continue WASH","Scale-up WASH") if w in prop["wash_strategy"].unique()]
+    vals_valid, vals_dom, xticks, xpos, centres = [], [], [], [], []
+    k = 0
+    for s in scopes:
+        pair = []
+        for w in wash_order:
+            row = prop[(prop["scope"]==s) & (prop["wash_strategy"]==w)]
+            if row.empty:
+                continue
+            r = row.iloc[0]
+            vals_valid.append(float(r["valid_share"]))
+            vals_dom.append(float(r["dom_share"]))
+            xpos.append(k); xticks.append(f"{s}\n{w.replace(' WASH','')}")
+            pair.append(k); k += 1
+        if pair:
+            centres.append(np.mean(pair))
+
+    # --- plot ---
+    fig, ax = plt.subplots(figsize=(9, 4.6))
+    bottoms = np.zeros(len(xpos))
+    ax.bar(xpos, vals_valid, bottom=bottoms, label="ICER valid (<61)")
+    bottoms += np.array(vals_valid)
+    ax.bar(xpos, vals_dom,   bottom=bottoms, label="Dominated—no additional benefit")
+
+    ax.set_ylim(0, 1.05)
+    ax.set_ylabel("Proportion of runs (aggregated across districts)")
+    ax.set_xticks(xpos, xticks)
+    ax.set_title("Classification overview: MDA scope × WASH context")
+    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.02, 1.0))
+    ax.axhline(1.0, color="0.85", lw=0.8)
+    for c in centres[:-1]:
+        ax.axvline(c + 1.0, color="0.9", ls="--", lw=0.8)
+
+    # annotate Δ valid (pp)
+    if have_both:
+        for s, c in zip(scopes, centres):
+            if s in delta_pp.index and pd.notna(delta_pp.loc[s]):
+                ax.text(c, 1.02, f"Δ valid: {delta_pp.loc[s]:+.1f} pp",
+                        ha="center", va="bottom", fontsize=9)
+
+    plt.tight_layout()
+    plt.savefig(results_folder / f"ICER_WASH_comparison.png", dpi=300)
+    plt.show()
+    return fig, ax, delta_pp, prop
+
+
+
+fig, ax, delta_pp, prop = plot_ce_two_class_from_pairwise(
+    df=icer_district_df)
+
+print(delta_pp)  # Δ valid share (pp) for SAC, PSAC+SAC, All-ages
+
+
+
+#####################################################################
+
+
+
+def plot_optimal_share_curves_from_draws(
+    dalys_averted: pd.DataFrame,
+    comparison_costs: pd.DataFrame,
+    lambdas: Iterable[float] = np.linspace(40, 120, 81),
+    draws_keep = (
+        "Continue WASH, MDA SAC",
+        "Continue WASH, MDA PSAC+SAC",
+        "Continue WASH, MDA All",
+    ),
+):
+    strat_order = list(draws_keep)
+    shares = []
+    districts_universe = None
+
+    for lam in lambdas:
+        nhb = compute_nhb(
+            dalys_averted=dalys_averted,
+            comparison_costs=comparison_costs,
+            discount_rate_dalys=0.0,
+            threshold=float(lam),
+            discount_rate_costs=0.0,
+            return_summary=True
+        ).copy()
+
+        need = {"district", "draw", "mean"}
+        if not need.issubset(nhb.columns):
+            missing = need - set(nhb.columns)
+            raise ValueError(f"compute_nhb output missing columns: {missing}")
+
+        nhb["draw"] = nhb["draw"].astype(str).str.strip()
+        nhb = nhb[nhb["draw"].isin(draws_keep)].copy()
+        if nhb.empty:
+            raise ValueError(f"No rows matched requested draws at λ={lam}: {draws_keep}")
+
+        # district × strategy (draw): NHB mean
+        mat = nhb.pivot_table(index="district", columns="draw", values="mean", aggfunc="mean")
+
+        # ensure denominator consistency across λ
+        if districts_universe is None:
+            districts_universe = mat.index
+        else:
+            districts_universe = districts_universe.union(mat.index)
+
+        mat = mat.reindex(index=districts_universe, columns=strat_order)
+
+        # choose best per district (skip rows that are all NaN)
+        valid = mat.notna().any(axis=1)
+        best = mat[valid].idxmax(axis=1)
+
+        # proportions among valid districts
+        prop = best.value_counts(normalize=True).reindex(strat_order).fillna(0.0)
+        prop.name = float(lam)
+        shares.append(prop)
+
+    shares_df = pd.DataFrame(shares)
+    shares_df.index.name = "lambda_usd_per_daly"
+
+    # ----- stacked bar plot -----
+    fig, ax = plt.subplots(figsize=(10, 5), constrained_layout=True)
+
+    x = np.arange(len(shares_df.index))
+    bottom = np.zeros(len(x))
+
+    # map long → short for legend
+    legend_map = {
+        "Continue WASH, MDA SAC": "MDA SAC",
+        "Continue WASH, MDA PSAC+SAC": "MDA PSAC+SAC",
+        "Continue WASH, MDA All": "MDA All",
+    }
+
+    # punchy, print-safe colours (colour-blind–aware)
+    colours = {
+        "Continue WASH, MDA SAC": "#C70E7B",  # magenta
+        "Continue WASH, MDA PSAC+SAC": "#A6E000",  # lime
+        "Continue WASH, MDA All": "#1BB6AF",  # teal
+    }
+
+    for s in strat_order:
+        if s not in shares_df.columns:
+            shares_df[s] = 0.0
+        heights = shares_df[s].values.astype(float)
+        ax.bar(x, heights, bottom=bottom, label=legend_map.get(s, s), color=colours[s])
+        bottom += heights
+
+        # x-axis labelling (keep it readable)
+    xtick_labels = [f"{int(l)}" if float(l).is_integer() else f"{float(l):.0f}" for l in shares_df.index]
+    ax.set_xticks(x)
+    ax.set_xticklabels(xtick_labels, rotation=45, ha="right")
+
+    ax.set_ylim(0, 1.05)
+    ax.set_xlabel("Opportunity cost threshold λ (USD per DALY)")
+    ax.set_ylabel("Proportion of districts NHB-optimal")
+    ax.set_title("")
+    leg = ax.legend(frameon=False, title="Strategy", loc="upper left", bbox_to_anchor=(1.02, 1.0))
+    ax.grid(axis="y", alpha=0.25)
+
+    # save and show (your style)
+    plt.savefig(results_folder / f"Varying lambda for NHB", dpi=300, bbox_inches="tight")
+    plt.show()
+
+    return fig, ax, shares_df
+
+
+
+lambdas = np.arange(20, 601, 20)  # 20, 40, 60, …, 600
+fig, ax, shares_df = plot_optimal_share_curves_from_draws(
+    dalys_averted=dalys_averted_district_compared_noMDA,
+    comparison_costs=cons_costs_relative_noMDA_district,
+    lambdas=lambdas,
+    draws_keep=(
+        "Continue WASH, MDA SAC",
+        "Continue WASH, MDA PSAC+SAC",
+        "Continue WASH, MDA All",
+    ),
+)

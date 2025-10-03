@@ -6,6 +6,7 @@ pyproj.datadir.set_data_dir('/Users/tmangal/anaconda3/envs/tlo/share/proj')
 
 import geopandas as gpd
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from pathlib import Path
@@ -57,7 +58,7 @@ map_with_nhb_diffs_continue = gdf.merge(continue_wash_best_strategy, on='distric
 map_with_nhb_diffs_scaleup = gdf.merge(scaleup_wash_best_strategy, on='district', how='left')  # 'left' keeps all districts
 
 
-# --- Plot  map ---
+# --- Plot  NHB map with different WASH assumptions ---
 
 fig, axs = plt.subplots(1, 3, figsize=(24, 8), constrained_layout=True)
 
@@ -144,7 +145,7 @@ suggest that the costs may outweigh the health benefits compared to the baseline
 # match draw names from preferred stratgy to draw name first_years_ephp_df_haem
 # todo these are probably 2% limits like the KM plots
 first_years_ephp_df_haem = pd.read_excel(results_folder / 'first_years_haem HML_2percent_2024-2050.xlsx')
-first_years_ephp_df_mansoni = pd.read_excel(results_folder / 'first_years_mansoni HML_2percent 2024-2050.xlsx')
+first_years_ephp_df_mansoni = pd.read_excel(results_folder / 'first_years_mansoni_HML_2percent 2024-2050.xlsx')
 
 # Merge to get year_ephp for the best strategy under Continue WASH
 continue_wash_best_strategy_with_ehph = continue_wash_best_strategy.merge(
@@ -185,7 +186,15 @@ for g in [map_with_nhb_diffs_ephp, lake_malawi, gdf_national]:
     else:
         g.to_crs(target_crs, inplace=True)    # reproject if necessary
 
-for i, (ax, (gdf, column, title, cmap)) in enumerate(zip(axs, maps)):
+for i, (ax, (gdf_in, column, title, cmap)) in enumerate(zip(axs, maps)):
+
+    gdf = gdf_in.copy()
+
+    # Treat -99 as missing for elimination-year maps (plots 2 & 3)
+    if i in (1, 2):
+        gdf[column] = pd.to_numeric(gdf[column], errors="coerce")
+        gdf[column] = gdf[column].where(gdf[column] != -99, np.nan)
+
     # Set normalisation
     if i == 0:
         # Dynamic range for first map
@@ -193,7 +202,7 @@ for i, (ax, (gdf, column, title, cmap)) in enumerate(zip(axs, maps)):
         vmax = gdf[column].max()
     else:
         # Fixed range for years on second and third maps
-        vmin, vmax = 2024, 2050
+        vmin, vmax = 2010, 2050
 
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 
@@ -218,7 +227,7 @@ for i, (ax, (gdf, column, title, cmap)) in enumerate(zip(axs, maps)):
         missing_kwds = {
             "color": "white",
             "edgecolor": "lightgrey",
-            "hatch": "///",
+            # "hatch": "///",
             "label": "No data"
         }
     else:
@@ -278,7 +287,7 @@ for ax, (gdf, column, title, cmap) in zip(axs, maps):
         vmin = gdf[column].min()
         vmax = gdf[column].max()
     else:
-        vmin, vmax = 2024, 2050
+        vmin, vmax = 2010, 2050
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
