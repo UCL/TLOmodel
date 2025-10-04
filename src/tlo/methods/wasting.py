@@ -1425,7 +1425,6 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         if whz == 'WHZ>=-2':
             # MAM by MUAC only
             df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
-            # TODO: I think this changes the proportions below as some of the cases will be issued here
 
         else:
             # using the probability of mam classification by anthropometric indices
@@ -1546,8 +1545,6 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Return the expected appointment footprint based on attendance at the HSI event."""
-        # TODO: for now assumed general attendance prob for <1 y old,
-        #  later may be excluded from here and be dealt with within epi module
         # perform growth monitoring if attending
         if self.attendance:
             return self.make_appt_footprint({'Under5OPD': 1})
@@ -1560,17 +1557,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         p = self.module.parameters
 
-        # TODO: Will they be monitored during the treatment? Can we assume, that after the treatment they will be
-        #  always properly checked (all measurements and oedema checked), or should be the assumed "treatment outcome"
-        #  be also based on equipment availability and probability of checking oedema? Maybe they should be sent for
-        #  after treatment monitoring, where the assumed "treatment outcome" will be determined and follow-up treatment
-        #  based on that? - The easiest way (currently coded) is assuming that after treatment all measurements are
-        #  done, hence correctly diagnosed. The growth monitoring is scheduled for them as usual, ie, for instance, for
-        #  a child 2-5 old, if they were sent for treatment via growth monitoring, they will be on tx for adequate nmb
-        #  of weeks, but next monitoring will be done in ~5 months after the treatment. - Or we could schedule for the
-        #  treated children a monitoring sooner after the treatment.
-        # no
-        # if person already dead or not under 5, the growth monitoring is no performed
+        # if person already dead or not under 5, the growth monitoring is not performed
         if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'age_exact_years'] >= 5):
             # or
             # df.at[person_id, 'un_am_treatment_type'].isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
@@ -1578,7 +1565,6 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         def schedule_next_monitoring():
             def get_monitoring_frequency_days(age):
-                # TODO: in future maybe 0-1 to be dealt with within epi module
                 if age < 1:
                     return p['growth_monitoring_frequency_days_agecat'][0]
                 elif age < 2:
@@ -1597,7 +1583,6 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
                 )
             # else: no more growth monitoring scheduled as the age will be above 5 at the time
 
-        # TODO: as stated above, for now we schedule next monitoring for all children, even those sent for treatment
         schedule_next_monitoring()
 
         # the person may not attend the appt
@@ -1606,7 +1591,6 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         # if person currently treated, or acute malnutrition already assessed,
         # acute malnutrition will not be assessed (again)
-        # TODO: later could be scheduled for monitoring within the tx to use the resources
         if (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
                 self.sim.date) or \
             (self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']):
