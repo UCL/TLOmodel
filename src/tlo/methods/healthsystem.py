@@ -1713,10 +1713,6 @@ class HealthSystem(Module):
             clinic_name: {fid: cl * self.capabilities_coefficient for fid, cl in clinic_cl.items()}
             for clinic_name, clinic_cl in self._daily_capabilities.items()
         }
-        print("***********************")
-        for clinic_name, clinic_cl in self._daily_capabilities.items():
-            print(clinic_name, type(clinic_cl))
-        print("***********************")
         return scaled
 
     def get_blank_appt_footprint(self):
