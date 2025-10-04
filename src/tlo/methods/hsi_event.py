@@ -232,14 +232,30 @@ class HSI_Event:
         # Determine if the request should be logged (over-ride argument provided if HealthSystem is disabled).
         _to_log = to_log if not self.healthcare_system.disable else False
 
-        # Checking the availability and logging:
-        rtn = self.healthcare_system.consumables._request_consumables(
-            essential_item_codes=_item_codes,
-            optional_item_codes=_optional_item_codes,
-            to_log=_to_log,
-            facility_info=self.facility_info,
-            treatment_id=self.TREATMENT_ID,
-        )
+        # Checking the availability and logging
+        # (including tmp hack for overriding CSB++ availability to the required prob for FS interv)
+        if 'Wasting' in self.sim.modules:
+            FS_interv_ON = self.sim.modules['Wasting'].FS_interv_ON
+            CSB_avail_prob_with_FS_interv = self.sim.modules["Wasting"].parameters["interv_avail_CSB++"]
+
+            # Checking the availability and logging:
+            rtn = self.healthcare_system.consumables._request_consumables(
+                essential_item_codes=_item_codes,
+                optional_item_codes=_optional_item_codes,
+                to_log=_to_log,
+                facility_info=self.facility_info,
+                treatment_id=self.TREATMENT_ID,
+                FS_interv_ON=FS_interv_ON,
+                CSB_avail_prob_with_FS_interv=CSB_avail_prob_with_FS_interv
+            )
+        else:
+            rtn = self.healthcare_system.consumables._request_consumables(
+                essential_item_codes=_item_codes,
+                optional_item_codes=_optional_item_codes,
+                to_log=_to_log,
+                facility_info=self.facility_info,
+                treatment_id=self.TREATMENT_ID
+            )
 
         # Return result in expected format:
         if not return_individual_results:

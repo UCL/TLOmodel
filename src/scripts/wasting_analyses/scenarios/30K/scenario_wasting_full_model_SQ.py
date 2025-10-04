@@ -3,11 +3,11 @@ This file defines a scenario for wasting analysis.
 
 It can be submitted on Azure Batch by running:
 
-    tlo batch-submit src/scripts/wasting_analyses/scenarios/2K/scenario_wasting_full_model_SQ_2y.py
+    tlo batch-submit src/scripts/wasting_analyses/scenarios/30K/scenario_wasting_full_model_SQ.py
 
 or locally using:
 
-    tlo scenario-run src/scripts/wasting_analyses/scenarios/2K/scenario_wasting_full_model_SQ_2y.py
+    tlo scenario-run src/scripts/wasting_analyses/scenarios/30K/scenario_wasting_full_model_SQ.py
 """
 # import itertools
 import warnings
@@ -27,8 +27,8 @@ class WastingAnalysis(BaseScenario):
         super().__init__(
             seed=0,
             start_date=Date(year=2010, month=1, day=1),
-            end_date=Date(year=2012, month=1, day=2),
-            initial_population_size=2_000,
+            end_date=Date(year=2031, month=1, day=2),
+            initial_population_size=30_000,
             number_of_draws=1,
             runs_per_draw=10,
         )

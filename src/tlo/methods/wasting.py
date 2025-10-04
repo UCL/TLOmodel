@@ -46,126 +46,189 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'Severe Acute Malnutrition': Cause(gbd_causes='Protein-energy malnutrition',
-                                           label='Childhood Undernutrition')
+        'SevereAcuteMalnutrition': Cause(gbd_causes='Protein-energy malnutrition',
+                                         label='Childhood Undernutrition')
     }
 
     # Declare Causes of Death and Disability
     CAUSES_OF_DISABILITY = {
-        'Severe Acute Malnutrition': Cause(gbd_causes='Protein-energy malnutrition',
-                                           label='Childhood Undernutrition')
+        'SevereAcuteMalnutrition': Cause(gbd_causes='Protein-energy malnutrition',
+                                         label='Childhood Undernutrition')
     }
 
     PARAMETERS = {
         # initial prevalence of wasting by age group
-        'prev_init_any_by_agegp': Parameter(
-            Types.LIST, 'initial any wasting (WHZ < -2) prevalence in 2010 by age groups'),
-        'prev_init_sev_by_agegp': Parameter(
-            Types.LIST, 'initial severe wasting (WHZ < -3) prevalence in 2010 by age groups'),
+        "prev_init_any_by_agegp": Parameter(
+            Types.LIST, "initial any wasting (WHZ < -2) prevalence in 2010 by age groups"
+        ),
+        "prev_init_sev_by_agegp": Parameter(
+            Types.LIST, "initial severe wasting (WHZ < -3) prevalence in 2010 by age groups"
+        ),
         # incidence
-        'min_days_to_relapse':  Parameter(
-            Types.REAL, 'minimum days to relapse: the incidence of another wasting episode in the previous '
-                        'month cannot occur if recovery happened fewer than this number of days before the start of '
-                        'that month'),
-        'base_overall_inc_rate_wasting': Parameter(
-            Types.REAL, 'base overall monthly moderate wasting incidence rate '
-                        '(probability per child aged <0.5 years per month)'),
-        'rr_inc_rate_wasting_by_agegp': Parameter(
-            Types.LIST, 'relative risk of monthly moderate wasting incidence rate by age group '
-                        '(reference age group: <0.5 years)'),
-        'rr_wasting_AGA_and_preterm': Parameter(
-            Types.REAL, 'relative risk of moderate wasting incidence if born adequate for gestational age '
-                        'and preterm'),
-        'rr_wasting_SGA_and_term': Parameter(
-            Types.REAL, 'relative risk of moderate wasting incidence if born small for gestational age '
-                        'and term'),
-        'rr_wasting_SGA_and_preterm': Parameter(
-            Types.REAL, 'relative risk of moderate wasting incidence if born small for gestational age '
-                        'and preterm'),
-        'rr_wasting_wealth_level': Parameter(
-            Types.REAL, 'relative risk of moderate wasting incidence per 1 unit decrease in wealth level'),
+        "min_days_to_relapse": Parameter(
+            Types.REAL,
+            "minimum days to relapse: the incidence of another wasting episode in the previous "
+            "month cannot occur if recovery happened fewer than this number of days before the start of "
+            "that month",
+        ),
+        "base_overall_inc_rate_wasting": Parameter(
+            Types.REAL,
+            "base overall monthly moderate wasting incidence rate (probability per child aged <0.5 years per month)",
+        ),
+        "rr_inc_rate_wasting_by_agegp": Parameter(
+            Types.LIST,
+            "relative risk of monthly moderate wasting incidence rate by age group (reference age group: <0.5 years)",
+        ),
+        "rr_wasting_AGA_and_preterm": Parameter(
+            Types.REAL, "relative risk of moderate wasting incidence if born adequate for gestational age and preterm"
+        ),
+        "rr_wasting_SGA_and_term": Parameter(
+            Types.REAL, "relative risk of moderate wasting incidence if born small for gestational age and term"
+        ),
+        "rr_wasting_SGA_and_preterm": Parameter(
+            Types.REAL, "relative risk of moderate wasting incidence if born small for gestational age and preterm"
+        ),
+        "rr_wasting_wealth_level": Parameter(
+            Types.REAL, "relative risk of moderate wasting incidence per 1 unit decrease in wealth level"
+        ),
         # progression
-        'min_days_duration_of_wasting': Parameter(
-            Types.REAL, 'minimum limit for moderate and severe wasting duration episode (days)'),
-        'duration_of_untreated_mod_wasting': Parameter(
-            Types.REAL, 'duration of untreated moderate wasting (days)'),
-        'duration_of_untreated_sev_wasting': Parameter(
-            Types.REAL, 'duration of untreated severe wasting (days)'),
-        'progression_severe_wasting_monthly_by_agegp': Parameter(
-            Types.LIST, 'monthly progression rate to severe wasting by age group'),
-        'prob_complications_in_SAM': Parameter(
-            Types.REAL, 'probability of medical complications in a SAM episode'),
-        'duration_sam_to_death': Parameter(
-            Types.REAL, 'duration of SAM till death if supposed to die due to untreated SAM (days)'),
-        'base_death_rate_untreated_SAM': Parameter(
-            Types.REAL, 'base death rate due to untreated SAM (reference age group <0.5 months old)'),
-        'rr_death_rate_by_agegp': Parameter(
-            Types.LIST, 'list with relative risks of death due to untreated SAM by age group, reference '
-                        'group <0.5 months old'),
+        "min_days_duration_of_wasting": Parameter(
+            Types.REAL, "minimum limit for moderate and severe wasting duration episode (days)"
+        ),
+        "duration_of_untreated_mod_wasting": Parameter(Types.REAL, "duration of untreated moderate wasting (days)"),
+        "duration_of_untreated_sev_wasting": Parameter(Types.REAL, "duration of untreated severe wasting (days)"),
+        "progression_severe_wasting_monthly_by_agegp": Parameter(
+            Types.LIST, "monthly progression rate to severe wasting by age group"
+        ),
+        "prob_complications_in_SAM": Parameter(Types.REAL, "probability of medical complications in a SAM episode"),
+        "duration_sam_to_death": Parameter(
+            Types.REAL, "duration of SAM till death if supposed to die due to untreated SAM (days)"
+        ),
+        "base_death_rate_untreated_SAM": Parameter(
+            Types.REAL, "base death rate due to untreated SAM (reference age group <0.5 months old)"
+        ),
+        "rr_death_rate_by_agegp": Parameter(
+            Types.LIST,
+            "list with relative risks of death due to untreated SAM by age group, reference group <0.5 months old",
+        ),
         # MUAC distributions
-        'proportion_WHZ<-3_with_MUAC<115mm': Parameter(
-            Types.REAL, 'proportion of individuals with severe wasting who have MUAC < 115 mm'),
-        'proportion_-3<=WHZ<-2_with_MUAC<115mm': Parameter(
-            Types.REAL, 'proportion of individuals with moderate wasting who have MUAC < 115 mm'),
-        'proportion_-3<=WHZ<-2_with_MUAC_[115-125)mm': Parameter(
-            Types.REAL, 'proportion of individuals with moderate wasting who have 115 mm ≤ MUAC < 125 mm'),
-        'proportion_mam_with_MUAC_[115-125)mm_and_normal_whz': Parameter(
-            Types.REAL, 'proportion of individuals with MAM who have 115 mm ≤ MUAC < 125 mm and normal/mild'
-                        ' WHZ'),
-        'proportion_mam_with_MUAC_[115-125)mm_and_-3<=WHZ<-2': Parameter(
-            Types.REAL, 'proportion of individuals with MAM who have both 115 mm ≤ MUAC < 125 mm and moderate'
-                        ' wasting'),
-        'proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC': Parameter(
-            Types.REAL, 'proportion of individuals with MAM who have moderate wasting and normal MUAC'),
-        'MUAC_distribution_WHZ<-3': Parameter(
-            Types.LIST,
-            'mean and standard deviation of a normal distribution of MUAC measurements for WHZ < -3'),
-        'MUAC_distribution_-3<=WHZ<-2': Parameter(
-            Types.LIST,
-            'mean and standard deviation of a normal distribution of MUAC measurements for -3 <= WHZ < -2'),
-        'MUAC_distribution_WHZ>=-2': Parameter(
-            Types.LIST,
-            'mean and standard deviation of a normal distribution of MUAC measurements for WHZ >= -2'),
+        "proportion_WHZ<-3_with_MUAC<115mm": Parameter(
+            Types.REAL, "proportion of individuals with severe wasting who have MUAC < 115 mm"
+        ),
+        "proportion_-3<=WHZ<-2_with_MUAC<115mm": Parameter(
+            Types.REAL, "proportion of individuals with moderate wasting who have MUAC < 115 mm"
+        ),
+        "proportion_-3<=WHZ<-2_with_MUAC_[115-125)mm": Parameter(
+            Types.REAL, "proportion of individuals with moderate wasting who have 115 mm ≤ MUAC < 125 mm"
+        ),
+        "proportion_mam_with_MUAC_[115-125)mm_and_normal_whz": Parameter(
+            Types.REAL, "proportion of individuals with MAM who have 115 mm ≤ MUAC < 125 mm and normal/mild WHZ"
+        ),
+        "proportion_mam_with_MUAC_[115-125)mm_and_-3<=WHZ<-2": Parameter(
+            Types.REAL, "proportion of individuals with MAM who have both 115 mm ≤ MUAC < 125 mm and moderate wasting"
+        ),
+        "proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC": Parameter(
+            Types.REAL, "proportion of individuals with MAM who have moderate wasting and normal MUAC"
+        ),
+        "MUAC_distribution_WHZ<-3": Parameter(
+            Types.LIST, "mean and standard deviation of a normal distribution of MUAC measurements for WHZ < -3"
+        ),
+        "MUAC_distribution_-3<=WHZ<-2": Parameter(
+            Types.LIST, "mean and standard deviation of a normal distribution of MUAC measurements for -3 <= WHZ < -2"
+        ),
+        "MUAC_distribution_WHZ>=-2": Parameter(
+            Types.LIST, "mean and standard deviation of a normal distribution of MUAC measurements for WHZ >= -2"
+        ),
         # nutritional oedema
-        'prevalence_nutritional_oedema': Parameter(
-            Types.REAL, 'prevalence of nutritional oedema'),
-        'proportion_WHZ<-2_with_oedema': Parameter(
-            Types.REAL, 'proportion of individuals with wasting (moderate or severe) who have oedema'),
-        'proportion_oedema_with_WHZ<-2': Parameter(
-            Types.REAL, 'proportion of individuals with oedema who are wasted (moderately or severely)'),
-        'proportion_normal_whz': Parameter(
-            Types.REAL, 'proportion of children under 5 with no wasting (WHZ >= -2)'),
+        "prevalence_nutritional_oedema": Parameter(Types.REAL, "prevalence of nutritional oedema"),
+        "proportion_WHZ<-2_with_oedema": Parameter(
+            Types.REAL, "proportion of individuals with wasting (moderate or severe) who have oedema"
+        ),
+        "proportion_oedema_with_WHZ<-2": Parameter(
+            Types.REAL, "proportion of individuals with oedema who are wasted (moderately or severely)"
+        ),
+        "proportion_normal_whz": Parameter(Types.REAL, "proportion of under-five children without wasting (WHZ >= -2)"),
         # detection
-        'growth_monitoring_first': Parameter(
-            Types.INT, 'recommended age (in days) for first growth monitoring visit'),
-        'growth_monitoring_frequency_days_agecat': Parameter(
-            Types.LIST, 'growth monitoring frequency (days) for age categories '),
-        'growth_monitoring_attendance_prob_agecat': Parameter(
-            Types.LIST, 'probability to attend the growth monitoring for age categories'),
-        # recovery due to treatment
-        'recovery_rate_with_soy_RUSF': Parameter(
-            Types.REAL, 'probability of recovery from MAM following treatment with soy RUSF'),
-        'recovery_rate_with_CSB++': Parameter(
-            Types.REAL, 'probability of recovery from MAM following treatment with CSB++'),
-        'recovery_rate_with_standard_RUTF': Parameter(
-            Types.REAL, 'probability of recovery from uncomplicated SAM following treatment with standard'
-                        'RUTF'),
-        'recovery_rate_with_inpatient_care': Parameter(
-            Types.REAL, 'probability of recovery from complicated SAM following treatment via inpatient '
-                        'care'),
-        'tx_length_weeks_SuppFeedingMAM': Parameter(
-            Types.REAL, 'number of weeks the patient receives treatment in the Supplementary Feeding '
-                        'Programme (SFP) for MAM, including the final supply provided at discharge'),
-        'tx_length_weeks_OutpatientSAM': Parameter(
-            Types.REAL, 'number of weeks the patient receives treatment in the Outpatient Therapeutic '
-                        'Programme (OTP) for uncomplicated SAM, including the final supply provided at discharge'),
-        'tx_length_weeks_InpatientSAM': Parameter(
-            Types.REAL, 'number of weeks the patient receives treatment in the Inpatient Therapeutic Care '
-                        '(ITC) for complicated SAM---modelled to include the Rehabilitation Phase, ie to cover OTP as '
-                        'well'),
-        # treatment impacts
-        'prob_death_after_SAMcare': Parameter(
-            Types.REAL, 'probability of dying from SAM after receiving care if not fully recovered'),
+        "growth_monitoring_first": Parameter(
+            Types.INT, "recommended age (in days) for first growth monitoring visit"),
+        "growth_monitoring_frequency_days_agecat": Parameter(
+            Types.LIST, "growth monitoring frequency (days) for age categories "
+        ),
+        "growth_monitoring_attendance_prob_agecat": Parameter(
+            Types.LIST, "probability to attend the growth monitoring for age categories <1, [1; 2], (2; 5) years old"
+        ),
+        "awareness_MAM_prob": Parameter(
+            Types.REAL, "probability of recognising symptoms and seeking care in MAM cases"
+        ),
+        # treatment
+        "tx_length_weeks_SuppFeedingMAM": Parameter(
+            Types.REAL,
+            "number of weeks the patient receives treatment in the Supplementary Feeding "
+            "Programme (SFP) for MAM, including the final supply provided at discharge"),
+        "tx_length_weeks_OutpatientSAM": Parameter(
+            Types.REAL,
+            "number of weeks the patient receives treatment in the Outpatient Therapeutic "
+            "Programme (OTP) for uncomplicated SAM, including the final supply provided at discharge",
+        ),
+        "tx_length_weeks_InpatientSAM": Parameter(
+            Types.REAL,
+            "number of weeks the patient receives treatment in the Inpatient Therapeutic Care "
+            "(ITC) for complicated SAM",
+        ),
+        "recovery_rate_with_soy_RUSF": Parameter(
+            Types.REAL, "probability of recovery from MAM following treatment with soy RUSF"
+        ),
+        "recovery_rate_with_CSB++": Parameter(
+            Types.REAL, "probability of recovery from MAM following treatment with CSB++"
+        ),
+        "recovery_rate_with_standard_RUTF": Parameter(
+            Types.REAL, "probability of recovery from uncomplicated SAM following treatment with standard RUTF"
+        ),
+        "recovery_rate_with_inpatient_care": Parameter(
+            Types.REAL, "probability of recovery from complicated SAM following treatment via inpatient care"
+        ),
+        "prob_death_after_OutpatientSAMcare": Parameter(
+            Types.REAL, "probability of dying from SAM after receiving outpatient care if not fully recovered"
+        ),
+        "prob_death_after_InpatientSAMcare": Parameter(
+            Types.REAL, "probability of dying from SAM after receiving inpatient care if not fully recovered"
+        ),
+        # interventions
+        "interv_start_year": Parameter(
+            Types.INT, "the year when the interventions are activated by overwriting the relevant parameters"
+        ),
+        "interv_growth_monitoring_attendance_prob_agecat": Parameter(
+            Types.LIST,
+            "probability to attend the growth monitoring for age categories following the "
+            "activation of the intervention",
+        ),
+        "interv_awareness_MAM_prob": Parameter(
+            Types.REAL,
+            "probability of recognising symptoms and seeking care in MAM cases following the "
+            "activation of the intervention",
+        ),
+        "interv_food_supplements_avail_bool": Parameter(
+            Types.BOOL,
+            "indicates whether the intervention that applies fixed availability probabilities"
+            "(`interv_avail_xx`) for food supplements across all facilities and months from"
+            "`interv_start_year` is implemented. If `True`, the default availability probabilities are"
+            "overridden with the corresponding fixed values.",
+        ),
+        "interv_avail_F75milk": Parameter(
+            Types.REAL,
+            "probability of F-75 therapeutic milk availability across all facilities and "
+            "months following the activation of the intervention",
+        ),
+        "interv_avail_RUTF": Parameter(
+            Types.REAL,
+            "probability of RUTF availability across all facilities and "
+            "months following the activation of the intervention",
+        ),
+        "interv_avail_CSB++": Parameter(
+            Types.REAL,
+            "probability of CSB++ availability across all facilities and "
+            "months following the activation of the intervention",
+        ),
     }
 
     PROPERTIES = {
@@ -241,9 +304,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                  'sev_not_yet_recovered']
         blank_length_counter = dict(
             zip(self.recovery_options, [list() for _ in self.recovery_options]))
-        self.wasting_length_tracker_blank = {
+        self.wasting_recovery_tracker_blank = {
             _agrp: copy.deepcopy(blank_length_counter) for _agrp in ['0y', '1y', '2y', '3y', '4y', '5+y']}
-        self.wasting_length_tracker = copy.deepcopy(self.wasting_length_tracker_blank)
+        self.wasting_recovery_tracker = copy.deepcopy(self.wasting_recovery_tracker_blank)
 
         # define age groups
         self.age_grps = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
@@ -252,11 +315,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             agegp_i = f'{low_bound_mos}_{high_bound_mos}mo'
             self.age_gps_range_mo.append(agegp_i)
 
+        self.FS_interv_ON = False
+
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """
         * 1) Reads the ResourceFile
         * 2) Declares the DALY weights
         * 3) Registers the Symptom
+
+        :param resourcefilepath:
         """
 
         # 1) Read parameters from the resource file
@@ -300,9 +367,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             for s in p['progression_severe_wasting_monthly_by_agegp']
         ]
         logger.debug(
-            key="progression_severe_wasting_by_agegp",
-            data="A progression_severe_wasting_monthly_by_agegp adjusted to the duration of untreated moderate wasting:"
-                 f" {p['progression_severe_wasting_by_agegp']}"
+            key="progression_severe_wasting",
+            data={
+                'progression_severe_wasting_monthly_by_agegp': p['progression_severe_wasting_monthly_by_agegp'],
+                 'progression_severe_wasting_by_agegp': p['progression_severe_wasting_by_agegp'],
+            },
+            description="monthly progression to severe wasting adjusted to the duration of untreated moderate wasting"
         )
 
         # Set initial properties
@@ -383,6 +453,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         * the first annual logging event,
         * the first monthly incidence polling event,
         * the first growth monitoring for all children under 5.
+        * Activation ('SWITCH ON') of interventions.
 
         :param sim:
         """
@@ -390,6 +461,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=1))
         # Schedule growth monitoring for all children under 5
         self.schedule_growth_monitoring_on_initiation()
+        sim.schedule_event(Wasting_ActivateInterventionsEvent(self),
+                           Date(year=self.parameters['interv_start_year'], month=1, day=1))
 
         # Retrieve the consumables codes and amounts of the consumables used
         self.cons_codes = self.get_consumables_for_each_treatment()
@@ -600,6 +673,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # if person well
         if (whz == 'WHZ>=-2') and (muac == '>=125mm') and (not oedema_presence):
             df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
+            # clear all wasting symptoms
+            self.sim.modules["SymptomManager"].clear_symptoms(
+                person_id=person_id, disease_module=self
+            )
         # if person not well
         else:
             # start without treatment
@@ -616,6 +693,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             # otherwise moderate acute malnutrition (MAM)
             else:
                 df.at[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
+                # apply symptoms to certain MAM cases
+                if self.rng.random_sample() < p['awareness_MAM_prob']:
+                    self.wasting_clinical_symptoms(person_id=person_id)
+                else:
+                    # clear all wasting symptoms
+                    self.sim.modules["SymptomManager"].clear_symptoms(
+                        person_id=person_id, disease_module=self
+                    )
 
         if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM':
             # Determine if SAM episode has complications
@@ -638,10 +723,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         else:
             df.at[person_id, 'un_sam_with_complications'] = False
-            # clear all wasting symptoms
-            self.sim.modules["SymptomManager"].clear_symptoms(
-                person_id=person_id, disease_module=self
-            )
 
         assert not ((df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM')
                     and (df.at[person_id, 'un_sam_with_complications'])), f'{person_id=} has MAM with complications.'
@@ -660,8 +741,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         _cons_codes['OTP_opt'] = {get_item_code("SAM medicines"): 1}
         _cons_codes['ITC'] = {get_item_code("F-75 therapeutic milk, 102.5 g"): 102.5 * 24,
                               get_item_code("Therapeutic spread, sachet 92g/CAR-150"): 3 * 4}
-        _cons_codes['ITC_opt'] = {get_item_code("Therapeutic spread, sachet 92g/CAR-150"): 20 * 7,
-                                  get_item_code("SAM medicines"): 1}
+        _cons_codes['ITC_opt'] = {get_item_code("SAM medicines"): 1}
         return _cons_codes
 
     def length_of_untreated_wasting(self, whz_category):
@@ -756,11 +836,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         :param person_id:
         """
         df = self.sim.population.props
-
-        if df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM':
+        if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well':
             return
 
-        # apply wasting symptoms to the new SAM case
+        # apply wasting symptoms to the new acute malnutrition case
         self.sim.modules["SymptomManager"].change_symptom(
             person_id=person_id,
             symptom_string=self.wasting_symptom,
@@ -803,8 +882,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             if self.sim.date == individual_properties['un_last_nonemergency_appt_date']:
                 logger.debug(
                     key="multiple non-emergency appts on same day",
-                    data=f"A non-emergency appointment is scheduled again on the same date for {person_id=}. "
-                         "Acute malnutrition assessment cancelled as it has already been performed."
+                    data={"person_id": person_id},
+                    description=(
+                        "A non-emergency appointment is scheduled again on the same date for the person, "
+                        "as they are seeking care for multiple different symptoms. "
+                        "Acute malnutrition assessment cancelled because it has already been performed."
+                    ),
                 )
             return
 
@@ -860,6 +943,16 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
         rng = self.rng
 
+        assert treatment in ('SFP', 'OTP', 'ITC')
+
+        logger.debug(key='get-tx',
+                     data={
+                         'treatment': treatment,
+                         'person_id': person_id,
+                         'age_group': self.age_grps.get(df.loc[person_id].age_years, '5+y')
+                     },
+                     description='Treatment for acute malnutrition provided.')
+
         # Cancel any scheduled natural outcome (natural recovery, progression, or death) with treatment,
         # the outcome will be determined by treatment
         df.at[person_id, 'un_recov_to_mam_date'] = pd.NaT
@@ -871,6 +964,19 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         # Set the date when the treatment is provided:
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
+
+        def log_tx_outcome():
+            logger.debug(
+                key="tx-outcome",
+                data={
+                    'treatment': treatment,
+                    'person_id': person_id,
+                    'age_group': self.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                    'tx_outcome': outcome,
+                    'outcome_date': outcome_date,
+                },
+                description="record treatment (tx) outcome"
+            )
 
         if treatment == 'SFP':
             outcome_date = self.sim.date + DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM'])
@@ -884,6 +990,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 )
 
             if mam_full_recovery:
+                outcome = 'full_recovery'
                 # set discharge date and schedule full recovery for that day
                 df.at[person_id, 'un_am_discharge_date'] = outcome_date
                 self.sim.schedule_event(
@@ -893,21 +1000,21 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 df.at[person_id, "un_full_recov_date"] = outcome_date
             else:
                 # remained MAM, send for another SFP
+                outcome = 'remained_MAM'
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                     priority=0, topen=outcome_date)
-                return
+            log_tx_outcome()
+            return
 
-        elif treatment in ['OTP', 'ITC']:
-            if treatment == 'OTP':
-                outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_OutpatientSAM']))
-            else:
-                outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_InpatientSAM']))
+        elif treatment == 'OTP':
+            outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_OutpatientSAM']))
 
             sam_full_recovery = self.wasting_models.acute_malnutrition_recovery_sam_lm.predict(
                 df.loc[[person_id]], rng
             )
             if sam_full_recovery:
+                outcome = 'full_recovery'
                 # set discharge date and schedule full recovery for that day
                 df.at[person_id, 'un_am_discharge_date'] = outcome_date
                 self.sim.schedule_event(
@@ -915,7 +1022,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     date=outcome_date
                 )
                 df.at[person_id, "un_full_recov_date"] = outcome_date
-                # send for follow-up treatment for MAM
+                # send for follow-up SFP
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                     priority=0, topen=outcome_date
@@ -924,8 +1031,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             else:
                 outcome = rng.choice(['recovery_to_mam', 'death'],
                                      p=[
-                                         1-self.parameters['prob_death_after_SAMcare'],
-                                         self.parameters['prob_death_after_SAMcare']
+                                         1-self.parameters['prob_death_after_OutpatientSAMcare'],
+                                         self.parameters['prob_death_after_OutpatientSAMcare']
                                      ])
                 if outcome == 'death':
                     self.sim.schedule_event(
@@ -941,6 +1048,50 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                         priority=0, topen=outcome_date)
+
+            log_tx_outcome()
+            return
+
+        else:  # treatment == 'ITC'
+            outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_InpatientSAM']))
+
+            sam_complications_recovery = self.wasting_models.acute_malnutrition_recovery_sam_lm.predict(
+                df.loc[[person_id]], rng
+            )
+
+            if sam_complications_recovery:
+                outcome = 'complications_recovery'
+                df.at[person_id, 'un_am_discharge_date'] = outcome_date
+                # schedule complications recovery
+                self.sim.schedule_event(
+                    event=Wasting_ComplicationsRecovery_Event(module=self, person_id=person_id),
+                    date=outcome_date
+                )
+                # send for follow-up OTP
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Wasting_OutpatientTherapeuticProgramme_SAM(module=self, person_id=person_id),
+                    priority=0, topen=outcome_date
+                )
+
+            else:
+                outcome = rng.choice(['complications_persist', 'death'],
+                                     p=[
+                                         1-self.parameters['prob_death_after_InpatientSAMcare'],
+                                         self.parameters['prob_death_after_InpatientSAMcare']
+                                     ])
+                if outcome == 'death':
+                    self.sim.schedule_event(
+                        event=Wasting_SevereAcuteMalnutritionDeath_Event(module=self, person_id=person_id),
+                        date=outcome_date
+                    )
+                    df.at[person_id, 'un_sam_death_date'] = outcome_date
+                else:  # complications persist hence send for another round of ITC
+                    df.at[person_id, 'un_am_discharge_date'] = outcome_date
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event=HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(module=self, person_id=person_id),
+                        priority=0, topen=outcome_date)
+
+            log_tx_outcome()
 
 class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
     """
@@ -963,20 +1114,15 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         df = population.props
-        p = self.module.parameters
         rng = self.module.rng
 
         # # # INCIDENCE OF MODERATE WASTING # # # # # # # # # # # # # # # # # # # # #
-        # Determine who developed wasting among those who are alive, under 5, currently do not have acute
-        # malnutrition, are not being treated, and did not recover later than min_days_to_relapse before the start
-        # of the previous month (incidence can occur on any day within the previous month)
-        days_in_month = (self.sim.date - pd.DateOffset(days=1)).days_in_month
+        # Determine who will be onset with wasting among those who are alive, under 5, currently do not have acute
+        # malnutrition, are not being treated, and did not recover in the last 14 days
         not_am_or_treated_or_recently_recovered =\
             df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_clinical_acute_malnutrition == 'well') &
                    (df.un_am_tx_start_date.isna()) &
-                   (df.un_am_recovery_date.isna() |
-                    (df.un_am_recovery_date < self.sim.date - pd.DateOffset(days=(p['min_days_to_relapse'] +
-                                                                                  days_in_month))))]
+                   (df.un_am_recovery_date.isna() | (df.un_am_recovery_date < self.sim.date - pd.DateOffset(days=14)))]
 
         incidence_of_wasting_bool = \
             self.module.wasting_models.wasting_incidence_lm.predict(not_am_or_treated_or_recently_recovered, rng=rng)
@@ -984,6 +1130,7 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         mod_wasting_new_cases_idx = mod_wasting_new_cases.index
         # update the properties for new cases of wasted children
         df.loc[mod_wasting_new_cases_idx, 'un_ever_wasted'] = True
+        days_in_month = (self.sim.date - pd.DateOffset(days=1)).days_in_month
         df.loc[mod_wasting_new_cases_idx, 'un_last_wasting_date_of_onset'] = (
             self.sim.date - pd.to_timedelta(rng.randint(1, days_in_month, size=len(mod_wasting_new_cases_idx)),
                                             unit='D')
@@ -1086,6 +1233,20 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
             df.at[person_id, "un_recov_to_mam_date"] = outcome_date
         # else: death due to SAM scheduled earlier, i.e. natural progression
 
+        logger.debug(
+            key="progression to severe wasting",
+            data={
+                'person_id': person_id,
+                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                'natural history scheduled':
+                    "recovery to moderate wasting" if pd.isnull(df.at[person_id, 'un_sam_death_date']) else "death",
+                'outcome_date':
+                    outcome_date if pd.isnull(df.at[person_id, 'un_sam_death_date']) else \
+                        df.at[person_id, 'un_sam_death_date']
+            },
+            description="progression from moderate to severe wasting"
+        )
+
 class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixin):
     """
     This event applies the death function
@@ -1116,7 +1277,7 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
             df.at[person_id, 'un_sam_death_date'] = self.sim.date
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
-                cause='Severe Acute Malnutrition',
+                cause='SevereAcuteMalnutrition',
                 originating_module=self.module)
         # else:
             # Death does not occur because the person has already recovered and has not become wasted again,
@@ -1150,11 +1311,24 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
         ):
             return
 
-        # if not well (i.e. occurs as result of OTP/ITC, not a follow-up SFP)
-        if df.at[person_id, 'un_WHZ_category'] != 'WHZ>=-2':
-            if df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2':
+        whz = df.at[person_id, 'un_WHZ_category']
+        severity = 'sev' if whz == 'WHZ<-3' else 'mod'
+
+        # Record recovery
+        logger.debug(
+            key="recovery",
+            data={
+                'person_id': person_id,
+                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                'recov_opt': f"{severity}_{df.at[person_id, 'un_clinical_acute_malnutrition']}_{recov_how}_full_recov"
+            },
+        )
+
+        # Record wasting length if wasted
+        if whz != 'WHZ>=-2':
+            if whz == '-3<=WHZ<-2':
                 recov_opt = f"mod_{df.at[person_id, 'un_clinical_acute_malnutrition']}_{recov_how}_full_recov"
-            else: # df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3':
+            else: # whz == 'WHZ<-3':
                 recov_opt = f"sev_{df.at[person_id, 'un_clinical_acute_malnutrition']}_{recov_how}_full_recov"
             age_group = self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
             wasted_days = (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
@@ -1181,12 +1355,11 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
                     min_length = min_length_nat
                 return min_length - 1
 
-            whz = df.at[person_id, 'un_WHZ_category']
             assert wasted_days >= get_min_length(recov_how, person_id, whz),\
                 (f" The {person_id=} is {wasted_days=} < minimal expected length= "
                  f"{get_min_length(recov_how, person_id, whz)} days "
                  f"when {recov_opt=}.")
-            self.module.wasting_length_tracker[age_group][recov_opt].append(wasted_days)
+            self.module.wasting_recovery_tracker[age_group][recov_opt].append(wasted_days)
 
         df.at[person_id, 'un_am_recovery_date'] = self.sim.date
         df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # normal WHZ
@@ -1199,7 +1372,7 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[person_id, 'un_am_treatment_type'] = 'not_applicable'
 
-        # this will clear all wasting symptoms
+        # Clear all wasting symptoms
         self.sim.modules["SymptomManager"].clear_symptoms(
             person_id=person_id, disease_module=self.module
         )
@@ -1240,6 +1413,15 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         # For cases with normal WHZ and other acute malnutrition signs:
         # oedema, or low MUAC - do not change the WHZ
         whz = df.at[person_id, 'un_WHZ_category']
+        severity = 'sev' if whz == 'WHZ<-3' else 'mod' if whz == '-3<=WHZ<-2' else 'norm'
+        logger.debug(
+            key="recovery",
+            data={
+                'person_id': person_id,
+                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                'recov_opt': f"{severity}_SAM_{recov_how}_recov_to_MAM"
+            },
+        )
         if whz == 'WHZ>=-2':
             # MAM by MUAC only
             df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
@@ -1275,7 +1457,7 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
                 assert wasted_days >= get_min_length(recov_how, person_id, whz), \
                     (f" The {person_id=} is wasted {wasted_days=} < minimal expected length= "
                      f"{get_min_length(recov_how, person_id, whz)} days when {recov_opt=}.")
-                self.module.wasting_length_tracker[age_group][recov_opt].append(wasted_days)
+                self.module.wasting_recovery_tracker[age_group][recov_opt].append(wasted_days)
 
                 df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
                 df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
@@ -1298,10 +1480,13 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[person_id, 'un_am_treatment_type'] = 'none'
 
-        # this will clear all wasting symptoms (applicable for SAM, not MAM)
-        self.sim.modules["SymptomManager"].clear_symptoms(
-            person_id=person_id, disease_module=self.module
-        )
+        # clear all wasting symptoms if not recognised
+        if rng.random_sample() < p["awareness_MAM_prob"]:
+            # check presence of weight_loss symptom
+            assert "weight_loss" in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
+        else:
+            # clear symptoms
+            self.sim.modules["SymptomManager"].clear_symptoms(person_id=person_id, disease_module=self.module)
 
         duration_of_untreated_mod_wasting = self.module.length_of_untreated_wasting('-3<=WHZ<-2')
         outcome_date = self.sim.date + DateOffset(days=duration_of_untreated_mod_wasting)
@@ -1316,6 +1501,21 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         else:
             self.sim.schedule_event(Wasting_FullRecovery_Event(self.module, person_id), outcome_date)
             df.at[person_id, "un_full_recov_date"] = outcome_date
+
+class Wasting_ComplicationsRecovery_Event(Event, IndividualScopeEventMixin):
+    """
+    This event updates complications from being to not being present for those cases that improved
+    from complicated SAM to uncomplicated SAM.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Wasting)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+
+        df.at[person_id, 'un_sam_with_complications'] = False
 
 class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
     """ Attendance is determined for the HSI. If the child attends, measurements with available equipment are performed
@@ -1443,8 +1643,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         logger.debug(key="HSI_Wasting_GrowthMonitoring",
-                     data="HSI_Wasting_GrowthMonitoring: did not run"
-                     )
+                     data="HSI_Wasting_GrowthMonitoring: did not run")
 
 
 class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEventMixin):
@@ -1459,36 +1658,56 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         self.TREATMENT_ID = 'Undernutrition_Feeding_Supplementary'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.person_id = person_id
 
     def apply(self, person_id, squeeze_factor):
         assert isinstance(self.module, Wasting)
+        treatment = 'SFP'
 
         df = self.sim.population.props
+
+        logger.debug(key='seek-tx',
+                     data={
+                         'HSI': 'HSI_Wasting_SupplementaryFeedingProgramme_MAM',
+                         'person_id': person_id,
+                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
+                     },
+                     description='Care is sought.')
 
         # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
             return
 
         # Check and log availability of consumables
-        if self.get_consumables(item_codes=self.module.cons_codes['SFP']):
-            logger.debug(key='debug', data='consumables are available')
+        if self.get_consumables(item_codes=self.module.cons_codes[treatment]):
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 1,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
+                         description='essential consumables availability recorded')
 
             # Admission for the treatment
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Perform measurements (height/length), weight, MUAC and log equipment required for the treatment
+            # Perform acute malnutrition assessment based on measurements (height/length, weight, MUAC)
+            # and log equipment required for the treatment
             self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape",
                                 "Development milestone charts", "Measuring Cup", "Mixing Bowls"})
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
             # Perform the treatment: cancel natural recovery/progression,
             # then determine and schedule the outcome following treatment
-            self.module.do_when_am_treatment(person_id, treatment='SFP')
+            self.module.do_when_am_treatment(person_id, treatment=treatment)
         else:
-            logger.debug(key='debug',
-                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 0,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
+                         description='essential consumables availability recorded')
 
     def did_not_run(self):
-        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {self.person_id}')
 
 
 class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeEventMixin):
@@ -1503,12 +1722,21 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         self.TREATMENT_ID = 'Undernutrition_Feeding_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"U5Malnutr": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.person_id = person_id
 
     def apply(self, person_id, squeeze_factor):
         assert isinstance(self.module, Wasting)
+        treatment = 'OTP'
 
         df = self.sim.population.props
-        # p = self.module.parameters
+
+        logger.debug(key='seek-tx',
+                     data={
+                         'HSI': 'HSI_Wasting_OutpatientTherapeuticProgramme_SAM',
+                         'person_id': person_id,
+                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
+                     },
+                     description='Care is sought.')
 
         # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
@@ -1516,24 +1744,35 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
 
         # Check and log availability of consumables
         if self.get_consumables(
-            item_codes=self.module.cons_codes['OTP'], optional_item_codes=self.module.cons_codes['OTP_opt']
+            item_codes=self.module.cons_codes[treatment], optional_item_codes=self.module.cons_codes['OTP_opt']
         ):
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 1,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
+                         description='essential consumables availability recorded')
+
             # Admission for the treatment
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Perform measurements (height/length), weight, MUAC
+            # Perform acute malnutrition assessment based on measurements (height/length, weight, MUAC)
             self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape",
                                 "Development milestone charts"})
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
             # Perform the treatment: cancel natural recovery/progression,
             # then determine and schedule the outcome following treatment
-            self.module.do_when_am_treatment(person_id, treatment='OTP')
+            self.module.do_when_am_treatment(person_id, treatment=treatment)
         else:
-            logger.debug(key='debug',
-                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 0,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
+                         description='essential consumables availability recorded')
 
     def did_not_run(self):
-        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {self.person_id}')
 
 
 class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMixin):
@@ -1549,11 +1788,21 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"U5Malnutr": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
+        self.person_id = person_id
 
     def apply(self, person_id, squeeze_factor):
         assert isinstance(self.module, Wasting)
+        treatment = 'ITC'
 
         df = self.sim.population.props
+
+        logger.debug(key='seek-tx',
+                     data={
+                         'HSI': 'HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM',
+                         'person_id': person_id,
+                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
+                     },
+                     description='Care is sought.')
 
         # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
@@ -1561,24 +1810,35 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
 
         # Check and log availability of consumables
         if self.get_consumables(
-            item_codes=self.module.cons_codes['ITC'], optional_item_codes=self.module.cons_codes['ITC_opt']
+            item_codes=self.module.cons_codes[treatment], optional_item_codes=self.module.cons_codes['ITC_opt']
         ):
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 1,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
+                         description='essential consumables availability recorded')
+
             # Admission for the treatment
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Perform measurements (height/length), weight, MUAC
+            # Perform acute malnutrition assessment based on measurements (height/length, weight, MUAC)
             self.add_equipment({"Height Pole (Stadiometer)", "Weighing scale", "MUAC tape",
                                 "Development milestone charts"})
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
             # Perform the treatment: cancel natural recovery/progression,
             # then determine and schedule the outcome following treatment
-            self.module.do_when_am_treatment(person_id, treatment='ITC')
+            self.module.do_when_am_treatment(person_id, treatment=treatment)
         else:
-            logger.debug(key='debug',
-                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 0,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y')},
+                         description='essential consumables availability recorded')
 
     def did_not_run(self):
-        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {self.person_id}')
 
 
 class WastingModels:
@@ -1761,17 +2021,31 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             self.module.wasting_incident_case_tracker = copy.deepcopy(self.module.wasting_incident_case_tracker_blank)
             self.date_last_run = self.sim.date
 
+            # ----- RECOVERY LOG ----------------
+            # Convert the list of lengths to number of recovery events
+            recovery_df = pd.DataFrame(index=self.module.wasting_recovery_tracker.keys(),
+                                     columns=self.module.recovery_options)
+            for age_grp in self.module.wasting_recovery_tracker.keys():
+                for recov_opt in self.module.recovery_options:
+                    if self.module.wasting_recovery_tracker[age_grp][recov_opt]:
+                        recovery_df.loc[age_grp, recov_opt] = \
+                            len(self.module.wasting_recovery_tracker[age_grp][recov_opt])
+                    else:
+                        recovery_df.loc[age_grp, recov_opt] = 0
+
+            logger.debug(key="wasting_recovery", data=recovery_df.to_dict())
+
             # ----- LENGTH LOG ----------------
             # Convert the list of lengths to an avg length
             # and check that all the lengths are positive
-            length_df = pd.DataFrame(index=self.module.wasting_length_tracker.keys(),
+            length_df = pd.DataFrame(index=self.module.wasting_recovery_tracker.keys(),
                                      columns=self.module.recovery_options)
-            for age_grp in self.module.wasting_length_tracker.keys():
+            for age_grp in self.module.wasting_recovery_tracker.keys():
                 for recov_opt in self.module.recovery_options:
-                    if self.module.wasting_length_tracker[age_grp][recov_opt]:
+                    if self.module.wasting_recovery_tracker[age_grp][recov_opt]:
                         length_df.loc[age_grp, recov_opt] = \
-                            (sum(self.module.wasting_length_tracker[age_grp][recov_opt]) /
-                             len(self.module.wasting_length_tracker[age_grp][recov_opt]))
+                            (sum(self.module.wasting_recovery_tracker[age_grp][recov_opt]) /
+                             len(self.module.wasting_recovery_tracker[age_grp][recov_opt]))
                     else:
                         length_df.loc[age_grp, recov_opt] = 0
                     assert not np.isnan(length_df.loc[age_grp, recov_opt]),\
@@ -1779,15 +2053,15 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
                     if recov_opt in ['mod_MAM_nat_full_recov', 'mod_SAM_nat_recov_to_MAM']:
                         assert all(length >= (p['duration_of_untreated_mod_wasting'] - 1) for length in
-                               self.module.wasting_length_tracker[age_grp][recov_opt]),\
-                            f"{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < "\
+                               self.module.wasting_recovery_tracker[age_grp][recov_opt]),\
+                            f"{self.module.wasting_recovery_tracker[age_grp][recov_opt]=} contains length(s) < "\
                             f"{(p['duration_of_untreated_mod_wasting'] - 1)=}; {age_grp=}, {recov_opt=}"
                     elif recov_opt in ['sev_SAM_nat_recov_to_MAM']:
                         assert all(length >=
                                    (p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 2)
-                                   for length in self.module.wasting_length_tracker[age_grp][recov_opt]),\
-                            (f"{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < duration "
-                             "of (mod + sev wast - 2): "
+                                   for length in self.module.wasting_recovery_tracker[age_grp][recov_opt]),\
+                            (f"{self.module.wasting_recovery_tracker[age_grp][recov_opt]=} contains length(s) < "
+                             "duration of (mod + sev wast - 2): "
                              f"{(p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 2)=}"
                              f" days; {age_grp=}, {recov_opt=}")
                     elif recov_opt in ['mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov', 'mod_SAM_tx_recov_to_MAM',
@@ -1799,14 +2073,11 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                 (min(p['tx_length_weeks_OutpatientSAM'], p['tx_length_weeks_InpatientSAM']) * 7) - 1
 
                         assert all(length >= min_length for length in
-                                   self.module.wasting_length_tracker[age_grp][recov_opt]), \
-                            f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < ' \
+                                   self.module.wasting_recovery_tracker[age_grp][recov_opt]), \
+                            f'{self.module.wasting_recovery_tracker[age_grp][recov_opt]=} contains length(s) < ' \
                             f'{min_length=} days; {age_grp=}, {recov_opt=}'
 
                     assert recov_opt in self.module.recovery_options, f'\nInvalid {recov_opt=}.'
-
-            # Reset the length tracker
-            self.module.wasting_length_tracker = copy.deepcopy(self.module.wasting_length_tracker_blank)
 
             for age_ys in range(6):
                 age_grp = self.module.age_grps.get(age_ys, '5+y')
@@ -1867,9 +2138,12 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 assert not np.isnan(length_df.loc[age_grp, 'sev_not_yet_recovered']), \
                     f"The avg {length_df.loc[age_grp, 'sev_not_yet_recovered']=} for {age_grp=} is empty."
 
-            logger.info(key='wasting_length_avg', data=length_df.to_dict())
+            logger.debug(key='wasting_length_avg', data=length_df.to_dict())
 
-        # ----- PREVALENCE LOG ----------------
+            # Reset the recovery tracker
+            self.module.wasting_recovery_tracker = copy.deepcopy(self.module.wasting_recovery_tracker_blank)
+
+        # ----- PREVALENCE & POP SIZE LOGS ----------------
         # Wasting totals (prevalence & pop size at logging time)
         # declare a dictionary that will hold proportions of wasting prevalence per each age group
         wasting_prev_dict: Dict[str, Any] = dict()
@@ -1935,3 +2209,73 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # log pop sizes
         logger.info(key='pop sizes', data=pop_sizes_dict)
+
+class Wasting_ActivateInterventionsEvent(Event, PopulationScopeEventMixin):
+    """
+    This event activates the intervention(s) by overwriting the relevant parameters with values set for draws in the
+    scenario file. The default values are set as the original parameters prior intervention(s), hence if scenario does
+    not define any 'interv_' parameter, no intervention is activated.
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+        assert isinstance(module, Wasting)
+
+    def apply(self, population):
+        p = self.module.parameters
+
+        # ###
+        # Log whether GM intervention is ON
+        logger.debug(
+            key="GM-interv",
+            data={'GM interv ON':
+                      p['growth_monitoring_attendance_prob_agecat'] != \
+                      p['interv_growth_monitoring_attendance_prob_agecat'],
+                  'growth_monitoring_attendance_prob_agecat': p['growth_monitoring_attendance_prob_agecat'],
+                  'interv_growth_monitoring_attendance_prob_agecat':
+                      p['interv_growth_monitoring_attendance_prob_agecat']
+                  },
+            description="record info about growth monitoring (GM) intervention"
+        )
+        # Overwrite growth monitoring attendance probs
+        p['growth_monitoring_attendance_prob_agecat'] = p['interv_growth_monitoring_attendance_prob_agecat']
+
+        # ###
+        # Log whether CS intervention is ON
+        logger.debug(
+            key="CS-interv",
+            data={'CS interv ON':
+                      p['awareness_MAM_prob'] != p['interv_awareness_MAM_prob'],
+                  'awareness_MAM_prob': p['awareness_MAM_prob'],
+                  'interv_awareness_MAM_prob':
+                      p['interv_awareness_MAM_prob']
+                  },
+            description="record info abo care-seeking (CS) intervention"
+        )
+        # Overwrite seeking care prob for MAM cases
+        p['awareness_MAM_prob'] = p['interv_awareness_MAM_prob']
+
+        # ###
+        # Log whether FS intervention is ON
+        logger.debug(
+            key="FS-interv",
+            data={'FS interv ON': p['interv_food_supplements_avail_bool'],
+                  'F-75 milk availability': p['interv_avail_F75milk'],
+                  'RUTF availability': p['interv_avail_RUTF'],
+                  'CSB availability': p['interv_avail_CSB++']
+                  },
+            description="record info about food supplements (FS) intervention"
+        )
+        # If FS intervention is ON, override the probabilities
+        if p['interv_food_supplements_avail_bool']:
+            self.module.FS_interv_ON = True
+            get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+            item_code_F75milk = get_item_code("F-75 therapeutic milk, 102.5 g")
+            item_code_RUTF = get_item_code("Therapeutic spread, sachet 92g/CAR-150")
+            # item_code_CSB = get_item_code("Corn Soya Blend (or Supercereal - CSB++)")
+
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({
+                item_code_F75milk: p['interv_avail_F75milk'],
+                item_code_RUTF: p['interv_avail_RUTF'],
+                # item_code_CSB: p['interv_avail_CSB++'],
+            })
