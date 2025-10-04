@@ -1956,8 +1956,8 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
                          level='1a')
     hsi1.initialise()
     for k, v in hsi1.expected_time_requests.items():
-        print(k, sim.modules['HealthSystem']._daily_fungible_capabilities[k])
-        sim.modules['HealthSystem']._daily_fungible_capabilities[k] = v*(tot_population/4)
+        print(k, sim.modules['HealthSystem']._daily_capabilities['OtherClinic'][k])
+        sim.modules['HealthSystem']._daily_capabilities['OtherClinic'][k] = v*(tot_population/4)
 
     # In second district, make capabilities tuned to be those required to run all priority=2 events under
     # maximum squeezed allowed for this priority, which currently is zero.
@@ -1970,7 +1970,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
                          level='1a')
     hsi2.initialise()
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_fungible_capabilities[k] = (v/scale)*(tot_population/4)
+        sim.modules['HealthSystem']._daily_capabilities['OtherClinic'][k] = (v/scale)*(tot_population/4)
 
     # Run healthsystemscheduler
     healthsystemscheduler.apply(sim.population)
