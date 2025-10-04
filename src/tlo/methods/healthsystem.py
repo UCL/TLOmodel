@@ -674,6 +674,10 @@ class HealthSystem(Module):
         errors one at a time.
         """
 
+        ## This is the default configuration, which is empty. No further checks needed.
+        if clinic_capabilities_df.shape[0] == 0:
+            return
+
         all_level2_facilities = self.parameters['Master_Facilities_List'][self.parameters['Master_Facilities_List']['Facility_Level'] == '2']
         cl_level2_facilities = clinic_capabilities_df[clinic_capabilities_df['Facility_ID'].isin(all_level2_facilities['Facility_ID'])]
         if not cl_level2_facilities.empty:
@@ -687,7 +691,7 @@ class HealthSystem(Module):
         if mask.any():
             raise ValueError(
                 f"Row(s) {clinic_capabilities_df[mask][id_col].values} in the ringfenced clinics file do not sum to 1.0. "
-                "Please ensure that the fractions for each appointment type sum to 1.0."
+                "Please ensure that the fractions for clinic types sum to 1.0."
             )
 
 

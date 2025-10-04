@@ -2072,6 +2072,7 @@ def test_mode_2_clinics(seed, tmpdir):
         log_config = {"filename": "log", "directory": tmpdir, "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG}}
         start_date = Date(2010, 1, 1)
         sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+
         sim.register(demography.Demography(),
                      healthsystem.HealthSystem(capabilities_coefficient=1.0,
                                                mode_appt_constraints=2,
@@ -2079,11 +2080,21 @@ def test_mode_2_clinics(seed, tmpdir):
                                                randomise_queue=True,
                                                policy_name="",
                                                use_funded_or_actual_staffing='funded_plus'
-                                               ),
+                                       ),
                      DummyModuleOtherClinic(),
                      DummyModuleClinic1()
                      )
         sim.make_initial_population(n=tot_population)
+
+        sim.modules['HealthSystem'].parameters['clinic_configuration'] = (pd.DataFrame(
+            [{"Facility_ID": 20.0, "Officer_Type_Code": "DCSA", "Clinic1": 0.6, "OtherClinic": 0.4}]
+        ))
+        sim.modules['HealthSystem'].parameters['clinic_mapping'] = (pd.DataFrame(
+            [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
+        ))
+        sim.modules['HealthSystem'].parameters['clinic_names'] = ['Clinic1', 'OtherClinic']
+        sim.modules['HealthSystem'].setup_daily_capabilities('funded_plus')
+
         # Assign the entire population to the first district, so that all events are run in the same district
         col = "district_of_residence"
         s = sim.population.props[col]
@@ -2091,11 +2102,10 @@ def test_mode_2_clinics(seed, tmpdir):
         ## and that caused problems later on.
         sim.population.props[col] = pd.Series(s.cat.categories[0], index=s.index, dtype=s.dtype)
 
-        sim.modules['HealthSystem'].setup_daily_capabilities('funded_plus')
-
         sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
 
         return sim
+
 
     def schedule_hsi_events(nfungible, nnonfungible, sim):
         for i in range(0, nfungible):
@@ -2132,8 +2142,7 @@ def test_mode_2_clinics(seed, tmpdir):
 
     ## Test that capabilities are split according the proportion specified for the Facility Id
     ## and officer combination in the Resource file.
-    ## 40% of capabilities are OtherClinic and 60% Clinic1
-    ## Dummy Clinic capabilities
+    ## 40% of capabilities are OtherClinic and 60% Clinic1 capabilities
     other_clinic = sim.modules['HealthSystem']._daily_capabilities_per_staff['OtherClinic']
     clinic1 = sim.modules['HealthSystem']._daily_capabilities_per_staff['Clinic1']
 
