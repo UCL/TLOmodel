@@ -42,30 +42,13 @@ results_folder = get_scenario_outputs("hiv_program_simplification", outputspath)
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder, draw=3, run=5)
+log = load_pickled_dataframes(results_folder, draw=0, run=0)
 
 # get basic information about the results
 scenario_info = get_scenario_info(results_folder)
 
 # Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-
-#             module_param                value
-# draw
-# 0     Hiv:type_of_scaleup                 none
-# 1     Hiv:type_of_scaleup      reduce_HIV_test
-# 2     Hiv:type_of_scaleup            remove_VL
-# 3     Hiv:type_of_scaleup  replace_VL_with_TDF
-# 4     Hiv:type_of_scaleup      remove_prep_fsw
-# 5     Hiv:type_of_scaleup     remove_prep_agyw
-# 6     Hiv:type_of_scaleup           remove_IPT
-# 7     Hiv:type_of_scaleup           target_IPT
-# 8     Hiv:type_of_scaleup          remove_vmmc
-# 9     Hiv:type_of_scaleup        increase_6MMD
-# 10    Hiv:type_of_scaleup           remove_all
-# 11    Hiv:type_of_scaleup               target
-
-
 
 TARGET_PERIOD = (Date(2025, 1, 1), Date(2050, 12, 31))
 
@@ -122,6 +105,21 @@ def find_difference_relative_to_comparison_series_dataframe(_df: pd.DataFrame, *
 # set3_palette = sns.color_palette("Mako", 11).as_hex()
 # colours = sns.color_palette("mako", n_colors=12)
 
+# colours = [
+#     "#3B4252",  # brighter slate
+#     "#5B708C",  # mid grey-blue
+#     "#4C89D9",  # vivid blue
+#     "#76A9E0",  # lighter sky
+#     "#4CCED9",  # aqua
+#     "#66D9C1",  # mint
+#     "#9CD48C",  # fresh green
+#     "#F2D98D",  # golden sand
+#     "#F29E74",  # warm coral
+#     "#E06B75",  # lively crimson
+#     "#C58CCB",  # pastel lilac
+#     "#A6A5FF",  # periwinkle (light but visible)
+# ]
+
 colours = [
     "#3B4252",  # brighter slate
     "#5B708C",  # mid grey-blue
@@ -133,9 +131,11 @@ colours = [
     "#F2D98D",  # golden sand
     "#F29E74",  # warm coral
     "#E06B75",  # lively crimson
+    "#7A5FD6",  # royal violet (new; adds depth/contrast)
     "#C58CCB",  # pastel lilac
     "#A6A5FF",  # periwinkle (light but visible)
 ]
+
 
 
 scenario_colours = dict(zip(param_names, colours))
@@ -321,6 +321,7 @@ def plot_with_ci(
 
     if created_fig:
         plt.tight_layout()
+        plt.savefig(results_folder / f"{title}.png")
         plt.show()
     return ax
 
@@ -455,6 +456,52 @@ plot_with_ci(
 
 
 
+# ART coverage
+def make_column_summariser_year(column_name: str):
+    """
+    Returns a function that computes the total for a specified column over the TARGET_PERIOD,
+    validating that all years in the period are present.
+    """
+
+    def summariser(_df):
+        _df["date"] = pd.to_datetime(_df["date"])
+        years_needed = set(i.year for i in TARGET_PERIOD)
+        recorded_years = set(_df["date"].dt.year.unique())
+        assert recorded_years.issuperset(years_needed), "Some years are not recorded."
+
+        mask = _df["date"].between(*TARGET_PERIOD)
+        total = _df.loc[mask, column_name].sum()
+
+        return pd.Series(data={column_name: total})
+
+    return summariser
+
+
+# todo this averages over all years 2010+
+get_art_coverage = make_column_summariser("art_coverage_adult")
+
+art_coverage_adult = compute_summary_statistics(
+    extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="hiv_program_coverage",
+        custom_generate_series=get_art_coverage,
+        do_scaling=False
+    ), central_measure="mean", use_standard_error=True
+).pipe(set_param_names_as_column_index_level_0)
+
+
+plot_with_ci(
+    art_coverage_adult,
+    variable="art_coverage_adult",
+    title=f"ART coverage adults {target_period()}",
+    ylabel="Proportion adults with HIV on ART",
+    colour_map=scenario_colours
+)
+
+
+
+
 
 
 
@@ -470,6 +517,7 @@ num_tdf = compute_summary_statistics(
         do_scaling=True
     ), central_measure="mean", use_standard_error=True
 ).pipe(set_param_names_as_column_index_level_0)
+
 
 plot_with_ci(
     num_tdf,
@@ -488,7 +536,8 @@ num_new_infections = compute_summary_statistics(
         results_folder,
         module="tlo.methods.hiv",
         key="summary_inc_and_prev_for_adults_and_children_and_fsw",
-        custom_generate_series=get_num_inf
+        custom_generate_series=get_num_inf,
+        do_scaling=True,
     ), central_measure="mean", use_standard_error=True
 ).pipe(set_param_names_as_column_index_level_0)
 
@@ -563,29 +612,29 @@ plot_with_ci(
 
 
 
-# 6MMD
-
-mmd_M = compute_summary_statistics(extract_results(
-        results_folder,
-        module="tlo.methods.hiv",
-        key="arv_dispensing_intervals",
-        column="group=adult_male|interval=6+",
-        index="date",
-        do_scaling=False
-), central_measure="mean", use_standard_error=True
-)
-
-
-mmd_F = extract_results(
-        results_folder,
-        module="tlo.methods.hiv",
-        key="arv_dispensing_intervals",
-        column="group=adult_female|interval=6+",
-        index="date",
-        do_scaling=False
-)
-
-
+# # 6MMD
+#
+# mmd_M = compute_summary_statistics(extract_results(
+#         results_folder,
+#         module="tlo.methods.hiv",
+#         key="arv_dispensing_intervals",
+#         column="group=adult_male|interval=6+",
+#         index="date",
+#         do_scaling=False
+# ), central_measure="mean", use_standard_error=True
+# )
+#
+#
+# mmd_F = extract_results(
+#         results_folder,
+#         module="tlo.methods.hiv",
+#         key="arv_dispensing_intervals",
+#         column="group=adult_female|interval=6+",
+#         index="date",
+#         do_scaling=False
+# )
+#
+#
 
 
 
@@ -657,65 +706,18 @@ pc_dalys_diff_from_statusquo = 100.0 * compute_summary_statistics(
     ).T
 ).iloc[0].unstack().reindex(param_names).drop(['Status Quo'])
 
-#
-# def plot_with_ci(
-#     df,
-#     title,
-#     ylabel,
-#     figsize=(12, 6),
-#     percent_df=None
-# ):
-#     """
-#     Plot a bar chart with central values and confidence intervals using a custom colour scheme.
-#     Optionally annotate bars with percentage differences, positioned above the upper error bar.
-#     """
-#     central = df["central"]
-#     lower = df["lower"]
-#     upper = df["upper"]
-#     yerr = [central - lower, upper - central]
-#
-#     # Colour mapping
-#     bar_colours = (
-#         [scenario_colours[sc] for sc in central.index]
-#         if scenario_colours else None
-#     )
-#
-#     fig, ax = plt.subplots(figsize=figsize)
-#     bars = ax.bar(central.index, central.values, yerr=yerr, capsize=5, color=bar_colours)
-#
-#     ax.set_ylabel(ylabel)
-#     ax.set_title(title)
-#     ax.set_xticks(range(len(central.index)))
-#     ax.set_xticklabels(central.index, rotation=45, ha="right")
-#     ax.grid(axis="y", linestyle="--", alpha=0.7)
-#     ax.axhline(0, color="grey", linewidth=1)
-#
-#     # Annotate bars with percentage change above the upper CI
-#     if percent_df is not None:
-#         for label, bar in zip(central.index, bars):
-#             pc = percent_df.loc[label, "central"]
-#             bar_x = bar.get_x() + bar.get_width() / 2
-#             upper_bound = upper[label]
-#             offset = 0.05 * (upper.max() - lower.min())  # 5% vertical offset
-#             y_pos = upper_bound + offset
-#             ax.text(bar_x, y_pos, f"{pc:.1f}%", ha='center', va='bottom', fontsize=9)
-#
-#     # Adjust y-limits to avoid clipping
-#     y_max = (upper + (0.1 * (upper.max() - lower.min()))).max()
-#     y_min = (lower - (0.1 * (upper.max() - lower.min()))).min()
-#     ax.set_ylim(y_min, y_max)
-#
-#     plt.tight_layout()
-#     plt.show()
-
 
 
 plot_with_ci(
     df=dalys_diff_from_statusquo,
     title=f"Difference in All-Cause DALYs from Status Quo {target_period()}",
     ylabel="Difference from Status Quo",
-    percent_df=pc_dalys_diff_from_statusquo
+    percent_df=pc_dalys_diff_from_statusquo,
+    colour_map=scenario_colours
 )
+
+
+
 
 
 def num_dalys_by_cause(_df):
@@ -781,7 +783,8 @@ plot_with_ci(
     df=aids_ci,   # now a (draw × stat) wide frame with required cols
     title=f"Difference in AIDS DALYs from Status Quo {target_period()}",
     ylabel="Difference from Status Quo",
-    percent_df=pc_aids_ci
+    percent_df=pc_aids_ci,
+    colour_map=scenario_colours
 )
 
 
@@ -887,6 +890,7 @@ def plot_stacked_dalys_by_cause(
 
     plt.subplots_adjust(left=0.15)
     plt.tight_layout()
+    plt.savefig(results_folder / f'{title}.png')
     plt.show()
 
 
@@ -986,7 +990,8 @@ plot_with_ci(
     df=aids_deaths_ci,   # now a (draw × stat) wide frame with required cols
     title=f"Difference in AIDS deaths from Status Quo {target_period()}",
     ylabel="Difference from Status Quo",
-    percent_df=pc_aids_deaths_ci
+    percent_df=pc_aids_deaths_ci,
+    colour_map=scenario_colours,
 )
 
 
@@ -1004,6 +1009,7 @@ aids_deaths_ci_edit = aids_deaths_ci.drop("Status Quo")
 
 fig, axes = plt.subplots(3, 1, figsize=(12, 12), sharex=True)
 
+# annotate labels selects which bars to give % values, if overlap 0 then don't annotate
 plot_with_ci(
     df=infect_ci,
     variable="n_new_infections_adult_1549",
@@ -1012,13 +1018,13 @@ plot_with_ci(
     percent_df=pc_infect_ci,
     colour_map=scenario_colours,
     ax=axes[0],
-    annotate_labels={'Reduce HIV testing',
-                     'Remove Viral Load Testing',
-                     'Remove PrEP for FSW',
-                     'Remove VMMC',
-                     'Increase 6-monthly Dispensing',
-                     'Reduce All Elements',
-                     'Program Scale-up'}
+    # annotate_labels={'Reduce HIV testing',
+    #                  'Remove Viral Load Testing',
+    #                  'Remove PrEP for FSW',
+    #                  'Remove VMMC',
+    #                  'Increase 6-monthly Dispensing',
+    #                  'Reduce All Elements',
+    #                  'Program Scale-up'}
 )
 
 
@@ -1030,13 +1036,14 @@ plot_with_ci(
     percent_df=pc_aids_ci,
     colour_map=scenario_colours,
     ax=axes[1],
-    annotate_labels={'Reduce HIV testing',
-                     'Remove Viral Load Testing',
-                     'Replace Viral Load Testing',
-                     'Increase 6-monthly Dispensing',
-                     'Reduce All Elements',
-                     'Program Scale-up'}
+    # annotate_labels={'Reduce HIV testing',
+    #                  'Remove Viral Load Testing',
+    #                  'Replace Viral Load Testing',
+    #                  'Increase 6-monthly Dispensing',
+    #                  'Reduce All Elements',
+    #                  'Program Scale-up'}
 )
+
 
 plot_with_ci(
     df=aids_deaths_ci_edit,
@@ -1253,6 +1260,7 @@ def plot_cadre_hours_vs_outcomes(
     fig.legend(handles=handles, title="Scenario",
                loc="center left", bbox_to_anchor=(0.7, 0.5),
                bbox_transform=fig.transFigure, frameon=False)
+    plt.savefig(results_folder / f'num_hcw_hours_diff_{ylabel}_{target_period()}.png')
     plt.show()
 
 
