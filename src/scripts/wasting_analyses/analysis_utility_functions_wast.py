@@ -450,7 +450,7 @@ def regenerate_pickles_with_debug_logs(iterv_folders_dict) -> None:
 def extract_tx_data_frames(
     folder,
     years_of_interest,
-    intervention_datayears,
+    intervention_years,
     interv
 ) -> Dict[str, pd.DataFrame]:
     """
@@ -458,7 +458,7 @@ def extract_tx_data_frames(
 
     :param folder: Path to the folder containing outcome data.
     :param years_of_interest: List of years to extract data for.
-    :param intervention_datayears: List of years for which data include the interventions if any implemented.
+    :param intervention_years: List of years for which data include the interventions if any implemented.
     :param interv: Name or identifier of the intervention.
     :return: Dictionary with DataFrames:
         (1) 'tx_by_age_group_df': Counts by year, treatment, age_group (by draw and run),
@@ -501,13 +501,10 @@ def extract_tx_data_frames(
     tx_mean_ci_df = return_mean_95_CI_across_runs(tx_mean_df)
 
     # For intervention years
-    interv_tx_by_age_group_df = tx_by_age_group_df.loc[intervention_datayears]
+    interv_tx_by_age_group_df = tx_by_age_group_df.loc[intervention_years]
     interv_tx_by_age_group_mean_ci_df = return_mean_95_CI_across_runs(interv_tx_by_age_group_df)
     interv_tx_mean_df = interv_tx_by_age_group_df.groupby(['year', 'treatment']).sum()
     interv_tx_mean_ci_df = return_mean_95_CI_across_runs(interv_tx_mean_df)
-
-    # report during which years interventions were implemented (if any)
-    interv_years = [year+1 for year in intervention_datayears[:-1]]
 
     return {
         'tx_by_age_group_df': tx_by_age_group_df,
@@ -516,7 +513,7 @@ def extract_tx_data_frames(
         'interv_tx_by_age_group_df': interv_tx_by_age_group_df,
         'interv_tx_by_age_group_mean_ci_df': interv_tx_by_age_group_mean_ci_df,
         'interv_tx_mean_ci_df': interv_tx_mean_ci_df,
-        'interv_years': interv_years
+        'interv_years': intervention_years
     }
 
 def get_scen_colour(scen_name: str) -> str:

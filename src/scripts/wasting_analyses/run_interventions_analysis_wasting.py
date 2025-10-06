@@ -586,10 +586,6 @@ def run_behind_the_scene_analysis_wasting(
     """
 
     datayears = [year-1 for year in plotyears]
-    # when plotting means for intervention years, it needs to be plotted from the first year of interventions being
-    # implemented until the beginning of year after last year of interventions
-    interv_plotyears = interventionyears + [interventionyears[-1] + 1]
-    interv_datayears = [year-1 for year in interv_plotyears]
 
     print("\n----------------------------")
     print("--- BEHIND-THE-SCENE ANALYSES ---")
@@ -657,7 +653,7 @@ def run_behind_the_scene_analysis_wasting(
         print("\ntx outcomes calculation ...")
         tx_outcomes_dict = {
             interv: util_fncs.extract_tx_data_frames(
-                iterv_folders_dict[interv], datayears, interv_datayears, interv
+                iterv_folders_dict[interv], datayears, interventionyears, interv
             ) for interv in scenario_folders
 		}
         print("saving tx outcomes to file ...")
