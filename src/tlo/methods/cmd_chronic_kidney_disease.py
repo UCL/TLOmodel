@@ -51,6 +51,12 @@ class CMDChronicKidneyDisease(Module):
         "rp_ckd_nc_chronic_ischemic_hd": Parameter(
             Types.REAL, "relative prevalence at baseline of CKD if person has heart disease"
         ),
+        "prob_ckd_renal_clinic": Parameter(
+            Types.REAL, "Proportion of eligible population that goes for Renal Clinic & Medication"
+        ),
+        "prob_ckd_transplant_eval": Parameter(
+            Types.REAL, "Proportion of eligible population that goes for Kidney Transplant Evaluation"
+        ),
     }
 
     PROPERTIES = {
@@ -97,13 +103,17 @@ class CMDChronicKidneyDisease(Module):
         self.parameters['rate_onset_to_stage1_4'] = 0.29
         self.parameters['rate_stage1_4_to_stage5'] = 0.4
 
-        self.parameters['init_prob_any_ckd'] = [0.5, 0.3, 0.2]
+        self.parameters['init_prob_any_ckd'] = [0.6, 0.4]
 
         self.parameters['rp_ckd_nc_diabetes'] = 1.1
         self.parameters['rp_ckd_hiv_infection'] = 1.2
         self.parameters['rp_ckd_li_bmi'] = 1.3
         self.parameters['rp_ckd_nc_hypertension'] = 1.3
         self.parameters['rp_ckd_nc_chronic_ischemic_hd'] = 1.2
+
+        #
+        self.parameters['prob_ckd_renal_clinic'] = 0.7
+        self.parameters['prob_ckd_transplant_eval'] = 0.3
 
         #todo use chronic_kidney_disease_symptoms from cardio_metabolic_disorders.py
 
@@ -219,7 +229,22 @@ class CMDChronicKidneyDisease(Module):
 
     def look_up_consumable_item_codes(self):
         """Look up the item codes used in the HSI of this module"""
-        pass
+        get_item_codes = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        self.cons_item_codes = dict()
+        self.cons_item_codes['renal_consumables'] = {
+            get_item_codes("Sterile syringe"): 1,
+            get_item_codes('Sterile drapes and supplies'): 3,
+            get_item_codes('Gloves, exam, latex, disposable, pair'): 4,
+            get_item_codes("Catheter"): 1,
+            get_item_codes("Disinfectant"): 1
+        },
+        self.cons_item_codes['kidney_transplant_eval_cons'] = {
+            get_item_codes("Blood collection tube"): 1,
+            get_item_codes('Reagents'): 3,
+            get_item_codes('Radiopharmaceuticals'): 4
+        }
+
 
 
 class CMDChronicKidneyDiseasePollEvent(RegularEvent, PopulationScopeEventMixin):
@@ -250,6 +275,44 @@ class CMDChronicKidneyDiseasePollEvent(RegularEvent, PopulationScopeEventMixin):
         stage1_to_4_to_stage5_idx = df.index[np.where(stage1_to_4_to_stage5)[0]]
         df.loc[stage1_to_4_to_stage5_idx, 'ckd_status'] = 'stage5'
 
+        # ----------------------------SELECTING INDIVIDUALS FOR CKD Diagnosis by stage----------------------------#
+
+        eligible_population = (
+            (df.is_alive & df.nc_chronic_kidney_disease) &
+            (df.ckd_status == 'pre_diagnosis') &
+            (df.age_years >= 20) &
+            (pd.isna(df.ckd_date_diagnosis))
+        )
+
+        eligible_idx = df.loc[eligible_population].index
+
+        if not eligible_idx.empty:
+            probs = [
+                self.module.parameters['prob_ckd_renal_clinic'],
+                self.module.parameters['prob_ckd_transplant_eval']
+            ]
+
+            hsi_choices = self.module.rng.choice(
+                ['renal_clinic', 'transplant_eval'],
+                size=len(eligible_idx),
+                p=probs
+            )
+
+            for person_id, hsi_choice in zip(eligible_idx, hsi_choices):
+                if hsi_choice == 'renal_clinic':
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event=HSI_Renal_Clinic_and_Medication(self.module, person_id),
+                        priority=1,
+                        topen=self.sim.date,
+                        tclose=self.sim.date + DateOffset(months=1),
+                    )
+                elif hsi_choice == 'transplant_eval':
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event=HSI_Kidney_Transplant_Evaluation(self.module, person_id),
+                        priority=1,
+                        topen=self.sim.date,
+                        tclose=self.sim.date + DateOffset(months=1),
+                    )
 
     def do_at_generic_first_appt(
         self,
@@ -281,9 +344,81 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key='debug',
                      data=f'This is HSI_Renal_Clinic_and_Medication for person {person_id}')
         df = self.sim.population.props
-        # person = df.loc[person_id]
-        # hs = self.sim.modules["HealthSystem"]
-        pass
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            # The person is not alive, the event did not happen: so return a blank footprint
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
+        # if person already on treatment or not yet diagnosed, do nothing
+        if person["ckd_on_treatment"] or not person["ckd_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        assert pd.isnull(df.at[person_id, 'ckd_date_treatment'])
+
+        is_cons_available = self.get_consumables(
+            self.module.cons_item_codes['renal_consumables']
+        )
+
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='renal_clinic_test',
+            hsi_event=self
+        )
+
+        if dx_result and is_cons_available:
+            # record date of diagnosis
+            df.at[person_id, 'ckd_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'ckd_date_treatment'] = self.sim.date
+            df.at[person_id, 'ckd_stage_at_which_treatment_given'] = df.at[person_id, 'ckd_status']
+
+
+
+class HSI_Kidney_Transplant_Evaluation(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is the event a person undergoes in order to determine whether an individual is eligible for a kidney transplant
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, CMDChronicKidneyDisease)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Dr_CMD_Kidney_Transplant_Evaluation'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(key='debug',
+                     data=f'This is HSI_Kidney_Transplant_Evaluation for person {person_id}')
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+        if not df.at[person_id, 'is_alive']:
+            # The person is not alive, the event did not happen: so return a blank footprint
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
+        # if person already on treatment or not yet diagnosed, do nothing
+        if person["ckd_on_treatment"] or not person["ckd_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        assert pd.isnull(df.at[person_id, 'ckd_date_treatment'])
+
+        is_cons_available = self.get_consumables(
+            self.module.cons_item_codes['kidney_transplant_eval_cons']
+        )
+
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='kidney_transplant_eval_tests',
+            hsi_event=self
+        )
+
+        if dx_result and is_cons_available:
+            # record date of diagnosis
+            df.at[person_id, 'ckd_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'ckd_date_treatment'] = self.sim.date
+            df.at[person_id, 'ckd_stage_at_which_treatment_given'] = df.at[person_id, 'ckd_status']
 
 
 class CMDChronicKidneyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
