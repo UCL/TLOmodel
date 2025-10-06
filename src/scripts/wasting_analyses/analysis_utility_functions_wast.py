@@ -1175,7 +1175,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                     combinations = list(itertools.product(interventions, start_up_costs, unit_costs, coverages))
 
-                    rows = []
+                    rows_unit_costs_coverage = []
+                    rows_impl_costs = []
                     for interv, start_up_C, unit_C, cov in combinations:
                         impl_cost_df = pd.DataFrame(
                             {
@@ -1191,20 +1192,50 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         impl_cost_discounted_df = apply_discounting_to_cost_data(
                             _df=impl_cost_df, _discount_rate=0.03, _column_for_discounting='impl_costs'
                         )
+                        sum_impl_costs_discounted = sum(impl_cost_discounted_df['impl_costs'])
                         scen = next(iter(scenarios_dict[interv]))
-                        rows.append(
-                            {   "Scenario": scen,
-                                "StartUpCost": round(start_up_C, 2),
-                                "UnitCost": round(unit_C, 2),
-                                "Coverage": round(cov, 2),
-                                "Implementation costs": f"{int(round(sum(impl_cost_discounted_df['impl_costs']))):,}",
-                                "INMB": f"{int(net_monetary_benefit[scen][0]):,}",
+                        # rows_unit_costs_coverage.append(
+                        #     {   "Scenario": scen,
+                        #         "StartUp_UnitCost": round(start_up_C, 2),
+                        #         "UnitCost": round(unit_C, 2),
+                        #         "Coverage": round(cov, 2),
+                        #         "Implementation costs": f"{int(round(sum(impl_cost_discounted_df['impl_costs']))):,}",
+                        #         "INMB": f"{int(net_monetary_benefit[scen][0]):,}",
+                        #     }
+                        # )
+
+                        total_costs = incremental_costs.get(scen, 0) + sum_impl_costs_discounted
+                        net_monetary_benefit_incl_impl_costs = {
+                            scen: [
+                                (averted_DALYs[scen][0] * CET) - total_costs,  # mean
+                                (averted_DALYs[scen][1] * CET) - total_costs,  # low
+                                (averted_DALYs[scen][2] * CET) - total_costs,  # upp
+                            ]
+                            for scen in averted_DALYs
+                        }
+
+                        rows_impl_costs.append(
+                            {
+                                "Scenario": scen,
+                                "Maximum additional implementation costs":
+                                    f"{int(net_monetary_benefit[scen][0]):,} "
+                                    f"({int(net_monetary_benefit[scen][1]):,}; {int(net_monetary_benefit[scen][2]):,})",
+                                "Implementation costs": f"{int(round(sum_impl_costs_discounted)):,}",
+                                ("Incremental net monetary benefit "
+                                "(DALYs averted, Incremental costs & Implementation costs)"):
+                                    f"{int(net_monetary_benefit_incl_impl_costs[scen][0]):,} "
+                                    f"({int(net_monetary_benefit_incl_impl_costs[scen][1]):,}; "
+                                    f"{int(net_monetary_benefit_incl_impl_costs[scen][2]):,})",
                             }
                         )
 
-                    implementation_costs_df = pd.DataFrame(rows)
+                    # implementation_unit_costs_coverage_df = pd.DataFrame(rows_unit_costs_coverage)
+                    # print("Implementation unit costs & coverage:")
+                    # print(implementation_unit_costs_coverage_df)
+
                     print("---------------------")
                     print("\nImplementation cost table:")
+                    implementation_costs_df = pd.DataFrame(rows_impl_costs)
                     print(implementation_costs_df)
 
                     # Implementation costs FS:
