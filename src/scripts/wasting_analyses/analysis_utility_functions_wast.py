@@ -1084,6 +1084,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         ],
                     }
                 )
+                print("---------------------")
                 print(f"\ncost_eff_table:\n{cost_eff_table}")
 
                 # Plot cost-effectiveness scatter plot
@@ -1162,11 +1163,12 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     # calculate_implementation_costs_GM_CS(start_up_Pearson_etal2018, unit_cost_Pearson_etal2018,
                     #                                      1.0)
 
-                    # Implementation cost table:
+                    # Implementation costs GM, CS & FS:
+                    # #####
                     # Generate all combinations of start-up cost, unit cost, and coverage
                     import itertools
 
-                    interventions = ["GM", "CS"]
+                    interventions = ["GM", "CS", "FS"]
                     start_up_costs = [start_up_Pearson_etal2018] #, start_up_cost_Gelli_etal2021]
                     unit_costs = [unit_cost_Pearson_etal2018] #, unit_cost_Gelli_etal2021]
                     coverages = [1.0] # [coverage_educ_Pearson_etal2018, coverage_prom_Pearson_etal2018, 1.0]
@@ -1201,8 +1203,14 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         )
 
                     implementation_costs_df = pd.DataFrame(rows)
+                    print("---------------------")
                     print("\nImplementation cost table:")
                     print(implementation_costs_df)
+
+                    # Implementation costs FS:
+                    # TODO:
+                    #  interv_tx_mean_ci_df
+                    #  salary [RF_Costing_HR Nutrition] at levels 1a, 1b and 2: 4573.11153 USD (annual??)
 
                 calculate_implementation_costs()
 
