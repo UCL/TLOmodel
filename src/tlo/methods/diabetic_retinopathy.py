@@ -797,7 +797,7 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
                     priority=0
                 )
             elif self.session == 2:
-                # completing treatment
+                # should complete treatment??
                 df.at[person_id, 'dr_on_treatment'] = False
 
                 # schedule follow-up at 2 months
