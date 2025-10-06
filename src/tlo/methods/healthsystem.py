@@ -507,7 +507,9 @@ class HealthSystem(Module):
 
         # A reusable store for holding squeeze factors in get_squeeze_factors()
         self._get_squeeze_factors_store_grow = 500
-        self._get_squeeze_factors_store = np.zeros(self._get_squeeze_factors_store_grow)
+        ## We need this to be a dictionary indexed by clinic names, but we don't have the clinic names yet.
+        ## create an empty dictionary here, and then populate it properly later.
+        self._get_squeeze_factors_store = {}
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -1213,7 +1215,7 @@ class HealthSystem(Module):
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
-        for clinic, clinic_cl in self._daily_capabilities.keys():
+        for clinic, clinic_cl in self._daily_capabilities.items():
             for officer in clinic_cl.keys():
                 matches = re.match(pattern, officer)
                 # Extract ID and officer type from
@@ -1229,8 +1231,9 @@ class HealthSystem(Module):
                     # We assume that increased daily capabilities is a result of each staff performing more
                     # daily patient facing time per day than contracted (or equivalently performing appts more
                     # efficiently).
-                    self._daily_capabilities_per_staff[clinic][officer] *= rescaling_factor
                     self._daily_capabilities[clinic][officer] *= rescaling_factor
+                    self._daily_capabilities_per_staff[clinic][officer] *= rescaling_factor
+
 
 
 
@@ -1768,6 +1771,21 @@ class HealthSystem(Module):
     def get_squeeze_factors(self, footprints_per_event, total_footprint, current_capabilities,
                             compute_squeeze_factor_to_district_level: bool
                             ):
+        ## TODO: check if there is a better place to intitalise this store
+        self._get_squeeze_factors_store = (
+            {clinic: np.zeros(self._get_squeeze_factors_store_grow)
+             for clinic in self.parameters['clinic_names']}
+        )
+        for clinic, clinic_cl in current_capabilities.items():
+            self.get_clinic_squeeze_factors(clinic, footprints_per_event, total_footprint, clinic_cl,
+                                            compute_squeeze_factor_to_district_level)
+
+        return self._get_squeeze_factors_store
+
+
+    def get_clinic_squeeze_factors(self, clinic, footprints_per_event, total_footprint, current_capabilities,
+                            compute_squeeze_factor_to_district_level: bool
+                            ):
         """
         This will compute the squeeze factors for each HSI event from the list of all
         the calls on health system resources for the day.
@@ -1857,12 +1875,12 @@ class HealthSystem(Module):
 
         # Instead of repeatedly creating lists for squeeze factors, we reuse a numpy array
         # If the current store is too small, replace it
-        if len(footprints_per_event) > len(self._get_squeeze_factors_store):
+        if len(footprints_per_event) > len(self._get_squeeze_factors_store[clinic]):
             # The new array size is a multiple of `grow`
             new_size = math.ceil(
                 len(footprints_per_event) / self._get_squeeze_factors_store_grow
             ) * self._get_squeeze_factors_store_grow
-            self._get_squeeze_factors_store = np.zeros(new_size)
+            self._get_squeeze_factors_store[clinic] = np.zeros(new_size)
 
         for i, footprint in enumerate(footprints_per_event):
             if footprint:
@@ -1875,11 +1893,11 @@ class HealthSystem(Module):
                         break
 
                 if require_missing_officer:
-                    self._get_squeeze_factors_store[i] = np.inf
+                    self._get_squeeze_factors_store[clinic][i] = np.inf
                 else:
-                    self._get_squeeze_factors_store[i] = max(load_factor[footprint.most_common()[0][0]], 0.)
+                    self._get_squeeze_factors_store[clinic][i] = max(load_factor[footprint.most_common()[0][0]], 0.)
             else:
-                self._get_squeeze_factors_store[i] = 0.0
+                self._get_squeeze_factors_store[clinic][i] = 0.0
 
         return self._get_squeeze_factors_store
 
@@ -2234,7 +2252,8 @@ class HealthSystem(Module):
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
                 event = event.hsi_event
-                squeeze_factor = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
+                clinic = self.get_clinic_eligibility(event)
+                squeeze_factor = squeeze_factor_per_hsi_event[clinic][ev_num]                  # todo use zip here!
 
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT

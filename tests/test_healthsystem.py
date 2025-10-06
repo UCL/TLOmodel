@@ -460,6 +460,7 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
             'Squeeze_Factor'
         ] >= 100.0
     ).all()  # All the events that had a non-blank footprint experienced high squeezing.
+
     assert not (
         hsi_events.loc[
             (hsi_events['Person_ID'] >= 0) &
