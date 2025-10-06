@@ -117,7 +117,6 @@ class ClimateHealthPipeline:
         """
         facility_info = pd.read_csv(filepath, index_col=0)
         self.facility_info = facility_info
-        print(len(facility_info))
         return facility_info
 
     def create_lagged_features(self, weather_data_all_years: pd.DataFrame, lags: List[int] = [1, 2, 3, 4, 9]) -> Dict[
@@ -202,7 +201,6 @@ class ClimateHealthPipeline:
         # Monthly weather features
         if weather_data is not None:
             weather_monthly = weather_data.values.flatten()
-            print("weather_data", len(weather_data))
             weather_features.append(weather_monthly)
             num_weather_features += 1
 
@@ -251,17 +249,31 @@ class ClimateHealthPipeline:
                 altitude = self._repeat_facility_info(
                     facility_info['A109__Altitude'], len(year_range)
                 )
+                # Convert to numeric, coercing errors to NaN
+                altitude = pd.to_numeric(altitude, errors='coerce')
+                altitude = np.array(altitude)
+                altitude = np.where(altitude < 0, np.nan, altitude)
+                mean_altitude = round(np.nanmean(altitude))
+                altitude = np.where(np.isnan(altitude), float(mean_altitude), altitude)
+                altitude = np.nan_to_num(altitude, nan=mean_altitude, posinf=mean_altitude,
+                                                  neginf=mean_altitude)
+                altitude = list(altitude)
                 continuous_features.append(np.array(altitude))
 
             if 'minimum_distance' in facility_info.columns:
                 min_dist = self._repeat_facility_info(
                     facility_info['minimum_distance'], len(year_range)
                 )
+                min_dist = np.nan_to_num(min_dist, nan=np.nan, posinf=np.nan,
+                                                          neginf=np.nan)
+                min_dist = pd.to_numeric(min_dist, errors='coerce')
+                print(min_dist)
                 continuous_features.append(np.array(min_dist))
 
+
         # Combine all features
-        for i, feat in enumerate(continuous_features):
-            print(f"Feature {feat}: length = {len(feat)}")
+        continuous_features = [arr.astype(float) for arr in continuous_features]
+
         X_continuous = np.column_stack(continuous_features)
 
         if categorical_features:
@@ -288,6 +300,9 @@ class ClimateHealthPipeline:
                 encoded_feature = pd.get_dummies(feature_values, drop_first=True)
                 categorical_features.extend([encoded_feature.iloc[:, i].values
                                              for i in range(encoded_feature.shape[1])])
+                for i in range(encoded_feature.shape[1]):
+                    feature_array = encoded_feature.iloc[:, i].values.astype(float)
+                    categorical_features.append(feature_array)
 
         return categorical_features
 
@@ -316,13 +331,12 @@ class ClimateHealthPipeline:
             Tuple of (included_features, model_results, predictions, data_mask)
         """
         print("Performing stepwise feature selection...")
-        X = np.nan_to_num(X.astype(float), nan=np.nan)
-        X = X.apply(pd.to_numeric, errors='coerce')
-        y = pd.to_numeric(y, errors='coerce')
-        mask = ~(np.isnan(X).any(axis=1) | np.isnan(y))
+
+        mask = (~np.isnan(X).any(axis=1) & ~np.isnan(y) & (y <= 1e4))
 
         X_clean = X[mask]
         y_clean = y[mask]
+
 
         n_features = X_clean.shape[1]
         included = np.zeros(n_features, dtype=bool)
@@ -344,6 +358,7 @@ class ClimateHealthPipeline:
 
                 if self.log_y:
                     y_model = np.log(y_clean)
+                    print(X_subset)
                     model = sm.OLS(y_model, X_subset).fit()
                 else:
                     if self.poisson:
@@ -423,6 +438,7 @@ class ClimateHealthPipeline:
             'predictions': predictions,
             'mask': mask
         }
+        print("baseline model", included)
 
         print("Baseline model fitted successfully")
         return self.baseline_model
@@ -441,7 +457,7 @@ class ClimateHealthPipeline:
         print("Fitting weather model (including all features)...")
 
         included, model, predictions, mask = self.stepwise_selection(X, y)
-
+        print("weather model", included)
         self.weather_model = {
             'model': model,
             'included_features': included,
@@ -454,7 +470,8 @@ class ClimateHealthPipeline:
 
     def calculate_weather_impact(self) -> pd.DataFrame:
         """
-        Calculate the impact of weather on healthcare utilization.
+        Calculate the impact of weather on healthcare utilization,
+        accounting for differing masks and prediction lengths.
 
         Returns:
             DataFrame with weather impact analysis
@@ -462,20 +479,37 @@ class ClimateHealthPipeline:
         if self.baseline_model is None or self.weather_model is None:
             raise ValueError("Both baseline and weather models must be fitted first")
 
-        print("Calculating weather impact...")
+        print("Calculating weather impact with alignment of masks...")
 
         baseline_pred = self.baseline_model['predictions']
         weather_pred = self.weather_model['predictions']
 
-        # Calculate difference in predictions
+        baseline_mask = self.baseline_model['mask']
+        weather_mask = self.weather_model['mask']
+
+        # Determine the combined valid mask
+        combined_mask = baseline_mask & weather_mask
+        print(f"Number of valid points after mask alignment: {np.sum(combined_mask)}")
+
+        # Create full-length arrays with NaNs where predictions were masked
+        full_baseline_pred = np.full(baseline_mask.shape, np.nan)
+        full_baseline_pred[baseline_mask] = baseline_pred
+
+        full_weather_pred = np.full(weather_mask.shape, np.nan)
+        full_weather_pred[weather_mask] = weather_pred
+
+        # Align using combined mask
+        aligned_baseline = full_baseline_pred[combined_mask]
+        aligned_weather = full_weather_pred[combined_mask]
+
         if self.log_y:
-            difference = np.exp(weather_pred) - np.exp(baseline_pred)
+            difference = np.exp(aligned_weather) - np.exp(aligned_baseline)
         else:
-            difference = weather_pred - baseline_pred
+            difference = aligned_weather - aligned_baseline
 
         results = pd.DataFrame({
-            'baseline_prediction': np.exp(baseline_pred) if self.log_y else baseline_pred,
-            'weather_prediction': np.exp(weather_pred) if self.log_y else weather_pred,
+            'baseline_prediction': np.exp(aligned_baseline) if self.log_y else aligned_baseline,
+            'weather_prediction': np.exp(aligned_weather) if self.log_y else aligned_weather,
             'weather_impact': difference
         })
 
@@ -510,16 +544,19 @@ class ClimateHealthPipeline:
         return results
 
     def plot_results(self, weather_impact: pd.DataFrame,
+                     monthly_weather_data: Optional[pd.DataFrame] = None,
                      save_path: Optional[str] = None) -> None:
         """
         Create visualization of results.
 
         Args:
             weather_impact: DataFrame from calculate_weather_impact()
+            monthly_weather_data: Optional monthly weather data for x-axis
             save_path: Optional path to save the plot
         """
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
+        # Predictions comparison
         ax1.scatter(range(len(weather_impact)), weather_impact['baseline_prediction'],
                     alpha=0.5, label='Baseline Model', color='blue')
         ax1.scatter(range(len(weather_impact)), weather_impact['weather_prediction'],
@@ -529,10 +566,16 @@ class ClimateHealthPipeline:
         ax1.set_title('Model Predictions Comparison')
         ax1.legend()
 
-        ax2.scatter(range(len(weather_impact)), weather_impact['weather_impact'],
+        # Weather impact plot
+        if monthly_weather_data is not None:
+            x_axis = monthly_weather_data.values.flatten()[:len(weather_impact)]
+        else:
+            x_axis = range(len(weather_impact))
+
+        ax2.scatter(x_axis, weather_impact['weather_impact'],
                     alpha=0.5, color='green')
         ax2.axhline(y=0, color='black', linestyle='--', alpha=0.5)
-        ax2.set_xlabel('Observation')
+        ax2.set_xlabel('Monthly Weather')
         ax2.set_ylabel('Weather Impact on Visits')
         ax2.set_title('Impact of Weather on Healthcare Utilization')
 
@@ -590,7 +633,6 @@ def run_pipeline(config: Dict) -> ClimateHealthPipeline:
         config.get('monthly_weather_path'),
         config.get('daily_weather_path')
     )
-    print(len(monthly_weather))
     facility_info = None
     if 'facility_info_path' in config:
         facility_info = pipeline.load_facility_info(config['facility_info_path'])
@@ -608,7 +650,7 @@ def run_pipeline(config: Dict) -> ClimateHealthPipeline:
     if num_weather_features > 0:
         weather_impact = pipeline.calculate_weather_impact()
         lr_results = pipeline.likelihood_ratio_test()
-        pipeline.plot_results(weather_impact)
+        pipeline.plot_results(weather_impact, monthly_weather_data=monthly_weather)
     else:
         print("No weather features available. Skipping weather impact analysis.")
 
