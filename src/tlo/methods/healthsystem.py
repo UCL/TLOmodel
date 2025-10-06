@@ -1824,22 +1824,40 @@ class HealthSystem(Module):
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         # Debug logger gives simple line-list for every HSI event
-        logger_summary.info(
-            key="HSI_Event",
-            data={
-                'Event_Name': event_details.event_name,
-                'TREATMENT_ID': event_details.treatment_id,
-                'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
-                'Person_ID': person_id,
-                'Squeeze_Factor': squeeze_factor,
-                'priority': priority,
-                'did_run': did_run,
-                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
-                'Facility_ID': facility_id if facility_id is not None else -99,
-                'Equipment': sorted(event_details.equipment),
-            },
-            description="record of each HSI event"
-        )
+        if facility_id in [4, 5, 6, 7, 8, 9, 10, 11]:
+            logger_summary.info(
+                key="HSI_Event",
+                data={
+                    'Event_Name': event_details.event_name,
+                    'TREATMENT_ID': event_details.treatment_id,
+                    'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
+                    'Person_ID': person_id,
+                    'Squeeze_Factor': squeeze_factor,
+                    'priority': priority,
+                    'did_run': did_run,
+                    'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
+                    'Facility_ID': facility_id if facility_id is not None else -99,
+                    'Equipment': sorted(event_details.equipment),
+                },
+                description="record of each HSI event"
+            )
+        else:
+            logger.debug(
+                key="HSI_Event",
+                data={
+                    'Event_Name': event_details.event_name,
+                    'TREATMENT_ID': event_details.treatment_id,
+                    'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
+                    'Person_ID': person_id,
+                    'Squeeze_Factor': squeeze_factor,
+                    'priority': priority,
+                    'did_run': did_run,
+                    'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
+                    'Facility_ID': facility_id if facility_id is not None else -99,
+                    'Equipment': sorted(event_details.equipment),
+                },
+                description="record of each HSI event"
+            )
         if did_run:
             if self._hsi_event_count_log_period is not None:
                 # Do logging for HSI Event using counts of each 'unique type' of HSI event (as defined by
@@ -1937,19 +1955,34 @@ class HealthSystem(Module):
         priority: int,
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
-        logger_summary.info(
-            key="Never_ran_HSI_Event",
-            data={
-                'Event_Name': event_details.event_name,
-                'TREATMENT_ID': event_details.treatment_id,
-                'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
-                'Person_ID': person_id,
-                'priority': priority,
-                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else "-99",
-                'Facility_ID': facility_id if facility_id is not None else -99,
-            },
-            description="record of each HSI event that never ran"
-        )
+        if facility_id is [4, 5, 6, 7, 8, 9, 10, 11]:
+            logger_summary.info(
+                key="Never_ran_HSI_Event",
+                data={
+                    'Event_Name': event_details.event_name,
+                    'TREATMENT_ID': event_details.treatment_id,
+                    'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
+                    'Person_ID': person_id,
+                    'priority': priority,
+                    'Facility_Level': event_details.facility_level if event_details.facility_level is not None else "-99",
+                    'Facility_ID': facility_id if facility_id is not None else -99,
+                },
+                description="record of each HSI event that never ran"
+            )
+        else:
+            logger.debug(
+                key="Never_ran_HSI_Event",
+                data={
+                    'Event_Name': event_details.event_name,
+                    'TREATMENT_ID': event_details.treatment_id,
+                    'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
+                    'Person_ID': person_id,
+                    'priority': priority,
+                    'Facility_Level': event_details.facility_level if event_details.facility_level is not None else "-99",
+                    'Facility_ID': facility_id if facility_id is not None else -99,
+                },
+                description="record of each HSI event that never ran"
+            )
         if self._hsi_event_count_log_period is not None:
             event_details_key = self._never_ran_hsi_event_details.setdefault(
                 event_details, len(self._never_ran_hsi_event_details)
@@ -3081,7 +3114,6 @@ class HealthSystemSummaryCounter:
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
-
         logger_summary.info(
             key="HSI_Event",
             description="Counts of the HSI_Events that have occurred in this calendar year by TREATMENT_ID, "
