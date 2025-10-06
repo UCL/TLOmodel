@@ -2558,7 +2558,9 @@ def test_HR_scaling_by_level_and_officer_type_assumption(seed, tmpdir):
         # Days ran need to be offset by 1 in order for event on 2010,1,1 to take place
         sim.simulate(end_date=start_date + pd.DateOffset(days=1))
 
-        return sim.modules['HealthSystem'].capabilities_today
+        ctoday = sim.modules['HealthSystem'].capabilities_today
+
+        return pd.Series(ctoday['OtherClinic'])
 
     caps = {
         _HR_scaling_by_level_and_officer_type_mode: get_capabilities_today(_HR_scaling_by_level_and_officer_type_mode)
@@ -2591,7 +2593,9 @@ def test_dynamic_HR_scaling(seed, tmpdir):
         sim.make_initial_population(n=100)
         sim.simulate(end_date=start_date + pd.DateOffset(days=0))
 
-        return sim.modules['HealthSystem'].capabilities_today
+        ctoday = sim.modules['HealthSystem'].capabilities_today
+
+        return pd.Series(ctoday['OtherClinic'])
 
     def get_capabilities_after_two_updates(dynamic_HR_scaling_factor: float, scale_HR_by_pop_size: bool) -> tuple:
         sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
@@ -2616,7 +2620,9 @@ def test_dynamic_HR_scaling(seed, tmpdir):
         popsize_curr = sim.population.props['is_alive'].sum()
         final_popsize_increase = popsize_curr / popsize_start
 
-        return sim.modules['HealthSystem'].capabilities_today, final_popsize_increase
+        ctoday = sim.modules['HealthSystem'].capabilities_today
+
+        return pd.Series(ctoday['OtherClinic']), final_popsize_increase
 
     dynamic_HR_scaling_factor = 1.05
 
@@ -2668,7 +2674,9 @@ def test_dynamic_HR_scaling_multiple_changes(seed, tmpdir):
         sim.make_initial_population(n=100)
         sim.simulate(end_date=start_date + pd.DateOffset(days=0))
 
-        return sim.modules['HealthSystem'].capabilities_today
+        ctoday = sim.modules['HealthSystem'].capabilities_today
+
+        return pd.Series(ctoday['OtherClinic'])
 
     def run_sim(dynamic_HR_scaling_factor: Dict[int, float]) -> tuple:
         """Run simulation for 10 years, with a sequence of factors that apply, specified in a dict of the form
@@ -2697,7 +2705,9 @@ def test_dynamic_HR_scaling_multiple_changes(seed, tmpdir):
         # (updates occur on 1st Jan, starting in 2010, so simulation should stop on 2nd Jan 2011).
         sim.simulate(end_date=sim.date + pd.DateOffset(years=10, days=1))
 
-        return sim.modules['HealthSystem'].capabilities_today
+        ctoday = sim.modules['HealthSystem'].capabilities_today
+
+        return pd.Series(ctoday['OtherClinic'])
 
     dynamic_HR_scaling_factor = {
         2010: 1.0,
@@ -2757,7 +2767,9 @@ def test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together(seed)
         sim.make_initial_population(n=popsize)
         sim.simulate(end_date=sim.date + pd.DateOffset(years=10, days=1))  # run simulation until at least past 2018
 
-        return sim.modules['HealthSystem'].capabilities_today.sum()
+        ctoday = sim.modules['HealthSystem'].capabilities_today
+
+        return pd.Series(ctoday['OtherClinic']).sum()
 
     # - When running without any rescaling
     caps_only_scaling_by_level = get_capabilities(yearly_scaling=False, scaling_by_level=True, rescaling=False)
