@@ -1026,6 +1026,7 @@ class HealthSystem(Module):
         # Also, store the set of officers with non-zero daily availability
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
+        ## TODO: Fix this
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
         # Now adjust it according to the clinic configuration specified. Capabilities will be split between clinics
         # specified. In the "Default" configuration, this means assigning all capabilities to "OtherClinic"
@@ -2476,13 +2477,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
 
-        capabilities_monitor = {k: Counter(v) for k, v in self.module._daily_capabilities_per_staff.items()}
+        capabilities_monitor = {clinic: Counter(clinic_cl) for clinic, clinic_cl in self.module.capabilities_today.items()}
         set_capabilities_still_available = defaultdict(set)
+
         ## For each clinic, pull out the facility and officer type with non-zero capabilities.
         for clinic_name, clinic_val in capabilities_monitor.items():
             for facility_officer_id, facility_officer_id_capabilities in clinic_val.items():
                 if facility_officer_id_capabilities > 0:
                     set_capabilities_still_available[clinic_name].add(facility_officer_id)
+
 
         # Here use different approach for appt_mode_constraints = 2: rather than collecting events
         # due today all at once, run event immediately at time of querying. This ensures that no
@@ -2508,7 +2511,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # This will make things slower for tests/small simulations, but should be of significant help
             # in the case of large simulations in mode_appt_constraints = 2 where number of people in the
             # queue for today >> resources available for that day. This would be faster done by facility.
-            if len(set_capabilities_still_available) > 0 or len(set_cl_capabilities_still_available) > 0:
+            if len(set_capabilities_still_available) > 0:
 
                 next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
                 # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
@@ -2547,8 +2550,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # Retrieve officers&facility required for HSI
                     original_call = next_event_tuple.hsi_event.expected_time_requests
                     _priority = next_event_tuple.priority
-
-
+                    print("********** Running event ************")
+                    print(_priority)
+                    print("********** * ************")
                     # In this version of mode_appt_constraints = 2, do not have access to squeeze
                     # based on queue information, and we assume no squeeze ever takes place.
                     squeeze_factor = 0.

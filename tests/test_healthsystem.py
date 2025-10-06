@@ -1944,7 +1944,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
             tclose=sim.date + pd.DateOffset(days=1),
             # Assign priority as 0,1,0,1,...0,1,2,3,2,3,....2,3. In doing so, in following tests also
             # check that events are rearranged in queue based on priority and not order in which were scheduled.
-            priority=int(i/int(tot_population/2))*2 + i % 2
+            priority= int(i/int(tot_population/2))*2 + i % 2
         )
 
     # Now adjust capabilities available.
@@ -1971,6 +1971,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     hsi2.initialise()
     for k, v in hsi2.expected_time_requests.items():
         sim.modules['HealthSystem']._daily_capabilities['OtherClinic'][k] = (v/scale)*(tot_population/4)
+
 
     # Run healthsystemscheduler
     healthsystemscheduler.apply(sim.population)
