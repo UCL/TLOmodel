@@ -237,11 +237,11 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
         print("    plotting sum of deaths ...")
-        util_fncs.plot_sum_outcome_and_CIs__intervention_period(
+        util_fncs.plot_sum_outcome_and_CIs_intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "deaths", death_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
-        util_fncs.plot_sum_outcome_and_CIs__intervention_period(
+        util_fncs.plot_sum_outcome_and_CIs_intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "deaths_with_SAM", death_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
@@ -251,9 +251,10 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
         print("    plotting sum of DALYs ...")
-        util_fncs.plot_sum_outcome_and_CIs__intervention_period(
+        util_fncs.plot_sum_outcome_and_CIs_intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "DALYs", dalys_outcomes_dict,
-            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix, interv_timestamps_dict
+            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix, interv_timestamps_dict,
+            birth_outcomes_dict
         )
 
     # --------------------- Create a PDF to save all figures and save each page also as PNG file --------------------- #

@@ -809,7 +809,7 @@ def plot_percentage_deaths_with_SAM(
     :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
     """
 
-def plot_sum_outcome_and_CIs__intervention_period(
+def plot_sum_outcome_and_CIs_intervention_period(
     cohort: str,
     scenarios_dict: dict,
     scenarios_to_compare: list,
@@ -818,11 +818,13 @@ def plot_sum_outcome_and_CIs__intervention_period(
     outputs_path: Path,
     scenarios_tocompare_prefix: str,
     timestamps_suffix: str,
-    interv_timestamps_dict: dict = None
+    interv_timestamps_dict: dict = None,
+    births_dict: dict = None,
 ) -> None:
     """
     Plots sum of deaths or DALYs and confidence intervals (mean across runs) over the intervention period for the
     specified cohort for multiple scenarios.
+    If outcome is DALYs, also plots and tables the cost-effectiveness.
     :param cohort: 'Neonatal' or 'Under-5'
     :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
     :param scenarios_to_compare: List of scenarios to plot
@@ -832,6 +834,9 @@ def plot_sum_outcome_and_CIs__intervention_period(
     :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
     :param timestamps_suffix: Suffix with timestamps to identify the log data from which the outcomes originated
     :param interv_timestamps_dict: Dictionary with timestamps for all the interventions
+            (default: None, as needed only for outcome_type = 'DALYs' for cost-effectiveness analysis)
+    :param births_dict: Dataframe containing births data from simulations nested as
+            births_dict[interv][outcome][draw][run]
             (default: None, as needed only for outcome_type = 'DALYs' for cost-effectiveness analysis)
     """
     assert cohort in ['Neonatal', 'Under-5'], \
@@ -919,8 +924,9 @@ def plot_sum_outcome_and_CIs__intervention_period(
                     ax.axhline(y=interv_ci_upper, color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
 
             # Add labels, title, and legend
-            min_interv_year = min(outcomes_dict["SQ"]['interv_years'])
-            max_interv_year = max(outcomes_dict["SQ"]['interv_years'])
+            interv_years = outcomes_dict["SQ"]['interv_years']
+            min_interv_year = min(interv_years)
+            max_interv_year = max(interv_years)
             plt.ylabel(f'{cohort} {outcome_type} (Sum over intervention period)')
             plt.xlabel('Scenario')
             plt.title(
@@ -989,8 +995,6 @@ def plot_sum_outcome_and_CIs__intervention_period(
                     #     averted_ci_upper < y_top2 / 2 + y_top2 / 15 else y_top2 / 2 - y_top2 / 15,
                     #          f"{averted_ci_lower:,.0f}", color='white', ha='center', va='bottom', fontsize=12.5)
 
-            min_interv_year = min(outcomes_dict["SQ"]['interv_years'])
-            max_interv_year = max(outcomes_dict["SQ"]['interv_years'])
             plt.ylabel(f'{cohort}: Averted {outcome_type}, sum over intervention period)')
             plt.xlabel('Scenario')
             plt.title(
@@ -1008,7 +1012,7 @@ def plot_sum_outcome_and_CIs__intervention_period(
                 bbox_inches='tight'
             )
 
-            def plot_cost_effectiveness(averted_DALYs: dict) -> None:
+            def plot_and_table_cost_effectiveness(averted_DALYs: dict) -> None:
                 # path to outcome calculated data
                 cost_outcome_folder_path = outputs_path / "outcomes_data"
                 # SQ timestamp associated with scenarios for which we want the costs to be calculated
@@ -1059,11 +1063,11 @@ def plot_sum_outcome_and_CIs__intervention_period(
                 # print(f"\naverted_DALYs:\n{averted_DALYs}")
                 # print(f"\nincremental_costs:\n{incremental_costs}")
                 # print(f"\nnet_health_benefit:\n{net_health_benefit}")
-                print(f"\nnet_monetary_benefit:\n{net_monetary_benefit}")
+                # print(f"\nnet_monetary_benefit:\n{net_monetary_benefit}")
 
                 cost_eff_table = pd.DataFrame(
                     {
-                        "Intervention": list(averted_DALYs.keys()),
+                        "Scenario": list(averted_DALYs.keys()),
                         "Averted DALYs": [
                             f"{int(round(vals[0])):,} ({int(round(vals[1])):,}; {int(round(vals[2])):,})"
                             for vals in averted_DALYs.values()
@@ -1093,6 +1097,7 @@ def plot_sum_outcome_and_CIs__intervention_period(
                 for scen in incremental_costs.keys():
                     i += 1
                     scen_cons_cost_per_DALY = incremental_costs[scen]/averted_DALYs[scen][0]
+                    # TODO: include CI for ICER in the figure
                     ax_ce.errorbar(
                         averted_DALYs[scen][0], incremental_costs[scen],
                         xerr=[[averted_DALYs[scen][0] - averted_DALYs[scen][1]],
@@ -1133,8 +1138,79 @@ def plot_sum_outcome_and_CIs__intervention_period(
                     bbox_inches='tight'
                 )
 
-            if outcome_type == "DALYs" and cause == 'any cause':
-                plot_cost_effectiveness(averted_DALYs_anycause)
+                # Implementation costs estimates based on number of births and unit costs from REFs, dicounted by 3%
+
+                def calculate_implementation_costs():
+                    # Implementation costs for education/promotion intreventions (ie GM & CS)
+                    start_up_cost_Gelli_etal2021 = 58.41 * 0.3
+                    unit_cost_Gelli_etal2021 = 58.41 * 0.7
+                    coverage_educ_Pearson_etal2018 = 0.247
+                    coverage_prom_Pearson_etal2018 = 0.61
+                    # print("Implementation costs Gelli et al., 2021")
+                    # calculate_implementation_costs_GM_CS(start_up_cost_Gelli_etal2021, unit_cost_Gelli_etal2021,
+                    #                                      coverage_educ_Pearson_etal2018)
+                    # print("Implementation costs Pearson et al., 2018")
+                    unit_cost_Pearson_etal2018 = 1.57
+                    start_up_Pearson_etal2018 = 1.57 / 7 * 3
+                    # print(f"Gelli et al.'s start-up costs; {coverage_educ_Pearson_etal2018*100}% coverage")
+                    # calculate_implementation_costs_GM_CS(start_up_cost_Gelli_etal2021, unit_cost_Pearson_etal2018,
+                    #                                      coverage_educ_Pearson_etal2018)
+                    # print(f"Gelli et al.'s start-up costs; {coverage_prom_Pearson_etal2018*100}% coverage")
+                    # calculate_implementation_costs_GM_CS(start_up_cost_Gelli_etal2021, unit_cost_Pearson_etal2018,
+                    #                                      coverage_prom_Pearson_etal2018)
+                    # print(f"Gelli et al.'s start-up costs; {1.0*100}% coverage")
+                    # calculate_implementation_costs_GM_CS(start_up_cost_Gelli_etal2021, unit_cost_Pearson_etal2018,
+                    #                                      1.0)
+                    # print(f"Pearson et al.'s start-up costs; {1.0*100}% coverage")
+                    # calculate_implementation_costs_GM_CS(start_up_Pearson_etal2018, unit_cost_Pearson_etal2018,
+                    #                                      1.0)
+
+                    # Implementation cost table:
+                    # Generate all combinations of start-up cost, unit cost, and coverage
+                    import itertools
+
+                    interventions = ["GM", "CS"]
+                    start_up_costs = [start_up_Pearson_etal2018] #, start_up_cost_Gelli_etal2021]
+                    unit_costs = [unit_cost_Pearson_etal2018] #, unit_cost_Gelli_etal2021]
+                    coverages = [1.0] # [coverage_educ_Pearson_etal2018, coverage_prom_Pearson_etal2018, 1.0]
+
+                    combinations = list(itertools.product(interventions, start_up_costs, unit_costs, coverages))
+
+                    rows = []
+                    for interv, start_up_C, unit_C, cov in combinations:
+                        impl_cost_df = pd.DataFrame(
+                            {
+                                "year": interv_years,
+                                "impl_costs": [
+                                    births_dict[interv]["births_mean_ci_df"][0].loc[year][0]
+                                    * cov
+                                    * ((unit_C + start_up_C) if year == interv_years[0] else unit_C)
+                                    for year in interv_years
+                                ],
+                            }
+                        )
+                        impl_cost_discounted_df = apply_discounting_to_cost_data(
+                            _df=impl_cost_df, _discount_rate=0.03, _column_for_discounting='impl_costs'
+                        )
+                        scen = next(iter(scenarios_dict[interv]))
+                        rows.append(
+                            {   "Scenario": scen,
+                                "StartUpCost": round(start_up_C, 2),
+                                "UnitCost": round(unit_C, 2),
+                                "Coverage": round(cov, 2),
+                                "Implementation costs": f"{int(round(sum(impl_cost_discounted_df['impl_costs']))):,}",
+                                "INMB": f"{int(net_monetary_benefit[scen][0]):,}",
+                            }
+                        )
+
+                    implementation_costs_df = pd.DataFrame(rows)
+                    print("\nImplementation cost table:")
+                    print(implementation_costs_df)
+
+                calculate_implementation_costs()
+
+            if outcome_type == "DALYs" and cause == "any cause":
+                plot_and_table_cost_effectiveness(averted_DALYs_anycause)
 
 # ----------------------------------------------------------------------------------------------------------------------
 def plot_availability_heatmaps(outputs_path: Path) -> None:
