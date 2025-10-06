@@ -2238,8 +2238,7 @@ class HealthSystem(Module):
             # Estimate Squeeze-Factors for today
             if self.mode_appt_constraints == 0:
                 # For Mode 0 (no Constraints), the squeeze factors are all zero.
-                squeeze_factor_per_hsi_event = np.zeros(
-                    len(footprints_of_all_individual_level_hsi_event))
+                squeeze_factor_per_hsi_event = {'OtherClinic' : np.zeros(len(footprints_of_all_individual_level_hsi_event))}
             else:
                 # For Other Modes, the squeeze factors must be computed
                 squeeze_factor_per_hsi_event = self.get_squeeze_factors(
