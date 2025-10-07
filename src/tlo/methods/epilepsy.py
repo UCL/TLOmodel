@@ -637,6 +637,21 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
+        # Add equipment for severe epilepsy cases
+        if df.at[person_id, 'ep_seiz_stat'] == '3':  # Frequent seizures
+            # Assessment and mobility equipment for severe epilepsy
+            self.add_equipment({'Wheelchair'})
+
+            # Pediatric equipment for children with severe epilepsy
+            if df.at[person_id, 'age_years'] < 18:
+                self.add_equipment({
+                    'Paediatric Corner sit',
+                    'Paediatric CP Chair',
+                    'Paediatric mat',
+                    'Paediatric rollator',
+                    'Paediatric Standing frame'
+                })
+
         # Check what drugs are available
         best_available_medicine = self.module.get_best_available_medicine(self)
 
@@ -702,6 +717,51 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
         # If the person does not remain on anti-epileptics, do nothing:
         if not df.at[person_id, 'ep_antiep']:
             return hs.get_blank_appt_footprint()
+
+        # Add equipment for severe epilepsy cases at follow-up visits
+        if df.at[person_id, 'ep_seiz_stat'] == '3':  # Frequent seizures
+            # Equipment for severe epilepsy rehabilitation and support
+            self.add_equipment({
+                'Adaptive communication switches (Infrared switches)',
+                'Speech therapy kit',
+                'Bobath bed',
+                'Box and Block Test',
+                'Built Up (adapted) Utensils',
+                'Goniometer',
+                'Grasp Dynamometer',
+                'Hand function kits',
+                'Hot Pack Therapy Units',
+                'Interferential therapy machine',
+                'Muscle stimulator',
+                'TENs Unit',
+                'Transcutaneous electrical neuromuscular stimulation',
+                'Exercise Mats',
+                'Gym mat',
+                'Parallel Bars',
+                'Pulley System',
+                'Suspension Slings',
+                'Rehabilitation wall bars',
+                'Rollators',
+                'Walking Frame',
+                'Walking Cane',
+                'Overhead pulley',
+                'Training stairs',
+                'Stress Ball',
+                'Wheelchair',
+                'Ordinary balls',
+                'Medicinal Balls (Sets of 0.5kgs, 1kg, 2kgs, 3kgs, 4kgs, 5kgs)',
+                'Exercise ball'
+            })
+
+            # Pediatric equipment for children with severe epilepsy
+            if df.at[person_id, 'age_years'] < 18:
+                self.add_equipment({
+                    'Paediatric Corner sit',
+                    'Paediatric CP Chair',
+                    'Paediatric mat',
+                    'Paediatric rollator',
+                    'Paediatric Standing frame'
+                })
 
         # Request the medicine
         best_available_medicine = self.module.get_best_available_medicine(self)

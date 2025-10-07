@@ -325,11 +325,11 @@ class HealthSystem(Module):
 
         # Mode Appt Constraints
         'mode_appt_constraints': Parameter(
-            Types.INT, 'Integer code in `{0, 1, 2}` determining mode of constraints with regards to officer numbers '
-                       'and time - 0: no constraints, all HSI events run with no squeeze factor, 1: elastic constraints'
-                       ', all HSI events run with squeeze factor, 2: hard constraints, only HSI events with no squeeze '
-                       'factor run. N.B. This parameter is over-ridden if an argument is provided'
-                       ' to the module initialiser.',
+            Types.INT, 'Integer code in `{1, 2}` determining mode of constraints with regards to officer numbers '
+                       'and time - 1: elastic constraints, all HSI events run with squeeze factor, provided '
+                       'officers required to deliver the HSI have capabilities > 0'
+                       '2: hard constraints, only HSI events with no squeeze factor run. N.B. This parameter'
+                       'is over-ridden if an argument is provided to the module initialiser.',
         ),
         'mode_appt_constraints_postSwitch': Parameter(
             Types.INT, 'Mode considered after a mode switch in year_mode_switch.'),
@@ -369,10 +369,10 @@ class HealthSystem(Module):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
         :param service_availability: A list of treatment IDs to allow.
-        :param mode_appt_constraints: Integer code in ``{0, 1, 2}`` determining mode of
-            constraints with regards to officer numbers and time - 0: no constraints,
-            all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
-            events run with squeeze factor, 2: hard constraints, only HSI events with
+        :param mode_appt_constraints: Integer code in ``{1, 2}`` determining mode of
+            constraints with regards to officer numbers and time - 1: elastic constraints, all HSI
+            events run with squeeze factor provided officers required have nonzero capabilities,
+            2: hard constraints, only HSI events with
             no squeeze factor run.
         :param cons_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
         let no consumable be ever be available; if 'all', then all consumables are always available. When using 'all'
@@ -423,7 +423,7 @@ class HealthSystem(Module):
 
         self.mode_appt_constraints = None  # Will be the final determination of the `mode_appt_constraints'
         if mode_appt_constraints is not None:
-            assert mode_appt_constraints in {0, 1, 2}
+            assert mode_appt_constraints in {1, 2}
         self.arg_mode_appt_constraints = mode_appt_constraints
 
         self.rng_for_hsi_queue = None  # Will be a dedicated RNG for the purpose of randomising the queue
@@ -752,6 +752,8 @@ class HealthSystem(Module):
             master_facilities_list=self.parameters['Master_Facilities_List'],
             availability=self.get_equip_availability(),
         )
+        # Cache the content of the in-patients equipment package, as this is used a lot
+        self.in_patient_equipment_package: set[int] = self.equipment.from_pkg_names('In-patient')
 
         self.tclose_overwrite = self.parameters['tclose_overwrite']
         self.tclose_days_offset_overwrite = self.parameters['tclose_days_offset_overwrite']
@@ -2195,6 +2197,7 @@ class HealthSystem(Module):
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
 
+
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
         # If we are at the end of the year preceeding the mode switch, and if wanted
@@ -2212,12 +2215,15 @@ class HealthSystem(Module):
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
 
-    def run_individual_level_events_in_mode_0_or_1(self,
+        # Record equipment usage for the year, for each facility
+        self._record_general_equipment_usage_for_year()
+
+    def run_individual_level_events_in_mode_1(self,
                                                    _list_of_individual_hsi_event_tuples:
                                                    List[HSIEventQueueItem]) -> List:
         """Run a list of individual level events. Returns: list of events that did not run (maybe an empty list)."""
         _to_be_held_over = list()
-        assert self.mode_appt_constraints in (0, 1)
+        assert self.mode_appt_constraints == 1
 
         if _list_of_individual_hsi_event_tuples:
             # Examine total call on health officers time from the HSI events in the list:
@@ -2236,17 +2242,12 @@ class HealthSystem(Module):
                 self.running_total_footprint.update(footprint)
 
             # Estimate Squeeze-Factors for today
-            if self.mode_appt_constraints == 0:
-                # For Mode 0 (no Constraints), the squeeze factors are all zero.
-                squeeze_factor_per_hsi_event = {'OtherClinic' : np.zeros(len(footprints_of_all_individual_level_hsi_event))}
-            else:
-                # For Other Modes, the squeeze factors must be computed
-                squeeze_factor_per_hsi_event = self.get_squeeze_factors(
-                    footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                    total_footprint=self.running_total_footprint,
-                    current_capabilities=self.capabilities_today,
-                    compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
-                )
+            squeeze_factor_per_hsi_event = self.get_squeeze_factors(
+                footprints_per_event=footprints_of_all_individual_level_hsi_event,
+                total_footprint=self.running_total_footprint,
+                current_capabilities=self.capabilities_today,
+                compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
+            )
 
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
@@ -2257,7 +2258,6 @@ class HealthSystem(Module):
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
 
-                # Mode 0: All HSI Event run, with no squeeze
                 # Mode 1: All HSI Events run with squeeze provided latter is not inf
                 ok_to_run = True
 
@@ -2298,15 +2298,13 @@ class HealthSystem(Module):
                         self.running_total_footprint -= original_call
                         self.running_total_footprint += updated_call
 
-                        # Don't recompute for mode=0
-                        if self.mode_appt_constraints != 0:
-                            squeeze_factor_per_hsi_event = self.get_squeeze_factors(
-                                footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                                total_footprint=self.running_total_footprint,
-                                current_capabilities=self.capabilities_today,
-                                compute_squeeze_factor_to_district_level=self.
-                                compute_squeeze_factor_to_district_level,
-                            )
+                        squeeze_factor_per_hsi_event = self.get_squeeze_factors(
+                            footprints_per_event=footprints_of_all_individual_level_hsi_event,
+                            total_footprint=self.running_total_footprint,
+                            current_capabilities=self.capabilities_today,
+                            compute_squeeze_factor_to_district_level=self.
+                            compute_squeeze_factor_to_district_level,
+                        )
 
                     else:
                         # no actual footprint is returned so take the expected initial declaration as the actual,
@@ -2346,6 +2344,23 @@ class HealthSystem(Module):
                     )
 
         return _to_be_held_over
+
+    def _record_general_equipment_usage_for_year(self):
+        """This event is called at the end of each year and records the general equipment usage for the year, for each
+        facility_id."""
+
+        general_equipment_by_facility_level = {
+            '1a': self.equipment.from_pkg_names('General_FacilityLevel_1a_and_1b'),
+            '1b': self.equipment.from_pkg_names('General_FacilityLevel_1a_and_1b'),
+            '2': self.equipment.from_pkg_names('General_FacilityLevel_2'),
+        }
+
+        for fac in self._facility_by_facility_id.values():
+            self.equipment.record_use_of_equipment(
+                facility_id=fac.id,
+                item_codes=general_equipment_by_facility_level.get(fac.level, set())
+            )
+
 
     @property
     def hsi_event_counts(self) -> Counter:
@@ -2469,7 +2484,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         return due_today
 
-    def process_events_mode_0_and_1(self, hold_over: List[HSIEventQueueItem]) -> None:
+    def process_events_mode_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
             # Get the events that are due today:
             list_of_individual_hsi_event_tuples_due_today = self._get_events_due_today()
@@ -2488,7 +2503,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
 
             # Try to run the list of individual-level events that have their essential equipment
-            _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(
+            _to_be_held_over = self.module.run_individual_level_events_in_mode_1(
                 list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment,
             )
             hold_over.extend(_to_be_held_over)
@@ -2700,9 +2715,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # were exhausted, so here we traverse the queue again to ensure that if any events expired were
         # left unchecked they are properly removed from the queue, and did_not_run() is invoked for all
         # postponed events. (This should still be more efficient than querying the queue as done in
-        # mode_appt_constraints = 0 and 1 while ensuring mid-day effects are avoided.)
+        # mode_appt_constraints = 1 while ensuring mid-day effects are avoided.)
         # We also schedule a call_never_run for any HSI below the lowest_priority_considered,
-        # in case any of them where left in the queue due to a transition from mode 0/1 to mode 2
+        # in case any of them where left in the queue due to a transition from mode 1 to mode 2
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
@@ -2733,7 +2748,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             elif self.sim.date < next_event_tuple.topen:
                 # The event is not yet due (before topen). Do not stop querying the queue here if we have
                 # reached the lowest_priority_considered, as we want to make sure HSIs with lower priority
-                # (which may have been scheduled during a prior mode 0/1 period) are flushed from the queue.
+                # (which may have been scheduled during a prior mode 1 period) are flushed from the queue.
                 hp.heappush(list_of_events_not_due_today, next_event_tuple)
 
             else:
@@ -2810,11 +2825,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
 
-        if self.module.mode_appt_constraints in (0, 1):
+        if self.module.mode_appt_constraints == 1:
             # Run all events due today, repeating the check for due events until none are due
             # (this allows for HSI that are added to the queue in the course of other HSI
             # for this today to be run this day).
-            self.process_events_mode_0_and_1(hold_over)
+            self.process_events_mode_1(hold_over)
 
         elif self.module.mode_appt_constraints == 2:
             self.process_events_mode_2(hold_over)
