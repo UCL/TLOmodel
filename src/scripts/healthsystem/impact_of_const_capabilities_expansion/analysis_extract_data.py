@@ -149,7 +149,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     print(deaths_by_year_and_cause)
     print(list(deaths_by_year_and_cause.index))
     deaths_by_year_and_cause.to_csv('ConvertedOutputs/Deaths_by_cause_with_time.csv', index=True)
-    exit(-1)
 
     # ================================================================================================
     # TIME EVOLUTION OF TOTAL DALYs
