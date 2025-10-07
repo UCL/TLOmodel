@@ -457,48 +457,24 @@ plot_with_ci(
 
 
 # ART coverage
-def make_column_summariser_year(column_name: str):
-    """
-    Returns a function that computes the total for a specified column over the TARGET_PERIOD,
-    validating that all years in the period are present.
-    """
-
-    def summariser(_df):
-        _df["date"] = pd.to_datetime(_df["date"])
-        years_needed = set(i.year for i in TARGET_PERIOD)
-        recorded_years = set(_df["date"].dt.year.unique())
-        assert recorded_years.issuperset(years_needed), "Some years are not recorded."
-
-        mask = _df["date"].between(*TARGET_PERIOD)
-        total = _df.loc[mask, column_name].sum()
-
-        return pd.Series(data={column_name: total})
-
-    return summariser
-
-
-# todo this averages over all years 2010+
-get_art_coverage = make_column_summariser("art_coverage_adult")
-
-art_coverage_adult = compute_summary_statistics(
-    extract_results(
+art_cov = compute_summary_statistics(extract_results(
         results_folder,
-        module="tlo.methods.hiv",
-        key="hiv_program_coverage",
-        custom_generate_series=get_art_coverage,
+        module='tlo.methods.hiv',
+        key='hiv_program_coverage',
+        column="art_coverage_adult",
+        index='date',
         do_scaling=False
-    ), central_measure="mean", use_standard_error=True
-).pipe(set_param_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0), central_measure='median')
 
 
-plot_with_ci(
-    art_coverage_adult,
-    variable="art_coverage_adult",
-    title=f"ART coverage adults {target_period()}",
-    ylabel="Proportion adults with HIV on ART",
-    colour_map=scenario_colours
-)
-
+art_cov_full = extract_results(
+        results_folder,
+        module='tlo.methods.hiv',
+        key='hiv_program_coverage',
+        column="art_coverage_adult",
+        index='date',
+        do_scaling=False
+    ).pipe(set_param_names_as_column_index_level_0)
 
 
 
