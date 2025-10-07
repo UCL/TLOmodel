@@ -2145,8 +2145,8 @@ def test_mode_2_clinics(seed, tmpdir):
     ## Test that capabilities are split according the proportion specified for the Facility Id
     ## and officer combination in the Resource file.
     ## 40% of capabilities are OtherClinic and 60% Clinic1 capabilities
-    other_clinic = sim.modules['HealthSystem']._daily_capabilities_per_staff['OtherClinic']
-    clinic1 = sim.modules['HealthSystem']._daily_capabilities_per_staff['Clinic1']
+    other_clinic = sim.modules['HealthSystem']._daily_capabilities['OtherClinic']
+    clinic1 = sim.modules['HealthSystem']._daily_capabilities['Clinic1']
 
     # 'FacilityID_20_Officer_DCSA' is coming from the resource file
     ratio = clinic1['FacilityID_20_Officer_DCSA'] / other_clinic['FacilityID_20_Officer_DCSA']
@@ -2167,10 +2167,10 @@ def test_mode_2_clinics(seed, tmpdir):
     # Now adjust capabilities available.
     # We first want to make sure there are enough capabilities available to run all events
 
-    sim.modules['HealthSystem']._daily_capabilities_per_staff['Clinic1'] = {}
+    sim.modules['HealthSystem']._daily_capabilities['Clinic1'] = {}
     for k, v in hsi1.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_capabilities_per_staff['OtherClinic'][k] = v*tot_population
-        sim.modules['HealthSystem']._daily_capabilities_per_staff['Clinic1'][k] = v*tot_population
+        sim.modules['HealthSystem']._daily_capabilities['OtherClinic'][k] = v*tot_population
+        sim.modules['HealthSystem']._daily_capabilities['Clinic1'][k] = v*tot_population
 
     # Run healthsystemscheduler and read the results
     sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
@@ -2188,9 +2188,9 @@ def test_mode_2_clinics(seed, tmpdir):
     sim = create_simulation(tmpdir, tot_population)
     sim = schedule_hsi_events(tot_population // 2, tot_population // 2, sim)
 
-    sim.modules['HealthSystem']._daily_capabilities_per_staff['OtherClinic'] = {}
+    sim.modules['HealthSystem']._daily_capabilities['OtherClinic'] = {'FacilityID_20_Officer_DCSA': 0.0}
     for k, v in hsi1.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_capabilities_per_staff['Clinic1'][k] = v*(tot_population)
+        sim.modules['HealthSystem']._daily_capabilities['Clinic1'][k] = v*(tot_population)
 
     sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
 
@@ -2209,9 +2209,9 @@ def test_mode_2_clinics(seed, tmpdir):
     sim = schedule_hsi_events(tot_population // 2, tot_population // 2, sim)
 
     # Now adjust capabilities available using hsi2 created above
-    sim.modules['HealthSystem']._daily_capabilities_per_staff['Clinic1'] = {}
+    sim.modules['HealthSystem']._daily_capabilities['Clinic1'] = {'FacilityID_20_Officer_DCSA': 0.0}
     for k, v in hsi1.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_capabilities_per_staff['OtherClinic'][k] = v*(tot_population)
+        sim.modules['HealthSystem']._daily_capabilities['OtherClinic'][k] = v*(tot_population)
 
 
     sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
@@ -2235,9 +2235,9 @@ def test_mode_2_clinics(seed, tmpdir):
     sim = schedule_hsi_events(0, 25, sim)
 
     # Now adjust capabilities available.
-    sim.modules['HealthSystem']._daily_capabilities_per_staff['Clinic1'] = {}
+    sim.modules['HealthSystem']._daily_capabilities['Clinic1'] = {'FacilityID_20_Officer_DCSA': 0.0}
     for k, v in hsi1.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_capabilities_per_staff['OtherClinic'][k] = v*(tot_population/2)
+        sim.modules['HealthSystem']._daily_capabilities['OtherClinic'][k] = v*(tot_population/2)
 
     sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
 

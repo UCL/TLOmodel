@@ -2047,7 +2047,7 @@ class HealthSystem(Module):
 
         # Combine the current_capabilities and total_footprint per-officer totals
         comparison = pd.DataFrame(index=current_capabilities.keys())
-        comparison['Total_Minutes_Per_Day'] = current_capabilities
+        comparison['Total_Minutes_Per_Day'] = current_capabilities.values()
         comparison['Minutes_Used'] = pd.Series(total_footprint, dtype='float64')
         comparison['Minutes_Used'] = comparison['Minutes_Used'].fillna(0.0)
         assert len(comparison) == len(current_capabilities)
