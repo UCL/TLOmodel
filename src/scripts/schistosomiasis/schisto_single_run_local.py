@@ -72,10 +72,12 @@ def run_simulation(popsize,
                  healthsystem.HealthSystem(disable_and_reject_all=hs_disable_and_reject_all,
                                            cons_availability='all'),
                  simplified_births.SimplifiedBirths(),
-                 schisto.Schisto(mda_execute=mda_execute,
-                                 single_district=single_district),
+                 schisto.Schisto(),
                  )
 
+    # Override schisto parameters
+    sim.modules["Schisto"].parameters["mda_execute"] = mda_execute
+    sim.modules["Schisto"].parameters["single_district"] = single_district
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
     # sim.modules["Schisto"].parameters["scaleup_WASH"] = 0.0  # 1.0=True
     # sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011

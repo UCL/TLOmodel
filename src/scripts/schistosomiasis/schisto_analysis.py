@@ -16,7 +16,7 @@ from tlo.methods import contraception, demography, healthburden, healthsystem, s
 from tlo.util import read_csv_files
 
 
-def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
+def run_simulation(popsize=10000, haem=True, mansoni=True):
     outputpath = Path("./outputs")  # folder for convenience of storing outputs
     # The resource files
     resourcefilepath = Path("./resources")
@@ -59,7 +59,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     return sim, output
 
 
-sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=False)
+sim, output = run_simulation(popsize=10000, haem=True, mansoni=False)
 
 
 # ---------------------------------------------------------------------------------------------------------

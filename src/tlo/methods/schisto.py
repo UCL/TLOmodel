@@ -147,6 +147,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                              'Upper limit for MDA coverage'),
         'single_district_calibration_number': Parameter(Types.INT,
                                                        'District number for single district calibration runs'),
+        'single_district_calibration_name': Parameter(Types.STRING,
+                                                        'District name for single district calibration runs'),
+        'single_district_calibration_region': Parameter(Types.STRING,
+                                                        'District region for single district calibration runs'),
         'mda_schedule_month': Parameter(Types.INT,
                                        'Month for scheduling MDA events'),
         'mda_schedule_day': Parameter(Types.INT,
@@ -167,6 +171,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         'adults_max_age': Parameter(Types.INT, 'Maximum age for Adults group'),
         'mda_execute': Parameter(Types.BOOL, 'Whether to execute MDA events'),
         'single_district': Parameter(Types.BOOL, 'Whether to run simulation for a single district only'),
+        'main_polling_frequency': Parameter(Types.INT, 'Polling freq main schisto event in months'),
+
     }
 
     def __init__(self, name=None):
@@ -252,15 +258,15 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, f'{self.module_prefix}_MDA_treatment_counter'] = 0
 
         # reset all to one district if doing calibration or test runs
-        # choose district based on parameter (default Zomba district 19) as it has ~10% prev of both species
+        # choose district based on parameter (in Malawi, default Zomba district 19) as it has ~10% prev of both species
         if p['single_district']:
-            district_num = int(self.parameters['single_district_calibration_number'])
+            district_num = int(p['single_district_calibration_number'])
             df['district_num_of_residence'] = pd.Categorical([district_num] * len(df),
                                                              categories=df['district_num_of_residence'].cat.categories)
 
-            df['district_of_residence'] = pd.Categorical(['Zomba'] * len(df),
+            df['district_of_residence'] = pd.Categorical([p['single_district_calibration_name']] * len(df),
                                                          categories=df['district_of_residence'].cat.categories)
-            df['region_of_residence'] = pd.Categorical(['Southern'] * len(df),
+            df['region_of_residence'] = pd.Categorical([p['single_district_calibration_region']] * len(df),
                                                        categories=df['region_of_residence'].cat.categories)
         for _spec in self.species.values():
             _spec.initialise_population(population)
@@ -445,6 +451,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             'urine_filtration_specificity_noneWB',
             'mda_coverage_upper_limit',
             'single_district_calibration_number',
+            'single_district_calibration_name',
+            'single_district_calibration_region',
             'mda_schedule_month',
             'mda_schedule_day',
             'minimum_baseline_prevalence',
@@ -459,7 +467,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             'adults_min_age',
             'adults_max_age',
             'mda_execute',
-            'single_district'
+            'single_district',
+            'main_polling_frequency'
         ):
             value = param_list[_param_name]
             parameters[_param_name] = try_cast_to_float(value)
@@ -1265,7 +1274,8 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module: Module, species: SchistoSpecies):
-        super().__init__(module, frequency=DateOffset(months=1))
+        p = self.module.parameters
+        super().__init__(module, frequency=DateOffset(months=p['main_polling_frequency']))
         self.species = species
 
     def apply(self, population):

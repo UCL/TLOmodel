@@ -65,8 +65,11 @@ def run_simulation(popsize=popsize, mda_execute=True):
                  healthburden.HealthBurden(),
                  healthsystem.HealthSystem(),
                  simplified_births.SimplifiedBirths(),
-                 schisto.Schisto(mda_execute=mda_execute),
+                 schisto.Schisto(),
                  )
+
+    # Override schisto parameters
+    sim.modules["Schisto"].parameters["mda_execute"] = mda_execute
 
     # initialise the population
     sim.make_initial_population(n=popsize)
