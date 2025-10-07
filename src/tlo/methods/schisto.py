@@ -143,8 +143,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'Odds ratio for health seeking in children with schisto low symptoms'),
         'odds_ratio_health_seeking_adults_schisto_low': Parameter(
             Types.REAL, 'Odds ratio for health seeking in adults with schisto low symptoms'),
-        'mda_coverage_upper_limit': Parameter(Types.REAL,
-                                             'Upper limit for MDA coverage'),
         'single_district_calibration_number': Parameter(Types.INT,
                                                        'District number for single district calibration runs'),
         'single_district_calibration_name': Parameter(Types.STRING,
@@ -1080,6 +1078,7 @@ class SchistoSpecies:
         * Schedule the WormBurdenEvent for this species. (A recurring instance of this event will be scheduled for
         each species independently.)"""
 
+        p = self.schisto_module.parameters
         sim.schedule_event(
             SchistoInfectionWormBurdenEvent(
                 module=self.schisto_module,
@@ -1783,6 +1782,7 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         # if MDA includes SAC/PSAC, return average dose for SAC for all beneficiaries
         # using total_dosage = sum(self.module.calculate_praziquantel_dosage(pid) for pid in beneficiaries_still_alive)
         # is very slow
+        p = self.module.parameters
         if 'Adults' in self.age_group_included:
             # adult dosing
             total_dosage = 40 * p['avg_weight_adult_kg'] * len(beneficiaries_still_alive)
