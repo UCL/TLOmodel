@@ -33,8 +33,10 @@ def get_simulation(seed, start_date, mda_execute=True):
                  healthburden.HealthBurden(),
                  healthsystem.HealthSystem(cons_availability='all'),
                  simplified_births.SimplifiedBirths(),
-                 schisto.Schisto(mda_execute=mda_execute),
+                 schisto.Schisto(),
                  )
+    # Override the mda_execute parameter
+    sim.modules['Schisto'].parameters['mda_execute'] = mda_execute
     return sim
 
 

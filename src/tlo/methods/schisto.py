@@ -165,12 +165,12 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         'sac_max_age': Parameter(Types.INT, 'Maximum age for SAC group'),
         'adults_min_age': Parameter(Types.INT, 'Minimum age for Adults group'),
         'adults_max_age': Parameter(Types.INT, 'Maximum age for Adults group'),
+        'mda_execute': Parameter(Types.BOOL, 'Whether to execute MDA events'),
+        'single_district': Parameter(Types.BOOL, 'Whether to run simulation for a single district only'),
     }
 
-    def __init__(self, name=None, mda_execute=True, single_district=False):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.mda_execute = mda_execute
-        self.single_district = single_district
 
         # Create pointer that will be to dict of disability weights
         self.disability_weights = None
@@ -248,11 +248,12 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         """Set the property values for the initial population."""
 
         df = population.props
+        p = self.parameters
         df.loc[df.is_alive, f'{self.module_prefix}_MDA_treatment_counter'] = 0
 
         # reset all to one district if doing calibration or test runs
         # choose district based on parameter (default Zomba district 19) as it has ~10% prev of both species
-        if self.single_district:
+        if p['single_district']:
             district_num = int(self.parameters['single_district_calibration_number'])
             df['district_num_of_residence'] = pd.Categorical([district_num] * len(df),
                                                              categories=df['district_num_of_residence'].cat.categories)
@@ -266,7 +267,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start."""
-
+        p = self.parameters
         # Look-up DALY weights
         if 'HealthBurden' in self.sim.modules:
             self.disability_weights = self._get_disability_weight()
@@ -298,7 +299,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         #     {286: 1.0})
 
         # Schedule MDA events
-        if self.mda_execute:
+        if p['mda_execute']:
             # update future mda strategy from default values
             self.prognosed_mda = self._create_mda_strategy()
 
@@ -456,7 +457,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             'sac_min_age',
             'sac_max_age',
             'adults_min_age',
-            'adults_max_age'
+            'adults_max_age',
+            'mda_execute',
+            'single_district'
         ):
             value = param_list[_param_name]
             parameters[_param_name] = try_cast_to_float(value)
