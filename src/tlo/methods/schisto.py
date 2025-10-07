@@ -792,8 +792,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         status = pd.Series("Non-infected", index=age.index, dtype="object")
 
-        heavy_group = ((age <= p["psac_max_age"]) & (aggregate_worm_burden >= params["heavy_intensity_threshold_PSAC"])) | (
-            aggregate_worm_burden >= params["heavy_intensity_threshold"])
+        heavy_group = ((age <= p["psac_max_age"]) & (aggregate_worm_burden >=
+            params["heavy_intensity_threshold_PSAC"])) | (aggregate_worm_burden >= params["heavy_intensity_threshold"])
         moderate_group = ~heavy_group & (aggregate_worm_burden >= params["low_intensity_threshold"])
         low_group = (aggregate_worm_burden < params["low_intensity_threshold"]) & (aggregate_worm_burden > 0)
 
@@ -1429,7 +1429,8 @@ class SchistoMatureJuvenileWormsEvent(RegularEvent, PopulationScopeEventMixin):
             """
             # all new juvenile infections will have same infection date
             p = self.module.parameters
-            if (df[juvenile_infection_date] <= self.sim.date - pd.DateOffset(months=p['worm_maturation_period_months'])).any():
+            if (df[juvenile_infection_date] <= self.sim.date -
+                    pd.DateOffset(months=p['worm_maturation_period_months'])).any():
                 df[species_column_aggregate] += df[species_column_juvenile]
 
                 # Set 'juvenile' column to zeros
