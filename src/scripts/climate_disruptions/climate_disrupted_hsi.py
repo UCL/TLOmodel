@@ -515,6 +515,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_weather_delayed_mean.to_csv(output_folder / f"weather_delayed_by_type_{draw}.csv")
         df_all_years_weather_cancelled_mean.to_csv(output_folder / f"weather_cancelled_by_type_{draw}.csv")
 
+
         # Accumulate data across all draws
         all_draws_treatments_mean.append(pd.Series(df_all_years_treatments_mean.sum(), name=f'Draw {draw}'))
         all_draws_never_ran_mean.append(pd.Series(df_all_years_never_ran_mean.sum(), name=f'Draw {draw}'))
@@ -670,11 +671,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(output_folder / f"treatments_and_appointments_per_1000_all_draws_with_weather_{max_year}.png")
     plt.close(fig)
 
-    # Save summary data (Enhanced)
+    # Save summary data
     df_treatments_all_draws_mean.to_csv(output_folder / "treatments_summary_all_draws.csv")
     df_never_ran_all_draws_mean.to_csv(output_folder / "never_ran_summary_all_draws.csv")
     df_weather_delayed_all_draws_mean.to_csv(output_folder / "weather_delayed_summary_all_draws.csv")
     df_weather_cancelled_all_draws_mean.to_csv(output_folder / "weather_cancelled_summary_all_draws.csv")
+
+    (df_weather_delayed_all_draws_mean / df_treatments_all_draws_mean).to_csv(
+        output_folder / f"percentage_weather_delayed_by_all_draws.csv")
+    (df_weather_delayed_all_draws_mean / df_treatments_all_draws_mean).to_csv(
+        output_folder / f"percentage_weather_cancelled_by_all_draws.csv")
 
 
 if __name__ == "__main__":
