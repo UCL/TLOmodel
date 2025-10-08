@@ -41,7 +41,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True):
     sim.register(healthsystem.HealthSystem())
     sim.register(healthburden.HealthBurden())
     sim.register(contraception.Contraception())
-    sim.register(schisto.Schisto(mda_execute=mda_execute))
+    sim.register(schisto.Schisto())
     if haem:
         sim.register(schisto.Schisto_Haematobium(symptoms_and_HSI=False))
     if mansoni:
