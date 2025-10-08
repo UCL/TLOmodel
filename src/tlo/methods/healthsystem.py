@@ -1932,7 +1932,7 @@ class HealthSystem(Module):
         squeeze_factor: float,
         did_run: bool,
         priority: int,
-        clinic: Optional[str] = None
+        clinic: str
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         # Debug logger gives simple line-list for every HSI event
@@ -1947,10 +1947,9 @@ class HealthSystem(Module):
                 'did_run': did_run,
                 'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
                 'Facility_ID': facility_id if facility_id is not None else -99,
-                'Equipment': sorted(event_details.equipment)
+                'Equipment': sorted(event_details.equipment),
+                'Clinic': clinic if clinic is not None else 'None'
         }
-        if clinic is not None:
-            hsi_record['Clinic'] = clinic
 
         logger.debug(
             key="HSI_Event",
@@ -1974,7 +1973,7 @@ class HealthSystem(Module):
                 level=event_details.facility_level,
             )
 
-    def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None):
+    def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None, clinic=None):
         """
         Record the fact that an HSI event was never ran.
         If this is an individual-level HSI_Event, it will also record the actual appointment footprint
@@ -1990,6 +1989,7 @@ class HealthSystem(Module):
                  person_id=hsi_event.target,
                  facility_id=hsi_event.facility_info.id,
                  priority=priority,
+                 clinic=clinic
                  )
         else:
             self.write_to_never_ran_hsi_log(
@@ -1997,6 +1997,7 @@ class HealthSystem(Module):
                  person_id=-1,
                  facility_id=-1,
                  priority=priority,
+                 clinic=clinic
                  )
 
     def write_to_never_ran_hsi_log(
@@ -2005,6 +2006,7 @@ class HealthSystem(Module):
         person_id: int,
         facility_id: Optional[int],
         priority: int,
+        clinic: str
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.debug(
@@ -2017,6 +2019,7 @@ class HealthSystem(Module):
                 'priority': priority,
                 'Facility_Level': event_details.facility_level if event_details.facility_level is not None else "-99",
                 'Facility_ID': facility_id if facility_id is not None else -99,
+                'Clinic': clinic
             },
             description="record of each HSI event that never ran"
         )
@@ -2057,7 +2060,7 @@ class HealthSystem(Module):
         # Compute Fraction of Time Used Overall
         total_available = comparison['Total_Minutes_Per_Day'].sum()
         fraction_time_used_overall = (
-            comparison['Minutes_Used'].sum() / total_available if total_available > 0 else 0
+            comparison['Minutes_Used'].sum() / total_available if total_available > 0 else 0.0
         )
 
         # Compute Fraction of Time Used In Each Facility
@@ -2583,9 +2586,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # Retrieve officers&facility required for HSI
                     original_call = next_event_tuple.hsi_event.expected_time_requests
                     _priority = next_event_tuple.priority
-                    print("********** Running event ************")
-                    print(_priority)
-                    print("********** * ************")
                     # In this version of mode_appt_constraints = 2, do not have access to squeeze
                     # based on queue information, and we assume no squeeze ever takes place.
                     squeeze_factor = 0.
@@ -2649,7 +2649,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         if not event.is_all_declared_equipment_available:
                             self.module.call_and_record_never_ran_hsi_event(
                                 hsi_event=event,
-                                priority=next_event_tuple.priority
+                                priority=next_event_tuple.priority,
+                                clinic=next_event_tuple.clinic_eligibility
                             )
                             continue
 
@@ -2737,7 +2738,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 self.module.call_and_record_never_ran_hsi_event(
                       hsi_event=event,
-                      priority=next_event_tuple.priority
+                      priority=next_event_tuple.priority,
+                      clinic=next_event_tuple.clinic_eligibility
                      )
 
             elif event.target not in alive_persons:
@@ -2816,6 +2818,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     facility_id=_fac_id,
                     squeeze_factor=0.0,
                     priority=-1,
+                    clinic=str(None),
                     did_run=True,
                 )
 

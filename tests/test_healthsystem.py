@@ -826,7 +826,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     detailed_capacity = log["tlo.methods.healthsystem"]['Capacity']
     detailed_consumables = log["tlo.methods.healthsystem"]['Consumables']
 
-    assert {'date', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'priority', 'Number_By_Appt_Type_Code', 'Person_ID',
+    assert {'date', 'Clinic', 'TREATMENT_ID', 'did_run', 'Squeeze_Factor', 'priority', 'Number_By_Appt_Type_Code', 'Person_ID',
             'Facility_Level', 'Facility_ID', 'Event_Name', 'Equipment'
             } == set(detailed_hsi_event.columns)
     assert {'date', 'Clinic' ,'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID', 'Frac_Time_Used_By_OfficerType',
