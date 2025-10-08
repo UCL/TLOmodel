@@ -421,8 +421,10 @@ for fac in fac_ids:
                     category_recorded_at_other_facilities_of_same_level = False
                 else:
                     category_recorded_at_other_facilities_of_same_level = pd.notnull(
-                        full_set.loc[(fac, slice(None), items), col]
-                    ).any()
+                        full_set.loc[(fac, slice(None), slice(None)), col]  # this fac, all months/items
+                        .reindex(items or [], level='item_code')  # allow missing items
+                        .notna()
+                        .any())
 
                 if recorded_at_other_facilities_of_same_level:
                     # If it recorded at other facilities of same level, find the average availability of the item at other
@@ -437,8 +439,15 @@ for fac in fac_ids:
                     # If it recorded at other facilities of same level, find the average availability of the item at other
                     # facilities of the same level.
                     print("Data for item ", item, " extrapolated from other items within category - ", items)
+                    block = (
+                        full_set
+                        .loc[(fac, slice(None), slice(None)), col]
+                        .reindex(items, level='item_code')  # tolerate items not present in the index
+                    )
+
+                    # Mean across items for each month, then interpolate remaining gaps
                     _monthly_records = interpolate_missing_with_mean(
-                        full_set.loc[(fac, slice(None), items), col].groupby(level=1).mean()
+                        block.groupby(level='month').mean()
                     )
 
                 else:
