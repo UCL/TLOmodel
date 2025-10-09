@@ -526,7 +526,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
 
         # Read parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            read_csv_files(resourcefilepath / 'ResourceFile_Diarrhoea', files='Parameter_values')
+            read_csv_files(resourcefilepath / 'ResourceFile_Diarrhoea', files='parameter_values')
         )
 
         # Check that every value has been read-in successfully
