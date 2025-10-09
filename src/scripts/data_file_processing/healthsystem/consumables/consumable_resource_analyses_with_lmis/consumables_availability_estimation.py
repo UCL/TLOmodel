@@ -765,7 +765,32 @@ mwanza_1a = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')]
 mwanza_1b = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')].copy().assign(fac_type_tlo='1b')
 sf = pd.concat([sf, mwanza_1b], axis=0, ignore_index=True)
 
-# 4) Copy all the results to create a level 0 with an availability equal to half that in the respective 1a
+# 4) Update the availability Xpert (item_code = 187)
+# First add rows for Xpert at level 1b by cloning rows for level 2 -> only if not already present
+xpert_item = sf['item_code'].eq(187)
+level_2    = sf['fac_type_tlo'].eq('2')
+level_1b   = sf['fac_type_tlo'].eq('1b')
+
+base   = sf.loc[level_2 & xpert_item].copy()
+new_rows  = base.copy()
+new_rows['fac_type_tlo'] = '1b'
+
+sf = pd.concat([sf, new_rows], ignore_index=True)
+id_cols = [c for c in sf.columns if c != 'available_prop']
+dupe_mask = sf.duplicated(subset=id_cols, keep=False)
+dupes = sf.loc[dupe_mask].sort_values(id_cols)
+sf = sf.drop_duplicates(subset=id_cols, keep='first').reset_index(drop=True)
+
+# Compute the average availability Sep–Dec (months >= 9) for level 2, item 187
+sep_to_dec = sf['month'].ge(9)
+new_xpert_availability = sf.loc[level_2 & xpert_item & sep_to_dec, 'available_prop'].mean()
+
+levels_1b_2_or_3 = sf['fac_type_tlo'].isin(['1b', '2', '3'])
+xpert_item = sf['item_code'].eq(187)
+sf.loc[levels_1b_2_or_3 & xpert_item, 'available_prop'] = new_xpert_availability
+print(sf[levels_1b_2_or_3 & xpert_item].groupby(['fac_type_tlo', 'month'])['available_prop'].mean())
+
+# 5) Copy all the results to create a level 0 with an availability equal to half that in the respective 1a
 all_1a = sf.loc[sf.fac_type_tlo == '1a']
 all_0 = sf.loc[sf.fac_type_tlo == '1a'].copy().assign(fac_type_tlo='0')
 all_0.available_prop *= 0.5
