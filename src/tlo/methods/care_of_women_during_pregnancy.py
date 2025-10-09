@@ -192,6 +192,8 @@ class CareOfWomenDuringPregnancy(Module):
         # FOLLOW-UP TIMING AND CLINICAL...
         'follow_up_days_anaemia': Parameter(
             Types.INT, 'days until follow-up for anaemia treatment'),
+        'days_to_glycaemic_control_event': Parameter(
+            Types.INT, 'days to glycaemic control event'),
         'follow_up_days_gestational_diabetes': Parameter(
             Types.INT, 'days until follow-up for gestational diabetes'),
         'days_to_rupture_ectopic_untreated': Parameter(
@@ -2291,7 +2293,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             # effective in controlling this woman's blood sugar prior to her next check up
             from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
             self.sim.schedule_event(GestationalDiabetesGlycaemicControlEvent(
-                self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
+                self.sim.modules['PregnancySupervisor'], person_id), self.sim.date +
+                                                        DateOffset(days=params['days_to_glycaemic_control_event']))
 
             # We then schedule this woman to return for blood sugar testing to evaluate the effectiveness of her
             # treatment and potentially move to second line treatment
