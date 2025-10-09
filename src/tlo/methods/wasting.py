@@ -62,7 +62,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.LIST, 'initial any wasting (WHZ < -2) prevalence in 2010 by age groups'),
         'prev_init_sev_by_agegp': Parameter(
             Types.LIST, 'initial severe wasting (WHZ < -3) prevalence in 2010 by age groups'),
+        'max_age_child_wasting': Parameter(
+            Types.INT, 'Max age child treated for wasting'),
         # incidence
+        'wasting_incidence_polling_freq_months': Parameter(
+            Types.INT, 'Wasting incidence polling frequency in months'),
         'min_days_to_relapse':  Parameter(
             Types.REAL, 'minimum days to relapse: the incidence of another wasting episode in the previous '
                         'month cannot occur if recovery happened fewer than this number of days before the start of '
@@ -136,6 +140,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'proportion_normal_whz': Parameter(
             Types.REAL, 'proportion of children under 5 with no wasting (WHZ >= -2)'),
         # detection
+        'odds_ratio_health_seeking_wasting_children': Parameter(
+            Types.REAL, 'Odds seeking care for wasting in children'),
         'growth_monitoring_first': Parameter(
             Types.INT, 'recommended age (in days) for first growth monitoring visit'),
         'growth_monitoring_frequency_days_agecat': Parameter(
@@ -261,7 +267,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         # 1) Read parameters from the resource file
         self.load_parameters_from_dataframe(
-            read_csv_files(resourcefilepath / 'ResourceFile_Wasting', files='parameters')
+            read_csv_files(resourcefilepath / 'ResourceFile_Wasting', files='parameter_values')
         )
 
         # 2) Get the DALY weights
@@ -272,10 +278,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         self.daly_wts['sev_wasting_with_oedema'] = get_daly_weight(sequlae_code=463)
 
         # 3) Register wasting symptom (weight loss) in Symptoms Manager with high odds of seeking care
+        p = self.parameters
         self.sim.modules["SymptomManager"].register_symptom(
             Symptom(
                 name=self.wasting_symptom,
-                odds_ratio_health_seeking_in_children=20.0,
+                odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_wasting_children'],
             )
         )
 
@@ -386,8 +393,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         :param sim:
         """
+        p = self.parameters
         sim.schedule_event(Wasting_LoggingEvent(self), sim.date)
-        sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(Wasting_IncidencePoll(self), sim.date +
+                           DateOffset(months=p['wasting_incidence_polling_freq_months']))
         # Schedule growth monitoring for all children under 5
         self.schedule_growth_monitoring_on_initiation()
 
@@ -452,7 +461,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             next_event_days = rng.randint(
                 0, max(0, (get_monitoring_frequency_days(df.at[person_id, "age_exact_years"]) - 2))
             )
-            if (df.at[person_id, "age_exact_years"] + (next_event_days / 365.25)) < 5:
+            if (df.at[person_id, "age_exact_years"] + (next_event_days / 365.25)) < p['max_age_child_wasting']:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Wasting_GrowthMonitoring(module=self, person_id=person_id),
                     priority=2,
@@ -792,10 +801,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         :param kwargs: additional keyword arguments
         """
         df = self.sim.population.props
+        p = self.parameters
 
         # if person not under 5, or currently treated, or acute malnutrition already assessed,
         # it will not be assessed (again)
-        if (individual_properties['age_years'] >= 5) or \
+        if (individual_properties['age_years'] >= p['max_age_child_wasting']) or \
             (individual_properties['un_last_wasting_date_of_onset'] < individual_properties['un_am_tx_start_date'] <
              self.sim.date) or \
             (self.sim.date == individual_properties['un_last_nonemergency_appt_date']) or \
@@ -955,7 +965,8 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         """schedule to run every month
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(months=1))
+        p = module.parameters
+        super().__init__(module, frequency=DateOffset(months=p['wasting_incidence_polling_freq_months']))
         assert isinstance(module, Wasting)
 
     def apply(self, population):
@@ -972,7 +983,8 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         # of the previous month (incidence can occur on any day within the previous month)
         days_in_month = (self.sim.date - pd.DateOffset(days=1)).days_in_month
         not_am_or_treated_or_recently_recovered =\
-            df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_clinical_acute_malnutrition == 'well') &
+            df.loc[df.is_alive & (df.age_exact_years < p['max_age_child_wasting']) &
+                   (df.un_clinical_acute_malnutrition == 'well') &
                    (df.un_am_tx_start_date.isna()) &
                    (df.un_am_recovery_date.isna() |
                     (df.un_am_recovery_date < self.sim.date - pd.DateOffset(days=(p['min_days_to_relapse'] +
@@ -1046,13 +1058,14 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
+        p = self.module.parameters
 
         # if the person is already dead, or not under 5, or not moderately wasted, or is currently treated,
         # or progression should not occur today;
         # the progression will NOT happen
         if (
             (not df.at[person_id, 'is_alive']) or
-            (df.at[person_id, 'age_exact_years'] >= 5) or
+            (df.at[person_id, 'age_exact_years'] >= p['max_age_child_wasting']) or
             (df.at[person_id, 'un_WHZ_category'] != '-3<=WHZ<-2') or
             (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
                 self.sim.date) or
@@ -1361,7 +1374,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         #  treated children a monitoring sooner after the treatment.
         # no
         # if person already dead or not under 5, the growth monitoring is no performed
-        if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'age_exact_years'] >= 5):
+        if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'age_exact_years'] >= p['max_age_child_wasting']):
             # or
             # df.at[person_id, 'un_am_treatment_type'].isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
             return self.make_appt_footprint({})
@@ -1377,7 +1390,8 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
                     return p['growth_monitoring_frequency_days_agecat'][2]
 
             person_monitoring_frequency = get_monitoring_frequency_days(df.at[person_id, 'age_exact_years'])
-            if (df.at[person_id, 'age_exact_years'] + (person_monitoring_frequency / 365.25)) < 5:
+            if ((df.at[person_id, 'age_exact_years'] + (person_monitoring_frequency / 365.25)) <
+                p['max_age_child_wasting']):
                 # schedule next growth monitoring
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Wasting_GrowthMonitoring(module=self.module, person_id=person_id),
