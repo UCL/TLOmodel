@@ -530,31 +530,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
-
-        # get the clinical states
-        dr_stage = individual_properties['dr_status']
-
-        # No interventions if well
-        if dr_stage == 'none':
-            return
-
-        elif dr_stage == 'mild_or_moderate':
-            # schedule HSI for mild_or_moderate
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                    person_id=person_id,
-                    module=self.sim.modules["CardioMetabolicDisorders"],
-                    condition='diabetes',
-                ),
-                priority=0,
-                topen=self.sim.date
-            )
-
-        elif dr_stage == 'severe' or dr_stage == 'proliferative':
-            # Intervention for severe and proliferative
-            schedule_hsi_event(
-                hsi_event=HSI_Dr_AntiVEGF(module=self, person_id=person_id),
-                priority=0, topen=self.sim.date)
+        pass
 
 
 class HSI_Dr_Eye_Examination(HSI_Event, IndividualScopeEventMixin):
