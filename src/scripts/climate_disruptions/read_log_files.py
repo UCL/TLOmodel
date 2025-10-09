@@ -1,11 +1,13 @@
 from tlo.analysis.utils import create_pickles_locally, parse_log_file
+import glob
 
-# File paths
 
+for draw in [0]:
+    for run in range(5):
+        log_pattern = f'/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/climate_scenario_runs-2025-09-26T144635Z/{draw}/{run}/climate_scenario_runs__2025-10-06*.log'
 
-# Parse the log file
+        # Get all matching log files
+        log_files = glob.glob(log_pattern)
 
-scenario_output_dir = '/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/climate_scenario_runs-2025-08-26T082255Z/'
-
-# # get the pickled files if not generated at the batch run
-create_pickles_locally(scenario_output_dir = scenario_output_dir, compressed_file_name_prefix='climate_scenario_runs_')
+        for log_file in log_files:
+            parse_log_file(log_file)
