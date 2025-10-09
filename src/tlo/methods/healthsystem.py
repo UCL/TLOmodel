@@ -670,20 +670,13 @@ class HealthSystem(Module):
     def validate_clinic_configuration(self, clinic_capabilities_df: pd.DataFrame):
         """Validate the contents of the clinics capabilities dataframe.
         :param clinic_capabilities_df: DataFrame read from ResourceFile_Clinics.csv
-        Checks that a) no level 2 facilities are included, and b) that the fractions sum to 1 for each row.
-        Raises ValueError if either of the two checks fails. Note that check on fractions will not be
-        carried out if level 2 facilities are included. That is, users will only get to know about the
-        errors one at a time.
+        Checks that the fractions sum to 1 for each row; raises ValueError otherwise
         """
 
         ## This is the default configuration, which is empty. No further checks needed.
         if clinic_capabilities_df.shape[0] == 0:
             return
 
-        all_level2_facilities = self.parameters['Master_Facilities_List'][self.parameters['Master_Facilities_List']['Facility_Level'] == '2']
-        cl_level2_facilities = clinic_capabilities_df[clinic_capabilities_df['Facility_ID'].isin(all_level2_facilities['Facility_ID'])]
-        if not cl_level2_facilities.empty:
-            raise ValueError('Level 2 facilities should not be present in the resource file for clinics. ')
 
         ## Check that the fractions add to 1 for each row.
         id_cols = ['Facility_ID', 'Officer_Type_Code']
