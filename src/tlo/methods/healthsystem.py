@@ -339,6 +339,7 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
+        'clinic_configuration_name': Parameter(Types.STRING, 'Name of configuration of clinics to use.'),
     }
 
     PROPERTIES = {
@@ -363,7 +364,7 @@ class HealthSystem(Module):
         disable: bool = False,
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
-        hsi_event_count_log_period: Optional[str] = "month",
+        hsi_event_count_log_period: Optional[str] = "month"
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -506,7 +507,9 @@ class HealthSystem(Module):
 
         # A reusable store for holding squeeze factors in get_squeeze_factors()
         self._get_squeeze_factors_store_grow = 500
-        self._get_squeeze_factors_store = np.zeros(self._get_squeeze_factors_store_grow)
+        ## We need this to be a dictionary indexed by clinic names, but we don't have the clinic names yet.
+        ## create an empty dictionary here, and then populate it properly later.
+        self._get_squeeze_factors_store = {}
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -532,9 +535,10 @@ class HealthSystem(Module):
                 "'year', 'simulation' or None."
             )
 
+
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
-        path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
+        path_to_resourcefiles_for_healthsystem = resourcefilepath / 'Healthsystem'
 
         # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
@@ -544,6 +548,31 @@ class HealthSystem(Module):
         # Load basic information about the organization of the HealthSystem
         self.parameters['Master_Facilities_List'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
+
+        # Data on the clinics configurations and mappings to be used.
+        filepath = (
+            path_to_resourcefiles_for_healthsystem
+            / 'human_resources'
+            / 'clinics'
+            / 'ResourceFile_ClinicConfigurations'
+            / f"{self.parameters['clinic_configuration_name']}.csv"
+        )
+
+        self.parameters['clinic_configuration'] = pd.read_csv(filepath)
+        filepath = (
+            path_to_resourcefiles_for_healthsystem
+            / 'human_resources'
+            / 'clinics'
+            / 'ResourceFile_ClinicMappings'
+            / f"{self.parameters['clinic_configuration_name']}.csv"
+        )
+
+        self.parameters['clinic_mapping'] = pd.read_csv(filepath)
+        self.parameters['clinic_names'] = self.parameters['clinic_configuration'].columns.difference(['Facility_ID', 'Officer_Type_Code'])
+        # Ensure that a valid clinic configuration has been specified
+        self.validate_clinic_configuration(self.parameters['clinic_configuration'])
+
+
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
@@ -637,6 +666,30 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
+
+    def validate_clinic_configuration(self, clinic_capabilities_df: pd.DataFrame):
+        """Validate the contents of the clinics capabilities dataframe.
+        :param clinic_capabilities_df: DataFrame read from ResourceFile_Clinics.csv
+        Checks that the fractions sum to 1 for each row; raises ValueError otherwise
+        """
+
+        ## This is the default configuration, which is empty. No further checks needed.
+        if clinic_capabilities_df.shape[0] == 0:
+            return
+
+
+        ## Check that the fractions add to 1 for each row.
+        id_cols = ['Facility_ID', 'Officer_Type_Code']
+        data = clinic_capabilities_df.drop(columns=id_cols)
+        row_sums = data.sum(axis=1)
+        mask = ~np.isclose(row_sums, 1.0, rtol=1e-5, atol=1e-8)
+        if mask.any():
+            raise ValueError(
+                f"Row(s) {clinic_capabilities_df[mask][id_col].values} in the ringfenced clinics file do not sum to 1.0. "
+                "Please ensure that the fractions for clinic types sum to 1.0."
+            )
+
+
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
 
@@ -704,6 +757,9 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
+
+
+
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -954,10 +1010,11 @@ class HealthSystem(Module):
         self._facility_by_facility_id = facilities_by_facility_id
         self._facilities_for_each_district = facilities_per_level_and_district
 
+
     def setup_daily_capabilities(self, use_funded_or_actual_staffing):
         """Set up `self._daily_capabilities` and `self._officers_with_availability`.
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
-         and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
+        and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
         self._daily_capabilities, self._daily_capabilities_per_staff = (
             self.format_daily_capabilities(use_funded_or_actual_staffing)
@@ -966,7 +1023,47 @@ class HealthSystem(Module):
         # Also, store the set of officers with non-zero daily availability
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
+        ## TODO: Fix this
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
+        # Now adjust it according to the clinic configuration specified. Capabilities will be split between clinics
+        # specified. In the "Default" configuration, this means assigning all capabilities to "OtherClinic"
+        self.adjust_clinics_capabilities()
+
+
+    def adjust_clinics_capabilities(self):
+        """Adjust the capabilities to account for ringfenced clinics according to the configuration specified.
+        This is done by splitting the capabilities into separate clinics with OtherClinic serving as the
+        catch-all clinic. The specified configuration is filled in so that all facilities and officer types
+        are included. For combinations of facility and officer type not included in the configuration, all
+        capabilities are assigned to OtherClinic.
+        """
+
+        clinic_names = self.parameters['clinic_names']
+        self.parameters['clinic_configuration'] = self.format_clinic_capabilities()
+
+        updated_capabilities = self.parameters['clinic_configuration'].join(self._daily_capabilities)
+        ## New capabilities are old_capabilities * proportions specified;
+
+        updated_capabilities[clinic_names] = updated_capabilities[clinic_names].multiply(updated_capabilities['Total_Minutes_Per_Day'], axis =  0)
+        self._daily_capabilities = updated_capabilities[clinic_names].to_dict()
+
+
+        updated_capabilities = self.parameters['clinic_configuration'].join(self._daily_capabilities_per_staff)
+        ## New capabilities are old_capabilities * proportions specified;
+        updated_capabilities[clinic_names] = updated_capabilities[clinic_names].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis =  0)
+        self._daily_capabilities_per_staff = updated_capabilities[clinic_names].to_dict()
+
+
+    def get_clinic_eligibility(self, hsi_event):
+        """
+        Determine the clinic mapped to the HSI Event treatment ID. If no clinic is mapped, then a default value of
+        'OtherClinic' is returned. Note that we assume that a treatment ID is mapped to at most one clinic, returning
+        the first match regardless of the number of matches.
+        """
+        eligible_treatment_ids = self.parameters['clinic_mapping'].loc[self.parameters['clinic_mapping']['Treatment'] == hsi_event.TREATMENT_ID, 'Clinic']
+        clinic = eligible_treatment_ids.iloc[0] if not  eligible_treatment_ids.empty else 'OtherClinic'
+        return clinic
+
 
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
@@ -1057,6 +1154,55 @@ class HealthSystem(Module):
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
         return capabilities_ex['Total_Minutes_Per_Day'], capabilities_per_staff_ex['Mins_Per_Day_Per_Staff']
 
+
+    def format_clinic_capabilities(self) -> pd.DataFrame:
+        """
+        The breakdown of capabilities across clinics and a catch-all OtherClinic is read in from the
+        resource file in ResourceFile_ClinicConfigurations. This function will fill out the capabilities dataframe
+        so that for facility, officer type combinations that are not present in the file, the proportion of OtherClinic
+        is set to 1, and capabilities for all other clinics are set to 0.
+        """
+
+        capabilities_cl = self.parameters['clinic_configuration']
+        # Create dataframe containing background information about facility and officer types
+        facility_ids = set(self._facility_by_facility_id.keys())
+        officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
+        facs = list()
+        officers = list()
+        for f in facility_ids:
+            for o in officer_type_codes:
+                facs.append(f)
+                officers.append(o)
+
+        capabilities_ex = pd.DataFrame(data={'Facility_ID': facs, 'Officer_Type_Code': officers})
+
+        # Merge in information about facility from Master Facilities List
+        mfl = self.parameters['Master_Facilities_List']
+        capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
+        capabilities_ex = capabilities_ex.merge(
+            capabilities_cl,
+            on=['Facility_ID', 'Officer_Type_Code'],
+            how='left',
+        )
+        ## OtherClinic set to 1 for missing facility/office_code combinations
+        capabilities_ex['OtherClinic'] = capabilities_ex['OtherClinic'].fillna(1)
+        ## All other columns are set to 0
+        other_cols = capabilities_ex.columns.difference(['Facility_ID', 'Officer_Type_Code', 'OtherClinic'])
+        capabilities_ex[other_cols] = capabilities_ex[other_cols].fillna(0)
+
+        # Give the standard index:
+        capabilities_ex = capabilities_ex.set_index(
+            'FacilityID_'
+            + capabilities_ex['Facility_ID'].astype(str)
+            + '_Officer_'
+            + capabilities_ex['Officer_Type_Code']
+        )
+
+        # Checks
+        assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
+
+        return capabilities_ex
+
     def _rescale_capabilities_to_capture_effective_capability(self):
         # Notice that capabilities will only be expanded through this process
         # (i.e. won't reduce available capabilities if these were under-used in the last year).
@@ -1064,24 +1210,27 @@ class HealthSystem(Module):
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
-        for officer in self._daily_capabilities.keys():
-            matches = re.match(pattern, officer)
-            # Extract ID and officer type from
-            facility_id = int(matches.group(1))
-            officer_type = matches.group(2)
-            level = self._facility_by_facility_id[facility_id].level
-            # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
-            # available capabilities if these were under-used the previous year).
-            rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
-                officer_type=officer_type, level=level
-            )
-            if rescaling_factor > 1 and rescaling_factor != float("inf"):
-                self._daily_capabilities[officer] *= rescaling_factor
+        for clinic, clinic_cl in self._daily_capabilities.items():
+            for officer in clinic_cl.keys():
+                matches = re.match(pattern, officer)
+                # Extract ID and officer type from
+                facility_id = int(matches.group(1))
+                officer_type = matches.group(2)
+                level = self._facility_by_facility_id[facility_id].level
+                # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
+                # available capabilities if these were under-used the previous year).
+                rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
+                    officer_type=officer_type, level=level
+                )
+                if rescaling_factor > 1 and rescaling_factor != float("inf"):
+                    # We assume that increased daily capabilities is a result of each staff performing more
+                    # daily patient facing time per day than contracted (or equivalently performing appts more
+                    # efficiently).
+                    self._daily_capabilities[clinic][officer] *= rescaling_factor
+                    self._daily_capabilities_per_staff[clinic][officer] *= rescaling_factor
 
-                # We assume that increased daily capabilities is a result of each staff performing more
-                # daily patient facing time per day than contracted (or equivalently performing appts more
-                # efficiently).
-                self._daily_capabilities_per_staff[officer] *= rescaling_factor
+
+
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
@@ -1273,6 +1422,7 @@ class HealthSystem(Module):
             )
             del self.priority_rank_dict["lowest_priority_considered"]
 
+
     def schedule_hsi_event(
         self,
         hsi_event: 'HSI_Event',
@@ -1373,8 +1523,9 @@ class HealthSystem(Module):
         else:
             rand_queue = self.hsi_event_queue_counter
 
+        clinic_eligibility = self.get_clinic_eligibility(hsi_event)
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
+            clinic_eligibility, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
 
         # Add to queue:
         hp.heappush(self.HSI_EVENT_QUEUE, _new_item)
@@ -1549,10 +1700,10 @@ class HealthSystem(Module):
         )
 
     @property
-    def capabilities_today(self) -> pd.Series:
+    def capabilities_today(self) -> dict:
         """
         Returns the capabilities of the health system today.
-        returns: pd.Series giving minutes available for each officer type in each facility type
+        returns: a nested series giving minutes available in each clinic for each officer type in each facility type
 
         Functions can go in here in the future that could expand the time available,
         simulating increasing efficiency (the concept of a productivity ratio raised
@@ -1561,7 +1712,11 @@ class HealthSystem(Module):
         For now this method only multiplies the estimated minutes available by the `capabilities_coefficient` scale
         factor.
         """
-        return self._daily_capabilities * self.capabilities_coefficient
+        scaled = {
+            clinic_name: {fid: cl * self.capabilities_coefficient for fid, cl in clinic_cl.items()}
+            for clinic_name, clinic_cl in self._daily_capabilities.items()
+        }
+        return scaled
 
     def get_blank_appt_footprint(self):
         """
@@ -1609,6 +1764,21 @@ class HealthSystem(Module):
         return appt_footprint_times
 
     def get_squeeze_factors(self, footprints_per_event, total_footprint, current_capabilities,
+                            compute_squeeze_factor_to_district_level: bool
+                            ):
+        ## TODO: check if there is a better place to intitalise this store
+        self._get_squeeze_factors_store = (
+            {clinic: np.zeros(self._get_squeeze_factors_store_grow)
+             for clinic in self.parameters['clinic_names']}
+        )
+        for clinic, clinic_cl in current_capabilities.items():
+            self.get_clinic_squeeze_factors(clinic, footprints_per_event, total_footprint, clinic_cl,
+                                            compute_squeeze_factor_to_district_level)
+
+        return self._get_squeeze_factors_store
+
+
+    def get_clinic_squeeze_factors(self, clinic, footprints_per_event, total_footprint, current_capabilities,
                             compute_squeeze_factor_to_district_level: bool
                             ):
         """
@@ -1700,12 +1870,12 @@ class HealthSystem(Module):
 
         # Instead of repeatedly creating lists for squeeze factors, we reuse a numpy array
         # If the current store is too small, replace it
-        if len(footprints_per_event) > len(self._get_squeeze_factors_store):
+        if len(footprints_per_event) > len(self._get_squeeze_factors_store[clinic]):
             # The new array size is a multiple of `grow`
             new_size = math.ceil(
                 len(footprints_per_event) / self._get_squeeze_factors_store_grow
             ) * self._get_squeeze_factors_store_grow
-            self._get_squeeze_factors_store = np.zeros(new_size)
+            self._get_squeeze_factors_store[clinic] = np.zeros(new_size)
 
         for i, footprint in enumerate(footprints_per_event):
             if footprint:
@@ -1718,15 +1888,15 @@ class HealthSystem(Module):
                         break
 
                 if require_missing_officer:
-                    self._get_squeeze_factors_store[i] = np.inf
+                    self._get_squeeze_factors_store[clinic][i] = np.inf
                 else:
-                    self._get_squeeze_factors_store[i] = max(load_factor[footprint.most_common()[0][0]], 0.)
+                    self._get_squeeze_factors_store[clinic][i] = max(load_factor[footprint.most_common()[0][0]], 0.)
             else:
-                self._get_squeeze_factors_store[i] = 0.0
+                self._get_squeeze_factors_store[clinic][i] = 0.0
 
         return self._get_squeeze_factors_store
 
-    def record_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True, priority=None):
+    def record_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True, priority=None, clinic=None):
         """
         Record the processing of an HSI event.
         It will also record the actual appointment footprint.
@@ -1744,6 +1914,7 @@ class HealthSystem(Module):
             squeeze_factor=_squeeze_factor,
             did_run=did_run,
             priority=priority,
+            clinic=clinic
         )
 
     def write_to_hsi_log(
@@ -1754,12 +1925,12 @@ class HealthSystem(Module):
         squeeze_factor: float,
         did_run: bool,
         priority: int,
+        clinic: str
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         # Debug logger gives simple line-list for every HSI event
-        logger.debug(
-            key="HSI_Event",
-            data={
+
+        hsi_record = {
                 'Event_Name': event_details.event_name,
                 'TREATMENT_ID': event_details.treatment_id,
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
@@ -1770,7 +1941,12 @@ class HealthSystem(Module):
                 'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
                 'Facility_ID': facility_id if facility_id is not None else -99,
                 'Equipment': sorted(event_details.equipment),
-            },
+                'Clinic': clinic if clinic is not None else 'None'
+        }
+
+        logger.debug(
+            key="HSI_Event",
+            data=hsi_record,
             description="record of each HSI event"
         )
         if did_run:
@@ -1790,7 +1966,7 @@ class HealthSystem(Module):
                 level=event_details.facility_level,
             )
 
-    def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None):
+    def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None, clinic=None):
         """
         Record the fact that an HSI event was never ran.
         If this is an individual-level HSI_Event, it will also record the actual appointment footprint
@@ -1806,6 +1982,7 @@ class HealthSystem(Module):
                  person_id=hsi_event.target,
                  facility_id=hsi_event.facility_info.id,
                  priority=priority,
+                 clinic=clinic
                  )
         else:
             self.write_to_never_ran_hsi_log(
@@ -1813,6 +1990,7 @@ class HealthSystem(Module):
                  person_id=-1,
                  facility_id=-1,
                  priority=priority,
+                 clinic=clinic
                  )
 
     def write_to_never_ran_hsi_log(
@@ -1821,6 +1999,7 @@ class HealthSystem(Module):
         person_id: int,
         facility_id: Optional[int],
         priority: int,
+        clinic: str
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.debug(
@@ -1833,6 +2012,7 @@ class HealthSystem(Module):
                 'priority': priority,
                 'Facility_Level': event_details.facility_level if event_details.facility_level is not None else "-99",
                 'Facility_ID': facility_id if facility_id is not None else -99,
+                'Clinic': clinic
             },
             description="record of each HSI event that never ran"
         )
@@ -1848,17 +2028,24 @@ class HealthSystem(Module):
             level=event_details.facility_level,
         )
 
+
     def log_current_capabilities_and_usage(self):
+        for clinic_name in self.parameters['clinic_names']:
+            self.log_clinic_current_capabilities_and_usage(clinic_name)
+
+
+
+    def log_clinic_current_capabilities_and_usage(self, clinic_name):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
         `runnning_total_footprint`. This runs every day.
         """
-        current_capabilities = self.capabilities_today
+        current_capabilities = self.capabilities_today[clinic_name]
         total_footprint = self.running_total_footprint
 
         # Combine the current_capabilities and total_footprint per-officer totals
-        comparison = pd.DataFrame(index=current_capabilities.index)
-        comparison['Total_Minutes_Per_Day'] = current_capabilities
+        comparison = pd.DataFrame(index=current_capabilities.keys())
+        comparison['Total_Minutes_Per_Day'] = current_capabilities.values()
         comparison['Minutes_Used'] = pd.Series(total_footprint, dtype='float64')
         comparison['Minutes_Used'] = comparison['Minutes_Used'].fillna(0.0)
         assert len(comparison) == len(current_capabilities)
@@ -1866,7 +2053,7 @@ class HealthSystem(Module):
         # Compute Fraction of Time Used Overall
         total_available = comparison['Total_Minutes_Per_Day'].sum()
         fraction_time_used_overall = (
-            comparison['Minutes_Used'].sum() / total_available if total_available > 0 else 0
+            comparison['Minutes_Used'].sum() / total_available if total_available > 0 else 0.0
         )
 
         # Compute Fraction of Time Used In Each Facility
@@ -1888,6 +2075,7 @@ class HealthSystem(Module):
 
         logger.info(key='Capacity',
                     data={
+                        'Clinic': clinic_name,
                         'Frac_Time_Used_Overall': fraction_time_used_overall,
                         'Frac_Time_Used_By_Facility_ID': summary_by_fac_id['Fraction_Time_Used'].to_dict(),
                         'Frac_Time_Used_By_OfficerType':  flatten_multi_index_series_into_dict_for_logging(
@@ -2060,7 +2248,8 @@ class HealthSystem(Module):
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
                 event = event.hsi_event
-                squeeze_factor = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
+                clinic = self.get_clinic_eligibility(event)
+                squeeze_factor = squeeze_factor_per_hsi_event[clinic][ev_num]                  # todo use zip here!
 
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
@@ -2317,8 +2506,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
 
-        capabilities_monitor = Counter(self.module.capabilities_today.to_dict())
-        set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
+        capabilities_monitor = {clinic: Counter(clinic_cl) for clinic, clinic_cl in self.module.capabilities_today.items()}
+        set_capabilities_still_available = defaultdict(set)
+
+        ## For each clinic, pull out the facility and officer type with non-zero capabilities.
+        for clinic_name, clinic_val in capabilities_monitor.items():
+            for facility_officer_id, facility_officer_id_capabilities in clinic_val.items():
+                if facility_officer_id_capabilities > 0:
+                    set_capabilities_still_available[clinic_name].add(facility_officer_id)
+
 
         # Here use different approach for appt_mode_constraints = 2: rather than collecting events
         # due today all at once, run event immediately at time of querying. This ensures that no
@@ -2339,7 +2535,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Traverse the queue and run events due today until have capabilities still available
         while len(self.module.HSI_EVENT_QUEUE) > 0:
-
             # Check if any of the officers in the country are still available for today.
             # If not, no point in going through the queue any longer.
             # This will make things slower for tests/small simulations, but should be of significant help
@@ -2351,6 +2546,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
 
                 event = next_event_tuple.hsi_event
+                # Check the clinic for event's treatment-id
+                event_clinic = next_event_tuple.clinic_eligibility
+                capabilities_still_available = set_capabilities_still_available[event_clinic]
 
                 if self.sim.date > next_event_tuple.tclose:
                     # The event has expired (after tclose) having never been run. Call the 'never_ran' function
@@ -2389,7 +2587,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     out_of_resources = False
                     for officer, call in original_call.items():
                         # If any of the officers are not available, then out of resources
-                        if officer not in set_capabilities_still_available:
+                        if officer not in capabilities_still_available:
                             out_of_resources = True
                     # If officers still available, run event. Note: in current logic, a little
                     # overtime is allowed to run last event of the day. This seems more realistic
@@ -2418,7 +2616,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                             squeeze_factor=squeeze_factor,
                             did_run=False,
-                            priority=_priority
+                            priority=_priority,
+                            clinic=event_clinic
                         )
 
                     # Have enough capabilities left to run event
@@ -2443,7 +2642,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         if not event.is_all_declared_equipment_available:
                             self.module.call_and_record_never_ran_hsi_event(
                                 hsi_event=event,
-                                priority=next_event_tuple.priority
+                                priority=next_event_tuple.priority,
+                                clinic=next_event_tuple.clinic_eligibility
                             )
                             continue
 
@@ -2472,14 +2672,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
 
                         # Subtract this from capabilities used so-far today
-                        capabilities_monitor.subtract(updated_call)
+                        capabilities_monitor[event_clinic].subtract(updated_call)
 
                         # If any of the officers have run out of time by performing this hsi,
                         # remove them from list of available officers.
                         for officer, call in updated_call.items():
-                            if capabilities_monitor[officer] <= 0:
-                                if officer in set_capabilities_still_available:
-                                    set_capabilities_still_available.remove(officer)
+                            if capabilities_monitor[event_clinic][officer] <= 0:
+                                if officer in capabilities_still_available:
+                                    capabilities_still_available.remove(officer)
                                 else:
                                     logger.warning(
                                         key="message",
@@ -2496,7 +2696,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             actual_appt_footprint=actual_appt_footprint,
                             squeeze_factor=squeeze_factor,
                             did_run=True,
-                            priority=_priority
+                            priority=_priority,
+                            clinic=event_clinic
                         )
 
             # Don't have any capabilities at all left for today, no
@@ -2530,7 +2731,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 self.module.call_and_record_never_ran_hsi_event(
                       hsi_event=event,
-                      priority=next_event_tuple.priority
+                      priority=next_event_tuple.priority,
+                      clinic=next_event_tuple.clinic_eligibility
                      )
 
             elif event.target not in alive_persons:
@@ -2569,7 +2771,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                    actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                    squeeze_factor=0,
                    did_run=False,
-                   priority=next_event_tuple.priority
+                   priority=next_event_tuple.priority,
+                   clinic=next_event_tuple.clinic_eligibility
                    )
 
         # add events from the list_of_events_not_due_today back into the queue
@@ -2608,6 +2811,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     facility_id=_fac_id,
                     squeeze_factor=0.0,
                     priority=-1,
+                    clinic=str(None),
                     did_run=True,
                 )
 
@@ -2901,11 +3105,16 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
         config = self.scaling_values.get(self._get_most_recent_year_specified_for_a_change_in_configuration())
 
         # ... Do the rescaling specified for this year by the specified factor
-        self.module._daily_capabilities *= config['dynamic_HR_scaling_factor']
+        for clinic_name, clinic_cl in self.module._daily_capabilities.items():
+            for cl in clinic_cl:
+                clinic_cl[cl] *= config['dynamic_HR_scaling_factor']
+
 
         # ... If requested, also do the scaling for the population growth that has occurred since the last year
         if config['scale_HR_by_popsize']:
-            self.module._daily_capabilities *= this_year_pop_size / self.last_year_pop_size
+            for clinic_name, clinic_cl in self.module._daily_capabilities.items():
+                for cl in clinic_cl:
+                    clinic_cl[cl] *= this_year_pop_size / self.last_year_pop_size
 
         # Save current population size as that for 'last year'.
         self.last_year_pop_size = this_year_pop_size
@@ -2929,14 +3138,17 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
 
-        for officer in self.module._daily_capabilities.keys():
-            matches = re.match(pattern, officer)
-            # Extract ID and officer type from
-            facility_id = int(matches.group(1))
-            officer_type = matches.group(2)
-            level = self.module._facility_by_facility_id[facility_id].level
-            self.module._daily_capabilities[officer] *= \
-                HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
+        for clinic, clinic_cl in self.module._daily_capabilities.items():
+            for officer in clinic_cl.keys():
+                matches = re.match(pattern, officer)
+                # Extract ID and officer type from
+                facility_id = int(matches.group(1))
+                officer_type = matches.group(2)
+                level = self.module._facility_by_facility_id[facility_id].level
+                self.module._daily_capabilities[clinic][officer] *= \
+                    HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
+
+
 
 
 class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
@@ -2952,14 +3164,15 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
         ].set_index('District').to_dict()
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+        for clinic, clinic_cl in self.module._daily_capabilities.items():
+            for officer in clinic_cl.keys():
+                matches = re.match(pattern, officer)
+                # Extract ID and officer type from
+                facility_id = int(matches.group(1))
+                district = self.module._facility_by_facility_id[facility_id].district
+                if district in HR_scaling_factor_by_district:
+                    self.module._daily_capabilities[clinic][officer] *= HR_scaling_factor_by_district[district]
 
-        for officer in self.module._daily_capabilities.keys():
-            matches = re.match(pattern, officer)
-            # Extract ID and officer type from
-            facility_id = int(matches.group(1))
-            district = self.module._facility_by_facility_id[facility_id].district
-            if district in HR_scaling_factor_by_district:
-                self.module._daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
@@ -3040,7 +3253,16 @@ class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
         # Compute staff counts from available capabilities (hs.capabilities_today) and daily capabilities per staff,
         # both of which would have been rescaled to current efficiency levels if scale_to_effective_capabilities=True
         # This returns the number of staff counts normalised by the self.capabilities_coefficient parameter
-        current_staff_count = dict((hs.capabilities_today/hs._daily_capabilities_per_staff).sort_index())
+        current_staff_count = {}
+        for clinic in sorted(hs.capabilities_today):
+            current_staff_count[clinic] = {}
+            for fid in sorted(hs.capabilities_today[clinic]):
+                denom = hs._daily_capabilities_per_staff[clinic][fid]
+                if denom == 0:
+                    current_staff_count[clinic][fid] = 0
+                else:
+                    current_staff_count[clinic][fid] = hs.capabilities_today[clinic][fid] / denom
+
 
         logger_summary.info(
             key="number_of_hcw_staff",
