@@ -59,7 +59,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     initial_rt_event_properties = set()
 
     num_individuals = 1000
-    num_runs = 50
+    num_runs = 1
     record = []
     # Include results folder in output file name
     name_tag = str(results_folder).replace("outputs/", "")

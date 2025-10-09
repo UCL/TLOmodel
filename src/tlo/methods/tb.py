@@ -890,10 +890,7 @@ class Tb(Module):
         sim.schedule_event(TbRegularEvents(self), sim.date)
         sim.schedule_event(TbSelfCureEvent(self), sim.date)
 
-        if sim.generate_event_chains is True and sim.generate_event_chains_overwrite_epi is True:
-            sim.schedule_event(TbActiveCasePollGenerateData(self), sim.date + DateOffset(days=0))
-        else:
-            sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
 
         # 2) log at the end of the year

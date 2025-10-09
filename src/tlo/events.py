@@ -77,7 +77,7 @@ class Event:
         """
         raise NotImplementedError
         
-    def values_differ(self, v1, v2):
+    def mni_values_differ(self, v1, v2):
     
         if isinstance(v1, list) and isinstance(v2, list):
             return v1 != v2  # simple element-wise comparison
@@ -111,14 +111,14 @@ class Event:
         for person in all_individuals:
             if person not in entire_mni_before: # but is afterward
                 for key in entire_mni_after[person]:
-                    if self.values_differ(entire_mni_after[person][key],self.sim.modules['PregnancySupervisor'].default_mni_values[key]):
+                    if self.mni_values_differ(entire_mni_after[person][key],self.sim.modules['PregnancySupervisor'].default_mni_values[key]):
                         if person not in diffs:
                             diffs[person] = {}
                         diffs[person][key] = entire_mni_after[person][key]
                     
             elif person not in entire_mni_after: # but is beforehand
                 for key in entire_mni_before[person]:
-                    if self.values_differ(entire_mni_before[person][key],self.sim.modules['PregnancySupervisor'].default_mni_values[key]):
+                    if self.mni_values_differ(entire_mni_before[person][key],self.sim.modules['PregnancySupervisor'].default_mni_values[key]):
                         if person not in diffs:
                             diffs[person] = {}
                         diffs[person][key] = self.sim.modules['PregnancySupervisor'].default_mni_values[key]
@@ -126,7 +126,7 @@ class Event:
             else: # person is in both
                 # Compare properties
                 for key in entire_mni_before[person]:
-                    if self.values_differ(entire_mni_before[person][key],entire_mni_after[person][key]):
+                    if self.mni_values_differ(entire_mni_before[person][key],entire_mni_after[person][key]):
                         if person not in diffs:
                             diffs[person] = {}
                         diffs[person][key] = entire_mni_after[person][key]
@@ -135,13 +135,12 @@ class Event:
             print("DIfferences for ", diffs)
         return diffs
         
-    def compare_population_dataframe(self,df_before, df_after, entire_mni_before, entire_mni_after):
-        """ This function compares the population dataframe before/after a population-wide event has occurred.
+    def compare_population_dataframe_and_mni(self,df_before, df_after, entire_mni_before, entire_mni_after):
+        """ This function compares the population dataframe and mni dictionary before/after a population-wide event has occurred.
         It allows us to identify the individuals for which this event led to a significant (i.e. property) change, and to store the properties which have changed as a result of it. """
         
         # Create a mask of where values are different
         diff_mask = (df_before != df_after) & ~(df_before.isna() & df_after.isna())
-
         diff_mni  = self.compare_entire_mni_dicts(entire_mni_before, entire_mni_after)
         
         # Create an empty list to store changes for each of the individuals
@@ -176,12 +175,10 @@ class Event:
                 # Append the event and changes to the individual key
                 chain_links[idx] = str(link_info)
      
-        # Check individuals
+        # For individuals which only underwent changes in mni dictionary, save changes here
         if len(diff_mni)>0:
-            print("Non-zero changes in mni")
             for key in diff_mni:
                 if key not in persons_changed:
-                    print("Individual ", key, "is changing in mni alone")
                     # If individual hadn't been previously added due to changes in pop df, add it here
                     link_info = {
                         'person_ID': key,
@@ -193,7 +190,6 @@ class Event:
                         link_info[key_prop] = diff_mni[key][key_prop]
                         
                     chain_links[key] = str(link_info)
-                    print("Change for ", key, " is ", str(link_info))
 
         return chain_links
         
@@ -210,7 +206,6 @@ class Event:
         entire_mni_before = {}
         
         # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
-        #if (self.module in self.sim.generate_event_chains_modules_of_interest) and ..
         if all(sub not in str(self) for sub in self.sim.generate_event_chains_ignore_events):
         
         # Will eventually use this once I can actually GET THE NAME OF THE SELF
@@ -224,139 +219,87 @@ class Event:
                 # Save row for comparison after event has occurred
                 row_before = self.sim.population.props.loc[abs(self.target)].copy().fillna(-99999)
                 
+                # Check if individual is already in mni dictionary, if so copy her original status
                 mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-                
                 if self.target in mni:
                     mni_instances_before = True
                     mni_row_before = mni[self.target].copy()
-                                    
-                if self.sim.debug_generate_event_chains:
-                    # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-                    row = self.sim.population.props.loc[[abs(self.target)]]
-                    row['person_ID'] = self.target
-                    row['event'] = type(self).__name__
-                    row['event_date'] = self.sim.date
-                    row['when'] = 'Before'
-                    if not mni_instances_before:
-                        for key in self.sim.modules['PregnancySupervisor'].default_mni_values:
-                            row[key] = self.sim.modules['PregnancySupervisor'].default_mni_values[key]
-                    else:
-                        for key in mni_row_before:
-                            row[key] = mni_row_before[key]
-                            
-                    self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
                 
             else:
 
                 # This will be a population-wide event. In order to find individuals for which this led to
-                # a meaningful change, make a copy of the pop dataframe before the event has occurred.
+                # a meaningful change, make a copy of the while pop dataframe/mni before the event has occurred.
                 df_before = self.sim.population.props.copy()
                 entire_mni_before = copy.deepcopy(self.sim.modules['PregnancySupervisor'].mother_and_newborn_info)
                 
         return print_chains, row_before, df_before, mni_row_before, entire_mni_before, mni_instances_before
         
-    def store_chains_to_do_after_event(self, print_chains, row_before, df_before, mni_row_before, entire_mni_before, mni_instances_before) -> dict:
+    def store_chains_to_do_after_event(self, row_before, df_before, mni_row_before, entire_mni_before, mni_instances_before) -> dict:
         """ If print_chains=True, this function logs the event and identifies and logs the any property changes that have occured to one or multiple individuals as a result of the event taking place. """
         
         chain_links = {}
-
-
-        if print_chains:
-        
-            # Target is single individual
-            if self.target != self.sim.population:
+    
+        # Target is single individual
+        if self.target != self.sim.population:
+    
+            # Copy full new status for individual
+            row_after = self.sim.population.props.loc[abs(self.target)].fillna(-99999)
             
-                mni_instances_after = False
+            # Check if individual is in mni after the event
+            mni_instances_after = False
+            mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+            if self.target in mni:
+                mni_instances_after = True
             
-                row_after = self.sim.population.props.loc[abs(self.target)].fillna(-99999)
-                
-                mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-                
-                if self.target in mni:
-                    mni_instances_after = True
-                
-                # Create and store event for this individual, regardless of whether any property change occurred
-                link_info = {
-                    #'person_ID' : self.target,
-                    'person_ID' : self.target,
-                    'event' : type(self).__name__,
-                    'event_date' : self.sim.date,
-                }
-                
-                # Store (if any) property changes as a result of the event for this individual
-                for key in row_before.index:
-                    if row_before[key] != row_after[key]: # Note: used fillna previously
-                        link_info[key] = row_after[key]
-                        
-                # Now store changes in the mni dictionary, accounting for following cases:
-                
-                # Individual is in mni dictionary before and after
-                if mni_instances_before and mni_instances_after:
-                    for key in mni_row_before:
-                        if self.values_differ(mni_row_before[key], mni[self.target][key]):
-                            link_info[key] = mni[self.target][key]
-                # Individual is only in mni dictionary before event
-                elif mni_instances_before and not mni_instances_after:
-                    default = self.sim.modules['PregnancySupervisor'].default_mni_values
-                    for key in mni_row_before:
-                        if self.values_differ(mni_row_before[key], default[key]):
-                            link_info[key] = default[key]
-                # Individual is only in mni dictionary after event
-                elif mni_instances_after and not mni_instances_before:
-                    print("INDIVIDUAL WAS ADDED")
-                    exit(-1)
-                    default = self.sim.modules['PregnancySupervisor'].default_mni_values
-                    for key in default:
-                        if self.values_differ(default[key], mni[self.target][key]):
-                            link_info[key] = mni[self.target][key]
-                # Else, no need to do anything
-                        
-                chain_links[self.target] = str(link_info)
-
-                # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-                if self.sim.debug_generate_event_chains:
-                    # Print entire row
-                    row = self.sim.population.props.loc[[abs(self.target)]] # Use abs to avoid potentil issue with direct births
-                    row['person_ID'] = self.target
-                    row['event'] = type(self).__name__
-                    row['event_date'] = self.sim.date
-                    row['when'] = 'After'
-
-                    self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
-                
-            else:
-                # Target is entire population. Identify individuals for which properties have changed
-                # and store their changes.
-                
-                # Population frame after event
-                df_after = self.sim.population.props
-                entire_mni_after = copy.deepcopy(self.sim.modules['PregnancySupervisor'].mother_and_newborn_info)
-                
-                #  Create and store the event and dictionary of changes for affected individuals
-                chain_links = self.compare_population_dataframe(df_before, df_after, entire_mni_before, entire_mni_after)
-
-                # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-                if self.sim.debug_generate_event_chains:
-                    # Or print entire rows
-                    change = df_before.compare(df_after)
-                    if not change.empty:
-                        indices = change.index
-                        new_rows_before = df_before.loc[indices]
-                        new_rows_before['person_ID'] = new_rows_before.index
-                        new_rows_before['event'] = type(self).__name__
-                        new_rows_before['event_date'] = self.sim.date
-                        new_rows_before['when'] = 'Before'
-
-                        new_rows_after = df_after.loc[indices]
-                        new_rows_after['person_ID'] = new_rows_after.index
-                        new_rows_after['event'] = type(self).__name__
-                        new_rows_after['event_date'] = self.sim.date
-                        new_rows_after['when'] = 'After'
-
-                        self.sim.event_chains = pd.concat([self.sim.event_chains,new_rows_before], ignore_index=True)
-                        self.sim.event_chains = pd.concat([self.sim.event_chains,new_rows_after], ignore_index=True)
+            # Create and store event for this individual, regardless of whether any property change occurred
+            link_info = {
+                #'person_ID' : self.target,
+                'person_ID' : self.target,
+                'event' : type(self).__name__,
+                'event_date' : self.sim.date,
+            }
+            
+            # Store (if any) property changes as a result of the event for this individual
+            for key in row_before.index:
+                if row_before[key] != row_after[key]: # Note: used fillna previously, so this is safe
+                    link_info[key] = row_after[key]
+                    
+            # Now check and store changes in the mni dictionary, accounting for following cases:
+            # Individual is in mni dictionary before and after
+            if mni_instances_before and mni_instances_after:
+                for key in mni_row_before:
+                    if self.mni_values_differ(mni_row_before[key], mni[self.target][key]):
+                        link_info[key] = mni[self.target][key]
+            # Individual is only in mni dictionary before event
+            elif mni_instances_before and not mni_instances_after:
+                default = self.sim.modules['PregnancySupervisor'].default_mni_values
+                for key in mni_row_before:
+                    if self.mni_values_differ(mni_row_before[key], default[key]):
+                        link_info[key] = default[key]
+            # Individual is only in mni dictionary after event
+            elif mni_instances_after and not mni_instances_before:
+                default = self.sim.modules['PregnancySupervisor'].default_mni_values
+                for key in default:
+                    if self.mni_values_differ(default[key], mni[self.target][key]):
+                        link_info[key] = mni[self.target][key]
+            # Else, no need to do anything
+                    
+            # Add individual to the chain links
+            chain_links[self.target] = str(link_info)
+            
+        else:
+            # Target is entire population. Identify individuals for which properties have changed
+            # and store their changes.
+            
+            # Population frame after event
+            df_after = self.sim.population.props
+            entire_mni_after = copy.deepcopy(self.sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+            
+            #  Create and store the event and dictionary of changes for affected individuals
+            chain_links = self.compare_population_dataframe_and_mni(df_before, df_after, entire_mni_before, entire_mni_after)
                     
         return chain_links
+
 
     def run(self):
         """Make the event happen."""
@@ -370,8 +313,8 @@ class Event:
         
         # Collect event info + meaningful property changes of individuals. Combined, these will constitute a 'link'
         # in the individual's event chain.
-        if self.sim.generate_event_chains:
-            chain_links = self.store_chains_to_do_after_event(print_chains, row_before, df_before, mni_row_before, entire_mni_before, mni_instances_before)
+        if self.sim.generate_event_chains and print_chains:
+            chain_links = self.store_chains_to_do_after_event(row_before, df_before, mni_row_before, entire_mni_before, mni_instances_before)
             
             # Create empty logger for entire pop
             pop_dict = {i: '' for i in range(FACTOR_POP_DICT)} # Always include all possible individuals
@@ -384,7 +327,7 @@ class Event:
                                   data= pop_dict,
                                   description='Links forming chains of events for simulated individuals')
                 
-                #print("Chain events ", chain_links)
+                print("Chain events ", chain_links)
 
 
 class RegularEvent(Event):

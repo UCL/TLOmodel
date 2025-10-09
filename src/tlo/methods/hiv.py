@@ -631,12 +631,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "hv_date_treated"] = pd.NaT
         df.loc[df.is_alive, "hv_date_last_ART"] = pd.NaT
 
-        if self.sim.generate_event_chains is False or self.sim.generate_event_chains is None or self.sim.generate_event_chains_overwrite_epi is False:
-            # Launch sub-routines for allocating the right number of people into each category
-            self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
+        # Launch sub-routines for allocating the right number of people into each category
+        self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
 
-            self.initialise_baseline_art(population)  # allocate baseline art coverage
-            self.initialise_baseline_tested(population)  # allocate baseline testing coverage
+        self.initialise_baseline_art(population)  # allocate baseline art coverage
+        self.initialise_baseline_tested(population)  # allocate baseline testing coverage
 
     def initialise_baseline_prevalence(self, population):
         """
@@ -906,16 +905,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df = sim.population.props
         p = self.parameters
 
-        if self.sim.generate_event_chains is True and self.sim.generate_event_chains_overwrite_epi:
-            print("Should be generating data")
-            sim.schedule_event(
-                HivPollingEventForDataGeneration(self), sim.date + DateOffset(days=0)
-            )
-        else:
-            # 1) Schedule the Main HIV Regular Polling Event
-            sim.schedule_event(
-                HivRegularPollingEvent(self), sim.date + DateOffset(days=0)
-            )
+        # 1) Schedule the Main HIV Regular Polling Event
+        sim.schedule_event(
+            HivRegularPollingEvent(self), sim.date + DateOffset(days=0)
+        )
 
         # 2) Schedule the Logging Event
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -1901,12 +1894,11 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     priority=0,
                 )
 
-        if self.sim.generate_event_chains is False or self.sim.generate_event_chains is None or self.sim.generate_event_chains_overwrite_epi is False:
-            # Horizontal transmission: Male --> Female
-            horizontal_transmission(from_sex="M", to_sex="F")
+        # Horizontal transmission: Male --> Female
+        horizontal_transmission(from_sex="M", to_sex="F")
 
-            # Horizontal transmission: Female --> Male
-            horizontal_transmission(from_sex="F", to_sex="M")
+        # Horizontal transmission: Female --> Male
+        horizontal_transmission(from_sex="F", to_sex="M")
 
         # testing
         # if year later than 2020, set testing rates to those reported in 2020

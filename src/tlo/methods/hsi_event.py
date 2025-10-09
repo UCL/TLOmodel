@@ -216,8 +216,7 @@ class HSI_Event:
         mni_row_before = {}
         
         # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
-        #if (self.module in self.sim.generate_event_chains_modules_of_interest) and ..
-        if all(sub not in str(self) for sub in self.sim.generate_event_chains_ignore_events):
+        if (self.module in self.sim.generate_event_chains_modules_of_interest) and all(sub not in str(self) for sub in self.sim.generate_event_chains_ignore_events):
         
         # Will eventually use this once I can actually GET THE NAME OF THE SELF
         #if not set(self.sim.generate_event_chains_ignore_events).intersection(str(self)):
@@ -230,112 +229,75 @@ class HSI_Event:
                 # Save row for comparison after event has occurred
                 row_before = self.sim.population.props.loc[abs(self.target)].copy().fillna(-99999)
                 
+                # Check if individual is in mni dictionary before the event, if so store its original status
                 mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-                
                 if self.target in mni:
                     mni_instances_before = True
                     mni_row_before = mni[self.target].copy()
-                                    
-                if self.sim.debug_generate_event_chains:
-                    # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-                    row = self.sim.population.props.loc[[abs(self.target)]]
-                    row['person_ID'] = self.target
-                    row['event'] = type(self).__name__
-                    row['event_date'] = self.sim.date
-                    row['when'] = 'Before'
-                    if not mni_instances_before:
-                        for key in self.sim.modules['PregnancySupervisor'].default_mni_values:
-                            row[key] = self.sim.modules['PregnancySupervisor'].default_mni_values[key]
-                    else:
-                        for key in mni_row_before:
-                            row[key] = mni_row_before[key]
-                            
-                    self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
                 
             else:
                 print("ERROR: there shouldn't be pop-wide HSI event")
+                exit(-1)
                 
         return print_chains, row_before, mni_row_before, mni_instances_before
         
-    def store_chains_to_do_after_event(self, print_chains, row_before, footprint, mni_row_before, mni_instances_before) -> dict:
+    def store_chains_to_do_after_event(self, row_before, footprint, mni_row_before, mni_instances_before) -> dict:
         """ If print_chains=True, this function logs the event and identifies and logs the any property changes that have occured to one or multiple individuals as a result of the event taking place. """
-        if print_chains:
-            # For HSI event, this will only ever occur for individual events
-            chain_links = {}
 
-            row_after = self.sim.population.props.loc[abs(self.target)].fillna(-99999)
+        # For HSI event, this will only ever occur for individual events
+        chain_links = {}
+
+        row_after = self.sim.population.props.loc[abs(self.target)].fillna(-99999)
+        
+        mni_instances_after = False
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        if self.target in mni:
+            mni_instances_after = True
             
-            mni_instances_after = False
+        # Create and store dictionary of changes. Note that person_ID, event, event_date, appt_foot, and level
+        # will be stored regardless of whether individual experienced property changes or not.
+
+        # Add event details
+        try:
+            record_footprint = str(footprint)
+            record_level = self.facility_info.level
+        except:
+            record_footprint = 'N/A'
+            record_level = 'N/A'
             
-            mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-            
-            if self.target in mni:
-                mni_instances_after = True
+        link_info = {
+            'person_ID': self.target,
+            'event' : type(self).__name__,
+            'event_date' : self.sim.date,
+            'appt_footprint' : record_footprint,
+            'level' : record_level,
+        }
+        
+        # Add changes to properties
+        for key in row_before.index:
+            if row_before[key] != row_after[key]: # Note: used fillna previously
+                link_info[key] = row_after[key]
                 
-            # Create and store dictionary of changes. Note that person_ID, event, event_date, appt_foot, and level
-            # will be stored regardless of whether individual experienced property changes.
+        # Now store changes in the mni dictionary, accounting for following cases:
+        # Individual is in mni dictionary before and after
+        if mni_instances_before and mni_instances_after:
+            for key in mni_row_before:
+                if self.values_differ(mni_row_before[key], mni[self.target][key]):
+                    link_info[key] = mni[self.target][key]
+        # Individual is only in mni dictionary before event
+        elif mni_instances_before and not mni_instances_after:
+            default = self.sim.modules['PregnancySupervisor'].default_mni_values
+            for key in mni_row_before:
+                if self.values_differ(mni_row_before[key], default[key]):
+                    link_info[key] = default[key]
+        # Individual is only in mni dictionary after event
+        elif mni_instances_after and not mni_instances_before:
+            default = self.sim.modules['PregnancySupervisor'].default_mni_values
+            for key in default:
+                if self.values_differ(default[key], mni[self.target][key]):
+                    link_info[key] = mni[self.target][key]
 
-            # Add event details
-            
-            try:
-                record_footprint = str(footprint)
-                record_level = self.facility_info.level
-            except:
-                record_footprint = 'N/A'
-                record_level = 'N/A'
-                
-            link_info = {
-                'person_ID': self.target,
-                'event' : type(self).__name__,
-                'event_date' : self.sim.date,
-                'appt_footprint' : record_footprint,
-                'level' : record_level,
-            }
-            
-            # Add changes to properties
-            for key in row_before.index:
-                if row_before[key] != row_after[key]: # Note: used fillna previously
-                    link_info[key] = row_after[key]
-                    
-            # Now store changes in the mni dictionary, accounting for following cases:
-                
-            # Individual is in mni dictionary before and after
-            if mni_instances_before and mni_instances_after:
-                for key in mni_row_before:
-                    if self.values_differ(mni_row_before[key], mni[self.target][key]):
-                        link_info[key] = mni[self.target][key]
-                        print("--------------------------------------------->",link_info[key])
-                        exit(-1)
-
-                        
-            # Individual is only in mni dictionary before event
-            elif mni_instances_before and not mni_instances_after:
-                default = self.sim.modules['PregnancySupervisor'].default_mni_values
-                for key in mni_row_before:
-                    if self.values_differ(mni_row_before[key], default[key]):
-                        link_info[key] = default[key]
-                        print("--------------------------------------------->",link_info[key])
-                        exit(-1)
-            # Individual is only in mni dictionary after event
-            elif mni_instances_after and not mni_instances_before:
-                default = self.sim.modules['PregnancySupervisor'].default_mni_values
-                for key in default:
-                    if self.values_differ(default[key], mni[self.target][key]):
-                        link_info[key] = mni[self.target][key]
-                        print("--------------------------------------------->",link_info[key])
-                        exit(-1)
-            chain_links[self.target] = str(link_info)
-
-            if self.sim.debug_generate_event_chains:
-                # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-                row = self.sim.population.props.loc[[abs(self.target)]]
-                row['person_ID'] = self.target
-                row['event'] = type(self).__name__
-                row['event_date'] = self.sim.date
-                row['when'] = 'After'
-                row['appt_footprint'] = record_footprint
-                row['level'] = record_level
-                self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
+        chain_links[self.target] = str(link_info)
             
         return chain_links
         
@@ -360,17 +322,16 @@ class HSI_Event:
             if updated_appt_footprint is not None:
                 footprint = updated_appt_footprint
             
-            chain_links = self.store_chains_to_do_after_event(print_chains, row_before, str(footprint), mni_row_before, mni_instances_before)
+            if print_chains:
+                chain_links = self.store_chains_to_do_after_event(row_before, str(footprint), mni_row_before, mni_instances_before)
             
-            if len(chain_links)>0:
-                pop_dict = {i: '' for i in range(FACTOR_POP_DICT)}
-               # pop_dict = {i: '' for i in range(1000)} # Always include all possible individuals
-
-                pop_dict.update(chain_links)
-                
-                logger_chains.info(key='event_chains',
-                            data = pop_dict,
-                            description='Links forming chains of events for simulated individuals')
+                if len(chain_links)>0:
+                    pop_dict = {i: '' for i in range(FACTOR_POP_DICT)}
+                    pop_dict.update(chain_links)
+                    
+                    logger_chains.info(key='event_chains',
+                                data = pop_dict,
+                                description='Links forming chains of events for simulated individuals')
                 
         return updated_appt_footprint
         
