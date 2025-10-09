@@ -8,9 +8,12 @@ import itertools
 import time
 from collections import OrderedDict
 from pathlib import Path
+from typing import Optional
 from typing import TYPE_CHECKING, Optional
-
+import pandas as pd
+import tlo.population
 import numpy as np
+from tlo.util import FACTOR_POP_DICT
 
 try:
     import dill
@@ -34,6 +37,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+logger_chains = logging.getLogger("tlo.methods.event")
+logger_chains.setLevel(logging.INFO)
 
 
 class SimulationPreviouslyInitialisedError(Exception):
@@ -102,10 +108,14 @@ class Simulation:
         self.date = self.start_date = start_date
         self.modules = OrderedDict()
         self.event_queue = EventQueue()
+        self.generate_event_chains = True
+        self.generate_event_chains_modules_of_interest = []
+        self.generate_event_chains_ignore_events = []
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
-
+        
+        
         self.show_progress_bar = show_progress_bar
         self.resourcefilepath = resourcefilepath
 
@@ -273,13 +283,29 @@ class Simulation:
                 key="debug",
                 data=f"{module.name}.initialise_population() {time.time() - start1} s",
             )
+        
+        # When logging events for each individual to reconstruct chains, only the changes in individual properties will be logged.
+        # At the start of the simulation + when a new individual is born, we therefore want to store all of their properties at the start.
+        if self.generate_event_chains:
 
+            pop_dict = self.population.props.to_dict(orient='index')
+
+            for key in pop_dict.keys():
+                pop_dict[key]['person_ID'] = key
+                pop_dict[key] = str(pop_dict[key]) # Log as string to avoid issues around length of properties stored later
+                
+            pop_dict_full = {i: '' for i in range(FACTOR_POP_DICT)}
+            pop_dict_full.update(pop_dict)
+            
+            logger.info(key='event_chains',
+                               data = pop_dict_full,
+                               description='Links forming chains of events for simulated individuals')
+                               
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
 
     def initialise(self, *, end_date: Date) -> None:
         """Initialise all modules in simulation.
-
         :param end_date: Date to end simulation on - accessible to modules to allow
             initialising data structures which may depend (in size for example) on the
             date range being simulated.
@@ -289,6 +315,16 @@ class Simulation:
             raise SimulationPreviouslyInitialisedError(msg)
         self.date = self.start_date
         self.end_date = end_date  # store the end_date so that others can reference it
+
+        #self.generate_event_chains = generate_event_chains
+        if self.generate_event_chains:
+            # For now keep these fixed, eventually they will be input from user
+            self.generate_event_chains_modules_of_interest = [self.modules]
+            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth', 'LifestyleEvent', 'TbActiveCasePollGenerateData','HivPollingEventForDataGeneration', 'RTIPollingEvent']
+
+        # Reorder columns to place the new columns at the front
+        pd.set_option('display.max_columns', None)
+
         for module in self.modules.values():
             module.initialise_simulation(self)
         self._initialised = True
@@ -350,6 +386,8 @@ class Simulation:
         :param to_date: Date to simulate up to but not including - must be before or
             equal to simulation end date specified in call to :py:meth:`initialise`.
         """
+        open('output.txt', mode='a')
+
         if not self._initialised:
             msg = "Simulation must be initialised before calling run_simulation_to"
             raise SimulationNotInitialisedError(msg)
@@ -366,6 +404,7 @@ class Simulation:
                 self._update_progress_bar(progress_bar, date)
             self.fire_single_event(event, date)
         self.date = to_date
+
         if self.show_progress_bar:
             progress_bar.stop()
 
@@ -407,6 +446,7 @@ class Simulation:
         """
         self.date = date
         event.run()
+        
 
     def do_birth(self, mother_id: int) -> int:
         """Create a new child person.
@@ -420,6 +460,21 @@ class Simulation:
         child_id = self.population.do_birth()
         for module in self.modules.values():
             module.on_birth(mother_id, child_id)
+            
+        if self.generate_event_chains:
+            # When individual is born, store their initial properties to provide a starting point to the chain of property
+            # changes that this individual will undergo as a result of events taking place.
+            prop_dict = self.population.props.loc[child_id].to_dict()
+            prop_dict['event'] = 'Birth'
+            prop_dict['event_date'] = self.date
+            
+            pop_dict = {i: '' for i in range(FACTOR_POP_DICT)} # Always include all possible individuals
+            pop_dict[child_id] = str(prop_dict) # Convert to string to avoid issue of length
+
+            logger.info(key='event_chains',
+                               data = pop_dict,
+                               description='Links forming chains of events for simulated individuals')
+
         return child_id
 
     def find_events_for_person(self, person_id: int) -> list[tuple[Date, Event]]:

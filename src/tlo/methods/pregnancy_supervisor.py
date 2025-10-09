@@ -61,6 +61,96 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complications = None
+        
+        self.default_mni_values = {'delete_mni': False,  # if True, mni deleted in report_daly_values function
+                              'didnt_seek_care': False,
+                              'cons_not_avail': False,
+                              'comp_not_avail': False,
+                              'hcw_not_avail': False,
+                              'ga_anc_one': 0,
+                              'anc_ints': [],
+                              'abortion_onset': pd.NaT,
+                              'abortion_haem_onset': pd.NaT,
+                              'abortion_sep_onset': pd.NaT,
+                              'eclampsia_onset': pd.NaT,
+                              'mild_mod_aph_onset': pd.NaT,
+                              'severe_aph_onset': pd.NaT,
+                              'chorio_onset': pd.NaT,
+                              'chorio_in_preg': False,  # use in predictor in newborn linear models
+                              'ectopic_onset': pd.NaT,
+                              'ectopic_rupture_onset': pd.NaT,
+                              'gest_diab_onset': pd.NaT,
+                              'gest_diab_diagnosed_onset': pd.NaT,
+                              'gest_diab_resolution': pd.NaT,
+                              'none_anaemia_onset': pd.NaT,
+                              'none_anaemia_resolution': pd.NaT,
+                              'mild_anaemia_onset': pd.NaT,
+                              'mild_anaemia_resolution': pd.NaT,
+                              'moderate_anaemia_onset': pd.NaT,
+                              'moderate_anaemia_resolution': pd.NaT,
+                              'severe_anaemia_onset': pd.NaT,
+                              'severe_anaemia_resolution': pd.NaT,
+                              'mild_anaemia_pp_onset': pd.NaT,
+                              'mild_anaemia_pp_resolution': pd.NaT,
+                              'moderate_anaemia_pp_onset': pd.NaT,
+                              'moderate_anaemia_pp_resolution': pd.NaT,
+                              'severe_anaemia_pp_onset': pd.NaT,
+                              'severe_anaemia_pp_resolution': pd.NaT,
+                              'hypertension_onset': pd.NaT,
+                              'hypertension_resolution': pd.NaT,
+                              'obstructed_labour_onset': pd.NaT,
+                              'sepsis_onset': pd.NaT,
+                              'uterine_rupture_onset': pd.NaT,
+                              'mild_mod_pph_onset': pd.NaT,
+                              'severe_pph_onset': pd.NaT,
+                              'secondary_pph_onset': pd.NaT,
+                              'vesicovaginal_fistula_onset': pd.NaT,
+                              'vesicovaginal_fistula_resolution': pd.NaT,
+                              'rectovaginal_fistula_onset': pd.NaT,
+                              'rectovaginal_fistula_resolution': pd.NaT,
+                              'test_run': False,  # used by labour module when running some model tests
+                              'pred_syph_infect': pd.NaT,  # date syphilis is predicted to onset
+                              'new_onset_spe': False,
+                              'cs_indication': 'none'
+                              }
+        self.default_labour_values = {'labour_state': None,
+                            # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
+                            'birth_weight': 'normal_birth_weight',
+                            'birth_size': 'average_for_gestational_age',
+                            'delivery_setting': None,  # home_birth, health_centre, hospital
+                            'twins': None,
+                            'twin_count': 0,
+                            'twin_one_comps': False,
+                            'pnc_twin_one': 'none',
+                            'bf_status_twin_one': 'none',
+                            'eibf_status_twin_one': False,
+                            'an_placental_abruption': None,
+                            'corticosteroids_given': False,
+                            'clean_birth_practices': False,
+                            'abx_for_prom_given': False,
+                            'abx_for_pprom_given': False,
+                            'endo_pp': False,
+                            'retained_placenta': False,
+                            'uterine_atony': False,
+                            'amtsl_given': False,
+                            'cpd': False,
+                            'mode_of_delivery': 'vaginal_delivery',
+                            'neo_will_receive_resus_if_needed': False,
+                            # vaginal_delivery, instrumental, caesarean_section
+                            'hsi_cant_run': False,  # True (T) or False (F)
+                            'sought_care_for_complication': False,  # True (T) or False (F)
+                            'sought_care_labour_phase': 'none',
+                            'referred_for_cs': False,  # True (T) or False (F)
+                            'referred_for_blood': False,  # True (T) or False (F)
+                            'received_blood_transfusion': False,  # True (T) or False (F)
+                            'referred_for_surgery': False,  # True (T) or False (F)'
+                            'death_in_labour': False,  # True (T) or False (F)
+                            'single_twin_still_birth': False,  # True (T) or False (F)
+                            'will_receive_pnc': 'none',
+                            'passed_through_week_one': False}
+                            
+        self.default_all_mni_values = self.default_mni_values
+        self.default_all_mni_values.update(self.default_labour_values)
 
         # Finally we create a dictionary to capture the frequency of key outcomes for logging
         mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()

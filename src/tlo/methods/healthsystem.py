@@ -2457,7 +2457,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                             # Expected appt footprint before running event
                             _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
-                            # Run event & get actual footprint
+
+                            # Run the HSI event (allowing it to return an updated appt_footprint)
                             actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
 
                             # Check if the HSI event returned updated_appt_footprint, and if so adjust original_call

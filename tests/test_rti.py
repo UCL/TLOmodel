@@ -25,6 +25,17 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 1000
 
+@pytest.mark.slow
+def test_data_harvesting(seed):
+    """
+    This test runs a simulation with a functioning health system with full service availability and no set
+    constraints
+    """
+    # create sim object
+    sim = create_basic_rti_sim(popsize, seed)
+    # run simulation
+    sim.simulate(end_date=end_date)
+    exit(-1)
 
 def check_dtypes(simulation):
     # check types of columns in dataframe, check they are the same, list those that aren't
@@ -63,6 +74,7 @@ def test_run(seed):
     sim.simulate(end_date=end_date)
     # check datatypes are same through sim
     check_dtypes(sim)
+
 
 
 @pytest.mark.slow
