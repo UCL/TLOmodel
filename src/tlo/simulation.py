@@ -109,7 +109,7 @@ class Simulation:
         self.modules = OrderedDict()
         self.event_queue = EventQueue()
         self.generate_event_chains = True
-        self.generate_event_chains_overwrite_epi = None
+        self.generate_event_chains_overwrite_epi = False
         self.generate_event_chains_modules_of_interest = []
         self.generate_event_chains_ignore_events = []
         self.debug_generate_event_chains = False
@@ -299,6 +299,12 @@ class Simulation:
         if self.generate_event_chains:
 
             pop_dict = self.population.props.to_dict(orient='index')
+          
+            #if "PregnancySupervisor" in self.modules:
+            #    print("I found it!")
+            #    print(self.modules['PregnancySupervisor'].mother_and_newborn_info)
+            #    exit(-1)
+
             for key in pop_dict.keys():
                 pop_dict[key]['person_ID'] = key
                 pop_dict[key] = str(pop_dict[key]) # Log as string to avoid issues around length of properties stored later
@@ -329,10 +335,10 @@ class Simulation:
         #self.generate_event_chains = generate_event_chains
         if self.generate_event_chains:
             # Eventually this can be made an option
-            self.generate_event_chains_overwrite_epi = True
+            self.generate_event_chains_overwrite_epi = False
             # For now keep these fixed, eventually they will be input from user
             self.generate_event_chains_modules_of_interest = [self.modules]
-            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth', 'HealthSeekingBehaviourPoll', 'LifestyleEvent'] #['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
+            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth', 'LifestyleEvent', 'TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler', 'RTIPollingEvent']
         else:
             # If not using to print chains, cannot ignore epi
             self.generate_event_chains_overwrite_epi = False
@@ -491,7 +497,6 @@ class Simulation:
             pop_dict = {i: '' for i in range(FACTOR_POP_DICT)} # Always include all possible individuals
             pop_dict[child_id] = str(prop_dict) # Convert to string to avoid issue of length
 
-            print("Length at birth", len(pop_dict))
             logger.info(key='event_chains',
                                data = pop_dict,
                                description='Links forming chains of events for simulated individuals')

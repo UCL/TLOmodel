@@ -195,65 +195,83 @@ class HSI_Event:
                 item_codes=self._EQUIPMENT,
                 facility_id=self.facility_info.id
             )
-            
-    def store_chains_to_do_before_event(self) -> tuple[bool, pd.Series]:
+
+    def values_differ(self, v1, v2):
+    
+        if isinstance(v1, list) and isinstance(v2, list):
+            return v1 != v2  # simple element-wise comparison
+
+        if pd.isna(v1) and pd.isna(v2):
+            return False  # treat both NaT/NaN as equal
+        return v1 != v2
+
+
+    def store_chains_to_do_before_event(self) -> tuple[bool, pd.Series, dict, bool]:
         """ This function checks whether this event should be logged as part of the event chains, and if so stored required information before the event has occurred. """
         
         # Initialise these variables
         print_chains = False
         row_before = pd.Series()
+        mni_instances_before = False
+        mni_row_before = {}
         
         # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
-        # if (self.module in self.sim.generate_event_chains_modules_of_interest) and
+        #if (self.module in self.sim.generate_event_chains_modules_of_interest) and ..
         if all(sub not in str(self) for sub in self.sim.generate_event_chains_ignore_events):
         
         # Will eventually use this once I can actually GET THE NAME OF THE SELF
-        # if not set(self.sim.generate_event_chains_ignore_events).intersection(str(self)):
-                
+        #if not set(self.sim.generate_event_chains_ignore_events).intersection(str(self)):
+
+            print_chains = True
+            
+            # Target is single individual
             if self.target != self.sim.population:
             
-                # In the case of HSI events, only individual events should exist and therefore be logged
-                print_chains = True
-                
                 # Save row for comparison after event has occurred
                 row_before = self.sim.population.props.loc[abs(self.target)].copy().fillna(-99999)
-
+                
+                mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+                
+                if self.target in mni:
+                    mni_instances_before = True
+                    mni_row_before = mni[self.target].copy()
+                                    
                 if self.sim.debug_generate_event_chains:
                     # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
                     row = self.sim.population.props.loc[[abs(self.target)]]
                     row['person_ID'] = self.target
-                    row['event'] = type(self).__name__ #str(self.event_name)
+                    row['event'] = type(self).__name__
                     row['event_date'] = self.sim.date
                     row['when'] = 'Before'
-                
-                    try:
-                        row['appt_footprint'] = str(self.EXPECTED_APPT_FOOTPRINT)
-                        row['level'] = self.facility_info.level
-                    except:
-                        row['appt_footprint'] = 'N/A'
-                        row['level'] = 'N/A'
+                    if not mni_instances_before:
+                        for key in self.sim.modules['PregnancySupervisor'].default_mni_values:
+                            row[key] = self.sim.modules['PregnancySupervisor'].default_mni_values[key]
+                    else:
+                        for key in mni_row_before:
+                            row[key] = mni_row_before[key]
+                            
                     self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
                 
             else:
-                # Once this has been removed from Chronic Syndrome mock module, make this a Runtime Error
-                # raise RuntimeError("Cannot have population-wide HSI events")
-                logger.debug(
-                    key="message",
-                    data=(
-                        "Cannot have population-wide HSI events"
-                    ),
-                )
-
+                print("ERROR: there shouldn't be pop-wide HSI event")
                 
-        return print_chains, row_before
+        return print_chains, row_before, mni_row_before, mni_instances_before
         
-    def store_chains_to_do_after_event(self, print_chains, row_before, footprint) -> dict:
+    def store_chains_to_do_after_event(self, print_chains, row_before, footprint, mni_row_before, mni_instances_before) -> dict:
         """ If print_chains=True, this function logs the event and identifies and logs the any property changes that have occured to one or multiple individuals as a result of the event taking place. """
         if print_chains:
             # For HSI event, this will only ever occur for individual events
-            
+            chain_links = {}
+
             row_after = self.sim.population.props.loc[abs(self.target)].fillna(-99999)
             
+            mni_instances_after = False
+            
+            mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+            
+            if self.target in mni:
+                mni_instances_after = True
+                
             # Create and store dictionary of changes. Note that person_ID, event, event_date, appt_foot, and level
             # will be stored regardless of whether individual experienced property changes.
 
@@ -278,8 +296,35 @@ class HSI_Event:
             for key in row_before.index:
                 if row_before[key] != row_after[key]: # Note: used fillna previously
                     link_info[key] = row_after[key]
-            
-            chain_links = {self.target : str(link_info)}
+                    
+            # Now store changes in the mni dictionary, accounting for following cases:
+                
+            # Individual is in mni dictionary before and after
+            if mni_instances_before and mni_instances_after:
+                for key in mni_row_before:
+                    if self.values_differ(mni_row_before[key], mni[self.target][key]):
+                        link_info[key] = mni[self.target][key]
+                        print("--------------------------------------------->",link_info[key])
+                        exit(-1)
+
+                        
+            # Individual is only in mni dictionary before event
+            elif mni_instances_before and not mni_instances_after:
+                default = self.sim.modules['PregnancySupervisor'].default_mni_values
+                for key in mni_row_before:
+                    if self.values_differ(mni_row_before[key], default[key]):
+                        link_info[key] = default[key]
+                        print("--------------------------------------------->",link_info[key])
+                        exit(-1)
+            # Individual is only in mni dictionary after event
+            elif mni_instances_after and not mni_instances_before:
+                default = self.sim.modules['PregnancySupervisor'].default_mni_values
+                for key in default:
+                    if self.values_differ(default[key], mni[self.target][key]):
+                        link_info[key] = mni[self.target][key]
+                        print("--------------------------------------------->",link_info[key])
+                        exit(-1)
+            chain_links[self.target] = str(link_info)
 
             if self.sim.debug_generate_event_chains:
                 # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
@@ -300,7 +345,7 @@ class HSI_Event:
 
         
         if self.sim.generate_event_chains and self.target != self.sim.population:
-            print_chains, row_before = self.store_chains_to_do_before_event()
+            print_chains, row_before, mni_row_before, mni_instances_before = self.store_chains_to_do_before_event()
               
             footprint = self.EXPECTED_APPT_FOOTPRINT
 
@@ -315,10 +360,9 @@ class HSI_Event:
             if updated_appt_footprint is not None:
                 footprint = updated_appt_footprint
             
-            chain_links = self.store_chains_to_do_after_event(print_chains, row_before, str(footprint))
+            chain_links = self.store_chains_to_do_after_event(print_chains, row_before, str(footprint), mni_row_before, mni_instances_before)
             
             if len(chain_links)>0:
-            
                 pop_dict = {i: '' for i in range(FACTOR_POP_DICT)}
                # pop_dict = {i: '' for i in range(1000)} # Always include all possible individuals
 

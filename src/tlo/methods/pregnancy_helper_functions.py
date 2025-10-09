@@ -542,55 +542,7 @@ def update_mni_dictionary(self, individual_id):
 
     if self == self.sim.modules['PregnancySupervisor']:
 
-        mni[individual_id] = {'delete_mni': False,  # if True, mni deleted in report_daly_values function
-                              'didnt_seek_care': False,
-                              'cons_not_avail': False,
-                              'comp_not_avail': False,
-                              'hcw_not_avail': False,
-                              'ga_anc_one': 0,
-                              'anc_ints': [],
-                              'abortion_onset': pd.NaT,
-                              'abortion_haem_onset': pd.NaT,
-                              'abortion_sep_onset': pd.NaT,
-                              'eclampsia_onset': pd.NaT,
-                              'mild_mod_aph_onset': pd.NaT,
-                              'severe_aph_onset': pd.NaT,
-                              'chorio_onset': pd.NaT,
-                              'chorio_in_preg': False,  # use in predictor in newborn linear models
-                              'ectopic_onset': pd.NaT,
-                              'ectopic_rupture_onset': pd.NaT,
-                              'gest_diab_onset': pd.NaT,
-                              'gest_diab_diagnosed_onset': pd.NaT,
-                              'gest_diab_resolution': pd.NaT,
-                              'mild_anaemia_onset': pd.NaT,
-                              'mild_anaemia_resolution': pd.NaT,
-                              'moderate_anaemia_onset': pd.NaT,
-                              'moderate_anaemia_resolution': pd.NaT,
-                              'severe_anaemia_onset': pd.NaT,
-                              'severe_anaemia_resolution': pd.NaT,
-                              'mild_anaemia_pp_onset': pd.NaT,
-                              'mild_anaemia_pp_resolution': pd.NaT,
-                              'moderate_anaemia_pp_onset': pd.NaT,
-                              'moderate_anaemia_pp_resolution': pd.NaT,
-                              'severe_anaemia_pp_onset': pd.NaT,
-                              'severe_anaemia_pp_resolution': pd.NaT,
-                              'hypertension_onset': pd.NaT,
-                              'hypertension_resolution': pd.NaT,
-                              'obstructed_labour_onset': pd.NaT,
-                              'sepsis_onset': pd.NaT,
-                              'uterine_rupture_onset': pd.NaT,
-                              'mild_mod_pph_onset': pd.NaT,
-                              'severe_pph_onset': pd.NaT,
-                              'secondary_pph_onset': pd.NaT,
-                              'vesicovaginal_fistula_onset': pd.NaT,
-                              'vesicovaginal_fistula_resolution': pd.NaT,
-                              'rectovaginal_fistula_onset': pd.NaT,
-                              'rectovaginal_fistula_resolution': pd.NaT,
-                              'test_run': False,  # used by labour module when running some model tests
-                              'pred_syph_infect': pd.NaT,  # date syphilis is predicted to onset
-                              'new_onset_spe': False,
-                              'cs_indication': 'none'
-                              }
+        mni[individual_id] = self.sim.modules['PregnancySupervisor'].default_mni_values.copy()
 
     elif self == self.sim.modules['Labour']:
         labour_variables = {'labour_state': None,

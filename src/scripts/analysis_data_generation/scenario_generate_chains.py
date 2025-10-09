@@ -53,11 +53,11 @@ class GenerateDataChains(BaseScenario):
         super().__init__()
         self.seed = 42
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(months=13)
+        self.end_date = self.start_date + pd.DateOffset(months=36)
         self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 50
+        self.runs_per_draw = 1
         self.generate_event_chains = True
 
     def log_configuration(self):
@@ -77,21 +77,31 @@ class GenerateDataChains(BaseScenario):
     def modules(self):
         # MODIFY
         # Here instead of running full module
+        """
         return [demography.Demography(resourcefilepath=self.resources),
                 enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
                 healthburden.HealthBurden(resourcefilepath=self.resources),
-                symptommanager.SymptomManager(resourcefilepath=self.resources, spurious_symptoms=False),
-                rti.RTI(resourcefilepath=self.resources),
+                symptommanager.SymptomManager(resourcefilepath=self.resources, spurious_symptoms=False),#,
+                #rti.RTI(resourcefilepath=self.resources),
+                pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
+                labour.Labour(resourcefilepath=self.resources),
+                care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
+                contraception.Contraception(resourcefilepath=self.resources),
+                newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
+                postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
+                hiv.Hiv(resourcefilepath=self.resources),
+                tb.Tb(resourcefilepath=self.resources),
+                epi.Epi(resourcefilepath=self.resources),
                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-                #simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+            #simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                 healthsystem.HealthSystem(resourcefilepath=self.resources,
                                           mode_appt_constraints=1,
                                           cons_availability='all')]
-                                          
-       # return (
-       #     fullmodel(resourcefilepath=self.resources)
-       #     + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
-       # )
+        """
+        return (
+            fullmodel(resourcefilepath=self.resources)
+            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
+        )
     """
     def draw_parameters(self, draw_number, rng):
         return mix_scenarios(
