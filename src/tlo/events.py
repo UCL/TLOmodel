@@ -88,40 +88,23 @@ class Event:
         
     def compare_entire_mni_dicts(self,entire_mni_before, entire_mni_after):
         diffs = {}
-        """
-        will_pause = False
-        
-        target_attribute = 'hcw_not_avail'
-        if len(entire_mni_after)>0:
-            print("Default target value before", self.sim.modules['PregnancySupervisor'].default_mni_values[target_attribute])
-            person = next(iter(entire_mni_after))
-            entire_mni_after[person][target_attribute] = True
-            will_pause = True
-            print("Default target value after", self.sim.modules['PregnancySupervisor'].default_mni_values[target_attribute])
 
-            
-        if will_pause:
-            print("Reprint")
-            print(entire_mni_before)
-            print(entire_mni_after)
-            print("Default target value", self.sim.modules['PregnancySupervisor'].default_mni_values[target_attribute])
-        """
         all_individuals = set(entire_mni_before.keys()) | set(entire_mni_after.keys())
             
         for person in all_individuals:
             if person not in entire_mni_before: # but is afterward
                 for key in entire_mni_after[person]:
-                    if self.mni_values_differ(entire_mni_after[person][key],self.sim.modules['PregnancySupervisor'].default_mni_values[key]):
+                    if self.mni_values_differ(entire_mni_after[person][key],self.sim.modules['PregnancySupervisor'].default_all_mni_values[key]):
                         if person not in diffs:
                             diffs[person] = {}
                         diffs[person][key] = entire_mni_after[person][key]
                     
             elif person not in entire_mni_after: # but is beforehand
                 for key in entire_mni_before[person]:
-                    if self.mni_values_differ(entire_mni_before[person][key],self.sim.modules['PregnancySupervisor'].default_mni_values[key]):
+                    if self.mni_values_differ(entire_mni_before[person][key],self.sim.modules['PregnancySupervisor'].default_all_mni_values[key]):
                         if person not in diffs:
                             diffs[person] = {}
-                        diffs[person][key] = self.sim.modules['PregnancySupervisor'].default_mni_values[key]
+                        diffs[person][key] = self.sim.modules['PregnancySupervisor'].default_all_mni_values[key]
 
             else: # person is in both
                 # Compare properties
@@ -131,8 +114,6 @@ class Event:
                             diffs[person] = {}
                         diffs[person][key] = entire_mni_after[person][key]
 
-        if len(diffs)>0:
-            print("DIfferences for ", diffs)
         return diffs
         
     def compare_population_dataframe_and_mni(self,df_before, df_after, entire_mni_before, entire_mni_after):
@@ -272,13 +253,13 @@ class Event:
                         link_info[key] = mni[self.target][key]
             # Individual is only in mni dictionary before event
             elif mni_instances_before and not mni_instances_after:
-                default = self.sim.modules['PregnancySupervisor'].default_mni_values
+                default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
                 for key in mni_row_before:
                     if self.mni_values_differ(mni_row_before[key], default[key]):
                         link_info[key] = default[key]
             # Individual is only in mni dictionary after event
             elif mni_instances_after and not mni_instances_before:
-                default = self.sim.modules['PregnancySupervisor'].default_mni_values
+                default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
                 for key in default:
                     if self.mni_values_differ(default[key], mni[self.target][key]):
                         link_info[key] = mni[self.target][key]
@@ -322,12 +303,10 @@ class Event:
 
             # Log chain_links here
             if len(chain_links)>0:
-                print(chain_links)
+
                 logger_chain.info(key='event_chains',
                                   data= pop_dict,
                                   description='Links forming chains of events for simulated individuals')
-                
-                print("Chain events ", chain_links)
 
 
 class RegularEvent(Event):

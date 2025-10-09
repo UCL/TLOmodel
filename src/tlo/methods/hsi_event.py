@@ -286,13 +286,13 @@ class HSI_Event:
                     link_info[key] = mni[self.target][key]
         # Individual is only in mni dictionary before event
         elif mni_instances_before and not mni_instances_after:
-            default = self.sim.modules['PregnancySupervisor'].default_mni_values
+            default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
             for key in mni_row_before:
                 if self.values_differ(mni_row_before[key], default[key]):
                     link_info[key] = default[key]
         # Individual is only in mni dictionary after event
         elif mni_instances_after and not mni_instances_before:
-            default = self.sim.modules['PregnancySupervisor'].default_mni_values
+            default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
             for key in default:
                 if self.values_differ(default[key], mni[self.target][key]):
                     link_info[key] = mni[self.target][key]

@@ -82,6 +82,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                               'gest_diab_onset': pd.NaT,
                               'gest_diab_diagnosed_onset': pd.NaT,
                               'gest_diab_resolution': pd.NaT,
+                              'none_anaemia_onset': pd.NaT,
+                              'none_anaemia_resolution': pd.NaT,
                               'mild_anaemia_onset': pd.NaT,
                               'mild_anaemia_resolution': pd.NaT,
                               'moderate_anaemia_onset': pd.NaT,
@@ -111,6 +113,44 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                               'new_onset_spe': False,
                               'cs_indication': 'none'
                               }
+        self.default_labour_values = {'labour_state': None,
+                            # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
+                            'birth_weight': 'normal_birth_weight',
+                            'birth_size': 'average_for_gestational_age',
+                            'delivery_setting': None,  # home_birth, health_centre, hospital
+                            'twins': None,
+                            'twin_count': 0,
+                            'twin_one_comps': False,
+                            'pnc_twin_one': 'none',
+                            'bf_status_twin_one': 'none',
+                            'eibf_status_twin_one': False,
+                            'an_placental_abruption': None,
+                            'corticosteroids_given': False,
+                            'clean_birth_practices': False,
+                            'abx_for_prom_given': False,
+                            'abx_for_pprom_given': False,
+                            'endo_pp': False,
+                            'retained_placenta': False,
+                            'uterine_atony': False,
+                            'amtsl_given': False,
+                            'cpd': False,
+                            'mode_of_delivery': 'vaginal_delivery',
+                            'neo_will_receive_resus_if_needed': False,
+                            # vaginal_delivery, instrumental, caesarean_section
+                            'hsi_cant_run': False,  # True (T) or False (F)
+                            'sought_care_for_complication': False,  # True (T) or False (F)
+                            'sought_care_labour_phase': 'none',
+                            'referred_for_cs': False,  # True (T) or False (F)
+                            'referred_for_blood': False,  # True (T) or False (F)
+                            'received_blood_transfusion': False,  # True (T) or False (F)
+                            'referred_for_surgery': False,  # True (T) or False (F)'
+                            'death_in_labour': False,  # True (T) or False (F)
+                            'single_twin_still_birth': False,  # True (T) or False (F)
+                            'will_receive_pnc': 'none',
+                            'passed_through_week_one': False}
+                            
+        self.default_all_mni_values = self.default_mni_values
+        self.default_all_mni_values.update(self.default_labour_values)
 
     INIT_DEPENDENCIES = {'Demography'}
 

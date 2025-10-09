@@ -98,7 +98,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 if value !='' and isinstance(value, str):
                     evaluated = eval(value, eval_env)
                     list_for_individual.append(evaluated)
-                    
+            
+            for i in list_for_individual:
+                print(i)
+            
+            """
             # These are the properties of the individual before the start of the chain of events
             initial_properties = list_for_individual[0]
             
@@ -201,7 +205,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             properties = key_first_event | key_last_event
                 
             record.append(properties)
-            
+            """
 
     df = pd.DataFrame(record)
     df.to_csv("new_raw_data_" + name_tag + ".csv", index=False)
