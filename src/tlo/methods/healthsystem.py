@@ -339,6 +339,12 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
+        'facility_type': Parameter(
+            Types.CATEGORICAL,
+            "Option for facility types to include: `government`, `cham`, or `both`. "
+            "If not specified, defaults to `government`.",
+            categories=['government', 'cham', 'both']
+        ),
     }
 
     PROPERTIES = {
@@ -364,6 +370,8 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
+        facility_type: Optional[str] = 'government',
+        # facility_type: Optional[str] = None,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -495,6 +503,8 @@ class HealthSystem(Module):
         # Create the pointer that will be to the instance of Consumables used to determine availability of consumables.
         self.consumables = None
 
+        self.arg_facility_type = facility_type
+
         # Create pointer for the HealthSystemScheduler event
         self.healthsystemscheduler = None
 
@@ -534,7 +544,17 @@ class HealthSystem(Module):
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
-        path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
+        # path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
+
+        # Determine which facility type to use
+        facility_type = self.parameters['facility_type'] if self.arg_facility_type is None else self.arg_facility_type
+        assert facility_type in ('government', 'cham'), "facility_type must be 'government' or 'cham'"
+
+        # Set base path based on facility type
+        if facility_type == 'government':
+            path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
+        else:  # CHAM
+            path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem' / 'cham'
 
         # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
@@ -717,6 +737,26 @@ class HealthSystem(Module):
         self.bed_days.initialise_beddays_tracker(
             model_to_data_popsize_ratio=self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
         )
+
+        df = self.sim.population.props.copy()
+        print(f"Simulation start date: {sim.date} — initial alive population: {int(df.is_alive.sum())}")
+
+        if "service_provider" not in df.columns:
+            population_total = len(df)
+            gov_facilities = int(0.6 * population_total)
+            cham_facilities = population_total - gov_facilities
+
+            providers = ["government"] * gov_facilities + ["cham"] * cham_facilities
+            self.rng_for_hsi_queue.shuffle(providers)  # randomize tbe order of the list
+            df["service_provider"] = providers
+
+        if self.arg_facility_type in ("government", "cham"):
+            df["hs_access"] = df["is_alive"] & (df["service_provider"] == self.arg_facility_type)
+        else:  # both
+            df["hs_access"] = df["is_alive"]
+
+        print(f"Facility type: {self.arg_facility_type} — Alive population: {df.is_alive.sum()}")
+        print(df["service_provider"].value_counts())
 
         # Set the consumables modules in preparation for the simulation
         self.consumables.on_start_of_day(sim.date)
@@ -1323,6 +1363,17 @@ class HealthSystem(Module):
 
         # Check that priority is in valid range
         assert priority >= 0
+
+        required_level = getattr(hsi_event, "ACCEPTED_FACILITY_LEVEL", None)
+
+        # Only apply referral if this HSI is individual-scoped
+        if required_level is not None and hasattr(hsi_event, "person_id"):
+            provider, facility_level = self.resolve_facility(
+                person_id=hsi_event.person_id,
+                required_level=required_level
+            )
+            hsi_event.service_provider = provider
+            hsi_event.facility_level = facility_level
 
         # If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling under mode 2
         if (self.mode_appt_constraints == 2) and (priority > self.lowest_priority_considered):
@@ -2216,6 +2267,33 @@ class HealthSystem(Module):
                     in self._never_ran_hsi_event_details.items()
                 }
             )
+
+    def resolve_facility(self, person_id: int, required_level: str) -> Tuple[str, str]:
+        """
+        Return (service_provider, facility_level) for a given HSI event.
+        Handles referrals: if CHAM cannot provide the required level, refer to government.
+        """
+        df = self.sim.population.props
+        provider = df.at[person_id, "service_provider"]
+
+        gov_levels = {"0", "1a", "1b", "2", "3"}
+        cham_levels = {"0", "1a", "1b", "2"}
+
+        if provider == "government":
+            if required_level in gov_levels:
+                return ("government", required_level)
+            else:
+                raise RuntimeError(f"Government does not support {required_level}")
+
+        elif provider == "cham":
+            if required_level in cham_levels:
+                return ("cham", required_level)
+            else:
+                # referral
+                return ("government", required_level)
+
+        else:  # fallback for 'both' or unknown
+            return ("government", required_level)
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
