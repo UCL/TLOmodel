@@ -28,15 +28,15 @@ total_time_start = time.time()
 # }
 scenarios_dict = {
     'SQ': {'Status Quo': 0},
-    'GM': {'GM_FullAttend': 0},  # 'GM_all': 0, 'GM_1-2': 1, 'GM_FullAttend': 2},
-    'CS': {'CS_100': 0},  # 'CS_10': 0 ,'CS_30': 1, 'CS_50': 2, 'CS_100': 3},
-    'FS': {'FS_Full': 0}  # 'FS_70':0, 'FS_Full': 1}
+    'GM': {'GM': 0},  # 'GM_all': 0, 'GM_1-2': 1, 'GM_FullAttend': 2},
+    'CS': {'CS': 0},  # 'CS_10': 0 ,'CS_30': 1, 'CS_50': 2, 'CS_100': 3},
+    'FS': {'FS': 0}  # 'FS_70':0, 'FS_Full': 1}
 }
 # Set the intervention to be analysed, and for which years they were simulated
 intervs_all = ['SQ', 'GM', 'CS', 'FS']
 intervs_of_interest = ['GM', 'CS', 'FS']
 intervention_years = list(range(2026, 2031))
-scenarios_to_compare = ['GM_FullAttend', 'CS_100', 'FS_Full']
+scenarios_to_compare = ['GM', 'CS', 'FS'] # ['GM_FullAttend', 'CS_100', 'FS_Full']
 # Which years to plot (from post burn-in period)
 plot_years = list(range(2015, 2032))
 # Plot settings
@@ -50,10 +50,10 @@ scenario_filename_prefix = 'wasting_analysis__full_model'
 # Where to save the outcomes
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
 cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
-# force_calculation of [births_data, deaths_data, dalys_data, tx_data],
+# force_calculation of [births_data, deaths_data, dalys_data, tx_data, cost_data],
 #   if True, enables to force recalculation of the corresponding data
-force_calculation = [False, False, False, False]
-# force_calculation = [True, True, True, True]
+force_calculation = [False, False, False, False, False]
+# force_calculation = [True, True, True, True, True]
 ######################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")
@@ -254,7 +254,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         util_fncs.plot_sum_outcome_and_CIs_intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "DALYs", dalys_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix, interv_timestamps_dict,
-            birth_outcomes_dict
+            birth_outcomes_dict, force_calculation
         )
 
     # --------------------- Create a PDF to save all figures and save each page also as PNG file --------------------- #

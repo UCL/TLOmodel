@@ -21,7 +21,8 @@ from tlo.analysis.utils import (
 )
 
 
-def run_costing_analysis_wast(cost_outcome_folderpath: Path, SQ_timestamp: str, scen_timestamps_suffix: str):
+def run_costing_analysis_wast(cost_outcome_folderpath: Path, SQ_timestamp: str, scen_timestamps_suffix: str,
+                              force_calculation: list):
     # `start time of the analysis
     total_time_start = time.time()
 
@@ -61,7 +62,7 @@ def run_costing_analysis_wast(cost_outcome_folderpath: Path, SQ_timestamp: str, 
     cost_scenarios_draw_nmbs = list(cost_scenarios.keys())
 
     input_costs_file_path = cost_outcome_folderpath / f"input_cost_outcomes_{SQ_timestamp}.pkl"
-    if input_costs_file_path.exists():
+    if input_costs_file_path.exists() and not force_calculation[4]:
         print("\nloading input cost outcomes from file ...")
         input_costs = pd.read_pickle(input_costs_file_path)
     else:
