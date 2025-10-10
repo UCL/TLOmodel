@@ -50,7 +50,7 @@ def run_costing_analysis_wast(cost_outcome_folderpath: Path, SQ_timestamp: str, 
     # number_of_years_costed = relevant_period_for_costing[1] - relevant_period_for_costing[0] + 1
 
     # Scenarios
-    cost_scenarios = {0: "SQ", 3: "GM_FullAttend", 5: "CS_100", 8: "FS_Full"}
+    cost_scenarios = {0: "SQ", 1: "GM", 2: "CS", 3: "FS", 4:"GM_FS", 5:"CS_FS", 6:"GM_CS_FS", 7:"GM_CS"}
 
     # Costing parameters
     discount_rate = 0.03

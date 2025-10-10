@@ -532,6 +532,10 @@ def get_scen_colour(scen_name: str) -> str:
         # "FS_70": "#D4898E",
         # "FS_Full": "#A90251",
         "FS": "#A90251",
+        "GM_FS": "#FD7700",
+        "CS_FS": "#54DC5C",
+        "GM_CS_FS": "#350D90",
+        "GM_CS": "#689DEF",
     }.get(scen_name)
 
 def plot_mortality_rate__by_interv_multiple_settings(
@@ -751,13 +755,17 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
             # Iterate over scenarios to compare
             for scenario in scenarios_to_compare:
                 # Find the corresponding intervention and draw number
-                interv, draw = next(
-                    (interv, draw)
-                    for interv, scenarios_for_interv_dict in scenarios_dict.items()
-                    if scenario in scenarios_for_interv_dict
-                    for scen_name, draw in scenarios_for_interv_dict.items()
-                    if scen_name == scenario
-                )
+                try:
+                    interv, draw = next(
+                        (interv, draw)
+                        for interv, scenarios_for_interv_dict in scenarios_dict.items()
+                        if scenario in scenarios_for_interv_dict
+                        for scen_name, draw in scenarios_for_interv_dict.items()
+                        if scen_name == scenario
+                    )
+                except StopIteration:
+                    raise ValueError(f"Scenario '{scenario}' not found in scenarios_dict")
+
 
                 # Extract data for the scenario
                 scen_data = outcomes_dict[interv][outcome][draw]
@@ -1094,8 +1102,10 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                 # Plot cost-effectiveness scatter plot
                 fig_ce, ax_ce = plt.subplots()
-                ha_scen = ['right', 'left', 'center']
-                va_scen = ['bottom', 'top', 'bottom']
+                ha_scen = {'GM':'right', 'CS':'left', 'FS':'left', 'GM_FS':'right', 'CS_FS':'right',
+                           'GM_CS_FS':'left', 'GM_CS':'right'} # ['right', 'left', 'center']
+                va_scen = {'GM':'bottom', 'CS':'top', 'FS':'bottom', 'GM_FS':'bottom', 'CS_FS':'top',
+                           'GM_CS_FS':'bottom', 'GM_CS':'bottom'}  # ['bottom', 'top', 'bottom']
                 i = -1
                 for scen in incremental_costs.keys():
                     i += 1
@@ -1112,13 +1122,13 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     #            fontsize=12, ha='center', va='bottom', color=get_scen_colour(scen))
                     # Add a legend box with scenario labels instead of text above points
                     ax_ce.legend([scen for scen in incremental_costs.keys()], loc='best', fontsize=12)
-                    space = 0.15 * incremental_costs['FS']
+                    space = 0.05 * incremental_costs['FS']
                     ax_ce.text(averted_DALYs[scen][0],
                                incremental_costs[scen] + space if incremental_costs[scen] > 0 else \
                                    incremental_costs[scen] - space,
                                f"${scen_cons_cost_per_DALY:,.2f}/DALY" if scen_cons_cost_per_DALY > 0 else\
                                f"−${-scen_cons_cost_per_DALY:,.2f}/DALY",
-                               fontsize=12, ha=ha_scen[i % 3], va=va_scen[i % 3], color=get_scen_colour(scen))
+                               fontsize=12, ha=ha_scen[scen], va=va_scen[scen], color=get_scen_colour(scen))
 
                 ax_ce.set_xlabel('DALYs Averted')
                 ax_ce.set_ylabel('Incremental Costs (2023 USD)')

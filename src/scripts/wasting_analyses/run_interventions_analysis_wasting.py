@@ -30,13 +30,17 @@ scenarios_dict = {
     'SQ': {'Status Quo': 0},
     'GM': {'GM': 0},  # 'GM_all': 0, 'GM_1-2': 1, 'GM_FullAttend': 2},
     'CS': {'CS': 0},  # 'CS_10': 0 ,'CS_30': 1, 'CS_50': 2, 'CS_100': 3},
-    'FS': {'FS': 0}  # 'FS_70':0, 'FS_Full': 1}
+    'FS': {'FS': 0},  # 'FS_70':0, 'FS_Full': 1}
+    'GM_FS': {'GM_FS': 0},
+    'CS_FS': {'CS_FS': 0},
+    'GM_CS_FS': {'GM_CS_FS': 0},
+    'GM_CS': {'GM_CS': 0},
 }
 # Set the intervention to be analysed, and for which years they were simulated
-intervs_all = ['SQ', 'GM', 'CS', 'FS']
-intervs_of_interest = ['GM', 'CS', 'FS']
+intervs_all = ['SQ', 'GM', 'CS', 'FS', 'GM_FS', 'CS_FS', 'GM_CS_FS', 'GM_CS']
+intervs_of_interest = ['GM', 'CS', 'FS', 'GM_FS', 'CS_FS', 'GM_CS_FS', 'GM_CS']
 intervention_years = list(range(2026, 2031))
-scenarios_to_compare = ['GM', 'CS', 'FS'] # ['GM_FullAttend', 'CS_100', 'FS_Full']
+scenarios_to_compare = ['GM', 'CS', 'FS', 'GM_FS', 'CS_FS', 'GM_CS_FS', 'GM_CS'] # ['GM_FullAttend', 'CS_100', 'FS_Full']
 # Which years to plot (from post burn-in period)
 plot_years = list(range(2015, 2032))
 # Plot settings
@@ -203,16 +207,22 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         ]
     else:
         scenarios_tocompare_sq_shorten = scenarios_tocompare
-    scenarios_tocompare_prefix = "_".join(scenarios_tocompare_sq_shorten)
+    if len(scenarios_tocompare_sq_shorten) > 4:
+        scenarios_tocompare_prefix = f"_{len(scenarios_tocompare_sq_shorten)}scenarios_inclSQ"
+    else:
+        scenarios_tocompare_prefix = "_".join(scenarios_tocompare_sq_shorten)
     # Prepare timestamps_scenarios_comparison_suffix
     timestamps_scenarios_comparison_suffix = ''
     for interv in intervsall:
-        if any(scenario.startswith(interv) for scenario in scenarios_tocompare):
-            if timestamps_scenarios_comparison_suffix == '':
-                timestamps_scenarios_comparison_suffix = f"{interv_timestamps_dict[interv]}"
-            else:
-                timestamps_scenarios_comparison_suffix = \
-                    timestamps_scenarios_comparison_suffix + f"_{interv_timestamps_dict[interv]}"
+        if len(intervsall) > 4:
+            timestamps_scenarios_comparison_suffix = f"{interv_timestamps_dict['SQ']}"
+        else:
+            if any(scenario.startswith(interv) for scenario in scenarios_tocompare):
+                if timestamps_scenarios_comparison_suffix == '':
+                    timestamps_scenarios_comparison_suffix = f"{interv_timestamps_dict[interv]}"
+                else:
+                    timestamps_scenarios_comparison_suffix = \
+                        timestamps_scenarios_comparison_suffix + f"_{interv_timestamps_dict[interv]}"
     if 'Status Quo' in scenarios_tocompare:
         if timestamps_scenarios_comparison_suffix == '':
             timestamps_scenarios_comparison_suffix = f"{interv_timestamps_dict['SQ']}"
@@ -676,8 +686,8 @@ def run_behind_the_scene_analysis_wasting(
 # ---------------- #
 run_interventions_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest,
                                    scenarios_to_compare, intervs_all)
-run_behind_the_scene_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest,
-                                      scenarios_dict)
+# run_behind_the_scene_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest,
+#                                       scenarios_dict)
 
 total_time_end = time.time()
 print(f"\ntotal running time (s): {(total_time_end - total_time_start)}")
