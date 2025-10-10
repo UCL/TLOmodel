@@ -419,15 +419,16 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         parameters = dict()
 
         # HSI and treatment params:
-        param_list = workbook['Parameters'].set_index("parameter_name")['value']
+        param_list = workbook['parameter_values'].set_index("parameter_name")['value']
 
         def try_cast_to_float(val):
             try:
-                # Try to convert to float first
+                # Don't convert strings that contain alphabetic characters
+                if isinstance(val, str) and any(c.isalpha() for c in val):
+                    return val
                 return float(val)
             except (ValueError, TypeError):
-                # If conversion fails, return the original value
-                return val
+                return val  # Fall back to original value
 
         # parameters are all converted to strings if any strings are present
         for _param_name in (
@@ -1020,7 +1021,7 @@ class SchistoSpecies:
         parameters = dict()
 
         # Natural history params
-        param_list = workbook['Parameters'].set_index("parameter_name")['value']
+        param_list = workbook['parameter_values'].set_index("parameter_name")['value']
         for _param_name in ('R0',
                             'beta_PSAC',
                             'beta_SAC',
