@@ -567,7 +567,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
 
         # Outcome 8: cost-effectiveness scatter plot
         cost_effectiveness_png_path = outputs_path / (
-            f"cost_effectiveness_scatter_DALYsAverted_vs_IncrementalCosts__"
+            f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
             f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
         )
         if cost_effectiveness_png_path.exists():

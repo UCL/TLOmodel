@@ -519,6 +519,7 @@ def extract_tx_data_frames(
 def get_scen_colour(scen_name: str) -> str:
     return {
         "Status Quo": "#F12AE5",
+        "SQ": "#F12AE5",
         # "GM_FullAttend": "#4575B4",
         # "GM_all": "#BDEBF7",
         # "GM_1-2": "#91BFDB",
@@ -853,10 +854,14 @@ def plot_sum_outcome_and_CIs_intervention_period(
     assert outcome_type in ['deaths', 'deaths_with_SAM', 'DALYs'], \
         f"Invalid value for 'outcome_type': expected 'deaths' or 'DALYs'. Received {outcome_type} instead."
 
-    averted_DALYs_anycause = dict()
+    averted_DALYs_bycause = dict()
+    averted_deaths_bycause = dict()
 
     # Outcome to plot
     for i, cause in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea']):
+        averted_DALYs_bycause[cause] = {}
+        averted_deaths_bycause[cause] = {}
+
         if outcome_type == "deaths":
             neonatal_outcomes = ['interv_neo_deaths_sum_ci_df', 'interv_neo_SAM_deaths_sum_ci_df',
                                  'interv_neo_ALRI_deaths_sum_ci_df', 'interv_neo_Diarrhoea_deaths_sum_ci_df']
@@ -987,8 +992,10 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     ) ** 0.5
                     averted_ci_lower = averted_sum - (z_score * averted_SE)
                     averted_ci_upper = averted_sum + (z_score * averted_SE)
-                    if outcome_type == "DALYs" and cause=='any cause':
-                        averted_DALYs_anycause[scenario] = [averted_sum, averted_ci_lower, averted_ci_upper]
+                    if outcome_type == "deaths":
+                            averted_deaths_bycause[cause][scenario] = [averted_sum, averted_ci_lower, averted_ci_upper]
+                    if outcome_type == "DALYs":
+                        averted_DALYs_bycause[cause][scenario] = [averted_sum, averted_ci_lower, averted_ci_upper]
                     ax2.bar(scenario, averted_sum,
                             yerr=[[averted_sum - averted_ci_lower], [averted_ci_upper - averted_sum]],
                             label=scenario, color=get_scen_colour(scenario), capsize=5)
@@ -1027,179 +1034,44 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 # SQ timestamp associated with scenarios for which we want the costs to be calculated
                 SQ_results_timestamp = interv_timestamps_dict['SQ']
                 # -----------
-                output_costs_medical_file_path = \
-                    cost_outcome_folder_path / f"output_costs_medical_outcomes_{SQ_results_timestamp}.pkl"
-                if output_costs_medical_file_path.exists() and not force_calculation[4]:
-                    print("\nloading output costs medical from file ...")
-                    output_costs_medical_df = pd.read_pickle(output_costs_medical_file_path)
-                else:
-                    print("\noutput costs medical calculation ...")
-                    run_costing(cost_outcome_folder_path, SQ_results_timestamp, timestamps_suffix, force_calculation)
-                    output_costs_medical_df = pd.read_pickle(output_costs_medical_file_path)
-
-                incremental_costs = dict()
-                for scen in output_costs_medical_df.index:
-                    if scen != 'SQ':
-                        incremental_costs[scen] = \
-                            output_costs_medical_df.loc[scen, 'total'] - output_costs_medical_df.loc['SQ', 'total']
-                # TODO: use also incremental_costs CIs
-                #  (saved as output_costs_medical_df.loc[scen, ['lower_bound', 'upper_bound']])
-                #  How the net_health_benefit & net_monetary_benefit then will need to account for both uncertainty
-                #  around Averted DALYs and around Incremental Costs (hence similar calculation as when calculated CI
-                #  for Averted DALYs)
-
-                # cost-effectiveness threshold (CET) = willingness to pay
-                CET = 83
-                net_health_benefit = {
-                    scen: [
-                        averted_DALYs[scen][0] - (incremental_costs.get(scen, 0) / CET),  # mean
-                        averted_DALYs[scen][1] - (incremental_costs.get(scen, 0) / CET),  # low
-                        averted_DALYs[scen][2] - (incremental_costs.get(scen, 0) / CET),  # upp
-                    ]
-                    for scen in averted_DALYs
-                }
-
-                # max_implementation_costs ~ net_monetary_benefit
-                net_monetary_benefit = {
-                    scen: [
-                        (averted_DALYs[scen][0] * CET) - incremental_costs.get(scen, 0),  # mean
-                        (averted_DALYs[scen][1] * CET) - incremental_costs.get(scen, 0),  # low
-                        (averted_DALYs[scen][2] * CET) - incremental_costs.get(scen, 0),  # upp
-                    ]
-                    for scen in averted_DALYs
-                }
-
-                # # In below prints not rounded values
-                # print(f"\naverted_DALYs:\n{averted_DALYs}")
-                # print(f"\nincremental_costs:\n{incremental_costs}")
-                # print(f"\nnet_health_benefit:\n{net_health_benefit}")
-                # print(f"\nnet_monetary_benefit:\n{net_monetary_benefit}")
-
-                cost_eff_table = pd.DataFrame(
-                    {
-                        "Scenario": list(averted_DALYs.keys()),
-                        "Averted DALYs": [
-                            f"{int(round(vals[0])):,} ({int(round(vals[1])):,}; {int(round(vals[2])):,})"
-                            for vals in averted_DALYs.values()
-                        ],
-                        "Incremental Costs (2023 USD)": [
-                            f"{int(round(incremental_costs.get(interv, 0))):,}" for interv in averted_DALYs.keys()
-                        ],
-                        "Incremental net health benefit (DALYS averted)": [
-                            f"{int(round(nhb[0])):,} ({int(round(nhb[1])):,}; {int(round(nhb[2])):,})"
-                            for nhb in net_health_benefit.values()
-                        ],
-                        "Incremental net monetary benefit (DALYs averted)": [
-                            # round down to ensure CET is not exceeded
-                            f"{int(nmb[0]):,} ({int(nmb[1]):,}; {int(nmb[2]):,})"
-                            # f"{int(round(nmb[0])):,} ({int(round(nmb[1])):,}; {int(round(nmb[2])):,})"
-                            for nmb in net_monetary_benefit.values()
-                        ],
-                    }
-                )
-                print("---------------------")
-                print(f"\ncost_eff_table:\n{cost_eff_table}")
-
-                # Plot cost-effectiveness scatter plot
-                fig_ce, ax_ce = plt.subplots()
-                ha_scen = {'GM':'right', 'CS':'left', 'FS':'left', 'GM_FS':'right', 'CS_FS':'right',
-                           'GM_CS_FS':'left', 'GM_CS':'right'} # ['right', 'left', 'center']
-                va_scen = {'GM':'bottom', 'CS':'top', 'FS':'bottom', 'GM_FS':'bottom', 'CS_FS':'top',
-                           'GM_CS_FS':'bottom', 'GM_CS':'bottom'}  # ['bottom', 'top', 'bottom']
-                i = -1
-                for scen in incremental_costs.keys():
-                    i += 1
-                    scen_cons_cost_per_DALY = incremental_costs[scen]/averted_DALYs[scen][0]
-                    # TODO: include CI for ICER in the figure
-                    ax_ce.errorbar(
-                        averted_DALYs[scen][0], incremental_costs[scen],
-                        xerr=[[averted_DALYs[scen][0] - averted_DALYs[scen][1]],
-                              [averted_DALYs[scen][2] - averted_DALYs[scen][0]]],
-                        fmt='o', color=get_scen_colour(scen), capsize=5
-                    )
-                    # ax_ce.text(averted_DALYs[scen][0], incremental_costs[scen] + 1 * incremental_costs[scen],
-                    #            scen,
-                    #            fontsize=12, ha='center', va='bottom', color=get_scen_colour(scen))
-                    # Add a legend box with scenario labels instead of text above points
-                    ax_ce.legend([scen for scen in incremental_costs.keys()], loc='best', fontsize=12)
-                    space = 0.05 * incremental_costs['FS']
-                    ax_ce.text(averted_DALYs[scen][0],
-                               incremental_costs[scen] + space if incremental_costs[scen] > 0 else \
-                                   incremental_costs[scen] - space,
-                               f"${scen_cons_cost_per_DALY:,.2f}/DALY" if scen_cons_cost_per_DALY > 0 else\
-                               f"−${-scen_cons_cost_per_DALY:,.2f}/DALY",
-                               fontsize=12, ha=ha_scen[scen], va=va_scen[scen], color=get_scen_colour(scen))
-
-                ax_ce.set_xlabel('DALYs Averted')
-                ax_ce.set_ylabel('Incremental Costs (2023 USD)')
-                ax_ce.set_title('Cost-Effectiveness: DALYs Averted vs Incremental Costs', pad=12)
-
-                # Add dashed black line for 1 DALY averted per CET
-                x_vals = np.array(ax_ce.get_xlim())
-                y_vals = x_vals * CET
-                ax_ce.plot(x_vals, y_vals, color='black', linestyle='--')
-                ax_ce.text(
-                    x_vals[-1], y_vals[-1], f"ICER = ${CET}/DALY", color="black", fontsize=9, ha="right", va="bottom"
-                )
-
-                plt.tight_layout()
-                plt.savefig(
-                    outputs_path / (
-                        f"cost_effectiveness_scatter_DALYsAverted_vs_IncrementalCosts__"
-                        f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
-                    ),
-                    bbox_inches='tight'
-                )
-
                 # Implementation costs estimates based on number of births and unit costs from REFs, dicounted by 3%
-
                 def calculate_implementation_costs():
-                    # Implementation costs for education/promotion intreventions (ie GM & CS)
-                    start_up_cost_Gelli_etal2021 = 58.41 * 0.3
-                    unit_cost_Gelli_etal2021 = 58.41 * 0.7
-                    coverage_educ_Pearson_etal2018 = 0.247
-                    coverage_prom_Pearson_etal2018 = 0.61
-                    # print("Implementation costs Gelli et al., 2021")
-                    # calculate_implementation_costs_GM_CS(start_up_cost_Gelli_etal2021, unit_cost_Gelli_etal2021,
-                    #                                      coverage_educ_Pearson_etal2018)
+                    # Implementation costs for education/promotion interventions (ie GM & CS)
+                    # Gelli et al., 2021 (incl food, not the best choice as we already have food supplements modelled separtely)
+                    # start_up_cost_Gelli_etal2021 = 58.41 * 0.3
+                    # unit_cost_Gelli_etal2021 = 58.41 * 0.7
+                    # Pearson et al, 2018 (seems to include purely implementation costs, and assume coverage for the
+                    # interventions, however as we intend to reach 100% scale-up, we assume 100% coverage)
+                    # coverage_educ_Pearson_etal2018 = 0.247
+                    # coverage_prom_Pearson_etal2018 = 0.61
+
                     # print("Implementation costs Pearson et al., 2018")
                     unit_cost_Pearson_etal2018 = 1.57
                     start_up_Pearson_etal2018 = 1.57 / 7 * 3
-                    # print(f"Gelli et al.'s start-up costs; {coverage_educ_Pearson_etal2018*100}% coverage")
-                    # calculate_implementation_costs_GM_CS(start_up_cost_Gelli_etal2021, unit_cost_Pearson_etal2018,
-                    #                                      coverage_educ_Pearson_etal2018)
-                    # print(f"Gelli et al.'s start-up costs; {coverage_prom_Pearson_etal2018*100}% coverage")
-                    # calculate_implementation_costs_GM_CS(start_up_cost_Gelli_etal2021, unit_cost_Pearson_etal2018,
-                    #                                      coverage_prom_Pearson_etal2018)
-                    # print(f"Gelli et al.'s start-up costs; {1.0*100}% coverage")
-                    # calculate_implementation_costs_GM_CS(start_up_cost_Gelli_etal2021, unit_cost_Pearson_etal2018,
-                    #                                      1.0)
-                    # print(f"Pearson et al.'s start-up costs; {1.0*100}% coverage")
-                    # calculate_implementation_costs_GM_CS(start_up_Pearson_etal2018, unit_cost_Pearson_etal2018,
-                    #                                      1.0)
 
                     # Implementation costs GM, CS & FS:
                     # #####
                     # Generate all combinations of start-up cost, unit cost, and coverage
                     import itertools
 
-                    interventions = ["GM", "CS", "FS"]
-                    start_up_costs = [start_up_Pearson_etal2018] #, start_up_cost_Gelli_etal2021]
-                    unit_costs = [unit_cost_Pearson_etal2018] #, unit_cost_Gelli_etal2021]
-                    coverages = [1.0] # [coverage_educ_Pearson_etal2018, coverage_prom_Pearson_etal2018, 1.0]
+                    scenarios_without_SQ = [scen for scen in scenarios_to_compare if scen != 'Status Quo']
+                    start_up_unit_cost = start_up_Pearson_etal2018 #, start_up_cost_Gelli_etal2021
+                    unit_cost = unit_cost_Pearson_etal2018 #, unit_cost_Gelli_etal2021
+                    coverage = 1.0  # [coverage_educ_Pearson_etal2018, coverage_prom_Pearson_etal2018, 1.0]
 
-                    combinations = list(itertools.product(interventions, start_up_costs, unit_costs, coverages))
-
-                    rows_unit_costs_coverage = []
-                    rows_impl_costs = []
-                    for interv, start_up_C, unit_C, cov in combinations:
+                    impl_costs = dict()
+                    for scen in scenarios_without_SQ:
+                        scen_coef = (
+                            1 if "_" not in scen else 2.5 if scen.count("_") == 2 else 1.5 if scen == "GM_CS" else 2
+                        )
                         impl_cost_df = pd.DataFrame(
                             {
                                 "year": interv_years,
                                 "impl_costs": [
-                                    births_dict[interv]["births_mean_ci_df"][0].loc[year][0]
-                                    * cov
-                                    * ((unit_C + start_up_C) if year == interv_years[0] else unit_C)
+                                    births_dict[scen]["births_mean_ci_df"][0].loc[year][0]
+                                    * coverage
+                                    * ((unit_cost + start_up_unit_cost) if year == interv_years[0] else unit_cost)
+                                    * scen_coef
                                     for year in interv_years
                                 ],
                             }
@@ -1208,60 +1080,261 @@ def plot_sum_outcome_and_CIs_intervention_period(
                             _df=impl_cost_df, _discount_rate=0.03, _column_for_discounting='impl_costs'
                         )
                         sum_impl_costs_discounted = sum(impl_cost_discounted_df['impl_costs'])
-                        scen = next(iter(scenarios_dict[interv]))
-                        # rows_unit_costs_coverage.append(
-                        #     {   "Scenario": scen,
-                        #         "StartUp_UnitCost": round(start_up_C, 2),
-                        #         "UnitCost": round(unit_C, 2),
-                        #         "Coverage": round(cov, 2),
-                        #         "Implementation costs": f"{int(round(sum(impl_cost_discounted_df['impl_costs']))):,}",
-                        #         "INMB": f"{int(net_monetary_benefit[scen][0]):,}",
-                        #     }
-                        # )
-
-                        total_costs = incremental_costs.get(scen, 0) + sum_impl_costs_discounted
-                        net_monetary_benefit_incl_impl_costs = {
-                            scen: [
-                                (averted_DALYs[scen][0] * CET) - total_costs,  # mean
-                                (averted_DALYs[scen][1] * CET) - total_costs,  # low
-                                (averted_DALYs[scen][2] * CET) - total_costs,  # upp
-                            ]
-                            for scen in averted_DALYs
-                        }
-
-                        rows_impl_costs.append(
-                            {
-                                "Scenario": scen,
-                                "Maximum additional implementation costs":
-                                    f"{int(net_monetary_benefit[scen][0]):,} "
-                                    f"({int(net_monetary_benefit[scen][1]):,}; {int(net_monetary_benefit[scen][2]):,})",
-                                "Implementation costs": f"{int(round(sum_impl_costs_discounted)):,}",
-                                ("Incremental net monetary benefit "
-                                "(DALYs averted, Incremental costs & Implementation costs)"):
-                                    f"{int(net_monetary_benefit_incl_impl_costs[scen][0]):,} "
-                                    f"({int(net_monetary_benefit_incl_impl_costs[scen][1]):,}; "
-                                    f"{int(net_monetary_benefit_incl_impl_costs[scen][2]):,})",
-                            }
-                        )
-
-                    # implementation_unit_costs_coverage_df = pd.DataFrame(rows_unit_costs_coverage)
-                    # print("Implementation unit costs & coverage:")
-                    # print(implementation_unit_costs_coverage_df)
-
-                    print("---------------------")
-                    print("\nImplementation cost table:")
-                    implementation_costs_df = pd.DataFrame(rows_impl_costs)
-                    print(implementation_costs_df)
+                        impl_costs[scen] = sum_impl_costs_discounted
 
                     # Implementation costs FS:
                     # TODO:
                     #  interv_tx_mean_ci_df
                     #  salary [RF_Costing_HR Nutrition] at levels 1a, 1b and 2: 4573.11153 USD (annual??)
 
-                calculate_implementation_costs()
+                    # Add 0 implementation costs for SQ
+                    impl_costs['SQ'] = 0.0
+                    return impl_costs
 
-            if outcome_type == "DALYs" and cause == "any cause":
-                plot_and_table_cost_effectiveness(averted_DALYs_anycause)
+                def get_all_costs():
+                    # 1. Medical consumable costs - discounted by 3%
+                    output_costs_medical_file_path = \
+                        cost_outcome_folder_path / f"output_costs_medical_outcomes_{SQ_results_timestamp}.pkl"
+                    if output_costs_medical_file_path.exists() and not force_calculation[4]:
+                        print("\nloading output costs medical from file ...")
+                        output_costs_medical_df = pd.read_pickle(output_costs_medical_file_path)
+                    else:
+                        print("\noutput costs medical calculation ...")
+                        run_costing(cost_outcome_folder_path, SQ_results_timestamp, timestamps_suffix, force_calculation)
+                        output_costs_medical_df = pd.read_pickle(output_costs_medical_file_path)
+                    incremental_consumable_costs = dict()
+                    for scen in output_costs_medical_df.index:
+                        incremental_consumable_costs[scen] = \
+                            output_costs_medical_df.loc[scen, 'total'] - output_costs_medical_df.loc['SQ', 'total']
+                    print("\nincremental_consumable_costs")
+                    print(incremental_consumable_costs)
+
+                    # TODO: use also incremental_consumable_costs CIs
+                    #  (saved as output_costs_medical_df.loc[scen, ['lower_bound', 'upper_bound']])
+                    #  How the net_health_benefit & net_monetary_benefit then will need to account for both uncertainty
+                    #  around Averted DALYs and around Incremental Costs (hence similar calculation as when calculated CI
+                    #  for Averted DALYs)
+
+                    # 2. Implementation costs estimates based on number of births and unit costs from REFs, dicounted by 3%
+                    implementation_costs = calculate_implementation_costs()
+                    print("\nimplementation_costs")
+                    print(implementation_costs)
+
+                    all_costs = pd.DataFrame(
+                        {
+                            "scenario": list(incremental_consumable_costs.keys()),
+                            "incremental_consumable_costs": [
+                                incremental_consumable_costs[scen] for scen in incremental_consumable_costs.keys()
+                            ],
+                            "implementation_costs": [
+                                implementation_costs[scen] for scen in incremental_consumable_costs.keys()
+                            ],
+                            "total_cost": [
+                                incremental_consumable_costs[scen] + implementation_costs[scen]
+                                for scen in incremental_consumable_costs.keys()
+                            ],
+                        }
+                    )
+                    return all_costs
+
+                output_all_costs_file_path = (
+                    cost_outcome_folder_path / f"all_costs_{SQ_results_timestamp}.pkl"
+                )
+                if output_all_costs_file_path.exists() and not force_calculation[4]:
+                    print("\nloading all costs from file ...")
+                    all_costs_df = pd.read_pickle(output_all_costs_file_path)
+                else:
+                    print("\nall costs calculation ...")
+                    all_costs_df = get_all_costs()
+                    print("saving all costs to file ...")
+                    all_costs_df.to_pickle(output_all_costs_file_path)
+
+
+                # Cost-effectiveness threshold (CET) = willingness to pay
+                CET = 83
+
+                # PLOT cost-effectiveness plane
+                # #####
+                print("\nplotting CE plane ...")
+                scenarios_without_SQ = [scen for scen in all_costs_df['scenario'] if scen != "SQ"]
+
+                fig_ce, ax_ce = plt.subplots(figsize=(10, 8))
+                ha_scen = {
+                    "SQ": "left",
+                    "GM": "right",
+                    "CS": "left",
+                    "FS": "left",
+                    "GM_FS": "center",
+                    "CS_FS": "left",
+                    "GM_CS_FS": "center",
+                    "GM_CS": "center",
+                }  # ['right', 'left', 'center']
+                va_scen = {
+                    "SQ": "top",
+                    "GM": "bottom",
+                    "CS": "top",
+                    "FS": "bottom",
+                    "GM_FS": "bottom",
+                    "CS_FS": "top",
+                    "GM_CS_FS": "bottom",
+                    "GM_CS": "top",
+                }  # ['bottom', 'top', 'bottom']
+                space = 0.012 * all_costs_df.loc[all_costs_df['scenario'] == "FS", "total_cost"].values[0]
+                for scen in scenarios_without_SQ:
+                    ax_ce.errorbar(
+                        averted_DALYs[scen][0],
+                        all_costs_df.loc[all_costs_df['scenario'] == scen, 'total_cost'].values[0],
+                        xerr=[
+                            [averted_DALYs[scen][0] - averted_DALYs[scen][1]],
+                            [averted_DALYs[scen][2] - averted_DALYs[scen][0]],
+                        ],
+                        fmt="o",
+                        color=get_scen_colour(scen),
+                        capsize=5,
+                    )
+                # add SQ point
+                ax_ce.plot(0, 0, marker="o", color=get_scen_colour('SQ'))
+                # define domination for scenarios
+                domination = {
+                    "SQ": "",
+                    "GM": "dominated",
+                    "CS": "",
+                    "FS": "dominated",
+                    "GM_FS": "dominated",
+                    "CS_FS": "",
+                    "GM_CS_FS": "",
+                    "GM_CS": "dominated",
+                }
+                for _, row in all_costs_df.iterrows():
+                    scen = row["scenario"]
+                    scen_cons_cost_per_DALY = row["total_cost"] / averted_DALYs[scen][0] if scen != 'SQ' else 0
+                    ICER = (
+                        f"${scen_cons_cost_per_DALY:,.2f}"
+                        if scen_cons_cost_per_DALY >= 0
+                        else f"−${-scen_cons_cost_per_DALY:,.2f}"
+                    )
+                    ICER_domination = ICER if domination[scen] == "" else domination[scen]
+                    ax_ce.text(
+                        averted_DALYs[scen][0] if scen != 'SQ' else 0,
+                        row["total_cost"] + (space * 0.9) if va_scen[scen] == "bottom"
+                        else row["total_cost"] - space,
+                        ICER_domination,
+                        fontsize=12, ha=ha_scen[scen], va=va_scen[scen], color=get_scen_colour(scen),
+                    )
+
+                # Add a legend box with scenario labels
+                ax_ce.legend([scen for scen in all_costs_df['scenario']],
+                             loc="center left", bbox_to_anchor=(1, 0.5), fontsize=12)
+
+                # Add cost-effectiveness frontier
+                # Add cost-effectiveness frontier (dotted line connecting CS -> CS_FS -> GM_CS_FS)
+                scen_frontier = ["SQ", "CS", "CS_FS", "GM_CS_FS"]
+                frontier_x = [averted_DALYs[scen][0] if scen != 'SQ' else 0 for scen in scen_frontier]
+                frontier_y = [all_costs_df.loc[all_costs_df['scenario'] == scen, 'total_cost'].values[0]
+                              for scen in scen_frontier]
+                ax_ce.plot(
+                    frontier_x,
+                    frontier_y,
+                    linestyle=":",
+                    color="black",
+                    linewidth=1.5,
+                    label="Cost-effectiveness frontier",
+                )
+
+                # ax_ce.set_ylim(bottom=-1 * 1e7, top=5 * 1e7)
+
+                ax_ce.set_xlabel("DALYs Averted")
+                ax_ce.set_ylabel("Total Incremental Costs (2023 USD)")
+                # ax_ce.set_title("Cost-Effectiveness: DALYs Averted vs Total Incremental Costs", pad=12)
+
+                # Add dashed black line for 1 DALY averted per CET
+                y_vals = np.array(ax_ce.get_ylim())
+                x_vals = y_vals / CET
+                # x_vals = np.array(ax_ce.get_xlim())
+                # y_vals = x_vals * CET
+                ax_ce.plot(x_vals, y_vals, color="black", linestyle="--")
+                ax_ce.text(
+                    x_vals[-1] + 10, y_vals[-1] + 1e6, f"ICER = ${CET}/DALY",
+                    color="black", fontsize=9, ha="left", va="top",
+                )
+
+                plt.tight_layout()
+                plt.savefig(
+                    outputs_path
+                    / (
+                        f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
+                        f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+                    ),
+                    bbox_inches="tight",
+                )
+
+                # TABLE cost-effectiveness
+                # #####
+                print("\ncreating table with CE metrics ...")
+
+                # Create a cost-effectiveness summary table for each scenario
+                ce_table_rows = []
+                for scen in all_costs_df["scenario"]:
+                    averted_dalys = averted_DALYs[scen][0] if scen != 'SQ' else 0
+                    averted_dalys_lower = averted_DALYs[scen][1] if scen != 'SQ' else 0
+                    averted_dalys_upper = averted_DALYs[scen][2] if scen != 'SQ' else 0
+                    incremental_costs = \
+                        all_costs_df.loc[all_costs_df['scenario'] == scen, 'incremental_consumable_costs'].values[0]
+                    impl_cost = all_costs_df.loc[all_costs_df['scenario'] == scen, 'implementation_costs'].values[0]
+                    total_cost = incremental_costs + impl_cost
+
+                    max_impl_costs = (averted_dalys * CET) - incremental_costs
+                    max_impl_costs_lower = (averted_dalys_lower * CET) - incremental_costs
+                    max_impl_costs_upper = (averted_dalys_upper * CET) - incremental_costs
+
+                    net_health_benefit = averted_dalys - (total_cost / CET)
+                    net_health_benefit_lower = averted_dalys_lower - (total_cost / CET)
+                    net_health_benefit_upper = averted_dalys_upper - (total_cost / CET)
+
+                    net_monetary_benefit = (averted_dalys * CET) - total_cost
+                    net_monetary_benefit_lower = (averted_dalys_lower * CET) - total_cost
+                    net_monetary_benefit_upper = (averted_dalys_upper * CET) - total_cost
+
+                    ce_table_rows.append(
+                        {
+                            "Scenario": scen,
+                            "Averted DALYs (95% CI)": f"{averted_dalys:,.0f} ({averted_dalys_lower:,.0f}; {averted_dalys_upper:,.0f})",
+                            "Incremental consumable-related costs (2023 USD)": f"{incremental_costs:,.0f}",
+                            "Maximum additional implementation costs (2023 USD, 95% CI)": f"{max_impl_costs:,.0f} ({max_impl_costs_lower:,.0f}; {max_impl_costs_upper:,.0f})",
+                            "Implementation costs estimates (2023 USD)": f"{impl_cost:,.0f}",
+                            "Incremental net health benefit (95% CI)": f"{net_health_benefit:,.2f} ({net_health_benefit_lower:,.2f}; {net_health_benefit_upper:,.2f})",
+                            "Incremental net monetary benefit (95% CI)": f"{net_monetary_benefit:,.0f} ({net_monetary_benefit_lower:,.0f}; {net_monetary_benefit_upper:,.0f})",
+                        }
+                    )
+                ce_table_df = pd.DataFrame(ce_table_rows)
+                ce_table_df.to_csv(
+                    outputs_path
+                    / (f"cost_effectiveness_summary_table__{timestamps_suffix}.csv"),
+                    index=False,
+                )
+                print("\nCost-effectiveness summary table:")
+                print(ce_table_df)
+
+            def table_effectiveness(averted_outcome: dict, outcome_cause_suffix:str) -> None:
+
+                eff_table = pd.DataFrame(
+                    {
+                        "Scenario": list(averted_outcome.keys()),
+                        "Averted deaths": [
+                            f"{int(round(vals[0])):,} ({int(round(vals[1])):,}; {int(round(vals[2])):,})"
+                            for vals in averted_outcome.values()
+                        ],
+                    }
+                )
+                eff_table.to_csv(outputs_path / f"effectiveness_table_{outcome_cause_suffix}.csv", index=False)
+
+            if outcome_type == "DALYs":
+                if cause == "any cause":
+                    plot_and_table_cost_effectiveness(averted_DALYs_bycause[cause])
+                else:
+                    table_effectiveness(averted_DALYs_bycause[cause], f"{outcome_type}_{cause}")
+            if outcome_type == "deaths":
+                table_effectiveness(averted_deaths_bycause[cause], f"{outcome_type}_{cause}")
 
 # ----------------------------------------------------------------------------------------------------------------------
 def plot_availability_heatmaps(outputs_path: Path) -> None:
