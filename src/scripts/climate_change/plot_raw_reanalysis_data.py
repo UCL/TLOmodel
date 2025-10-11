@@ -1,0 +1,183 @@
+import glob
+import os
+import re
+
+import geopandas as gpd
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib import colors as mcolors
+from netCDF4 import Dataset
+from shapely.geometry import Polygon
+
+# Load the dataset and the variable
+baseline = False
+file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/2011/60ab007aa16d679a32f9c3e186d2f744.nc"
+dataset = Dataset(file_path_historical_data, mode='r')
+print(dataset.variables.keys())
+pr_data = dataset.variables['tp'][:]  # ['pr'][:] pr for projections, tp for historical
+lat_data = dataset.variables['latitude'][:]  # ['lat'][:]
+long_data = dataset.variables['longitude'][:]  # ['lon'][:]
+meshgrid_from_netCDF = np.meshgrid(long_data, lat_data)
+
+# Load Malawi shapefile
+malawi = gpd.read_file(
+    "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm0_nso_20181016.shp")
+malawi_admin1 = gpd.read_file(
+    "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm1_nso_20181016.shp")
+malawi_admin2 = gpd.read_file(
+    "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
+water_bodies = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp")
+
+difference_lat = lat_data[1] - lat_data[0]  # as is a grid, the difference is the same for all sequential coordinates
+difference_long = long_data[1] - long_data[0]
+
+polygons = []
+for x in long_data:
+    for y in lat_data:
+        bottom_left = (x, y)
+        bottom_right = (x + difference_long, y)
+        top_right = (x + difference_long, y + difference_lat)
+        top_left = (x, y + difference_lat)
+        polygon = Polygon([bottom_left, bottom_right, top_right, top_left])
+        polygons.append(polygon)
+
+grid = gpd.GeoDataFrame({'geometry': polygons}, crs=malawi.crs)
+grid_clipped = gpd.overlay(grid, malawi, how='intersection')  # for graphing
+grid_clipped_ADM1 = gpd.overlay(grid, malawi_admin1, how='intersection')  # for graphing
+grid_clipped_ADM2 = gpd.overlay(grid, malawi_admin2, how='intersection')  # for graphing
+
+# Setup color map for plotting grid lines
+colors = cm.get_cmap("tab20", 20)
+
+# Corrected part for processing model files
+nc_file_directory = "/path/to/your/nc_files"  # Define this correctly
+fig, ax = plt.subplots(figsize=(10, 10))  # Ensure you create the axis before plotting
+water_bodies.plot(ax=ax, facecolor="none", edgecolor="#999999", linewidth=0.5, hatch="xxx")
+water_bodies.plot(ax=ax, facecolor="none",edgecolor='#1C6E8C', alpha=0.4, linewidth=1)
+
+for idx, file in enumerate(glob.glob(os.path.join(nc_file_directory, "*.nc"))):
+    data_per_model = Dataset(file, mode='r')
+    pr_data_model = data_per_model.variables['pr'][:]  # in kg m-2 s-1 = mm s-1 x 86400 to get to day
+    lat_data_model = data_per_model.variables['lat'][:]
+    long_data_model = data_per_model.variables['lon'][:]
+
+    # Plot grid lines for this model file
+    for lon in long_data_model:
+        ax.axvline(x=lon, color=colors(idx), linestyle='--', linewidth=0.5)
+    for lat in lat_data_model:
+        ax.axhline(y=lat, color=colors(idx), linestyle='--', linewidth=0.5)
+
+# Add in facility information
+if baseline:
+    expanded_facility_info = pd.read_csv(
+        "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline.csv",
+        index_col=0
+    )
+else:
+    expanded_facility_info = pd.read_csv(
+        "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv",
+        index_col=0
+    )
+
+long_format = expanded_facility_info.T.reset_index()
+long_format.columns = [
+    'Facility', 'Zonename', 'Resid', 'Dist', 'A105', 'A109__Altitude', 'Ftype',
+    'A109__Latitude', 'A109__Longitude', 'minimum_distance', 'average_precipitation'
+]
+
+long_format = long_format.dropna(subset=['A109__Latitude'])
+
+
+long_format = expanded_facility_info.T.reset_index()
+long_format.columns = [
+    'Facility', 'Zonename', 'Resid', 'Dist', 'A105', 'A109__Altitude', 'Ftype',
+    'A109__Latitude', 'A109__Longitude', 'minimum_distance', 'average_precipitation'
+]
+long_format.loc[long_format['Facility'] == 'Referral Hospital_Southern', 'Dist'] = 'Blantyre City'
+long_format.loc[long_format['Facility'] == 'Referral Hospital_Central', 'Dist'] = 'Lilongwe City'
+long_format.loc[long_format['Facility'] == 'Referral Hospital_Northern', 'Dist'] = 'Mzuzu City'
+long_format.loc[long_format['Facility'] == 'Mzuzu University Clinic', 'Dist'] = 'Mzuzu City'
+
+long_format.loc[long_format['Facility'] == 'Zomba Mental Hospital', 'Dist'] = 'Zomba City'
+long_format.loc[long_format['Facility'] == 'Headquarter', 'Dist'] = 'Lilongwe City'
+long_format['Dist'] = long_format['Dist'].replace({
+    'Blantyre City': 'Blantyre',
+    'Lilongwe City': 'Lilongwe',
+    'Zomba City': 'Zomba',
+    'Mzuzu City': 'Mzimba',
+    'Mzimba North': 'Mzimba',
+    'Mzimba South': 'Mzimba'
+})
+
+long_format['average_precipitation'] = pd.to_numeric(long_format['average_precipitation'], errors='coerce')
+
+district_precip = long_format.groupby("Dist", as_index=False)['average_precipitation'].mean()
+
+# Merge with shapefile (malawi_admin2 has district boundaries, usually in ADM2_EN)
+cities_to_drop = ["Blantyre City", "Lilongwe City", "Zomba City", "Mzuzu City"]
+
+malawi_admin2 = malawi_admin2.merge(district_precip, left_on="ADM2_EN", right_on="Dist", how="left")
+city_to_district = {
+    "Blantyre City": "Blantyre",
+    "Lilongwe City": "Lilongwe",
+    "Zomba City": "Zomba",
+    "Mzuzu City": "Mzimba"   # Mzuzu is inside Mzimba
+}
+
+# replace ADM2_EN for city polygons with their parent district
+malawi_admin2["ADM2_EN"] = malawi_admin2["ADM2_EN"].replace(city_to_district)
+
+# dissolve geometries so each district is a single polygon
+malawi_admin2 = malawi_admin2.dissolve(by="ADM2_EN", as_index=False, aggfunc="first")
+
+# recompute average_precipitation (if already merged with precip data)
+malawi_admin2["average_precipitation"] = (
+    malawi_admin2.groupby("ADM2_EN")["average_precipitation"]
+    .transform("mean")
+)
+norm = mcolors.Normalize(vmin=malawi_admin2['average_precipitation'].min(),
+                         vmax=malawi_admin2['average_precipitation'].max())
+cmap_districts = plt.cm.YlOrBr
+
+
+print(malawi_admin2)
+grid_clipped_ADM2.plot(ax=ax, edgecolor='#1C6E8C', alpha=0)
+malawi_admin2.plot(column='average_precipitation', ax=ax, cmap=cmap_districts,
+                   edgecolor='black', linewidth=0.5, legend=False)
+grid_clipped_ADM1.plot(column='ADM1_EN', ax=ax, cmap=colors, edgecolor='#1C6E8C', alpha=0)
+
+sm = plt.cm.ScalarMappable(cmap=cmap_districts, norm=norm)
+sm.set_array([])
+cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.03, pad=0.04)
+cbar.set_label('Mean Monthly Precipitation (mm)')
+
+plt.xlabel("Longitude")
+plt.ylabel("Latitude")
+if baseline:
+    plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/baseline_weather_district.png')
+
+else:
+    plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/historical_weather_district.png')
+
+plt.show()
+
+
+### compare baseline and non-baseline data
+
+expanded_facility_info_baseline = pd.read_csv(
+        "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline.csv",
+        index_col=0
+    ).T
+
+expanded_facility_info = pd.read_csv(
+        "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv",
+        index_col=0
+    ).T
+expanded_facility_info_baseline['average_precipitation'] = pd.to_numeric(expanded_facility_info_baseline['average_precipitation'], errors='coerce')
+expanded_facility_info['average_precipitation'] = pd.to_numeric(expanded_facility_info['average_precipitation'], errors='coerce')
+plt.plot(range(len(expanded_facility_info_baseline['average_precipitation'])), expanded_facility_info_baseline['average_precipitation'], label='baseline')
+plt.plot(range(len(expanded_facility_info['average_precipitation'])), expanded_facility_info['average_precipitation'], label='historical')
+plt.legend(loc='upper right')
+plt.show()
