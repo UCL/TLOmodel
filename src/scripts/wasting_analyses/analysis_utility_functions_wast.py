@@ -1149,7 +1149,6 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     print("saving all costs to file ...")
                     all_costs_df.to_pickle(output_all_costs_file_path)
 
-
                 # Cost-effectiveness threshold (CET) = willingness to pay
                 CET = 83
 
@@ -1166,18 +1165,18 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     "FS": "left",
                     "GM_FS": "center",
                     "CS_FS": "left",
-                    "GM_CS_FS": "center",
-                    "GM_CS": "center",
+                    "GM_CS_FS": "left",
+                    "GM_CS": "right",
                 }  # ['right', 'left', 'center']
                 va_scen = {
                     "SQ": "top",
-                    "GM": "bottom",
+                    "GM": "top",
                     "CS": "top",
                     "FS": "bottom",
                     "GM_FS": "bottom",
                     "CS_FS": "top",
-                    "GM_CS_FS": "bottom",
-                    "GM_CS": "top",
+                    "GM_CS_FS": "top",
+                    "GM_CS": "bottom",
                 }  # ['bottom', 'top', 'bottom']
                 space = 0.012 * all_costs_df.loc[all_costs_df['scenario'] == "FS", "total_cost"].values[0]
                 for scen in scenarios_without_SQ:
@@ -1203,11 +1202,22 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     "GM_FS": "dominated",
                     "CS_FS": "",
                     "GM_CS_FS": "",
-                    "GM_CS": "dominated",
+                    "GM_CS": "",
                 }
+                # print("\nICER:")
                 for _, row in all_costs_df.iterrows():
                     scen = row["scenario"]
-                    scen_cons_cost_per_DALY = row["total_cost"] / averted_DALYs[scen][0] if scen != 'SQ' else 0
+                    if scen == 'SQ':
+                        scen_cons_cost_per_DALY = 0
+                    else:
+                        scen_cons_cost_per_DALY = row["total_cost"] / averted_DALYs[scen][0]
+                        # scen_cons_cost_per_DALY_lower = \
+                        #     min(row["total_cost"] / averted_DALYs[scen][1], row["total_cost"] / averted_DALYs[scen][2])
+                        # scen_cons_cost_per_DALY_upper = \
+                        #     max(row["total_cost"] / averted_DALYs[scen][1], row["total_cost"] / averted_DALYs[scen][2])
+                        # print(f"{scen=}: "
+                        #       f"${scen_cons_cost_per_DALY:,.2f} ({scen_cons_cost_per_DALY_lower:,.2f}–"
+                        #       f"{scen_cons_cost_per_DALY_upper:,.2f})")
                     ICER = (
                         f"${scen_cons_cost_per_DALY:,.2f}"
                         if scen_cons_cost_per_DALY >= 0
@@ -1228,7 +1238,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                 # Add cost-effectiveness frontier
                 # Add cost-effectiveness frontier (dotted line connecting CS -> CS_FS -> GM_CS_FS)
-                scen_frontier = ["SQ", "CS", "CS_FS", "GM_CS_FS"]
+                scen_frontier = ["SQ", "CS", "GM_CS", "CS_FS", "GM_CS_FS"]
                 frontier_x = [averted_DALYs[scen][0] if scen != 'SQ' else 0 for scen in scen_frontier]
                 frontier_y = [all_costs_df.loc[all_costs_df['scenario'] == scen, 'total_cost'].values[0]
                               for scen in scen_frontier]
@@ -1257,6 +1267,10 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     x_vals[-1] + 10, y_vals[-1] + 1e6, f"ICER = ${CET}/DALY",
                     color="black", fontsize=9, ha="left", va="top",
                 )
+
+                # Add indicator of negative DALYs
+                ax_ce.axvline(x=0, color="red", linestyle="--", linewidth=1.5)
+                ax_ce.axvspan(ax_ce.get_xlim()[0], 0, color="red", alpha=0.08)
 
                 plt.tight_layout()
                 plt.savefig(
@@ -1302,18 +1316,20 @@ def plot_sum_outcome_and_CIs_intervention_period(
                             "Incremental consumable-related costs (2023 USD)": f"{incremental_costs:,.0f}",
                             "Maximum additional implementation costs (2023 USD, 95% CI)": f"{max_impl_costs:,.0f} ({max_impl_costs_lower:,.0f}; {max_impl_costs_upper:,.0f})",
                             "Implementation costs estimates (2023 USD)": f"{impl_cost:,.0f}",
-                            "Incremental net health benefit (95% CI)": f"{net_health_benefit:,.2f} ({net_health_benefit_lower:,.2f}; {net_health_benefit_upper:,.2f})",
+                            "Total costs (2023 USD)": f"{total_cost:,.0f}",
+                            "Incremental net health benefit (95% CI)": f"{net_health_benefit:,.0f} ({net_health_benefit_lower:,.0f}; {net_health_benefit_upper:,.0f})",
                             "Incremental net monetary benefit (95% CI)": f"{net_monetary_benefit:,.0f} ({net_monetary_benefit_lower:,.0f}; {net_monetary_benefit_upper:,.0f})",
                         }
                     )
                 ce_table_df = pd.DataFrame(ce_table_rows)
+                ce_table_df = ce_table_df.sort_values(
+                    by="Total costs (2023 USD)", key=lambda x: x.str.replace(",", "").astype(float)
+                )
                 ce_table_df.to_csv(
                     outputs_path
                     / (f"cost_effectiveness_summary_table__{timestamps_suffix}.csv"),
                     index=False,
                 )
-                print("\nCost-effectiveness summary table:")
-                print(ce_table_df)
 
             def table_effectiveness(averted_outcome: dict, outcome_cause_suffix:str) -> None:
 
