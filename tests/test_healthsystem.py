@@ -1994,7 +1994,8 @@ def test_mode_2_clinics(seed, tmpdir):
         sim.modules['HealthSystem'].parameters['clinic_mapping'] = (pd.DataFrame(
             [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
         ))
-        sim.modules['HealthSystem'].parameters['clinic_names'] = ['Clinic1', 'OtherClinic']
+        sim.modules['HealthSystem']._clinic_names = ['Clinic1', 'OtherClinic']
+
         sim.modules['HealthSystem'].setup_daily_capabilities('funded_plus')
 
         # Assign the entire population to the first district, so that all events are run in the same district

@@ -568,7 +568,7 @@ class HealthSystem(Module):
         )
 
         self.parameters['clinic_mapping'] = pd.read_csv(filepath)
-        self.parameters['clinic_names'] = self.parameters['clinic_configuration'].columns.difference(['Facility_ID', 'Officer_Type_Code'])
+        self._clinic_names = self.parameters['clinic_configuration'].columns.difference(['Facility_ID', 'Officer_Type_Code'])
         # Ensure that a valid clinic configuration has been specified
         self.validate_clinic_configuration(self.parameters['clinic_configuration'])
 
@@ -1016,56 +1016,49 @@ class HealthSystem(Module):
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
         and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
-        self._daily_capabilities, self._daily_capabilities_per_staff = (
-            self.format_daily_capabilities(use_funded_or_actual_staffing)
+        # We first split daily capabilities into clinics; then pool capabilities at levels 1b and 2
+        # and then calculate _daily_capabilities_per_staff
+        capabilities = self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
+        capabilities = capabilities.set_index(
+            'FacilityID_'
+            + capabilities['Facility_ID'].astype('Int64').astype(str)
+            + '_Officer_'
+            + capabilities['Officer_Category']
         )
 
-        # Also, store the set of officers with non-zero daily availability
-        # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
-        # never available.)
-        ## TODO: Fix this
-        self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
-        # Now adjust it according to the clinic configuration specified. Capabilities will be split between clinics
-        # specified. In the "Default" configuration, this means assigning all capabilities to "OtherClinic"
-        self.adjust_clinics_capabilities()
-
-
-    def adjust_clinics_capabilities(self):
-        """Adjust the capabilities to account for ringfenced clinics according to the configuration specified.
-        This is done by splitting the capabilities into separate clinics with OtherClinic serving as the
-        catch-all clinic. The specified configuration is filled in so that all facilities and officer types
-        are included. For combinations of facility and officer type not included in the configuration, all
-        capabilities are assigned to OtherClinic.
-        """
-
-        clinic_names = self.parameters['clinic_names']
+        ## format_clinic_capabilities fills out the supplied clinic/officer values with missing
+        ## combinations
         self.parameters['clinic_configuration'] = self.format_clinic_capabilities()
+        self._daily_capabilities = {}
+        self._daily_capabilities_per_staff = {}
+        self._officers_with_availability = {}
+        for clinic in self._clinic_names:
+            multiplier = self.parameters['clinic_configuration'][clinic]
+            updated_capabilities = capabilities.copy()
+            updated_capabilities['Total_Mins_Per_Day'] = updated_capabilities['Total_Mins_Per_Day'] * multiplier
+            updated_capabilities['Staff_Count'] = updated_capabilities['Staff_Count'] * multiplier
+            self._daily_capabilities[clinic], self._daily_capabilities_per_staff[clinic] = (
+                self.format_daily_capabilities(updated_capabilities, use_funded_or_actual_staffing)
+            )
+            # Also, store the set of officers with non-zero daily availability
+            # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
+            # never available.)
+            self._officers_with_availability[clinic] = {k for k, v in self._daily_capabilities[clinic].items() if v > 0}
 
-        updated_capabilities = self.parameters['clinic_configuration'].join(self._daily_capabilities)
-        ## New capabilities are old_capabilities * proportions specified;
-
-        updated_capabilities[clinic_names] = updated_capabilities[clinic_names].multiply(updated_capabilities['Total_Minutes_Per_Day'], axis =  0)
-        self._daily_capabilities = updated_capabilities[clinic_names].to_dict()
-
-
-        updated_capabilities = self.parameters['clinic_configuration'].join(self._daily_capabilities_per_staff)
-        ## New capabilities are old_capabilities * proportions specified;
-        updated_capabilities[clinic_names] = updated_capabilities[clinic_names].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis =  0)
-        self._daily_capabilities_per_staff = updated_capabilities[clinic_names].to_dict()
 
 
     def get_clinic_eligibility(self, hsi_event):
         """
         Determine the clinic mapped to the HSI Event treatment ID. If no clinic is mapped, then a default value of
         'OtherClinic' is returned. Note that we assume that a treatment ID is mapped to at most one clinic, returning
-        the first match regardless of the number of matches.
+        the first match.
         """
         eligible_treatment_ids = self.parameters['clinic_mapping'].loc[self.parameters['clinic_mapping']['Treatment'] == hsi_event.TREATMENT_ID, 'Clinic']
         clinic = eligible_treatment_ids.iloc[0] if not  eligible_treatment_ids.empty else 'OtherClinic'
         return clinic
 
 
-    def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
+    def format_daily_capabilities(self, capabilities, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to:
         1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no
@@ -1076,10 +1069,7 @@ class HealthSystem(Module):
         of assumed efficiency.
         """
 
-        # Get the capabilities data imported (according to the specified underlying assumptions).
-        capabilities = pool_capabilities_at_levels_1b_and_2(
-                self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
-        )
+
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create new column where capabilities per staff are computed
@@ -1152,7 +1142,7 @@ class HealthSystem(Module):
         assert len(capabilities_per_staff_ex) == len(facility_ids) * len(officer_type_codes)
 
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
-        return capabilities_ex['Total_Minutes_Per_Day'], capabilities_per_staff_ex['Mins_Per_Day_Per_Staff']
+        return capabilities_ex['Total_Minutes_Per_Day'].to_dict(), capabilities_per_staff_ex['Mins_Per_Day_Per_Staff'].to_dict()
 
 
     def format_clinic_capabilities(self) -> pd.DataFrame:
@@ -1769,7 +1759,7 @@ class HealthSystem(Module):
         ## TODO: check if there is a better place to intitalise this store
         self._get_squeeze_factors_store = (
             {clinic: np.zeros(self._get_squeeze_factors_store_grow)
-             for clinic in self.parameters['clinic_names']}
+             for clinic in self._clinic_names}
         )
         for clinic, clinic_cl in current_capabilities.items():
             self.get_clinic_squeeze_factors(clinic, footprints_per_event, total_footprint, clinic_cl,
@@ -2030,7 +2020,7 @@ class HealthSystem(Module):
 
 
     def log_current_capabilities_and_usage(self):
-        for clinic_name in self.parameters['clinic_names']:
+        for clinic_name in self._clinic_names:
             self.log_clinic_current_capabilities_and_usage(clinic_name)
 
 

@@ -356,7 +356,7 @@ class HSI_Event:
                 appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
             )
         )
-
+        self.eligible_clinic = health_system.get_clinic_eligibility(self)
 
         # Do checks
         self._check_if_appt_footprint_can_run()
@@ -365,7 +365,7 @@ class HSI_Event:
         """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
         this does not demand officers that are _never_ available), and issue warning if not.
         """
-        if self.healthcare_system._officers_with_availability.issuperset(
+        if self.healthcare_system._officers_with_availability[self.eligible_clinic].issuperset(
             self.expected_time_requests.keys()
         ):
             return True
