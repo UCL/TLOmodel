@@ -646,13 +646,15 @@ class PostnatalSupervisor(Module):
            
            # If generating chains of events, all women at risk will partially die, partially survive
            for person in at_risk_of_death_htn.index:
+           
+                    original_aliveness_weight = df.loc[person,'aliveness_weight']
                     df.loc[person,'aliveness_weight'] *= (1. - params['weekly_prob_death_severe_gest_htn'])
                     # Individual is partially dead
-                    death_weight = df.loc[individual_id]['aliveness_weight'] * params['weekly_prob_death_severe_gest_htn']
+                    death_weight = original_aliveness_weight * params['weekly_prob_death_severe_gest_htn']
                     
-                    df.loc[individual_id, 'date_of_partial_death'].append(str(self.sim.date))
-                    df.loc[individual_id, 'death_weight'].append(death_weight)
-                    df.loc[individual_id, 'cause_of_partial_death'].append('severe_gestational_hypertension')
+                    df.loc[person, 'date_of_partial_death'].append(str(self.sim.date))
+                    df.loc[person, 'death_weight'].append(death_weight)
+                    df.loc[person, 'cause_of_partial_death'].append('severe_gestational_hypertension')
 
         else:
             
@@ -815,21 +817,33 @@ class PostnatalSupervisor(Module):
         # Create a list of all the causes that may cause death in the individual (matched to GBD labels)
         if mother_or_child == 'mother':
 
-            # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
-            # (either from one or multiple causes) and if death occurs returns the cause
-            potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-                self, individual_id=individual_id, timing='postnatal')
-
-            # If a cause is returned death is scheduled
-            if potential_cause_of_death:
-                mni[individual_id]['didnt_seek_care'] = True
-                pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
-                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
-                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
-                                                        originating_module=self.sim.modules['PostnatalSupervisor'])
-                del mni[individual_id]
+            survived = True
+            
+            if self.sim.generate_event_chains:
+            
+                # If collecting events, woman will always partially survive and partially die from all possible causes
+                risks = pregnancy_helper_functions.get_risk_of_death_from_cause_maternal(
+                    self, individual_id=individual_id, timing='postnatal')
+                    
+                pregnancy_helper_functions.apply_multiple_partial_deaths(self, risks, individual_id=individual_id)
 
             else:
+                # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
+                # (either from one or multiple causes) and if death occurs returns the cause
+                potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
+                    self, individual_id=individual_id, timing='postnatal')
+
+                # If a cause is returned death is scheduled
+                if potential_cause_of_death:
+                    survived = False
+                    mni[individual_id]['didnt_seek_care'] = True
+                    pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
+                    self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
+                    self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
+                                                            originating_module=self.sim.modules['PostnatalSupervisor'])
+                    del mni[individual_id]
+
+            if survived:
                 # Reset variables for women who survive
                 if mother.pn_postpartum_haem_secondary:
                     df.at[individual_id, 'pn_postpartum_haem_secondary'] = False
@@ -844,6 +858,8 @@ class PostnatalSupervisor(Module):
         if mother_or_child == 'child':
             # Neonates can have either early or late onset sepsis, not both at once- so we use either equation
             # depending on this neonates current condition
+            
+            survived = True
             if child.pn_sepsis_early_neonatal:
                 risk_of_death = params['cfr_early_onset_neonatal_sepsis']
             elif child.pn_sepsis_late_neonatal:
@@ -858,29 +874,28 @@ class PostnatalSupervisor(Module):
                 if self.sim.generate_event_chains:
                 
                     # This neonate will always partially die, partially survive
+                    original_aliveness_weight = df.loc[individual_id,'aliveness_weight']
                     # Individual is partially less alive
                     df.loc[individual_id,'aliveness_weight'] *= (1. - risk_of_death)
                     # Individual is partially dead
-                    death_weight = df.loc[individual_id]['aliveness_weight'] * risk_of_death
+                    death_weight = original_aliveness_weight * risk_of_death
                     df.loc[individual_id, 'date_of_partial_death'].append(str(self.sim.date))
                     df.loc[individual_id, 'death_weight'].append(death_weight)
                     df.loc[individual_id, 'cause_of_partial_death'].append(cause)
-                    
-                    # Because it always survives, always reset variables in the dataframe
-                    df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
-                    df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
 
                 else:
                     # If this neonate will die then we make the appropriate changes
                     if self.rng.random_sample() < risk_of_death:
+                    
+                        survived = False
                         self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{cause}_n_death'] += 1
                         self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=cause,
                                                                 originating_module=self.sim.modules['PostnatalSupervisor'])
 
-                    # Otherwise we reset the variables in the data frame
-                    else:
-                        df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
-                        df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
+                # If individual survived we reset the variables in the data frame
+                if survived:
+                    df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
+                    df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
 
 
 class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):

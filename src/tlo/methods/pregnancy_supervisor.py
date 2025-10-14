@@ -1335,15 +1335,17 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         
             # Every woman at risk will partially die
             for person in df.index[at_risk]:
+            
+                original_aliveness_weight = df.loc[person,'aliveness_weight']
                 # Individual is partially less alive
                 df.loc[person,'aliveness_weight'] *= (1. - params['prob_monthly_death_severe_htn'])
                 # Individual is partially dead
-                death_weight = df.loc[person]['aliveness_weight'] * params['prob_monthly_death_severe_htn']
+                death_weight = original_aliveness_weight * params['prob_monthly_death_severe_htn']
                 df.loc[person, 'date_of_partial_death'].append(str(self.sim.date))
                 df.loc[person, 'death_weight'].append(death_weight)
                 df.loc[person, 'cause_of_partial_death'].append('severe_gestational_hypertension')
                 
-                # Not deleting woman from mni because she has survived
+                # Not deleting woman from mni because she always survives
 
         else:
         
@@ -1667,21 +1669,36 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         mother = df.loc[individual_id]
 
-        # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
-        # (either from one or multiple causes) and if death occurs returns the cause
-        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
+        survived = True
+        
+        if self.sim.generate_event_chains:
+        
+            # Get all potential causes of death and associated risks
+            risks = pregnancy_helper_functions.get_risk_of_death_from_cause_maternal(
                 self, individual_id=individual_id, timing='antenatal')
+        
+            pregnancy_helper_functions.apply_multiple_partial_deaths(self, risks, individual_id=individual_id)
+            
+        else:
+        
+            # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
+            # (either from one or multiple causes) and if death occurs returns the cause
+            potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
+                    self, individual_id=individual_id, timing='antenatal')
 
-        # If a cause is returned death is scheduled
-        if potential_cause_of_death:
-            pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
-                                                    originating_module=self.sim.modules['PregnancySupervisor'])
-            self.mnh_outcome_counter['direct_mat_death'] += 1
-            del mni[individual_id]
+            # If a cause is returned death is scheduled
+            if potential_cause_of_death:
+            
+                # If woman has been selected to die, set survived to false
+                survived = False
+                pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
+                                                        originating_module=self.sim.modules['PregnancySupervisor'])
+                self.mnh_outcome_counter['direct_mat_death'] += 1
+                del mni[individual_id]
 
         # If not we reset variables and the woman survives
-        else:
+        if survived:
             mni[individual_id]['didnt_seek_care'] = False
 
             if (mother.ps_htn_disorders == 'severe_pre_eclamp') and mni[individual_id]['new_onset_spe']:
@@ -2099,36 +2116,32 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[individual_id, 'is_alive']:
             return
 
+        # Woman assumed to survive, will overwrite if selected for death
+        survived = True
+
         # Individual risk of death is calculated through the linear model
         risk_of_death = self.module.ps_linear_models[f'{self.cause}_death'].predict(
             df.loc[[individual_id]])[individual_id]
 
         if self.sim.generate_event_chains:
         
+                original_aliveness_weight = df.loc[individual_id,'aliveness_weight']
+                
                 # Individual partially survives
                 df.loc[individual_id,'aliveness_weight'] *= (1. - risk_of_death)
                 
                 # Individual partially dies
-                death_weight = df.loc[individual_id]['aliveness_weight'] * risk_of_death
+                death_weight = original_aliveness_weight * risk_of_death
                 df.loc[individual_id, 'date_of_partial_death'].append(str(self.sim.date))
                 df.loc[individual_id, 'death_weight'].append(death_weight)
                 df.loc[individual_id, 'cause_of_partial_death'].append('severe_gestational_hypertension')
-                
-                # Individual always survives, so always update variables
-                if self.cause == 'ectopic_pregnancy':
-                    df.at[individual_id, 'ps_ectopic_pregnancy'] = 'none'
-
-                else:
-                    self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury', 'other')
-                    df.at[individual_id, 'ac_received_post_abortion_care'] = False
-
-                if individual_id in mni:
-                    mni[individual_id]['delete_mni'] = True
 
         else:
 
             # If the death occurs we record it here
             if self.module.rng.random_sample() < risk_of_death:
+                
+                survived = False
 
                 if individual_id in mni:
                     pregnancy_helper_functions.log_mni_for_maternal_death(self.module, individual_id)
@@ -2139,17 +2152,19 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
                 self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{self.cause}',
                                                         originating_module=self.sim.modules['PregnancySupervisor'])
 
+        # If individual survived, updated variables
+        if survived:
+        
+            # If woman survived we reset any variables
+            if self.cause == 'ectopic_pregnancy':
+                df.at[individual_id, 'ps_ectopic_pregnancy'] = 'none'
+
             else:
-                # Otherwise we reset any variables
-                if self.cause == 'ectopic_pregnancy':
-                    df.at[individual_id, 'ps_ectopic_pregnancy'] = 'none'
+                self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury', 'other')
+                df.at[individual_id, 'ac_received_post_abortion_care'] = False
 
-                else:
-                    self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury', 'other')
-                    df.at[individual_id, 'ac_received_post_abortion_care'] = False
-
-                if individual_id in mni:
-                    mni[individual_id]['delete_mni'] = True
+            if individual_id in mni:
+                mni[individual_id]['delete_mni'] = True
 
 
 class GestationalDiabetesGlycaemicControlEvent(Event, IndividualScopeEventMixin):

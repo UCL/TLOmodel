@@ -77,6 +77,7 @@ class MaternalNewbornHealthCohort(Module):
         # Set the dtypes and index of the cohort dataframe
         props_dtypes = self.sim.population.props.dtypes
         preg_pop_final = preg_pop.astype(props_dtypes.to_dict())
+        
         preg_pop_final.index.name = 'person'
 
         # For the below columns we manually overwrite the dtypes

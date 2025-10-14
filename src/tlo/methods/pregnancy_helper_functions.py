@@ -305,6 +305,27 @@ def log_mni_for_maternal_death(self, person_id):
     logger.info(key='death_mni', data=mni_to_log)
 
 
+def apply_multiple_partial_deaths(self, risks, individual_id):
+    """
+    This function applies multiple causes of partial death on individual
+    """
+    df = self.sim.population.props
+
+    total_risk_of_death = 0
+    for key, value in risks.items():
+        total_risk_of_death += value
+
+    # Individual is partially less alive
+    original_aliveness_weight = df.loc[individual_id,'aliveness_weight']
+    df.loc[individual_id,'aliveness_weight'] *= (1. - total_risk_of_death)
+    for key, value in risks.items():
+        # Individual is partially dead
+        death_weight = original_aliveness_weight * value
+        df.loc[individual_id, 'date_of_partial_death'].append(str(self.sim.date))
+        df.loc[individual_id, 'death_weight'].append(death_weight)
+        df.loc[individual_id, 'cause_of_partial_death'].append(key)
+
+
 def calculate_risk_of_death_from_causes(self, risks, target):
     """
     This function calculates risk of death in the context of one or more 'death causing' complications in a mother of a
