@@ -80,6 +80,8 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
             Staff_Count=lambda df: df.Staff_Count.fillna(0.0)
         )
 
+    ## Drop the index because the updated dataframe does not have an index and that breaks the assertion
+    df_original = df_original.reset_index(drop=True)
     # Check that the *total* number of minutes per officer in each district/region is the same as before the change
     assert_series_equal(
         df_updated.groupby(by=['District', 'Region', 'Officer_Category'], dropna=False)['Total_Mins_Per_Day'].sum(),
@@ -1069,6 +1071,7 @@ class HealthSystem(Module):
         of assumed efficiency.
         """
 
+        capabilities = pool_capabilities_at_levels_1b_and_2(capabilities)
 
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
