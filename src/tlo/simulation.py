@@ -320,7 +320,7 @@ class Simulation:
         if self.generate_event_chains:
             # For now keep these fixed, eventually they will be input from user
             self.generate_event_chains_modules_of_interest = [self.modules]
-            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth', 'LifestyleEvent', 'TbActiveCasePollGenerateData','HivPollingEventForDataGeneration', 'RTIPollingEvent']
+            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth', 'LifestyleEvent', 'TbActiveCasePollGenerateData','HivPollingEventForDataGeneration', 'RTIPollingEvent', 'DepressionPollingEvent','Get_Current_DALYs', 'PostnatalSupervisorEvent','PregnancySupervisorEvent', 'MalariaPollingEventDistrict','CopdPollEvent', 'CardioMetabolicDisorders_MainPollingEvent', 'CardioMetabolicDisorders_LoggingEvent']
 
         # Reorder columns to place the new columns at the front
         pd.set_option('display.max_columns', None)

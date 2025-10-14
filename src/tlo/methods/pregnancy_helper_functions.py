@@ -341,12 +341,10 @@ def calculate_risk_of_death_from_causes(self, risks, target):
         return False
 
 
-def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
+def get_risk_of_death_from_cause_maternal(self, individual_id, timing):
     """
-    This function calculates the risk of death associated with one or more causes being experience by an individual and
-    determines if they will die and which of a number of competing cause is the primary cause of death
-    :param individual_id: individual_id of woman at risk of death
-    return: cause of death or False
+    This function calculates the risk of death associated with one or more causes being experience by an individual 
+    return: causes and associated risks
     """
     params = self.current_parameters
     df = self.sim.population.props
@@ -389,10 +387,11 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
     if mother.pn_postpartum_haem_secondary and (timing == 'postnatal'):
         causes.append('secondary_postpartum_haemorrhage')
 
+    risks = dict()
+    
     # If this list is not empty, use either CFR parameters or linear models to calculate risk of death from each
     # complication she is experiencing and store in a dictionary, using each cause as the key
     if causes:
-        risks = dict()
 
         def apply_effect_of_anaemia(cause):
             lab_params = self.sim.modules['Labour'].current_parameters
@@ -443,7 +442,21 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                     apply_effect_of_anaemia(cause)
 
                 risks.update(risk)
+    
+    return risks
 
+
+def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
+    """
+    This function calculates the risk of death associated with one or more causes being experience by an individual and
+    determines if they will die and which of a number of competing cause is the primary cause of death
+    :param individual_id: individual_id of woman at risk of death
+    return: cause of death or False
+    """
+
+    risks = get_risk_of_death_from_cause_maternal(self, individual_id, timing)
+    
+    if len(risks)>0:
         # Call return the result from calculate_risk_of_death_from_causes function
         return calculate_risk_of_death_from_causes(self, risks, target='m')
 
@@ -451,12 +464,10 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
     return False
 
 
-def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
+def get_risk_of_death_from_cause_neonatal(self, individual_id):
     """
-    This function calculates the risk of death associated with one or more causes being experience by an individual and
-    determines if they will die and which of a number of competing cause is the primary cause of death
-    :param individual_id: individual_id of woman at risk of death
-    return: cause of death or False
+    This function calculates the risk of death associated with one or more causes being experience by an individual 
+    return: causes and associated risks
     """
     params = self.current_parameters
     df = self.sim.population.props
@@ -501,10 +512,11 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
         if self.congeintal_anomalies.has_all(individual_id, 'other'):
             causes.append('other_anomaly')
 
+    risks = dict()
+
     # If this list is not empty, use either CFR parameters or linear models to calculate risk of death from each
     # complication they experiencing and store in a dictionary, using each cause as the key
     if causes:
-        risks = dict()
         for cause in causes:
             if f'{cause}_death' in self.nb_linear_models.keys():
                 risk = {cause: self.nb_linear_models[f'{cause}_death'].predict(
@@ -513,7 +525,21 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
                 risk = {cause: params[f'cfr_{cause}']}
 
             risks.update(risk)
+            
+    return risks
 
+
+def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
+    """
+    This function calculates the risk of death associated with one or more causes being experience by an individual and
+    determines if they will die and which of a number of competing cause is the primary cause of death
+    :param individual_id: individual_id of woman at risk of death
+    return: cause of death or False
+    """
+
+    risks = get_risk_of_death_from_cause_neonatal(self, individual_id)
+
+    if len(risks)>0:
         # Return the result from calculate_risk_of_death_from_causes function (returns primary cause of death or False)
         return calculate_risk_of_death_from_causes(self, risks, target='n')
 

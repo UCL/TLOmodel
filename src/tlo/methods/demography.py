@@ -121,8 +121,13 @@ class Demography(Module):
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
+        'aliveness_weight': Property(Types.REAL, 'If allowing individual to survive, track decreasing weight'),
+        'death_weight': Property(Types.LIST, 'If allowing individual to survive, track weight of death'),
         'date_of_birth': Property(Types.DATE, 'Date of birth of this individual'),
         'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
+        'date_of_partial_death': Property(Types.LIST, 'Date of latest partial death of this individual'),
+        'cause_of_partial_death': Property(Types.LIST, 'Date of latest partial death of this individual'),
+
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
 
@@ -278,9 +283,14 @@ class Demography(Module):
 
         # Assign the characteristics
         df.is_alive.values[:] = True
+        alive_count = sum(df.is_alive)
+        df.aliveness_weight.values[:] = 1
+        df.loc[df.is_alive, 'death_weight'] = pd.Series([[] for _ in range(alive_count)])
         df.loc[df.is_alive, 'date_of_birth'] = demog_char_to_assign['date_of_birth']
         df.loc[df.is_alive, 'date_of_death'] = pd.NaT
+        df.loc[df.is_alive, 'date_of_partial_death'] = pd.Series([[] for _ in range(alive_count)])
         df.loc[df.is_alive, 'cause_of_death'] = np.nan
+        df.loc[df.is_alive, 'cause_of_partial_death'] = pd.Series([[] for _ in range(alive_count)])
         df.loc[df.is_alive, 'sex'] = demog_char_to_assign['Sex']
         df.loc[df.is_alive, 'mother_id'] = DEFAULT_MOTHER_ID  # Motherless, and their characterists are not inherited
         df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
@@ -353,9 +363,13 @@ class Demography(Module):
 
         child = {
             'is_alive': True,
+            'aliveness_weight': 1.0,
+            'death_weight': [],
             'date_of_birth': self.sim.date,
             'date_of_death': pd.NaT,
             'cause_of_death': np.nan,
+            'date_of_partial_death': [],
+            'cause_of_partial_death': [],
             'sex': 'M' if rng.random_sample() < fraction_of_births_male else 'F',
             'mother_id': mother_id,
             'district_num_of_residence': _district_num_of_residence,
@@ -478,6 +492,7 @@ class Demography(Module):
             key='mapper_from_gbd_cause_to_common_label',
             data=mapper_from_gbd_causes
         )
+
 
     def do_death(self, individual_id: int, cause: str, originating_module: Module):
         """Register and log the death of an individual from a specific cause.
@@ -749,6 +764,26 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
             # schedule the death for some point in the next month
             self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),
                                     self.sim.date + DateOffset(days=self.module.rng.randint(0, 30)))
+
+
+class InstantaneousPartialDeath(Event, IndividualScopeEventMixin):
+    """
+    Call the do_death function to cause the person to die.
+
+    Note that no checking is done here. (Checking is done within `do_death` which can also be called directly.)
+
+    The 'individual_id' is the index in the population.props dataframe. It is for _one_ person only.
+    The 'cause' is the cause that is defined by the disease module (aka, "tlo cause").
+    The 'module' passed to this event is the disease module that is causing the death.
+    """
+
+    def __init__(self, module, individual_id, cause, weight):
+        super().__init__(module, person_id=individual_id)
+        self.cause = cause
+        self.weight = weight
+
+    def apply(self, individual_id):
+        self.sim.modules['Demography'].do_partial_death(individual_id, cause=self.cause, originating_module=self.module, weight=self.weight)
 
 
 class InstantaneousDeath(Event, IndividualScopeEventMixin):

@@ -278,7 +278,7 @@ class Event:
             
             #  Create and store the event and dictionary of changes for affected individuals
             chain_links = self.compare_population_dataframe_and_mni(df_before, df_after, entire_mni_before, entire_mni_after)
-                    
+                                        
         return chain_links
 
 
@@ -303,7 +303,7 @@ class Event:
 
             # Log chain_links here
             if len(chain_links)>0:
-
+                print(chain_links)
                 logger_chain.info(key='event_chains',
                                   data= pop_dict,
                                   description='Links forming chains of events for simulated individuals')

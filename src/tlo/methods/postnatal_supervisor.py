@@ -641,18 +641,34 @@ class PostnatalSupervisor(Module):
                                       (df['pn_postnatal_period_in_weeks'] == week) &
                                       (df['pn_htn_disorders'] == 'severe_gest_htn')]
 
-        die_from_htn = pd.Series(self.rng.random_sample(len(at_risk_of_death_htn)) <
-                                 params['weekly_prob_death_severe_gest_htn'], index=at_risk_of_death_htn.index)
 
-        # Those women who die the on_death function in demography is applied
-        for person in die_from_htn.loc[die_from_htn].index:
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['severe_gestational_hypertension_m_death'] += 1
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
+        if self.sim.generate_event_chains:
+           
+           # If generating chains of events, all women at risk will partially die, partially survive
+           for person in at_risk_of_death_htn.index:
+                    df.loc[person,'aliveness_weight'] *= (1. - params['weekly_prob_death_severe_gest_htn'])
+                    # Individual is partially dead
+                    death_weight = df.loc[individual_id]['aliveness_weight'] * params['weekly_prob_death_severe_gest_htn']
+                    
+                    df.loc[individual_id, 'date_of_partial_death'].append(str(self.sim.date))
+                    df.loc[individual_id, 'death_weight'].append(death_weight)
+                    df.loc[individual_id, 'cause_of_partial_death'].append('severe_gestational_hypertension')
 
-            self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
-                                                    originating_module=self.sim.modules['PostnatalSupervisor'])
+        else:
+            
+            die_from_htn = pd.Series(self.rng.random_sample(len(at_risk_of_death_htn)) <
+                         params['weekly_prob_death_severe_gest_htn'], index=at_risk_of_death_htn.index)
+    
+            for person in die_from_htn.loc[die_from_htn].index:
 
-            del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]
+                # Those women who die the on_death function in demography is applied
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['severe_gestational_hypertension_m_death'] += 1
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
+
+                self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
+                                                        originating_module=self.sim.modules['PostnatalSupervisor'])
+
+                del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]
 
         # ----------------------------------------- CARE SEEKING ------------------------------------------------------
         # We now use the pn_emergency_event_mother property that has just been set for women who are experiencing
@@ -839,16 +855,32 @@ class PostnatalSupervisor(Module):
                 else:
                     cause = 'early_onset_sepsis'
 
-                # If this neonate will die then we make the appropriate changes
-                if self.rng.random_sample() < risk_of_death:
-                    self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{cause}_n_death'] += 1
-                    self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=cause,
-                                                            originating_module=self.sim.modules['PostnatalSupervisor'])
-
-                # Otherwise we reset the variables in the data frame
-                else:
+                if self.sim.generate_event_chains:
+                
+                    # This neonate will always partially die, partially survive
+                    # Individual is partially less alive
+                    df.loc[individual_id,'aliveness_weight'] *= (1. - risk_of_death)
+                    # Individual is partially dead
+                    death_weight = df.loc[individual_id]['aliveness_weight'] * risk_of_death
+                    df.loc[individual_id, 'date_of_partial_death'].append(str(self.sim.date))
+                    df.loc[individual_id, 'death_weight'].append(death_weight)
+                    df.loc[individual_id, 'cause_of_partial_death'].append(cause)
+                    
+                    # Because it always survives, always reset variables in the dataframe
                     df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
                     df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
+
+                else:
+                    # If this neonate will die then we make the appropriate changes
+                    if self.rng.random_sample() < risk_of_death:
+                        self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{cause}_n_death'] += 1
+                        self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=cause,
+                                                                originating_module=self.sim.modules['PostnatalSupervisor'])
+
+                    # Otherwise we reset the variables in the data frame
+                    else:
+                        df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
+                        df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
 
 
 class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
