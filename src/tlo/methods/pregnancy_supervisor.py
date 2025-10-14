@@ -2124,7 +2124,6 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
             df.loc[[individual_id]])[individual_id]
 
         if self.sim.generate_event_chains:
-        
                 original_aliveness_weight = df.loc[individual_id,'aliveness_weight']
                 
                 # Individual partially survives
@@ -2135,7 +2134,6 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
                 df.loc[individual_id, 'date_of_partial_death'].append(str(self.sim.date))
                 df.loc[individual_id, 'death_weight'].append(death_weight)
                 df.loc[individual_id, 'cause_of_partial_death'].append('severe_gestational_hypertension')
-
         else:
 
             # If the death occurs we record it here

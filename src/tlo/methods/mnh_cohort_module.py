@@ -96,8 +96,7 @@ class MaternalNewbornHealthCohort(Module):
         preg_pop = preg_pop[self.sim.population.props.columns]
 
         preg_pop_final = preg_pop.astype(props_dtypes.to_dict())
-        
-        
+
         preg_pop_final.index.name = 'person'
 
         # For the below columns we manually overwrite the dtypes

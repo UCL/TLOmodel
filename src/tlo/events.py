@@ -172,6 +172,12 @@ class Event:
                         
                     chain_links[key] = str(link_info)
 
+        # Ensure the partial death events are cleared after event
+        #df = self.sim.population.props
+        #df.loc[:,'death_weight'] = pd.Series([[] for _ in range(len(df))])
+        #df.loc[:,'cause_of_partial_death'] = pd.Series([[] for _ in range(len(df))])
+        #df.loc[:,'date_of_partial_death'] = pd.Series([[] for _ in range(len(df))])
+
         return chain_links
         
         
@@ -198,8 +204,14 @@ class Event:
             if self.target != self.sim.population:
             
                 # Save row for comparison after event has occurred
-                row_before = self.sim.population.props.loc[abs(self.target)].copy().fillna(-99999)
-                
+                row_before = self.sim.population.props.loc[[abs(self.target)], :].copy(deep=True).iloc[0]
+                row_before = row_before.fillna(-99999)
+                # Recursively deep copy all object columns (like lists, Series, dicts)
+                for col in row_before.index:
+                    val = row_before[col]
+                    if isinstance(val, (list, dict, pd.Series)):
+                        row_before[col] = copy.deepcopy(val)
+
                 # Check if individual is already in mni dictionary, if so copy her original status
                 mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
                 if self.target in mni:
@@ -222,10 +234,10 @@ class Event:
     
         # Target is single individual
         if self.target != self.sim.population:
-    
+
             # Copy full new status for individual
             row_after = self.sim.population.props.loc[abs(self.target)].fillna(-99999)
-            
+
             # Check if individual is in mni after the event
             mni_instances_after = False
             mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -268,6 +280,11 @@ class Event:
             # Add individual to the chain links
             chain_links[self.target] = str(link_info)
             
+            # Ensure the partial death events are cleared after event
+            #df = self.sim.population.props
+            #df.at[self.target,'death_weight'] = []
+            #df.at[self.target,'cause_of_partial_death'] = []
+            #df.at[self.target,'date_of_partial_death'] = []
         else:
             # Target is entire population. Identify individuals for which properties have changed
             # and store their changes.
@@ -278,7 +295,7 @@ class Event:
             
             #  Create and store the event and dictionary of changes for affected individuals
             chain_links = self.compare_population_dataframe_and_mni(df_before, df_after, entire_mni_before, entire_mni_after)
-                                        
+
         return chain_links
 
 
@@ -303,7 +320,6 @@ class Event:
 
             # Log chain_links here
             if len(chain_links)>0:
-                print(chain_links)
                 logger_chain.info(key='event_chains',
                                   data= pop_dict,
                                   description='Links forming chains of events for simulated individuals')
