@@ -191,7 +191,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                     scenario_definitions.hss_package_realistic(),
                 ),
 
-            - - - TB - - -
+            # - - - TB - - -
 
             # - - - TB SCALE-UP WITHOUT HSS - - -
             "TB Program Scale-up Without HSS Expansion":

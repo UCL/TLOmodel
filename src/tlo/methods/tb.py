@@ -918,10 +918,10 @@ class Tb(Module):
             sim.schedule_event(
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
             )
-
-        # todo update availability of Xpert in all years/facilities
-        self.sim.modules['HealthSystem'].override_availability_of_consumables(
-            {187: 0.857})
+        #
+        # # todo update availability of Xpert in all years/facilities
+        # self.sim.modules['HealthSystem'].override_availability_of_consumables(
+        #     {187: 0.857})
 
     def update_parameters_for_program_scaleup(self):
         """ options for program scale-up are 'target' or 'max' """
@@ -1418,9 +1418,9 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # todo this is a temp solution to stop consumables scenarios over-riding xpert to availability=0
-        self.sim.modules['HealthSystem'].override_availability_of_consumables(
-            {187: 0.857})
+        # # todo this is a temp solution to stop consumables scenarios over-riding xpert to availability=0
+        # self.sim.modules['HealthSystem'].override_availability_of_consumables(
+        #     {187: 0.857})
 
         p = self.module.parameters
 
