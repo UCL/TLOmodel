@@ -2010,8 +2010,8 @@ def test_mode_2_clinics(seed, tmpdir):
         return sim
 
 
-    def schedule_hsi_events(nfungible, nnonfungible, sim):
-        for i in range(0, nfungible):
+    def schedule_hsi_events(notherclinic, nclinic1, sim):
+        for i in range(0, notherclinic):
             hsi = DummyHSIEvent(module=sim.modules['DummyModuleOtherClinic'],
                                 person_id=i,
                                 appt_type='ConWithDCSA',
@@ -2024,7 +2024,7 @@ def test_mode_2_clinics(seed, tmpdir):
                 priority=1
             )
 
-        for i in range(nfungible, nfungible + nnonfungible):
+        for i in range(notherclinic, notherclinic + nclinic1):
             hsi = DummyHSIEvent(module=sim.modules['DummyModuleClinic1'],
                                 person_id=i,
                                 appt_type='ConWithDCSA',
@@ -2123,9 +2123,8 @@ def test_mode_2_clinics(seed, tmpdir):
     assert hs_output['did_run'].sum() == tot_population // 2, "Half of the events ran"
     Nevents = hs_output.groupby('Clinic')['did_run'].value_counts()
     ## No more non-fungible events should have run, but all OtherClinic ones should have
-    assert Nevents.loc[('Clinic1', False)] == tot_population // 2, "No additional NonFungible events ran"
-    assert Nevents.loc[('OtherClinic', True)] == tot_population // 2, "Scheduled OtherClinic events ran"
-
+    assert Nevents.loc[('Clinic1', False)] == tot_population // 2
+    assert Nevents.loc[('OtherClinic', True)] == tot_population // 2
 
     ## Test 4: Queue up OtherClinic/Clinic1/OtherClinic; have Clinic1 capabilities run out
     ## and ensure OtherClinic events still run.
