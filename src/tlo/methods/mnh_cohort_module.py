@@ -54,6 +54,8 @@ class MaternalNewbornHealthCohort(Module):
         # Only select rows equal to the desired population size
         if len(self.sim.population.props) <= len(all_preg_df):
             preg_pop = all_preg_df.loc[0:(len(self.sim.population.props))-1]
+            #preg_pop = all_preg_df.iloc[0:(len(self.sim.population.props))-1].copy()
+
         else:
             # Calculate the number of rows needed to reach the desired length
             additional_rows = len(self.sim.population.props) - len(all_preg_df)
@@ -76,7 +78,25 @@ class MaternalNewbornHealthCohort(Module):
 
         # Set the dtypes and index of the cohort dataframe
         props_dtypes = self.sim.population.props.dtypes
+                
+        preg_pop.loc[:,'aliveness_weight'] = 1
+        preg_pop.loc[:,'death_weight'] = [[] for _ in range(len(preg_pop))]
+        preg_pop.loc[:,'cause_of_partial_death'] = [[] for _ in range(len(preg_pop))]
+        preg_pop.loc[:,'date_of_partial_death'] = [[] for _ in range(len(preg_pop))]
+
+        print(preg_pop.columns)
+        missing_cols = [col for col in self.sim.population.props.columns if col not in preg_pop.columns]
+        if missing_cols:
+            print("Missing columns")
+            for col in missing_cols:
+                print(col)
+            exit(-1)
+            
+        # Reorder columns
+        preg_pop = preg_pop[self.sim.population.props.columns]
+
         preg_pop_final = preg_pop.astype(props_dtypes.to_dict())
+        
         
         preg_pop_final.index.name = 'person'
 
