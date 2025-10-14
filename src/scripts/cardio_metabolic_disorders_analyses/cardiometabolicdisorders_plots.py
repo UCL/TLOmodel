@@ -190,8 +190,8 @@ for condition in conditions:
 
     # get prevalence + lower and upper values
     prev_range = read_csv_files(resourcefilepath / "cmd" / "ResourceFile_cmd_condition_prevalence", files=None)
-    baseline_error = [(prev_range[f'{condition}']['value'].values - prev_range[f'{condition}']['lower'].values),
-                      (prev_range[f'{condition}']['upper'].values - prev_range[f'{condition}']['value'].values)]
+    baseline_error = [(prev_range[f'{condition}']['value'].values - prev_range[f'{condition}']['prior_min'].values),
+                      (prev_range[f'{condition}']['prior_max'].values - prev_range[f'{condition}']['value'].values)]
     if 'gbd_value' in prev_range[f'{condition}']:
         gbd_error = [(prev_range[f'{condition}']['gbd_value'].values - prev_range[f'{condition}'][
             'gbd_lower'].values),
@@ -498,8 +498,8 @@ def make_incidence_plot(condition, type):
                                   files=None)
     else:
         inc_range = read_csv_files(resourcefilepath / "cmd" / f"ResourceFile_cmd_event_{type}", files=None)
-    asymptomatic_error = [(inc_range[f'{condition}']['value'].values - inc_range[f'{condition}']['lower'].values),
-                          (inc_range[f'{condition}']['upper'].values - inc_range[f'{condition}']['value'].values)]
+    asymptomatic_error = [(inc_range[f'{condition}']['value'].values - inc_range[f'{condition}']['prior_min'].values),
+                          (inc_range[f'{condition}']['prior_max'].values - inc_range[f'{condition}']['value'].values)]
 
     bar_width = 0.75
     opacity = 0.25

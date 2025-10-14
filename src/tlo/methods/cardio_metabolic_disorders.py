@@ -287,7 +287,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         events_symptoms = read_csv_files(cmd_path / "ResourceFile_cmd_events_symptoms", files=None)
         events_hsi = read_csv_files(cmd_path / "ResourceFile_cmd_events_hsi", files=None)
 
-        self.load_parameters_from_dataframe(pd.read_csv(cmd_path / "ResourceFile_cmd_parameters.csv"))
+        self.load_parameters_from_dataframe(pd.read_csv(cmd_path / "parameter_values.csv"))
 
         def get_values(params, value):
             """replaces nans in the 'value' key with specified value"""
