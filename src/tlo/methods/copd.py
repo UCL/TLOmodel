@@ -295,7 +295,8 @@ class Copd(Module, GenericFirstAppointmentsMixin):
     ) -> None:
         # Non-emergency appointments are only forwarded if
         # the patient is over the minimum age threshold
-        if individual_properties["age_years"] > self.parameters["min_age_first_appt"]:
+        p = self.parameters
+        if individual_properties["age_years"] > p["min_age_first_appt"]:
             return self._common_first_appt(
                 person_id=person_id,
                 individual_properties=individual_properties,
@@ -498,8 +499,9 @@ class CopdModels:
         eligible to progress to the next level of ch_lungfunction (i.e., alive, aged above minimum assessment age,
         and not in the highest category already).
         :param df: an individual population dataframe """
+        p = self.params
         return (
-            df.is_alive & (df.age_years >= self.params['min_age_lung_function_assessment']) &
+            df.is_alive & (df.age_years >= p['min_age_lung_function_assessment']) &
             (df['ch_lungfunction'] != ch_lungfunction_cats[-1])
         )
 
