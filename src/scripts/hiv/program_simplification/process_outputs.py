@@ -560,7 +560,7 @@ pc_inc_diff_from_statusquo.to_excel(results_folder / "pc_inc_diff_from_statusquo
 
 
 # Get the draw order from the original DataFrame
-draw_order = inc_diff_from_statusquo.columns.get_level_values("draw").unique()
+draw_order = num_new_infections.columns.get_level_values("draw").unique()
 
 # Select the row, keep the (draw, stat) wide format, but reorder the draws
 infect_ci = (
@@ -753,6 +753,8 @@ aids_ci = aids_ci.reindex(draw_order)
 pc_aids_ci = pc_dalys_diff_from_statusquo.loc['AIDS'].unstack('stat')
 pc_aids_ci = pc_aids_ci.reindex(draw_order)
 
+aids_ci.to_excel(results_folder / "aids_dalys_diff_from_statusquo.xlsx")
+pc_aids_ci.to_excel(results_folder / "pc_aids_dalys_diff_from_statusquo.xlsx")
 
 # Plot
 plot_with_ci(
@@ -959,6 +961,9 @@ aids_deaths_ci = aids_deaths_ci.reindex(draw_order)
 
 pc_aids_deaths_ci = pc_deaths_averted.loc['HIV/AIDS'].unstack('stat')
 pc_aids_deaths_ci = pc_aids_deaths_ci.reindex(draw_order)
+
+aids_deaths_ci.to_csv(results_folder / f'aids_deaths_averted{target_period()}.csv')
+pc_aids_deaths_ci.to_csv(results_folder / f'pc_aids_deaths_averted_{target_period()}.csv')
 
 
 # Plot
