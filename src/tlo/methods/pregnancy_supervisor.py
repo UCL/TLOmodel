@@ -2065,7 +2065,8 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
             # then this event is scheduled by the HSI (did_not_run)
             days_until_rupture = (
                 7 * params['ectopic_rupture_min_weeks'] +
-                self.module.rng.randint(0, 7 * (params['ectopic_rupture_max_weeks']-params['ectopic_rupture_min_weeks']))
+                self.module.rng.randint(0, 7 *
+                                        (params['ectopic_rupture_max_weeks']-params['ectopic_rupture_min_weeks']))
             )
             self.sim.schedule_event(
                 EctopicPregnancyRuptureEvent(self.module, individual_id),
