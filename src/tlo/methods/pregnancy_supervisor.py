@@ -891,18 +891,28 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         params = self.current_parameters
 
-        # Define the weeks of each month of pregnancy
-        months_min_max = {2: [5, 8], 3: [9, 13], 4: [14, 17], 5: [18, 22], 6: [23, 27], 7: [28, 31], 8: [32, 35],
-                          9: [36, 40]}
+        # Define the weeks of each month of pregnancy using parameters
+        months_min_max = {
+            2: [params['anc_month_2_min_week'], params['anc_month_2_max_week']],
+            3: [params['anc_month_3_min_week'], params['anc_month_3_max_week']],
+            4: [params['anc_month_4_min_week'], params['anc_month_4_max_week']],
+            5: [params['anc_month_5_min_week'], params['anc_month_5_max_week']],
+            6: [params['anc_month_6_min_week'], params['anc_month_6_max_week']],
+            7: [params['anc_month_7_min_week'], params['anc_month_7_max_week']],
+            8: [params['anc_month_8_min_week'], params['anc_month_8_max_week']],
+            9: [params['anc_month_9_min_week'], params['anc_month_9_max_week']]
+        }
 
         # As care seeking is applied at week 8 gestational age, women who seek care within month two must attend within
         # the next week
-        if anc_month == 2:
-            days_until_anc = self.rng.randint(0, 6)
+        if anc_month == params['anc_care_seeking_initial_weeks']/4:
+            days_until_anc = self.rng.randint(0, params['anc_scheduling_window'])
         else:
             # Otherwise we draw a week between the min max weeks for predicted month of visit, and then a random day
-            weeks_of_visit = (self.rng.randint(months_min_max[anc_month][0], months_min_max[anc_month][1]) - 8)
-            days_until_anc = (weeks_of_visit * 7) + self.rng.randint(0, 6)
+            weeks_of_visit = (
+                self.rng.randint(months_min_max[anc_month][0], months_min_max[anc_month][1]) -
+                params['anc_care_seeking_initial_weeks'])
+            days_until_anc = (weeks_of_visit * 7) + self.rng.randint(0, params['anc_scheduling_window'])
 
         first_anc_date = self.sim.date + DateOffset(days=days_until_anc)
 
@@ -929,9 +939,11 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             first_anc_appt = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id, visit_number=1)
 
-        self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=0,
-                                                            topen=first_anc_date,
-                                                            tclose=first_anc_date + DateOffset(days=1))
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            first_anc_appt, priority=0,
+            topen=first_anc_date,
+            tclose=first_anc_date + DateOffset(days=params['hsi_event_window_days'])
+        )
 
     def apply_risk_of_spontaneous_abortion(self, gestation_of_interest):
         """
@@ -1055,8 +1067,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         self.care_seeking_pregnancy_loss_complications(individual_id, cause='abortion')
 
         # Schedule possible death
-        self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self, individual_id, cause=f'{cause}'),
-                                self.sim.date + DateOffset(days=7))
+        self.sim.schedule_event(
+            EarlyPregnancyLossDeathEvent(self, individual_id, cause=f'{cause}'),
+            self.sim.date + DateOffset(days=params['death_delay_days_after_abortion'])
+        )
 
     def apply_risk_of_anaemia(self, gestation_of_interest):
         """
@@ -1371,19 +1385,22 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # To prevent clustering of labour onset we scatter women to go into labour on a random day before their
         # next month gestation
+        params = self.current_parameters
         for person in preterm_labour.loc[preterm_labour].index:
-            if df.at[person, 'ps_gestational_age_in_weeks'] == 22:
-                poss_day_onset = (27 - 22) * 7
+            current_gestation = df.at[person, 'ps_gestational_age_in_weeks']
+
+            if current_gestation == 22:
+                poss_day_onset = (params['preterm_labour_gestation_22_max'] - 22) * 7
                 # We only allow labour to onset from 24 weeks (to match with our definition of preterm labour)
-                onset_day = self.rng.randint(14, poss_day_onset)
-            elif df.at[person, 'ps_gestational_age_in_weeks'] == 27:
-                poss_day_onset = (31 - 27) * 7
+                onset_day = self.rng.randint((params['preterm_labour_min_weeks'] - 22) * 7, poss_day_onset)
+            elif current_gestation == 27:
+                poss_day_onset = (params['preterm_labour_gestation_27_max'] - 27) * 7
                 onset_day = self.rng.randint(0, poss_day_onset)
-            elif df.at[person, 'ps_gestational_age_in_weeks'] == 31:
-                poss_day_onset = (35 - 31) * 7
+            elif current_gestation == 31:
+                poss_day_onset = (params['preterm_labour_gestation_31_max'] - 31) * 7
                 onset_day = self.rng.randint(0, poss_day_onset)
-            elif df.at[person, 'ps_gestational_age_in_weeks'] == 35:
-                poss_day_onset = (37 - 35) * 7
+            elif current_gestation == 35:
+                poss_day_onset = (params['preterm_labour_gestation_35_max'] - 35) * 7
                 onset_day = self.rng.randint(0, poss_day_onset)
             else:
                 # If any other gestational ages are pass, the function should end
@@ -1497,9 +1514,11 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             induction = HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(induction, priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                induction, priority=0,
+                topen=self.sim.date,
+                tclose=self.sim.date + DateOffset(days=params['hsi_event_window_days'])
+            )
 
         # For those who dont seek care we a apply a weekly risk of stillbirth (this function is called weekly for women
         # who are post term)
