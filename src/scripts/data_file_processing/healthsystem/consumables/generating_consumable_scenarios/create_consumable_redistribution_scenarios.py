@@ -68,8 +68,126 @@ lmis = lmis[lmis.lat.notna()]
 #lmis = lmis[lmis["Facility_Level"] == '1a']
 
 # -----------------------------------
-# 1) Estimate travel time matrix
+# 1) Data exploration
 # -----------------------------------
+def compute_opening_balance(df: pd.DataFrame) -> pd.Series:
+    """
+    Opening balance from same-month records:
+    OB = closing_bal - received + dispensed.
+    This is equivalent to OB_(m) = CB_(m-1)
+    """
+    return df["closing_bal"] - df["received"] + df["dispensed"]
+
+def generate_stock_adequacy_heatmap(
+    df: pd.DataFrame,
+    figures_path: Path = Path("figures"),
+    filename: str = "heatmap_adequacy_opening_vs_3xamc.png",
+    include_missing_as_fail: bool = False,   # if True, items with NaN opening/amc count as NOT adequate
+    as_pct: bool = True,
+    amc_threshold: float = 3.0,
+    decimals: int = 0,
+    cmap: str = "RdYlGn",
+    figsize=(14, 10),
+    xtick_rotation: int = 45,
+    ytick_rotation: int = 0,
+):
+    """
+    Heatmap values: for each (month, district), the % of item_code groups where
+    sum(opening_balance over Facility_ID) >= 3 * sum(amc over Facility_ID).
+    """
+
+    df = df.copy()
+    df["opening_bal"] =  compute_opening_balance(df).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+
+    # ---- 1) Make sure 'month' is sortable chronologically ----
+    # ---- 2) Aggregate to (month, district, item_code) over facilities ----
+    agg = (
+        df.groupby(["month", "district", "item_code"], dropna=False)
+          .agg(opening_bal=("opening_bal", "sum"),
+               amc=("amc", "sum"))
+          .reset_index()
+    )
+
+    # ---- 3) Adequacy indicator per (month, district, item_code) ----
+    if include_missing_as_fail:
+        # NaNs treated as fail -> fill with NaN-safe compare: set False when either missing
+        adequate = (agg["opening_bal"].fillna(np.nan) >= amc_threshold * agg["amc"].fillna(np.nan)) & \
+                   agg[["opening_bal", "amc"]].notna().all(axis=1)
+    else:
+        valid = agg.dropna(subset=["opening_bal", "amc"])
+        adequate = pd.Series(False, index=agg.index)
+        adequate.loc[valid.index] = valid["opening_bal"] >= amc_threshold * valid["amc"]
+
+    agg["adequate"] = adequate.astype(int)  # 1/0
+
+    # ---- 4) % adequate per (month, district) across item_code ----
+    # Denominator = number of item_code present after NaN handling
+    if include_missing_as_fail:
+        denom = agg.groupby(["month", "district"])["item_code"].nunique()
+        numer = agg.groupby(["month", "district"])["adequate"].sum()
+    else:
+        valid_mask = agg[["opening_bal", "amc"]].notna().all(axis=1)
+        denom = agg[valid_mask].groupby(["month", "district"])["item_code"].nunique()
+        numer = agg[valid_mask].groupby(["month", "district"])["adequate"].sum()
+
+    pct = (numer / denom * 100).replace([np.inf, -np.inf], np.nan)
+
+    # Bring to a DataFrame for pivoting
+    pct_df = pct.reset_index(name="pct_adequate")
+
+    # ---- 5) Pivot: districts (rows) x months (columns) ----
+    # Sort months by _month_sort and use _month_label as the displayed column name
+    month_order = (
+        pct_df[["month"]]
+        .drop_duplicates()
+        .sort_values("month")
+        ["month"]
+        .tolist()
+    )
+    heatmap_df = pct_df.pivot(index="district", columns="month", values="pct_adequate")
+    heatmap_df = heatmap_df.reindex(columns=month_order)
+
+    # Optional rounding for nicer colorbar ticks (doesn't affect color)
+    if decimals is not None:
+        heatmap_df = heatmap_df.round(decimals)
+
+    # ---- 6) Plot heatmap ----
+    sns.set(font_scale=1.0)
+    fig, ax = plt.subplots(figsize=figsize)
+
+    hm = sns.heatmap(
+        heatmap_df,
+        cmap=cmap,
+        cbar_kws={"label": f"% of consumables with Opening Balance ≥ {amc_threshold} × AMC"},
+        ax=ax,
+        annot=True, annot_kws={"size": 12},
+        vmin = 0, vmax = 100)
+
+    ax.set_xlabel("Month")
+    ax.set_ylabel("District")
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=xtick_rotation)
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=ytick_rotation)
+
+    # Keep colorbar ticks plain (no scientific notation)
+    try:
+        cbar_ax = ax.figure.axes[-1]
+        cbar_ax.ticklabel_format(style="plain")
+    except Exception:
+        pass
+
+    # ---- 7) Save & return ----
+    figures_path.mkdir(parents=True, exist_ok=True)
+    outpath = figures_path / filename
+    plt.savefig(outpath, dpi=300, bbox_inches="tight")
+    plt.show()
+    plt.close(fig)
+
+    return fig, ax, heatmap_df
+
+# -----------------------------------
+# 2) Estimate travel time matrix
+# -----------------------------------
+
 def _chunk_indices(n: int, chunk: int):
     """Yield (start, end) index pairs for chunking 0..n-1."""
     for s in range(0, n, chunk):
@@ -242,17 +360,8 @@ def build_time_matrices_by_district(
     return matrices
 
 # -----------------------------------------------
-# 2) Data prep for redistribution linear program
+# 3) Data prep for redistribution linear program
 # -----------------------------------------------
-def compute_opening_balance(df: pd.DataFrame) -> pd.Series:
-    """
-    Opening balance from same-month records:
-    OB = closing_bal - received + dispensed.
-    This is equivalent to OB_(m) = CB_(m-1)
-    """
-    return df["closing_bal"] - df["received"] + df["dispensed"]
-
-
 def presumed_availability(ob, amc, eps=1e-9) -> float:
     """
     Presumed likelihood of cons availability =  p = min(1, OB/AMC) at month start (no additional receipts considered
@@ -330,7 +439,7 @@ def _farthest_first_seeds(T: pd.DataFrame, k: int, big: float = 1e9) -> list:
 # Assign each facility to its nearest seed subject to a hard cluster capacity (≤ X members)
 def _assign_to_cluster_with_fixed_capacity(T: pd.DataFrame, seeds: list, capacity: int, big: float = 1e9) -> Dict[str, int]:
     """
-    Greedy assignment of facilities to nearest seed that still has capacity.
+    Greedy assignment of facilities to nearest seed that still has capacity (based on maximum cluster size).
     Returns: mapping facility -> seed_index (position in seeds list).
     """
     facs = T.index.tolist()
@@ -701,7 +810,6 @@ def redistribute_pooling_lp(
         g = g.copy()
         node_val, m, i = keys if pooling_level == "cluster" else (g["district"].iloc[0], keys[1], keys[2])
 
-        # Clean AMC/OB and dedupe
         AMC = (g.set_index(facility_col)[amc_col]
                .astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0))
         OB0 = (g.set_index(facility_col)["OB"]
@@ -803,7 +911,7 @@ def redistribute_pooling_lp(
     else:
         p_mech[~pos_mask.values] = (out.loc[~pos_mask, "OB_prime"].to_numpy() > 0.0).astype(float)
 
-    out["available_prop_redis"] = p_mech
+    out["available_prop_redis"] = np.maximum(p_mech,out["available_prop"])
     out["received_from_pool"] = out["OB_prime"] - out["OB"]
 
     if return_move_log:
@@ -901,6 +1009,10 @@ fac_coords = lmis[['fac_name', 'district', 'lat','long']]
 #    backend="osrm",
 #    osrm_base_url="https://router.project-osrm.org",
 #    max_chunk=50)
+
+# Plot stock adequacy by district and month
+fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath, amc_threshold = 3, filename = "mth_district_stock_adequacy_3amc.png")
+fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath, amc_threshold = 2, filename = "mth_district_stock_adequacy_2amc.png")
 
 # Store dictionary in pickle format
 #with open(outputfilepath / "T_car.pkl", "wb") as f:
