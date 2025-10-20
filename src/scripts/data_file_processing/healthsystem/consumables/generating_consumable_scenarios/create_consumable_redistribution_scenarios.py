@@ -1,6 +1,7 @@
 import datetime
 from pathlib import Path
 import pickle
+import calendar
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -82,14 +83,18 @@ def generate_stock_adequacy_heatmap(
     df: pd.DataFrame,
     figures_path: Path = Path("figures"),
     filename: str = "heatmap_adequacy_opening_vs_3xamc.png",
+    y_var: str = "district", # the variable on the y-axis of the heatmap
+    value_var: str = "item_code", # the count variable on the basis of which the values are calculated
+    value_label: str = "", # label describing the values in the heatmap
     include_missing_as_fail: bool = False,   # if True, items with NaN opening/amc count as NOT adequate
-    as_pct: bool = True,
     amc_threshold: float = 3.0,
+    compare: str = "ge" ,        # "ge" for >= threshold*AMC, "le" for <= threshold*AMC
     decimals: int = 0,
     cmap: str = "RdYlGn",
-    figsize=(14, 10),
+    figsize= None,
     xtick_rotation: int = 45,
     ytick_rotation: int = 0,
+    annotation: bool = True,
 ):
     """
     Heatmap values: for each (month, district), the % of item_code groups where
@@ -99,10 +104,16 @@ def generate_stock_adequacy_heatmap(
     df = df.copy()
     df["opening_bal"] =  compute_opening_balance(df).replace([np.inf, -np.inf], np.nan).fillna(0.0)
 
-    # ---- 1) Make sure 'month' is sortable chronologically ----
+    # --- 1. Ensure month is int and build label ---
+    df["month"] = pd.to_numeric(df["month"], errors="coerce").astype("Int64")
+    df = df.dropna(subset=["month"])
+    df["month"] = df["month"].astype(int)
+
+    df["_month_label"] = df["month"].map(lambda m: calendar.month_abbr[m])
+
     # ---- 2) Aggregate to (month, district, item_code) over facilities ----
     agg = (
-        df.groupby(["month", "district", "item_code"], dropna=False)
+        df.groupby(["month", "_month_label", y_var, value_var], dropna=False)
           .agg(opening_bal=("opening_bal", "sum"),
                amc=("amc", "sum"))
           .reset_index()
@@ -111,60 +122,85 @@ def generate_stock_adequacy_heatmap(
     # ---- 3) Adequacy indicator per (month, district, item_code) ----
     if include_missing_as_fail:
         # NaNs treated as fail -> fill with NaN-safe compare: set False when either missing
-        adequate = (agg["opening_bal"].fillna(np.nan) >= amc_threshold * agg["amc"].fillna(np.nan)) & \
-                   agg[["opening_bal", "amc"]].notna().all(axis=1)
+        ok = agg[["opening_bal", "amc"]].notna().all(axis=1)
+        left = agg["opening_bal"]
+        right = amc_threshold * agg["amc"]
+        if compare == "le":
+            cond = (left <= right) & ok
+        else:  # default to ">="
+            cond = (left >= right) & ok
     else:
         valid = agg.dropna(subset=["opening_bal", "amc"])
-        adequate = pd.Series(False, index=agg.index)
-        adequate.loc[valid.index] = valid["opening_bal"] >= amc_threshold * valid["amc"]
+        cond = pd.Series(False, index=agg.index)
+        left = valid["opening_bal"]
+        right = amc_threshold * valid["amc"]
+        if compare == "le":
+            cond.loc[valid.index] = left <= right
+        else:
+            cond.loc[valid.index] = left >= right
 
-    agg["adequate"] = adequate.astype(int)  # 1/0
+    agg["condition_met"] = cond.astype(int)
 
-    # ---- 4) % adequate per (month, district) across item_code ----
-    # Denominator = number of item_code present after NaN handling
+    # --- % meeting condition per (month, district) across item_code ---
     if include_missing_as_fail:
-        denom = agg.groupby(["month", "district"])["item_code"].nunique()
-        numer = agg.groupby(["month", "district"])["adequate"].sum()
+        denom = agg.groupby(["month", "_month_label", y_var])[value_var].nunique()
+        numer = agg.groupby(["month", "_month_label", y_var])["condition_met"].sum()
     else:
         valid_mask = agg[["opening_bal", "amc"]].notna().all(axis=1)
-        denom = agg[valid_mask].groupby(["month", "district"])["item_code"].nunique()
-        numer = agg[valid_mask].groupby(["month", "district"])["adequate"].sum()
+        denom = agg[valid_mask].groupby(["month", "_month_label", y_var])[value_var].nunique()
+        numer = agg[valid_mask].groupby(["month", "_month_label", y_var])["condition_met"].sum()
 
-    pct = (numer / denom * 100).replace([np.inf, -np.inf], np.nan)
-
-    # Bring to a DataFrame for pivoting
-    pct_df = pct.reset_index(name="pct_adequate")
+    pct = (numer / denom * 100).replace([np.inf, -np.inf], np.nan).reset_index(name="pct_meeting")
 
     # ---- 5) Pivot: districts (rows) x months (columns) ----
     # Sort months by _month_sort and use _month_label as the displayed column name
     month_order = (
-        pct_df[["month"]]
+        pct[["month", "_month_label"]]
         .drop_duplicates()
         .sort_values("month")
-        ["month"]
+        ["_month_label"]
         .tolist()
     )
-    heatmap_df = pct_df.pivot(index="district", columns="month", values="pct_adequate")
+    heatmap_df = pct.pivot(index=y_var, columns="_month_label", values="pct_meeting")
     heatmap_df = heatmap_df.reindex(columns=month_order)
+
+    # --- Add average row and column ---
+    # Column average (mean of each month)
+    heatmap_df.loc["Average"] = heatmap_df.mean(axis=0)
+    # Row average (mean of each y_var)
+    heatmap_df["Average"] = heatmap_df.mean(axis=1)
+
+    # Fix overall average (bottom-right)
+    overall_avg = heatmap_df.loc["Average", "Average"]
+    heatmap_df.loc["Average", "Average"] = overall_avg
 
     # Optional rounding for nicer colorbar ticks (doesn't affect color)
     if decimals is not None:
         heatmap_df = heatmap_df.round(decimals)
 
+    # --- Dynamic figure size ---
+    if figsize is None:
+        n_rows = len(heatmap_df)
+        n_cols = len(heatmap_df.columns)
+        height = max(6, n_rows * 0.2)  # taller if many rows
+        width = max(8, n_cols * 0.6)
+        figsize = (width, height)
+
     # ---- 6) Plot heatmap ----
     sns.set(font_scale=1.0)
     fig, ax = plt.subplots(figsize=figsize)
 
+    cbar_kws = value_label
     hm = sns.heatmap(
         heatmap_df,
         cmap=cmap,
-        cbar_kws={"label": f"% of consumables with Opening Balance ≥ {amc_threshold} × AMC"},
+        cbar_kws={"label": value_label},
         ax=ax,
-        annot=True, annot_kws={"size": 12},
+        annot=True, annot_kws={"size": 10},
         vmin = 0, vmax = 100)
 
     ax.set_xlabel("Month")
-    ax.set_ylabel("District")
+    ax.set_ylabel(f"{y_var}")
     ax.set_xticklabels(ax.get_xticklabels(), rotation=xtick_rotation)
     ax.set_yticklabels(ax.get_yticklabels(), rotation=ytick_rotation)
 
@@ -1011,9 +1047,31 @@ fac_coords = lmis[['fac_name', 'district', 'lat','long']]
 #    max_chunk=50)
 
 # Plot stock adequacy by district and month
-fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath, amc_threshold = 3, filename = "mth_district_stock_adequacy_3amc.png")
-fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath, amc_threshold = 2, filename = "mth_district_stock_adequacy_2amc.png")
-
+fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
+                                                 y_var = 'district', value_var = 'item_code',
+                                                 value_label= f"% of consumables with Opening Balance ≥ 3 × AMC",
+                                                 amc_threshold = 3, compare = "ge",
+                                                 filename = "mth_district_stock_adequacy_3amc.png", figsize = (12,10))
+fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
+                                                 y_var = 'district', value_var = 'item_code',
+                                                 value_label= f"% of consumables with Opening Balance ≥ 3 × AMC",
+                                                 amc_threshold = 2, compare = "ge",
+                                                 filename = "mth_district_stock_adequacy_2amc.png", figsize = (12,10))
+fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
+                                                 y_var = 'district', value_var = 'item_code',
+                                                 value_label= f"% of consumables with Opening Balance <= 1 × AMC",
+                                                 amc_threshold = 1, compare = "le",
+                                                 filename = "mth_district_stock_inadequacy_1amc.png", figsize = (12,10))
+fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
+                                                 y_var = 'item_code', value_var = 'fac_name',
+                                                 value_label= f"% of facilities with Opening Balance ≥ 3 × AMC",
+                                                 amc_threshold = 3, compare = "ge",
+                                                 filename = "mth_item_stock_adequacy_3amc.png")
+fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
+                                                 y_var = 'item_code', value_var = 'fac_name',
+                                                 value_label= f"% of facilities with Opening Balance <= 1 × AMC",
+                                                 amc_threshold = 1, compare = "le",
+                                                 filename = "mth_item_stock_inadequacy_1amc.png")
 # Store dictionary in pickle format
 #with open(outputfilepath / "T_car.pkl", "wb") as f:
 #    pickle.dump(T_car, f)
