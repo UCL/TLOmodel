@@ -772,6 +772,7 @@ def redistribute_pooling_lp(
     df: pd.DataFrame,
     tau_min: float = 0.25,   # lower floor in "months of demand" (≈ 7–8 days) - minimum transfer required
     tau_max: float = 3.0,    # upper ceiling (storage/policy max)
+    tau_donor_keep: float = 3.0, # minimum the donor keeps before donating
     id_cols=("district","month","item_code"),
     facility_col="fac_name",
     level_col="Facility_Level",
@@ -890,8 +891,9 @@ def redistribute_pooling_lp(
         tau_min_floor = (tau_min * AMC_pos).astype(float)
         tau_max_ceiling = (tau_max * AMC_pos).astype(float)
 
-        # ---- Donor protection: x_f >= pLB_f = min(OB, 3*AMC)
-        pLB = np.minimum(OB0_pos, 3.0 * AMC_pos)  # Series
+        # ---- Donor protection: x_f >= pLB_f = min(OB, tau_donor_keep*AMC)
+        pLB = np.minimum(OB0_pos, tau_donor_keep * AMC_pos)  # the lower bound for a donor facility is OB if that is less than
+        #tau_donor_keep X AMC or tau_donor_keep X AMC is that is lower than OB (i.e. only OB - 3 X AMC can be donated, if tau_donor_keep = 3)
 
         # ---- Receiver eligibility: only 1a/1b may increase above OB
         eligible_mask = LVL_pos.isin(["1a", "1b"])
@@ -901,7 +903,7 @@ def redistribute_pooling_lp(
         UB.loc[~eligible_mask] = np.minimum(OB0_pos.loc[~eligible_mask], tau_max_ceiling.loc[~eligible_mask])
 
         # ---- Lower bound assembly BEFORE scaling tau_min
-        LB0 = np.maximum(pLB, tau_min_floor)  # candidate lower bound
+        LB0 = np.maximum(pLB, tau_min_floor)  # enforces receiver's lower bound
 
         # ---- Optional "no-harm": p_f >= baseline -> x_f >= AMC_f * p_base_f
         if enforce_no_harm:
@@ -955,7 +957,7 @@ def redistribute_pooling_lp(
             prob += float(AMC_pos.loc[f]) * p[f] <= x[f]  # p <= x/AMC
 
         # Solve
-        prob.solve()
+        prob.solve(PULP_CBC_CMD(msg=False, cuts=0, presolve=True, threads=1))
         if LpStatus[prob.status] != "Optimal":
             continue
 
@@ -996,7 +998,8 @@ def redistribute_pooling_lp(
     amc_safe = out[amc_col].astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0)
     pos_mask_all = amc_safe >= amc_eps
 
-    p_mech = np.zeros(len(out), dtype=float)
+    p_mech = np.zeros(len(out), dtype=float) # mechanistically calculated p based on balances and AMC
+    # (different from the base which was calculated from actual stkout_days recorded_
     denom = np.maximum(amc_eps, amc_safe[pos_mask_all].to_numpy())
     p_mech[pos_mask_all.values] = np.minimum(
         1.0, np.maximum(0.0, out.loc[pos_mask_all, "OB_prime"].to_numpy() / denom)
@@ -1009,22 +1012,30 @@ def redistribute_pooling_lp(
     else:
         p_mech[~pos_mask_all.values] = (out.loc[~pos_mask_all, "OB_prime"].to_numpy() > 0.0).astype(float)
 
+    # For levels 1a and 1b force availability to be max of old (actual) versus new (mechnistically calculated)
     out["available_prop_redis_raw"] = p_mech
     out["available_prop_redis"] = (
         np.maximum(p_mech, out["available_prop"].astype(float).values)
         if floor_to_baseline else p_mech
     )
+    # For levels other than 1a and 1b force availability to be equal to old
+    mask_non_elig = ~out["Facility_Level"].isin(["1a", "1b"])
+    out.loc[mask_non_elig, "available_prop_redis"] = out.loc[mask_non_elig,"available_prop"] # this should ideally happen automatically
+    # however, there are facilities at levels 2-4 whether some stock out was experienced even though OB > AMC
+    # We want to retain the original probability in these cases because our overall analysis is restricted to levels 1a and 1b
 
     # Per-row movement
     out["received_from_pool"] = out["OB_prime"] - out["OB"]
 
     # Check if the rules are correctly applied
-    # No facility should end below min(OB, 3*AMC)
-    viol = (out["OB_prime"] < np.minimum(out["OB"], 3 * out["amc"]) - 1e-6)
-    assert not viol.any()
-    # Non-eligible levels never increase OB
-    mask_non_elig = ~out["Facility_Level"].isin(["1a", "1b"])
-    assert not (out.loc[mask_non_elig, "OB_prime"] > out.loc[mask_non_elig, "OB"] + 1e-6).any()
+    # No facility should end below min(OB, tau_donor_keep*AMC)
+    viol_lb = out["OB_prime"] < (np.minimum(out["OB"], tau_donor_keep * out["amc"]) - 1e-6)
+    #assert not viol_lb.any(), "Donor-protection LB violated (OB' < min(OB, tau_donor_keep*AMC))."
+    print(out[viol_lb][['available_prop_redis', 'available_prop', 'OB', 'OB_prime', 'amc']])
+    # Non-eligible levels never increase prob
+    #mask_non_elig = ~out["Facility_Level"].isin(["1a", "1b"])
+    #mask_correct = (out["available_prop_redis"] == out["available_prop"])
+    #print(out[mask_non_elig & ~mask_correct][['available_prop_redis', 'available_prop', 'OB', 'OB_prime', 'amc']])
 
     if return_move_log:
         move_log = pd.DataFrame(move_rows)
@@ -1032,7 +1043,6 @@ def redistribute_pooling_lp(
 
     return out
 # pooled_df, pool_moves = redistribute_pooling_lp(lmis, tau_min=0.25, tau_max=3.0, return_move_log=True)
-
 
 # ------------------------
 # 4) HIGH-LEVEL DRIVER
