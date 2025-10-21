@@ -34,6 +34,34 @@ path_to_share = Path(  # <-- point to the shared folder
 lmis = (pd.read_csv(outputfilepath / "ResourceFile_Consumables_availability_and_usage.csv")
         [['district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'available_prop',
        'closing_bal', 'amc', 'dispensed', 'received']])
+
+# Drop duplicated facility, item, month combinations
+print(lmis.shape, "rows before collapsing duplicates")
+key_cols = ["district", "item_code", "fac_name", "month"] # keys that define a unique record
+
+# helper to keep one facility level per group (mode → most common; fallback to first non-null)
+def _mode_or_first(s: pd.Series):
+    s = s.dropna()
+    if s.empty:
+        return np.nan
+    m = s.mode()
+    return m.iloc[0] if not m.empty else s.iloc[0]
+
+lmis = (
+    lmis
+    .groupby(key_cols, as_index=False)
+    .agg(
+        closing_bal=("closing_bal", "sum"),
+        dispensed=("dispensed", "sum"),
+        received=("received", "sum"),
+        amc=("amc", "sum"),
+        available_prop=("available_prop", "mean"),
+        fac_type_tlo=("fac_type_tlo", _mode_or_first),   # optional; remove if not needed
+    )
+)
+
+print(lmis.shape, "rows after collapsing duplicates")
+
 # Import data on facility location
 location = (pd.read_excel(path_to_share / "07 - Data/Facility_GPS_Coordinates/gis_data_for_openlmis/LMISFacilityLocations_raw.xlsx")
         [['LMIS Facility List', 'LATITUDE', 'LONGITUDE']])
