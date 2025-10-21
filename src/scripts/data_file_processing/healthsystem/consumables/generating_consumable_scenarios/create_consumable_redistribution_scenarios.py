@@ -4,6 +4,7 @@ import pickle
 import calendar
 
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 import pandas as pd
 
@@ -871,6 +872,7 @@ def redistribute_pooling_lp(
     move_rows = []  # optional movement log
     # TODO could remove the movement log
 
+    skipped_nodes = []  # collect nodes that did NOT solve optimally
     for keys, g in out.groupby(group_cols, sort=False):
         g = g.copy()
         # Resolve node ID for logging and selection masks
@@ -950,7 +952,7 @@ def redistribute_pooling_lp(
             # Decompose tau_min contribution above base_guard
             tau_min_above = np.maximum(0.0, tau_min_floor - np.minimum(tau_min_floor, base_guard))
             need = float(tau_min_above.sum())
-            # Available budget for that component:
+            # Available stock for that component:
             budget = total_stock - float(base_guard.sum())
             scale = 0.0 if need <= 1e-12 else max(0.0, min(1.0, budget / max(1e-9, need)))
 
@@ -987,7 +989,11 @@ def redistribute_pooling_lp(
         # Solve
         prob.solve(PULP_CBC_CMD(msg=False, cuts=0, presolve=True, threads=1))
         if LpStatus[prob.status] != "Optimal":
+            skipped_nodes.append((node_val, m, i))
+            #print("NO Optimal solution found", node_val, m, i)
             continue
+        #else:
+            #print("Optimal solution found", node_val, m, i)
 
         # Apply solution to OB'
         x_sol = {f: float(value(var) or 0.0) for f, var in x.items()}
@@ -1056,14 +1062,48 @@ def redistribute_pooling_lp(
     out["received_from_pool"] = out["OB_prime"] - out["OB"]
 
     # Check if the rules are correctly applied
-    # No facility should end below min(OB, tau_donor_keep*AMC)
-    viol_lb = out["OB_prime"] < (np.minimum(out["OB"], tau_donor_keep * out["amc"]) - 1e-6)
-    #assert not viol_lb.any(), "Donor-protection LB violated (OB' < min(OB, tau_donor_keep*AMC))."
-    print(out[viol_lb][['available_prop_redis', 'available_prop', 'OB', 'OB_prime', 'amc']])
-    # Non-eligible levels never increase prob
-    #mask_non_elig = ~out["Facility_Level"].isin(["1a", "1b"])
-    #mask_correct = (out["available_prop_redis"] == out["available_prop"])
-    #print(out[mask_non_elig & ~mask_correct][['available_prop_redis', 'available_prop', 'OB', 'OB_prime', 'amc']])
+    # --- Build masks for skipping ---
+    # 1. Nodes that failed to solve optimally
+    # Exclude any node/month/item combinations that didn't solve optimally or which were skipped due to AMC == 0
+    if skipped_nodes:
+        skipped_df = pd.DataFrame(skipped_nodes, columns=[node_label, "month", "item_code"])
+
+        # Merge to flag rows belonging to skipped groups
+        out = out.merge(
+            skipped_df.assign(skip_flag=True),
+            on=[node_label, "month", "item_code"],
+            how="left",
+        )
+        mask_skip_solution = out["skip_flag"].fillna(False)
+    else:
+        mask_skip_solution = pd.Series(False, index=out.index)
+
+    # 2. Facilities with AMC effectively zero
+    mask_skip_amc = out["amc"].astype(float) <= 1e-9
+
+    # Combined skip mask
+    mask_skip = mask_skip_solution | mask_skip_amc
+    mask_solved = ~mask_skip
+    print(f"Skipping {mask_skip.sum()} rows due to non-optimal LPs or AMC≈0")
+
+    # No facility should end below min(OB, tau_donor_keep*AMC) (# Lower bound check)
+    tol = 1e-6 #tolerance
+    viol_lb = (
+        (out.loc[mask_solved, "OB_prime"] <
+         (np.minimum(out.loc[mask_solved, "OB"], tau_donor_keep * out.loc[mask_solved, "amc"]) - tol))
+    )
+
+    # No facility ends up above upper bounds (# Upper bound check)
+    elig = out.loc[mask_solved, "Facility_Level"].isin(["1a", "1b"]).values
+    ub = np.where(
+        elig,
+        tau_max * out.loc[mask_solved, "amc"],
+        np.minimum(out.loc[mask_solved, "OB"], tau_max * out.loc[mask_solved, "amc"])
+    )
+    viol_ub = out.loc[mask_solved, "OB_prime"].values > (ub + tol)
+
+    assert not viol_lb.any(), "viol_lb violated"
+    assert not viol_ub.any(), "viol_ub violated"
 
     if return_move_log:
         move_log = pd.DataFrame(move_rows)
@@ -1159,7 +1199,19 @@ fac_coords = lmis[['fac_name', 'district', 'lat','long']]
 #    osrm_base_url="https://router.project-osrm.org",
 #    max_chunk=50)
 
-# Plot stock adequacy by district and month
+# Store dictionary in pickle format
+#with open(outputfilepath / "T_car.pkl", "wb") as f:
+#    pickle.dump(T_car, f)
+# -> Commented out because it takes long to run. The result has been stored in pickle format
+
+# Load pre-generated dictionary
+with open(outputfilepath / "T_car.pkl", "rb") as f:
+    T_car = pickle.load(f)
+
+#edges_flat = build_edges_within_radius_flat(T_car, max_minutes= 60)
+
+# 2) Explore the availability and distances to make decisions about optimisation rules
+# Plot stock adequacy by district and month to assess what bounds to set when pooling
 fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
                                                  y_var = 'district', value_var = 'item_code',
                                                  value_label= f"% of consumables with Opening Balance ≥ 3 × AMC",
@@ -1185,16 +1237,7 @@ fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outpu
                                                  value_label= f"% of facilities with Opening Balance <= 1 × AMC",
                                                  amc_threshold = 1, compare = "le",
                                                  filename = "mth_item_stock_inadequacy_1amc.png")
-# Store dictionary in pickle format
-#with open(outputfilepath / "T_car.pkl", "wb") as f:
-#    pickle.dump(T_car, f)
-# -> Commented out because it takes long to run. The result has been stored in pickle format
 
-# Load pre-generated dictionary
-with open(outputfilepath / "T_car.pkl", "rb") as f:
-    T_car = pickle.load(f)
-
-#edges_flat = build_edges_within_radius_flat(T_car, max_minutes= 60)
 
 # Browse the number of eligible neighbours depending on allowable travel time
 results = []
@@ -1224,34 +1267,57 @@ plt.savefig(outputfilepath / "neighbour_count_by_max_travel_time")
 # TODO find a more generalisable solution for this issue (within the optimisation functions)
 #lmis = lmis[(lmis.amc != 0) & (lmis.amc.notna())]
 
-#lmis = lmis[lmis.district == 'Lilongwe']
-
-# Trying the updated pool-based redistribution
-# 1) Build clusters from your per-district travel-time matrices (minutes)
+# 3) Implement pooled redistribution
+# a) Build clusters from per-district travel-time matrices
 #    T_car_by_dist: {"District A": DF(index=fac_ids, cols=fac_ids), ...}
 cluster_size = 3
 cluster_series = build_capacity_clusters_all(T_car, cluster_size=cluster_size)
 # cluster_series is a pd.Series: index=facility_id, value like "District A#C00", "District A#C01", ...
 
-# 2) Pool at the cluster level
-pooled_df, cluster_moves = redistribute_pooling_lp(
-    df=lmis,  # your LMIS dataframe
+# b) Run optimisation at district level
+pooled_district_df, cluster_district_moves = redistribute_pooling_lp(
+    df=lmis_test,  # the LMIS dataframe
     tau_min=0.25, tau_max=3.0,
+    tau_donor_keep = 3.0,
+    pooling_level="district",
+    cluster_map=None,
+    return_move_log=True,
+    enforce_no_harm=True,
+    floor_to_baseline=True
+)
+print(pooled_district_df.groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
+pooled_district_df.to_csv(outputfilepath/ 'clustering_district_df.csv', index=False)
+tlo_pooled_district = (
+        pooled_district_df
+        .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
+        .agg(available_prop_scen16=("available_prop_redis", "mean"))
+        .sort_values(["item_code","district","Facility_Level","month"])
+    )
+
+
+#  c) Run optimisation at cluster (size = 3) level
+pooled_cluster_df, cluster_moves = redistribute_pooling_lp(
+    df=lmis,  # the LMIS dataframe
+    tau_min=0.25, tau_max=3.0,
+    tau_donor_keep = 3.0,
     pooling_level="cluster",
     cluster_map=cluster_series,
     return_move_log=True,
+    enforce_no_harm=True,
+    floor_to_baseline=True
 )
-pooled_df.to_csv(outputfilepath/ 'clustering_n3_df.csv', index=False)
+print(pooled_cluster_df.groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
+pooled_cluster_df.to_csv(outputfilepath/ 'clustering_n3_df.csv', index=False)
 
-# 3) Pool at the full district level (upper bound)
-pooled_district_df, district_moves = redistribute_pooling_lp(
-    df=lmis,
-    tau_min=0.25, tau_max=3.0,
-    pooling_level="district",
-    return_move_log=True,
-)
-pooled_df.to_csv(outputfilepath/ 'clustering_district_df.csv', index=False)
+tlo_pooled_cluster = (
+        pooled_district_df
+        .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
+        .agg(available_prop_scen17=("available_prop_redis", "mean"))
+        .sort_values(["item_code","district","Facility_Level","month"])
+    )
 
+
+# 3) Implement pairwise redistribution
 # 2) Run Scenario 1 (1-hour radius)
 
 tlo_30 = run_redistribution_scenarios(
