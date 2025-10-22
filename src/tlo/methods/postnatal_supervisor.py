@@ -232,7 +232,7 @@ class PostnatalSupervisor(Module):
                         'the end of the postnatal and neonatal period in case either the '
                         'mother or newborn are receiving treatment following the last PNC visit '),
         'obstetric_fistula_repair_beddays': Parameter(
-            Types.LIST, 'Number of beddays required for obstetric fistula repair'),
+            Types.INT, 'Number of beddays required for obstetric fistula repair'),
         'neonatal_period_end_days': Parameter(
             Types.INT, 'End of neonatal period in days')
     }
