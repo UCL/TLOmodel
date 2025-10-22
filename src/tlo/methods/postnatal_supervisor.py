@@ -205,7 +205,36 @@ class PostnatalSupervisor(Module):
             Types.LIST, 'Treatment effect of chlorhexidine cord care on early onset neonatal sepsis risk'),
         'treatment_effect_anti_htns_progression_pn': Parameter(
             Types.LIST, 'Treatment effect of oral anti hypertensives on progression from mild/mod to severe gestational'
-                        'hypertension')
+                        'hypertension'),
+
+        # TIMING AND SCHEDULING PARAMETERS
+        'fistula_repair_min_days': Parameter(
+            Types.LIST, 'Minimum days after birth to schedule obstetric fistula repair'),
+        'fistula_repair_max_days': Parameter(
+            Types.LIST, 'Maximum days after birth to schedule obstetric fistula repair'),
+        'fistula_repair_appointment_window_days': Parameter(
+            Types.LIST, 'Number of days for fistula repair appointment scheduling window'),
+        'emergency_postnatal_care_appointment_window_days': Parameter(
+            Types.LIST, 'Number of days for emergency postnatal care appointment scheduling window'),
+        'pnc_one_maternal_appt_max_days_without_complications': Parameter(
+            Types.LIST, 'Maximum number of days from current date for pnc_one_maternal_appt if no complications'),
+        'pnc_one_maternal_appt_window_days': Parameter(
+        Types.LIST, 'Number of days for pnc_one_maternal_appt scheduling window'),
+        'postnatal_check_sepsis_appt_window_days': Parameter(
+            Types.LIST, 'Number of days for postnatal check if sepsis - scheduling window'),
+        'pnc_one_neonatal_sepsis_appt_window_days': Parameter(
+            Types.LIST, 'Number of days for pnc_one_neonatal if sepsis - scheduling window'),
+        'emergency_care_postnatal_reset_week': Parameter(
+            Types.INT, 'Week at which pregnancy variables are reset for women who are experiencing '
+                        'severe complications'),
+        'postnatal_reset_week': Parameter(
+            Types.INT, 'Week at which postnatal variables are reset overall: Changes made 2 weeks after'
+                        'the end of the postnatal and neonatal period in case either the '
+                        'mother or newborn are receiving treatment following the last PNC visit '),
+        'obstetric_fistula_repair_beddays': Parameter(
+            Types.LIST, 'Number of beddays required for obstetric fistula repair'),
+        'neonatal_period_end_days': Parameter(
+            Types.INT, 'End of neonatal period in days')
     }
 
     PROPERTIES = {
@@ -365,12 +394,14 @@ class PostnatalSupervisor(Module):
                 if care_seeking_for_repair:
                     repair_hsi = HSI_PostnatalSupervisor_TreatmentForObstetricFistula(
                         self, person_id=mother_id)
-                    repair_date = self.sim.date + DateOffset(days=(self.rng.randint(7, 42)))
+                    repair_date = self.sim.date + DateOffset(days=(self.rng.randint(
+                        params['fistula_repair_min_days'], params['fistula_repair_max_days'])))
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(repair_hsi,
-                                                                        priority=0,
-                                                                        topen=repair_date,
-                                                                        tclose=repair_date + DateOffset(days=7))
+                                                priority=0,
+                                                topen=repair_date,
+                                                tclose=repair_date +
+                                                DateOffset(days=params['fistula_repair_appointment_window_days']))
 
             # ======================= CONTINUATION OF COMPLICATIONS INTO THE POSTNATAL PERIOD =========================
             # Certain conditions experienced in pregnancy are liable to continue into the postnatal period
@@ -676,23 +707,26 @@ class PostnatalSupervisor(Module):
                 self.sim.modules['Labour'], person_id=person)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_check,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=2))
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=self.sim.date +
+                               DateOffset(days=params['emergency_postnatal_care_appointment_window_days']))
 
         # For women who do not seek care we immediately apply risk of death due to complications
         for person in care_seekers.loc[~care_seekers].index:
             self.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother', individual_id=person)
 
-        if week == 6:
+        if week == params['emergency_care_postnatal_reset_week']:
             # Here we reset any remaining pregnancy variables (as some are used as predictors in models in the postnatal
             # period)
-            week_6_women = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 6)
+            emergency_care_postnatal_reset_week_women = (df.is_alive &
+                                df.la_is_postpartum &
+                                (df.pn_postnatal_period_in_weeks == params['emergency_care_postnatal_reset_week']))
 
             self.sim.modules['PregnancySupervisor'].pregnancy_supervisor_property_reset(
-                id_or_index=week_6_women.loc[week_6_women].index)
+                id_or_index=emergency_care_postnatal_reset_week_women.loc[emergency_care_postnatal_reset_week_women].index)
             self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
-                id_or_index=week_6_women.loc[week_6_women].index)
+                id_or_index=emergency_care_postnatal_reset_week_women.loc[emergency_care_postnatal_reset_week_women].index)
 
     def apply_risk_of_neonatal_complications_in_week_one(self, child_id, mother_id):
         """
@@ -768,9 +802,10 @@ class PostnatalSupervisor(Module):
                 self.sim.modules['NewbornOutcomes'], person_id=person)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_check,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=self.sim.date +
+                                   DateOffset(days=params['postnatal_check_sepsis_appt_window_days']))
 
         # And apply risk of death for newborns for which care is not sought
         for person in care_seeking.loc[~care_seeking].index:
@@ -864,6 +899,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
+        params = self.module.parameters
         store_dalys_in_mni = pregnancy_helper_functions.store_dalys_in_mni
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         mnh_counter = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
@@ -900,28 +936,32 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # newborn are receiving treatment following the last PNC visit (around day 42)
 
         # Maternal variables
-        week_8_postnatal_women_htn = \
-            df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8) & \
-            (df.pn_htn_disorders.str.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|severe_pre_eclamp|eclampsia'))
+        reset_week_postnatal_women_htn = \
+            (df.is_alive & df.la_is_postpartum &
+             (df.pn_postnatal_period_in_weeks == params['postnatal_reset_week']) &
+            (df.pn_htn_disorders.str.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|severe_pre_eclamp|eclampsia')))
 
         # Schedule date of resolution for any women with hypertension
-        for person in week_8_postnatal_women_htn.loc[week_8_postnatal_women_htn].index:
+        for person in reset_week_postnatal_women_htn.loc[reset_week_postnatal_women_htn].index:
             if not pd.isnull(mni[person]['hypertension_onset']):
                 store_dalys_in_mni(person, mni, 'hypertension_resolution', self.sim.date)
 
-        week_8_postnatal_women_anaemia = \
-            df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8) & \
-            (df.pn_anaemia_following_pregnancy != 'none')
+        reset_week_postnatal_women_anaemia = \
+            (df.is_alive & df.la_is_postpartum &
+             (df.pn_postnatal_period_in_weeks == params['postnatal_reset_week']) &
+            (df.pn_anaemia_following_pregnancy != 'none'))
 
         # Schedule date of resolution for any women with anaemia
-        for person in week_8_postnatal_women_anaemia.loc[week_8_postnatal_women_anaemia].index:
+        for person in reset_week_postnatal_women_anaemia.loc[reset_week_postnatal_women_anaemia].index:
             store_dalys_in_mni(person, mni, f'{df.at[person, "pn_anaemia_following_pregnancy"]}_anaemia'
                                             f'_pp_resolution', self.sim.date)
 
-        week_8_postnatal_women = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8)
+        reset_week_postnatal_women = (df.is_alive &
+                                            df.la_is_postpartum &
+                                            (df.pn_postnatal_period_in_weeks == params['postnatal_reset_week']))
 
         # Set mni[person]['delete_mni'] to True meaning after the next DALY event each womans MNI dict is deleted
-        for person in week_8_postnatal_women.loc[week_8_postnatal_women].index:
+        for person in reset_week_postnatal_women.loc[reset_week_postnatal_women].index:
             pn_checks = df.at[person, 'la_pn_checks_maternal']
 
             mni[person]['delete_mni'] = True
@@ -940,19 +980,20 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                                           'visits': df.at[person, 'la_pn_checks_maternal'],
                                                           'anaemia': df.at[person, 'pn_anaemia_following_pregnancy']})
 
-        df.loc[week_8_postnatal_women, 'pn_postnatal_period_in_weeks'] = 0
-        df.loc[week_8_postnatal_women, 'la_is_postpartum'] = False
-        df.loc[week_8_postnatal_women, 'la_pn_checks_maternal'] = 0
-        df.loc[week_8_postnatal_women, 'pn_sepsis_late_postpartum'] = False
-        df.loc[week_8_postnatal_women, 'pn_postpartum_haem_secondary'] = False
+        df.loc[reset_week_postnatal_women, 'pn_postnatal_period_in_weeks'] = 0
+        df.loc[reset_week_postnatal_women, 'la_is_postpartum'] = False
+        df.loc[reset_week_postnatal_women, 'la_pn_checks_maternal'] = 0
+        df.loc[reset_week_postnatal_women, 'pn_sepsis_late_postpartum'] = False
+        df.loc[reset_week_postnatal_women, 'pn_postpartum_haem_secondary'] = False
 
-        df.loc[week_8_postnatal_women, 'pn_htn_disorders'] = 'none'
-        df.loc[week_8_postnatal_women, 'pn_anaemia_following_pregnancy'] = 'none'
+        df.loc[reset_week_postnatal_women, 'pn_htn_disorders'] = 'none'
+        df.loc[reset_week_postnatal_women, 'pn_anaemia_following_pregnancy'] = 'none'
 
         # For the neonates we now determine if they will develop any long term neurodevelopmental impairment following
         # survival of the neonatal period
-        week_5_postnatal_neonates = df.is_alive & (df.age_days > 28) & (df.age_days < 36) & (df.date_of_birth >
-                                                                                             self.sim.start_date)
+        week_5_postnatal_neonates = (df.is_alive & (df.age_days > params['neonatal_period_end_days'])
+                                     & (df.age_days <= params['neonatal_period_end_days'] +7) &
+                                     (df.date_of_birth > self.sim.start_date))
 
         for person in week_5_postnatal_neonates.loc[week_5_postnatal_neonates].index:
             pn_checks = df.at[person, 'nb_pnc_check']
@@ -1157,7 +1198,8 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                                                                       params['prob_care_seeking_postnatal_emergency']):
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=2))
+                    pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date +
+                                            pd.DateOffset(days=params['pnc_one_maternal_appt_window_days']))
 
             # If she will not receive treatment for her complications we apply risk of death now
             else:
@@ -1166,9 +1208,12 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
         else:
             # Women without complications in week one are scheduled to attend PNC in the future
             if mni[individual_id]['will_receive_pnc'] == 'late':
-                appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 35))
+                appt_date = (self.sim.date +
+                    pd.DateOffset(self.module.rng.randint(0,
+                                params['pnc_one_maternal_appt_max_days_without_complications'])))
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=2))
+                    pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date +
+                                        pd.DateOffset(days= params['pnc_one_maternal_appt_window_days']))
 
 
 class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
@@ -1216,9 +1261,10 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
                                                                               'emergency_neonate'])):
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(pnc_one_neonatal,
-                                                                    priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + pd.DateOffset(days=1))
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=self.sim.date +
+                               pd.DateOffset(days=params['pnc_one_neonatal_sepsis_appt_window_days']))
             else:
                 # Apply risk of death for those who wont seek care
                 self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
@@ -1249,7 +1295,8 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'general_bed': module.parameters['obstetric_fistula_repair_beddays']}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
