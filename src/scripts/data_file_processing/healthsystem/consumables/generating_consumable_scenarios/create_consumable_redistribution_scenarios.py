@@ -102,8 +102,60 @@ lmis["item_code"] = lmis["item_code"].astype("string").str.strip()
 lmis["district"] = lmis["district"].astype("string").str.strip().str.replace(r"\s+", "_", regex=True)
 lmis["Facility_Level"] = lmis["Facility_Level"].astype("string").str.strip()
 
+# 3) Ensure numeric types (quietly coerce bad strings to NaN)
+lmis["amc"] = pd.to_numeric(lmis["amc"], errors="coerce")
+lmis["closing_bal"] = pd.to_numeric(lmis["closing_bal"], errors="coerce")
+
 # Keep only those facilities whose location is available
 lmis = lmis[lmis.lat.notna()]
+
+lmis[(lmis.amc ==0)|(lmis.amc.isna())].to_csv(outputfilepath / 'exploring_amc_0.csv', index=False)
+
+# --- 1) Replace amc==0 with mean(amc>0) per (fac_name, item_code) ---
+# Mark AMC bad-before
+amc_bad_before = lmis["amc"].isna() | (lmis["amc"] == 0)
+
+# Fix AMC: fill zeros/NaNs with mean of positive AMC within (fac_name, item_code)
+def _fill_amc_pos_mean(s: pd.Series) -> pd.Series:
+    m = s[s > 0].mean()  # mean over positive AMC only
+    if pd.isna(m):
+        return s          # no positive months -> leave as-is
+    return s.where(~(s.isna() | (s == 0)), m)
+
+amc_before_zeros_and_nan = ((lmis["amc"] == 0)|(lmis['amc'].isna())).sum()
+lmis['amc_previously_zero_or_nan'] = ((lmis["amc"] == 0)|(lmis['amc'].isna()))
+lmis["amc"] = (
+    lmis.groupby(["fac_name", "item_code"], group_keys=False)["amc"]
+        .transform(_fill_amc_pos_mean)
+)
+amc_after_zeros_and_nan =  ((lmis["amc"] == 0)|(lmis['amc'].isna())).sum()
+print(f"AMC zeroes and nan before: {amc_before_zeros_and_nan:,} | after: {amc_after_zeros_and_nan:,}")
+
+# Rows where AMC was bad and is now fixed (>0)
+amc_fixed_now = amc_bad_before & lmis["amc"].notna() & (lmis["amc"] > 0)
+
+# Prepare group means for closing_bal (non-zero, non-NaN only)
+cb_group_mean = (
+    lmis.groupby(["fac_name", "item_code"])["closing_bal"]
+         .transform(lambda s: s.replace(0, np.nan).mean())
+ )
+
+# Edit closing_bal ONLY where:
+#       (a) AMC was previously bad and is now fixed, AND
+#       (b) closing_bal is 0 or NaN, AND
+#       (c) a group mean exists
+cb_bad_now = lmis["closing_bal"].isna() | (lmis["closing_bal"] == 0)
+mask_edit = amc_fixed_now & cb_bad_now & cb_group_mean.notna()
+
+before = (cb_bad_now & amc_fixed_now).sum()
+
+lmis.loc[mask_edit, "closing_bal"] = cb_group_mean[mask_edit]
+
+after = ( (lmis["closing_bal"].isna()) | (lmis["closing_bal"] == 0) ) & amc_fixed_now
+print(f"closing_bal zeros/NaNs among AMC-fixed rows — before: {before:,} | after: {after.sum():,}")
+
+lmis[mask_edit].to_csv(outputfilepath / 'exploring_amc_0_after_fix.csv', index=False)
+
 # TODO assume something else about location of these facilities with missing location - eg. centroid of district?
 # only 16 facilties have missing information
 
@@ -1125,12 +1177,13 @@ def redistribute_pooling_lp(
               "which violates a constraint in the LPP")
         # TODO see if this problem needs to be resolved
         print(temp[viol_lb][['Facility_Level', 'amc', 'OB', 'OB_prime']])
-
+        temp[viol_lb][['Facility_Level', 'fac_name', 'amc', 'OB', 'OB_prime']].to_csv('violates_lb.csv')
     if viol_ub.any():
         print("For the following rows (facility, item and month combinations), unclear why OB_prime > tau_max * AMC "
               "which violates a constraint in the LPP")
         # TODO see if this problem needs to be resolved
         print(temp[viol_ub][['Facility_Level', 'amc', 'OB', 'OB_prime']])
+        temp[viol_ub][['Facility_Level', 'fac_name', 'amc', 'OB', 'OB_prime']].to_csv('violates_ub.csv')
 
     if return_move_log:
         move_log = pd.DataFrame(move_rows)
@@ -1303,6 +1356,7 @@ cluster_series = build_capacity_clusters_all(T_car, cluster_size=cluster_size)
 # cluster_series is a pd.Series: index=facility_id, value like "District A#C00", "District A#C01", ...
 
 # b) Run optimisation at district level
+print("Now running pooled redistribution at District level")
 pooled_district_df, cluster_district_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
     tau_min=0, tau_max=4.0,
@@ -1326,6 +1380,7 @@ tlo_pooled_district = (
 
 
 #  c) Run optimisation at cluster (size = 3) level
+print("Now running pooled redistribution at Cluster (Size = 3) level")
 pooled_cluster_df, cluster_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
     tau_min=0, tau_max=4.0,
