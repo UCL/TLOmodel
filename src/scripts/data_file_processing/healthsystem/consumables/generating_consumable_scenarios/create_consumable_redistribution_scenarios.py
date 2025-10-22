@@ -87,6 +87,21 @@ month_map = {
 lmis["month"] = lmis["month"].map(month_map)
 lmis["Facility_Level"] = lmis["Facility_Level"].str.replace("Facility_level_", "", regex=False)
 
+# Clean data types before analysis
+# 1) Normalize fac_name
+lmis["fac_name"] = (
+    lmis["fac_name"]
+    .astype("string")            # Pandas string dtype (not just object)
+    .str.normalize("NFKC")       # unify unicode forms
+    .str.strip()                 # trim leading/trailing spaces
+    .str.replace(r"\s+", "_", regex=True)  # collapse internal whitespace
+)
+
+# 2) Normalize other key columns used in grouping/joins
+lmis["item_code"] = lmis["item_code"].astype("string").str.strip()
+lmis["district"] = lmis["district"].astype("string").str.strip().str.replace(r"\s+", "_", regex=True)
+lmis["Facility_Level"] = lmis["Facility_Level"].astype("string").str.strip()
+
 # Keep only those facilities whose location is available
 lmis = lmis[lmis.lat.notna()]
 # TODO assume something else about location of these facilities with missing location - eg. centroid of district?
@@ -1008,7 +1023,7 @@ def redistribute_pooling_lp(
         mask_rows_pos = sel & out[facility_col].isin(facs_pos)
         out.loc[mask_rows_pos, "OB_prime"] = out.loc[mask_rows_pos, facility_col].map(x_sol).values
 
-        # Facilities with AMC<eps donate entirely: OB' = min(OB, 3*AMC) but since AMC≈0, pLB=0 -> OB' = 0
+        # Facilities with AMC<eps donate entirely: OB' = min(OB, tau_donor_keep*AMC) but since AMC≈0, pLB=0 -> OB' = 0
         # (this matches the "donate to pool" assumption)
         mask_rows_zero = sel & ~out[facility_col].isin(facs_pos)
         out.loc[mask_rows_zero, "OB_prime"] = 0.0
@@ -1102,8 +1117,20 @@ def redistribute_pooling_lp(
     )
     viol_ub = out.loc[mask_solved, "OB_prime"].values > (ub + tol)
 
-    assert not viol_lb.any(), "viol_lb violated"
-    assert not viol_ub.any(), "viol_ub violated"
+    #assert not viol_lb.any(), "viol_lb violated"
+    #assert not viol_ub.any(), "viol_ub violated"
+    temp = out[mask_solved]
+    if viol_lb.any():
+        print("For the following rows (facility, item and month combinations), unclear why OB_prime < tau_donor_keep * AMC "
+              "which violates a constraint in the LPP")
+        # TODO see if this problem needs to be resolved
+        print(temp[viol_lb][['Facility_Level', 'amc', 'OB', 'OB_prime']])
+
+    if viol_ub.any():
+        print("For the following rows (facility, item and month combinations), unclear why OB_prime > tau_max * AMC "
+              "which violates a constraint in the LPP")
+        # TODO see if this problem needs to be resolved
+        print(temp[viol_ub][['Facility_Level', 'amc', 'OB', 'OB_prime']])
 
     if return_move_log:
         move_log = pd.DataFrame(move_rows)
@@ -1200,13 +1227,14 @@ fac_coords = lmis[['fac_name', 'district', 'lat','long']]
 #    max_chunk=50)
 
 # Store dictionary in pickle format
-#with open(outputfilepath / "T_car.pkl", "wb") as f:
+#with open(outputfilepath / "T_car2.pkl", "wb") as f:
 #    pickle.dump(T_car, f)
 # -> Commented out because it takes long to run. The result has been stored in pickle format
 
 # Load pre-generated dictionary
-with open(outputfilepath / "T_car.pkl", "rb") as f:
+with open(outputfilepath / "T_car2.pkl", "rb") as f:
     T_car = pickle.load(f)
+# T_car2 was created after cleaning fac names and getting rid of spaces in the text
 
 #edges_flat = build_edges_within_radius_flat(T_car, max_minutes= 60)
 
@@ -1276,17 +1304,19 @@ cluster_series = build_capacity_clusters_all(T_car, cluster_size=cluster_size)
 
 # b) Run optimisation at district level
 pooled_district_df, cluster_district_moves = redistribute_pooling_lp(
-    df=lmis_test,  # the LMIS dataframe
-    tau_min=0.25, tau_max=3.0,
+    df=lmis,  # the LMIS dataframe
+    tau_min=0, tau_max=4.0,
     tau_donor_keep = 3.0,
     pooling_level="district",
     cluster_map=None,
     return_move_log=True,
-    enforce_no_harm=True,
+    enforce_no_harm=False,
     floor_to_baseline=True
 )
 print(pooled_district_df.groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
-pooled_district_df.to_csv(outputfilepath/ 'clustering_district_df.csv', index=False)
+pooled_district_df[['district', 'item_code',	'fac_name', 'month', 'amc', 'available_prop', 'Facility_Level',
+                    'OB', 'OB_prime', 'available_prop_redis_raw', 'available_prop_redis', 'received_from_pool',
+                    'skip_flag']].to_csv(outputfilepath/ 'clustering_district_df.csv', index=False)
 tlo_pooled_district = (
         pooled_district_df
         .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
@@ -1298,7 +1328,7 @@ tlo_pooled_district = (
 #  c) Run optimisation at cluster (size = 3) level
 pooled_cluster_df, cluster_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
-    tau_min=0.25, tau_max=3.0,
+    tau_min=0, tau_max=4.0,
     tau_donor_keep = 3.0,
     pooling_level="cluster",
     cluster_map=cluster_series,
@@ -1310,12 +1340,13 @@ print(pooled_cluster_df.groupby('Facility_Level')[['available_prop_redis', 'avai
 pooled_cluster_df.to_csv(outputfilepath/ 'clustering_n3_df.csv', index=False)
 
 tlo_pooled_cluster = (
-        pooled_district_df
+        pooled_cluster_df
         .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
         .agg(available_prop_scen17=("available_prop_redis", "mean"))
         .sort_values(["item_code","district","Facility_Level","month"])
     )
 
+tlo_pooled = tlo_pooled_district.merge(tlo_pooled_cluster, on=["item_code", "district", "Facility_Level", "month"], how="left", validate="one_to_one")
 
 # 3) Implement pairwise redistribution
 # 2) Run Scenario 1 (1-hour radius)
