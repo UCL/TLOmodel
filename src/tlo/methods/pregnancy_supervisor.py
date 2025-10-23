@@ -403,8 +403,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # MODULE DESIGN, TIMING & SCHEDULING PARAMETERS ...
         'parameter_update_year': Parameter(
             Types.INT, 'Year when parameters are updated from 2010 to 2015 values'),
-        'initial_event_scheduling_offset_days': Parameter(
-            Types.INT, 'Initial scheduling offset for PregnancySupervisorEvent in days'),
         'main_polling_frequency_weeks': Parameter(
             Types.INT, 'Frequency of PregnancySupervisorEvent in weeks'),
         'hsi_event_window_days': Parameter(
@@ -426,15 +424,15 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             Types.INT, 'Maximum weeks before ectopic rupture event'),
         'anc_care_seeking_initial_weeks': Parameter(
             Types.INT, 'Weeks of gestation at which initial care seeking is applied'),
-        'anc_scheduling_window': Parameter(
-            Types.INT, 'Window in days for scheduling of ANC event'),
+        'anc_one_scheduling_window': Parameter(
+            Types.INT, 'Window in days for scheduling of first ANC event'),
 
         # AGE & GESTATIONAL THRESHOLDS...
         'min_age_reproductive': Parameter(
             Types.INT, 'Minimum age for reproductive period'),
         'max_age_reproductive': Parameter(
             Types.INT, 'Maximum age for reproductive period'),
-        'gestation_week_for_risk_application': Parameter(
+        'gestation_week_for_first_risk_application': Parameter(
             Types.INT, 'Gestational age in weeks when initial pregnancy risks are applied'),
         'gestation_week_ectopic_limit': Parameter(
             Types.INT, 'Gestational age limit in weeks for ectopic pregnancy'),
@@ -605,7 +603,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # Next we register and schedule the PregnancySupervisorEvent
         sim.schedule_event(
             PregnancySupervisorEvent(self),
-            sim.date + DateOffset(days=params['initial_event_scheduling_offset_days'])
+            sim.date
         )
 
         # ..and register and schedule logging event
@@ -983,13 +981,13 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # As care seeking is applied at week 8 gestational age, women who seek care within month two must attend within
         # the next week
         if anc_month == params['anc_care_seeking_initial_weeks']/4:
-            days_until_anc = self.rng.randint(0, params['anc_scheduling_window'])
+            days_until_anc = self.rng.randint(0, params['anc_one_scheduling_window'])
         else:
             # Otherwise we draw a week between the min max weeks for predicted month of visit, and then a random day
             weeks_of_visit = (
                 self.rng.randint(months_min_max[anc_month][0], months_min_max[anc_month][1]) -
                 params['anc_care_seeking_initial_weeks'])
-            days_until_anc = (weeks_of_visit * 7) + self.rng.randint(0, params['anc_scheduling_window'])
+            days_until_anc = (weeks_of_visit * 7) + self.rng.randint(0, params['anc_one_scheduling_window'])
 
         first_anc_date = self.sim.date + DateOffset(days=days_until_anc)
 
@@ -1844,7 +1842,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # is similar to the functions which apply risk of complication
         new_pregnancy = (
             df.is_alive & df.is_pregnant &
-            (df.ps_gestational_age_in_weeks == params['gestation_week_for_risk_application'])
+            (df.ps_gestational_age_in_weeks == params['gestation_week_for_first_risk_application'])
         )
         ectopic_risk = pd.Series(self.module.rng.random_sample(len(new_pregnancy.loc[new_pregnancy])) <
                                  params['prob_ectopic_pregnancy'], index=new_pregnancy.loc[new_pregnancy].index)
@@ -1871,7 +1869,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # changes accordingly
         multiple_risk = (
             df.is_alive & df.is_pregnant &
-            (df.ps_gestational_age_in_weeks == params['gestation_week_for_risk_application']) &
+            (df.ps_gestational_age_in_weeks == params['gestation_week_for_first_risk_application']) &
             (df.ps_ectopic_pregnancy == 'none')
         )
 
@@ -1895,7 +1893,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Finally apply risk that syphilis will develop during pregnancy
         at_risk_women = (
             df.is_alive & df.is_pregnant &
-            (df.ps_gestational_age_in_weeks == params['gestation_week_for_risk_application']) &
+            (df.ps_gestational_age_in_weeks == params['gestation_week_for_first_risk_application']) &
             (df.ps_ectopic_pregnancy == 'none')
         )
 
