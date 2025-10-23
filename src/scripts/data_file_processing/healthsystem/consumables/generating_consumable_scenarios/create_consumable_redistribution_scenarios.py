@@ -214,6 +214,21 @@ def generate_stock_adequacy_heatmap(
                amc=("amc", "sum"))
           .reset_index()
     )
+    # Identify groups (fac_name, item_code) that have any non-zero amc
+    nonzero_groups = agg.loc[agg["amc"] != 0, ["fac_name", "item_code"]].drop_duplicates()
+
+    # Keep:
+    # - 1. all rows where amc != 0
+    # - 2. rows where the (fac_name, item_code) pair never had any non-zero amc
+    # (because this would indicate that their AMC may in fact be zero)
+    # - 3. rows where both Closing balance and AMC are not zero
+    agg = agg[
+        (agg["amc"] != 0)
+        | (~agg[["fac_name", "item_code"]]
+           .apply(tuple, axis=1)
+           .isin(nonzero_groups.apply(tuple, axis=1)))
+        ]
+    agg = agg[~((agg["amc"] == 0) & (agg["opening_bal"] == 0))]
 
     # ---- 3) Adequacy indicator per (month, district, item_code) ----
     if include_missing_as_fail:
