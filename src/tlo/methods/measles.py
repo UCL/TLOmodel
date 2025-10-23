@@ -81,31 +81,31 @@ class Measles(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "Age threshold below which children are protected by maternal immunity"
         ),
         "age_min_symptoms_constant_rate": Parameter(
-            Types.REAL, "Maximum age for measles symptom probability lookup"
+            Types.INT, "Maximum age for measles symptom probability lookup"
         ),
         "death_timing_min_days": Parameter(
-            Types.REAL, "Minimum days from symptom onset to death"
+            Types.INT, "Minimum days from symptom onset to death"
         ),
         "death_timing_max_days": Parameter(
-            Types.REAL, "Maximum days from symptom onset to death"
+            Types.INT, "Maximum days from symptom onset to death"
         ),
         "natural_resolution_min_days": Parameter(
-            Types.REAL, "Minimum days from symptom onset to natural resolution"
+            Types.INT, "Minimum days from symptom onset to natural resolution"
         ),
         "natural_resolution_max_days": Parameter(
-            Types.REAL, "Maximum days from symptom onset to natural resolution"
+            Types.INT, "Maximum days from symptom onset to natural resolution"
         ),
         "symptom_onset_min_days": Parameter(
-            Types.REAL, "Minimum days from infection to symptom onset (incubation period)"
+            Types.INT, "Minimum days from infection to symptom onset (incubation period)"
         ),
         "symptom_onset_max_days": Parameter(
-            Types.REAL, "Maximum days from infection to symptom onset (incubation period)"
+            Types.INT, "Maximum days from infection to symptom onset (incubation period)"
         ),
         "sympt_resolution_after_treatment": Parameter(
-            Types.REAL, "Days until symptom resolution after treatment"
+            Types.INT, "Days until symptom resolution after treatment"
         ),
         "main_polling_event_frequency_months": Parameter(
-            Types.REAL, "Measles main polling event frequency months"
+            Types.INT, "Measles main polling event frequency months"
         ),
         "case_fatality_rate": Parameter(
             Types.DICT, "Case fatality rate for measles infection"),
@@ -245,8 +245,8 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         self.symptom_probs = {level: probs.loc[(level, slice(None))].to_dict() for level in probs.index.levels[0]}
 
         # Check that a sensible value for a probability of symptom onset is declared for each symptom and for each age
-        # up to and including age for which symptom probabilities stabilizes
-        for _age in range(int(p["age_min_symptoms_constant_rate"]) + 1):
+        # up to and including 'age_min_symptoms_constant_rate' for which symptom probabilities stabilizes
+        for _age in range(p["age_min_symptoms_constant_rate"] + 1):
             assert set(self.symptoms) == set(self.symptom_probs.get(_age).keys())
             assert all([0.0 <= x <= 1.0 for x in self.symptom_probs.get(_age).values()])
 
