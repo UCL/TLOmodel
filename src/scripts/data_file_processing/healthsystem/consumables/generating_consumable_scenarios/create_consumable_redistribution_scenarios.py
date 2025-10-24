@@ -107,66 +107,13 @@ lmis["amc"] = pd.to_numeric(lmis["amc"], errors="coerce")
 lmis["closing_bal"] = pd.to_numeric(lmis["closing_bal"], errors="coerce")
 
 # Keep only those facilities whose location is available
+old_facility_count = lmis.fac_name.nunique()
 lmis = lmis[lmis.lat.notna()]
+new_facility_count = lmis.fac_name.nunique()
+print(f"{old_facility_count - new_facility_count} facilities out of {old_facility_count} in the lmis data dropped due to "
+      f"missing location information")
 
-lmis[(lmis.amc ==0)|(lmis.amc.isna())].to_csv(outputfilepath / 'exploring_amc_0.csv', index=False)
-
-# --- 1) Replace amc==0 with mean(amc>0) per (fac_name, item_code) ---
-# Mark AMC bad-before
-amc_bad_before = lmis["amc"].isna() | (lmis["amc"] == 0)
-
-# Fix AMC: fill zeros/NaNs with mean of positive AMC within (fac_name, item_code)
-def _fill_amc_pos_mean(s: pd.Series) -> pd.Series:
-    m = s[s > 0].mean()  # mean over positive AMC only
-    if pd.isna(m):
-        return s          # no positive months -> leave as-is
-    return s.where(~(s.isna() | (s == 0)), m)
-
-amc_before_zeros_and_nan = ((lmis["amc"] == 0)|(lmis['amc'].isna())).sum()
-lmis['amc_previously_zero_or_nan'] = ((lmis["amc"] == 0)|(lmis['amc'].isna()))
-lmis["amc"] = (
-    lmis.groupby(["fac_name", "item_code"], group_keys=False)["amc"]
-        .transform(_fill_amc_pos_mean)
-)
-amc_after_zeros_and_nan =  ((lmis["amc"] == 0)|(lmis['amc'].isna())).sum()
-print(f"AMC zeroes and nan before: {amc_before_zeros_and_nan:,} | after: {amc_after_zeros_and_nan:,}")
-
-# Rows where AMC was bad and is now fixed (>0)
-amc_fixed_now = amc_bad_before & lmis["amc"].notna() & (lmis["amc"] > 0)
-
-# Prepare group means for closing_bal (non-zero, non-NaN only)
-cb_group_mean = (
-    lmis.groupby(["fac_name", "item_code"])["closing_bal"]
-         .transform(lambda s: s.replace(0, np.nan).mean())
- )
-
-# Edit closing_bal ONLY where:
-#       (a) AMC was previously bad and is now fixed, AND
-#       (b) closing_bal is 0 or NaN, AND
-#       (c) a group mean exists
-cb_bad_now = lmis["closing_bal"].isna() | (lmis["closing_bal"] == 0)
-mask_edit = amc_fixed_now & cb_bad_now & cb_group_mean.notna()
-
-before = (cb_bad_now & amc_fixed_now).sum()
-
-lmis.loc[mask_edit, "closing_bal"] = cb_group_mean[mask_edit]
-
-after = ( (lmis["closing_bal"].isna()) | (lmis["closing_bal"] == 0) ) & amc_fixed_now
-print(f"closing_bal zeros/NaNs among AMC-fixed rows — before: {before:,} | after: {after.sum():,}")
-
-lmis[mask_edit].to_csv(outputfilepath / 'exploring_amc_0_after_fix.csv', index=False)
-
-# TODO assume something else about location of these facilities with missing location - eg. centroid of district?
-# only 16 facilties have missing information
-
-# For now, let's keep only 8 facilities in 1 district
-#lmis = lmis[lmis.district == 'Balaka']
-# Keep only facilities with Facility_Level == '1a'
-#lmis = lmis[lmis["Facility_Level"] == '1a']
-
-# -----------------------------------
-# 1) Data exploration
-# -----------------------------------
+# Explore missingness
 def compute_opening_balance(df: pd.DataFrame) -> pd.Series:
     """
     Opening balance from same-month records:
@@ -175,6 +122,45 @@ def compute_opening_balance(df: pd.DataFrame) -> pd.Series:
     """
     return df["closing_bal"] - df["received"] + df["dispensed"]
 
+# Drop the rows which seem suspicious
+# - 1. Rows with AMC and OB = 0 (these would be excluded from the redistribution algorithm anyway)
+# - 2. Rows where the (fac_name, item_code) pair only reported 0 AMC throughout the year
+lmis.reset_index(inplace=True, drop=True)
+lmis['opening_bal'] = compute_opening_balance(lmis)
+cb0 = (lmis.closing_bal == 0)|(lmis.closing_bal.isna())
+ob0 = (lmis.opening_bal == 0)|(lmis.opening_bal.isna())
+amc0 = (lmis.amc == 0)|(lmis.amc.isna())
+d0 = (lmis.dispensed == 0)|(lmis.dispensed.isna())
+r0 = (lmis.received == 0)|(lmis.received.isna())
+prob0 = (lmis.available_prop == 0)|(lmis.available_prop.isna())
+non_zero_amc_groups = lmis.loc[~amc0, ["fac_name", "item_code"]].drop_duplicates()
+non0_amc = lmis[['fac_name', 'item_code']].apply(tuple, axis=1).isin(non_zero_amc_groups.apply(tuple, axis=1))
+non_zero_ob_groups = lmis.loc[~ob0, ["fac_name", "item_code"]].drop_duplicates()
+non0_ob = lmis[['fac_name', 'item_code']].apply(tuple, axis=1).isin(non_zero_ob_groups.apply(tuple, axis=1))
+
+print(f"{(amc0 & non0_amc).sum()} rows ({(amc0 & non0_amc).sum()/len(lmis) * 100:.2f}%) where AMC is zero even though the same facility recorded a non-zero AMC for a specific item"
+      f"for a different month in the year")
+print(f"Among these, {(amc0 & cb0 & non0_amc).sum()} rows ({(amc0 & cb0 & non0_amc).sum()/len(lmis) * 100:.2f}% of "
+      f"total) also recorded CB as zero even though CB was non-zero for a different month")
+print(f"Among these, {(amc0 & cb0 & non0_amc & ~prob0).sum()} rows "
+      f"({(amc0 & cb0 & non0_amc& ~prob0).sum()/len(lmis) * 100:.2f}% of "
+      f"total) have been recorded as having a non-zero probability of drug availability based on data from other months.")
+
+old_row_count = len(lmis)
+drop_mask = (amc0 & ob0) | (~non0_amc)
+lmis = lmis[~drop_mask]
+new_row_count = len(lmis)
+
+print(f"{old_row_count - new_row_count} ({(old_row_count - new_row_count)/old_row_count * 100:.2f}%)"
+      f"rows out of {old_row_count} in the lmis data dropped due to seemingly incorrect entries")
+lmis.reset_index(inplace=True, drop = True)
+
+# TODO assume something else about location of these facilities with missing location - eg. centroid of district?
+# only 16 facilties have missing information
+
+# -----------------------------------
+# 1) Data exploration
+# -----------------------------------
 def generate_stock_adequacy_heatmap(
     df: pd.DataFrame,
     figures_path: Path = Path("figures"),
@@ -214,21 +200,6 @@ def generate_stock_adequacy_heatmap(
                amc=("amc", "sum"))
           .reset_index()
     )
-    # Identify groups (fac_name, item_code) that have any non-zero amc
-    nonzero_groups = agg.loc[agg["amc"] != 0, ["fac_name", "item_code"]].drop_duplicates()
-
-    # Keep:
-    # - 1. all rows where amc != 0
-    # - 2. rows where the (fac_name, item_code) pair never had any non-zero amc
-    # (because this would indicate that their AMC may in fact be zero)
-    # - 3. rows where both Closing balance and AMC are not zero
-    agg = agg[
-        (agg["amc"] != 0)
-        | (~agg[["fac_name", "item_code"]]
-           .apply(tuple, axis=1)
-           .isin(nonzero_groups.apply(tuple, axis=1)))
-        ]
-    agg = agg[~((agg["amc"] == 0) & (agg["opening_bal"] == 0))]
 
     # ---- 3) Adequacy indicator per (month, district, item_code) ----
     if include_missing_as_fail:
@@ -307,7 +278,7 @@ def generate_stock_adequacy_heatmap(
         cmap=cmap,
         cbar_kws={"label": value_label},
         ax=ax,
-        annot=True, annot_kws={"size": 10},
+        annot=annotation, annot_kws={"size": 10},
         vmin = 0, vmax = 100)
 
     ax.set_xlabel("Month")
