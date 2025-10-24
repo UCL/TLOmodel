@@ -1000,6 +1000,8 @@ def redistribute_pooling_lp(
         x = {f: LpVariable(f"x_{f}", lowBound=0) for f in facs_pos}
         p = {f: LpVariable(f"p_{f}", lowBound=0, upBound=1) for f in facs_pos}
         excess = LpVariable("excess", lowBound=0) if allow_excess_sink else None
+        # note that even though facilities with AMC == 0 are not considered for optimisation, their postive OB is
+        # included in the total stock
 
         # Objective: maximize total availability
         prob += lpSum(p.values())
