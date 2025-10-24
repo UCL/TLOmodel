@@ -122,37 +122,6 @@ def compute_opening_balance(df: pd.DataFrame) -> pd.Series:
     """
     return df["closing_bal"] - df["received"] + df["dispensed"]
 
-# Drop the rows which seem suspicious
-# - 1. Rows with AMC and OB = 0 (these would be excluded from the redistribution algorithm anyway)
-# - 2. Rows where the (fac_name, item_code) pair only reported 0 AMC throughout the year
-lmis.reset_index(inplace=True, drop=True)
-lmis['opening_bal'] = compute_opening_balance(lmis)
-cb0 = (lmis.closing_bal == 0)|(lmis.closing_bal.isna())
-ob0 = (lmis.opening_bal == 0)|(lmis.opening_bal.isna())
-amc0 = (lmis.amc == 0)|(lmis.amc.isna())
-d0 = (lmis.dispensed == 0)|(lmis.dispensed.isna())
-r0 = (lmis.received == 0)|(lmis.received.isna())
-prob0 = (lmis.available_prop == 0)|(lmis.available_prop.isna())
-non_zero_amc_groups = lmis.loc[~amc0, ["fac_name", "item_code"]].drop_duplicates()
-non0_amc = lmis[['fac_name', 'item_code']].apply(tuple, axis=1).isin(non_zero_amc_groups.apply(tuple, axis=1))
-non_zero_ob_groups = lmis.loc[~ob0, ["fac_name", "item_code"]].drop_duplicates()
-non0_ob = lmis[['fac_name', 'item_code']].apply(tuple, axis=1).isin(non_zero_ob_groups.apply(tuple, axis=1))
-
-print(f"{(amc0 & non0_amc).sum()} rows ({(amc0 & non0_amc).sum()/len(lmis) * 100:.2f}%) where AMC is zero even though the same facility recorded a non-zero AMC for a specific item"
-      f"for a different month in the year")
-print(f"Among these, {(amc0 & cb0 & non0_amc).sum()} rows ({(amc0 & cb0 & non0_amc).sum()/len(lmis) * 100:.2f}% of "
-      f"total) also recorded CB as zero even though CB was non-zero for a different month")
-print(f"Among these, {(amc0 & cb0 & non0_amc & ~prob0).sum()} rows "
-      f"({(amc0 & cb0 & non0_amc& ~prob0).sum()/len(lmis) * 100:.2f}% of "
-      f"total) have been recorded as having a non-zero probability of drug availability based on data from other months.")
-
-old_row_count = len(lmis)
-drop_mask = (amc0 & ob0) | (~non0_amc)
-lmis = lmis[~drop_mask]
-new_row_count = len(lmis)
-
-print(f"{old_row_count - new_row_count} ({(old_row_count - new_row_count)/old_row_count * 100:.2f}%)"
-      f"rows out of {old_row_count} in the lmis data dropped due to seemingly incorrect entries")
 lmis.reset_index(inplace=True, drop = True)
 
 # TODO assume something else about location of these facilities with missing location - eg. centroid of district?
@@ -200,6 +169,14 @@ def generate_stock_adequacy_heatmap(
                amc=("amc", "sum"))
           .reset_index()
     )
+
+    # Keep:
+    # - 1. all rows where amc != 0
+    # - 2. rows where the (fac_name, item_code) pair never had any non-zero amc
+    # (because this would indicate that their AMC may in fact be zero)
+    # - 3. rows where both Opening balance and AMC are not zero
+    agg = agg[(agg["amc"] != 0)]
+    agg = agg[~((agg["amc"] == 0) & (agg["opening_bal"] == 0))]
 
     # ---- 3) Adequacy indicator per (month, district, item_code) ----
     if include_missing_as_fail:
@@ -1342,7 +1319,7 @@ cluster_series = build_capacity_clusters_all(T_car, cluster_size=cluster_size)
 # cluster_series is a pd.Series: index=facility_id, value like "District A#C00", "District A#C01", ...
 
 # b) Run optimisation at district level
-print("Now running pooled redistribution at District level")
+print("Now running Pooled Redistribution at District level")
 pooled_district_df, cluster_district_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
     tau_min=0, tau_max=4.0,
