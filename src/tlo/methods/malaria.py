@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Literal, Optional, Union
 
 import pandas as pd
+
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, Predictor
@@ -954,7 +955,8 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=module.parameters['MalariaPollingEventDistrict_frequency_months']))
+        super().__init__(module, frequency=DateOffset(
+            months=module.parameters['MalariaPollingEventDistrict_frequency_months']))
 
     def apply(self, population):
         logger.debug(key='message', data='MalariaEvent: tracking the disease progression of the population')
