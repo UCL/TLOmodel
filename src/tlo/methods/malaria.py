@@ -258,8 +258,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         itn_curr = p['itn_district']
         itn_curr.rename(columns={'itn_rates': 'itn_rate'}, inplace=True)
         itn_curr['itn_rate'] = itn_curr['itn_rate'].round(decimals=1)
-        # maximum itn is 0.7; see comment https://github.com/UCL/TLOmodel/pull/165#issuecomment-699625290
-        itn_curr.loc[itn_curr.itn_rate > 0.7, 'itn_rate'] = 0.7
+        # temp_max_itn_coverage is currently set to 0.7; see comment https://github.com/UCL/TLOmodel/pull/165#issuecomment-699625290
+        itn_curr.loc[itn_curr.itn_rate > p['temp_max_itn_coverage'], 'itn_rate'] = p['temp_max_itn_coverage']
         itn_curr = itn_curr.set_index(['District', 'Year'])
 
         irs_curr = p['irs_district']
