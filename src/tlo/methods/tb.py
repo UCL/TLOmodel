@@ -2822,7 +2822,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         self,
                         topen=self.sim.date + pd.DateOffset(days=p["ipt_scheduling_delay_days_min"]),
-                        tclose=self.sim.date + pd.DateOffset(days=p["ipt_scheduling_delay_days_min"]),
+                        tclose=self.sim.date + pd.DateOffset(days=p["ipt_scheduling_delay_days_max"]),
                         priority=0,
                     )
 
