@@ -123,7 +123,7 @@ def test_hiv_scale_up(seed):
     assert sim.modules["Malaria"].itn_irs['irs_rate'].all() < 1.0
     # itn rates for 2019 onwards
     assert sim.modules["Malaria"].parameters["itn"] == mal_original_params.loc[
-        mal_original_params.parameter_name == "itn", "value"].values[0]
+        mal_original_params.parameter_name == "itn_projected_future_coverage", "value"].values[0]
 
     # check tb parameters unchanged
     tb_original_params = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="parameters")
@@ -196,8 +196,8 @@ def test_htm_scale_up(seed):
     # some irs coverage levels should now = 1.0
     assert sim.modules["Malaria"].itn_irs['irs_rate'].any() == 1.0
     # itn rates for 2019 onwards
-    assert sim.modules["Malaria"].parameters["itn"] == new_mal_params.loc[
-        new_mal_params.parameter == "itn", "target_value"].values[0]
+    assert sim.modules["Malaria"].parameters["itn_projected_future_coverage"] == new_mal_params.loc[
+        new_mal_params.parameter == "itn_projected_future_coverage", "target_value"].values[0]
 
     # check tb parameters changed
     new_tb_params = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="scaleup_parameters")

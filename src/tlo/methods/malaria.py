@@ -94,9 +94,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             'probability of severe anaemia in pregnant women with clinical malaria',
         ),
-        'itn_proj': Parameter(
-            Types.REAL, 'coverage of ITN for projections 2020 onwards'
-        ),
         'mortality_adjust': Parameter(
             Types.REAL, 'adjustment of case-fatality rate to match WHO/MAP'
         ),
@@ -116,7 +113,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'probability that a malaria case will have a scheduled rdt'
         ),
         'itn_projected_future_coverage': Parameter(
-            Types.REAL, 'projected future itn coverage'
+            Types.REAL, 'projected future itn coverage after data end'
         ),
         'rdt_testing_rates': Parameter(
             Types.REAL,
@@ -770,7 +767,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         self.itn_irs['itn_rate'] = scaled_params["itn_district"]
 
         # itn rates for 2019 onwards
-        p["itn_projected_future_coverage"] = scaled_params["itn_projected_future_coverage"]
+        p["itn_projected_future_coverage"] = scaled_params["itn"]
 
         # update exising linear models to use new scaled-up parameters
         self._build_linear_models()
