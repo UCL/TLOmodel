@@ -116,11 +116,42 @@ print(f"{old_facility_count - new_facility_count} facilities out of {old_facilit
 # Explore missingness
 def compute_opening_balance(df: pd.DataFrame) -> pd.Series:
     """
-    Opening balance from same-month records:
-    OB = closing_bal - received + dispensed.
-    This is equivalent to OB_(m) = CB_(m-1)
+    Compute opening balance (OB) per facility, item, and month.
+
+    Rule:
+      OB_(m) = closing_bal_(m-1)
+      If missing or zero, use OB_(m) = closing_bal_(m) - received_(m) + dispensed_(m)
+      If the computed OB_(m) < 0, set it to 0.
+      For January (month == 1), always use the formula.
+
+    Expected columns: ['fac_name', 'item_code', 'month', 'closing_bal', 'received', 'dispensed']
     """
-    return df["closing_bal"] - df["received"] + df["dispensed"]
+    df = df.copy()
+
+    # --- 1. Sort properly by facility, item, and month ---
+    df = df.sort_values(["fac_name", "item_code", "month"]).reset_index(drop=True)
+
+    # --- 2. Compute lag of closing balance (previous month’s closing balance) ---
+    df["CB_prev"] = (
+        df.groupby(["fac_name", "item_code"])["closing_bal"]
+        .shift(1)
+    )
+
+    # --- 3. Base formula for fallback ---
+    df["OB_formula"] = df["closing_bal"] - df["received"] + df["dispensed"]
+
+    # --- 4. Choose the appropriate opening balance ---
+    # Start with previous month’s CB
+    df["OB"] = df["CB_prev"]
+
+    # If OB missing or zero OR month == 1 → use formula
+    mask_formula = (df["OB"].isna()) | (df["OB"] <= 0) | (df["month"] == 1)
+    df.loc[mask_formula, "OB"] = df.loc[mask_formula, "OB_formula"]
+
+    # --- 5. Guard against negative balances ---
+    df["OB"] = df["OB"].clip(lower=0)
+
+    return df["OB"]
 
 lmis.reset_index(inplace=True, drop = True)
 
@@ -627,7 +658,7 @@ def redistribute_radius_lp(
     df: pd.DataFrame,
     time_matrix: pd.DataFrame,
     radius_minutes: float,
-    tau_keep: float = 2.0, # Keeper minimum (2 --> Donors want to keep at least 2 X AMC)
+    tau_keep: float = 3.0, # Keeper minimum (2 --> Donors want to keep at least 3 X AMC)
     tau_tar: float = 1.0, # Receiver target (1 --> Receivers want OB = AMC)
     alpha: float = 0.7, # Donation cap (between 0 and 1)
     # alpha can be set to 1 if donors only want to keep a min of tau_keep X AMC
