@@ -1307,12 +1307,11 @@ tlo_pooled_district = (
 print("Now running pooled redistribution at Cluster (Size = 3) level")
 pooled_cluster_df, cluster_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
-    tau_min=0, tau_max=4.0,
-    tau_donor_keep = 3.0,
+    tau_min=0, tau_max=3.0,
+    tau_donor_keep = 1.0,
     pooling_level="cluster",
     cluster_map=cluster_series,
     return_move_log=True,
-    enforce_no_harm=True,
     floor_to_baseline=True
 )
 print(pooled_cluster_df.drop(columns = ['LMIS Facility List', 'lat', 'long', 'fac_owner']).groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
