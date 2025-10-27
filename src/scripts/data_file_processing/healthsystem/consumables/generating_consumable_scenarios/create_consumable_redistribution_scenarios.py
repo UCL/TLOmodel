@@ -126,6 +126,21 @@ def compute_opening_balance(df: pd.DataFrame) -> pd.Series:
     ob = df["closing_bal"] - df["received"] + df["dispensed"]
     return ob.clip(lower=0)
 
+# 1. Compute opening balance
+lmis["opening_bal"] = compute_opening_balance(lmis).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+# Mechanistic probability (p_mech = OB / AMC)
+amc_safe = np.maximum(1e-6, lmis["amc"].astype(float))
+lmis["p_mech"] = np.clip(lmis["opening_bal"] / amc_safe, 0.0, 1.0)
+# Identify inconsistent rows (where reported p > mechanistic p)
+mask_inconsistent = lmis["p_mech"] < lmis["available_prop"]
+# Adjust opening balance upward to match reported availability
+lmis.loc[mask_inconsistent, "opening_bal"] = (
+    lmis.loc[mask_inconsistent, "available_prop"] * lmis.loc[mask_inconsistent, "amc"]
+)
+print(f"Adjusted {mask_inconsistent.sum():,} rows "
+      f"({mask_inconsistent.mean()*100:.2f}%) where recorded availability "
+      f"exceeded mechanistic availability.")
+
 lmis.reset_index(inplace=True, drop = True)
 
 # TODO assume something else about location of these facilities with missing location - eg. centroid of district?
@@ -155,9 +170,7 @@ def generate_stock_adequacy_heatmap(
     Heatmap values: for each (month, district), the % of item_code groups where
     sum(opening_balance over Facility_ID) >= 3 * sum(amc over Facility_ID).
     """
-
     df = df.copy()
-    df["opening_bal"] =  compute_opening_balance(df).replace([np.inf, -np.inf], np.nan).fillna(0.0)
 
     # --- 1. Ensure month is int and build label ---
     df["month"] = pd.to_numeric(df["month"], errors="coerce").astype("Int64")
@@ -286,7 +299,6 @@ def generate_stock_adequacy_heatmap(
 # -----------------------------------
 # 2) Estimate travel time matrix
 # -----------------------------------
-
 def _chunk_indices(n: int, chunk: int):
     """Yield (start, end) index pairs for chunking 0..n-1."""
     for s in range(0, n, chunk):
@@ -643,7 +655,6 @@ def redistribute_radius_lp(
     facility_col="fac_name",
     level_col="Facility_Level",
     amc_col="amc",
-    close_cols=("closing_bal","received","dispensed"),
     # outputs/behaviour
     return_edge_log: bool = True,
     floor_to_baseline: bool = True,       # if True, never let reported availability drop below baseline
@@ -666,11 +677,13 @@ def redistribute_radius_lp(
         - degree caps per item: inbound ≤ K_in, outbound ≤ K_out
     Availability is recomputed mechanistically and written back **only** where a transfer occurred.
     """
-    closing_bal, received, dispensed = close_cols
     out = df.copy()
 
-    # Opening balance (same-month identity)
-    out["OB"] = compute_opening_balance(out).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    # Opening balance
+    out["OB"] = out["opening_bal"]
+    # Preserve only necessary columns
+    selected_cols = list(id_cols) + [level_col, facility_col, 'OB', amc_col, 'available_prop']
+    out = out[selected_cols]
 
     # clean AMC & level
     out[amc_col] = pd.to_numeric(out[amc_col], errors="coerce").fillna(0.0)
@@ -876,12 +889,10 @@ def redistribute_pooling_lp(
     level_col="Facility_Level",
     amc_col="amc",
     close_cols=("closing_bal","received","dispensed"),
-    keep_baseline_for_amc0: bool = True,   # leave baseline availability where AMC≈0
     amc_eps: float = 1e-6,                  # threshold to treat AMC as "zero"
     return_move_log: bool = True, # return a detailed df showing net movement of consumables after redistribution
     pooling_level: str = "district",  # "district" or "cluster"
     cluster_map: pd.Series | None = None,  # required if pooling_level=="cluster"; this specifes which cluster each facility belongs to
-    enforce_no_harm: bool = True,  # if True, enforce p_f >= baseline at each facility (hard constraint)
     floor_to_baseline: bool = True # if True, report availability floored to baseline (no decrease in outputs)
 ) -> pd.DataFrame:
     """
@@ -911,8 +922,16 @@ def redistribute_pooling_lp(
     closing_bal, received, dispensed = close_cols
     out = df.copy()
 
-    # Safe opening balance
-    out["OB"] = compute_opening_balance(out).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    # Opening balance
+    # Ensure OB is consistent with observed availability
+    amc_safe = np.maximum(1e-6, lmis["amc"].astype(float))
+    lmis["p_mech"] = np.clip(lmis["opening_bal"] / amc_safe, 0.0, 1.0)
+
+    mask_inconsistent = lmis["p_mech"] < lmis["available_prop"]
+    lmis.loc[mask_inconsistent, "opening_bal"] = (
+        lmis.loc[mask_inconsistent, "available_prop"] * lmis.loc[mask_inconsistent, "amc"]
+    )
+    out["OB"] = out["opening_bal"]
 
     # Default (will overwrite per group)
     out["OB_prime"] = out["OB"]
@@ -957,16 +976,12 @@ def redistribute_pooling_lp(
                .astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0))
         LVL = (g.set_index(facility_col)[level_col].astype(str)
                .replace({np.nan: ""}))
-        Pbase = (g.set_index(facility_col)["available_prop"]
-                 .astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0))
 
         # collapse duplicates if any
         if AMC.index.duplicated().any():
             AMC = AMC[~AMC.index.duplicated(keep="first")]
         if LVL.index.duplicated().any():
             LVL = LVL[~LVL.index.duplicated(keep="first")]
-        if Pbase.index.duplicated().any():
-            Pbase = Pbase.groupby(level=0).mean()  # average baseline if duplicates
         if OB0.index.duplicated().any():
             OB0 = OB0.groupby(level=0).sum()
 
@@ -984,48 +999,28 @@ def redistribute_pooling_lp(
         AMC_pos = AMC.loc[facs_pos]
         OB0_pos = OB0.loc[facs_pos]
         LVL_pos = LVL.reindex(facs_pos)
-        Pbase_pos = Pbase.reindex(facs_pos).fillna(0.0)
 
-        # policy floors/ceilings (raw)
+        # policy floors/ceilings
         tau_min_floor = (tau_min * AMC_pos).astype(float)
-        tau_max_ceiling = (tau_max * AMC_pos).astype(float)
+        donor_protect  = np.minimum(OB0_pos, tau_donor_keep * AMC_pos)  # retain min(OB, tau_donor_keep*AMC)
+        LB0 = np.maximum(tau_min_floor, donor_protect)
 
-        # ---- Donor protection: x_f >= pLB_f = min(OB, tau_donor_keep*AMC)
-        pLB = np.minimum(OB0_pos, tau_donor_keep * AMC_pos)  # the lower bound for a donor facility is OB if that is less than
-        #tau_donor_keep X AMC or tau_donor_keep X AMC is that is lower than OB (i.e. only OB - 3 X AMC can be donated, if tau_donor_keep = 3)
+        UB = (tau_max * AMC_pos).astype(float)
+        UB.loc[~LVL_pos.isin(["1a", "1b"])] = np.minimum(
+            OB0_pos.loc[~LVL_pos.isin(["1a", "1b"])],
+            UB.loc[~LVL_pos.isin(["1a", "1b"])]
+        )
 
-        # ---- Receiver eligibility: only 1a/1b may increase above OB
-        eligible_mask = LVL_pos.isin(["1a", "1b"])
-        # For eligible: UB = tau_max*AMC
-        # For ineligible: UB = min(OB, tau_max*AMC)  (can donate, cannot receive above OB)
-        UB = tau_max_ceiling.copy()
-        UB.loc[~eligible_mask] = np.minimum(OB0_pos.loc[~eligible_mask], tau_max_ceiling.loc[~eligible_mask])
-
-        # ---- Lower bound assembly BEFORE scaling tau_min
-        LB0 = np.maximum(pLB, tau_min_floor)  # enforces receiver's lower bound
-
-        # ---- Optional "no-harm": p_f >= baseline -> x_f >= AMC_f * p_base_f
-        if enforce_no_harm:
-            no_harm_lb = (AMC_pos * Pbase_pos).astype(float)
-            LB0 = np.maximum(LB0, no_harm_lb)
-
-        # ---- Feasibility: scale ONLY the tau_min component if needed
+        # Feasibility: scale only the tau_min component if sum LB > total_stock
         sum_LB0 = float(LB0.sum())
         if total_stock + 1e-9 < sum_LB0:
-            # We want LB = max(pLB, tau_min_scaled, [no_harm_lb])
-            # Scale only the portion of tau_min_floor that lies above pLB (and above no_harm if on).
-            base_guard = pLB.copy()
-            if enforce_no_harm:
-                base_guard = np.maximum(base_guard, (AMC_pos * Pbase_pos))
-
-            # Decompose tau_min contribution above base_guard
-            tau_min_above = np.maximum(0.0, tau_min_floor - np.minimum(tau_min_floor, base_guard))
-            need = float(tau_min_above.sum())
-            # Available stock for that component:
+            # Scale down the tau_min part (not the donor protection)
+            base_guard = donor_protect
+            extra = np.maximum(0.0, tau_min_floor - np.minimum(tau_min_floor, base_guard))
+            need = float(extra.sum())
             budget = total_stock - float(base_guard.sum())
             scale = 0.0 if need <= 1e-12 else max(0.0, min(1.0, budget / max(1e-9, need)))
-
-            tau_min_scaled = np.minimum(base_guard, tau_min_floor) + tau_min_above * scale
+            tau_min_scaled = np.minimum(base_guard, tau_min_floor) + extra * scale
             LB = np.maximum(base_guard, tau_min_scaled)
         else:
             LB = LB0
@@ -1033,6 +1028,12 @@ def redistribute_pooling_lp(
         # ---- Excess sink if ceilings bind
         sum_UB = float(UB.sum())
         allow_excess_sink = total_stock > sum_UB + 1e-9
+
+        # 1) Per-facility feasibility guard
+        bad = LB > UB + 1e-12
+        if bad.any():
+            # clip LB to UB; if that still leaves negative room, the facility is degenerate
+            LB = np.minimum(LB, UB - 1e-9)
 
         # ---------- LP ----------
         prob = LpProblem(f"Pooling_{node_val}_{m}_{i}", LpMaximize)
@@ -1055,7 +1056,7 @@ def redistribute_pooling_lp(
         for f in facs_pos:
             prob += x[f] >= float(LB.loc[f])  # donor protection + tau_min (scaled) + (optional) no-harm
             prob += x[f] <= float(UB.loc[f])  # eligibility-aware ceiling
-            prob += float(AMC_pos.loc[f]) * p[f] <= x[f]  # p <= x/AMC
+            prob += float(max(AMC_pos.loc[f], amc_eps)) * p[f] <= x[f] # TODO CHECK max(AMC_pos.loc[f], amc_eps) or just AMC_pos
 
         # Solve
         prob.solve(PULP_CBC_CMD(msg=False, cuts=0, presolve=True, threads=1))
@@ -1099,51 +1100,26 @@ def redistribute_pooling_lp(
                     "eligible_receiver": bool(LVL.get(f, "") in {"1a", "1b"}),
                 })
 
-    # ---------- Availability after redistribution ----------
-    # ---------- Availability after redistribution (safe) ----------
-    amc_safe = out[amc_col].astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0)
-    pos_mask = amc_safe >= amc_eps
-
-    # Mechanistic availability p_mech = min(1, OB'/AMC) with guards
-    p_mech = np.zeros(len(out), dtype=float)
-    denom = np.maximum(amc_eps, amc_safe[pos_mask].to_numpy())
-    p_mech[pos_mask.values] = np.minimum(
-        1.0, np.maximum(0.0, out.loc[pos_mask, "OB_prime"].to_numpy() / denom)
-    )
-    if keep_baseline_for_amc0:
-        # keep observed availability where AMC≈0
-        p_mech[~pos_mask.values] = (
-            out.loc[~pos_mask, "available_prop"]
-            .astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0)
-            .to_numpy()
-        )
-    else:
-        # or: 1 if OB'>0 else 0 where AMC≈0
-        p_mech[~pos_mask.values] = (
-            out.loc[~pos_mask, "OB_prime"].to_numpy() > 0.0
-        ).astype(float)
-
-    # ---------- Update availability ONLY where a transfer actually occurred ----------
-    tol = 1e-6
-    changed_mask = (out["OB_prime"] - out["OB"]).abs().values > tol
-    elig_mask = out[level_col].isin(["1a", "1b"]).values
-    apply_mask = changed_mask & elig_mask
+    # --- Availability after redistribution: update ONLY where OB' changed ---
+    amc_safe_all = out[amc_col].astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    denom = np.maximum(amc_eps, amc_safe_all.values)
 
     # Start from baseline everywhere
-    avail_base = out["available_prop"].astype(float).replace([np.inf, -np.inf], np.nan).fillna(0.0).values
-    out["available_prop_redis"] = avail_base.copy()
+    out["available_prop_redis"] = out["available_prop"].astype(float).values
 
-    # Update only where transfers occurred AND facility is eligible
+    changed = (out["OB_prime"] - out["OB"]).abs() > 1e-6
+    p_new = np.minimum(1.0, np.maximum(0.0, out.loc[changed, "OB_prime"].values / denom[changed]))
     if floor_to_baseline:
-        out.loc[apply_mask, "available_prop_redis"] = np.maximum(
-            avail_base[apply_mask], p_mech[apply_mask]
-        )
-    else:
-        out.loc[apply_mask, "available_prop_redis"] = p_mech[apply_mask]
+        p_new = np.maximum(p_new, out.loc[changed, "available_prop"].astype(float).values)
+
+    out.loc[changed, "available_prop_redis"] = p_new
+    out["received_from_pool"] = out["OB_prime"] - out["OB"]
+
+    move_log = pd.DataFrame(move_rows) if return_move_log else None
 
     # Force non-eligible levels back to baseline (mirror analysis scope)
-    #non_elig = ~out[level_col].isin(["1a", "1b"])
-    #out.loc[non_elig, "available_prop_redis"] = out.loc[non_elig, "available_prop"].values  # this should ideally happen automatically
+    non_elig = ~out[level_col].isin(["1a", "1b"])
+    out.loc[non_elig, "available_prop_redis"] = out.loc[non_elig, "available_prop"].values  # this should ideally happen automatically
     # however, there are facilities at levels 2-4 whether some stock out was experienced even though OB > AMC
     # We want to retain the original probability in these cases because our overall analysis is restricted to levels 1a and 1b
 
@@ -1151,6 +1127,8 @@ def redistribute_pooling_lp(
     out["received_from_pool"] = out["OB_prime"] - out["OB"]
 
     # Check if the rules are correctly applied
+    # This section until  if return_move_log:, is not required for the solution
+    #---------------------------------------------------------------------------------
     # --- Build masks for skipping ---
     # 1. Nodes that failed to solve optimally
     # Exclude any node/month/item combinations that didn't solve optimally or which were skipped due to AMC == 0
@@ -1166,6 +1144,8 @@ def redistribute_pooling_lp(
         mask_skip_solution = out["skip_flag"].fillna(False)
     else:
         mask_skip_solution = pd.Series(False, index=out.index)
+
+    #out[mask_skip_solution].to_csv(outputfilepath / 'skipped_nodes_no_optiimal_soln.csv', index = False)
 
     # 2. Facilities with AMC effectively zero
     mask_skip_amc = out["amc"].astype(float) <= 1e-9
@@ -1191,19 +1171,15 @@ def redistribute_pooling_lp(
     )
     viol_ub = out.loc[mask_solved, "OB_prime"].values > (ub + tol)
 
-    #assert not viol_lb.any(), "viol_lb violated"
-    #assert not viol_ub.any(), "viol_ub violated"
     temp = out[mask_solved]
     if viol_lb.any():
         print("For the following rows (facility, item and month combinations), unclear why OB_prime < tau_donor_keep * AMC "
               "which violates a constraint in the LPP")
-        # TODO see if this problem needs to be resolved
         print(temp[viol_lb][['Facility_Level', 'amc', 'OB', 'OB_prime']])
         temp[viol_lb][['Facility_Level', 'fac_name', 'amc', 'OB', 'OB_prime']].to_csv('violates_lb.csv')
     if viol_ub.any():
         print("For the following rows (facility, item and month combinations), unclear why OB_prime > tau_max * AMC "
               "which violates a constraint in the LPP")
-        # TODO see if this problem needs to be resolved
         print(temp[viol_ub][['Facility_Level', 'amc', 'OB', 'OB_prime']])
         temp[viol_ub][['Facility_Level', 'fac_name', 'amc', 'OB', 'OB_prime']].to_csv('violates_ub.csv')
 
@@ -1294,28 +1270,27 @@ plt.savefig(outputfilepath / "neighbour_count_by_max_travel_time")
 #lmis = lmis[(lmis.amc != 0) & (lmis.amc.notna())]
 
 # 3) Implement pooled redistribution
-# a) Build clusters from per-district travel-time matrices
+# Build clusters from per-district travel-time matrices
 #    T_car_by_dist: {"District A": DF(index=fac_ids, cols=fac_ids), ...}
 cluster_size = 3
 cluster_series = build_capacity_clusters_all(T_car, cluster_size=cluster_size)
 # cluster_series is a pd.Series: index=facility_id, value like "District A#C00", "District A#C01", ...
 
-# b) Run optimisation at district level
+# a) Run optimisation at district level
 print("Now running Pooled Redistribution at District level")
 pooled_district_df, cluster_district_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
-    tau_min=0, tau_max=4.0,
-    tau_donor_keep = 3.0,
+    tau_min=0, tau_max=3.0,
+    tau_donor_keep = 1.0,
     pooling_level="district",
     cluster_map=None,
     return_move_log=True,
-    enforce_no_harm=False,
     floor_to_baseline=True
 )
-print(pooled_district_df.groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
+print(pooled_district_df.drop(columns = ['LMIS Facility List', 'lat', 'long', 'fac_owner']).groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
 pooled_district_df[['district', 'item_code',	'fac_name', 'month', 'amc', 'available_prop', 'Facility_Level',
-                    'OB', 'OB_prime', 'available_prop_redis_raw', 'available_prop_redis', 'received_from_pool',
-                    'skip_flag']].to_csv(outputfilepath/ 'clustering_district_df.csv', index=False)
+                    'OB', 'OB_prime', 'available_prop_redis', 'received_from_pool']].to_csv(
+                    outputfilepath/ 'clustering_district_df.csv', index=False)
 tlo_pooled_district = (
         pooled_district_df
         .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
@@ -1324,7 +1299,7 @@ tlo_pooled_district = (
     )
 
 
-#  c) Run optimisation at cluster (size = 3) level
+#  b) Run optimisation at cluster (size = 3) level
 print("Now running pooled redistribution at Cluster (Size = 3) level")
 pooled_cluster_df, cluster_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
@@ -1336,7 +1311,7 @@ pooled_cluster_df, cluster_moves = redistribute_pooling_lp(
     enforce_no_harm=True,
     floor_to_baseline=True
 )
-print(pooled_cluster_df.groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
+print(pooled_cluster_df.drop(columns = ['LMIS Facility List', 'lat', 'long', 'fac_owner']).groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
 pooled_cluster_df.to_csv(outputfilepath/ 'clustering_n3_df.csv', index=False)
 
 tlo_pooled_cluster = (
@@ -1348,30 +1323,50 @@ tlo_pooled_cluster = (
 
 tlo_pooled = tlo_pooled_district.merge(tlo_pooled_cluster, on=["item_code", "district", "Facility_Level", "month"], how="left", validate="one_to_one")
 
-# 3) Implement pairwise redistribution
-# 2) Run Scenario 1 (1-hour radius)
-
-tlo_30 = run_redistribution_scenarios(
-    lmis,
-    scenario="radius_30",
+# c) Implement pairwise redistribution
+# c.i) 1-hour radius
+large_radius_df, large_radius_moves = redistribute_radius_lp(
+    df=lmis,
     time_matrix=T_car,
-    tau_keep=2.0, tau_tar=1.0, alpha=1,
-    K_in=2, K_out=2, Qmin_days=7.0,
+    radius_minutes=60,      # facilities within 1 hour by car
+    tau_keep=1.0,           # donor must keep 1 × AMC
+    tau_tar=1.0,            # receivers target 1× AMC
+    K_in=1,           # at most 1 inbound transfers per item
+    K_out=10,          # at most 10 outbound transfers
+    Qmin_proportion=0.25,          # min lot = one week of demand
+    eligible_levels=("1a", "1b"),  # only 1a/1b can receive
 )
+print(large_radius_df.drop(columns = ['LMIS Facility List', 'lat', 'long', 'fac_owner']).groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
+large_radius_df.to_csv(outputfilepath/ 'large_radius_df.csv', index=False)
 
-tlo_60 = run_redistribution_scenarios(
-    lmis,
-    scenario="radius_60",
+tlo_large_radius = (
+        large_radius_df
+        .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
+        .agg(available_prop_scen18=("available_prop_redis", "mean"))
+        .sort_values(["item_code","district","Facility_Level","month"])
+    )
+
+# c.ii) 30-minute radius
+small_radius_df, small_radius_moves = redistribute_radius_lp(
+    df=lmis,
     time_matrix=T_car,
-    tau_keep=2.0, tau_tar=1.0, alpha=1,
-    K_in=2, K_out=2, Qmin_days=7.0,
+    radius_minutes=30,      # facilities within 1 hour by car
+    tau_keep=1.0,           # donor must keep 1 × AMC
+    tau_tar=1.0,            # receivers target 1 × AMC
+    K_in=1,           # at most 1 inbound transfers per item
+    K_out=10,          # at most 10 outbound transfers
+    Qmin_proportion=0.25,          # min lot = one week of demand
+    eligible_levels=("1a", "1b"),  # only 1a/1b can receive
 )
+print(small_radius_df.drop(columns = ['LMIS Facility List', 'lat', 'long', 'fac_owner']).groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
+small_radius_df.to_csv(outputfilepath/ 'small_radius_df.csv', index=False)
 
-tlo_pooling = run_redistribution_scenarios(
-    lmis,
-    scenario="pooling",
-    tau_min=0.75, tau_max=3.0
-)
+tlo_small_radius = (
+        small_radius_df
+        .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
+        .agg(available_prop_scen19=("available_prop_redis", "mean"))
+        .sort_values(["item_code","district","Facility_Level","month"])
+    )
 
 tlo_availability_df = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
 # Drop any scenario data previously included in the resourcefile
