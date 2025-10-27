@@ -9,7 +9,9 @@ import numpy as np
 import pandas as pd
 
 from typing import Literal, Optional, Dict, Tuple, Iterable
+from functools import reduce
 import requests
+from collections import defaultdict
 
 from pulp import LpProblem, LpMaximize, LpVariable, LpBinary, LpStatus, value, lpSum, LpContinuous, PULP_CBC_CMD
 from math import ceil
@@ -146,9 +148,9 @@ lmis.reset_index(inplace=True, drop = True)
 # TODO assume something else about location of these facilities with missing location - eg. centroid of district?
 # only 16 facilties have missing information
 
-# -----------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # 1) Data exploration
-# -----------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 def generate_stock_adequacy_heatmap(
     df: pd.DataFrame,
     figures_path: Path = Path("figures"),
@@ -296,9 +298,9 @@ def generate_stock_adequacy_heatmap(
 
     return fig, ax, heatmap_df
 
-# -----------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # 2) Estimate travel time matrix
-# -----------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 def _chunk_indices(n: int, chunk: int):
     """Yield (start, end) index pairs for chunking 0..n-1."""
     for s in range(0, n, chunk):
@@ -1269,7 +1271,9 @@ plt.savefig(outputfilepath / "neighbour_count_by_max_travel_time")
 # TODO find a more generalisable solution for this issue (within the optimisation functions)
 #lmis = lmis[(lmis.amc != 0) & (lmis.amc.notna())]
 
+# ----------------------------------------------------------------------------------------------------------------------
 # 3) Implement pooled redistribution
+# ----------------------------------------------------------------------------------------------------------------------
 # Build clusters from per-district travel-time matrices
 #    T_car_by_dist: {"District A": DF(index=fac_ids, cols=fac_ids), ...}
 cluster_size = 3
@@ -1294,7 +1298,7 @@ pooled_district_df[['district', 'item_code',	'fac_name', 'month', 'amc', 'availa
 tlo_pooled_district = (
         pooled_district_df
         .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
-        .agg(available_prop_scen16=("available_prop_redis", "mean"))
+        .agg(available_prop_scenario16=("available_prop_redis", "mean"))
         .sort_values(["item_code","district","Facility_Level","month"])
     )
 
@@ -1317,11 +1321,9 @@ pooled_cluster_df.to_csv(outputfilepath/ 'clustering_n3_df.csv', index=False)
 tlo_pooled_cluster = (
         pooled_cluster_df
         .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
-        .agg(available_prop_scen17=("available_prop_redis", "mean"))
+        .agg(available_prop_scenario17=("available_prop_redis", "mean"))
         .sort_values(["item_code","district","Facility_Level","month"])
     )
-
-tlo_pooled = tlo_pooled_district.merge(tlo_pooled_cluster, on=["item_code", "district", "Facility_Level", "month"], how="left", validate="one_to_one")
 
 # c) Implement pairwise redistribution
 # c.i) 1-hour radius
@@ -1336,13 +1338,13 @@ large_radius_df, large_radius_moves = redistribute_radius_lp(
     Qmin_proportion=0.25,          # min lot = one week of demand
     eligible_levels=("1a", "1b"),  # only 1a/1b can receive
 )
-print(large_radius_df.drop(columns = ['LMIS Facility List', 'lat', 'long', 'fac_owner']).groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
+print(large_radius_df.groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
 large_radius_df.to_csv(outputfilepath/ 'large_radius_df.csv', index=False)
 
 tlo_large_radius = (
         large_radius_df
         .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
-        .agg(available_prop_scen18=("available_prop_redis", "mean"))
+        .agg(available_prop_scenario18=("available_prop_redis", "mean"))
         .sort_values(["item_code","district","Facility_Level","month"])
     )
 
@@ -1358,58 +1360,436 @@ small_radius_df, small_radius_moves = redistribute_radius_lp(
     Qmin_proportion=0.25,          # min lot = one week of demand
     eligible_levels=("1a", "1b"),  # only 1a/1b can receive
 )
-print(small_radius_df.drop(columns = ['LMIS Facility List', 'lat', 'long', 'fac_owner']).groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
+print(small_radius_df.groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
 small_radius_df.to_csv(outputfilepath/ 'small_radius_df.csv', index=False)
 
 tlo_small_radius = (
         small_radius_df
         .groupby(["item_code", "district", "Facility_Level", "month"], as_index=False)
-        .agg(available_prop_scen19=("available_prop_redis", "mean"))
+        .agg(available_prop_scenario19=("available_prop_redis", "mean"))
         .sort_values(["item_code","district","Facility_Level","month"])
     )
 
-tlo_availability_df = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
-# Drop any scenario data previously included in the resourcefile
-tlo_availability_df = tlo_availability_df[['Facility_ID', 'month','item_code', 'available_prop']]
+# ----------------------------------------------------------------------------------------------------------------------
+# 4) Compile update probabilities and merge with Resourcefile
+# ----------------------------------------------------------------------------------------------------------------------
+# 1) Merge the new dataframes together
+# ----------------------------------------------------------------------------------------------------------------------
+tlo_redis = reduce(
+    lambda left, right: pd.merge(
+        left, right,
+        on=["item_code", "district", "Facility_Level", "month"],
+        how="outer"
+    ),
+    [tlo_pooled_district, tlo_pooled_cluster, tlo_large_radius, tlo_small_radius]
+)
 
-# Import item_category
-program_item_mapping = pd.read_csv(path_for_new_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv')[['Item_Code', 'item_category']]
-program_item_mapping = program_item_mapping.rename(columns ={'Item_Code': 'item_code'})[program_item_mapping.item_category.notna()]
+# Edit new dataframe to match mfl formatting
+list_of_new_scenario_variables = ['available_prop_scenario16', 'available_prop_scenario17',
+                              'available_prop_scenario18', 'available_prop_scenario19']
+tlo_redis = tlo_redis[['item_code', 'month', 'district', 'Facility_Level'] + list_of_new_scenario_variables].dropna()
+tlo_redis["item_code"] = tlo_redis["item_code"].astype(float).astype(int)
 
-# 1.1.1 Attach district,  facility level and item_category to this dataset
-#----------------------------------------------------------------
-# Get TLO Facility_ID for each district and facility level
+# Load master facility list
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
-districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
+mfl["District"] = mfl["District"].astype("string").str.strip().str.replace(r"\s+", "_", regex=True)
+districts = set(mfl[mfl.District.notna()]["District"].unique())
+kch = (mfl.Region == 'Central') & (mfl.Facility_Level == '3')
+qech = (mfl.Region == 'Southern') & (mfl.Facility_Level == '3')
+mch = (mfl.Region == 'Northern') & (mfl.Facility_Level == '3')
+zmh = mfl.Facility_Level == '4'
+mfl.loc[kch, "District"] = "Lilongwe"
+mfl.loc[qech, "District"] = "Blantyre"
+mfl.loc[mch, "District"] = "Mzimba"
+mfl.loc[zmh, "District"] = "Zomba"
+
+# Do some mapping to make the Districts line-up with the definition of Districts in the model
+rename_and_collapse_to_model_districts = {
+    'Nkhota_Kota': 'Nkhotakota',
+    'Mzimba_South': 'Mzimba',
+    'Mzimba_North': 'Mzimba',
+    'Nkhata_bay': 'Nkhata_Bay',
+}
+
+tlo_redis['district_std'] = tlo_redis['district'].replace(rename_and_collapse_to_model_districts)
+# Take averages (now that 'Mzimba' is mapped-to by both 'Mzimba South' and 'Mzimba North'.)
+tlo_redis = tlo_redis.groupby(by=['district_std', 'Facility_Level', 'month', 'item_code'])[list_of_new_scenario_variables].mean().reset_index()
+
+# Fill in missing data:
+# 1) Cities to get same results as their respective regions
+copy_source_to_destination = {
+    'Mzimba': 'Mzuzu_City',
+    'Lilongwe': 'Lilongwe_City',
+    'Zomba': 'Zomba_City',
+    'Blantyre': 'Blantyre_City'
+}
+
+for source, destination in copy_source_to_destination.items():
+    new_rows = tlo_redis.loc[(tlo_redis.district_std == source) & (tlo_redis.Facility_Level.isin(['1a', '1b', '2']))].copy()
+    new_rows.district_std = destination
+    tlo_redis = pd.concat([tlo_redis, new_rows], axis=0, ignore_index=True)
+
+# 2) Fill in Likoma (for which no data) with the means
+means = tlo_redis.loc[tlo_redis.Facility_Level.isin(['1a', '1b', '2'])].groupby(by=['Facility_Level', 'month', 'item_code'])[
+    list_of_new_scenario_variables].mean().reset_index()
+new_rows = means.copy()
+new_rows['district_std'] = 'Likoma'
+tlo_redis = pd.concat([tlo_redis, new_rows], axis=0, ignore_index=True)
+assert sorted(set(districts)) == sorted(set(pd.unique(tlo_redis.district_std)))
+
+# 3) copy the results for 'Mwanza/1b' to be equal to 'Mwanza/1a'.
+mwanza_1a = tlo_redis.loc[(tlo_redis.district_std == 'Mwanza') & (tlo_redis.Facility_Level == '1a')]
+mwanza_1b = tlo_redis.loc[(tlo_redis.district_std == 'Mwanza') & (tlo_redis.Facility_Level == '1a')].copy().assign(Facility_Level='1b')
+tlo_redis= pd.concat([tlo_redis, mwanza_1b], axis=0, ignore_index=True)
+
+# 4) Copy all the results to create a level 0 with an availability equal to half that in the respective 1a
+all_1a = tlo_redis.loc[tlo_redis.Facility_Level == '1a']
+all_0 = tlo_redis.loc[tlo_redis.Facility_Level == '1a'].copy().assign(Facility_Level='0')
+all_0[list_of_new_scenario_variables] *= 0.5
+tlo_redis = pd.concat([tlo_redis, all_0], axis=0, ignore_index=True)
+
+# Now, merge-in facility_id
+tlo_redis = tlo_redis.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
+                    left_on=['district_std', 'Facility_Level'],
+                    right_on=['District', 'Facility_Level'], how='left', indicator=True, validate = 'm:1')
+tlo_redis = tlo_redis[tlo_redis.Facility_ID.notna()][['Facility_ID', 'month', 'item_code'] + list_of_new_scenario_variables]
+assert sorted(set(mfl.loc[mfl.Facility_Level != '5','Facility_ID'].unique())) == sorted(set(pd.unique(tlo_redis.Facility_ID)))
+
+# Load original availability dataframe
+# ----------------------------------------------------------------------------------------------------------------------
+tlo_availability_df = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
+list_of_old_scenario_variables = [f"available_prop_scenario{i}" for i in range(1, 17)]
+tlo_availability_df = tlo_availability_df[['Facility_ID', 'month', 'item_code'] + list_of_old_scenario_variables]
+
+# Attach district,  facility level and item_category to this dataset
+program_item_mapping = pd.read_csv(path_for_new_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv')[['Item_Code', 'item_category']] # Import item_category
+program_item_mapping = program_item_mapping.rename(columns ={'Item_Code': 'item_code'})[program_item_mapping.item_category.notna()]
 fac_levels = {'0', '1a', '1b', '2', '3', '4'}
 tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
                     on = ['Facility_ID'], how='left')
-
 tlo_availability_df = tlo_availability_df.merge(program_item_mapping,
                     on = ['item_code'], how='left')
 tlo_availability_df = tlo_availability_df[~tlo_availability_df[['District', 'Facility_Level', 'month', 'item_code']].duplicated()]
 
+# Interpolate missing values in tlo_redis for all levels except 0
+# ----------------------------------------------------------------------------------------------------------------------
+# Generate the dataframe that has the desired size and shape
+fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
+item_codes = set(tlo_availability_df.item_code.unique())
+months = range(1, 13)
 
-comparison_df = tlo_30.rename(columns ={'new_available_prop': 'available_prop_30mins'}).merge(tlo_availability_df, left_on = ['district', 'Facility_Level', 'month', 'item_code'],
-                             right_on = ['District', 'Facility_Level', 'month', 'item_code'], how = 'left', validate = "1:1")
-comparison_df = comparison_df.merge(tlo_60.rename(columns ={'new_available_prop': 'available_prop_60mins'}), on = ['district', 'Facility_Level', 'month', 'item_code'], how = 'left', validate = "1:1")
-comparison_df = comparison_df.merge(tlo_pooling.rename(columns ={'new_available_prop': 'available_prop_pooling'}), on = ['district', 'Facility_Level', 'month', 'item_code'], how = 'left', validate = "1:1")
-print(comparison_df['available_prop'].mean(),comparison_df['available_prop_30mins'].mean(),
-comparison_df['available_prop_60mins'].mean(), comparison_df['available_prop_pooling'].mean())
+# Create a MultiIndex from the product of fac_ids, months, and item_codes
+index = pd.MultiIndex.from_product([fac_ids, months, item_codes], names=['Facility_ID', 'month', 'item_code'])
 
-comparison_df['available_prop_30mins'] = np.maximum(
-    comparison_df['available_prop_30mins'],
-    comparison_df['available_prop']
-)
-comparison_df['available_prop_60mins'] = np.maximum(
-    comparison_df['available_prop_60mins'],
-    comparison_df['available_prop']
-)
-comparison_df['available_prop_pooling'] = np.maximum(
-    comparison_df['available_prop_pooling'],
-    comparison_df['available_prop']
-)
-print(comparison_df['available_prop'].mean(),comparison_df['available_prop_30mins'].mean(),
-comparison_df['available_prop_60mins'].mean(), comparison_df['available_prop_pooling'].mean())
+# Initialize a DataFrame with the MultiIndex and columns, filled with NaN
+full_set = pd.DataFrame(index=index, columns=list_of_new_scenario_variables)
+full_set = full_set.astype(float)  # Ensure all columns are float type and filled with NaN
 
-# TODO keep only government facilities?
+# Insert the data, where it is available.
+full_set = full_set.combine_first(tlo_redis.set_index(['Facility_ID', 'month', 'item_code'])[list_of_new_scenario_variables])
+
+# Fill in the blanks with rules for interpolation.
+facilities_by_level = defaultdict(set)
+for ix, row in mfl.iterrows():
+    facilities_by_level[row['Facility_Level']].add(row['Facility_ID'])
+
+items_by_category = defaultdict(set)
+for ix, row in program_item_mapping.iterrows():
+    items_by_category[row['item_category']].add(row['item_code'])
+
+def get_other_facilities_of_same_level(_fac_id):
+    """Return a set of facility_id for other facilities that are of the same level as that provided."""
+    for v in facilities_by_level.values():
+        if _fac_id in v:
+            return v - {_fac_id}
+
+def get_other_items_of_same_category(_item_code):
+    """Return a set of item_codes for other items that are in the same category/program as that provided."""
+    for v in items_by_category.values():
+        if _item_code in v:
+            return v - {_item_code}
+def interpolate_missing_with_mean(_ser):
+    """Return a series in which any values that are null are replaced with the mean of the non-missing."""
+    if pd.isnull(_ser).all():
+        raise ValueError
+    return _ser.fillna(_ser.mean())
+
+# Create new dataset that include the interpolations (The operation is not done "in place", because the logic is based
+# on what results are missing before the interpolations in other facilities).
+full_set_interpolated = full_set * np.nan
+full_set_interpolated[list_of_new_scenario_variables] = full_set[list_of_new_scenario_variables]
+
+for fac in fac_ids:
+    for item in item_codes:
+        for col in list_of_new_scenario_variables:
+            print(f"Now doing: fac={fac}, item={item}, column={col}")
+
+            # Get records of the availability of this item in this facility.
+            _monthly_records = full_set.loc[(fac, slice(None), item), col].copy()
+
+            if pd.notnull(_monthly_records).any():
+                # If there is at least one record of this item at this facility, then interpolate the missing months from
+                # the months for there are data on this item in this facility. (If none are missing, this has no effect).
+                _monthly_records = interpolate_missing_with_mean(_monthly_records)
+
+            else:
+                # If there is no record of this item at this facility, check to see if it's available at other facilities
+                # of the same level
+                # Or if there is no record of item at other facilities at this level, check to see if other items of this category
+                # are available at this facility level
+                facilities = list(get_other_facilities_of_same_level(fac))
+
+                other_items = get_other_items_of_same_category(item)
+                items = list(other_items) if other_items else other_items
+
+                recorded_at_other_facilities_of_same_level = pd.notnull(
+                    full_set.loc[(facilities, slice(None), item), col]
+                ).any()
+
+                if not items:
+                    category_recorded_at_other_facilities_of_same_level = False
+                else:
+                    # Filter only items that exist in the MultiIndex at this facility
+                    valid_items = [
+                        itm for itm in items
+                        if any((fac, m, itm) in full_set.index for m in months)
+                    ]
+
+                    category_recorded_at_other_facilities_of_same_level = pd.notnull(
+                        full_set.loc[(fac, slice(None), valid_items), col]
+                    ).any()
+
+                if recorded_at_other_facilities_of_same_level:
+                    # If it recorded at other facilities of same level, find the average availability of the item at other
+                    # facilities of the same level.
+                    print("Data for facility ", fac, " extrapolated from other facilities within level - ", facilities)
+                    facilities = list(get_other_facilities_of_same_level(fac))
+                    _monthly_records = interpolate_missing_with_mean(
+                        full_set.loc[(facilities, slice(None), item), col].groupby(level=1).mean()
+                    )
+
+                elif category_recorded_at_other_facilities_of_same_level and valid_items:
+                    # If it recorded at other facilities of same level, find the average availability of the item at other
+                    # facilities of the same level.
+                    print("Data for item ", item, " extrapolated from other items within category - ", valid_items)
+
+                    _monthly_records = interpolate_missing_with_mean(
+                        full_set.loc[(fac, slice(None), valid_items), col].groupby(level=1).mean()
+                    )
+
+                else:
+                    # If it is not recorded at other facilities of same level, then assume that there is no change
+                    print("No interpolation worked")
+                    _monthly_records = _monthly_records.fillna(1.0)
+
+            # Insert values (including corrections) into the resulting dataset.
+            full_set_interpolated.loc[(fac, slice(None), item), col] = _monthly_records.values
+            # temporary code
+            assert full_set_interpolated.loc[(fac, slice(None), item), col].mean() >= 0
+
+# Check that there are not missing values
+assert not pd.isnull(full_set_interpolated).any().any()
+
+full_set_interpolated = full_set_interpolated.reset_index()
+
+# Merge with original dataset
+tlo_availability_df = tlo_availability_df.merge(full_set_interpolated, on = ['Facility_ID', 'month', 'item_code'],
+                                                how = 'left', validate = '1:1')
+for var in list_of_new_scenario_variables:
+    unchanged_levels = tlo_availability_df.Facility_Level.isin(['0', '2', '3', '4'])
+    tlo_availability_df.loc[unchanged_levels, var] = tlo_availability_df.loc[unchanged_levels, 'available_prop']
+
+tlo_availability_df.groupby('Facility_Level')[['available_prop'] + list_of_new_scenario_variables].mean()
+
+# --- Check that the exported file has the properties required of it by the model code. --- #
+# check_format_of_consumables_file(df=full_df_with_scenario, fac_ids=fac_ids)
+# TODO Add check
+
+# Save updated consumable availability resource file with scenario data
+df_for_plots = tlo_availability_df.copy()
+tlo_availability_df = tlo_availability_df.drop(columns = ['District', 'Facility_Level',
+       'item_category'])
+tlo_availability_df.to_csv(
+    path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
+    index=False
+)
+
+# Plot final availability
+def plot_availability_heatmap(
+    df: pd.DataFrame,
+    x_var: str = None,
+    y_var: str  = None,
+    value_var: str  = None,
+    scenario_cols: list[str]  = None,
+    filter_dict: dict  = None,
+    aggfunc: str = "mean",
+    cmap: str = "RdYlGn",
+    vmin: float = 0,
+    vmax: float = 1,
+    figsize: tuple = (12, 8),
+    annot: bool = True,
+    aggregate_label: str  = None,
+    rename_dict: dict  = None,
+    title: str = None,
+    output_path: Path  = None,
+):
+    """
+    Flexible heatmap generator that supports both:
+    1. Single value_var column (long format)
+    2. Multiple scenario columns (wide format, like available_prop_scen1–16)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    x_var : str, optional
+        Column name for x-axis (ignored if scenario_cols is given).
+    y_var : str, optional
+        Column name for y-axis.
+    value_var : str, optional
+        Value variable for color intensity (ignored if scenario_cols is given).
+    scenario_cols : list of str, optional
+        List of scenario columns (e.g., [f"available_prop_scen{i}" for i in range(1,17)]).
+    filter_dict : dict, optional
+        Filters to apply before plotting, e.g. {"Facility_Level": "1a"}.
+    aggfunc : str or callable, default "mean"
+        Aggregation for pivot table.
+    cmap : str
+        Colormap.
+    vmin, vmax : float
+        Color scale range.
+    figsize : tuple
+        Figure size.
+    annot : bool
+        Annotate cells with values.
+    aggregate_label : str, optional
+        Adds an aggregate (mean) row at bottom if provided.
+    rename_dict : dict, optional
+        Rename columns (for pretty scenario names, etc.)
+    title : str, optional
+        Title for the plot.
+    output_path : Path, optional
+        Save path for PNG; if None, displays interactively.
+    """
+
+    df_plot = df.copy()
+
+    # Apply filters
+    if filter_dict:
+        for k, v in filter_dict.items():
+            if isinstance(v, (list, tuple, set)):
+                df_plot = df_plot[df_plot[k].isin(v)]
+            else:
+                df_plot = df_plot[df_plot[k] == v]
+
+    # Rename columns if requested
+    if rename_dict:
+        df_plot = df_plot.rename(columns=rename_dict)
+
+    # Melt if scenario columns are provided
+    if scenario_cols is not None:
+        melted = df_plot.melt(
+            id_vars=[c for c in df_plot.columns if c not in scenario_cols],
+            value_vars=scenario_cols,
+            var_name="scenario",
+            value_name="value"
+        )
+        #melted["scenario_num"] = (
+        #    melted["scenario"].str.extract(r"(\d+)").astype(float)
+        #)
+        df_plot = melted
+        x_var = "scenario"
+        value_var = "value"
+
+    # Pivot table for heatmap
+    heatmap_data = df_plot.pivot_table(
+        index=y_var,
+        columns=x_var,
+        values=value_var,
+        aggfunc=aggfunc
+    )
+
+    # Add aggregate row
+    if aggregate_label:
+        heatmap_data.loc[aggregate_label] = heatmap_data.mean(numeric_only=True)
+
+    # Plot
+    plt.figure(figsize=figsize)
+    ax = sns.heatmap(
+        heatmap_data,
+        annot=annot,
+        cmap=cmap,
+        vmin=vmin,
+        vmax=vmax,
+        fmt=".2f",
+        cbar_kws={"label": value_var.replace("_", " ").capitalize()},
+        annot_kws={"size": 9}
+    )
+
+    # Titles & labels
+    if title:
+        ax.set_title(title, fontsize=14)
+    ax.set_xlabel(x_var.replace("_", " ").capitalize())
+    ax.set_ylabel(y_var.replace("_", " ").capitalize())
+
+    plt.tight_layout()
+
+    # Save or show
+    if output_path:
+        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
+
+
+clean_category_names = {'cancer': 'Cancer', 'cardiometabolicdisorders': 'Cardiometabolic Disorders',
+                        'contraception': 'Contraception', 'general': 'General', 'hiv': 'HIV', 'malaria': 'Malaria',
+                        'ncds': 'Non-communicable Diseases', 'neonatal_health': 'Neonatal Health',
+                        'other_childhood_illnesses': 'Other Childhood Illnesses', 'reproductive_health': 'Reproductive Health',
+                        'road_traffic_injuries': 'Road Traffic Injuries', 'tb': 'Tuberculosis',
+                        'undernutrition': 'Undernutrition', 'epi': 'Expanded programme on immunization'}
+df_for_plots['item_category_clean'] = df_for_plots['item_category'].map(clean_category_names)
+
+scenario_cols = ['available_prop_scenario1', 'available_prop_scenario2', 'available_prop_scenario3',
+                 'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8',
+                 'available_prop_scenario16', 'available_prop_scenario17', 'available_prop_scenario18', 'available_prop_scenario19']
+rename_dict = {'available_prop': 'Actual',
+               'available_prop_scenario1': 'Non-therapeutic consumables',
+               'available_prop_scenario2': 'Vital medicines',
+               'available_prop_scenario3': 'Pharmacist-managed',
+                'available_prop_scenario6': '75th percentile facility',
+               'available_prop_scenario7': '90th percentile acility',
+               'available_prop_scenario8': 'Best facility',
+                 'available_prop_scenario16': 'District Pooling',
+               'available_prop_scenario17' : 'Cluster Pooling',
+               'available_prop_scenario18': 'Pairwise exchange (60-min radius)',
+               'available_prop_scenario19': 'Pairwise exchange (30-min radius)'}
+scenario_names = list(rename_dict.values())
+
+plot_availability_heatmap(
+    df=df_for_plots,
+    scenario_cols=scenario_names,
+    y_var="item_category_clean",
+    filter_dict={"Facility_Level": ["1a"]},
+    aggregate_label="Average",
+    title="Availability across Scenarios — Level 1a",
+    rename_dict = rename_dict,
+    aggfunc = 'mean',
+    cmap = "RdYlGn",
+    output_path = outputfilepath / 'availability_1a.png'
+)
+plot_availability_heatmap(
+    df=df_for_plots,
+    scenario_cols=scenario_names,
+    y_var="item_category_clean",
+    filter_dict={"Facility_Level": ["1b"]},
+    aggregate_label="Average",
+    title="Availability across Scenarios — Level 1b",
+    rename_dict = rename_dict,
+    aggfunc = 'mean',
+    cmap = "RdYlGn",
+    output_path = outputfilepath / 'availability_1b.png'
+)
+
+
+
