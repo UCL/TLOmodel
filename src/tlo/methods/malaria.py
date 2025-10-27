@@ -75,9 +75,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         'irs_district': Parameter(
             Types.REAL, 'data frame of IRS usage rates by district'
         ),
-        'sev_symp_prob': Parameter(
-            Types.REAL, 'probabilities of each symptom for severe malaria cases'
-        ),
         'sensitivity_rdt': Parameter(Types.REAL, 'Sensitivity of rdt'),
         'cfr_severe_malaria': Parameter(Types.REAL, 'case-fatality rate for severe malaria'),
         'dur_asym': Parameter(Types.REAL, 'duration (days) of asymptomatic malaria'),
@@ -112,7 +109,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         'prob_malaria_case_tests': Parameter(
             Types.REAL, 'probability that a malaria case will have a scheduled rdt'
         ),
-        'itn_projected_future_coverage': Parameter(
+        'itn': Parameter(
             Types.REAL, 'projected future itn coverage after data end'
         ),
         'rdt_testing_rates': Parameter(
@@ -305,7 +302,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p['itn_district'] = workbook['MAP_ITNrates']
         p['irs_district'] = workbook['MAP_IRSrates']
 
-        p['sev_symp_prob'] = workbook['severe_symptoms']
         p['rdt_testing_rates'] = workbook['WHO_TestData2023']
         p['highrisk_districts'] = workbook['highrisk_districts']
 
@@ -317,11 +313,11 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p['scaleup_parameters'] = workbook["scaleup_parameters"]
 
         # check itn projected values are <=temp_max_itn_coverage and rounded to 1dp for matching to incidence tables
-        p['itn_projected_future_coverage'] = round(p['itn_projected_future_coverage'], 1)
-        assert (p['itn_projected_future_coverage'] <= p['temp_max_itn_coverage'])
+        p['itn'] = round(p['itn'], 1)
+        assert (p['itn'] <= p['temp_max_itn_coverage'])
 
         # ===============================================================================
-        # single dataframe for itn_projected_future_coverage and irs district/year data; set index for fast lookup
+        # single dataframe for itn and irs district/year data; set index for fast lookup
         # ===============================================================================
         itn_curr = p['itn_district']
         itn_curr.rename(columns={'itn_rates': 'itn_rate'}, inplace=True)
@@ -470,7 +466,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
         # replace itn coverage with projected coverage levels from 2019 onwards
         if now.year > p['data_end']:
-            itn_irs_curr['itn_rate'] = self.parameters['itn_projected_future_coverage']
+            itn_irs_curr['itn_rate'] = self.parameters['itn']
 
         month_districtnum_itn_irs_lookup = [
             tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table
@@ -724,9 +720,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         scaled_params_workbook = p["scaleup_parameters"]
 
         if p['type_of_scaleup'] == 'target':
-            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+            scaled_params = scaled_params_workbook.set_index('parameter_name')['value'].to_dict()
         else:
-            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+            scaled_params = scaled_params_workbook.set_index('parameter_name')['prior_max'].to_dict()
 
         # scale-up malaria program
         # increase testing
@@ -767,7 +763,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         self.itn_irs['itn_rate'] = scaled_params["itn_district"]
 
         # itn rates for 2019 onwards
-        p["itn_projected_future_coverage"] = scaled_params["itn"]
+        p["itn"] = scaled_params["itn"]
 
         # update exising linear models to use new scaled-up parameters
         self._build_linear_models()
