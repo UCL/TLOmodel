@@ -122,7 +122,7 @@ def test_hiv_scale_up(seed):
     # all irs coverage levels should be < 1.0
     assert sim.modules["Malaria"].itn_irs['irs_rate'].all() < 1.0
     # itn rates for 2019 onwards
-    assert sim.modules["Malaria"].parameters["itn"] == mal_original_params.loc[
+    assert sim.modules["Malaria"].parameters["itn_projected_future_coverage"] == mal_original_params.loc[
         mal_original_params.parameter_name == "itn_projected_future_coverage", "value"].values[0]
 
     # check tb parameters unchanged
