@@ -724,6 +724,7 @@ def redistribute_radius_lp(
                  .replace([np.inf, -np.inf], np.nan).fillna(0.0))
         LVL = (g.set_index(facility_col)[level_col].astype(str))
 
+
         # Align to facs and guard AMC
         AMC = AMC.reindex(facs).fillna(0.0)
         AMC_guard = AMC.copy()
@@ -734,6 +735,10 @@ def redistribute_radius_lp(
         # --- Surplus / deficit ---
         surplus = np.maximum(0.0, OB0.values - tau_keep * AMC_guard.values)  # donors
         deficit = np.maximum(0.0, tau_tar * AMC_guard.values - OB0.values)   # receivers
+
+        # Leave AMC == 0 untouched
+        #recv_pos_mask = AMC.values > amc_eps  # forbid AMC≈0 from receiving
+        #deficit = np.where(recv_pos_mask, deficit0, 0.0)
 
         # Only eligible levels can receive
         elig_recv = LVL.isin(eligible_levels).values
@@ -859,8 +864,8 @@ def redistribute_radius_lp(
         )
     print("Skipped ", len(skipped_nodes), "district-month-item combinations - no optimal solution")
 
-    # ---------- Availability: update ONLY where transfers happened ----------
-    changed_mask = (out["OB_prime"] - out["OB"]).abs() > 1e-6
+    # ---------- Availability: update ONLY where positive transfers happened ----------
+    changed_mask = (out["OB_prime"] - out["OB"]) > 1e-6
     denom = np.maximum(amc_eps, out[amc_col].astype(float).values)
     p_mech = np.minimum(1.0, np.maximum(0.0, out["OB_prime"].values / denom))
 
@@ -1109,7 +1114,8 @@ def redistribute_pooling_lp(
     # Start from baseline everywhere
     out["available_prop_redis"] = out["available_prop"].astype(float).values
 
-    changed = (out["OB_prime"] - out["OB"]).abs() > 1e-6
+    # Change availability only for those rows where OB has increased
+    changed = (out["OB_prime"] - out["OB"]) > 1e-6
     p_new = np.minimum(1.0, np.maximum(0.0, out.loc[changed, "OB_prime"].values / denom[changed]))
     if floor_to_baseline:
         p_new = np.maximum(p_new, out.loc[changed, "available_prop"].astype(float).values)
@@ -1325,14 +1331,15 @@ tlo_pooled_cluster = (
     )
 
 # c) Implement pairwise redistribution
+print("Now running pairwise redistribution with maximum radius 60 minutes")
 # c.i) 1-hour radius
 large_radius_df, large_radius_moves = redistribute_radius_lp(
     df=lmis,
     time_matrix=T_car,
     radius_minutes=60,      # facilities within 1 hour by car
-    tau_keep=1.0,           # donor must keep 1 × AMC
+    tau_keep=1.5,           # donor must keep 1 × AMC
     tau_tar=1.0,            # receivers target 1× AMC
-    K_in=1,           # at most 1 inbound transfers per item
+    K_in=2,           # at most 1 inbound transfers per item
     K_out=10,          # at most 10 outbound transfers
     Qmin_proportion=0.25,          # min lot = one week of demand
     eligible_levels=("1a", "1b"),  # only 1a/1b can receive
@@ -1348,13 +1355,14 @@ tlo_large_radius = (
     )
 
 # c.ii) 30-minute radius
+print("Now running pairwise redistribution with maximum radius 30 minutes")
 small_radius_df, small_radius_moves = redistribute_radius_lp(
     df=lmis,
     time_matrix=T_car,
     radius_minutes=30,      # facilities within 1 hour by car
-    tau_keep=1.0,           # donor must keep 1 × AMC
+    tau_keep=1.5,           # donor must keep 1 × AMC
     tau_tar=1.0,            # receivers target 1 × AMC
-    K_in=1,           # at most 1 inbound transfers per item
+    K_in=2,           # at most 1 inbound transfers per item
     K_out=10,          # at most 10 outbound transfers
     Qmin_proportion=0.25,          # min lot = one week of demand
     eligible_levels=("1a", "1b"),  # only 1a/1b can receive
