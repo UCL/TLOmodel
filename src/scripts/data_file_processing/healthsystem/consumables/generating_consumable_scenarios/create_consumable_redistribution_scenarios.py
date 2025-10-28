@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import pandas as pd
+import time
 
 from typing import Literal, Optional, Dict, Tuple, Iterable
 from functools import reduce
@@ -1288,6 +1289,7 @@ cluster_series = build_capacity_clusters_all(T_car, cluster_size=cluster_size)
 
 # a) Run optimisation at district level
 print("Now running Pooled Redistribution at District level")
+start = time.time()
 pooled_district_df, cluster_district_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
     tau_min=0, tau_max=3.0,
@@ -1307,10 +1309,12 @@ tlo_pooled_district = (
         .agg(available_prop_scenario16=("available_prop_redis", "mean"))
         .sort_values(["item_code","district","Facility_Level","month"])
     )
-
+end = time.time()
+print(f"Completed in {end - start:.3f} seconds")
 
 #  b) Run optimisation at cluster (size = 3) level
 print("Now running pooled redistribution at Cluster (Size = 3) level")
+start = time.time()
 pooled_cluster_df, cluster_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
     tau_min=0, tau_max=3.0,
@@ -1330,8 +1334,12 @@ tlo_pooled_cluster = (
         .sort_values(["item_code","district","Facility_Level","month"])
     )
 
+end = time.time()
+print(f"Completed in {end - start:.3f} seconds")
+
 # c) Implement pairwise redistribution
 print("Now running pairwise redistribution with maximum radius 60 minutes")
+start = time.time()
 # c.i) 1-hour radius
 large_radius_df, large_radius_moves = redistribute_radius_lp(
     df=lmis,
@@ -1354,8 +1362,12 @@ tlo_large_radius = (
         .sort_values(["item_code","district","Facility_Level","month"])
     )
 
+end = time.time()
+print(f"Completed in {end - start:.3f} seconds")
+
 # c.ii) 30-minute radius
 print("Now running pairwise redistribution with maximum radius 30 minutes")
+start = time.time()
 small_radius_df, small_radius_moves = redistribute_radius_lp(
     df=lmis,
     time_matrix=T_car,
@@ -1376,6 +1388,9 @@ tlo_small_radius = (
         .agg(available_prop_scenario19=("available_prop_redis", "mean"))
         .sort_values(["item_code","district","Facility_Level","month"])
     )
+
+end = time.time()
+print(f"Completed in {end - start:.3f} seconds")
 
 # ----------------------------------------------------------------------------------------------------------------------
 # 4) Compile update probabilities and merge with Resourcefile
