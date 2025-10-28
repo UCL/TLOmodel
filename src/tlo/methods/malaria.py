@@ -302,7 +302,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p['itn_district'] = workbook['MAP_ITNrates']
         p['irs_district'] = workbook['MAP_IRSrates']
 
-        p['rdt_testing_rates'] = workbook['WHO_TestData2023']
+        # TEMP FIX: Filter out param_label column from WHO_TestData2023 for consistency in df updating
+        p['rdt_testing_rates'] = workbook['WHO_TestData2023'].drop(columns=['param_label'], errors='ignore')
         p['highrisk_districts'] = workbook['highrisk_districts']
 
         inf_inc_sheet = pd.read_csv(resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
