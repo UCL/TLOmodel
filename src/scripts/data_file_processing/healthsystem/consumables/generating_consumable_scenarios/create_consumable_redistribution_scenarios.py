@@ -1230,9 +1230,9 @@ fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outpu
                                                  filename = "mth_district_stock_adequacy_3amc.png", figsize = (12,10))
 fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
                                                  y_var = 'district', value_var = 'item_code',
-                                                 value_label= f"% of consumables with Opening Balance ≥ 1 × AMC",
-                                                 amc_threshold = 1, compare = "ge",
-                                                 filename = "mth_district_stock_adequacy_1amc.png", figsize = (12,10))
+                                                 value_label= f"% of consumables with Opening Balance ≥ 1.5 × AMC",
+                                                 amc_threshold = 1.5, compare = "ge",
+                                                 filename = "mth_district_stock_adequacy_1.5amc.png", figsize = (12,10))
 fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
                                                  y_var = 'district', value_var = 'item_code',
                                                  value_label= f"% of consumables with Opening Balance <= 1 × AMC",
@@ -1293,7 +1293,7 @@ start = time.time()
 pooled_district_df, cluster_district_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
     tau_min=0, tau_max=3.0,
-    tau_donor_keep = 1.0,
+    tau_donor_keep = 1.5,
     pooling_level="district",
     cluster_map=None,
     return_move_log=True,
@@ -1318,7 +1318,7 @@ start = time.time()
 pooled_cluster_df, cluster_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
     tau_min=0, tau_max=3.0,
-    tau_donor_keep = 1.0,
+    tau_donor_keep = 1.5,
     pooling_level="cluster",
     cluster_map=cluster_series,
     return_move_log=True,
@@ -1480,8 +1480,8 @@ assert sorted(set(mfl.loc[mfl.Facility_Level != '5','Facility_ID'].unique())) ==
 # Load original availability dataframe
 # ----------------------------------------------------------------------------------------------------------------------
 tlo_availability_df = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
-list_of_old_scenario_variables = [f"available_prop_scenario{i}" for i in range(1, 17)]
-tlo_availability_df = tlo_availability_df[['Facility_ID', 'month', 'item_code'] + list_of_old_scenario_variables]
+list_of_old_scenario_variables = [f"available_prop_scenario{i}" for i in range(1, 16)]
+tlo_availability_df = tlo_availability_df[['Facility_ID', 'month', 'item_code', 'available_prop'] + list_of_old_scenario_variables]
 
 # Attach district,  facility level and item_category to this dataset
 program_item_mapping = pd.read_csv(path_for_new_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv')[['Item_Code', 'item_category']] # Import item_category
@@ -1639,43 +1639,33 @@ tlo_availability_df.to_csv(
 # Plot final availability
 def plot_availability_heatmap(
     df: pd.DataFrame,
-    x_var: str = None,
     y_var: str  = None,
-    value_var: str  = None,
     scenario_cols: list[str]  = None,
     filter_dict: dict  = None,
-    aggfunc: str = "mean",
     cmap: str = "RdYlGn",
     vmin: float = 0,
     vmax: float = 1,
-    figsize: tuple = (12, 8),
+    figsize: tuple = (10, 8),
     annot: bool = True,
-    aggregate_label: str  = None,
-    rename_dict: dict  = None,
-    title: str = None,
-    output_path: Path  = None,
+    rename_scenarios_dict: dict  = None,
+    title: str = 'Availability across scenarios',
+    figname: Path  = None,
 ):
     """
-    Flexible heatmap generator that supports both:
-    1. Single value_var column (long format)
+    Flexible heatmap generator that supports:
+    1. Filters to subset data
     2. Multiple scenario columns (wide format, like available_prop_scen1–16)
 
     Parameters
     ----------
     df : pd.DataFrame
         Input dataframe.
-    x_var : str, optional
-        Column name for x-axis (ignored if scenario_cols is given).
     y_var : str, optional
         Column name for y-axis.
-    value_var : str, optional
-        Value variable for color intensity (ignored if scenario_cols is given).
     scenario_cols : list of str, optional
         List of scenario columns (e.g., [f"available_prop_scen{i}" for i in range(1,17)]).
     filter_dict : dict, optional
         Filters to apply before plotting, e.g. {"Facility_Level": "1a"}.
-    aggfunc : str or callable, default "mean"
-        Aggregation for pivot table.
     cmap : str
         Colormap.
     vmin, vmax : float
@@ -1684,86 +1674,68 @@ def plot_availability_heatmap(
         Figure size.
     annot : bool
         Annotate cells with values.
-    aggregate_label : str, optional
-        Adds an aggregate (mean) row at bottom if provided.
-    rename_dict : dict, optional
+    rename_scenario_dict : dict, optional
         Rename columns (for pretty scenario names, etc.)
     title : str, optional
         Title for the plot.
-    output_path : Path, optional
-        Save path for PNG; if None, displays interactively.
+    figname : str, optional
+        Save name for PNG; if None, displays interactively.
     """
-
-    df_plot = df.copy()
-
-    # Apply filters
     if filter_dict:
         for k, v in filter_dict.items():
             if isinstance(v, (list, tuple, set)):
-                df_plot = df_plot[df_plot[k].isin(v)]
+                df = df[df[k].isin(v)]
             else:
-                df_plot = df_plot[df_plot[k] == v]
+                df = df[df[k] == v]
 
-    # Rename columns if requested
-    if rename_dict:
-        df_plot = df_plot.rename(columns=rename_dict)
+    aggregated_df = df.groupby([y_var])[scenario_cols].mean().reset_index()
+    heatmap_data = aggregated_df.set_index(y_var)
 
-    # Melt if scenario columns are provided
-    if scenario_cols is not None:
-        melted = df_plot.melt(
-            id_vars=[c for c in df_plot.columns if c not in scenario_cols],
-            value_vars=scenario_cols,
-            var_name="scenario",
-            value_name="value"
-        )
-        #melted["scenario_num"] = (
-        #    melted["scenario"].str.extract(r"(\d+)").astype(float)
-        #)
-        df_plot = melted
-        x_var = "scenario"
-        value_var = "value"
+    # Calculate aggregate column (true overall mean)
+    aggregate_col = df[scenario_cols].mean()
+    if rename_scenarios_dict:
+        aggregate_col = aggregate_col.rename(index=rename_scenarios_dict)
 
-    # Pivot table for heatmap
-    heatmap_data = df_plot.pivot_table(
-        index=y_var,
-        columns=x_var,
-        values=value_var,
-        aggfunc=aggfunc
-    )
+    # Apply column renames (fix variable name)
+    if rename_scenarios_dict:
+        heatmap_data = heatmap_data.rename(columns=rename_dict)
+    heatmap_data.loc['Average'] = aggregate_col
 
-    # Add aggregate row
-    if aggregate_label:
-        heatmap_data.loc[aggregate_label] = heatmap_data.mean(numeric_only=True)
-
-    # Plot
+    # Generate the heatmap
+    sns.set(font_scale=1)
     plt.figure(figsize=figsize)
-    ax = sns.heatmap(
+    ax = sns.heatmap(  # <── assign to ax
         heatmap_data,
         annot=annot,
         cmap=cmap,
         vmin=vmin,
         vmax=vmax,
-        fmt=".2f",
-        cbar_kws={"label": value_var.replace("_", " ").capitalize()},
-        annot_kws={"size": 9}
+        cbar_kws={'label': 'Proportion of days on which consumable is available'}
     )
 
-    # Titles & labels
-    if title:
-        ax.set_title(title, fontsize=14)
-    ax.set_xlabel(x_var.replace("_", " ").capitalize())
-    ax.set_ylabel(y_var.replace("_", " ").capitalize())
+    # Customize the plot
+    plt.title(title)
+    plt.xlabel('Scenarios')
+    plt.ylabel(y_var)
+    plt.xticks(rotation=90, fontsize=12)
+    plt.yticks(rotation=0, fontsize=11)
+    ax.set_xticklabels(
+        [textwrap.fill(label.get_text(), 20) for label in ax.get_xticklabels()],
+        rotation=90, ha='center'
+    )
+    ax.set_yticklabels(
+        [textwrap.fill(label.get_text(), 25) for label in ax.get_yticklabels()],
+        rotation=0, va='center'
+    )
 
-    plt.tight_layout()
-
-    # Save or show
-    if output_path:
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    if figname:
+        plt.savefig(outputfilepath / figname, dpi=500, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
+    plt.close()
 
-
+# Clean item category
 clean_category_names = {'cancer': 'Cancer', 'cardiometabolicdisorders': 'Cardiometabolic Disorders',
                         'contraception': 'Contraception', 'general': 'General', 'hiv': 'HIV', 'malaria': 'Malaria',
                         'ncds': 'Non-communicable Diseases', 'neonatal_health': 'Neonatal Health',
@@ -1772,7 +1744,7 @@ clean_category_names = {'cancer': 'Cancer', 'cardiometabolicdisorders': 'Cardiom
                         'undernutrition': 'Undernutrition', 'epi': 'Expanded programme on immunization'}
 df_for_plots['item_category_clean'] = df_for_plots['item_category'].map(clean_category_names)
 
-scenario_cols = ['available_prop_scenario1', 'available_prop_scenario2', 'available_prop_scenario3',
+scenario_cols = ['available_prop', 'available_prop_scenario1', 'available_prop_scenario2', 'available_prop_scenario3',
                  'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8',
                  'available_prop_scenario16', 'available_prop_scenario17', 'available_prop_scenario18', 'available_prop_scenario19']
 rename_dict = {'available_prop': 'Actual',
@@ -1788,30 +1760,26 @@ rename_dict = {'available_prop': 'Actual',
                'available_prop_scenario19': 'Pairwise exchange (30-min radius)'}
 scenario_names = list(rename_dict.values())
 
+# Plot heatmap for level 1a
 plot_availability_heatmap(
     df=df_for_plots,
-    scenario_cols=scenario_names,
+    scenario_cols=scenario_cols,
     y_var="item_category_clean",
     filter_dict={"Facility_Level": ["1a"]},
-    aggregate_label="Average",
     title="Availability across Scenarios — Level 1a",
-    rename_dict = rename_dict,
-    aggfunc = 'mean',
+    rename_scenarios_dict = rename_dict,
     cmap = "RdYlGn",
-    output_path = outputfilepath / 'availability_1a.png'
+    figname = 'availability_1a.png'
 )
+
+# Plot heatmap for level 1b
 plot_availability_heatmap(
     df=df_for_plots,
-    scenario_cols=scenario_names,
+    scenario_cols=scenario_cols,
     y_var="item_category_clean",
     filter_dict={"Facility_Level": ["1b"]},
-    aggregate_label="Average",
     title="Availability across Scenarios — Level 1b",
-    rename_dict = rename_dict,
-    aggfunc = 'mean',
+    rename_scenarios_dict = rename_dict,
     cmap = "RdYlGn",
-    output_path = outputfilepath / 'availability_1b.png'
+    figname = 'availability_1b.png'
 )
-
-
-
