@@ -35,7 +35,7 @@ class ClimateDisruptionScenario(BaseScenario):
         #         "scale_factor_severity_disruption_and_delay": np.arange(0.11, 1.11, 0.25), # below 1 assumes that severity does not decrease the time in seeking healthcare: weather-independent conditions. Max 10 times longer
         #     }})
         self._parameter_grid = random.sample(full_grid, 9)
-        print(random.sample(full_grid, 9))
+        print(self._parameter_grid)
 
         self.number_of_draws = len(self._parameter_grid)
 
