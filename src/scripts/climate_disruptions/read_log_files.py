@@ -12,5 +12,5 @@ import glob
 #         for log_file in log_files:
 #             parse_log_file(log_file)
 
-scenario_output_dir = '/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/climate_scenario_runs-2025-09-26T144635Z'
+scenario_output_dir = '/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/climate_scenario_runs-2025-10-08T103626Z'
 create_pickles_locally(scenario_output_dir = scenario_output_dir, compressed_file_name_prefix='climate_scenario_runs_')

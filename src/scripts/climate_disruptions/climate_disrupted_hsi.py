@@ -130,7 +130,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_weather_cancelled_mean_1000 = []
 
     for draw in range(len(scenario_names_all)):
-        if draw in [1,2,3,7,8,9]:
+        if draw in [0]:
             continue
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
