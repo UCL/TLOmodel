@@ -28,8 +28,8 @@ district_colours = [
         'coral', 'salmon', 'khaki', 'plum', 'orchid', 'tan', 'wheat', 'azure'
     ]
 
-vmin = -100
-vmax = 100
+vmin = -1000000000
+vmax = 100000
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce a standard set of plots describing the effect of each climate scenario.
@@ -144,14 +144,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 only_mean=True,
                 collapse_columns=True,
             )[draw]
-            all_years_data_dalys_mean_per_1000[target_year] = result_data_dalys['mean']/result_data_population['mean'] * 1000
-            all_years_data_deaths_mean_per_1000[target_year] = result_data_deaths['mean']/result_data_population['mean'] * 1000
+            all_years_data_dalys_mean_per_1000[target_year] = result_data_dalys['mean']#/result_data_population['mean'] * 1000
+            all_years_data_deaths_mean_per_1000[target_year] = result_data_deaths['mean']#/result_data_population['mean'] * 1000
 
-            all_years_data_dalys_lower_per_1000[target_year] = result_data_dalys['lower']/result_data_population['lower'] * 1000
-            all_years_data_deaths_lower_per_1000[target_year] = result_data_deaths['lower']/result_data_population['lower'] * 1000
+            all_years_data_dalys_lower_per_1000[target_year] = result_data_dalys['lower']#/result_data_population['lower'] * 1000
+            all_years_data_deaths_lower_per_1000[target_year] = result_data_deaths['lower']#/result_data_population['lower'] * 1000
 
-            all_years_data_dalys_upper[target_year] = result_data_dalys['upper']/result_data_population['upper'] * 1000
-            all_years_data_deaths_upper[target_year] = result_data_deaths['upper']/result_data_population['upper'] * 1000
+            all_years_data_dalys_upper[target_year] = result_data_dalys['upper']#/result_data_population['upper'] * 1000
+            all_years_data_deaths_upper[target_year] = result_data_deaths['upper']#/result_data_population['upper'] * 1000
 
             all_years_data_dalys_mean[target_year] = result_data_dalys['mean']
             all_years_data_deaths_mean[target_year] = result_data_deaths['mean']
@@ -418,7 +418,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             difference_from_baseline_per_1000 = df_dalys_by_district_all_scenarios_per_1000[scenario] - df_dalys_by_district_all_scenarios_per_1000['Baseline']
             malawi_admin2['DALY_Rate'] = malawi_admin2['ADM2_EN'].map(difference_from_baseline_per_1000)
             print(malawi_admin2['DALY_Rate'] )
-            malawi_admin2.plot(column='DALY_Rate', ax=axes[i], legend=True, cmap='PiYG',edgecolor='black', vmin=vmin, vmax=vmax)
+            malawi_admin2.plot(column='DALY_Rate', ax=axes[i], legend=True, cmap='PiYG',edgecolor='black')#, vmin=vmin, vmax=vmax)
             axes[i].set_title(f'DALYs per 1000 - {scenario}')
             axes[i].axis('off')
             water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", alpha = 0.6, edgecolor="#999999", linewidth=0.5, hatch="xxx")

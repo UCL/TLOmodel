@@ -5,7 +5,7 @@ from typing import Tuple
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
-
+import os
 from tlo import Date
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
@@ -14,15 +14,95 @@ from tlo.analysis.utils import (
     make_age_grp_lookup,
     order_of_cause_of_death_or_daly_label,
     summarize,
+    get_scenario_info, load_pickled_dataframes
 )
 
+
+
 min_year = 2026
-max_year = 2045
+max_year = 2044
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
+def extract_results(results_folder: Path,
+                    module: str,
+                    key: str,
+                    column: str = None,
+                    index: str = None,
+                    custom_generate_series=None,
+                    do_scaling: bool = False,
+                    ) -> pd.DataFrame:
+    """Utility function to unpack results.
 
-scenario_names = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low",
+    Produces a dataframe from extracting information from a log with the column multi-index for the draw/run.
+
+    If the column to be extracted exists in the log, the name of the `column` is provided as `column`. If the resulting
+     dataframe should be based on another column that exists in the log, this can be provided as 'index'.
+
+    If instead, some work must be done to generate a new column from log, then a function can be provided to do this as
+     `custom_generate_series`.
+
+    Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
+
+    Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
+    """
+
+    def get_multiplier(_draw, _run):
+        """Helper function to get the multiplier from the simulation.
+        Note that if the scaling factor cannot be found a `KeyError` is thrown."""
+        return load_pickled_dataframes(
+            results_folder, _draw, _run, 'tlo.methods.population'
+        )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+
+    if custom_generate_series is None:
+        # If there is no `custom_generate_series` provided, it implies that function required selects the specified
+        # column from the dataframe.
+        assert column is not None, "Must specify which column to extract"
+    else:
+        assert index is None, "Cannot specify an index if using custom_generate_series"
+        assert column is None, "Cannot specify a column if using custom_generate_series"
+
+    def generate_series(dataframe: pd.DataFrame) -> pd.Series:
+        if custom_generate_series is None:
+            if index is not None:
+                return dataframe.set_index(index)[column]
+            else:
+                return dataframe.reset_index(drop=True)[column]
+        else:
+            return custom_generate_series(dataframe)
+
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    # Collect results from each draw/run
+    res = dict()
+    for draw in range(info['number_of_draws']):
+        for run in range(5):
+
+            draw_run = (draw, run)
+
+            try:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                output_from_eval: pd.Series = generate_series(df)
+                assert isinstance(output_from_eval, pd.Series), (
+                    'Custom command does not generate a pd.Series'
+                )
+                if do_scaling:
+                    res[draw_run] = output_from_eval * get_multiplier(draw, run)
+                else:
+                    res[draw_run] = output_from_eval
+
+            except KeyError:
+                # Some logs could not be found - probably because this run failed.
+                res[draw_run] = None
+
+    # Use pd.concat to compile results (skips dict items where the values is None)
+    _concat = pd.concat(res, axis=1)
+    _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
+    return _concat
+scenario_names_all = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low",
                   "SSP 2.45 Mean", "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
+scenario_names = ["Baseline", "SSP 2.45 High", "SSP 2.45 Low",
+                  "SSP 2.45 Mean",]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167'] * 4
 
 
@@ -105,7 +185,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_dalys_mean_1000 = []
     all_draws_dalys_lower_1000 = []
     all_draws_dalys_upper_1000 = []
-    for draw in range(len(scenario_names)):
+    for draw in range(len(scenario_names_all)):
+        if draw in [1,2,3,7,8,9]:
+            continue
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
         all_years_data_deaths_mean = {}
@@ -408,6 +490,59 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_dalys_all_draws_upper_1000 = pd.concat(all_draws_dalys_upper_1000, axis=1)
     normalized_DALYs = pd.concat(normalized_DALYs, axis=1)
 
+    # Compute mean, lower, and upper total DALYs for each draw
+    total_dalys_mean = df_dalys_all_draws_mean.sum(axis=0)
+    total_dalys_lower = df_dalys_all_draws_lower.sum(axis=0)
+    total_dalys_upper = df_dalys_all_draws_upper.sum(axis=0)
+
+    # Baseline reference (first draw)
+    baseline_mean = total_dalys_mean.iloc[0]
+    baseline_lower = total_dalys_lower.iloc[0]
+    baseline_upper = total_dalys_upper.iloc[0]
+
+    print(((total_dalys_lower - baseline_upper) / baseline_upper) )
+    print(((total_dalys_upper - baseline_lower) / baseline_lower))
+    # Compute percentage change relative to baseline
+    mean_change = ((total_dalys_mean - baseline_mean) / baseline_mean) * 100
+    lower_change = ((total_dalys_lower - baseline_upper) / baseline_upper) * 100
+    upper_change = ((total_dalys_upper - baseline_lower) / baseline_lower) * 100
+
+    # Drop baseline (since change = 0)
+    mean_change = mean_change.iloc[1:]
+    lower_change = lower_change.iloc[1:]
+    upper_change = upper_change.iloc[1:]
+
+    # Compute CI error bars
+    print(mean_change)
+    print(lower_change)
+    print(mean_change - lower_change)
+    yerr_lower = mean_change - lower_change
+    yerr_upper = upper_change - mean_change
+    yerr = np.vstack([yerr_lower, yerr_upper])
+
+    # Plot with CI error bars
+    fig, ax = plt.subplots(figsize=(12, 6))
+    mean_change.plot(
+        kind='bar',
+        color=scenario_colours[1:len(mean_change) + 1],
+        ax=ax,
+        yerr=yerr,
+        capsize=5,
+        error_kw=dict(linewidth=1, alpha=0.8)
+    )
+
+    ax.set_title("Percentage Change in Total DALYs (with 95% CI)")
+    ax.set_xlabel("Scenario")
+    ax.set_ylabel("Percentage change in DALYs")
+    ax.set_xticklabels(scenario_names[1:], rotation=45, ha='right')
+    ax.axhline(0, color='black', linewidth=1)
+    ax.grid(axis='y', linestyle='--', alpha=0.5)
+
+    fig.tight_layout()
+    fig.savefig(output_folder / "relative_change_in_total_DALYs_across_draws_with_CI.png")
+    plt.close(fig)
+
+
     # Plotting as bar charts
     deaths_totals_mean = df_deaths_all_draws_mean.sum()
     dalys_totals_mean = df_dalys_all_draws_mean.sum()
@@ -435,7 +570,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].grid(False)
 
     # Panel B: Total DALYs
-    print(dalys_totals_mean)
     axes[1].bar(dalys_totals_mean.index, dalys_totals_mean.values, color=scenario_colours, yerr=dalys_totals_err,
                 capsize=20)
     axes[1].set_title(f'Total DALYs (2025-{max_year})')

@@ -22,6 +22,11 @@ PREFIX_ON_FILENAME = '1'
 scenario_names = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low", "SSP 2.45 Mean",  "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167' ] *4
 
+scenario_names_all = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low",
+                  "SSP 2.45 Mean", "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
+scenario_names = ["Baseline", "SSP 2.45 High", "SSP 2.45 Low",
+                  "SSP 2.45 Mean",]
+
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the healthcare system utilization across scenarios.
@@ -124,7 +129,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_weather_delayed_mean_1000 = []
     all_draws_weather_cancelled_mean_1000 = []
 
-    for draw in range(len(scenario_names)):
+    for draw in range(len(scenario_names_all)):
+        if draw in [1,2,3,7,8,9]:
+            continue
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
         all_years_data_treatments_mean = {}
@@ -289,7 +296,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0,0].set_title('Panel A: Healthcare Treatments by Type')
         axes[0,0].set_xlabel('Year')
         axes[0,0].set_ylabel('Number of Treatments')
-        axes[0,0].grid(True)
+        axes[0,0].grid(False)
         axes[0,0].legend(title='Treatment Type', bbox_to_anchor=(1., 1), loc='upper left')
 
         # Panel B: Never Ran Appointments
@@ -300,7 +307,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0,1].set_xlabel('Year')
         axes[0,1].set_ylabel('Number of Never Ran Appointments')
         axes[0,1].legend(title='Appointment Type', bbox_to_anchor=(1., 1), loc='upper left')
-        axes[0,1].grid(True)
+        axes[0,1].grid(False)
 
         # Panel C: Weather Delayed Appointments
         for i, appt_type in enumerate(df_all_years_weather_delayed_mean.index):
@@ -310,7 +317,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[1,0].set_xlabel('Year')
         axes[1,0].set_ylabel('Number of Weather Delayed Appointments')
         axes[1,0].legend(title='Appointment Type', bbox_to_anchor=(1., 1), loc='upper left')
-        axes[1,0].grid(True)
+        axes[1,0].grid(False)
 
         # Panel D: Weather Cancelled Appointments
         for i, appt_type in enumerate(df_all_years_weather_cancelled_mean.index):
@@ -320,7 +327,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[1,1].set_xlabel('Year')
         axes[1,1].set_ylabel('Number of Weather Cancelled Appointments')
         axes[1,1].legend(title='Appointment Type', bbox_to_anchor=(1., 1), loc='upper left')
-        axes[1,1].grid(True)
+        axes[1,1].grid(False)
 
         fig.tight_layout()
         fig.savefig(make_graph_file_name('Healthcare_System_Utilization_All_Years_With_Weather'))
@@ -615,8 +622,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0,1].grid(False)
 
     # Panel C: Total Weather Delayed Appointments
-    axes[1,0].bar(weather_delayed_totals_mean.index, weather_delayed_totals_mean.values,
-                color=scenario_colours, yerr=weather_delayed_totals_err, capsize=20)
+    axes[1,0].bar(weather_delayed_totals_mean.iloc[1:].index, weather_delayed_totals_mean.iloc[1:].values,
+                color=scenario_colours[1:], yerr=weather_delayed_totals_err[:, 1:], capsize=20)
     axes[1,0].set_title(f'Total Weather Delayed Appointments (2020-{max_year})')
     axes[1,0].set_xlabel('Scenario')
     axes[1,0].set_ylabel('Total Weather Delayed Appointments')
@@ -624,8 +631,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1,0].grid(False)
 
     # Panel D: Total Weather Cancelled Appointments
-    axes[1,1].bar(weather_cancelled_totals_mean.index, weather_cancelled_totals_mean.values,
-                color=scenario_colours, yerr=weather_cancelled_totals_err, capsize=20)
+    axes[1,1].bar(weather_cancelled_totals_mean.iloc[1:].index, weather_cancelled_totals_mean.iloc[1:].values,
+                color=scenario_colours[1:], yerr=weather_cancelled_totals_err[:, 1:], capsize=20)
     axes[1,1].set_title(f'Total Weather Cancelled Appointments (2020-{max_year})')
     axes[1,1].set_xlabel('Scenario')
     axes[1,1].set_ylabel('Total Weather Cancelled Appointments')
