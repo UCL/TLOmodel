@@ -733,7 +733,16 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
         if cons_avail:
             # Use a biopsy to diagnose whether the person has bladder Cancer
             # If consumables are available update the use of equipment and run the dx_test representing the biopsy
-            self.add_equipment({'Cystoscope', 'Ordinary Microscope', 'Ultrasound scanning machine'})
+            self.add_equipment({
+                'Cystoscope',
+                'Ordinary Microscope',
+                'Ultrasound scanning machine',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Use a cystoscope to diagnose whether the person has bladder Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -806,7 +815,16 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
         if cons_avail:
             # Use a biopsy to diagnose whether the person has bladder Cancer
             # If consumables are available log the use of equipment and run the dx_test representing the biopsy
-            self.add_equipment({'Cystoscope', 'Ordinary Microscope', 'Ultrasound scanning machine'})
+            self.add_equipment({
+                'Cystoscope',
+                'Ordinary Microscope',
+                'Ultrasound scanning machine',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Use a cystoscope to diagnose whether the person has bladder Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -899,6 +917,19 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
+            # Additional cancer treatment equipment for bladder cancer surgery
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'Analyser, Hormones',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Cystoscope',
+                'Sample Rack',
+                'Ordinary Microscope',
+                'Safety Goggles'
+            })
+
             # Record date and stage of starting treatment
             df.at[person_id, "bc_date_treatment"] = self.sim.date
             df.at[person_id, "bc_stage_at_which_treatment_given"] = df.at[person_id, "bc_status"]
@@ -909,7 +940,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(years=12),
+                topen=self.sim.date + DateOffset(months=12),
                 tclose=None,
                 priority=0
             )
@@ -942,6 +973,17 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
         assert not pd.isnull(df.at[person_id, "bc_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "bc_date_treatment"])
 
+        # Equipment for post-treatment monitoring and follow-up
+        self.add_equipment({
+            'Analyser, Haematology',
+            'Analyser, Chemistry',
+            'X-ray machine',
+            'Ultrasound scanning machine',
+            'Cystoscope',
+            'Sample Rack',
+            'Safety Goggles'
+        })
+
         if df.at[person_id, 'bc_status'] == 'metastatic':
             # If has progressed to metastatic, then start Palliative Care immediately:
             hs.schedule_hsi_event(
@@ -961,7 +1003,7 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=1),
+                topen=self.sim.date + DateOffset(months=1),
                 tclose=None,
                 priority=0
             )
@@ -1002,7 +1044,16 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.add_equipment({'Infusion pump', 'Drip stand'})
+            self.add_equipment({
+                'Infusion pump',
+                'Drip stand',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "bc_date_palliative_care"]):

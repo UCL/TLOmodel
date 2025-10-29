@@ -738,6 +738,14 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
+            # Equipment for PSA testing and initial prostate cancer assessment
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyser, Hormones',
+                'Sample Rack',
+                'Safety Goggles'
+            })
+
             # send for biopsy
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
@@ -785,6 +793,14 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
+            # Equipment for PSA testing and initial prostate cancer assessment
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyser, Hormones',
+                'Sample Rack',
+                'Safety Goggles'
+            })
+
             # send for biopsy
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
@@ -826,8 +842,22 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
                                                   'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_available:
-            # If consumables are available update the use of equipment and run the dx_test representing the biopsy
-            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
+            # Equipment for prostate cancer biopsy and investigation
+            self.add_equipment({
+                'Ultrasound scanning machine',
+                'Ordinary Microscope',
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
+                'Analyser, Hormones',
+                'Intravenous Pyelography set',
+                'Intravenous Pyrography set',
+                'Apron protective x-ray lead',
+                'Safety Goggles',
+                'Manual Rotary Microtome',
+                'Sample Rack',
+                'Shaker',
+                'Magnetic resonance imaging (MRI)'
+            })
 
             # Use a biopsy  to assess whether the person has prostate cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -919,6 +949,26 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
+            # Additional prostate cancer treatment-specific equipment - facility level dependent
+            # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
+
+            # Equipment for prostate cancer treatment
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
+                'Analyser, Hormones',
+                'Automatic Cell washer',
+                'Backsplit cotton gown',
+                'Coagulation machine',
+                'Sterilizing unit, steam, medium, 240 litre',
+                'Magnetic Stirrer',
+                'Micropipettes 10 - 100ul',
+                'Flow Cytometer',
+                'Urethrogram set',
+                'Intravenous Pyelography set',
+                'Automatic staining machine'
+            })
+
             # Record date and stage of starting treatment
             df.at[person_id, "pc_date_treatment"] = self.sim.date
             df.at[person_id, "pc_stage_at_which_treatment_given"] = df.at[person_id, "pc_status"]
@@ -962,6 +1012,21 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         assert not pd.isnull(df.at[person_id, "pc_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "pc_date_treatment"])
 
+        # Equipment for prostate cancer follow-up monitoring - facility level dependent
+        # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
+
+        # Equipment for prostate cancer post-treatment monitoring
+        self.add_equipment({
+            'Analyser, Haematology',
+            'Analyzer, Clinical immunoassay',
+            'Analyser, Hormones',
+            'Coagulation machine',
+            'Backsplit cotton gown',
+            'Safety Goggles',
+            'Sample Rack',
+            'Ultrasound scanning machine'
+        })
+
         if df.at[person_id, 'pc_status'] == 'metastatic':
             # If has progressed to metastatic, then start Palliative Care immediately:
             hs.schedule_hsi_event(
@@ -975,13 +1040,13 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
             )
 
         else:
-            # Schedule another HSI_ProstateCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_ProstateCancer_PostTreatmentCheck event in 12 months
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=1),
+                topen=self.sim.date + DateOffset(months=12),
                 tclose=None,
                 priority=0
             )
@@ -1022,7 +1087,19 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.add_equipment({'Infusion pump', 'Drip stand'})
+            self.add_equipment({
+                'Infusion pump',
+                'Drip stand',
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
+                'Analyser, Hormones',
+                'Backsplit cotton gown',
+                'Coagulation machine',
+                'Automatic Cell washer',
+                'Sterilizing unit, steam, 39 ltr',
+                'Safety Goggles',
+                'Sample Rack'
+            })
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "pc_date_palliative_care"]):
