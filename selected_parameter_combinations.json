@@ -1,0 +1,74 @@
+[
+  {
+    "HealthSystem": {
+      "scale_factor_delay_in_seeking_care_weather": 20.0,
+      "rescaling_prob_seeking_after_disruption": 0.01,
+      "rescaling_prob_disruption": 1.5,
+      "scale_factor_severity_disruption_and_delay": 0.7033333333333334
+    }
+  },
+  {
+    "HealthSystem": {
+      "scale_factor_delay_in_seeking_care_weather": 60.0,
+      "rescaling_prob_seeking_after_disruption": 1.01,
+      "rescaling_prob_disruption": 1.0,
+      "scale_factor_severity_disruption_and_delay": 1.0
+    }
+  },
+  {
+    "HealthSystem": {
+      "scale_factor_delay_in_seeking_care_weather": 10.0,
+      "rescaling_prob_seeking_after_disruption": 1.01,
+      "rescaling_prob_disruption": 0.5,
+      "scale_factor_severity_disruption_and_delay": 1.0
+    }
+  },
+  {
+    "HealthSystem": {
+      "scale_factor_delay_in_seeking_care_weather": 2.0,
+      "rescaling_prob_seeking_after_disruption": 0.01,
+      "rescaling_prob_disruption": 2.0,
+      "scale_factor_severity_disruption_and_delay": 0.4066666666666667
+    }
+  },
+  {
+    "HealthSystem": {
+      "scale_factor_delay_in_seeking_care_weather": 0.0,
+      "rescaling_prob_seeking_after_disruption": 0.51,
+      "rescaling_prob_disruption": 1.0,
+      "scale_factor_severity_disruption_and_delay": 0.4066666666666667
+    }
+  },
+  {
+    "HealthSystem": {
+      "scale_factor_delay_in_seeking_care_weather": 1.0,
+      "rescaling_prob_seeking_after_disruption": 0.01,
+      "rescaling_prob_disruption": 0.0,
+      "scale_factor_severity_disruption_and_delay": 0.4066666666666667
+    }
+  },
+  {
+    "HealthSystem": {
+      "scale_factor_delay_in_seeking_care_weather": 60.0,
+      "rescaling_prob_seeking_after_disruption": 0.01,
+      "rescaling_prob_disruption": 0.5,
+      "scale_factor_severity_disruption_and_delay": 0.7033333333333334
+    }
+  },
+  {
+    "HealthSystem": {
+      "scale_factor_delay_in_seeking_care_weather": 0.0,
+      "rescaling_prob_seeking_after_disruption": 1.01,
+      "rescaling_prob_disruption": 0.0,
+      "scale_factor_severity_disruption_and_delay": 1.0
+    }
+  },
+  {
+    "HealthSystem": {
+      "scale_factor_delay_in_seeking_care_weather": 10.0,
+      "rescaling_prob_seeking_after_disruption": 0.51,
+      "rescaling_prob_disruption": 1.5,
+      "scale_factor_severity_disruption_and_delay": 0.4066666666666667
+    }
+  }
+]

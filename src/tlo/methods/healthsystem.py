@@ -361,7 +361,7 @@ class HealthSystem(Module):
         'services_affected_precip': Parameter(Types.STRING,
                                               'Which modelled services can be affected by weather. Options are all, none'),
 
-        'scale_factor_severity_disruption_and_delay': Parameter(Types.INT,
+        'scale_factor_severity_disruption_and_delay': Parameter(Types.REAL,
                                                       'Scale factor that changes the delay in reseeking healthcare to the severity of disruption (as measured by probability of disruption)')
 
     }
