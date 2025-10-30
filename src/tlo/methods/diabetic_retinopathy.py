@@ -40,9 +40,6 @@ class DiabeticRetinopathy(Module):
         "rate_severe_to_proliferative": Parameter(Types.REAL,
                                                   "Probability of people who get diagnosed with "
                                                   "proliferative diabetic retinopathy"),
-        'prob_fast_dr': Parameter(Types.REAL,
-                                  "Probability of people who get diagnosed from none phase to "
-                                  "proliferative diabetic retinopathy stage"),
 
         "init_prob_any_dr": Parameter(Types.LIST, "Initial probability of anyone with diabetic retinopathy"),
         "prob_any_dmo": Parameter(Types.LIST, "Probability of anyone with diabetic retinopathy having "
@@ -51,9 +48,6 @@ class DiabeticRetinopathy(Module):
         "init_prob_ever_diet_mgmt_if_diagnosed": Parameter(
             Types.REAL, "Initial probability of ever having had a diet management session if ever diagnosed "
                         "with diabetic retinopathy"
-        ),
-        "prob_reg_eye_exam": Parameter(
-            Types.REAL, "Probability of people with Diabetes Mellitus selected for regular eye exam"
         ),
         "rp_dr_tobacco": Parameter(
             Types.REAL, "relative prevalence at baseline of diabetic retinopathy if tobacco"
@@ -78,9 +72,6 @@ class DiabeticRetinopathy(Module):
             Types.REAL,
             "Probability that people with mild DR and controlled diabetes regress to 'none'"
         ),
-        'effectiveness_of_laser_photocoagulation_in_severe_regression': Parameter(
-            Types.REAL,
-            'Probability of severe diabetic retinopathy regressing to moderate.'),
         "probs_for_dmo_when_dr_status_mild_or_moderate": Parameter(
             Types.LIST, "probability of having a DMO state when an individual has non-proliferative mild/moderate "
                         "Diabetic Retinopathy "),
@@ -162,9 +153,8 @@ class DiabeticRetinopathy(Module):
 
         self.parameters['rate_severe_to_proliferative'] = 0.07
 
-        self.parameters['prob_fast_dr'] = 0.5
         self.parameters['init_prob_any_dr'] = [0.4, 0.3, 0.3]
-        self.parameters['prob_any_dmo'] = [0.1, 0.2, 0.3, 0.4]
+        self.parameters['prob_any_dmo'] = [0.1, 0.2, 0.3, 0.4]  # not in resourcefile
 
         self.parameters['probs_for_dmo_when_dr_status_mild_or_moderate'] = [0.7, 0.1, 0.2]
         self.parameters['probs_for_dmo_when_dr_status_severe'] = [0.3, 0.5, 0.2]
@@ -172,12 +162,10 @@ class DiabeticRetinopathy(Module):
 
         # self.parameters['init_prob_any_dr'] = [0.2, 0.3, 0.3, 0.15, 0.05]
         # self.parameters['init_prob_proliferative_dr'] = 0.09
-        self.parameters['p_medication'] = 0.8
-        self.parameters['effectiveness_of_laser_photocoagulation_in_severe_regression'] = 0.21
-        self.parameters["prob_diabetes_controlled"] = 0.5
+        self.parameters['p_medication'] = 0.8  # not in resourcefile
+        self.parameters["prob_diabetes_controlled"] = 0.5  # not in resource file
         self.parameters["prob_eye_exam"] = 0.07
-        self.parameters["prob_mild_to_none_if_controlled_diabetes"] = 0.21
-        self.parameters['prob_reg_eye_exam'] = 0.05
+        self.parameters["prob_mild_to_none_if_controlled_diabetes"] = 0.21  # not in resource file
         self.parameters['prob_repeat_laser'] = 0.3
 
         self.parameters['rp_dr_ex_alc'] = 1.1
@@ -185,11 +173,6 @@ class DiabeticRetinopathy(Module):
         self.parameters['rp_dr_high_sugar'] = 1.2
         self.parameters['rp_dr_low_ex'] = 1.3
         self.parameters['rp_dr_urban'] = 1.4
-
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='blindness_partial'),
-            Symptom(name='blindness_full')
-        )
 
     def initialise_population(self, population: Population) -> None:
         """ Set property values for the initial population
