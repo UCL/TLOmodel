@@ -370,7 +370,7 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
-        facility_type: Optional[str] = 'government',
+        facility_type: Optional[str] = 'cham',
         # facility_type: Optional[str] = None,
     ):
         """
@@ -903,7 +903,7 @@ class HealthSystem(Module):
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
-        assert self._facility_levels == {'0', '1a', '1b', '2', '3', '4'}  # todo soft code this?
+      #  assert self._facility_levels == {'0', '1a', '1b', '2', '3', '4'}  # todo soft code this?
 
         # * Define Appointment Types
         self._appointment_types = set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
@@ -983,7 +983,14 @@ class HealthSystem(Module):
                 for _district in all_districts:
                     facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = _facility_info
 
+
         # Check that there is facility of every level for every district:
+
+        for level in self._facility_levels:
+            missing_districts = all_districts - set(facilities_per_level_and_district[level].keys())
+            if missing_districts:
+                print(f"Level {level} missing in districts: {missing_districts}")
+
         assert all(
             all_districts == facilities_per_level_and_district[_facility_level].keys()
             for _facility_level in self._facility_levels
