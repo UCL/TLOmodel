@@ -883,11 +883,18 @@ def update_level1b_availability(
     facilities_by_level: dict,
     resourcefilepath: Path,
     district_to_city_dict: dict,
+    weighting: str = "district_1b_to_2_ratio"
 ) -> pd.DataFrame:
     """
     Updates the availability of Level 1b facilities to be the weighted average
     of availability at Level 1b and 2 facilities, since these levels are merged
     together in simulations.
+
+    weighting : {'level2', 'national_1b_to_2_ratio', 'district_1b_to_2_ratio'}, default 'district_1b_to_2_ratio'
+        Weighting strategy:
+            - 'level2': Replace 1b availability entirely with level 2 values.
+            - 'national_1b_to_2_ratio': Apply a single national 1b:2 ratio to all districts.
+            - 'district_1b_to_2_ratio': (default) Use district-specific 1b:2 ratios.
     """
     # Load and prepare base weights (facility counts)
     # ---------------------------------------------------------------------
@@ -899,20 +906,48 @@ def update_level1b_availability(
     # Keep only Level 1b and 2 facilities
     lvl1b2_weights = weight[weight["Facility_Level"].isin(["1b", "2"])].copy()
 
-    # Replace city names with their parent districts (temporarily for grouping)
-    city_to_district_dict = {v: k for k, v in district_to_city_dict.items()}
-    lvl1b2_weights["District"] = lvl1b2_weights["District"].replace(city_to_district_dict)
+    # Compute weights depending on strategy
+    # ---------------------------------------------------------------------
+    if weighting == "level2":
+        # Force all weight on level 2
+        lvl1b2_weights = lvl1b2_weights[~lvl1b2_weights.District.str.contains("City")]
+        lvl1b2_weights["weight"] = (lvl1b2_weights["Facility_Level"] == "2").astype(float)
+        lvl1b2_weights = lvl1b2_weights.drop(columns = 'Facility_ID')
 
-    # Aggregate counts per (District, Level)
-    lvl1b2_weights = (
-        lvl1b2_weights
-        .groupby(["District", "Facility_Level"], as_index=False)["Facility_Count"]
-        .sum()
-    )
+    elif weighting == "national_1b_to_2_ratio":
+        lvl1b2_weights = lvl1b2_weights[~lvl1b2_weights.District.str.contains("City")]
+        # National total counts
+        national_counts = (
+            lvl1b2_weights.groupby("Facility_Level")["Facility_Count"].sum().to_dict()
+        )
+        total_fac = national_counts.get("1b", 0) + national_counts.get("2", 0)
+        if total_fac == 0:
+            raise ValueError("No facilities found at levels 1b or 2.")
+        lvl1b2_weights["weight"] = lvl1b2_weights["Facility_Level"].map(
+            {lvl: cnt / total_fac for lvl, cnt in national_counts.items()}
+        )
+        lvl1b2_weights = lvl1b2_weights.drop(columns='Facility_ID')
 
-    # Compute total and proportional weights within each district
-    lvl1b2_weights["total_facilities"] = lvl1b2_weights.groupby("District")["Facility_Count"].transform("sum")
-    lvl1b2_weights["weight"] = lvl1b2_weights["Facility_Count"] / lvl1b2_weights["total_facilities"]
+    elif weighting == "district_1b_to_2_ratio":
+        # Replace city names with their parent districts (temporarily for grouping)
+        city_to_district_dict = {v: k for k, v in district_to_city_dict.items()}
+        lvl1b2_weights["District"] = lvl1b2_weights["District"].replace(city_to_district_dict)
+
+        # District-level weighting (default)
+        lvl1b2_weights = (
+            lvl1b2_weights
+            .groupby(["District", "Facility_Level"], as_index=False)["Facility_Count"]
+            .sum()
+        )
+
+        lvl1b2_weights["total_facilities"] = lvl1b2_weights.groupby("District")["Facility_Count"].transform("sum")
+        lvl1b2_weights["weight"] = lvl1b2_weights["Facility_Count"] / lvl1b2_weights["total_facilities"]
+
+    else:
+        raise ValueError(
+            f"Invalid weighting '{weighting}'. Choose from "
+            "'level2', 'national_1b_to_2_ratio', or 'district_1b_to_2_ratio'."
+        )
 
     # Add back city districts (reverse mapping)
     for source, destination in copy_source_to_destination.items():
@@ -985,6 +1020,7 @@ full_set_interpolated = update_level1b_availability(
     facilities_by_level=facilities_by_level,
     resourcefilepath=resourcefilepath,
     district_to_city_dict=copy_source_to_destination,
+    weighting = 'district_1b_to_2_ratio',
 )
 
 # --- Check that the exported file has the properties required of it by the model code. --- #
