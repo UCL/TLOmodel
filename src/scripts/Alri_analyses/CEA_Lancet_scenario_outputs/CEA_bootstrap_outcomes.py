@@ -48,7 +48,6 @@ sa_name = ''
 # sa_name = 'out_inpatient_cost_double'
 
 
-
 # Date for saving the image for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
@@ -389,25 +388,40 @@ def plot_ce_plane(scenario_statistics):
     # Define base colors for each scenario
     BASE_COLOURS = {
         'baseline_ant': {
-            'base': '#004080', # Navy Blue
-            'level2': '#1a5da0', # Cobalt Blue
-            'level1b': '#3379c0',  # Royal Blue
-            'level1a': '#4d96df',  # Steel Blue
-            'level0': '#66b2ff'  # Cornflower Blue
+            # 'base': '#004080', # Navy Blue
+            # 'level2': '#1a5da0', # Cobalt Blue
+            # 'level1b': '#3379c0',  # Royal Blue
+            # 'level1a': '#4d96df',  # Steel Blue
+            # 'level0': '#66b2ff'  # Cornflower Blue
+            'base': '#1a5da0',
+            'level2': '#1a5da0',
+            'level1b': '#1a5da0',
+            'level1a': '#1a5da0',
+            'level0': '#1a5da0'
         },
         'existing_psa': {
-            'base': '#e65100', # Dark Orange
-            'level2': '#ec670a', # Medium-Dark Orange
-            'level1b': '#f37c13',  # Medium Orange
-            'level1a': '#f9921d',  # Medium-Light Orange
-            'level0': '#ffa726'  # Light Orange
+            # 'base': '#e65100', # Dark Orange
+            # 'level2': '#ec670a', # Medium-Dark Orange
+            # 'level1b': '#f37c13',  # Medium Orange
+            # 'level1a': '#f9921d',  # Medium-Light Orange
+            # 'level0': '#ffa726'  # Light Orange
+            'base': '#ec670a',
+            'level2': '#ec670a',
+            'level1b': '#ec670a',
+            'level1a': '#ec670a',
+            'level0': '#ec670a'
         },
         'planned_psa': {
-            'base': '#1b5e20', # Dark Green
-            'level2': '#3e7c42', # Medium-Dark Green
-            'level1b': '#609a64',  # Medium Green
-            'level1a': '#83b885',  # Medium-Light Green
-            'level0': '#a5d6a7'  # Light Green
+            # 'base': '#1b5e20', # Dark Green
+            # 'level2': '#3e7c42', # Medium-Dark Green
+            # 'level1b': '#609a64',  # Medium Green
+            # 'level1a': '#83b885',  # Medium-Light Green
+            # 'level0': '#a5d6a7'  # Light Green
+            'base': '#4a8549',
+            'level2': '#4a8549',
+            'level1b': '#4a8549',
+            'level1a': '#4a8549',
+            'level0': '#4a8549'
         }
     }
     colours = BASE_COLOURS
@@ -417,12 +431,12 @@ def plot_ce_plane(scenario_statistics):
         'base': 'o',  # circle
         'level2': 's',   # square
         'level1b': 'd',  # diamond
-        'level1a': '*',  # star
+        'level1a': 'p',  # pentagon
         'level0': '^'   # triangle
     }
 
     # Add point for baseline_ant
-    plt.scatter(0, 0, color=colours['baseline_ant']['base'], marker=po_level_markers['base'],
+    plt.scatter(0, 0, color=colours['baseline_ant']['base'], marker=po_level_markers['base'], s=65,
                 label='baseline_ant')
     # Plot each scenario
     for scenario in scenarios:
@@ -449,7 +463,7 @@ def plot_ce_plane(scenario_statistics):
 
         # Plot point (mean values)
         plt.scatter(daly_stats['mean'], cost_stats['mean'],
-                    color=colour, marker=marker,
+                    color=colour, marker=marker, s=65,
                     label=scenario)
 
         # For error bars, use same color with slight transparency
@@ -460,17 +474,18 @@ def plot_ce_plane(scenario_statistics):
 
         # Plot confidence intervals using pre-calculated CIs
         plt.errorbar(daly_stats['mean'], cost_stats['mean'],
-                     yerr=[[cost_stats['mean'] - cost_stats['ci_lower']],
-                           [cost_stats['ci_upper'] - cost_stats['mean']]],
+                     # yerr=[[cost_stats['mean'] - cost_stats['ci_lower']],
+                     #       [cost_stats['ci_upper'] - cost_stats['mean']]],
                      xerr=[[daly_stats['mean'] - daly_stats['ci_lower']],
                            [daly_stats['ci_upper'] - daly_stats['mean']]],
-                     color=error_color, capsize=5)
+                     color=error_color, linewidth=0.5, capsize=5, capthick=0.5)
 
     # Get and plot frontier
     frontier_points = get_frontier_points(scenario_statistics)
     frontier_x = [p['effect'] for p in frontier_points]
     frontier_y = [p['cost'] for p in frontier_points]
-    plt.plot(frontier_x, frontier_y, 'k--', color='grey', alpha=0.2, label='CE frontier')
+    plt.plot(frontier_x, frontier_y, '--', dashes=(10, 5), color='grey', linewidth=0.5,
+             label='cost-effectiveness frontier')
 
     # Get ICER value and format it
     n_points = len(frontier_points)
@@ -478,12 +493,12 @@ def plot_ce_plane(scenario_statistics):
         frontier_scenario = frontier_points[i]['scenario']
         icer_value = scenario_statistics[frontier_scenario]['icer_dalys_mean']
         icer_value_rounded = (np.round(icer_value)).astype(int)
-        icer_text = f"ICER={icer_value_rounded}$/DALY"
+        icer_text = f"ICER=${icer_value_rounded}/DALY"
         # Add ICER annotation
         plt.annotate(
             icer_text,
-            xy=(scenario_statistics[frontier_scenario]['dalys_averted_mean'],
-                scenario_statistics[frontier_scenario]['cost_diff_mean']-85000))
+            xy=(scenario_statistics[frontier_scenario]['dalys_averted_mean']+3200,
+                scenario_statistics[frontier_scenario]['cost_diff_mean']-25000))  # -85000
 
     # Set y-axis limits to match max cost
     plt.ylim(-max_cost * 0.1, max_cost * 1.1)  # Add 10% padding
@@ -499,7 +514,7 @@ def plot_ce_plane(scenario_statistics):
     # Customize plot
     plt.xlabel('DALYs Averted', fontsize=14)
     plt.ylabel('Incremental Cost ($)', fontsize=14)
-    plt.title('Cost-Effectiveness Plane')
+    # plt.title('Cost-Effectiveness Plane')
 
     # Get the current handles and labels
     handles, labels = plt.gca().get_legend_handles_labels()
@@ -565,7 +580,11 @@ fig = plot_ce_plane(bootstrap_results)
 plt.show()
 
 # Optionally save the figure
-fig.savefig(f'ce_plane{sa_name}.png', dpi=300, bbox_inches='tight')
+# fig.savefig(f'ce_plane{sa_name}.png', dpi=300, bbox_inches='tight')
+fig.savefig(f'ce_plane{sa_name}{datestamp}.eps', format='eps')
+fig.savefig(f'ce_plane{sa_name}{datestamp}_1000dpi.eps', format='eps', dpi=1000)
+fig.savefig(f'ce_plane{sa_name}{datestamp}_pdf.pdf', format='pdf', dpi=1200)
+fig.savefig(f'ce_plane{sa_name}.svg', format='svg', dpi=1200)
 
 # # # Save a dataframe with the key information for the paper
 key_table = {}
