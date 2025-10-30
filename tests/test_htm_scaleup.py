@@ -98,13 +98,13 @@ def test_hiv_scale_up(seed):
     assert sim.modules["Hiv"].parameters["beta"] < original_params.loc[
         original_params.parameter_name == "beta", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] == new_params.loc[
-        new_params.parameter == "prob_prep_for_fsw_after_hiv_test", "target_value"].values[0]
+        new_params.parameter_name == "prob_prep_for_fsw_after_hiv_test", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_agyw"] == new_params.loc[
-        new_params.parameter == "prob_prep_for_agyw", "target_value"].values[0]
+        new_params.parameter_name == "prob_prep_for_agyw", "value"].values[0]
     assert sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] == new_params.loc[
-        new_params.parameter == "probability_of_being_retained_on_prep_every_3_months", "target_value"].values[0]
+        new_params.parameter_name == "probability_of_being_retained_on_prep_every_3_months", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] == new_params.loc[
-        new_params.parameter == "prob_circ_after_hiv_test", "target_value"].values[0]
+        new_params.parameter_name == "prob_circ_after_hiv_test", "value"].values[0]
 
     # check malaria parameters unchanged
     mal_original_params = read_csv_files(resourcefilepath / 'malaria' / 'ResourceFile_malaria',
@@ -176,13 +176,13 @@ def test_htm_scale_up(seed):
     assert sim.modules["Hiv"].parameters["beta"] < original_hiv_params.loc[
         original_hiv_params.parameter_name == "beta", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] == new_hiv_params.loc[
-        new_hiv_params.parameter == "prob_prep_for_fsw_after_hiv_test", "target_value"].values[0]
+        new_hiv_params.parameter_name == "prob_prep_for_fsw_after_hiv_test", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_agyw"] == new_hiv_params.loc[
-        new_hiv_params.parameter == "prob_prep_for_agyw", "target_value"].values[0]
+        new_hiv_params.parameter_name == "prob_prep_for_agyw", "value"].values[0]
     assert sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] == new_hiv_params.loc[
-        new_hiv_params.parameter == "probability_of_being_retained_on_prep_every_3_months", "target_value"].values[0]
+        new_hiv_params.parameter_name == "probability_of_being_retained_on_prep_every_3_months", "value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] == new_hiv_params.loc[
-        new_hiv_params.parameter == "prob_circ_after_hiv_test", "target_value"].values[0]
+        new_hiv_params.parameter_name == "prob_circ_after_hiv_test", "value"].values[0]
 
     # check malaria parameters changed
     new_mal_params = read_csv_files(resourcefilepath / 'malaria' / 'ResourceFile_malaria',
