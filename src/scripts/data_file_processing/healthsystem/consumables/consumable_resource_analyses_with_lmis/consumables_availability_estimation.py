@@ -878,6 +878,115 @@ assert not pd.isnull(full_set_interpolated).any().any()
 full_set_interpolated = full_set_interpolated.reset_index()
 #full_set_interpolated = full_set_interpolated.reset_index().merge(item_code_category_mapping, on = 'item_code', how = 'left', validate = 'm:1')
 
+def update_level1b_availability(
+    full_set_interpolated: pd.DataFrame,
+    facilities_by_level: dict,
+    resourcefilepath: Path,
+    district_to_city_dict: dict,
+) -> pd.DataFrame:
+    """
+    Updates the availability of Level 1b facilities to be the weighted average
+    of availability at Level 1b and 2 facilities, since these levels are merged
+    together in simulations.
+    """
+    # Load and prepare base weights (facility counts)
+    # ---------------------------------------------------------------------
+    weight = (
+        pd.read_csv(resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
+        [["District", "Facility_Level", "Facility_ID", "Facility_Count"]]
+    )
+
+    # Keep only Level 1b and 2 facilities
+    lvl1b2_weights = weight[weight["Facility_Level"].isin(["1b", "2"])].copy()
+
+    # Replace city names with their parent districts (temporarily for grouping)
+    city_to_district_dict = {v: k for k, v in district_to_city_dict.items()}
+    lvl1b2_weights["District"] = lvl1b2_weights["District"].replace(city_to_district_dict)
+
+    # Aggregate counts per (District, Level)
+    lvl1b2_weights = (
+        lvl1b2_weights
+        .groupby(["District", "Facility_Level"], as_index=False)["Facility_Count"]
+        .sum()
+    )
+
+    # Compute total and proportional weights within each district
+    lvl1b2_weights["total_facilities"] = lvl1b2_weights.groupby("District")["Facility_Count"].transform("sum")
+    lvl1b2_weights["weight"] = lvl1b2_weights["Facility_Count"] / lvl1b2_weights["total_facilities"]
+
+    # Add back city districts (reverse mapping)
+    for source, destination in copy_source_to_destination.items():
+        new_rows = lvl1b2_weights.loc[lvl1b2_weights.District == source].copy()
+        new_rows.District = destination
+        lvl1b2_weights = pd.concat([lvl1b2_weights, new_rows], axis=0, ignore_index=True)
+
+    # Merge Facility_ID back
+    lvl1b2_weights = lvl1b2_weights.merge(
+        weight.loc[weight["Facility_Level"].isin(["1b", "2"]), ["District", "Facility_Level", "Facility_ID"]],
+        on=["District", "Facility_Level"],
+        how="left",
+        validate="1:1"
+    )
+
+    # Subset Level 1b and 2 facilities and apply weights
+    # ---------------------------------------------------------------------
+    lvl1b2_ids = list(facilities_by_level.get("1b", [])) + list(facilities_by_level.get("2", []))
+    full_set_interpolated_levels1b2 = full_set_interpolated[
+        full_set_interpolated["Facility_ID"].isin(lvl1b2_ids)
+    ].copy()
+
+    full_set_interpolated_levels1b2 = full_set_interpolated_levels1b2.merge(
+        lvl1b2_weights[["District", "Facility_Level", "Facility_ID", "weight"]],
+        on="Facility_ID",
+        how="left",
+        validate="m:1"
+    )
+
+    # Apply weighting
+    full_set_interpolated_levels1b2["available_prop"] *= full_set_interpolated_levels1b2["weight"]
+
+    # Aggregate to district-month-item level
+    full_set_interpolated_levels1b2 = (
+        full_set_interpolated_levels1b2
+        .groupby(["District", "month", "item_code"], as_index=False)["available_prop"]
+        .sum()
+    )
+    full_set_interpolated_levels1b2["Facility_Level"] = "1b"
+
+    # Reattach Facility_IDs for level 1b
+    full_set_interpolated_levels1b2 = full_set_interpolated_levels1b2.merge(
+        lvl1b2_weights.query("Facility_Level == '1b'")[["District", "Facility_Level", "Facility_ID", "weight"]],
+        on=["District", "Facility_Level"],
+        how="left",
+        validate="m:1"
+    )
+
+    # Replace old level 1b facilities and recompute weighted availability
+    # ---------------------------------------------------------------------
+    # Drop old Level 1b facilities
+    full_set_interpolated = full_set_interpolated[
+        ~full_set_interpolated["Facility_ID"].isin(facilities_by_level.get("1b", []))
+    ]
+
+    # Append new 1b facility data
+    full_set_interpolated = pd.concat(
+        [
+            full_set_interpolated,
+            full_set_interpolated_levels1b2[["Facility_ID", "month", "item_code", "available_prop"]]
+        ],
+        axis=0,
+        ignore_index=True
+    )
+
+    return full_set_interpolated
+
+full_set_interpolated = update_level1b_availability(
+    full_set_interpolated=full_set_interpolated,
+    facilities_by_level=facilities_by_level,
+    resourcefilepath=resourcefilepath,
+    district_to_city_dict=copy_source_to_destination,
+)
+
 # --- Check that the exported file has the properties required of it by the model code. --- #
 check_format_of_consumables_file(df=full_set_interpolated, fac_ids=fac_ids)
 
