@@ -201,18 +201,18 @@ def test_htm_scale_up(seed):
 
     # check tb parameters changed
     new_tb_params = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="scaleup_parameters")
-    new_tb_params.target_value = new_tb_params.target_value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
+    new_tb_params.value = new_tb_params.value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
     assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_tb_params.loc[
-        new_tb_params.parameter == "tb_treatment_coverage", "target_value"].values[0]).all()
+        new_tb_params.parameter_name == "tb_treatment_coverage", "value"].values[0]).all()
     assert sim.modules["Tb"].parameters["prob_tx_success_ds"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_ds", "target_value"].values[0]
+        new_tb_params.parameter_name == "tb_prob_tx_success_ds", "value"].values[0]
     assert sim.modules["Tb"].parameters["prob_tx_success_mdr"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_mdr", "target_value"].values[0]
+        new_tb_params.parameter_name == "tb_prob_tx_success_mdr", "value"].values[0]
     assert sim.modules["Tb"].parameters["prob_tx_success_0_4"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_0_4", "target_value"].values[0]
+        new_tb_params.parameter_name == "tb_prob_tx_success_0_4", "value"].values[0]
     assert sim.modules["Tb"].parameters["prob_tx_success_5_14"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_5_14", "target_value"].values[0]
+        new_tb_params.parameter_name == "tb_prob_tx_success_5_14", "value"].values[0]
     assert sim.modules["Tb"].parameters["first_line_test"] == new_tb_params.loc[
-        new_tb_params.parameter == "first_line_test", "target_value"].values[0]
+        new_tb_params.parameter_name == "first_line_test", "value"].values[0]
 

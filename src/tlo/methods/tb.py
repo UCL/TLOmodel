@@ -1061,9 +1061,9 @@ class Tb(Module):
             )
 
         if p['type_of_scaleup'] == 'target':
-            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+            scaled_params = scaled_params_workbook.set_index('parameter_name')['value'].to_dict()
         else:
-            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+            scaled_params = scaled_params_workbook.set_index('parameter_name')['prior_max'].to_dict()
 
         # scale-up TB program
         # use NTP treatment rates
