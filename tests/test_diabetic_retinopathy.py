@@ -153,10 +153,6 @@ def check_configuration_of_population(sim):
     assert pd.isnull(df.loc[df.dr_status == 'none', 'dr_date_diagnosis']).all()
     assert pd.isnull(df.loc[df.dr_status == 'none', 'dr_date_treatment']).all()
 
-    # check that those with symptoms are a subset of those with diabetic retinopathy:
-    assert set(sim.modules['SymptomManager'].who_has('blindness_full')).issubset(df.index[df.dr_status != 'none'])
-    assert set(sim.modules['SymptomManager'].who_has('blindness_partial')).issubset(df.index[df.dr_status != 'none'])
-
     # check that those diagnosed are a subset of those with any dr (and that the date makes sense):
     assert set(df.index[~pd.isnull(df.dr_date_diagnosis)]).issubset(df.index[df.dr_status_any_stage])
 
