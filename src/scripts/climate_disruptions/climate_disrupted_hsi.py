@@ -15,21 +15,29 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2026
-max_year = 2044
+max_year = 2041
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 climate_sensitivity_analysis = False
 parameter_sensitivity_analysis = False
 main_text = True
+scenario_names_all = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low",
+                  "SSP 2.45 Mean", "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
+
 if climate_sensitivity_analysis:
     scenario_names = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low", "SSP 2.45 Mean",  "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
     suffix = "climate_SA"
+    scenarios_of_interest = range(len(scenario_names))
 if parameter_sensitivity_analysis:
-    scenario_names = range(0,10,1)
+    scenario_names_all = range(0,10,1)
+    scenario_names = scenario_names_all
     suffix = "parameter_SA"
+
 if main_text:
     scenario_names = ["Baseline", "SSP 2.45 Mean", ]
     suffix = "main_text"
+    scenarios_of_interest = [0,6]
+
 
 precipitation_files  = {
     "Baseline": "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
@@ -146,8 +154,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_weather_delayed_mean_1000 = []
     all_draws_weather_cancelled_mean_1000 = []
 
-    for draw in range(len(scenario_names)):
-
+    for draw in range(len(scenario_names_all)):
+        if draw not in scenarios_of_interest:
+            continue
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
         all_years_data_treatments_mean = {}
@@ -441,36 +450,43 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         weather_cancelled_totals_upper - weather_cancelled_totals_mean
     ])
 
-    fig, axes = plt.subplots(1, 2, figsize=(18, 8))
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
     width = 0.35
-    x = np.arange(len(treatments_totals_mean.index))
 
+    # --------------------------
+    # total treatments
+    # --------------------------
+    x = np.arange(len(treatments_totals_mean.index))
     axes[0].bar(x, treatments_totals_mean.values, width,
                 color=scenario_colours, yerr=treatments_totals_err, capsize=10)
-    axes[0].set_title(f'Total Healthcare Treatments (2020–{max_year})')
+    axes[0].text(-0.0, 1.05, '(A)', transform=axes[0].transAxes,
+                   fontsize=14, va='top', ha='right')
+    axes[0].set_title(f'Total Health System Interactions (2020–2040)')
     axes[0].set_xlabel('Scenario')
-    axes[0].set_ylabel('Total Treatments')
+    axes[0].set_ylabel('Total HSIs')
     axes[0].set_xticks(x)
-    axes[0].set_xticklabels(scenario_names, rotation=45)
+    axes[0].set_xticklabels(scenario_names)
     axes[0].grid(False)
 
-    width = 0.35
-    x = np.arange(len(weather_delayed_totals_mean.iloc[1:].index))
-
-    axes[1].bar(x - width / 2, weather_delayed_totals_mean.iloc[1:].values, width,
-                label='Weather Delayed', color=scenario_colours[1],
-                yerr=weather_delayed_totals_err[:, 1:], capsize=10)
-    axes[1].bar(x + width / 2, weather_cancelled_totals_mean.iloc[1:].values, width,
-                label='Weather Cancelled', color=scenario_colours[2],
-                yerr=weather_cancelled_totals_err[:, 1:], capsize=10)
-
-    axes[1].set_title(f'Weather-Disrupted Appointments (2020–{max_year})')
-    axes[1].set_xlabel('Scenario')
-    axes[1].set_ylabel('Total Appointments')
+    # --------------------------
+    # weather disruptions
+    # --------------------------
+    x = np.arange(2)  # only two bars: Delayed and Cancelled
+    axes[1].bar(x[0], weather_delayed_totals_mean, width,
+                label='Weather Delayed', color='#FEB95F',
+                yerr=weather_delayed_totals_err, capsize=10)
+    axes[1].bar(x[1], weather_cancelled_totals_mean, width,
+                label='Weather Cancelled', color="#f07167",
+                yerr=weather_cancelled_totals_err, capsize=10)
+    axes[1].text(-0.0, 1.05, '(B)', transform=axes[1].transAxes,
+                   fontsize=14, va='top', ha='right')
+    axes[1].set_title(f'Weather-Disrupted Health System Interactions (2020–2040)')
+    axes[1].set_xlabel('Disruption Type')
+    axes[1].set_ylabel('')
     axes[1].set_xticks(x)
-    axes[1].set_xticklabels(scenario_names[1:], rotation=45)
-    axes[1].legend()
+    axes[1].set_xticklabels(['Delayed', 'Cancelled'])
     axes[1].grid(False)
+
     fig.tight_layout()
     fig.savefig(output_folder / f"treatments_and_weather_disruptions_{suffix}.png")
     plt.close(fig)
@@ -535,12 +551,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_weather_delayed_all_draws_mean.to_csv(output_folder / "weather_delayed_summary_all_draws.csv")
     df_weather_cancelled_all_draws_mean.to_csv(output_folder / "weather_cancelled_summary_all_draws.csv")
 
-    (df_weather_delayed_all_draws_mean / df_treatments_all_draws_mean).to_csv(
-        output_folder / f"percentage_weather_delayed_by_all_draws.csv")
-    (df_weather_delayed_all_draws_mean / df_treatments_all_draws_mean).to_csv(
-        output_folder / f"percentage_weather_cancelled_by_all_draws.csv")
+    # dont include delayed in denominator as included in treatments delivered
+    ((df_weather_delayed_all_draws_mean / (df_treatments_all_draws_mean + df_weather_cancelled_all_draws_mean )*100).to_csv(
+        output_folder / f"percentage_weather_delayed_by_all_draws.csv"))
+    ((df_weather_cancelled_all_draws_mean / (df_treatments_all_draws_mean + df_weather_cancelled_all_draws_mean )*100).to_csv(
+        output_folder / f"percentage_weather_cancelled_by_all_draws.csv"))
 
+    (((df_weather_cancelled_all_draws_mean  + df_weather_delayed_all_draws_mean)/ (df_treatments_all_draws_mean + df_weather_cancelled_all_draws_mean)*100).to_csv(
+        output_folder / f"percentage_weather_disrupted_by_all_draws.csv"))
 
+    ((df_weather_delayed_all_draws_mean.sum() / (df_treatments_all_draws_mean.sum() + df_weather_cancelled_all_draws_mean.sum() )*100).to_csv(
+        output_folder / f"percentage_weather_delayed_by_all_draws_total_across_years.csv"))
+    ((df_weather_cancelled_all_draws_mean.sum() / (df_treatments_all_draws_mean.sum() + df_weather_cancelled_all_draws_mean.sum() )*100).to_csv(
+        output_folder / f"percentage_weather_cancelled_by_all_draws_total_across_years.csv"))
+
+    (((df_weather_cancelled_all_draws_mean.sum()  + df_weather_delayed_all_draws_mean.sum())/ (df_treatments_all_draws_mean.sum() + df_weather_cancelled_all_draws_mean.sum())*100).to_csv(
+        output_folder / f"percentage_weather_disrupted_by_all_draws_total_across_years.csv"))
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
