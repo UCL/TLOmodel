@@ -86,6 +86,12 @@ class WastingAnalyses:
             'severe wasting': '#0E53EA',
             'moderate wasting': '#FFA783',
         }
+        self.__data_name = {
+            2010: 'DHS 2010',
+            2014: 'MICS 2013-2014',
+            2016: 'DHS 2015–2016',
+            2020: 'MICS 2019–2020',
+        }
 
         self.calib_outcomes_folder_path_name = (
             Path(sim_results_folder_path_str).parent / f"calib_outcome_figures_SQ-{self.datestamp}"
@@ -703,12 +709,21 @@ class WastingAnalyses:
                             capsize=5, fmt='none', color='white')
 
             # Plot the second set of bars (calibration data)
-            ax.bar(r2, plotting_calib['severe wasting'],
-                   color=self.__colors_data['severe wasting'], width=bar_width,
-                   label='severe wasting (data)')
-            ax.bar(r2, plotting_calib['moderate wasting'], bottom=plotting_calib['severe wasting'],
-                   color=self.__colors_data['moderate wasting'], width=bar_width,
-                   label='moderate wasting (data)')
+            ax.bar(
+                r2,
+                plotting_calib["severe wasting"],
+                color=self.__colors_data["severe wasting"],
+                width=bar_width,
+                label=f"severe wasting ({self.__data_name[year_calib]})",
+            )
+            ax.bar(
+                r2,
+                plotting_calib["moderate wasting"],
+                bottom=plotting_calib["severe wasting"],
+                color=self.__colors_data["moderate wasting"],
+                width=bar_width,
+                label=f"moderate wasting ({self.__data_name[year_calib]})",
+            )
 
             # Add the confidence intervals
             for i, age_group in enumerate(age_groups[0:len(age_groups)-1]):
@@ -769,10 +784,10 @@ class WastingAnalyses:
                                      slice(None), ['0-4'], 'Childhood Undernutrition'
                                      )].groupby('period').sum()
         plotting = plot_df.loc[['2015-2019']]
-        ax = plotting['model'].plot.bar(label='Model', ax=ax, rot=0)
+        ax = plotting['model'].plot.bar(label='deaths due to SAM (model)', ax=ax, rot=0)
         ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
-                    fmt='o', color='#000', label="GBD (2019)")
+                    fmt='o', color='#000', label="deaths due to SAM (GBD 2019)")
 
         # ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5',
         #              fontsize=title_fontsize - 1)
