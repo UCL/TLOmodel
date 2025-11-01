@@ -1342,7 +1342,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         ],
                     }
                 )
-                eff_table.to_csv(outputs_path / f"effectiveness_table_{outcome_cause_suffix}.csv", index=False)
+                eff_table.to_csv(outputs_path / f"effectiveness_table_{outcome_cause_suffix}_{timestamps_suffix}.csv",
+                                 index=False)
 
             if outcome_type == "DALYs":
                 if cause == "any cause":
