@@ -11,7 +11,7 @@ from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
     summarize,
-    load_pickled_dataframes
+    get_color_short_treatment_id
 )
 
 min_year = 2026
@@ -116,6 +116,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 total[k] = 0
                 total[k] += total.get(k, 0) + v
         return pd.Series(sum(total.values()), name="total_treatments")
+
 
     def get_population_for_year(_df):
         """Returns the population in the year of interest"""
@@ -526,6 +527,58 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(output_folder / f"treatments_and_appointments_per_1000_all_draws_with_weather_{max_year}_{suffix}.png")
     plt.close(fig)
 
+
+    target_year_final = max_year
+    target_period_final = (Date(target_year_final, 1, 1), Date(target_year_final, 12, 31))
+    scenario_labels_final = ["Baseline", "SSP2-4.5"]
+    scenario_indices_final = [0, 1]
+
+    def get_counts_of_hsi_by_treatment_id(_df):
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*target_period_final)]
+        _counts_by_treatment_id = _df['TREATMENT_ID'].apply(pd.Series).sum().astype(int)
+        return _counts_by_treatment_id.groupby(level=0).sum()
+
+    def get_counts_of_hsi_by_short_treatment_id(_df):
+        _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
+        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
+        return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
+
+    final_data = {}
+    for i, draw in enumerate(scenario_indices_final):
+        result_data = summarize(
+            extract_results(
+                results_folder,
+                module='tlo.methods.healthsystem.summary',
+                key='HSI_Event',
+                custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
+                do_scaling=True
+            ),
+            only_mean=True,
+            collapse_columns=True,
+        )[draw]
+        final_data[scenario_labels_final[i]] = result_data['mean']
+
+    df_final = pd.DataFrame(final_data).fillna(0)
+
+    # --- Plot: stacked bar chart (Baseline vs SSP2.45)
+    fig_final, ax_final = plt.subplots(figsize=(10, 7))
+    bottom = np.zeros(len(scenario_labels_final))
+
+    for treatment in df_final.index:
+        values = df_final.loc[treatment]
+        ax_final.bar(scenario_labels_final, values, bottom=bottom,
+                     color=get_color_short_treatment_id(treatment),
+                     label=treatment)
+        bottom += values.values
+
+    ax_final.set_ylabel("Total Number of Treatments (2040)", fontsize=12)
+    ax_final.set_xlabel("Scenario", fontsize=12)
+    ax_final.set_title("Total Treatments by Type in 2040", fontsize=14)
+    ax_final.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Treatment Type')
+    ax_final.tick_params(axis='both', labelsize=11)
+    fig_final.tight_layout()
+    fig_final.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_StackedBar_2040.png")
+    plt.close(fig_final)
 
         # Calculate differences relative to baseline
     df_treatments_diff = df_all_years_treatments_mean - baseline_treatments_by_year
