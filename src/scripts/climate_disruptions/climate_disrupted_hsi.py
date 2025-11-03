@@ -19,8 +19,8 @@ max_year = 2041
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 climate_sensitivity_analysis = False
-parameter_sensitivity_analysis = False
-main_text = True
+parameter_sensitivity_analysis = True
+main_text = False
 scenario_names_all = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low",
                   "SSP 2.45 Mean", "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
 
