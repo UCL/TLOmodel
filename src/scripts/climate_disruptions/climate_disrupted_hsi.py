@@ -529,7 +529,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
     target_year_final = max_year
-    target_period_final = (Date(target_year_final, 1, 1), Date(target_year_final, 12, 31))
+    target_period_final = (Date(2026, 1, 1), Date(target_year_final, 12, 31))
     scenario_labels_final = ["Baseline", "SSP2-4.5"]
     scenario_indices_final = [0, 1]
 
@@ -571,13 +571,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                      label=treatment)
         bottom += values.values
 
-    ax_final.set_ylabel("Total Number of Treatments (2040)", fontsize=12)
+    ax_final.set_ylabel("Total Number of HSIs ", fontsize=12)
     ax_final.set_xlabel("Scenario", fontsize=12)
-    ax_final.set_title("Total Treatments by Type in 2040", fontsize=14)
     ax_final.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Treatment Type')
     ax_final.tick_params(axis='both', labelsize=11)
     fig_final.tight_layout()
-    fig_final.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_StackedBar_2040.png")
+    fig_final.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_StackedBar_all_years.png")
     plt.close(fig_final)
 
         # Calculate differences relative to baseline
