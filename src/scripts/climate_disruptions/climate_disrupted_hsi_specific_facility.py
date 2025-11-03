@@ -15,13 +15,14 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2026
-max_year = 2044
+max_year = 2041
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
-scenario_names = ["Baseline", "SSP 2.45 Mean",  ]
+scenario_names = ["Baseline", "SSP 2.45 Mean"]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167' ] *4
 
+facility_of_interest = [4, 5, 6, 7, 8, 9, 10, 11]
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -29,55 +30,37 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the healthcare system impact through total treatments and never-ran appointments.
     - Now includes weather-delayed and weather-cancelled appointments.
     """
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
     TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
 
     # Definitions of general helper functions
-    make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
 
-    def get_num_treatments_total(_df):
+    def get_num_treatments_total(_df): # only ones saved have facility ID of interest
         _df['date'] = pd.to_datetime(_df['date'])
 
         # filter to target period
         _df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
-
         return pd.Series(len(_df), name="total_treatments")
 
-    def get_num_treatments_never_ran(_df):
-        _df['date'] = pd.to_datetime(_df['date'])
-
-        # filter to target period
+    def get_num_treatments_total_disrupted(_df):
+        if _df is None or not {'date', 'Facility_ID'}.issubset(_df.columns):
+            return pd.Series(0, name="total_treatments")
+        _df['date'] = pd.to_datetime(_df['date'], errors='coerce')
         _df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+
+        # filter to facility/facilities of interest
+        print(_df['Facility_ID'].unique())
+        if isinstance(facility_of_interest, (list, set, tuple)):
+            _df = _df.loc[_df['Facility_ID'].isin(facility_of_interest)]
+        else:
+            _df = _df.loc[_df['Facility_ID'] == facility_of_interest]
+
+        # handle empty result
+        if _df.empty:
+            return pd.Series(0, name="total_treatments")
 
         return pd.Series(len(_df), name="total_treatments")
-
-
-
-    def get_num_treatments_total_delayed(_df):
-        _df['date'] = pd.to_datetime(_df['date'])
-
-        # filter to target period
-        _df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
-        total = {}
-
-        for d in _df['weather_delayed_hsi_event_key_to_counts']:
-            for k, v in d.items():
-                total[k] = 0
-                total[k] += total.get(k, 0) + v
-        return pd.Series(sum(total.values()), name="total_treatments")
-
-    def get_num_treatments_total_cancelled(_df):
-        _df['date'] = pd.to_datetime(_df['date'])
-
-        # filter to target period
-        _df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
-        total = {}
-
-        for d in _df['weather_cancelled_hsi_event_key_to_counts']:
-            for k, v in d.items():
-                total[k] = 0
-                total[k] += total.get(k, 0) + v
-        return pd.Series(sum(total.values()), name="total_treatments")
 
     def get_population_for_year(_df):
         """Returns the population in the year of interest"""
@@ -117,10 +100,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_weather_cancelled_mean_1000 = []
 
     for draw in range(len(scenario_names)):
-        if draw in [0]:
+        if draw == 0:
             continue
-        make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
-
         all_years_data_treatments_mean = {}
         all_years_data_treatments_upper = {}
         all_years_data_treatments_lower = {}
@@ -190,7 +171,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         results_folder,
                         module='tlo.methods.healthsystem.summary',
                         key='never_ran_hsi_event_counts',
-                        custom_generate_series=get_num_treatments_never_ran,
+                        custom_generate_series=get_num_treatments_total_disrupted,
                         do_scaling=True
                     ),
                     only_mean=False,
@@ -207,8 +188,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     extract_results(
                         results_folder,
                         module='tlo.methods.healthsystem.summary',
-                        key='weather_delayed_hsi_event_counts',
-                        custom_generate_series=get_num_treatments_total_delayed,
+                        key='Weather_delayed_HSI_Event_full_info',
+                        custom_generate_series=get_num_treatments_total_disrupted,
                         do_scaling=True
                     ),
                     only_mean=False,
@@ -224,7 +205,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     extract_results(
                         results_folder,
                         module='tlo.methods.healthsystem.summary',
-                        key='weather_cancelled_hsi_event_counts',
+                        key='Weather_cancelled_HSI_Event_full_info',
                         custom_generate_series=get_num_treatments_total_cancelled,
                         do_scaling=True
                     ),
