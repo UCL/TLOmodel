@@ -7,49 +7,11 @@
     {
       "draw_number": 0,
       "parameters": {
-        "SymptomManager": {
-          "spurious_symptoms": true
-        },
         "HealthSystem": {
-          "Service_Availability": [
-            "*"
-          ],
-          "use_funded_or_actual_staffing": "funded_plus",
-          "mode_appt_constraints": 1,
-          "cons_availability": "default",
-          "beds_availability": "all",
-          "equip_availability": "default",
-          "cons_availability_postSwitch": "all",
-          "year_cons_availability_switch": 2020,
-          "equip_availability_postSwitch": "all",
-          "year_equip_availability_switch": 2020,
-          "climate_ssp": "ssp245",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "none",
-          "tclose_overwrite": 1000
-        },
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-          "max_healthsystem_function": [
-            false,
-            true
-          ],
-          "max_healthcare_seeking": [
-            false,
-            false
-          ],
-          "year_of_switch": 2020
-        },
-        "Malaria": {
-          "type_of_scaleup": "max",
-          "scaleup_start_year": 2020
-        },
-        "Tb": {
-          "type_of_scaleup": "max",
-          "scaleup_start_year": 2020
-        },
-        "Hiv": {
-          "type_of_scaleup": "max",
-          "scaleup_start_year": 2020
+          "scale_factor_delay_in_seeking_care_weather": 2.0,
+          "rescaling_prob_seeking_after_disruption": 0.51,
+          "rescaling_prob_disruption": 1.0,
+          "scale_factor_severity_disruption_and_delay": 1.0
         }
       },
       "draw_name": "0"
@@ -57,54 +19,100 @@
     {
       "draw_number": 1,
       "parameters": {
-        "SymptomManager": {
-          "spurious_symptoms": true
-        },
         "HealthSystem": {
-          "Service_Availability": [
-            "*"
-          ],
-          "use_funded_or_actual_staffing": "funded_plus",
-          "mode_appt_constraints": 1,
-          "cons_availability": "default",
-          "beds_availability": "all",
-          "equip_availability": "default",
-          "cons_availability_postSwitch": "all",
-          "year_cons_availability_switch": 2020,
-          "equip_availability_postSwitch": "all",
-          "year_equip_availability_switch": 2020,
-          "climate_ssp": "ssp245",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "all",
-          "tclose_overwrite": 1000
-        },
-        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-          "max_healthsystem_function": [
-            false,
-            true
-          ],
-          "max_healthcare_seeking": [
-            false,
-            false
-          ],
-          "year_of_switch": 2020
-        },
-        "Malaria": {
-          "type_of_scaleup": "max",
-          "scaleup_start_year": 2020
-        },
-        "Tb": {
-          "type_of_scaleup": "max",
-          "scaleup_start_year": 2020
-        },
-        "Hiv": {
-          "type_of_scaleup": "max",
-          "scaleup_start_year": 2020
+          "scale_factor_delay_in_seeking_care_weather": 60.0,
+          "rescaling_prob_seeking_after_disruption": 0.01,
+          "rescaling_prob_disruption": 0.0,
+          "scale_factor_severity_disruption_and_delay": 1.0
         }
       },
       "draw_name": "1"
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "HealthSystem": {
+          "scale_factor_delay_in_seeking_care_weather": 1.0,
+          "rescaling_prob_seeking_after_disruption": 0.01,
+          "rescaling_prob_disruption": 0.5,
+          "scale_factor_severity_disruption_and_delay": 1.0
+        }
+      },
+      "draw_name": "2"
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "HealthSystem": {
+          "scale_factor_delay_in_seeking_care_weather": 1.0,
+          "rescaling_prob_seeking_after_disruption": 1.01,
+          "rescaling_prob_disruption": 1.5,
+          "scale_factor_severity_disruption_and_delay": 0.11
+        }
+      },
+      "draw_name": "3"
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "HealthSystem": {
+          "scale_factor_delay_in_seeking_care_weather": 0.0,
+          "rescaling_prob_seeking_after_disruption": 0.01,
+          "rescaling_prob_disruption": 0.5,
+          "scale_factor_severity_disruption_and_delay": 1.0
+        }
+      },
+      "draw_name": "4"
+    },
+    {
+      "draw_number": 5,
+      "parameters": {
+        "HealthSystem": {
+          "scale_factor_delay_in_seeking_care_weather": 60.0,
+          "rescaling_prob_seeking_after_disruption": 0.51,
+          "rescaling_prob_disruption": 0.5,
+          "scale_factor_severity_disruption_and_delay": 0.4066666666666667
+        }
+      },
+      "draw_name": "5"
+    },
+    {
+      "draw_number": 6,
+      "parameters": {
+        "HealthSystem": {
+          "scale_factor_delay_in_seeking_care_weather": 60.0,
+          "rescaling_prob_seeking_after_disruption": 0.51,
+          "rescaling_prob_disruption": 1.5,
+          "scale_factor_severity_disruption_and_delay": 0.4066666666666667
+        }
+      },
+      "draw_name": "6"
+    },
+    {
+      "draw_number": 7,
+      "parameters": {
+        "HealthSystem": {
+          "scale_factor_delay_in_seeking_care_weather": 60.0,
+          "rescaling_prob_seeking_after_disruption": 0.51,
+          "rescaling_prob_disruption": 1.0,
+          "scale_factor_severity_disruption_and_delay": 0.4066666666666667
+        }
+      },
+      "draw_name": "7"
+    },
+    {
+      "draw_number": 8,
+      "parameters": {
+        "HealthSystem": {
+          "scale_factor_delay_in_seeking_care_weather": 0.0,
+          "rescaling_prob_seeking_after_disruption": 1.01,
+          "rescaling_prob_disruption": 0.5,
+          "scale_factor_severity_disruption_and_delay": 0.7033333333333334
+        }
+      },
+      "draw_name": "8"
     }
   ],
-  "commit": "d1404df45e033eefa7f9964c06beacd2200f8122",
-  "github": "https://github.com/UCL/TLOmodel/tree/d1404df45e033eefa7f9964c06beacd2200f8122"
+  "commit": "d9cc039676a355ea9382c151b6768c255693ff17",
+  "github": "https://github.com/UCL/TLOmodel/tree/d9cc039676a355ea9382c151b6768c255693ff17"
 }
