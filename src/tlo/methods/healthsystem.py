@@ -540,7 +540,7 @@ class HealthSystem(Module):
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
-        path_to_resourcefiles_for_healthsystem = resourcefilepath / 'Healthsystem'
+        path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
 
         # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
