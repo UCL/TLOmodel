@@ -19,21 +19,25 @@ from tlo.analysis.utils import (
 
 
 min_year = 2026
-max_year = 2044
+max_year = 2041
 spacing_of_years = 1
-
-climate_sensitivity_analysis = False
+scenario_names_all = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low",
+                  "SSP 2.45 Mean", "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
+climate_sensitivity_analysis = True
 parameter_sensitivity_analysis = False
-main_text = True
+main_text = False
 if climate_sensitivity_analysis:
     scenario_names = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low", "SSP 2.45 Mean",  "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
     suffix = "climate_SA"
+    scenarios_of_interest = range(len(scenario_names))
 if parameter_sensitivity_analysis:
     scenario_names = range(0,10,1)
     suffix = "parameter_SA"
 if main_text:
-    scenario_names = ["Baseline", "SSP 2.45 High", "SSP 2.45 Low", "SSP 2.45 Mean", ]
+    scenario_names = ["Baseline", "SSP 2.45 Mean", ]
     suffix = "main_text"
+    scenarios_of_interest = [0,6]
+
 
 PREFIX_ON_FILENAME = '1'
 def extract_results(results_folder: Path,
@@ -81,7 +85,7 @@ def extract_results(results_folder: Path,
     # Collect results from each draw/run
     res = dict()
     for draw in range(info['number_of_draws']):
-        for run in range(5):
+        for run in range(10):
 
             draw_run = (draw, run)
 
@@ -103,8 +107,6 @@ def extract_results(results_folder: Path,
     _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
     return _concat
 
-scenario_names = ["Baseline",
-                  "SSP 2.45 Mean",]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167'] * 4
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -164,9 +166,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_dalys_mean_1000 = []
     all_draws_dalys_lower_1000 = []
     all_draws_dalys_upper_1000 = []
-    for draw in range(len(scenario_names)):
-        # if draw in [0]:
-        #     continue
+    for draw in range(len(scenario_names_all)):
+        if draw not in scenarios_of_interest:
+            continue
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
         all_years_data_deaths_mean = {}
