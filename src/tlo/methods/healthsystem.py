@@ -2613,11 +2613,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         subgroup=subgroup_name,
                                         care_seeking_odds_ratios=care_seeking_odds_ratios
                                     ).iloc[0],1)
-                                    will_seek_care_prob = 1
                                     will_seek_care = 0
                                     if random.random() < will_seek_care_prob:
                                         will_seek_care = 1
-                                    will_seek_care = 1
                                     if will_seek_care:
                                             self.sim.modules[
                                                 'HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
