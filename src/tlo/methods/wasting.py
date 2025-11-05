@@ -252,29 +252,30 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'un_am_MUAC_category': Property(Types.CATEGORICAL, 'MUAC measurement categories, based on WHO '
                                                            'cut-offs',
                                         categories=['<115mm', '[115-125)mm', '>=125mm']),
-        'un_sam_with_complications': Property(Types.BOOL, 'medical complications in SAM episode'),
-        'un_sam_death_date': Property(Types.DATE, 'if alive, scheduled death date from SAM if not recovers '
-                                                  'with treatment; if not alive, date of death due to SAM'),
+        'un_sam_with_complications': Property(Types.BOOL, 'medical complications present in SAM episode'),
+        'un_sam_death_date': Property(Types.DATE, 'if alive, scheduled death date from SAM if not prevented '
+                                                  'by treatment; if not alive, date of death due to SAM'),
         'un_am_recovery_date': Property(Types.DATE, 'recovery date from last acute malnutrition episode'),
         # Properties related to treatment
-        'un_am_tx_start_date': Property(Types.DATE, 'treatment start date, if currently on treatment'),
+        'un_am_tx_start_date': Property(Types.DATE, 'treatment start date'),
         'un_am_treatment_type': Property(Types.CATEGORICAL, 'treatment type for acute malnutrition the person'
-                                         ' is currently on; set to not_applicable if well hence no treatment required',
+                                         ' is currently on; ’not_applicable’ if well-nourished',
                                          categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'] + [
                                              'none', 'not_applicable']),
-        'un_am_discharge_date': Property(Types.DATE, 'planned discharge date from current treatment '
-                                                     'when recovery will happen if not yet recovered'),
+        'un_am_discharge_date': Property(Types.DATE, 'planned discharge date from current treatment when '
+                                                     'recovery will happen if not yet recovered; actual discharge date '
+                                                     'from last treatment'),
         # Dates on which the events should occur
-        'un_recov_to_mam_date': Property(Types.DATE, 'date on which recovery from severe to moderate acute '
-                                                     'malnutrition (SAM to MAM) should occur'),
-        'un_full_recov_date': Property(Types.DATE, 'date on which the full recovery for the person should '
-                                                     'occur'),
-        'un_progression_date': Property(Types.DATE, 'date on which the progression from moderate to severe '
-                                                    'wasting for the person should occur'),
+        'un_recov_to_mam_date': Property(Types.DATE, 'expected date of recovery from SAM to MAM fi not '
+                                                     'altered by treatment'),
+        'un_full_recov_date': Property(Types.DATE, 'expected date of full recovery to well-nourished state if'
+                                                   ' not altered by treatment'),
+        'un_progression_date': Property(Types.DATE, 'expected date of moderate wasting progression to severe '
+                                                    'if not altered by treatment'),
         # Properties to avoid double acute malnutrition assessment
-        'un_last_nonemergency_appt_date': Property(Types.DATE, 'last date of generic non-emergency first '
+        'un_last_nonemergency_appt_date': Property(Types.DATE, 'date of last generic non-emergency first '
                                                                'appointment'),
-        'un_last_growth_monitoring_appt_date': Property(Types.DATE, 'last date of growth-monitoring '
+        'un_last_growth_monitoring_appt_date': Property(Types.DATE, 'date of last growth-monitoring '
                                                                'appointment'),
     }
 
