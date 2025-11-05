@@ -62,19 +62,21 @@ def run_costing_analysis_wast(cost_outcome_folderpath: Path, SQ_timestamp: str, 
     cost_scenarios_draw_nmbs = list(cost_scenarios.keys())
 
     input_costs_file_path = cost_outcome_folderpath / f"input_cost_outcomes_{SQ_timestamp}.pkl"
-    if input_costs_file_path.exists() and not force_calculation[4]:
-        print("\nloading input cost outcomes from file ...")
-        input_costs = pd.read_pickle(input_costs_file_path)
-    else:
-        print("\ninput cost outcomes calculation ...")
-        # Standard 3% discount rate
-        input_costs = estimate_input_cost_of_scenarios(
-            results_folder, resourcefilepath, _draws=cost_scenarios_draw_nmbs,
-            _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
-            _discount_rate=discount_rate, summarize=True
-        )
-        print("saving input cost outcomes to file ...")
-        input_costs.to_pickle(input_costs_file_path)
+    # Remove the file if already exists
+    if input_costs_file_path.exists():
+        try:
+            input_costs_file_path.unlink()
+        except Exception as e:
+            print(f"warning: could not remove existing file {input_costs_file_path}: {e}")
+    print("\ninput cost outcomes calculation ...")
+    # Standard 3% discount rate
+    input_costs = estimate_input_cost_of_scenarios(
+        results_folder, resourcefilepath, _draws=cost_scenarios_draw_nmbs,
+        _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
+        _discount_rate=discount_rate, summarize=True
+    )
+    print("saving input cost outcomes to file ...")
+    input_costs.to_pickle(input_costs_file_path)
 
     # pd.set_option('display.max_columns', None)  # Show all columns
     # pd.set_option('display.max_rows', None)  # Show all rows
@@ -158,14 +160,20 @@ def run_costing_analysis_wast(cost_outcome_folderpath: Path, SQ_timestamp: str, 
                                             _year = list_of_years_for_plot, show_title = False,
                                             _outputfilepath = figurespath, _scenario_dict = cost_scenarios, _add_figname_suffix=scen_timestamps_suffix)
     output_costs_medical_file_path = cost_outcome_folderpath / f"output_costs_medical_outcomes_{SQ_timestamp}.pkl"
-    if not output_costs_medical_file_path.exists():
-        print("saving output cost medical outcomes to file ...")
-        col_names = ['total', 'lower_bound', 'upper_bound']
-        output_costs_medical_df = pd.DataFrame({name: t for name, t in zip(col_names, output_costs_medical)})
-        output_costs_medical_df = output_costs_medical_df * 10 ** 6
-        output_costs_medical_df['interv'] = output_costs_medical_df.index.map(cost_scenarios)
-        output_costs_medical_df = output_costs_medical_df.set_index('interv')
-        output_costs_medical_df.to_pickle(output_costs_medical_file_path)
+    if output_costs_medical_file_path.exists():
+        try:
+            output_costs_medical_file_path.unlink()
+        except Exception as e:
+            print(f"warning: could not remove existing file {output_costs_medical_file_path}: {e}")
+    print("saving output cost medical outcomes to file ...")
+    col_names = ['total', 'lower_bound', 'upper_bound']
+    output_costs_medical_df = pd.DataFrame({name: t for name, t in zip(col_names, output_costs_medical)})
+    output_costs_medical_df = output_costs_medical_df * 10 ** 6
+    output_costs_medical_df['interv'] = output_costs_medical_df.index.map(cost_scenarios)
+    output_costs_medical_df = output_costs_medical_df.set_index('interv')
+    print("\noutput_costs_medical_df")
+    print(output_costs_medical_df)
+    output_costs_medical_df.to_pickle(output_costs_medical_file_path)
     # do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'human resources for health', _disaggregate_by_subgroup = False,
     #                                         _year = list_of_years_for_plot, show_title = False,
     #                                         _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
