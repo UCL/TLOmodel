@@ -49,7 +49,7 @@ log_config = {
     # Write log to ${AZ_BATCH_TASK_WORKING_DIR} if the variable exists,
     # otherwise to current directory
     "directory": os.getenv("AZ_BATCH_TASK_WORKING_DIR", ".") + "/outputs",
-    "custom_levels": {"*": logging.INFO}
+    "custom_levels": {"*": logging.INFO},
 }
 
 sim = Simulation(start_date=start_date, seed=int(seed_arg), log_config=log_config)
@@ -62,13 +62,10 @@ sim.register(
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-
     # HealthSystem
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-
     # Modules for birth/labour/newborns --> Simplified Births
     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-
     # Disease modules considered complete:
     depression.Depression(resourcefilepath=resourcefilepath),
     diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
@@ -78,7 +75,7 @@ sim.register(
     malaria.Malaria(resourcefilepath=resourcefilepath),
     cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
+    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
 )
 
 # Run the simulation
@@ -90,6 +87,6 @@ shared.print_checksum(sim)
 # Parse the log-file
 log_df = parse_log_file(sim.log_filepath)
 
-print('TABLES:')
+print("TABLES:")
 for k, v in log_df.items():
     print(f'{k}: {",".join(v.keys())}')

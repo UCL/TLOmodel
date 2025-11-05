@@ -21,7 +21,7 @@ def memory_statistics() -> dict[str, float]:
     """
     Extract memory usage statistics in current process using `psutil` if available.
     Statistics are returned as a dictionary. If `psutil` not installed an empty dict is returned.
-    
+
     Key / value pairs are:
     memory_rss_MiB: float
         Resident set size in mebibytes. The non-swapped physical memory the process has used.
@@ -72,9 +72,7 @@ def schedule_profile_log(sim: Simulation, frequency_months: int = 3) -> None:
 
 def print_checksum(sim: Simulation) -> None:
     """Output checksum of dataframe to screen"""
-    logger.info(
-        key="msg", data=f"Population checksum: {hash_dataframe(sim.population.props)}"
-    )
+    logger.info(key="msg", data=f"Population checksum: {hash_dataframe(sim.population.props)}")
 
 
 def save_population(sim: Simulation) -> None:

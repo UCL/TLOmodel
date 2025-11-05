@@ -12,10 +12,10 @@ from tlo import Date, Simulation, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.util import hash_dataframe
 
-resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 start_date = Date(2010, 1, 1)
 
-logger = logging.getLogger(f'tlo.{__name__}')  # = tlo.tests.test_fullmodel
+logger = logging.getLogger(f"tlo.{__name__}")  # = tlo.tests.test_fullmodel
 
 
 def check_dtypes(simulation):

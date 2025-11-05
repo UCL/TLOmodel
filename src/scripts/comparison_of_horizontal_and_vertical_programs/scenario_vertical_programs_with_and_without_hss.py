@@ -34,26 +34,25 @@ class HTMWithAndWithoutHSS(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'htm_with_and_without_hss',
-            'directory': Path('./outputs'),
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.WARNING,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.hiv': logging.INFO,
-                'tlo.methods.tb': logging.INFO,
-                'tlo.methods.malaria': logging.INFO,
-            }
+            "filename": "htm_with_and_without_hss",
+            "directory": Path("./outputs"),
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem": logging.WARNING,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+                "tlo.methods.hiv": logging.INFO,
+                "tlo.methods.tb": logging.INFO,
+                "tlo.methods.malaria": logging.INFO,
+            },
         }
 
     def modules(self):
-        return (
-            fullmodel(resourcefilepath=self.resources)
-            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
-        )
+        return fullmodel(resourcefilepath=self.resources) + [
+            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)
+        ]
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
@@ -65,83 +64,67 @@ class HTMWithAndWithoutHSS(BaseScenario):
         scenario_definitions = ScenarioDefinitions()
 
         return {
-            "Baseline":
-                scenario_definitions.baseline(),
-
+            "Baseline": scenario_definitions.baseline(),
             # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
-            "FULL HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hss_package(),
-                ),
-
+            "FULL HSS PACKAGE": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.hss_package(),
+            ),
             # **************************************************
             # VERTICAL PROGRAMS WITH AND WITHOUT THE HSS PACKAGE
             # **************************************************
-
             # - - - HIV SCALE-UP WITHOUT HSS PACKAGE- - -
-            "HIV Programs Scale-up WITHOUT HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                ),
+            "HIV Programs Scale-up WITHOUT HSS PACKAGE": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.hiv_scaleup(),
+            ),
             # - - - HIV SCALE-UP *WITH* HSS PACKAGE- - -
-            "HIV Programs Scale-up WITH HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.hss_package(),
-                ),
-
+            "HIV Programs Scale-up WITH HSS PACKAGE": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.hiv_scaleup(),
+                scenario_definitions.hss_package(),
+            ),
             # - - - TB SCALE-UP WITHOUT HSS PACKAGE- - -
-            "TB Programs Scale-up WITHOUT HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.tb_scaleup(),
-                ),
+            "TB Programs Scale-up WITHOUT HSS PACKAGE": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.tb_scaleup(),
+            ),
             # - - - TB SCALE-UP *WITH* HSS PACKAGE- - -
-            "TB Programs Scale-up WITH HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.tb_scaleup(),
-                    scenario_definitions.hss_package(),
-                ),
-
+            "TB Programs Scale-up WITH HSS PACKAGE": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.tb_scaleup(),
+                scenario_definitions.hss_package(),
+            ),
             # - - - MALARIA SCALE-UP WITHOUT HSS PACKAGE- - -
-            "Malaria Programs Scale-up WITHOUT HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.malaria_scaleup(),
-                ),
+            "Malaria Programs Scale-up WITHOUT HSS PACKAGE": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.malaria_scaleup(),
+            ),
             # - - - MALARIA SCALE-UP *WITH* HSS PACKAGE- - -
-            "Malaria Programs Scale-up WITH HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.malaria_scaleup(),
-                    scenario_definitions.hss_package(),
-                ),
-
+            "Malaria Programs Scale-up WITH HSS PACKAGE": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.malaria_scaleup(),
+                scenario_definitions.hss_package(),
+            ),
             # - - - HIV & TB & MALARIA SCALE-UP WITHOUT HSS PACKAGE- - -
-            "HIV/Tb/Malaria Programs Scale-up WITHOUT HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.tb_scaleup(),
-                    scenario_definitions.malaria_scaleup(),
-                ),
+            "HIV/Tb/Malaria Programs Scale-up WITHOUT HSS PACKAGE": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.hiv_scaleup(),
+                scenario_definitions.tb_scaleup(),
+                scenario_definitions.malaria_scaleup(),
+            ),
             # - - - HIV & TB & MALARIA SCALE-UP *WITH* HSS PACKAGE- - -
-            "HIV/Tb/Malaria Programs Scale-up WITH HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.tb_scaleup(),
-                    scenario_definitions.malaria_scaleup(),
-                    scenario_definitions.hss_package(),
-                ),
+            "HIV/Tb/Malaria Programs Scale-up WITH HSS PACKAGE": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.hiv_scaleup(),
+                scenario_definitions.tb_scaleup(),
+                scenario_definitions.malaria_scaleup(),
+                scenario_definitions.hss_package(),
+            ),
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

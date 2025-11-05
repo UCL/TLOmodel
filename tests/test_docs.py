@@ -22,10 +22,10 @@ def test_generate_module_dict():
     for dir in result:
         files = result[dir]
         if "/tests/test_docs_data/tlo/more" in dir:
-            assert files == ['c.py']
+            assert files == ["c.py"]
         else:
             if "/tests/test_docs_data/tlo" in dir:
-                assert sorted(files) == ['a.py', 'b.py']
+                assert sorted(files) == ["a.py", "b.py"]
 
 
 @pytest.mark.parametrize(
@@ -35,7 +35,7 @@ def test_generate_module_dict():
         ("daniel", "somewhere.else", "somewhere.else.daniel"),
         ("roberta", "", "roberta"),
         ("", "", ""),
-    ]
+    ],
 )
 def test_get_fully_qualified_name(filename, context, result):
     # Get the fully-qualified name of the module (file).
@@ -47,7 +47,7 @@ def test_get_fully_qualified_name(filename, context, result):
     [
         ("some/path/or/other/tlo/", "tlo"),
         ("./src/tlo/logging/sublog", "tlo.logging.sublog"),
-    ]
+    ],
 )
 def test_get_package_name_no_exceptions(dirpath, result):
     assert result == get_package_name(dirpath)
@@ -60,7 +60,7 @@ def test_get_package_name_no_exceptions(dirpath, result):
         ("/a/b/c"),
         ("/tlo"),
         ("tlo"),
-    ]
+    ],
 )
 def test_get_package_name_with_exceptions(dirpath):
     with pytest.raises(ValueError) as e:
@@ -69,15 +69,16 @@ def test_get_package_name_with_exceptions(dirpath):
 
 
 def get_classes_for_testing():
-    '''Utility function.
-     Each entry in the list returned is itself a list of:
-     [class name, class object, line number]
-     The classes are those defined in file for_tlo_methods_rst/tlo/a.py,
-     in the same order as they are defined in the source file.
-    '''
+    """Utility function.
+    Each entry in the list returned is itself a list of:
+    [class name, class object, line number]
+    The classes are those defined in file for_tlo_methods_rst/tlo/a.py,
+    in the same order as they are defined in the source file.
+    """
     fqn = "test_docs_data.tlo.a"
     # module_obj = importlib.import_module(fqn)
     from .test_docs_data.tlo import a
+
     return get_classes_in_module(fqn, a)
 
 
@@ -98,8 +99,7 @@ def test_extract_bases():
     # [class name, class object, line number]
     offspring = classes[-1]
     name, obj = offspring[0:2]
-    expected = "Bases: :class:`tests.test_docs_data.tlo.a.Father`," \
-               " :class:`tests.test_docs_data.tlo.a.Mother`"
+    expected = "Bases: :class:`tests.test_docs_data.tlo.a.Father`," " :class:`tests.test_docs_data.tlo.a.Mother`"
     (base_str, base_objects) = extract_bases(name, obj)
     assert expected == base_str.strip()
 
@@ -132,10 +132,9 @@ def test_get_class_output_string():
     expected = "\n\n\n.. autoclass:: Person\n\n"
     expected += "\n\n"  # It has no bases to extract.
     numspaces = 5
-    spacer = numspaces * ' '
+    spacer = numspaces * " "
 
-    expected += f"{spacer}**Functions (defined or overridden in " \
-                f"class Person):**\n\n"
+    expected += f"{spacer}**Functions (defined or overridden in " f"class Person):**\n\n"
 
     # These functions should be listed in source-file order.
     expected += f"{spacer}.. automethod:: __init__\n\n"

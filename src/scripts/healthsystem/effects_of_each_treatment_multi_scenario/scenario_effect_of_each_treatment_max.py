@@ -44,15 +44,15 @@ class EffectOfEachTreatmentMax(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment_max',
-            'directory': Path('./outputs'),  # <- (specified only for local running)
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-            }
+            "filename": "effect_of_each_treatment_max",
+            "directory": Path("./outputs"),  # <- (specified only for local running)
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+            },
         }
 
     def modules(self):
@@ -62,16 +62,14 @@ class EffectOfEachTreatmentMax(BaseScenario):
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {
-                'HealthSystem': {
-                    'Service_Availability': list(self._scenarios.values())[draw_number],
-                    'cons_availability': 'all',
+                "HealthSystem": {
+                    "Service_Availability": list(self._scenarios.values())[draw_number],
+                    "cons_availability": "all",
                     "mode_appt_constraints": 0,
                     "use_funded_or_actual_staffing": "funded_plus",
                 },
-                'HealthSeekingBehaviour': {
-                    'force_any_symptom_to_lead_to_healthcareseeking': True
-                },
-            }
+                "HealthSeekingBehaviour": {"force_any_symptom_to_lead_to_healthcareseeking": True},
+            },
         )
 
     def _get_scenarios(self) -> Dict[str, List[str]]:
@@ -85,14 +83,12 @@ class EffectOfEachTreatmentMax(BaseScenario):
         # Return 'Service_Availability' values, with scenarios for everything, nothing, and ones for which each
         # treatment is omitted
         service_availability = dict({"Everything": ["*"], "Nothing": []})
-        service_availability.update(
-            {f"No {t}": [x for x in treatments if x != t] for t in treatments}
-        )
+        service_availability.update({f"No {t}": [x for x in treatments if x != t] for t in treatments})
 
         return service_availability
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

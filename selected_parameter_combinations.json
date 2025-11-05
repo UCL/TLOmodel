@@ -1,74 +1,23 @@
 [
   {
     "HealthSystem": {
-      "scale_factor_delay_in_seeking_care_weather": 2.0,
-      "rescaling_prob_seeking_after_disruption": 0.51,
-      "rescaling_prob_disruption": 1.0,
-      "scale_factor_severity_disruption_and_delay": 1.0
-    }
-  },
-  {
-    "HealthSystem": {
-      "scale_factor_delay_in_seeking_care_weather": 60.0,
-      "rescaling_prob_seeking_after_disruption": 0.01,
-      "rescaling_prob_disruption": 0.0,
-      "scale_factor_severity_disruption_and_delay": 1.0
-    }
-  },
-  {
-    "HealthSystem": {
       "scale_factor_delay_in_seeking_care_weather": 1.0,
-      "rescaling_prob_seeking_after_disruption": 0.01,
-      "rescaling_prob_disruption": 0.5,
-      "scale_factor_severity_disruption_and_delay": 1.0
-    }
-  },
-  {
-    "HealthSystem": {
-      "scale_factor_delay_in_seeking_care_weather": 1.0,
-      "rescaling_prob_seeking_after_disruption": 1.01,
-      "rescaling_prob_disruption": 1.5,
-      "scale_factor_severity_disruption_and_delay": 0.11
-    }
-  },
-  {
-    "HealthSystem": {
-      "scale_factor_delay_in_seeking_care_weather": 0.0,
-      "rescaling_prob_seeking_after_disruption": 0.01,
-      "rescaling_prob_disruption": 0.5,
-      "scale_factor_severity_disruption_and_delay": 1.0
-    }
-  },
-  {
-    "HealthSystem": {
-      "scale_factor_delay_in_seeking_care_weather": 60.0,
-      "rescaling_prob_seeking_after_disruption": 0.51,
-      "rescaling_prob_disruption": 0.5,
-      "scale_factor_severity_disruption_and_delay": 0.4066666666666667
-    }
-  },
-  {
-    "HealthSystem": {
-      "scale_factor_delay_in_seeking_care_weather": 60.0,
-      "rescaling_prob_seeking_after_disruption": 0.51,
-      "rescaling_prob_disruption": 1.5,
-      "scale_factor_severity_disruption_and_delay": 0.4066666666666667
-    }
-  },
-  {
-    "HealthSystem": {
-      "scale_factor_delay_in_seeking_care_weather": 60.0,
-      "rescaling_prob_seeking_after_disruption": 0.51,
+      "rescaling_prob_seeking_after_disruption": 1.0,
       "rescaling_prob_disruption": 1.0,
-      "scale_factor_severity_disruption_and_delay": 0.4066666666666667
-    }
-  },
-  {
-    "HealthSystem": {
-      "scale_factor_delay_in_seeking_care_weather": 0.0,
-      "rescaling_prob_seeking_after_disruption": 1.01,
-      "rescaling_prob_disruption": 0.5,
-      "scale_factor_severity_disruption_and_delay": 0.7033333333333334
+      "scale_factor_severity_disruption_and_delay": 1.0,
+      "mode_appt_constraints": 1,
+      "cons_availability": "default",
+      "cons_availability_postSwitch": "all",
+      "year_cons_availability_switch": 2020,
+      "beds_availability": "all",
+      "equip_availability": "default",
+      "equip_availability_postSwitch": "all",
+      "year_equip_availability_switch": 2020,
+      "use_funded_or_actual_staffing": "funded_plus",
+      "climate_ssp": "ssp245",
+      "climate_model_ensemble_model": "mean",
+      "services_affected_precip": "all",
+      "tclose_overwrite": 1000
     }
   }
 ]

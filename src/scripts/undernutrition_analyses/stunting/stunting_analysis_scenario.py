@@ -45,11 +45,9 @@ class Scenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'analysis_stunting',
-            'directory': Path('./outputs'),
-            'custom_levels': {
-                "*": logging.WARNING,
-                "tlo.methods.stunting": logging.INFO}
+            "filename": "analysis_stunting",
+            "directory": Path("./outputs"),
+            "custom_levels": {"*": logging.WARNING, "tlo.methods.stunting": logging.INFO},
         }
 
     def modules(self):
@@ -66,11 +64,10 @@ class Scenario(BaseScenario):
             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
             newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
-
             diarrhoea.Diarrhoea(resourcefilepath=self.resources),
             wasting.Wasting(resourcefilepath=self.resources),
             alri.Alri(resourcefilepath=self.resources),
-            stunting.Stunting(resourcefilepath=self.resources)
+            stunting.Stunting(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
@@ -87,7 +84,7 @@ class Scenario(BaseScenario):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

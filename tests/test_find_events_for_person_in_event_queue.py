@@ -20,24 +20,25 @@ from tlo.methods import (
 start_date = Date(2010, 1, 1)
 
 try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 except NameError:
     # running interactively
-    resourcefilepath = './resources'
+    resourcefilepath = "./resources"
 
 
 def test_can_look_at_future_events(seed):
     sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome()
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        mockitis.Mockitis(),
+        chronicsyndrome.ChronicSyndrome(),
+    )
 
     sim.make_initial_population(n=10)
 
@@ -46,18 +47,20 @@ def test_can_look_at_future_events(seed):
 
     # Schedule some events for this person
     # event queue
-    dummy_event = mockitis.MockitisDeathEvent(sim.modules['Mockitis'], person_id)
+    dummy_event = mockitis.MockitisDeathEvent(sim.modules["Mockitis"], person_id)
     sim.schedule_event(dummy_event, sim.date)
 
     # hsi event queue
     dummy_hsi = chronicsyndrome.HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
-        sim.modules['ChronicSyndrome'], person_id=person_id)
-    sim.modules['HealthSystem'].schedule_hsi_event(dummy_hsi, priority=0, topen=sim.date,
-                                                   tclose=sim.date + pd.DateOffset(days=1))
+        sim.modules["ChronicSyndrome"], person_id=person_id
+    )
+    sim.modules["HealthSystem"].schedule_hsi_event(
+        dummy_hsi, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1)
+    )
 
     # Query the queue of events for this person:
     events = sim.find_events_for_person(person_id=person_id)
-    hsi_events = sim.modules['HealthSystem'].find_events_for_person(person_id=person_id)
+    hsi_events = sim.modules["HealthSystem"].find_events_for_person(person_id=person_id)
 
     all_events = events + hsi_events
     all_sorted_events = sorted(((i, j) for i, j in all_events), key=itemgetter(0))

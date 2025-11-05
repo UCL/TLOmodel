@@ -68,9 +68,7 @@ def initialise(
         handler.setLevel(stdout_handler_level)
         handler.setFormatter(formatter)
         root_logger.handlers = [
-            h
-            for h in root_logger.handlers
-            if not (isinstance(h, _logging.StreamHandler) and h.stream is sys.stdout)
+            h for h in root_logger.handlers if not (isinstance(h, _logging.StreamHandler) and h.stream is sys.stdout)
         ]
         root_logger.addHandler(handler)
 
@@ -97,9 +95,7 @@ def set_output_file(
     file_handler = _logging.FileHandler(log_path)
     file_handler.setFormatter(formatter)
     logger = getLogger("tlo")
-    logger.handlers = [
-        h for h in logger.handlers if not isinstance(h, _logging.FileHandler)
-    ]
+    logger.handlers = [h for h in logger.handlers if not isinstance(h, _logging.FileHandler)]
     logger.addHandler(file_handler)
     return file_handler
 
@@ -129,14 +125,9 @@ def _convert_keys_to_strings_and_sort(data: dict) -> dict[str, Any]:
     # Sort by mix of numeric or string keys _then_ convert all keys to strings to
     # ensure stringified numeric keys have natural numeric ordering, for example
     # '1', '2', '10' not '1', '10', '2'
-    sorted_data = dict(
-        (str(k), v)
-        for k, v in sorted(data.items(), key=lambda i: _numeric_or_str_sort_key(i[0]))
-    )
+    sorted_data = dict((str(k), v) for k, v in sorted(data.items(), key=lambda i: _numeric_or_str_sort_key(i[0])))
     if len(sorted_data) != len(data):
-        raise ValueError(
-            f"At least one pair of keys in data dictionary {data} map to same string."
-        )
+        raise ValueError(f"At least one pair of keys in data dictionary {data} map to same string.")
     return sorted_data
 
 
@@ -155,8 +146,7 @@ def _get_log_data_as_dict(data: LogData) -> dict:
             return _convert_keys_to_strings_and_sort(data_dict)
         else:
             raise ValueError(
-                "Logging multirow dataframes is not currently supported - "
-                "if you need this feature let us know"
+                "Logging multirow dataframes is not currently supported - " "if you need this feature let us know"
             )
     if isinstance(data, (list, set, tuple, pd.Series)):
         if isinstance(data, set):
@@ -170,9 +160,7 @@ def _get_log_data_as_dict(data: LogData) -> dict:
 def _convert_numpy_scalars_to_python_types(data: dict) -> dict:
     """Convert NumPy scalar types to suitable standard Python types."""
     return {
-        key: (
-            value.item() if isinstance(value, (np.number, np.bool_, np.str_)) else value
-        )
+        key: (value.item() if isinstance(value, (np.number, np.bool_, np.str_)) else value)
         for key, value in data.items()
     }
 
@@ -180,7 +168,7 @@ def _convert_numpy_scalars_to_python_types(data: dict) -> dict:
 def _get_columns_from_data_dict(data: dict) -> dict:
     """Get columns dictionary specifying types of data dictionary values."""
     # using type().__name__ so both pandas and stdlib types can be used
-    return {k: type(v).__name__ for k, v, in data.items()}
+    return {k: type(v).__name__ for k, v in data.items()}
 
 
 class Logger:
@@ -202,9 +190,7 @@ class Logger:
     HASH_LEN = 10
 
     def __init__(self, name: str, level: LogLevel = _DEFAULT_LEVEL) -> None:
-        assert name.startswith(
-            "tlo"
-        ), f"Only logging of tlo modules is allowed; name is {name}"
+        assert name.startswith("tlo"), f"Only logging of tlo modules is allowed; name is {name}"
         # we build our logger on top of the standard python logging
         self._std_logger = _logging.getLogger(name=name)
         self._std_logger.setLevel(level)
@@ -350,9 +336,7 @@ class Logger:
         :param description: Description of this log type.
         """
         if self._std_logger.isEnabledFor(level):
-            msg = self._get_json(
-                level=level, key=key, data=data, description=description
-            )
+            msg = self._get_json(level=level, key=key, data=data, description=description)
             self._std_logger.log(level=level, msg=msg)
 
     critical = partialmethod(log, CRITICAL)

@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from tlo.population import Population
     from tlo.simulation import Simulation
 
+
 class Types(Enum):
     """Possible types for parameters and properties.
 
@@ -32,6 +33,7 @@ class Types(Enum):
     sex where there are a fixed number of options to choose from. The LIST type is used
     for properties where the value is a collection, e.g. the set of children of a person.
     """
+
     DATE = auto()
     BOOL = auto()
     INT = auto()
@@ -51,11 +53,11 @@ class Specifiable:
     # Map our Types to pandas dtype specifications
     # Individuals have Property. Property Types map to Pandas dtypes
     PANDAS_TYPE_MAP = {
-        Types.DATE: 'datetime64[ns]',
+        Types.DATE: "datetime64[ns]",
         Types.BOOL: bool,
-        Types.INT: 'int64',
+        Types.INT: "int64",
         Types.REAL: float,
-        Types.CATEGORICAL: 'category',
+        Types.CATEGORICAL: "category",
         Types.LIST: object,
         Types.SERIES: object,
         Types.DATA_FRAME: object,
@@ -113,9 +115,9 @@ class Specifiable:
         delimiter = " === "
 
         if self.type_ == Types.CATEGORICAL:
-            return f'{self.type_.name}{delimiter}{self.description} (Possible values are: {self.categories})'
+            return f"{self.type_.name}{delimiter}{self.description} (Possible values are: {self.categories})"
 
-        return f'{self.type_.name}{delimiter}{self.description}'
+        return f"{self.type_.name}{delimiter}{self.description}"
 
 
 class Parameter(Specifiable):
@@ -170,7 +172,7 @@ class Property(Specifiable):
         """
         Default value for this property, which will be used to fill the respective columns
         of the population dataframe, for example.
-        
+
         If not explicitly set, it will fall back on the ``PANDAS_TYPE_DEFAULT_TYPE_MAP``.
         If a value is provided, it must:
 
@@ -189,9 +191,7 @@ class Property(Specifiable):
             # Check for valid category
             if self.type_ is Types.CATEGORICAL:
                 if new_val not in self.categories:
-                    raise ValueError(
-                        f"Value {new_val} is not a valid category, so cannot be set as the default."
-                    )
+                    raise ValueError(f"Value {new_val} is not a valid category, so cannot be set as the default.")
             # If not categorical, check for valid data type for default
             elif not isinstance(new_val, self.python_type):
                 raise ValueError(
@@ -211,9 +211,7 @@ class Property(Specifiable):
         """
         # Series of Categorical are set up differently
         if self.type_ is Types.CATEGORICAL:
-            dtype = pd.CategoricalDtype(
-                categories=self.categories, ordered=self.ordered
-            )
+            dtype = pd.CategoricalDtype(categories=self.categories, ordered=self.ordered)
         else:
             dtype = self.pandas_type
 
@@ -288,7 +286,7 @@ class Module:
 
     # The explicit attributes of the module. We list these to distinguish dynamic
     # parameters created from the PARAMETERS specification.
-    __slots__ = ('name', 'parameters', 'rng', 'sim')
+    __slots__ = ("name", "parameters", "rng", "sim")
 
     def __init__(self, name: Optional[str] = None) -> None:
         """Construct a new disease module ready to be included in a simulation.
@@ -321,8 +319,8 @@ class Module:
 
         :param DataFrame resource: DataFrame with a column of the parameter_name and a column of `value`
         """
-        resource.set_index('parameter_name', inplace=True)
-        skipped_data_types = ('DATA_FRAME', 'SERIES')
+        resource.set_index("parameter_name", inplace=True)
+        skipped_data_types = ("DATA_FRAME", "SERIES")
         # for each supported parameter, convert to the correct type
         for parameter_name in resource.index[resource.index.notnull()]:
             parameter_definition = self.PARAMETERS[parameter_name]
@@ -331,7 +329,7 @@ class Module:
                 continue
 
             # For each parameter, raise error if the value can't be coerced
-            parameter_value = resource.at[parameter_name, 'value']
+            parameter_value = resource.at[parameter_name, "value"]
             error_message = (
                 f"The value of '{parameter_value}' for parameter '{parameter_name}' "
                 f"could not be parsed as a {parameter_definition.type_.name} data type"
@@ -348,12 +346,14 @@ class Module:
                 categories = parameter_definition.categories
                 assert parameter_value in categories, f"{error_message}\nvalid values: {categories}"
                 parameter_value = pd.Categorical([parameter_value], categories=categories)
-            elif parameter_definition.type_.name == 'STRING':
+            elif parameter_definition.type_.name == "STRING":
                 parameter_value = parameter_value.strip()
-            elif parameter_definition.type_.name == 'BOOL':
-                parameter_value = False if (
-                    parameter_value in (0, '0', None, 'FALSE', 'False', 'false') or pd.isna(parameter_value)
-                ) else True
+            elif parameter_definition.type_.name == "BOOL":
+                parameter_value = (
+                    False
+                    if (parameter_value in (0, "0", None, "FALSE", "False", "false") or pd.isna(parameter_value))
+                    else True
+                )
             else:
                 # All other data types, assign to the python_type defined in Parameter class
                 try:
@@ -386,8 +386,8 @@ class Module:
 
         Modules that wish to implement this behaviour do not need to implement this method,
         it will be inherited automatically. Modules that wish to perform additional steps
-        during the initialise_population stage should reimplement this method and call 
-        
+        during the initialise_population stage should reimplement this method and call
+
         ```python
         super().initialise_population(population=population)
         ```
@@ -404,9 +404,7 @@ class Module:
         df = population.props
 
         for property_name, property in self.PROPERTIES.items():
-            df.loc[df.is_alive, property_name] = (
-                property._default_value
-            )
+            df.loc[df.is_alive, property_name] = property._default_value
 
     def initialise_simulation(self, sim: Simulation) -> None:
         """Get ready for simulation start.

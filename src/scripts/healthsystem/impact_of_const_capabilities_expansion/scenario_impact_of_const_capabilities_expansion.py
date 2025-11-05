@@ -28,7 +28,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=31) #CHECK
+        self.end_date = self.start_date + pd.DateOffset(years=31)  # CHECK
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -36,15 +36,15 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_policy',
-            'directory': Path('./outputs'),  # <- (specified only for local running)
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-            }
+            "filename": "effect_of_policy",
+            "directory": Path("./outputs"),  # <- (specified only for local running)
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+            },
         }
 
     def modules(self):
@@ -64,15 +64,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
     # case 6: gfHE =  0.030, factor = 1.07326
 
     def _get_scenarios(self) -> Dict[str, Dict]:
-        """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
-        """
+        """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {
-            "No growth":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
+            "No growth": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {
                     # MUST ADD SWITCH TO PERFECT CONSUMABLE AVAILABILITY IN 2018
-                     "HealthSystem": {
+                    "HealthSystem": {
                         "yearly_HR_scaling_mode": "no_scaling",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
@@ -82,15 +80,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "use_funded_or_actual_staffing": "actual",
                         "year_cons_availability_switch": 2019,
                         "cons_availability_postSwitch": "all",
-                      },
-                    }
-                ),
-
-            "GDP growth":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     "HealthSystem": {
+                    },
+                },
+            ),
+            "GDP growth": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {
+                    "HealthSystem": {
                         "yearly_HR_scaling_mode": "GDP_growth",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
@@ -100,15 +96,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "use_funded_or_actual_staffing": "actual",
                         "year_cons_availability_switch": 2019,
                         "cons_availability_postSwitch": "all",
-                      },
-                    }
-                ),
-
-            "GDP growth fHE growth case 1":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     "HealthSystem": {
+                    },
+                },
+            ),
+            "GDP growth fHE growth case 1": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {
+                    "HealthSystem": {
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case1",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
@@ -118,15 +112,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "use_funded_or_actual_staffing": "actual",
                         "year_cons_availability_switch": 2019,
                         "cons_availability_postSwitch": "all",
-                      },
-                    }
-                ),
-
-            "GDP growth fHE growth case 3":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     "HealthSystem": {
+                    },
+                },
+            ),
+            "GDP growth fHE growth case 3": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {
+                    "HealthSystem": {
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case3",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
@@ -136,15 +128,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "use_funded_or_actual_staffing": "actual",
                         "year_cons_availability_switch": 2019,
                         "cons_availability_postSwitch": "all",
-                      },
-                    }
-                ),
-
-            "GDP growth fHE growth case 4":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     "HealthSystem": {
+                    },
+                },
+            ),
+            "GDP growth fHE growth case 4": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {
+                    "HealthSystem": {
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case4",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
@@ -154,15 +144,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "use_funded_or_actual_staffing": "actual",
                         "year_cons_availability_switch": 2019,
                         "cons_availability_postSwitch": "all",
-                      },
-                    }
-                ),
-
-            "GDP growth fHE growth case 6":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     "HealthSystem": {
+                    },
+                },
+            ),
+            "GDP growth fHE growth case 6": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {
+                    "HealthSystem": {
                         "yearly_HR_scaling_mode": "GDP_growth_fHE_case6",
                         "year_mode_switch": 2019,
                         "mode_appt_constraints_postSwitch": 2,
@@ -172,12 +160,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         "use_funded_or_actual_staffing": "actual",
                         "year_cons_availability_switch": 2019,
                         "cons_availability_postSwitch": "all",
-                      },
-                    }
-                ),
+                    },
+                },
+            ),
         }
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

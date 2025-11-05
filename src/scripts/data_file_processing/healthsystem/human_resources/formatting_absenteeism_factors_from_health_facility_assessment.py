@@ -1,6 +1,14 @@
 import pandas as pd
 
-dict = { "1a" : "L1a_Av_Mins_Per_Day", "1b":"L1b_Av_Mins_Per_Day", "2":"L2_Av_Mins_Per_Day", "0":"L0_Av_Mins_Per_Day", "3": "L3_Av_Mins_Per_Day", "4": "L4_Av_Mins_Per_Day", "5": "L5_Av_Mins_Per_Day"}
+dict = {
+    "1a": "L1a_Av_Mins_Per_Day",
+    "1b": "L1b_Av_Mins_Per_Day",
+    "2": "L2_Av_Mins_Per_Day",
+    "0": "L0_Av_Mins_Per_Day",
+    "3": "L3_Av_Mins_Per_Day",
+    "4": "L4_Av_Mins_Per_Day",
+    "5": "L5_Av_Mins_Per_Day",
+}
 
 # Specify the file paths
 file_path1 = "resources/healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv"
@@ -20,7 +28,9 @@ del survey_daily_capabilities["Total_Av_Working_Days"]
 survey_daily_capabilities = survey_daily_capabilities.groupby("Officer_Category").mean().reset_index()
 
 # Obtain average mins per day
-daily_capabilities["Av_mins_per_day"] = (daily_capabilities["Total_Mins_Per_Day"]/daily_capabilities["Staff_Count"]).fillna(0)
+daily_capabilities["Av_mins_per_day"] = (
+    daily_capabilities["Total_Mins_Per_Day"] / daily_capabilities["Staff_Count"]
+).fillna(0)
 
 # Obtain officers types
 officers = daily_capabilities["Officer_Category"].drop_duplicates()
@@ -30,17 +40,19 @@ summarise_daily_capabilities = pd.DataFrame(columns=survey_daily_capabilities.co
 summarise_daily_capabilities["Officer_Category"] = survey_daily_capabilities["Officer_Category"]
 
 for level in ["0", "1a", "1b", "2"]:
-    dc_at_level = daily_capabilities[daily_capabilities["Facility_Level"]==level]
+    dc_at_level = daily_capabilities[daily_capabilities["Facility_Level"] == level]
     for officer in officers:
-        dc_at_level_officer = dc_at_level[dc_at_level["Officer_Category"]==officer]
+        dc_at_level_officer = dc_at_level[dc_at_level["Officer_Category"] == officer]
         mean_val = dc_at_level_officer["Av_mins_per_day"].mean()
-        summarise_daily_capabilities.loc[summarise_daily_capabilities["Officer_Category"] == officer, dict[level]] = mean_val
+        summarise_daily_capabilities.loc[
+            summarise_daily_capabilities["Officer_Category"] == officer, dict[level]
+        ] = mean_val
 
 survey_daily_capabilities = survey_daily_capabilities.set_index("Officer_Category")
 summarise_daily_capabilities = summarise_daily_capabilities.set_index("Officer_Category")
 
 # If not data is available, assume scaling factor of 1
-absenteeism_factor = (survey_daily_capabilities/summarise_daily_capabilities).fillna(1.)
+absenteeism_factor = (survey_daily_capabilities / summarise_daily_capabilities).fillna(1.0)
 
 # Output absenteeism file
 absenteeism_factor.to_excel("absenteeism_factor.xlsx")

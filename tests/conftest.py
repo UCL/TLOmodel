@@ -10,14 +10,9 @@ def pytest_addoption(parser):
         type=int,
         nargs="*",
         default=[DEFAULT_SEED],
-        help="Seed(s) for simulation-level random number generator in tests"
+        help="Seed(s) for simulation-level random number generator in tests",
     )
-    parser.addoption(
-        "--skip-slow",
-        action="store_true",
-        default=False,
-        help="Skip slow tests"
-    )
+    parser.addoption("--skip-slow", action="store_true", default=False, help="Skip slow tests")
 
 
 def pytest_configure(config):

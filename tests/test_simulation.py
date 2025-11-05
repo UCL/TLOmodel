@@ -15,9 +15,7 @@ from tlo.simulation import (
 )
 
 
-def _check_basic_simulation_attributes_equal(
-    simulation_1: Simulation, simulation_2: Simulation
-) -> None:
+def _check_basic_simulation_attributes_equal(simulation_1: Simulation, simulation_2: Simulation) -> None:
     for attribute in [
         "start_date",
         "end_date",
@@ -45,9 +43,7 @@ def _nested_dict_are_equal(nested_dict_1: dict, nested_dict_2: dict) -> bool:
     return True
 
 
-def _check_random_state_equal(
-    rng_1: np.random.RandomState, rng_2: np.random.RandomState
-) -> None:
+def _check_random_state_equal(rng_1: np.random.RandomState, rng_2: np.random.RandomState) -> None:
     rng_state_1 = rng_1.get_state(legacy=False)
     rng_state_2 = rng_2.get_state(legacy=False)
     assert _nested_dict_are_equal(rng_state_1, rng_state_2)
@@ -61,9 +57,7 @@ def _check_population_equal(population_1: Population, population_2: Population) 
     assert population_1.props.equals(population_2.props)
 
 
-def _check_modules_are_equal(
-    modules_dict_1: Dict[str, Module], modules_dict_2: Dict[str, Module]
-) -> None:
+def _check_modules_are_equal(modules_dict_1: Dict[str, Module], modules_dict_2: Dict[str, Module]) -> None:
     for module_name, module_1 in modules_dict_1.items():
         assert module_name in modules_dict_2
         module_2 = modules_dict_2[module_name]
@@ -72,9 +66,7 @@ def _check_modules_are_equal(
         _check_random_state_equal(module_1.rng, module_2.rng)
 
 
-def _check_event_queues_are_equal(
-    event_queue_1: EventQueue, event_queue_2: EventQueue
-) -> None:
+def _check_event_queues_are_equal(event_queue_1: EventQueue, event_queue_2: EventQueue) -> None:
     assert len(event_queue_1) == len(event_queue_2)
     for (*date_priority_count_1, event_1), (*date_priority_count_2, event_2) in zip(
         event_queue_1.queue, event_queue_2.queue
@@ -101,10 +93,7 @@ def _check_hsi_events_are_equal(hsi_event_1: HSI_Event, hsi_event_2: HSI_Event) 
     assert hsi_event_1.TREATMENT_ID == hsi_event_2.TREATMENT_ID
     assert hsi_event_1.ACCEPTED_FACILITY_LEVEL == hsi_event_2.ACCEPTED_FACILITY_LEVEL
     assert hsi_event_1.BEDDAYS_FOOTPRINT == hsi_event_2.BEDDAYS_FOOTPRINT
-    assert (
-        hsi_event_1._received_info_about_bed_days
-        == hsi_event_2._received_info_about_bed_days
-    )
+    assert hsi_event_1._received_info_about_bed_days == hsi_event_2._received_info_about_bed_days
     assert hsi_event_1.expected_time_requests == hsi_event_2.expected_time_requests
     assert hsi_event_1.facility_info == hsi_event_2.facility_info
 
@@ -114,24 +103,15 @@ def _check_hsi_event_queues_are_equal(
     hsi_event_queue_2: List[HSIEventQueueItem],
 ) -> None:
     assert len(hsi_event_queue_1) == len(hsi_event_queue_2)
-    for hsi_event_queue_item_1, hsi_event_queue_item_2 in zip(
-        hsi_event_queue_1, hsi_event_queue_2
-    ):
+    for hsi_event_queue_item_1, hsi_event_queue_item_2 in zip(hsi_event_queue_1, hsi_event_queue_2):
         assert hsi_event_queue_item_1.priority == hsi_event_queue_item_2.priority
         assert hsi_event_queue_item_1.topen == hsi_event_queue_item_2.topen
-        assert (
-            hsi_event_queue_item_1.rand_queue_counter
-            == hsi_event_queue_item_2.rand_queue_counter
-        )
+        assert hsi_event_queue_item_1.rand_queue_counter == hsi_event_queue_item_2.rand_queue_counter
         assert hsi_event_queue_item_1.tclose == hsi_event_queue_item_2.tclose
-        _check_hsi_events_are_equal(
-            hsi_event_queue_item_1.hsi_event, hsi_event_queue_item_2.hsi_event
-        )
+        _check_hsi_events_are_equal(hsi_event_queue_item_1.hsi_event, hsi_event_queue_item_2.hsi_event)
 
 
-def _check_simulations_are_equal(
-    simulation_1: Simulation, simulation_2: Simulation
-) -> None:
+def _check_simulations_are_equal(simulation_1: Simulation, simulation_2: Simulation) -> None:
     _check_basic_simulation_attributes_equal(simulation_1, simulation_2)
     _check_modules_are_equal(simulation_1.modules, simulation_2.modules)
     _check_random_state_equal(simulation_1.rng, simulation_2.rng)
@@ -173,9 +153,7 @@ def logging_custom_levels():
     return {"*": logging.INFO}
 
 
-def _simulation_factory(
-    output_directory, start_date, seed, resource_file_path, logging_custom_levels
-):
+def _simulation_factory(output_directory, start_date, seed, resource_file_path, logging_custom_levels):
     log_config = {
         "filename": "test",
         "directory": output_directory,
@@ -196,9 +174,7 @@ def _simulation_factory(
 
 @pytest.fixture
 def simulation(tmp_path, start_date, seed, resource_file_path, logging_custom_levels):
-    return _simulation_factory(
-        tmp_path, start_date, seed, resource_file_path, logging_custom_levels
-    )
+    return _simulation_factory(tmp_path, start_date, seed, resource_file_path, logging_custom_levels)
 
 
 @pytest.fixture(scope="module")
@@ -212,9 +188,7 @@ def simulated_simulation(
     logging_custom_levels,
 ):
     tmp_path = tmp_path_factory.mktemp("simulated_simulation")
-    simulation = _simulation_factory(
-        tmp_path, start_date, seed, resource_file_path, logging_custom_levels
-    )
+    simulation = _simulation_factory(tmp_path, start_date, seed, resource_file_path, logging_custom_levels)
     simulation.make_initial_population(n=initial_population_size)
     simulation.simulate(end_date=end_date)
     return simulation
@@ -226,9 +200,7 @@ def test_save_to_pickle_creates_file(tmp_path, simulation):
     assert pickle_path.exists()
 
 
-def test_save_load_pickle_after_initialising(
-    tmp_path, simulation, initial_population_size
-):
+def test_save_load_pickle_after_initialising(tmp_path, simulation, initial_population_size):
     simulation.make_initial_population(n=initial_population_size)
     simulation.initialise(end_date=simulation.start_date)
     pickle_path = tmp_path / "simulation.pkl"
@@ -289,34 +261,24 @@ def test_continuous_and_interrupted_simulations_equal(
     interrupted_simulation.finalise()
     _check_simulations_are_equal(simulated_simulation, interrupted_simulation)
     merged_log_path = tmp_path / "concatenated.log"
-    merge_log_files(
-        simulation.log_filepath, interrupted_simulation.log_filepath, merged_log_path
-    )
-    _check_parsed_logs_are_equal(
-        simulated_simulation.log_filepath, merged_log_path, {("tlo.simulation", "info")}
-    )
+    merge_log_files(simulation.log_filepath, interrupted_simulation.log_filepath, merged_log_path)
+    _check_parsed_logs_are_equal(simulated_simulation.log_filepath, merged_log_path, {("tlo.simulation", "info")})
 
 
-def test_run_simulation_to_past_end_date_raises(
-    simulation, initial_population_size, end_date
-):
+def test_run_simulation_to_past_end_date_raises(simulation, initial_population_size, end_date):
     simulation.make_initial_population(n=initial_population_size)
     simulation.initialise(end_date=end_date)
     with pytest.raises(ValueError, match="after simulation end date"):
         simulation.run_simulation_to(to_date=end_date + DateOffset(days=1))
 
 
-def test_run_simulation_without_initialisation_raises(
-    simulation, initial_population_size, end_date
-):
+def test_run_simulation_without_initialisation_raises(simulation, initial_population_size, end_date):
     simulation.make_initial_population(n=initial_population_size)
     with pytest.raises(SimulationNotInitialisedError):
         simulation.run_simulation_to(to_date=end_date)
 
 
-def test_initialise_simulation_twice_raises(
-    simulation, initial_population_size, end_date
-):
+def test_initialise_simulation_twice_raises(simulation, initial_population_size, end_date):
     simulation.make_initial_population(n=initial_population_size)
     simulation.initialise(end_date=end_date)
     with pytest.raises(SimulationPreviouslyInitialisedError):

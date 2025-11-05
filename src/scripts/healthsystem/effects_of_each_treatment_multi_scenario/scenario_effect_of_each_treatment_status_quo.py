@@ -49,15 +49,15 @@ class EffectOfEachTreatmentStatusQuo(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment_status_quo',
-            'directory': Path('./outputs'),  # <- (specified only for local running)
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-            }
+            "filename": "effect_of_each_treatment_status_quo",
+            "directory": Path("./outputs"),  # <- (specified only for local running)
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+            },
         }
 
     def modules(self):
@@ -67,10 +67,10 @@ class EffectOfEachTreatmentStatusQuo(BaseScenario):
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {
-                'HealthSystem': {
-                    'Service_Availability': list(self._scenarios.values())[draw_number],
+                "HealthSystem": {
+                    "Service_Availability": list(self._scenarios.values())[draw_number],
                 },
-            }
+            },
         )
 
     def _get_scenarios(self) -> Dict[str, List[str]]:
@@ -90,7 +90,7 @@ class EffectOfEachTreatmentStatusQuo(BaseScenario):
         return service_availability
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

@@ -43,12 +43,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         from scripts.overview_paper.C_impact_of_healthsystem_assumptions.scenario_impact_of_healthsystem import (
             ImpactOfHealthSystemAssumptions,
         )
+
         e = ImpactOfHealthSystemAssumptions()
         return tuple(e._scenarios.keys())
 
     def get_num_deaths(_df):
-        """Return total number of Deaths (total within the TARGET_PERIOD)
-        """
+        """Return total number of Deaths (total within the TARGET_PERIOD)"""
         return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]))
 
     def get_num_dalys(_df):
@@ -59,10 +59,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         years_needed = [i.year for i in TARGET_PERIOD]
         assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
         return pd.Series(
-            data=_df
-            .loc[_df.year.between(*years_needed)]
-            .drop(columns=['date', 'sex', 'age_range', 'year'])
-            .sum().sum()
+            data=_df.loc[_df.year.between(*years_needed)].drop(columns=["date", "sex", "age_range", "year"]).sum().sum()
         )
 
     def set_param_names_as_column_index_level_0(_df):
@@ -73,43 +70,41 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
         return _df
 
-    def find_difference_relative_to_comparison(_ser: pd.Series,
-                                               comparison: str,
-                                               scaled: bool = False,
-                                               drop_comparison: bool = True,
-                                               ):
+    def find_difference_relative_to_comparison(
+        _ser: pd.Series,
+        comparison: str,
+        scaled: bool = False,
+        drop_comparison: bool = True,
+    ):
         """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
         within the runs (level 1), relative to where draw = `comparison`.
         The comparison is `X - COMPARISON`."""
-        return _ser \
-            .unstack(level=0) \
-            .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
-            .drop(columns=([comparison] if drop_comparison else [])) \
+        return (
+            _ser.unstack(level=0)
+            .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1)
+            .drop(columns=([comparison] if drop_comparison else []))
             .stack()
+        )
 
     def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
         """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
-         extent of the error bar."""
-        yerr = np.array([
-            (_df['mean'] - _df['lower']).values,
-            (_df['upper'] - _df['mean']).values,
-        ])
+        extent of the error bar."""
+        yerr = np.array(
+            [
+                (_df["mean"] - _df["lower"]).values,
+                (_df["upper"] - _df["mean"]).values,
+            ]
+        )
 
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
         fig, ax = plt.subplots()
         ax.bar(
-            xticks.keys(),
-            _df['mean'].values,
-            yerr=yerr,
-            alpha=0.5,
-            ecolor='black',
-            capsize=10,
-            label=xticks.values()
+            xticks.keys(), _df["mean"].values, yerr=yerr, alpha=0.5, ecolor="black", capsize=10, label=xticks.values()
         )
         if annotations:
-            for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-                ax.text(xpos, ypos*1.05, text, horizontalalignment='center')
+            for xpos, ypos, text in zip(xticks.keys(), _df["upper"].values, annotations):
+                ax.text(xpos, ypos * 1.05, text, horizontalalignment="center")
         ax.set_xticks(list(xticks.keys()))
         if not xticklabels_horizontal_and_wrapped:
             # xticklabels will be vertical and not wrapped
@@ -118,8 +113,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
             ax.set_xticklabels(wrapped_labs)
         ax.grid(axis="y")
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
         fig.tight_layout()
 
         return fig, ax
@@ -132,18 +127,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Absolute Number of Deaths and DALYs
     num_deaths = extract_results(
         results_folder,
-        module='tlo.methods.demography',
-        key='death',
+        module="tlo.methods.demography",
+        key="death",
         custom_generate_series=get_num_deaths,
-        do_scaling=True
+        do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
     num_dalys = extract_results(
         results_folder,
-        module='tlo.methods.healthburden',
-        key='dalys_stacked',
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
         custom_generate_series=get_num_dalys,
-        do_scaling=True
+        do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
     # %% Charts of total numbers of deaths / DALYS
@@ -152,94 +147,86 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def rename_scenarios_in_index(ser: pd.Series) -> pd.Series:
         """Update the index of a pd.Series to reflect updated names of each scenario"""
-        scenario_renaming = {
-            '+ Perfect Clinical Practice': '+ Perfect Healthcare System Function'
-        }
+        scenario_renaming = {"+ Perfect Clinical Practice": "+ Perfect Healthcare System Function"}
         ser.index = pd.Series(ser.index).replace(scenario_renaming)
         return ser
 
     num_deaths_summarized = rename_scenarios_in_index(num_deaths_summarized)
     num_dalys_summarized = rename_scenarios_in_index(num_dalys_summarized)
 
-    name_of_plot = f'Deaths, {target_period()}'
+    name_of_plot = f"Deaths, {target_period()}"
     fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
+    ax.set_ylabel("(Millions)")
     fig.tight_layout()
-    ax.axhline(num_deaths_summarized.loc['Status Quo', 'mean']/1e6, color='green', alpha=0.5)
-    ax.containers[1][2].set_color('green')
-    ax.containers[1][0].set_color('k')
-    ax.containers[1][1].set_color('red')
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    ax.axhline(num_deaths_summarized.loc["Status Quo", "mean"] / 1e6, color="green", alpha=0.5)
+    ax.containers[1][2].set_color("green")
+    ax.containers[1][0].set_color("k")
+    ax.containers[1][1].set_color("red")
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_").replace(",", "")))
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'All Scenarios: DALYs, {target_period()}'
+    name_of_plot = f"All Scenarios: DALYs, {target_period()}"
     fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    ax.axhline(num_dalys_summarized.loc['Status Quo', 'mean']/1e6, color='green', alpha=0.5)
-    ax.containers[1][2].set_color('green')
-    ax.containers[1][0].set_color('k')
-    ax.containers[1][1].set_color('red')
+    ax.set_ylabel("(Millions)")
+    ax.axhline(num_dalys_summarized.loc["Status Quo", "mean"] / 1e6, color="green", alpha=0.5)
+    ax.containers[1][2].set_color("green")
+    ax.containers[1][0].set_color("k")
+    ax.containers[1][1].set_color("red")
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_").replace(",", "")))
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'DALYs, {target_period()}'
+    name_of_plot = f"DALYs, {target_period()}"
     fig, ax = do_bar_plot_with_ci(
-        num_dalys_summarized.loc[['No Healthcare System', 'With Hard Constraints', 'Status Quo']] / 1e6
+        num_dalys_summarized.loc[["No Healthcare System", "With Hard Constraints", "Status Quo"]] / 1e6
     )
     ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    ax.containers[1][2].set_color('green')
-    ax.containers[1][0].set_color('k')
-    ax.containers[1][1].set_color('red')
+    ax.set_ylabel("(Millions)")
+    ax.containers[1][2].set_color("green")
+    ax.containers[1][0].set_color("k")
+    ax.containers[1][1].set_color("red")
     ax.set_ylim(0, 100)
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_").replace(",", "")))
     fig.show()
     plt.close(fig)
 
     # %% Deaths and DALYS averted relative to Status Quo
-    num_deaths_averted = summarize(
-        -1.0 *
-        pd.DataFrame(
-            find_difference_relative_to_comparison(
-                num_deaths.loc[0],
-                comparison='Status Quo')
-        ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['No Healthcare System', 'With Hard Constraints', 'Status Quo'])
+    num_deaths_averted = (
+        summarize(
+            -1.0 * pd.DataFrame(find_difference_relative_to_comparison(num_deaths.loc[0], comparison="Status Quo")).T
+        )
+        .iloc[0]
+        .unstack()
+        .reindex(param_names)
+        .drop(["No Healthcare System", "With Hard Constraints", "Status Quo"])
+    )
 
     pc_deaths_averted = 100.0 * summarize(
-        -1.0 *
-        pd.DataFrame(
-            find_difference_relative_to_comparison(
-                num_deaths.loc[0],
-                comparison='Status Quo',
-                scaled=True)
+        -1.0
+        * pd.DataFrame(
+            find_difference_relative_to_comparison(num_deaths.loc[0], comparison="Status Quo", scaled=True)
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['No Healthcare System', 'With Hard Constraints', 'Status Quo'])
+    ).iloc[0].unstack().reindex(param_names).drop(["No Healthcare System", "With Hard Constraints", "Status Quo"])
 
-    num_dalys_averted = summarize(
-        -1.0 *
-        pd.DataFrame(
-            find_difference_relative_to_comparison(
-                num_dalys.loc[0],
-                comparison='Status Quo')
-        ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['No Healthcare System', 'With Hard Constraints', 'Status Quo'])
+    num_dalys_averted = (
+        summarize(
+            -1.0 * pd.DataFrame(find_difference_relative_to_comparison(num_dalys.loc[0], comparison="Status Quo")).T
+        )
+        .iloc[0]
+        .unstack()
+        .reindex(param_names)
+        .drop(["No Healthcare System", "With Hard Constraints", "Status Quo"])
+    )
 
     pc_dalys_averted = 100.0 * summarize(
-        -1.0 *
-        pd.DataFrame(
-            find_difference_relative_to_comparison(
-                num_dalys.loc[0],
-                comparison='Status Quo',
-                scaled=True)
-        ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['No Healthcare System', 'With Hard Constraints', 'Status Quo'])
+        -1.0
+        * pd.DataFrame(find_difference_relative_to_comparison(num_dalys.loc[0], comparison="Status Quo", scaled=True)).T
+    ).iloc[0].unstack().reindex(param_names).drop(["No Healthcare System", "With Hard Constraints", "Status Quo"])
 
     # rename scenarios
     num_deaths_averted = rename_scenarios_in_index(num_deaths_averted)
@@ -248,41 +235,41 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pc_dalys_averted = rename_scenarios_in_index(pc_dalys_averted)
 
     # DEATHS
-    name_of_plot = f'Additional Deaths Averted vs Status Quo, {target_period()}'
+    name_of_plot = f"Additional Deaths Averted vs Status Quo, {target_period()}"
     fig, ax = do_bar_plot_with_ci(
         num_deaths_averted.clip(lower=0.0),
         annotations=[
             f"{round(row['mean'], 0)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
             for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
-        ]
+        ],
     )
     ax.set_title(name_of_plot)
-    ax.set_ylabel('Additional Deaths Averted')
+    ax.set_ylabel("Additional Deaths Averted")
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_").replace(",", "")))
     fig.show()
     plt.close(fig)
 
     # DALYS
-    name_of_plot = f'Additional DALYs Averted vs Status Quo, {target_period()}'
+    name_of_plot = f"Additional DALYs Averted vs Status Quo, {target_period()}"
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
             f"{round(row['mean'])} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
-        ]
+        ],
     )
     ax.set_title(name_of_plot)
     ax.set_ylim(0, 16)
     ax.set_yticks(np.arange(0, 18, 2))
-    ax.set_ylabel('Additional DALYS Averted \n(Millions)')
+    ax.set_ylabel("Additional DALYS Averted \n(Millions)")
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_").replace(",", "")))
     fig.show()
     plt.close(fig)
 
     # DALYS (with xtickabels horizontal and wrapped)
-    name_of_plot = f'Additional DALYs Averted vs Status Quo, {target_period()}'
+    name_of_plot = f"Additional DALYs Averted vs Status Quo, {target_period()}"
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
@@ -294,9 +281,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     ax.set_ylim(0, 16)
     ax.set_yticks(np.arange(0, 18, 2))
-    ax.set_ylabel('Additional DALYS Averted \n(Millions)')
+    ax.set_ylabel("Additional DALYS Averted \n(Millions)")
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_").replace(",", "")))
     fig.show()
     plt.close(fig)
 
@@ -321,119 +308,121 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sum()
         )
 
-    total_num_dalys_by_wealth_and_label = summarize(
-        extract_results(
-            results_folder,
-            module="tlo.methods.healthburden",
-            key="dalys_by_wealth_stacked_by_age_and_time",
-            custom_generate_series=get_total_num_dalys_by_wealth_and_label,
-            do_scaling=True,
-        ),
-    ).pipe(set_param_names_as_column_index_level_0)[
-        ['No Healthcare System', 'Status Quo', 'Perfect Healthcare Seeking']
-    ].loc[:, (slice(None), 'mean')].droplevel(axis=1, level=1)
+    total_num_dalys_by_wealth_and_label = (
+        summarize(
+            extract_results(
+                results_folder,
+                module="tlo.methods.healthburden",
+                key="dalys_by_wealth_stacked_by_age_and_time",
+                custom_generate_series=get_total_num_dalys_by_wealth_and_label,
+                do_scaling=True,
+            ),
+        )
+        .pipe(set_param_names_as_column_index_level_0)[
+            ["No Healthcare System", "Status Quo", "Perfect Healthcare Seeking"]
+        ]
+        .loc[:, (slice(None), "mean")]
+        .droplevel(axis=1, level=1)
+    )
 
     fig, ax = plt.subplots(nrows=3, ncols=1, sharex=True, sharey=True)
-    name_of_plot = f'DALYS Incurred by Wealth and Cause {target_period()}'
-    for _ax, _scenario_name, in zip(ax, total_num_dalys_by_wealth_and_label.columns):
+    name_of_plot = f"DALYS Incurred by Wealth and Cause {target_period()}"
+    for (
+        _ax,
+        _scenario_name,
+    ) in zip(ax, total_num_dalys_by_wealth_and_label.columns):
         format_to_plot = total_num_dalys_by_wealth_and_label[_scenario_name].unstack()
-        format_to_plot = format_to_plot \
-            .sort_index(axis=0) \
-            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0) \
+        format_to_plot = (
+            format_to_plot.sort_index(axis=0)
+            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0)
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
-        (
-            format_to_plot / 1e6
-        ).plot.bar(stacked=True,
-                   ax=_ax,
-                   color=[get_color_cause_of_death_or_daly_label(_label) for _label in format_to_plot.columns],
-                   )
-        _ax.axhline(0.0, color='black')
-        _ax.set_title(f'{_scenario_name}')
-        if _scenario_name == 'Status Quo':
-            _ax.set_ylabel('Number of DALYs Averted (/1e6)')
+        )
+        (format_to_plot / 1e6).plot.bar(
+            stacked=True,
+            ax=_ax,
+            color=[get_color_cause_of_death_or_daly_label(_label) for _label in format_to_plot.columns],
+        )
+        _ax.axhline(0.0, color="black")
+        _ax.set_title(f"{_scenario_name}")
+        if _scenario_name == "Status Quo":
+            _ax.set_ylabel("Number of DALYs Averted (/1e6)")
         _ax.set_ylim(0, 20)
-        _ax.set_xlabel('Wealth Percentile')
+        _ax.set_xlabel("Wealth Percentile")
         _ax.grid()
-        _ax.spines['top'].set_visible(False)
-        _ax.spines['right'].set_visible(False)
-        _ax.legend(ncol=3, fontsize=8, loc='upper right')
+        _ax.spines["top"].set_visible(False)
+        _ax.spines["right"].set_visible(False)
+        _ax.legend(ncol=3, fontsize=8, loc="upper right")
         _ax.legend().set_visible(False)
     fig.suptitle(name_of_plot)
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     fig.show()
     plt.close(fig)
 
     # Normalised Total DALYS (where DALYS in the highest wealth class are 100)
     tots = total_num_dalys_by_wealth_and_label.groupby(axis=0, level=0).sum()
-    normalised_tots = tots.div(tots.loc['80-100%'])
+    normalised_tots = tots.div(tots.loc["80-100%"])
 
     fig, ax = plt.subplots(nrows=1, ncols=2, sharey=False)
-    name_of_plot = f'DALYS Incurred by Wealth Normalises {target_period()}'
+    name_of_plot = f"DALYS Incurred by Wealth Normalises {target_period()}"
     (tots / 1e6).plot(
-        ax=ax[0],
-        color=('black', 'green', (0.12156862745098039, 0.4666666666666667, 0.7058823529411765)),
-        alpha=0.5)
-    ax[0].set_ylabel('Total DALYS (/million)')
-    ax[0].set_xlabel('Wealth Percentile')
+        ax=ax[0], color=("black", "green", (0.12156862745098039, 0.4666666666666667, 0.7058823529411765)), alpha=0.5
+    )
+    ax[0].set_ylabel("Total DALYS (/million)")
+    ax[0].set_xlabel("Wealth Percentile")
     ax[0].set_xticklabels(ax[0].get_xticklabels(), rotation=90)
     ax[0].set_ylim(0, 15)
     ax[0].legend(fontsize=8)
-    ax[0].set_title('DALYS by Wealth (Totals)')
+    ax[0].set_title("DALYS by Wealth (Totals)")
     (normalised_tots * 100.0).plot(
-        ax=ax[1],
-        color=('black', 'green', (0.12156862745098039, 0.4666666666666667, 0.7058823529411765)),
-        alpha=0.5)
-    ax[1].set_ylabel('Normalised DALYS\n100 = Highest Wealth quantile')
-    ax[1].set_xlabel('Wealth Percentile')
+        ax=ax[1], color=("black", "green", (0.12156862745098039, 0.4666666666666667, 0.7058823529411765)), alpha=0.5
+    )
+    ax[1].set_ylabel("Normalised DALYS\n100 = Highest Wealth quantile")
+    ax[1].set_xlabel("Wealth Percentile")
     ax[1].set_xticklabels(ax[1].get_xticklabels(), rotation=90)
-    ax[1].axhline(100.0, color='k', linestyle='--')
+    ax[1].axhline(100.0, color="k", linestyle="--")
     ax[1].legend().set_visible(False)
-    ax[1].set_title('DALYS by Wealth (Normalised)')
+    ax[1].set_title("DALYS by Wealth (Normalised)")
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     fig.show()
     plt.close(fig)
 
     # Which disease are over-represented in the highest wealth categories, compared to others
     #  in No Healthcare System scenario)...?
 
-    dalys_no_hcs = total_num_dalys_by_wealth_and_label['No Healthcare System'].unstack()
-    dalys_no_hcs = dalys_no_hcs.sort_index(axis=1, key=order_of_cause_of_death_or_daly_label).drop(columns=['Other'])
+    dalys_no_hcs = total_num_dalys_by_wealth_and_label["No Healthcare System"].unstack()
+    dalys_no_hcs = dalys_no_hcs.sort_index(axis=1, key=order_of_cause_of_death_or_daly_label).drop(columns=["Other"])
 
     fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
-    name_of_plot = 'Distribution of health benefits'
+    name_of_plot = "Distribution of health benefits"
     # Excess DALYS in highest compared to middle
-    (
-        (dalys_no_hcs.loc['80-100%'] - dalys_no_hcs.loc['40-59%']) / 1e6
-    ).plot.bar(
+    ((dalys_no_hcs.loc["80-100%"] - dalys_no_hcs.loc["40-59%"]) / 1e6).plot.bar(
         ax=axs[0],
         color=[get_color_cause_of_death_or_daly_label(_label) for _label in dalys_no_hcs.columns],
     )
-    axs[0].set_title('Excess DALYS in Wealth Group 80-100% versus 40-59%')
-    axs[0].set_xlabel('Cause')
-    axs[0].set_ylabel('DALYS (/millions)')
-    axs[0].axhline(0.0, color='black')
+    axs[0].set_title("Excess DALYS in Wealth Group 80-100% versus 40-59%")
+    axs[0].set_xlabel("Cause")
+    axs[0].set_ylabel("DALYS (/millions)")
+    axs[0].axhline(0.0, color="black")
     axs[0].set_ylim(-1.5, 2.0)
     axs[0].set_yticks(np.arange(-1.0, 2.5, 1.0))
     axs[0].grid()
     # Excess DALYS in lowest compared to middle
-    (
-        (dalys_no_hcs.loc['0-19%'] - dalys_no_hcs.loc['40-59%']) / 1e6
-    ).plot.bar(
+    ((dalys_no_hcs.loc["0-19%"] - dalys_no_hcs.loc["40-59%"]) / 1e6).plot.bar(
         ax=axs[1],
         color=[get_color_cause_of_death_or_daly_label(_label) for _label in dalys_no_hcs.columns],
     )
-    axs[1].set_title('Excess DALYS in Wealth Group 0-19% versus 40-59%')
-    axs[1].set_xlabel('Cause')
-    axs[1].set_ylabel('DALYS (/millions)')
-    axs[1].axhline(0.0, color='black')
+    axs[1].set_title("Excess DALYS in Wealth Group 0-19% versus 40-59%")
+    axs[1].set_xlabel("Cause")
+    axs[1].set_ylabel("DALYS (/millions)")
+    axs[1].axhline(0.0, color="black")
     axs[1].set_ylim(-1.5, 2.0)
     axs[1].set_yticks(np.arange(-1.0, 2.5, 1.0))
     axs[1].grid()
 
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     fig.show()
     plt.close(fig)
 
@@ -450,8 +439,4 @@ if __name__ == "__main__":
     #     compressed_file_name_prefix=args.results_folder.name.split('-')[0],
     # )
 
-    apply(
-        results_folder=args.results_folder,
-        output_folder=args.results_folder,
-        resourcefilepath=Path('./resources')
-    )
+    apply(results_folder=args.results_folder, output_folder=args.results_folder, resourcefilepath=Path("./resources"))

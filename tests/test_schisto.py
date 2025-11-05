@@ -19,20 +19,21 @@ from tlo.methods import (
     symptommanager,
 )
 
-resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 
 
 def get_simulation(seed, start_date, mda_execute=True):
     sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute),
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute),
+    )
     return sim
 
 

@@ -68,18 +68,18 @@ class TestScenario(BaseScenario):
         self.runs_per_draw = runs_per_draw
 
         self.sampled_parameters = read_csv_files(
-            Path("./resources")/"ResourceFile_HIV",
+            Path("./resources") / "ResourceFile_HIV",
             files="LHC_samples",
         )
 
     def log_configuration(self):
         return {
-            'filename': 'deviance_runs',
-            'directory': './outputs',
-            'custom_levels': {
-                '*': logging.WARNING,
+            "filename": "deviance_runs",
+            "directory": "./outputs",
+            "custom_levels": {
+                "*": logging.WARNING,
                 "tlo.methods.deviance_measure": logging.INFO,
-            }
+            },
         }
 
     def modules(self):
@@ -108,17 +108,17 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-
         return {
-            'Hiv': {
-                'beta': self.sampled_parameters.hiv[draw_number],
+            "Hiv": {
+                "beta": self.sampled_parameters.hiv[draw_number],
             },
-            'Tb': {
-                'transmission_rate': self.sampled_parameters.tb[draw_number],
+            "Tb": {
+                "transmission_rate": self.sampled_parameters.tb[draw_number],
             },
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
+
     scenario_run([__file__])

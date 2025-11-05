@@ -34,26 +34,25 @@ class MiniRunHTMWithAndWithoutHSS(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'mini_htm_with_and_without_hss',
-            'directory': Path('./outputs'),
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.WARNING,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.hiv': logging.INFO,
-                'tlo.methods.tb': logging.INFO,
-                'tlo.methods.malaria': logging.INFO,
-            }
+            "filename": "mini_htm_with_and_without_hss",
+            "directory": Path("./outputs"),
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem": logging.WARNING,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+                "tlo.methods.hiv": logging.INFO,
+                "tlo.methods.tb": logging.INFO,
+                "tlo.methods.malaria": logging.INFO,
+            },
         }
 
     def modules(self):
-        return (
-            fullmodel(resourcefilepath=self.resources)
-            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
-        )
+        return fullmodel(resourcefilepath=self.resources) + [
+            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)
+        ]
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
@@ -65,21 +64,18 @@ class MiniRunHTMWithAndWithoutHSS(BaseScenario):
         scenario_definitions = ScenarioDefinitions()
 
         return {
-            "Baseline":
-                scenario_definitions.baseline(),
-
+            "Baseline": scenario_definitions.baseline(),
             # - - - HIV & TB & MALARIA SCALE-UP WITHOUT HSS PACKAGE- - -
-            "HIV/Tb/Malaria Programs Scale-up WITHOUT HSS PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hiv_scaleup(),
-                    scenario_definitions.tb_scaleup(),
-                    scenario_definitions.malaria_scaleup(),
-                ),
+            "HIV/Tb/Malaria Programs Scale-up WITHOUT HSS PACKAGE": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.hiv_scaleup(),
+                scenario_definitions.tb_scaleup(),
+                scenario_definitions.malaria_scaleup(),
+            ),
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

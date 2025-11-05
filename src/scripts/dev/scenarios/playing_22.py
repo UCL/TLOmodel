@@ -21,29 +21,30 @@ class Playing22(BaseScenario):
 
     def log_configuration(self):
         return {
-            'directory': './outputs',
-            'custom_levels': {
-                '*': logging.INFO,
-            }
+            "directory": "./outputs",
+            "custom_levels": {
+                "*": logging.INFO,
+            },
         }
 
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=['*']),
+            healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=["*"]),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'Demography': {
-                'max_age_initial': [80, 90, 100][draw_number],
+            "Demography": {
+                "max_age_initial": [80, 90, 100][draw_number],
             },
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
+
     scenario_run([__file__])

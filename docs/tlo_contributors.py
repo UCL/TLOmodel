@@ -6,9 +6,7 @@ import yaml
 
 
 def homepage_link_html(homepage_url):
-    homepage_icon_url = (
-        "https://raw.githubusercontent.com/primer/octicons/main/icons/home-16.svg"
-    )
+    homepage_icon_url = "https://raw.githubusercontent.com/primer/octicons/main/icons/home-16.svg"
     return (
         f"<a href='{homepage_url}' style='padding: 2px'>"
         f"<img src='{homepage_icon_url}' alt='Homepage' width='16' height='16' />"
@@ -51,16 +49,11 @@ def contributor_html(contributor):
 
 def contributor_list_html(contributors, sort_key="family-names"):
     sorted_contributors = sorted(contributors, key=lambda c: c[sort_key])
-    list_items = [
-        f"<li>{contributor_html(contributor)}</li>"
-        for contributor in sorted_contributors
-    ]
+    list_items = [f"<li>{contributor_html(contributor)}</li>" for contributor in sorted_contributors]
     return "<ul>\n  " + "\n  ".join(list_items) + "\n</ul>"
 
 
-def categorized_contributor_lists_html(
-    contributors, category_predicates, sort_key="family-names"
-):
+def categorized_contributor_lists_html(contributors, category_predicates, sort_key="family-names"):
     categorized_contributors = defaultdict(list)
     for contributor in contributors:
         for category, predicate in category_predicates.items():
@@ -78,9 +71,7 @@ def categorized_contributor_lists_html(
 if __name__ == "__main__":
     docs_directory = Path(__file__).parent
     root_directory = docs_directory.parent
-    parser = argparse.ArgumentParser(
-        description="Generate contributors list as HTML file"
-    )
+    parser = argparse.ArgumentParser(description="Generate contributors list as HTML file")
     parser.add_argument(
         "--contributors-file-path",
         type=Path,
@@ -107,10 +98,7 @@ if __name__ == "__main__":
     )
     category_predicates = {
         "Scientific leads": lambda c: "lead" in c.get("role", "").lower(),
-        **{
-            category: lambda c, d=category: d in c.get("contributions", ())
-            for category in contribution_categories
-        },
+        **{category: lambda c, d=category: d in c.get("contributions", ()) for category in contribution_categories},
         "Acknowledgements": lambda c: True,
     }
     with open(args.output_file_path, "w") as f:

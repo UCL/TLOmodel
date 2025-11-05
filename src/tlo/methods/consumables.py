@@ -9,8 +9,8 @@ import pandas as pd
 
 from tlo import logging
 
-logger = logging.getLogger('tlo.methods.healthsystem')
-logger_summary = logging.getLogger('tlo.methods.healthsystem.summary')
+logger = logging.getLogger("tlo.methods.healthsystem")
+logger_summary = logging.getLogger("tlo.methods.healthsystem.summary")
 
 
 class Consumables:
@@ -30,22 +30,22 @@ class Consumables:
      result returned is on the basis of the average availability of other consumables in that facility in that month.
     """
 
-    def __init__(self,
-                 availability_data: pd.DataFrame = None,
-                 item_code_designations: pd.DataFrame = None,
-                 rng: np.random = None,
-                 availability: str = 'default'
-                 ) -> None:
-
+    def __init__(
+        self,
+        availability_data: pd.DataFrame = None,
+        item_code_designations: pd.DataFrame = None,
+        rng: np.random = None,
+        availability: str = "default",
+    ) -> None:
         self._options_for_availability = {
-            'none',
-            'default',
-            'all',
-            'all_diagnostics_available',
-            'all_medicines_available',
-            'all_medicines_and_other_available',
-            'all_vital_available',
-            'all_drug_or_vaccine_available',
+            "none",
+            "default",
+            "all",
+            "all_diagnostics_available",
+            "all_medicines_available",
+            "all_medicines_and_other_available",
+            "all_vital_available",
+            "all_drug_or_vaccine_available",
         }
 
         # Create internal items:
@@ -60,8 +60,9 @@ class Consumables:
         self._item_code_designations = item_code_designations
 
         # Save all item_codes that are defined and pd.Series with probs of availability from ResourceFile
-        self.item_codes, self._processed_consumables_data = \
-            self._process_consumables_data(availability_data=availability_data)
+        self.item_codes, self._processed_consumables_data = self._process_consumables_data(
+            availability_data=availability_data
+        )
 
         # Set the availability based on the argument provided (this can be updated later after the class is initialised)
         self.availability = availability
@@ -102,33 +103,35 @@ class Consumables:
         item_code_designations = self._item_code_designations
 
         # Over-ride the data according to option for `availability`
-        if availability == 'default':
+        if availability == "default":
             pass
-        elif availability == 'all':
+        elif availability == "all":
             self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
-        elif availability == 'none':
+        elif availability == "none":
             self.override_availability(dict(zip(self.item_codes, repeat(0.0))))
-        elif availability == 'all_diagnostics_available':
-            item_codes_dx = set(
-                item_code_designations.index[item_code_designations['is_diagnostic']]).intersection(self.item_codes)
+        elif availability == "all_diagnostics_available":
+            item_codes_dx = set(item_code_designations.index[item_code_designations["is_diagnostic"]]).intersection(
+                self.item_codes
+            )
             self.override_availability(dict(zip(item_codes_dx, repeat(1.0))))
-        elif availability == 'all_medicines_available':
+        elif availability == "all_medicines_available":
             item_codes_medicines = set(
-                item_code_designations.index[item_code_designations['is_medicine']]).intersection(self.item_codes)
+                item_code_designations.index[item_code_designations["is_medicine"]]
+            ).intersection(self.item_codes)
             self.override_availability(dict(zip(item_codes_medicines, repeat(1.0))))
-        elif availability == 'all_medicines_and_other_available':
+        elif availability == "all_medicines_and_other_available":
             item_codes_medicines_and_other = set(
-                item_code_designations.index[item_code_designations['is_medicine'] | item_code_designations['is_other']]
+                item_code_designations.index[item_code_designations["is_medicine"] | item_code_designations["is_other"]]
             ).intersection(self.item_codes)
             self.override_availability(dict(zip(item_codes_medicines_and_other, repeat(1.0))))
-        elif availability == 'all_vital_available':
-            item_codes_vital = set(
-                item_code_designations.index[item_code_designations['is_vital']]
-            ).intersection(self.item_codes)
+        elif availability == "all_vital_available":
+            item_codes_vital = set(item_code_designations.index[item_code_designations["is_vital"]]).intersection(
+                self.item_codes
+            )
             self.override_availability(dict(zip(item_codes_vital, repeat(1.0))))
-        elif availability == 'all_drug_or_vaccine_available':
+        elif availability == "all_drug_or_vaccine_available":
             item_codes_drug_or_vaccine = set(
-                item_code_designations.index[item_code_designations['is_drug_or_vaccine']]
+                item_code_designations.index[item_code_designations["is_drug_or_vaccine"]]
             ).intersection(self.item_codes)
             self.override_availability(dict(zip(item_codes_drug_or_vaccine, repeat(1.0))))
         else:
@@ -142,7 +145,7 @@ class Consumables:
         """
         return (
             set(availability_data.item_code),
-            availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
+            availability_data.set_index(["month", "Facility_ID", "item_code"])["available_prop"],
         )
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
@@ -153,7 +156,7 @@ class Consumables:
         availability_this_month = self._prob_item_codes_available.loc[(month, slice(None), slice(None))]
         items_available_this_month = availability_this_month.index[
             availability_this_month.values > self._rng.random_sample(len(availability_this_month))
-            ]
+        ]
 
         # Convert to dict-of-sets to enable checking of item_code availability.
         self._is_available = defaultdict(set)
@@ -162,9 +165,10 @@ class Consumables:
 
         # Update the default return value (based on the average probability of availability of items at the facility)
         average_availability_of_items_by_facility_id = availability_this_month.groupby(level=0).mean()
-        self._is_unknown_item_available = (average_availability_of_items_by_facility_id >
-                                           self._rng.random_sample(len(average_availability_of_items_by_facility_id))
-                                           ).to_dict()
+        self._is_unknown_item_available = (
+            average_availability_of_items_by_facility_id
+            > self._rng.random_sample(len(average_availability_of_items_by_facility_id))
+        ).to_dict()
 
     def override_availability(self, item_codes: dict = None) -> None:
         """
@@ -178,9 +182,10 @@ class Consumables:
         """
 
         def check_item_codes_argument_is_valid(_item_codes):
-            assert set(_item_codes.keys()).issubset(self.item_codes), 'Some item_codes not recognised.'
-            assert all([0.0 <= x <= 1.0 for x in list(_item_codes.values())]), 'Probability of availability must be ' \
-                                                                               'between 0.0 and 1.0'
+            assert set(_item_codes.keys()).issubset(self.item_codes), "Some item_codes not recognised."
+            assert all([0.0 <= x <= 1.0 for x in list(_item_codes.values())]), (
+                "Probability of availability must be " "between 0.0 and 1.0"
+            )
 
         check_item_codes_argument_is_valid(item_codes)
 
@@ -190,20 +195,21 @@ class Consumables:
 
     @staticmethod
     def _determine_default_return_value(cons_availability, default_return_value):
-        if cons_availability == 'all':
+        if cons_availability == "all":
             return True
-        elif cons_availability == 'none':
+        elif cons_availability == "none":
             return False
         else:
             return default_return_value
 
-    def _request_consumables(self,
-                             facility_info: 'FacilityInfo',  # noqa: F821
-                             essential_item_codes: dict,
-                             optional_item_codes: Optional[dict] = None,
-                             to_log: bool = True,
-                             treatment_id: Optional[str] = None
-                             ) -> dict:
+    def _request_consumables(
+        self,
+        facility_info: "FacilityInfo",  # noqa: F821
+        essential_item_codes: dict,
+        optional_item_codes: Optional[dict] = None,
+        to_log: bool = True,
+        treatment_id: Optional[str] = None,
+    ) -> dict:
         """This is a private function called by 'get_consumables` in the `HSI_Event` base class. It queries whether
         item_codes are currently available at a particular Facility_ID and logs the request.
 
@@ -235,14 +241,14 @@ class Consumables:
             items_used = items_available if all(available.get(k, False) for k in essential_item_codes) else {}
 
             logger.info(
-                key='Consumables',
+                key="Consumables",
                 data={
-                    'TREATMENT_ID': treatment_id or "",
-                    'Item_Available': str(items_available),
-                    'Item_NotAvailable': str(items_not_available),
-                    'Item_Used': str(items_used),
+                    "TREATMENT_ID": treatment_id or "",
+                    "Item_Available": str(items_available),
+                    "Item_NotAvailable": str(items_not_available),
+                    "Item_Used": str(items_used),
                 },
-                description="Record of requested and used consumable items."
+                description="Record of requested and used consumable items.",
             )
             self._summary_counter.record_availability(
                 items_available=items_available,
@@ -253,10 +259,11 @@ class Consumables:
         # Return the result of the check on availability
         return available
 
-    def _lookup_availability_of_consumables(self,
-                                            facility_info: 'FacilityInfo',  # noqa: F821
-                                            item_codes: dict
-                                            ) -> dict:
+    def _lookup_availability_of_consumables(
+        self,
+        facility_info: "FacilityInfo",  # noqa: F821
+        item_codes: dict,
+    ) -> dict:
         """Lookup whether a particular item_code is in the set of available items for that facility (in
         `self._is_available`). If any code is not recognised, use the `_is_unknown_item_available`."""
         avail = dict()
@@ -265,7 +272,7 @@ class Consumables:
             # If `facility_info` is None, it implies that the HSI has not been initialised because the HealthSystem
             #  is running with `disable=True`. Therefore, assume the consumable is available if the overall
             #  availability assumption is 'all' or 'default', and not otherwise.
-            if self.availability in ('all', 'default'):
+            if self.availability in ("all", "default"):
                 return {_i: True for _i in item_codes}
             else:
                 return {_i: False for _i in item_codes}
@@ -287,11 +294,7 @@ class Consumables:
                 treatment_id if treatment_id is not None else "": sorted(codes)
                 for treatment_id, codes in self._not_recognised_item_codes.items()
             }
-            warnings.warn(
-                UserWarning(
-                    f"Item_Codes were not recognised.\n{not_recognised_item_codes}"
-                )
-            )
+            warnings.warn(UserWarning(f"Item_Codes were not recognised.\n{not_recognised_item_codes}"))
             logger.info(
                 key="item_codes_not_recognised",
                 data=not_recognised_item_codes,
@@ -303,10 +306,12 @@ class Consumables:
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
     """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
-     a given package name."""
-    ser = lookup_df.loc[
-        lookup_df['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
-        'Item_Code')['Expected_Units_Per_Case'].astype(float)
+    a given package name."""
+    ser = (
+        lookup_df.loc[lookup_df["Intervention_Pkg"] == package, ["Item_Code", "Expected_Units_Per_Case"]]
+        .set_index("Item_Code")["Expected_Units_Per_Case"]
+        .astype(float)
+    )
     return ser.groupby(ser.index).sum().to_dict()  # de-duplicate index before converting to dict
 
 
@@ -315,10 +320,11 @@ def get_item_code_from_item_name(lookup_df: pd.DataFrame, item: str) -> int:
     return int(pd.unique(lookup_df.loc[lookup_df["Items"] == item, "Item_Code"])[0])
 
 
-def create_dummy_data_for_cons_availability(intrinsic_availability: Optional[Dict[int, float]] = None,
-                                            months: Optional[List[int]] = None,
-                                            facility_ids: Optional[List[int]] = None,
-                                            ) -> pd.DataFrame:
+def create_dummy_data_for_cons_availability(
+    intrinsic_availability: Optional[Dict[int, float]] = None,
+    months: Optional[List[int]] = None,
+    facility_ids: Optional[List[int]] = None,
+) -> pd.DataFrame:
     """Returns a pd.DataFrame that is a dummy for the imported `ResourceFile_Consumables.csv`.
     By default, it describes the availability of two items, one of which is always available, and one of which is
     never available."""
@@ -336,12 +342,9 @@ def create_dummy_data_for_cons_availability(intrinsic_availability: Optional[Dic
     for _item, _avail in intrinsic_availability.items():
         for _month in months:
             for _fac_id in facility_ids:
-                list_of_items.append({
-                    'item_code': _item,
-                    'month': _month,
-                    'Facility_ID': _fac_id,
-                    'available_prop': _avail
-                })
+                list_of_items.append(
+                    {"item_code": _item, "month": _month, "Facility_ID": _fac_id, "available_prop": _avail}
+                )
     return pd.DataFrame(data=list_of_items)
 
 
@@ -350,13 +353,13 @@ def check_format_of_consumables_file(df, fac_ids):
     months = set(range(1, 13))
     item_codes = set(df.item_code.unique())
 
-    assert set(df.columns) == {'Facility_ID', 'month', 'item_code', 'available_prop'}
+    assert set(df.columns) == {"Facility_ID", "month", "item_code", "available_prop"}
 
     # Check that all permutations of Facility_ID, month and item_code are present
     pd.testing.assert_index_equal(
-        df.set_index(['Facility_ID', 'month', 'item_code']).index,
-        pd.MultiIndex.from_product([fac_ids, months, item_codes], names=['Facility_ID', 'month', 'item_code']),
-        check_order=False
+        df.set_index(["Facility_ID", "month", "item_code"]).index,
+        pd.MultiIndex.from_product([fac_ids, months, item_codes], names=["Facility_ID", "month", "item_code"]),
+        check_order=False,
     )
 
     # Check that every entry for a probability is a float on [0,1]
@@ -374,9 +377,9 @@ class ConsumablesSummaryCounter:
         """Create empty versions of the data structures used to store a running records."""
 
         self._items = {
-            'Available': defaultdict(int),
-            'NotAvailable': defaultdict(int),
-            'Used': defaultdict(int),
+            "Available": defaultdict(int),
+            "NotAvailable": defaultdict(int),
+            "Used": defaultdict(int),
         }
 
     def record_availability(self, items_available: dict, items_not_available: dict, items_used: dict) -> None:
@@ -384,15 +387,15 @@ class ConsumablesSummaryCounter:
 
         # Record items that were available
         for _item, _num in items_available.items():
-            self._items['Available'][_item] += _num
+            self._items["Available"][_item] += _num
 
         # Record items that were not available
         for _item, _num in items_not_available.items():
-            self._items['NotAvailable'][_item] += _num
+            self._items["NotAvailable"][_item] += _num
 
         # Record items that were used
         for _item, _num in items_used.items():
-            self._items['Used'][_item] += _num
+            self._items["Used"][_item] += _num
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics and reset the data structures."""
@@ -400,11 +403,11 @@ class ConsumablesSummaryCounter:
         logger_summary.info(
             key="Consumables",
             description="Counts of the items that were requested in this calendar year, which were available and"
-                        "not available.",
+            "not available.",
             data={
-                "Item_Available": self._items['Available'],
-                "Item_NotAvailable": self._items['NotAvailable'],
-                "Item_Used": self._items['Used'],
+                "Item_Available": self._items["Available"],
+                "Item_NotAvailable": self._items["NotAvailable"],
+                "Item_Used": self._items["Used"],
             },
         )
 

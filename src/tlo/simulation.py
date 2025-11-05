@@ -57,8 +57,8 @@ class Simulation:
     :ivar modules: A dictionary of the disease modules used in this simulation, keyed
        by the module name.
     :ivar population: The population being simulated.
-    :ivar rng: The simulation-level random number generator. 
-    
+    :ivar rng: The simulation-level random number generator.
+
     .. note::
        Individual modules also have their own random number generator with independent
        state.
@@ -80,7 +80,7 @@ class Simulation:
         :param seed: The seed for random number generator. class will create one if not
             supplied
         :param log_config: Dictionary specifying logging configuration for this
-            simulation. Can have entries: `filename` - prefix for log file name, final 
+            simulation. Can have entries: `filename` - prefix for log file name, final
             file name will have a date time appended, if not present default is to not
             output log to a file; `directory` - path to output directory to write log
             file to, default if not specified is to output to the `outputs` folder;
@@ -89,9 +89,9 @@ class Simulation:
             logging to standard output stream (default is `False`).
         :param show_progress_bar: Whether to show a progress bar instead of the logger
             output during the simulation.
-        :param resourcefilepath: Path to resource files folder. Assign ``None` if no 
+        :param resourcefilepath: Path to resource files folder. Assign ``None` if no
             path is provided.
-            
+
         .. note::
            The `custom_levels` entry in `log_config` argument can be used to disable
            logging on all disease modules by setting a high level to `*`, and then
@@ -114,7 +114,6 @@ class Simulation:
             log_config = {}
         self._custom_log_levels = None
         self._log_filepath = self._configure_logging(**log_config)
-        
 
         # random number generator
         seed_from = "auto" if seed is None else "user"
@@ -131,13 +130,13 @@ class Simulation:
 
     def _configure_logging(
         self,
-        filename: Optional[str] = None, 
+        filename: Optional[str] = None,
         directory: Path | str = "./outputs",
         custom_levels: Optional[dict[str, LogLevel]] = None,
-        suppress_stdout: bool = False
+        suppress_stdout: bool = False,
     ):
         """Configure logging of simulation outputs.
-         
+
         Can write log output to a file in addition the default of `stdout`. Mnimum
         custom levels for each logger can be specified for filtering out messages.
 
@@ -174,7 +173,7 @@ class Simulation:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
             log_path = Path(directory) / f"{filename}__{timestamp}.log"
             self.output_file = logging.set_output_file(log_path)
-            logger.info(key='info', data=f'Log output: {log_path}')
+            logger.info(key="info", data=f"Log output: {log_path}")
             return log_path
 
         return None
@@ -210,14 +209,11 @@ class Simulation:
             modules to be registered. A :py:exc:`.ModuleDependencyError` exception will
             be raised if there are missing dependencies.
         :param auto_register_dependencies: Whether to register missing module dependencies
-            or not. If this argument is set to True, all module dependencies will be 
+            or not. If this argument is set to True, all module dependencies will be
             automatically registered.
         """
         if auto_register_dependencies:
-            modules = [
-                *modules,
-                *initialise_missing_dependencies(modules, resourcefilepath=self.resourcefilepath)
-            ]
+            modules = [*modules, *initialise_missing_dependencies(modules, resourcefilepath=self.resourcefilepath)]
 
         if sort_modules:
             modules = list(topologically_sort_modules(modules))
@@ -226,16 +222,13 @@ class Simulation:
         # Iterate over modules and per-module seed sequences spawned from simulation
         # level seed sequence
         for module, seed_seq in zip(modules, self._seed_seq.spawn(len(modules))):
-            assert (
-                module.name not in self.modules
-            ), f"A module named {module.name} has already been registered"
+            assert module.name not in self.modules, f"A module named {module.name} has already been registered"
 
             # Seed the RNG for the registered module using spawned seed sequence
             logger.info(
                 key="info",
                 data=(
-                    f"{module.name} RNG auto (entropy, spawn key) = "
-                    f"({seed_seq.entropy}, {seed_seq.spawn_key[0]})"
+                    f"{module.name} RNG auto (entropy, spawn key) = " f"({seed_seq.entropy}, {seed_seq.spawn_key[0]})"
                 ),
             )
             module.rng = np.random.RandomState(np.random.MT19937(seed_seq))
@@ -260,11 +253,7 @@ class Simulation:
             module.pre_initialise_population()
 
         # Make the initial population
-        properties = {
-            name: prop
-            for module in self.modules.values()
-            for name, prop in module.PROPERTIES.items()
-        }
+        properties = {name: prop for module in self.modules.values() for name, prop in module.PROPERTIES.items()}
         self.population = Population(properties, n)
         for module in self.modules.values():
             start1 = time.time()
@@ -321,9 +310,7 @@ class Simulation:
 
     def _initialise_progress_bar(self, end_date: Date) -> ProgressBar:
         num_simulated_days = (end_date - self.date).days
-        progress_bar = ProgressBar(
-            num_simulated_days, "Simulation progress", unit="day"
-        )
+        progress_bar = ProgressBar(num_simulated_days, "Simulation progress", unit="day")
         progress_bar.start()
         return progress_bar
 
@@ -335,9 +322,7 @@ class Simulation:
             "queued events": str(len(self.event_queue)),
         }
         if "HealthSystem" in self.modules:
-            stats_dict["queued HSI events"] = str(
-                len(self.modules["HealthSystem"].HSI_EVENT_QUEUE)
-            )
+            stats_dict["queued HSI events"] = str(len(self.modules["HealthSystem"].HSI_EVENT_QUEUE))
         progress_bar.update(simulation_day, stats_dict=stats_dict)
 
     def run_simulation_to(self, *, to_date: Date) -> None:
@@ -358,9 +343,7 @@ class Simulation:
             raise ValueError(msg)
         if self.show_progress_bar:
             progress_bar = self._initialise_progress_bar(to_date)
-        while (
-            len(self.event_queue) > 0 and self.event_queue.date_of_next_event < to_date
-        ):
+        while len(self.event_queue) > 0 and self.event_queue.date_of_next_event < to_date:
             event, date = self.event_queue.pop_next_event_and_date()
             if self.show_progress_bar:
                 self._update_progress_bar(progress_bar, date)
@@ -424,7 +407,7 @@ class Simulation:
 
     def find_events_for_person(self, person_id: int) -> list[tuple[Date, Event]]:
         """Find the events in the queue for a particular person.
-    
+
         :param person_id: The row index of the person of interest.
         :return: List of tuples `(date_of_event, event)` for that `person_id` in the
             queue.
@@ -455,16 +438,14 @@ class Simulation:
             dill.dump(self, pickle_file)
 
     @staticmethod
-    def load_from_pickle(
-        pickle_path: Path, log_config: Optional[dict] = None
-    ) -> Simulation:
+    def load_from_pickle(pickle_path: Path, log_config: Optional[dict] = None) -> Simulation:
         """Load simulation state from a pickle file using :py:mod:`dill`.
 
         Requires :py:mod:`dill` to be importable.
 
         :param pickle_path: File path to load simulation state from.
         :param log_config: New log configuration to override previous configuration. If
-            `None` previous configuration (including output file) will be retained. 
+            `None` previous configuration (including output file) will be retained.
 
         :returns: Loaded :py:class:`Simulation` object.
         """

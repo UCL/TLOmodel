@@ -21,9 +21,7 @@ class IndividualProperties:
     instances for a given population.
     """
 
-    def __init__(
-        self, population_dataframe: pd.DataFrame, person_id: int, read_only: bool = True
-    ):
+    def __init__(self, population_dataframe: pd.DataFrame, person_id: int, read_only: bool = True):
         self._finalized = False
         self._read_only = read_only
         self._property_cache: Dict[str, Any] = {}
@@ -124,9 +122,7 @@ class Population:
             # TODO: profile adjustment of this and more clever calculation
             append_size = math.ceil(initial_size * 0.02)
 
-        assert (
-            append_size > 0
-        ), "Number of rows to append when growing must be greater than 0"
+        assert append_size > 0, "Number of rows to append when growing must be greater than 0"
 
         logger.info(key="info", data=f"Dataframe capacity append size: {append_size}")
 
@@ -163,9 +159,7 @@ class Population:
         # the index of the next person
         if self.next_person_id > index_of_last_row:
             # we need to add some rows
-            self.props = pd.concat(
-                (self.props, self.new_rows), ignore_index=True, sort=False
-            )
+            self.props = pd.concat((self.props, self.new_rows), ignore_index=True, sort=False)
             self.props.index.name = "person"
             logger.info(
                 key="info",
@@ -212,7 +206,7 @@ class Population:
         In this case on exit from the ``with`` block in which the context is entered,
         any updates to the individual properties will be written back to the population
         dataframe.
-        
+
         Once the ``with`` block in which the context is entered has been exited the view
         returned will raise an error on any subsequent attempts at reading or writing
         properties.

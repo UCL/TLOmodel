@@ -18,10 +18,7 @@ def test_scale_run_script_deterministic(tmp_path):
     non-determinism caused by relying implicitly on non-repeatable hashing, for example
     iterating over a set.
     """
-    script_path = (
-        Path(os.path.dirname(__file__))
-        / "../src/scripts/profiling/scale_run.py"
-    )
+    script_path = Path(os.path.dirname(__file__)) / "../src/scripts/profiling/scale_run.py"
     assert os.path.exists(script_path), "Cannot find scale_run script at specified path"
     command_args = [
         sys.executable,
@@ -48,9 +45,7 @@ def test_scale_run_script_deterministic(tmp_path):
             f"with stderr output\n\n{completed_process.stderr}"
         )
         final_population_pickle_path = tmp_path / "final_population.pkl"
-        assert os.path.exists(final_population_pickle_path), (
-            "Pickle of final population dataframe not found"
-        )
+        assert os.path.exists(final_population_pickle_path), "Pickle of final population dataframe not found"
         final_population_dataframes.append(pd.read_pickle(final_population_pickle_path))
     assert final_population_dataframes[0].equals(final_population_dataframes[1]), (
         f"Running {' '.join(command_args)} twice produces different final populations. "

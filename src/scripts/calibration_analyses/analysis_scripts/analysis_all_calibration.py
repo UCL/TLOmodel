@@ -20,23 +20,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     the results of running `long_run_all_diseases.py`."""
 
     analysis_demography_calibrations.apply(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
 
     analysis_cause_of_death_and_disability_calibrations.apply(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
 
     analysis_hsi_descriptions.apply(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
 
     analysis_compare_appt_usage_real_and_simulation.apply(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
 
     plot_appt_use_by_hsi.apply(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
 
     # Plot the legends
-    plot_legends.apply(
-        results_folder=None, output_folder=output_folder, resourcefilepath=resourcefilepath)
+    plot_legends.apply(results_folder=None, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
     # make html page to present results
     html = "<html><body>"
@@ -64,8 +68,4 @@ if __name__ == "__main__":
     parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
 
-    apply(
-        results_folder=args.results_folder,
-        output_folder=args.results_folder,
-        resourcefilepath=Path('./resources')
-    )
+    apply(results_folder=args.results_folder, output_folder=args.results_folder, resourcefilepath=Path("./resources"))

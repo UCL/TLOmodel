@@ -15,7 +15,7 @@ from tlo.analysis.life_expectancy import (
 def test_get_life_expectancy():
     """Use `get_life_expectancy_estimates` to generate estimate of life-expectancy from the dummy simulation data."""
 
-    results_folder_dummy_results = Path(os.path.dirname(__file__)) / 'resources' / 'dummy_simulation_run'
+    results_folder_dummy_results = Path(os.path.dirname(__file__)) / "resources" / "dummy_simulation_run"
 
     # Summary measure: Should have row ('M', 'F') and columns ('mean', 'lower', 'upper')
     rtn_summary = get_life_expectancy_estimates(
@@ -25,7 +25,7 @@ def test_get_life_expectancy():
     )
     assert isinstance(rtn_summary, pd.DataFrame)
     assert sorted(rtn_summary.index.to_list()) == ["F", "M"]
-    assert list(rtn_summary.columns.names) == ['draw', 'stat']
+    assert list(rtn_summary.columns.names) == ["draw", "stat"]
     assert rtn_summary.columns.levels[1].to_list() == ["lower", "mean", "upper"]
 
     # Non-summary measure: Estimate should be for each run/draw
@@ -36,7 +36,7 @@ def test_get_life_expectancy():
     )
     assert isinstance(rtn_full, pd.DataFrame)
     assert sorted(rtn_full.index.to_list()) == ["F", "M"]
-    assert list(rtn_full.columns.names) == ['draw', 'run']
+    assert list(rtn_full.columns.names) == ["draw", "run"]
     assert rtn_full.columns.levels[1].to_list() == [0, 1]
 
 
@@ -57,18 +57,20 @@ def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_a
     # load results from a dummy cohort where everyone starts at age 0.
     target_period = (datetime.date(2010, 1, 1), datetime.date(2080, 12, 31))
 
-    results_folder_dummy_results = Path(os.path.dirname(__file__)) / 'resources' / 'probability_premature_death'
-    pickled_file = os.path.join(results_folder_dummy_results, '0', '0', 'tlo.methods.demography.pickle')
+    results_folder_dummy_results = Path(os.path.dirname(__file__)) / "resources" / "probability_premature_death"
+    pickled_file = os.path.join(results_folder_dummy_results, "0", "0", "tlo.methods.demography.pickle")
 
     # - Compute 'manually' from raw data
-    with open(pickled_file, 'rb') as file:
+    with open(pickled_file, "rb") as file:
         demography_data = pickle.load(file)
-    initial_popsize = {'F':  demography_data['population']['female'][0], 'M': demography_data['population']['male'][0]}
-    deaths_total = demography_data['death'][['sex', 'age']]
-    num_premature_deaths = deaths_total.loc[deaths_total['age'] < age_before_which_death_is_defined_as_premature] \
-                                       .groupby('sex') \
-                                       .size() \
-                                       .to_dict()
+    initial_popsize = {"F": demography_data["population"]["female"][0], "M": demography_data["population"]["male"][0]}
+    deaths_total = demography_data["death"][["sex", "age"]]
+    num_premature_deaths = (
+        deaths_total.loc[deaths_total["age"] < age_before_which_death_is_defined_as_premature]
+        .groupby("sex")
+        .size()
+        .to_dict()
+    )
     prob_premature_death = {s: num_premature_deaths[s] / initial_popsize[s] for s in ("M", "F")}
 
     # - Compute using utility function
@@ -83,12 +85,8 @@ def test_probability_premature_death(tmpdir, age_before_which_death_is_defined_a
     # cumulative probability of death in each age-group mean that the manual computation done here and the calculation
     # performed in the utility function are not expected to agree perfectly.)
     assert np.isclose(
-        probability_premature_death_summary.loc["F"].loc[(0, 'mean')],
-        prob_premature_death['F'],
-        atol=0.01
+        probability_premature_death_summary.loc["F"].loc[(0, "mean")], prob_premature_death["F"], atol=0.01
     )
     assert np.isclose(
-        probability_premature_death_summary.loc["M"].loc[(0, 'mean')],
-        prob_premature_death['M'],
-        atol=0.01
+        probability_premature_death_summary.loc["M"].loc[(0, "mean")], prob_premature_death["M"], atol=0.01
     )

@@ -23,20 +23,20 @@ from tlo.methods import (
 seed = 100
 
 log_config_no_hs = {
-    "filename": "rti_analysis_no_healthsystem",   # The name of the output file (a timestamp will be appended).
+    "filename": "rti_analysis_no_healthsystem",  # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.rti": logging.INFO,
-    }
+    },
 }
 log_config_with_hs = {
-    "filename": "rti_analysis_with_healthsystem",   # The name of the output file (a timestamp will be appended).
+    "filename": "rti_analysis_with_healthsystem",  # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.rti": logging.INFO,
-    }
+    },
 }
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 12, 31)
@@ -47,7 +47,7 @@ sim_no_health_system = Simulation(start_date=start_date, seed=seed, log_config=l
 
 # Path to the resource files used by the disease and intervention methods
 # resources = "./resources"
-resourcefilepath = Path('./resources')
+resourcefilepath = Path("./resources")
 
 # Used to configure health system behaviour
 service_availability_no_hs = []
@@ -56,15 +56,15 @@ service_availability_no_hs = []
 # able to handle dependencies if modules are registered together
 # Register modules used in each model run, specifying the availability of service from the hs
 sim_no_health_system.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability_no_hs),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
-        )
+    demography.Demography(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability_no_hs),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    rti.RTI(resourcefilepath=resourcefilepath),
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+)
 
 # create and run each simulation
 sim_no_health_system.make_initial_population(n=pop_size)
@@ -72,18 +72,18 @@ sim_no_health_system.simulate(end_date=end_date)
 
 sim_with_health_system = Simulation(start_date=start_date, seed=seed, log_config=log_config_with_hs)
 
-service_availability_with_hs = ['*']
+service_availability_with_hs = ["*"]
 
 sim_with_health_system.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability_with_hs),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
-        )
+    demography.Demography(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability_with_hs),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    rti.RTI(resourcefilepath=resourcefilepath),
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+)
 
 sim_with_health_system.make_initial_population(n=pop_size)
 sim_with_health_system.simulate(end_date=end_date)
@@ -103,8 +103,8 @@ mean_inc_rti_with_hs = np.mean(inc_with_hs)
 # calculate the mean incidence of RTI death in each simulation
 mean_inc_rti_death_no_hs = np.mean(inc_death_no_hs)
 mean_inc_rti_death_with_hs = np.mean(inc_death_with_hs)
-plt.bar([1, 2], [mean_inc_rti_death_no_hs, mean_inc_rti_death_with_hs], color='lightsteelblue')
-plt.xticks([1, 2], ['Incidence of death \nwithout healthsystem', 'Incidence of death \nwith healthsystem'])
-plt.ylabel('Mean incidence of death per 100,000')
-plt.title('Incidence of RTI death with and without the health system')
+plt.bar([1, 2], [mean_inc_rti_death_no_hs, mean_inc_rti_death_with_hs], color="lightsteelblue")
+plt.xticks([1, 2], ["Incidence of death \nwithout healthsystem", "Incidence of death \nwith healthsystem"])
+plt.ylabel("Mean incidence of death per 100,000")
+plt.title("Incidence of RTI death with and without the health system")
 plt.show()

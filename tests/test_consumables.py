@@ -21,22 +21,22 @@ from tlo.methods.consumables import (
 )
 from tlo.methods.hsi_event import HSI_Event
 
-resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
-fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
-facility_info_0 = namedtuple('FacilityInfo', ['id'])(0)
+fac_ids = set(mfl.loc[mfl.Facility_Level != "5"].Facility_ID)
+facility_info_0 = namedtuple("FacilityInfo", ["id"])(0)
 
 
 def find_level_of_facility_id(facility_id: int) -> str:
     """Returns the level of a Facility_ID"""
-    return mfl.set_index('Facility_ID').loc[facility_id].Facility_Level
+    return mfl.set_index("Facility_ID").loc[facility_id].Facility_Level
 
 
 def any_warnings_about_item_code(recorded_warnings):
     """Helper function to determine if any of the recorded warnings is the one created when an Item_Code is not
     recognised."""
-    return len([_r for _r in recorded_warnings if str(_r.message).startswith('Item_Code')]) > 0
+    return len([_r for _r in recorded_warnings if str(_r.message).startswith("Item_Code")]) > 0
 
 
 def get_rng(seed):
@@ -47,9 +47,8 @@ def test_using_recognised_item_codes(seed):
     """Test the functionality of the `Consumables` class with a recognising item_code."""
     # Prepare inputs for the Consumables class (normally provided by the `HealthSystem` module).
     data = create_dummy_data_for_cons_availability(
-        intrinsic_availability={0: 0.0, 1: 1.0},
-        months=[1],
-        facility_ids=[0])
+        intrinsic_availability={0: 0.0, 1: 1.0}, months=[1], facility_ids=[0]
+    )
     rng = get_rng(seed)
     date = datetime.datetime(2010, 1, 1)
 
@@ -60,10 +59,7 @@ def test_using_recognised_item_codes(seed):
     cons.on_start_of_day(date=date)
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
-    rtn = cons._request_consumables(
-        essential_item_codes={0: 1, 1: 1},
-        facility_info=facility_info_0
-    )
+    rtn = cons._request_consumables(essential_item_codes={0: 1, 1: 1}, facility_info=facility_info_0)
 
     assert {0: False, 1: True} == rtn
     assert len(cons._not_recognised_item_codes) == 0  # No item_codes recorded as not recognised.
@@ -74,9 +70,8 @@ def test_unrecognised_item_code_is_recorded(seed):
     an unrecognised item_code was requested is logged and a warning issued."""
     # Prepare inputs for the Consumables class (normally provided by the `HealthSystem` module).
     data = create_dummy_data_for_cons_availability(
-        intrinsic_availability={0: 0.0, 1: 1.0},
-        months=[1],
-        facility_ids=[0])
+        intrinsic_availability={0: 0.0, 1: 1.0}, months=[1], facility_ids=[0]
+    )
     rng = get_rng(seed)
     date = datetime.datetime(2010, 1, 1)
 
@@ -87,10 +82,7 @@ def test_unrecognised_item_code_is_recorded(seed):
     cons.on_start_of_day(date=date)
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
-    rtn = cons._request_consumables(
-        essential_item_codes={99: 1},
-        facility_info=facility_info_0
-    )
+    rtn = cons._request_consumables(essential_item_codes={99: 1}, facility_info=facility_info_0)
 
     assert isinstance(rtn[99], bool)
     assert len(cons._not_recognised_item_codes) > 0  # Some item_codes recorded as not recognised.
@@ -107,9 +99,8 @@ def test_consumables_availability_options(seed):
     unrecognised item_codes."""
     intrinsic_availability = {0: 0.0, 1: 1.0}
     data = create_dummy_data_for_cons_availability(
-        intrinsic_availability=intrinsic_availability,
-        months=[1, 2],
-        facility_ids=[0, 1])
+        intrinsic_availability=intrinsic_availability, months=[1, 2], facility_ids=[0, 1]
+    )
     rng = get_rng(seed)
     date = datetime.datetime(2010, 1, 1)
 
@@ -129,7 +120,8 @@ def test_consumables_availability_options(seed):
 
         assert _expected_result == cons._request_consumables(
             essential_item_codes={_item_code: 1 for _item_code in all_items_request},
-            to_log=False, facility_info=facility_info_0
+            to_log=False,
+            facility_info=facility_info_0,
         )
 
 
@@ -140,29 +132,28 @@ def test_override_cons_availability(seed):
         0: 0.0,  # Not available
         1: 1.0,  # Available
         2: 0.0,  # Not available -- but will be over-ridden
-        3: 1.0   # Available -- but will be over-ridden
+        3: 1.0,  # Available -- but will be over-ridden
     }
 
     data = create_dummy_data_for_cons_availability(
-        intrinsic_availability=intrinsic_availability,
-        months=[1],
-        facility_ids=[0])
+        intrinsic_availability=intrinsic_availability, months=[1], facility_ids=[0]
+    )
 
     def request_item(cons, item_code: Union[list, int]):
         """Use the internal helper function of the Consumables class to make the request."""
         if isinstance(item_code, int):
             item_code = [item_code]
 
-        return all(cons._request_consumables(
-            essential_item_codes={_i: 1 for _i in item_code},
-            to_log=False, facility_info=facility_info_0
-        ).values())
+        return all(
+            cons._request_consumables(
+                essential_item_codes={_i: 1 for _i in item_code}, to_log=False, facility_info=facility_info_0
+            ).values()
+        )
 
     rng = get_rng(seed)
     date = datetime.datetime(2010, 1, 1)
 
-    for _availability in ('default', 'all', 'none'):
-
+    for _availability in ("default", "all", "none"):
         # Create consumables class
         cons = Consumables(availability_data=data, rng=rng, availability=_availability)
 
@@ -170,7 +161,7 @@ def test_override_cons_availability(seed):
         for _ in range(1000):
             cons.on_start_of_day(date=date)
 
-            if _availability == 'default':
+            if _availability == "default":
                 # Request item that is not available and not over-ridden
                 assert False is request_item(cons, 0)
 
@@ -183,25 +174,22 @@ def test_override_cons_availability(seed):
                 # Request item that is available but later over-ridden to be not available
                 assert True is request_item(cons, 3)
 
-            elif _availability == 'all':
+            elif _availability == "all":
                 # If 'cons_availability='all'` then all the items are available:
                 assert True is request_item(cons, [0, 1, 2, 3])
 
-            elif _availability == 'none':
+            elif _availability == "none":
                 # If 'cons_availability='none'` then none of items are available:
                 assert False is request_item(cons, [0, 1, 2, 3])
 
         # Do over-riding of availability of item_codes 2 and 3
-        cons.override_availability({
-            2: 1.0,
-            3: 0.0
-        })
+        cons.override_availability({2: 1.0, 3: 0.0})
 
         # Check after overriding availability
         for _ in range(1000):
             cons.on_start_of_day(date=date)
 
-            if _availability == 'default':
+            if _availability == "default":
                 # Request item that is not available and not over-ridden
                 assert False is request_item(cons, 0)
 
@@ -214,13 +202,13 @@ def test_override_cons_availability(seed):
                 # Request item that is available but over-ridden to be not available
                 assert False is request_item(cons, 3)
 
-            elif _availability == 'all':
+            elif _availability == "all":
                 # When everything defaults to being available, everything will be available, except the consumable (3)
                 # that is over-ridden to not be available.
                 assert True is request_item(cons, [0, 1, 2])
                 assert False is request_item(cons, 3)
 
-            elif _availability == 'none':
+            elif _availability == "none":
                 # When everything defaults to not being available, everything will be not available, except the
                 # consumable (2) that is over-ridden to be available.
                 assert False is request_item(cons, [0, 1, 3])
@@ -235,10 +223,7 @@ def test_consumables_available_at_right_frequency(seed):
     requested_items = {**{_i: 1 for _i in p_known_items}, **{4: 1}}  # request for item_code=4 is not recognised.
     average_availability_of_known_items = sum(p_known_items.values()) / len(p_known_items.values())
 
-    data = create_dummy_data_for_cons_availability(
-        intrinsic_availability=p_known_items,
-        months=[1],
-        facility_ids=[0])
+    data = create_dummy_data_for_cons_availability(intrinsic_availability=p_known_items, months=[1], facility_ids=[0])
     rng = get_rng(seed)
     date = datetime.datetime(2010, 1, 1)
 
@@ -256,14 +241,14 @@ def test_consumables_available_at_right_frequency(seed):
             facility_info=facility_info_0,
         )
         for _i in requested_items:
-            counter[_i] += (1 if (rtn[_i]) else 0)
+            counter[_i] += 1 if (rtn[_i]) else 0
 
     assert 0 == counter[0]
     assert n_trials == counter[3]
 
     def is_obs_frequency_consistent_with_expected_probability(n_obs, n_trials, p):
         """Returns True if the 99% binomial confidence interval on the estimate of frequency from `n_obs` successes out
-         of `n_trials` includes the value `p`."""
+        of `n_trials` includes the value `p`."""
         return np.isclose(p, n_obs / n_trials, atol=2.58 * (p * (1.0 - p) / n_trials) ** 0.5)
 
     # Check that the availability of each item is consistent with the expectation
@@ -271,16 +256,20 @@ def test_consumables_available_at_right_frequency(seed):
         assert is_obs_frequency_consistent_with_expected_probability(n_obs=counter[_i], n_trials=n_trials, p=_p)
 
     # Check that the availability of the unknown item is the average of the known items
-    assert is_obs_frequency_consistent_with_expected_probability(n_obs=counter[4], n_trials=n_trials,
-                                                                 p=average_availability_of_known_items)
+    assert is_obs_frequency_consistent_with_expected_probability(
+        n_obs=counter[4], n_trials=n_trials, p=average_availability_of_known_items
+    )
 
 
-@pytest.mark.parametrize("p_known_items, expected_items_used", [
-    # Test 1
-    ({0: 0.0, 1: 1.0, 2: 1.0, 3: 1.0}, {}),
-    # Test 2
-    ({0: 1.0, 1: 1.0, 2: 0.0, 3: 1.0}, {0: 5, 1: 10, 3: 2})
-])
+@pytest.mark.parametrize(
+    "p_known_items, expected_items_used",
+    [
+        # Test 1
+        ({0: 0.0, 1: 1.0, 2: 1.0, 3: 1.0}, {}),
+        # Test 2
+        ({0: 1.0, 1: 1.0, 2: 0.0, 3: 1.0}, {0: 5, 1: 10, 3: 2}),
+    ],
+)
 def test_items_used_includes_only_available_items(seed, p_known_items, expected_items_used):
     """
     Test that 'items_used' includes only items that are available.
@@ -290,11 +279,7 @@ def test_items_used_includes_only_available_items(seed, p_known_items, expected_
     Test 2: should have essential items logged as items_used, but optional item 2 is not available
     """
 
-    data = create_dummy_data_for_cons_availability(
-        intrinsic_availability=p_known_items,
-        months=[1],
-        facility_ids=[0]
-    )
+    data = create_dummy_data_for_cons_availability(intrinsic_availability=p_known_items, months=[1], facility_ids=[0])
     rng = get_rng(seed)
     date = datetime.datetime(2010, 1, 1)
 
@@ -312,7 +297,7 @@ def test_items_used_includes_only_available_items(seed, p_known_items, expected_
     )
 
     # Access items used from the Consumables summary counter
-    items_used = getattr(cons._summary_counter, '_items', {}).get('Used')
+    items_used = getattr(cons._summary_counter, "_items", {}).get("Used")
     assert items_used == expected_items_used, f"Expected items_used to be {expected_items_used}, but got {items_used}"
 
 
@@ -335,8 +320,8 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
     # Create simulation with the HealthSystem and DummyModule
     if tmpdir is not None:
         _log_config = {
-            'filename': 'tmp',
-            'directory': tmpdir,
+            "filename": "tmp",
+            "directory": tmpdir,
         }
     else:
         _log_config = None
@@ -350,11 +335,11 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
         DummyModule(),
         # Disable sorting + checks to avoid error due to missing dependencies
         sort_modules=False,
-        check_all_dependencies=False
+        check_all_dependencies=False,
     )
 
     if data is not None:
-        sim.modules['HealthSystem'].parameters['availability_estimates'] = data
+        sim.modules["HealthSystem"].parameters["availability_estimates"] = data
 
     sim.make_initial_population(n=100)
 
@@ -373,23 +358,26 @@ def get_dummy_hsi_event_instance(module, facility_id=None, to_log=False):
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
-            self.TREATMENT_ID = 'Dummy'
+            self.TREATMENT_ID = "Dummy"
             self.ACCEPTED_FACILITY_LEVEL = _facility_level
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1}) \
-                if self.ACCEPTED_FACILITY_LEVEL == '0' else self.make_appt_footprint({'Over5OPD': 1})
+            self.EXPECTED_APPT_FOOTPRINT = (
+                self.make_appt_footprint({"ConWithDCSA": 1})
+                if self.ACCEPTED_FACILITY_LEVEL == "0"
+                else self.make_appt_footprint({"Over5OPD": 1})
+            )
             self._facility_id = facility_id
 
         def apply(self, person_id, squeeze_factor):
             """Requests all recognised consumables."""
             self.get_consumables(
-                item_codes=list(self.sim.modules['HealthSystem'].consumables.item_codes),
+                item_codes=list(self.sim.modules["HealthSystem"].consumables.item_codes),
                 to_log=to_log,
-                return_individual_results=False
+                return_individual_results=False,
             )
 
     hsi_dummy = HSI_Dummy(module=module, person_id=0)
     hsi_dummy.initialise()
-    hsi_dummy.facility_info = module.sim.modules['HealthSystem']._facility_by_facility_id[facility_id]
+    hsi_dummy.facility_info = module.sim.modules["HealthSystem"]._facility_by_facility_id[facility_id]
     return hsi_dummy
 
 
@@ -400,41 +388,39 @@ def test_use_get_consumables_by_hsi_method_get_consumables():
     # Create data with item_codes known to be available or not.
     item_code_is_available = [0, 1]
     item_code_not_available = [2, 3]
-    intrinsic_availability = {**{_i: 1.0 for _i in item_code_is_available},
-                              **{_i: 0.0 for _i in item_code_not_available}}
+    intrinsic_availability = {
+        **{_i: 1.0 for _i in item_code_is_available},
+        **{_i: 0.0 for _i in item_code_not_available},
+    }
 
     sim = get_sim_with_dummy_module_registered(
         data=create_dummy_data_for_cons_availability(
-            intrinsic_availability=intrinsic_availability,
-            months=[1],
-            facility_ids=[0])
+            intrinsic_availability=intrinsic_availability, months=[1], facility_ids=[0]
+        )
     )
-    hsi_event = get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0)
+    hsi_event = get_dummy_hsi_event_instance(module=sim.modules["DummyModule"], facility_id=0)
 
     # Test using item_codes in different input format and with different output formats..
     # -- input as `int`
     assert True is hsi_event.get_consumables(item_codes=item_code_is_available[0])
     assert False is hsi_event.get_consumables(item_codes=item_code_not_available[0])
     assert {item_code_not_available[0]: False} == hsi_event.get_consumables(
-        item_codes=item_code_not_available[0], return_individual_results=True)
+        item_codes=item_code_not_available[0], return_individual_results=True
+    )
 
     # -- input as `list`
     assert True is hsi_event.get_consumables(item_codes=item_code_is_available)
     assert False is hsi_event.get_consumables(item_codes=item_code_not_available)
     assert False is hsi_event.get_consumables(item_codes=item_code_is_available + item_code_not_available)
     assert {item_code_is_available[0]: True, item_code_not_available[0]: False} == hsi_event.get_consumables(
-        item_codes=[item_code_is_available[0], item_code_not_available[0]], return_individual_results=True)
+        item_codes=[item_code_is_available[0], item_code_not_available[0]], return_individual_results=True
+    )
 
     # -- input as `dict`
-    assert True is hsi_event.get_consumables(
-        item_codes={i: 10 for i in item_code_is_available}
-    )
-    assert False is hsi_event.get_consumables(
-        item_codes={i: 10 for i in item_code_not_available}
-    )
+    assert True is hsi_event.get_consumables(item_codes={i: 10 for i in item_code_is_available})
+    assert False is hsi_event.get_consumables(item_codes={i: 10 for i in item_code_not_available})
     assert {item_code_is_available[0]: True, item_code_not_available[0]: False} == hsi_event.get_consumables(
-        item_codes={item_code_is_available[0]: 10, item_code_not_available[0]: 10},
-        return_individual_results=True
+        item_codes={item_code_is_available[0]: 10, item_code_not_available[0]: 10}, return_individual_results=True
     )
 
     #  Using `optional_item_codes` argument in the `get_consumables` method on the HSI Base Class should result in those
@@ -447,12 +433,14 @@ def test_use_get_consumables_by_hsi_method_get_consumables():
 
     # Make request with the non-available consumable being optional: as the non-optional one is available, result is
     #  True.
-    assert True is hsi_event.get_consumables(item_codes=item_code_is_available[0],
-                                             optional_item_codes=item_code_not_available[0])
+    assert True is hsi_event.get_consumables(
+        item_codes=item_code_is_available[0], optional_item_codes=item_code_not_available[0]
+    )
 
     # Make request with the non-available consumable being non-optional: result is False
-    assert False is hsi_event.get_consumables(item_codes=item_code_not_available[0],
-                                              optional_item_codes=item_code_is_available[0])
+    assert False is hsi_event.get_consumables(
+        item_codes=item_code_not_available[0], optional_item_codes=item_code_is_available[0]
+    )
 
     # If the only consumables requested are optional, then the result is always True
     assert True is hsi_event.get_consumables(item_codes=[], optional_item_codes=item_code_not_available[0])
@@ -463,7 +451,7 @@ def test_use_get_consumables_by_hsi_method_get_consumables():
     assert {item_code_is_available[0]: True, item_code_not_available[0]: False} == hsi_event.get_consumables(
         item_codes=item_code_is_available[0],
         optional_item_codes=item_code_not_available[0],
-        return_individual_results=True
+        return_individual_results=True,
     )
 
 
@@ -473,11 +461,10 @@ def test_outputs_to_log(tmpdir):
 
     sim = get_sim_with_dummy_module_registered(
         data=create_dummy_data_for_cons_availability(
-            intrinsic_availability=intrinsic_availability,
-            months=[1],
-            facility_ids=[0]),
+            intrinsic_availability=intrinsic_availability, months=[1], facility_ids=[0]
+        ),
         tmpdir=tmpdir,
-        run=False
+        run=False,
     )
 
     # Edit the `initialise_simulation` method of DummyModule so that, during the simulation, an HSI is run that requests
@@ -485,26 +472,26 @@ def test_outputs_to_log(tmpdir):
     def schedule_hsi_that_will_request_consumables(sim):
         """Drop-in replacement for `initialise_simulation` in the DummyModule module."""
         # Make the district for person_id=0 such that the HSI will be served by facility_id=0
-        sim.population.props.at[0, 'district_of_residence'] = mfl.set_index('Facility_ID').loc[0].District
+        sim.population.props.at[0, "district_of_residence"] = mfl.set_index("Facility_ID").loc[0].District
 
         # Schedule the HSI event for person_id=0
-        sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0, to_log=True),
+        sim.modules["HealthSystem"].schedule_hsi_event(
+            hsi_event=get_dummy_hsi_event_instance(module=sim.modules["DummyModule"], facility_id=0, to_log=True),
             topen=sim.start_date,
             tclose=None,
-            priority=0
+            priority=0,
         )
 
-    sim.modules['DummyModule'].initialise_simulation = schedule_hsi_that_will_request_consumables
+    sim.modules["DummyModule"].initialise_simulation = schedule_hsi_that_will_request_consumables
 
     # Simulate for one day
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=1))
 
     # Check that log is created and the content is as expected.
-    cons_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['Consumables']
+    cons_log = parse_log_file(sim.log_filepath)["tlo.methods.healthsystem"]["Consumables"]
     assert len(cons_log)
-    assert "{0: 1}" == cons_log.loc[cons_log.index[0], 'Item_Available']  # Item 0 (1 requested) is available
-    assert "{1: 1}" == cons_log.loc[cons_log.index[0], 'Item_NotAvailable']  # Item 1 (1 requested) is not available
+    assert "{0: 1}" == cons_log.loc[cons_log.index[0], "Item_Available"]  # Item 0 (1 requested) is available
+    assert "{1: 1}" == cons_log.loc[cons_log.index[0], "Item_NotAvailable"]  # Item 1 (1 requested) is not available
 
 
 # ----------------------------------------------------------------------------
@@ -516,39 +503,36 @@ def test_check_format_of_consumables_file():
     """Run the check on the file used by default for the Consumables data"""
     check_format_of_consumables_file(
         pd.read_csv(
-            resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small.csv'),
-        fac_ids=fac_ids
+            resourcefilepath / "healthsystem" / "consumables" / "ResourceFile_Consumables_availability_small.csv"
+        ),
+        fac_ids=fac_ids,
     )
 
 
 @pytest.mark.slow
 def test_every_declared_consumable_for_every_possible_hsi_using_actual_data(recwarn):
-    """Check that every item_code that is declared can be requested from a person at every district and facility_level.
-    """
+    """Check that every item_code that is declared can be requested from a person at every district and facility_level."""
 
     sim = get_sim_with_dummy_module_registered(run=True)
-    hs = sim.modules['HealthSystem']
+    hs = sim.modules["HealthSystem"]
     item_codes = hs.consumables.item_codes
 
     for month in range(1, 13):
         sim.date = Date(2010, month, 1)
         hs.consumables._refresh_availability_of_consumables(date=sim.date)
 
-        for _district in sim.modules['Demography'].PROPERTIES['district_of_residence'].categories:
+        for _district in sim.modules["Demography"].PROPERTIES["district_of_residence"].categories:
             # Change the district of person 0 (for whom the HSI is created.)
-            sim.population.props.at[0, 'district_of_residence'] = _district
+            sim.population.props.at[0, "district_of_residence"] = _district
             for _facility_id in fac_ids:
-                hsi_event = get_dummy_hsi_event_instance(
-                    module=sim.modules['DummyModule'],
-                    facility_id=_facility_id
-                )
+                hsi_event = get_dummy_hsi_event_instance(module=sim.modules["DummyModule"], facility_id=_facility_id)
                 for _item_code in item_codes:
                     hsi_event.get_consumables(item_codes=_item_code, to_log=False)
 
-    sim.modules['HealthSystem'].on_simulation_end()
+    sim.modules["HealthSystem"].on_simulation_end()
 
     # Check that no warnings raised or item_codes recorded as being not recognised.
-    assert len(sim.modules['HealthSystem'].consumables._not_recognised_item_codes) == 0
+    assert len(sim.modules["HealthSystem"].consumables._not_recognised_item_codes) == 0
     assert not any_warnings_about_item_code(recwarn)
 
 
@@ -561,7 +545,7 @@ def test_get_item_code_from_item_name():
     example_item_names = [
         "Syringe, autodisposable, BCG, 0.1 ml, with needle",
         "Pentavalent vaccine (DPT, Hep B, Hib)",
-        "Pneumococcal vaccine"
+        "Pneumococcal vaccine",
     ]
 
     for _item_name in example_item_names:
@@ -576,25 +560,21 @@ def test_get_item_codes_from_package_name():
         resourcefilepath / "healthsystem" / "consumables" / "ResourceFile_Consumables_Items_and_Packages.csv"
     )
 
-    example_package_names = [
-        "Implant",
-        "Measles rubella vaccine",
-        "HPV vaccine",
-        "Tetanus toxoid (pregnant women)"
-    ]
+    example_package_names = ["Implant", "Measles rubella vaccine", "HPV vaccine", "Tetanus toxoid (pregnant women)"]
 
     for _pkg_name in example_package_names:
         _item_codes = get_item_codes_from_package_name(lookup_df=lookup_df, package=_pkg_name)
         assert isinstance(_item_codes, dict)
 
-        res_from_lookup = \
-            lookup_df.loc[lookup_df.Intervention_Pkg == _pkg_name].set_index('Item_Code').sort_index()[
-                'Expected_Units_Per_Case'].astype(float)
+        res_from_lookup = (
+            lookup_df.loc[lookup_df.Intervention_Pkg == _pkg_name]
+            .set_index("Item_Code")
+            .sort_index()["Expected_Units_Per_Case"]
+            .astype(float)
+        )
 
         pd.testing.assert_series_equal(
-            res_from_lookup.groupby(res_from_lookup.index).sum(),
-            pd.Series(_item_codes).sort_index(),
-            check_names=False
+            res_from_lookup.groupby(res_from_lookup.index).sum(), pd.Series(_item_codes).sort_index(), check_names=False
         )
 
 
@@ -614,19 +594,19 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.start_date)
-    hs = sim.modules['HealthSystem']
+    hs = sim.modules["HealthSystem"]
     consumables = hs.consumables
 
     # - Get the item_codes for each category
-    designations = hs.parameters['consumables_item_designations']
+    designations = hs.parameters["consumables_item_designations"]
     items_all = consumables.item_codes
-    items_medicines = set(designations.index[designations['is_medicine']]).intersection(consumables.item_codes)
-    items_diagnostics = set(designations.index[designations['is_diagnostic']]).intersection(consumables.item_codes)
-    items_other = set(designations.index[designations['is_other']]).intersection(consumables.item_codes)
-    items_vital = set(designations.index[designations['is_vital']]).intersection(consumables.item_codes)
-    items_drug_or_vaccine = set(
-        designations.index[designations['is_drug_or_vaccine']]
-    ).intersection(consumables.item_codes)
+    items_medicines = set(designations.index[designations["is_medicine"]]).intersection(consumables.item_codes)
+    items_diagnostics = set(designations.index[designations["is_diagnostic"]]).intersection(consumables.item_codes)
+    items_other = set(designations.index[designations["is_other"]]).intersection(consumables.item_codes)
+    items_vital = set(designations.index[designations["is_vital"]]).intersection(consumables.item_codes)
+    items_drug_or_vaccine = set(designations.index[designations["is_drug_or_vaccine"]]).intersection(
+        consumables.item_codes
+    )
 
     options_for_availability = consumables._options_for_availability
 
@@ -635,24 +615,24 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
         consumables.availability = availability
 
         # Check that probabilities of availability are as expected:
-        if availability == 'all':
+        if availability == "all":
             target_items = items_all
-        elif availability == 'all_medicines_available':
+        elif availability == "all_medicines_available":
             target_items = items_medicines
-        elif availability == 'all_diagnostics_available':
+        elif availability == "all_diagnostics_available":
             target_items = items_diagnostics
-        elif availability == 'all_medicines_and_other_available':
+        elif availability == "all_medicines_and_other_available":
             target_items = items_medicines.union(items_other)
-        elif availability == 'all_vital_available':
+        elif availability == "all_vital_available":
             target_items = items_vital
-        elif availability == 'all_drug_or_vaccine_available':
+        elif availability == "all_drug_or_vaccine_available":
             target_items = items_drug_or_vaccine
-        elif availability == 'none':
+        elif availability == "none":
             target_items = set()
-        elif availability == 'default':
+        elif availability == "default":
             continue
         else:
-            raise ValueError(f'Unexpected availability: {availability}')
+            raise ValueError(f"Unexpected availability: {availability}")
 
         # - Check probabilities for selected items are 1.0
         if target_items:

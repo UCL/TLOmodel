@@ -7,6 +7,7 @@ from pandas.api.types import is_extension_array_dtype
 
 class PandasEncoder(json.JSONEncoder):
     """Encode numpy and pandas objects for writing to json"""
+
     def default(self, obj):
         # using base classes for numpy numeric types
         if isinstance(obj, np.floating):

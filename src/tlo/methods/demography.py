@@ -10,11 +10,11 @@ from collections import defaultdict
 from pathlib import Path
 from types import MappingProxyType
 from typing import Union
+
 try:
     from shapely.geometry import Point
 except ImportError:
     shapely.geometry = None
-import random
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -50,7 +50,7 @@ logger_detail = logging.getLogger(f"{__name__}.detail")
 logger_detail.setLevel(logging.INFO)
 
 # Population scale factor logger
-logger_scale_factor = logging.getLogger('tlo.methods.population')
+logger_scale_factor = logging.getLogger("tlo.methods.population")
 logger_scale_factor.setLevel(logging.INFO)
 
 # Limits for setting up age range categories
@@ -67,12 +67,12 @@ def swap_rows(df, row1, row2):
 
 
 def age_at_date(
-    date: Union[Date, pd.DatetimeIndex, pd.Series],
-    date_of_birth: Union[Date, pd.DatetimeIndex, pd.Series]
+    date: Union[Date, pd.DatetimeIndex, pd.Series], date_of_birth: Union[Date, pd.DatetimeIndex, pd.Series]
 ) -> float:
     """Compute exact age in years given a date of birth `dob` and date `date`."""
     # Assume a fixed number of days in all years, ignoring variations due to leap years
     return (date - date_of_birth) / pd.Timedelta(days=DAYS_IN_YEAR)
+
 
 class Demography(Module):
     """
@@ -92,13 +92,12 @@ class Demography(Module):
         self.other_death_poll = None  # will hold pointer to the OtherDeathPoll object
         self.districts = None  # will store all the districts in a list
 
-    OPTIONAL_INIT_DEPENDENCIES = {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher'}
+    OPTIONAL_INIT_DEPENDENCIES = {"ImprovedHealthSystemAndCareSeekingScenarioSwitcher"}
     # <-- this forces that module to be the first registered module, if it's registered.
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
-        min_age=MIN_AGE_FOR_RANGE,
-        max_age=MAX_AGE_FOR_RANGE,
-        range_size=AGE_RANGE_SIZE)
+        min_age=MIN_AGE_FOR_RANGE, max_age=MAX_AGE_FOR_RANGE, range_size=AGE_RANGE_SIZE
+    )
 
     # Convert AGE_RANGE_LOOKUP to read-only mapping to avoid accidental updates
     AGE_RANGE_LOOKUP = MappingProxyType(dict(AGE_RANGE_LOOKUP))
@@ -109,126 +108,126 @@ class Demography(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'max_age_initial': Parameter(Types.INT, 'The oldest age (in whole years) in the initial population'),
-        'pop_2010': Parameter(Types.DATA_FRAME, 'Population in 2010 for initialising population'),
-        'district_num_to_district_name': Parameter(Types.DICT, 'Mapping from district_num to district name'),
-        'district_num_to_region_name': Parameter(Types.DICT, 'Mapping from district_num to region name'),
-        'districts_in_region': Parameter(Types.DICT, 'Set of districts (by name) that are within a region (by name)'),
-        'all_cause_mortality_schedule': Parameter(Types.DATA_FRAME, 'All-cause age-specific mortality rates from WPP'),
-        'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
-        'gbd_causes_of_death_data': Parameter(Types.DATA_FRAME,
-                                              'Proportion of deaths in each age/sex group attributable to each possible'
-                                              ' cause of death in the GBD dataset.'),
-        'possible_facilities':Parameter(Types.DATA_FRAME,
-                                              'Possible facilities for individuals to be assigned'),
+        "max_age_initial": Parameter(Types.INT, "The oldest age (in whole years) in the initial population"),
+        "pop_2010": Parameter(Types.DATA_FRAME, "Population in 2010 for initialising population"),
+        "district_num_to_district_name": Parameter(Types.DICT, "Mapping from district_num to district name"),
+        "district_num_to_region_name": Parameter(Types.DICT, "Mapping from district_num to region name"),
+        "districts_in_region": Parameter(Types.DICT, "Set of districts (by name) that are within a region (by name)"),
+        "all_cause_mortality_schedule": Parameter(Types.DATA_FRAME, "All-cause age-specific mortality rates from WPP"),
+        "fraction_of_births_male": Parameter(Types.REAL, "Birth Sex Ratio"),
+        "gbd_causes_of_death_data": Parameter(
+            Types.DATA_FRAME,
+            "Proportion of deaths in each age/sex group attributable to each possible"
+            " cause of death in the GBD dataset.",
+        ),
+        "possible_facilities": Parameter(Types.DATA_FRAME, "Possible facilities for individuals to be assigned"),
     }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
-        'date_of_birth': Property(Types.DATE, 'Date of birth of this individual'),
-        'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
-        'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
-        'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
-
+        "is_alive": Property(Types.BOOL, "Whether this individual is alive"),
+        "date_of_birth": Property(Types.DATE, "Date of birth of this individual"),
+        "date_of_death": Property(Types.DATE, "Date of death of this individual"),
+        "sex": Property(Types.CATEGORICAL, "Male or female", categories=["M", "F"]),
+        "mother_id": Property(Types.INT, "Unique identifier of mother of this individual"),
         # the categories of these properties are set in `pre_initialise_population`
-        'cause_of_death': Property(
+        "cause_of_death": Property(
             Types.CATEGORICAL,
-            'The cause of death of this individual (the tlo_cause defined by the module)',
-            categories=['SET_AT_RUNTIME']
+            "The cause of death of this individual (the tlo_cause defined by the module)",
+            categories=["SET_AT_RUNTIME"],
         ),
-
-        'district_num_of_residence': Property(
+        "district_num_of_residence": Property(
+            Types.CATEGORICAL, "The district number in which the person is resident", categories=["SET_AT_RUNTIME"]
+        ),
+        "district_of_residence": Property(
             Types.CATEGORICAL,
-            'The district number in which the person is resident',
-            categories=['SET_AT_RUNTIME']
+            "The district (name) of residence (mapped from district_num_of_residence).",
+            categories=["SET_AT_RUNTIME"],
         ),
-
-        'district_of_residence': Property(
+        "region_of_residence": Property(
             Types.CATEGORICAL,
-            'The district (name) of residence (mapped from district_num_of_residence).',
-            categories=['SET_AT_RUNTIME']
+            "The region of residence (mapped from district_num_of_residence).",
+            categories=["SET_AT_RUNTIME"],
         ),
-
-        'region_of_residence': Property(
-            Types.CATEGORICAL,
-            'The region of residence (mapped from district_num_of_residence).',
-            categories=['SET_AT_RUNTIME']
+        "level_0": Property(
+            Types.CATEGORICAL, 'Which level 0 facility is "used" by individual.', categories=["SET_AT_RUNTIME"]
         ),
-
-        'level_0': Property(Types.CATEGORICAL,
-                             'Which level 0 facility is "used" by individual.',
-                             categories=['SET_AT_RUNTIME']),
-        'level_1a': Property(Types.CATEGORICAL,
-                                  'Which level 1a facility is "used" by individual.',
-                                          categories = ['SET_AT_RUNTIME']),
-        'level_1b': Property(Types.CATEGORICAL,
-                                           'Which level 1b facility is "used" by individual.',
-                                           categories=['SET_AT_RUNTIME']),
-        'level_2': Property(Types.CATEGORICAL,
-                                           'Which level 2 facility is "used" by individual.',
-                                           categories=['SET_AT_RUNTIME']),
-        'level_3': Property(Types.CATEGORICAL,
-                                           'Which level 3 facility is "used" by individual.',
-                                           categories=['SET_AT_RUNTIME']),
+        "level_1a": Property(
+            Types.CATEGORICAL, 'Which level 1a facility is "used" by individual.', categories=["SET_AT_RUNTIME"]
+        ),
+        "level_1b": Property(
+            Types.CATEGORICAL, 'Which level 1b facility is "used" by individual.', categories=["SET_AT_RUNTIME"]
+        ),
+        "level_2": Property(
+            Types.CATEGORICAL, 'Which level 2 facility is "used" by individual.', categories=["SET_AT_RUNTIME"]
+        ),
+        "level_3": Property(
+            Types.CATEGORICAL, 'Which level 3 facility is "used" by individual.', categories=["SET_AT_RUNTIME"]
+        ),
         # Age calculation is handled by demography module
-        'age_exact_years': Property(Types.REAL, 'The age of the individual in exact years'),
-        'age_years': Property(Types.INT, 'The age of the individual in years'),
-        'age_range': Property(Types.CATEGORICAL,
-                              'The age range category of the individual',
-                              categories=AGE_RANGE_CATEGORIES),
-        'age_days': Property(Types.INT, 'The age of the individual in whole days'),
+        "age_exact_years": Property(Types.REAL, "The age of the individual in exact years"),
+        "age_years": Property(Types.INT, "The age of the individual in years"),
+        "age_range": Property(
+            Types.CATEGORICAL, "The age range category of the individual", categories=AGE_RANGE_CATEGORIES
+        ),
+        "age_days": Property(Types.INT, "The age of the individual in whole days"),
     }
 
     def read_parameters(self, data_folder):
         """Load the parameters from `ResourceFile_Demography_parameters.csv` and data from other `ResourceFiles`."""
 
         # General parameters
-        self.load_parameters_from_dataframe(pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Demography_parameters.csv')
+        self.load_parameters_from_dataframe(
+            pd.read_csv(Path(self.resourcefilepath) / "demography" / "ResourceFile_Demography_parameters.csv")
         )
 
         # Initial population size:
-        self.parameters['pop_2010'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_2010.csv'
+        self.parameters["pop_2010"] = pd.read_csv(
+            Path(self.resourcefilepath) / "demography" / "ResourceFile_Population_2010.csv"
         )
 
         # Lookup dicts to map from district_num_of_residence (in the df) and District name and Region name
-        self.districts = self.parameters['pop_2010']['District'].drop_duplicates().to_list()
-        self.parameters['district_num_to_district_name'] = \
-            self.parameters['pop_2010'][['District_Num', 'District']].drop_duplicates() \
-                .set_index('District_Num')['District'] \
-                .to_dict()
+        self.districts = self.parameters["pop_2010"]["District"].drop_duplicates().to_list()
+        self.parameters["district_num_to_district_name"] = (
+            self.parameters["pop_2010"][["District_Num", "District"]]
+            .drop_duplicates()
+            .set_index("District_Num")["District"]
+            .to_dict()
+        )
 
-        self.parameters['district_num_to_region_name'] = \
-            self.parameters['pop_2010'][['District_Num', 'Region']].drop_duplicates() \
-                .set_index('District_Num')['Region'] \
-                .to_dict()
+        self.parameters["district_num_to_region_name"] = (
+            self.parameters["pop_2010"][["District_Num", "Region"]]
+            .drop_duplicates()
+            .set_index("District_Num")["Region"]
+            .to_dict()
+        )
 
         districts_in_region = defaultdict(set)
-        for _district in self.parameters['pop_2010'][['District', 'Region']].drop_duplicates().itertuples():
+        for _district in self.parameters["pop_2010"][["District", "Region"]].drop_duplicates().itertuples():
             districts_in_region[_district.Region].add(_district.District)
-        self.parameters['districts_in_region'] = districts_in_region
+        self.parameters["districts_in_region"] = districts_in_region
 
         # Fraction of babies that are male
-        self.parameters['fraction_of_births_male'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_Frac_Births_Male.csv'
-        ).set_index('Year')['frac_births_male']
+        self.parameters["fraction_of_births_male"] = pd.read_csv(
+            Path(self.resourcefilepath) / "demography" / "ResourceFile_Pop_Frac_Births_Male.csv"
+        ).set_index("Year")["frac_births_male"]
 
         # All-Cause Mortality schedule:
-        self.parameters['all_cause_mortality_schedule'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
+        self.parameters["all_cause_mortality_schedule"] = pd.read_csv(
+            Path(self.resourcefilepath) / "demography" / "ResourceFile_Pop_DeathRates_Expanded_WPP.csv"
         )
 
         # GBD Dataset for Causes of Death
-        self.parameters['gbd_causes_of_death_data'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDeath_GBD2019.csv'
-        ).set_index(['Sex', 'Age_Grp'])
+        self.parameters["gbd_causes_of_death_data"] = pd.read_csv(
+            Path(self.resourcefilepath) / "gbd" / "ResourceFile_CausesOfDeath_GBD2019.csv"
+        ).set_index(["Sex", "Age_Grp"])
 
         # possible facilities for all levels
-        self.parameters['possible_facilities'] = pd.read_csv(Path(self.resourcefilepath) / 'climate_change_impacts'/'facilities_with_lat_long_region.csv')['Fname']
+        self.parameters["possible_facilities"] = pd.read_csv(
+            Path(self.resourcefilepath) / "climate_change_impacts" / "facilities_with_lat_long_region.csv"
+        )["Fname"]
 
     def pre_initialise_population(self):
         """
@@ -238,7 +237,7 @@ class Demography(Module):
         """
 
         # 1) Store all the cause of death represented in the imported GBD data
-        self.gbd_causes_of_death = set(self.parameters['gbd_causes_of_death_data'].columns)
+        self.gbd_causes_of_death = set(self.parameters["gbd_causes_of_death_data"].columns)
 
         # 2) Process the declarations of causes of death made by the disease modules
         self.process_causes_of_death()
@@ -246,126 +245,123 @@ class Demography(Module):
         # 3) Define categorical properties for 'cause_of_death', 'region_of_residence' and 'district_of_residence'
         # Nb. This couldn't be done before categories for each of these has been determined following read-in of data
         # and initialising of other modules.
-        self.PROPERTIES['cause_of_death'] = Property(
+        self.PROPERTIES["cause_of_death"] = Property(
             Types.CATEGORICAL,
-            'The cause of death of this individual (the tlo_cause defined by the module)',
-            categories=list(self.causes_of_death.keys())
+            "The cause of death of this individual (the tlo_cause defined by the module)",
+            categories=list(self.causes_of_death.keys()),
         )
-        self.PROPERTIES['district_num_of_residence'] = Property(
+        self.PROPERTIES["district_num_of_residence"] = Property(
             Types.CATEGORICAL,
-            'The district (name) of residence (mapped from district_num_of_residence).',
-            categories=sorted(self.parameters['district_num_to_region_name']),
+            "The district (name) of residence (mapped from district_num_of_residence).",
+            categories=sorted(self.parameters["district_num_to_region_name"]),
         )
-        self.PROPERTIES['district_of_residence'] = Property(
+        self.PROPERTIES["district_of_residence"] = Property(
             Types.CATEGORICAL,
-            'The district (name) of residence (mapped from district_num_of_residence).',
-            categories=self.parameters['pop_2010']['District'].unique().tolist()
+            "The district (name) of residence (mapped from district_num_of_residence).",
+            categories=self.parameters["pop_2010"]["District"].unique().tolist(),
         )
-        self.PROPERTIES['region_of_residence'] = Property(
+        self.PROPERTIES["region_of_residence"] = Property(
             Types.CATEGORICAL,
-            'The region of residence (mapped from district_num_of_residence).',
-            categories=self.parameters['pop_2010']['Region'].unique().tolist()
+            "The region of residence (mapped from district_num_of_residence).",
+            categories=self.parameters["pop_2010"]["Region"].unique().tolist(),
         )
 
-        self.PROPERTIES['level_0'] = Property(
+        self.PROPERTIES["level_0"] = Property(
             Types.CATEGORICAL,
             'Which level 0 facility is "used" by individual.',
-            categories= self.parameters['possible_facilities'].unique().tolist()
+            categories=self.parameters["possible_facilities"].unique().tolist(),
         )
 
-        self.PROPERTIES['level_1a'] = Property(
+        self.PROPERTIES["level_1a"] = Property(
             Types.CATEGORICAL,
             'Which level 1a facility is "used" by individual.',
-            categories= self.parameters['possible_facilities'].unique().tolist()
+            categories=self.parameters["possible_facilities"].unique().tolist(),
         )
 
-        self.PROPERTIES['level_1b'] = Property(
+        self.PROPERTIES["level_1b"] = Property(
             Types.CATEGORICAL,
             'Which level 1b facility is "used" by individual.',
-            categories= self.parameters['possible_facilities'].unique().tolist()
+            categories=self.parameters["possible_facilities"].unique().tolist(),
         )
 
-        self.PROPERTIES['level_2'] = Property(
+        self.PROPERTIES["level_2"] = Property(
             Types.CATEGORICAL,
             'Which level 2 facility is "used" by individual.',
-            categories= self.parameters['possible_facilities'].unique().tolist()
+            categories=self.parameters["possible_facilities"].unique().tolist(),
         )
 
-        self.PROPERTIES['level_3'] = Property(
+        self.PROPERTIES["level_3"] = Property(
             Types.CATEGORICAL,
             'Which level 3 facility is "used" by individual.',
-            categories= self.parameters['possible_facilities'].unique().tolist()
+            categories=self.parameters["possible_facilities"].unique().tolist(),
         )
-
-
 
     def initialise_population(self, population):
         """Set properties for this module and compute the initial population scaling factor"""
         df = population.props
 
         # Compute the initial population scaling factor
-        self.initial_model_to_data_popsize_ratio = \
-            self.compute_initial_model_to_data_popsize_ratio(population.initial_size)
+        self.initial_model_to_data_popsize_ratio = self.compute_initial_model_to_data_popsize_ratio(
+            population.initial_size
+        )
 
-        init_pop = self.parameters['pop_2010']
-        init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
+        init_pop = self.parameters["pop_2010"]
+        init_pop["prob"] = init_pop["Count"] / init_pop["Count"].sum()
 
         init_pop = self._edit_init_pop_to_prevent_persons_greater_than_max_age(
-            init_pop,
-            max_age=self.parameters['max_age_initial']
+            init_pop, max_age=self.parameters["max_age_initial"]
         )
         if self.equal_allocation_by_district:
             init_pop = self._edit_init_pop_so_that_equal_number_in_each_district(init_pop)
 
         # randomly pick from the init_pop sheet, to allocate characteristic to each person in the df
-        demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
-                                                             size=len(df),
-                                                             replace=True,
-                                                             p=init_pop.prob)][
-            ['District', 'District_Num', 'Region', 'Sex', 'Age']] \
-            .reset_index(drop=True)
+        demog_char_to_assign = init_pop.iloc[
+            self.rng.choice(init_pop.index.values, size=len(df), replace=True, p=init_pop.prob)
+        ][["District", "District_Num", "Region", "Sex", "Age"]].reset_index(drop=True)
 
         # make a date of birth that is consistent with the allocated age of each person
-        demog_char_to_assign['days_since_last_birthday'] = self.rng.randint(0, 365, len(demog_char_to_assign))
+        demog_char_to_assign["days_since_last_birthday"] = self.rng.randint(0, 365, len(demog_char_to_assign))
 
-        demog_char_to_assign['date_of_birth'] = [
-            self.sim.date - DateOffset(years=int(demog_char_to_assign['Age'][i]),
-                                       days=int(demog_char_to_assign['days_since_last_birthday'][i]))
-            for i in demog_char_to_assign.index]
+        demog_char_to_assign["date_of_birth"] = [
+            self.sim.date
+            - DateOffset(
+                years=int(demog_char_to_assign["Age"][i]), days=int(demog_char_to_assign["days_since_last_birthday"][i])
+            )
+            for i in demog_char_to_assign.index
+        ]
 
         # Assign the characteristics
         df.is_alive.values[:] = True
-        df.loc[df.is_alive, 'date_of_birth'] = demog_char_to_assign['date_of_birth']
-        df.loc[df.is_alive, 'date_of_death'] = pd.NaT
-        df.loc[df.is_alive, 'cause_of_death'] = np.nan
-        df.loc[df.is_alive, 'sex'] = demog_char_to_assign['Sex']
-        df.loc[df.is_alive, 'mother_id'] = DEFAULT_MOTHER_ID  # Motherless, and their characterists are not inherited
-        df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
-        df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
-        df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
+        df.loc[df.is_alive, "date_of_birth"] = demog_char_to_assign["date_of_birth"]
+        df.loc[df.is_alive, "date_of_death"] = pd.NaT
+        df.loc[df.is_alive, "cause_of_death"] = np.nan
+        df.loc[df.is_alive, "sex"] = demog_char_to_assign["Sex"]
+        df.loc[df.is_alive, "mother_id"] = DEFAULT_MOTHER_ID  # Motherless, and their characterists are not inherited
+        df.loc[df.is_alive, "district_num_of_residence"] = demog_char_to_assign["District_Num"].values[:]
+        df.loc[df.is_alive, "district_of_residence"] = demog_char_to_assign["District"].values[:]
+        df.loc[df.is_alive, "region_of_residence"] = demog_char_to_assign["Region"].values[:]
 
-        df.loc[df.is_alive, 'age_exact_years'] = age_at_date(self.sim.date, demog_char_to_assign['date_of_birth'])
-        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
-        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
-        df.loc[df.is_alive, 'age_days'] = (
-            self.sim.date - demog_char_to_assign['date_of_birth']
-        ).dt.days
+        df.loc[df.is_alive, "age_exact_years"] = age_at_date(self.sim.date, demog_char_to_assign["date_of_birth"])
+        df.loc[df.is_alive, "age_years"] = df.loc[df.is_alive, "age_exact_years"].astype("int64")
+        df.loc[df.is_alive, "age_range"] = df.loc[df.is_alive, "age_years"].map(self.AGE_RANGE_LOOKUP)
+        df.loc[df.is_alive, "age_days"] = (self.sim.date - demog_char_to_assign["date_of_birth"]).dt.days
         self.assign_closest_facility_level()
-        df.loc[df.is_alive, 'facility_used_level_0'] = self.sim.population.props.loc[df.is_alive, "level_0"]
-        df.loc[df.is_alive, 'facility_used_level_1a'] = self.sim.population.props.loc[df.is_alive, "level_1a"]
-        df.loc[df.is_alive, 'facility_used_level_1b'] = self.sim.population.props.loc[df.is_alive, "level_1b"]
-        df.loc[df.is_alive, 'facility_used_level_2'] = self.sim.population.props.loc[df.is_alive, "level_2"]
-        df.loc[df.is_alive, 'facility_used_level_3'] = self.sim.population.props.loc[df.is_alive, "level_3"]
+        df.loc[df.is_alive, "facility_used_level_0"] = self.sim.population.props.loc[df.is_alive, "level_0"]
+        df.loc[df.is_alive, "facility_used_level_1a"] = self.sim.population.props.loc[df.is_alive, "level_1a"]
+        df.loc[df.is_alive, "facility_used_level_1b"] = self.sim.population.props.loc[df.is_alive, "level_1b"]
+        df.loc[df.is_alive, "facility_used_level_2"] = self.sim.population.props.loc[df.is_alive, "level_2"]
+        df.loc[df.is_alive, "facility_used_level_3"] = self.sim.population.props.loc[df.is_alive, "level_3"]
 
         # Ensure first individual in df is a man, to safely exclude person_id=0 from selection of direct birth mothers.
         # If no men are found in df, issue a warning and proceed with female individual at person_id = 0.
-        if df.loc[0].sex == 'F':
-            diff_id = (df.sex.values != 'F').argmax()
+        if df.loc[0].sex == "F":
+            diff_id = (df.sex.values != "F").argmax()
             if diff_id != 0:
                 swap_rows(df, 0, diff_id)
             else:
-                logger.warning(key="warning",
-                               data="No men found. Direct birth mothers search will exclude woman at person_id=0.")
+                logger.warning(
+                    key="warning", data="No men found. Direct birth mothers search will exclude woman at person_id=0."
+                )
 
     def initialise_simulation(self, sim):
         """
@@ -385,15 +381,15 @@ class Demography(Module):
         # Log the initial population scaling-factor (to the logger of this module and that of `tlo.methods.population`)
         for _logger in (logger, logger_scale_factor):
             _logger.warning(
-                key='scaling_factor',
-                data={'scaling_factor': 1.0 / self.initial_model_to_data_popsize_ratio},
-                description='The data-to-model scaling factor (based on the initial population size, used to '
-                            'multiply-up results so that they correspond to the real population size.'
+                key="scaling_factor",
+                data={"scaling_factor": 1.0 / self.initial_model_to_data_popsize_ratio},
+                description="The data-to-model scaling factor (based on the initial population size, used to "
+                "multiply-up results so that they correspond to the real population size.",
             )
 
         # Check that the simulation does not run too long
         if self.sim.end_date.year >= 2100:
-            raise Exception('Year is after 2100: Demographic data do not extend that far.')
+            raise Exception("Year is after 2100: Demographic data do not extend that far.")
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -404,56 +400,57 @@ class Demography(Module):
         df = self.sim.population.props
         rng = self.rng
 
-        fraction_of_births_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
+        fraction_of_births_male = self.parameters["fraction_of_births_male"][self.sim.date.year]
 
         # Determine characteristics that are inherited from mother (and if no mother,
         # from a randomly selected person)
         _id_inherit_from = get_person_id_to_inherit_from(child_id, mother_id, df, rng)
-        _district_num_of_residence = df.at[_id_inherit_from, 'district_num_of_residence']
-        _district_of_residence = df.at[_id_inherit_from, 'district_of_residence']
-        _region_of_residence = df.at[_id_inherit_from, 'region_of_residence']
-        _level_0 = df.at[_id_inherit_from, 'level_0']
-        _level_1a = df.at[_id_inherit_from, 'level_1a']
-        _level_1b = df.at[_id_inherit_from, 'level_1b']
-        _level_2 = df.at[_id_inherit_from, 'level_2']
-        _level_3 = df.at[_id_inherit_from, 'level_3']
+        _district_num_of_residence = df.at[_id_inherit_from, "district_num_of_residence"]
+        _district_of_residence = df.at[_id_inherit_from, "district_of_residence"]
+        _region_of_residence = df.at[_id_inherit_from, "region_of_residence"]
+        _level_0 = df.at[_id_inherit_from, "level_0"]
+        _level_1a = df.at[_id_inherit_from, "level_1a"]
+        _level_1b = df.at[_id_inherit_from, "level_1b"]
+        _level_2 = df.at[_id_inherit_from, "level_2"]
+        _level_3 = df.at[_id_inherit_from, "level_3"]
 
         child = {
-            'is_alive': True,
-            'date_of_birth': self.sim.date,
-            'date_of_death': pd.NaT,
-            'cause_of_death': np.nan,
-            'sex': 'M' if rng.random_sample() < fraction_of_births_male else 'F',
-            'mother_id': mother_id,
-            'district_num_of_residence': _district_num_of_residence,
-            'district_of_residence': _district_of_residence,
-            'region_of_residence': _region_of_residence,
-            'age_exact_years': 0.0,
-            'age_years': 0,
-            'age_range': self.AGE_RANGE_LOOKUP[0],
-            'level_0': _level_0,
-            'level_1a': _level_1a,
-            'level_1b': _level_1b,
-            'level_2': _level_2,
-            'level_3': _level_3,
+            "is_alive": True,
+            "date_of_birth": self.sim.date,
+            "date_of_death": pd.NaT,
+            "cause_of_death": np.nan,
+            "sex": "M" if rng.random_sample() < fraction_of_births_male else "F",
+            "mother_id": mother_id,
+            "district_num_of_residence": _district_num_of_residence,
+            "district_of_residence": _district_of_residence,
+            "region_of_residence": _region_of_residence,
+            "age_exact_years": 0.0,
+            "age_years": 0,
+            "age_range": self.AGE_RANGE_LOOKUP[0],
+            "level_0": _level_0,
+            "level_1a": _level_1a,
+            "level_1b": _level_1b,
+            "level_2": _level_2,
+            "level_3": _level_3,
         }
         df.loc[child_id, child.keys()] = child.values()
 
         # Log the birth:
-        _mother_age_at_birth = df.at[abs(mother_id), 'age_years']  # Log age of mother whether true or direct birth
-        _mother_age_at_pregnancy = int(
-            age_at_date(
-                df.at[mother_id, 'date_of_last_pregnancy'],
-                df.at[mother_id, 'date_of_birth']
-            )
-        ) if mother_id >= 0 else -1  # No pregnancy for direct birth
+        _mother_age_at_birth = df.at[abs(mother_id), "age_years"]  # Log age of mother whether true or direct birth
+        _mother_age_at_pregnancy = (
+            int(age_at_date(df.at[mother_id, "date_of_last_pregnancy"], df.at[mother_id, "date_of_birth"]))
+            if mother_id >= 0
+            else -1
+        )  # No pregnancy for direct birth
 
         logger.info(
-            key='on_birth',
-            data={'mother': mother_id,  # Keep track of whether true or direct birth by using mother_id
-                  'child': child_id,
-                  'mother_age': _mother_age_at_birth,
-                  'mother_age_at_pregnancy': _mother_age_at_pregnancy}
+            key="on_birth",
+            data={
+                "mother": mother_id,  # Keep track of whether true or direct birth by using mother_id
+                "child": child_id,
+                "mother_age": _mother_age_at_birth,
+                "mother_age_at_pregnancy": _mother_age_at_pregnancy,
+            },
         )
 
     def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
@@ -470,11 +467,15 @@ class Demography(Module):
 
     def assign_closest_facility_level(self):
         """Function that assigns an individual coordinates,
-         and then the facilities at which they recieve care at each level."""
+        and then the facilities at which they recieve care at each level."""
         # Load district polygons from shapefile
-        malawi_admin2 = gpd.read_file(Path(self.resourcefilepath/'mapping'/'ResourceFile_mwi_admbnda_adm2_nso_20181016.shp'))
-        worldpop_gdf = gpd.read_file(Path(self.resourcefilepath / 'climate_change_impacts' / 'worldpop_density_with_districts.shp'))
-        worldpop_gdf['Z_prop'] = pd.to_numeric(worldpop_gdf['Z_prop'], errors='coerce') # even when saved as numeric, read in as string
+        gpd.read_file(Path(self.resourcefilepath / "mapping" / "ResourceFile_mwi_admbnda_adm2_nso_20181016.shp"))
+        worldpop_gdf = gpd.read_file(
+            Path(self.resourcefilepath / "climate_change_impacts" / "worldpop_density_with_districts.shp")
+        )
+        worldpop_gdf["Z_prop"] = pd.to_numeric(
+            worldpop_gdf["Z_prop"], errors="coerce"
+        )  # even when saved as numeric, read in as string
 
         def assign_coordinate_by_population_weight(district_name):
             """Assigns a coordinate within the district, weighted by population density (Z_proportion)."""
@@ -484,36 +485,53 @@ class Demography(Module):
             chosen_point = subset.sample(weights="Z_prop").iloc[0]["geometry"]
             return chosen_point
 
-
         # Assign unique coordinates to each individual based on their district
-        df = self.sim.population.props.copy() # take copy of dataframe
-        df["coordinate_of_residence"] = df["district_of_residence"].apply(
-            assign_coordinate_by_population_weight)
-        facility_info  =pd.read_csv(Path(self.resourcefilepath / 'climate_change_impacts' / "facilities_with_lat_long_region.csv"))# these are ones that were included in the regression model
+        df = self.sim.population.props.copy()  # take copy of dataframe
+        df["coordinate_of_residence"] = df["district_of_residence"].apply(assign_coordinate_by_population_weight)
+        facility_info = pd.read_csv(
+            Path(self.resourcefilepath / "climate_change_impacts" / "facilities_with_lat_long_region.csv")
+        )  # these are ones that were included in the regression model
 
         facility_levels_types = {
-            "level_0": ["Health Post", "Village Health Committee", "Community Health Station", "Village Clinic", "Mobile Clinic", "Outreach Clinic"],
+            "level_0": [
+                "Health Post",
+                "Village Health Committee",
+                "Community Health Station",
+                "Village Clinic",
+                "Mobile Clinic",
+                "Outreach Clinic",
+            ],
             "level_1a": [
-                "Dispensary", "Rural Health Centre", "Urban Health Centre", "Private Clinic", "Special Clinic",
-                "Antenatal Clinic", "Maternity Clinic", "Maternity Facility"
+                "Dispensary",
+                "Rural Health Centre",
+                "Urban Health Centre",
+                "Private Clinic",
+                "Special Clinic",
+                "Antenatal Clinic",
+                "Maternity Clinic",
+                "Maternity Facility",
             ],
             "level_1b": ["Community Hospital", "Rural Hospital", "CHAM Hospital"],
             "level_2": ["District Hospital", "District Health Office"],
-            "level_3": ["Kamuzu Central Hospital", "Mzuzu Central Hospital", "Zomba Central Hospital",
-                        "Queen Elizabeth Central Hospital"],
-            "level_4": ["Zomba Mental Hospital"]
+            "level_3": [
+                "Kamuzu Central Hospital",
+                "Mzuzu Central Hospital",
+                "Zomba Central Hospital",
+                "Queen Elizabeth Central Hospital",
+            ],
+            "level_4": ["Zomba Mental Hospital"],
         }
 
-        individual_coords = np.array([
-            (point.x, point.y) if point else (np.nan, np.nan)
-            for point in df["coordinate_of_residence"]
-        ])
+        individual_coords = np.array(
+            [(point.x, point.y) if point else (np.nan, np.nan) for point in df["coordinate_of_residence"]]
+        )
 
         for level, facility_types in facility_levels_types.items():
             relevant_facilities = facility_info[facility_info["Ftype"].isin(facility_types)]
             if not relevant_facilities.empty:
                 facility_coords = list(
-                    zip(relevant_facilities["A109__Longitude"], relevant_facilities["A109__Latitude"]))
+                    zip(relevant_facilities["A109__Longitude"], relevant_facilities["A109__Latitude"])
+                )
                 facility_tree = cKDTree(facility_coords)
                 distances, indices = facility_tree.query(individual_coords, k=1, workers=-1)
                 df[level] = relevant_facilities.iloc[indices].reset_index(drop=True)["Fname"].astype("category")
@@ -527,44 +545,43 @@ class Demography(Module):
         in each district."""
 
         # Get breakdown of Sex/Age within each district
-        district_nums = df['District_Num'].unique()
+        district_nums = df["District_Num"].unique()
 
         # Target size of each district
-        target_size_for_district = df['Count'].sum() / len(district_nums)
+        target_size_for_district = df["Count"].sum() / len(district_nums)
 
         # Make new version (a copy) of the dataframe
         df_new = df.copy()
 
         for district_num in district_nums:
-            mask_for_district = df['District_Num'] == district_num
+            mask_for_district = df["District_Num"] == district_num
             # For each district, compute the age/sex breakdown, and use this with target_size to create updated `Count`
             # values
-            df_new.loc[mask_for_district, 'Count'] = target_size_for_district * (
-                df.loc[mask_for_district, 'Count'] / df.loc[mask_for_district, 'Count'].sum()
+            df_new.loc[mask_for_district, "Count"] = target_size_for_district * (
+                df.loc[mask_for_district, "Count"] / df.loc[mask_for_district, "Count"].sum()
             )
 
         # Recompute "prob" column (i.e. the probability of being in that category)
-        df_new["prob"] = df_new['Count'] / df_new['Count'].sum()
+        df_new["prob"] = df_new["Count"] / df_new["Count"].sum()
 
         # Check that the resulting dataframe is of the same size/shape as the original; that Count and prob make
         # sense; and that we have preserved the age/sex breakdown within each district
         def all_elements_identical(x):
             return np.allclose(x, x[0])
 
-        assert df['Count'].sum() == df_new['Count'].sum()
-        assert 1.0 == df['prob'].sum() == df_new['prob'].sum()
-        assert all_elements_identical(df_new.groupby('District_Num')['prob'].sum().values)
+        assert df["Count"].sum() == df_new["Count"].sum()
+        assert 1.0 == df["prob"].sum() == df_new["prob"].sum()
+        assert all_elements_identical(df_new.groupby("District_Num")["prob"].sum().values)
 
         def get_age_sex_breakdown_in_district(dat, district_num):
             return (
-                dat.loc[df['District_Num'] == district_num].groupby(['Age', 'Sex'])['prob'].sum()
-                / dat.loc[df['District_Num'] == district_num, 'prob'].sum()
+                dat.loc[df["District_Num"] == district_num].groupby(["Age", "Sex"])["prob"].sum()
+                / dat.loc[df["District_Num"] == district_num, "prob"].sum()
             )
 
         for _d in district_nums:
             pd.testing.assert_series_equal(
-                get_age_sex_breakdown_in_district(df, _d),
-                get_age_sex_breakdown_in_district(df_new, _d)
+                get_age_sex_breakdown_in_district(df, _d), get_age_sex_breakdown_in_district(df_new, _d)
             )
 
         # Return the new dataframe
@@ -578,30 +595,21 @@ class Demography(Module):
         """
         # 1) Register all the causes of death from the disease modules: gives dict(<tlo_cause>: <Cause instance>)
         self.causes_of_death = collect_causes_from_disease_modules(
-            all_modules=self.sim.modules.values(),
-            collect='CAUSES_OF_DEATH',
-            acceptable_causes=self.gbd_causes_of_death
+            all_modules=self.sim.modules.values(), collect="CAUSES_OF_DEATH", acceptable_causes=self.gbd_causes_of_death
         )
 
         # 2) Define the "Other" tlo_cause of death (that is managed in this module by the OtherDeathPoll)
-        self.gbd_causes_of_death_not_represented_in_disease_modules = \
-            get_gbd_causes_not_represented_in_disease_modules(causes=self.causes_of_death,
-                                                              gbd_causes=self.gbd_causes_of_death)
-        self.causes_of_death['Other'] = Cause(
-            label='Other',
-            gbd_causes=self.gbd_causes_of_death_not_represented_in_disease_modules
+        self.gbd_causes_of_death_not_represented_in_disease_modules = get_gbd_causes_not_represented_in_disease_modules(
+            causes=self.causes_of_death, gbd_causes=self.gbd_causes_of_death
+        )
+        self.causes_of_death["Other"] = Cause(
+            label="Other", gbd_causes=self.gbd_causes_of_death_not_represented_in_disease_modules
         )
 
         # 3) Output to the log mappers for causes of death
         mapper_from_tlo_causes, mapper_from_gbd_causes = self.create_mappers_from_causes_of_death_to_label()
-        logger.info(
-            key='mapper_from_tlo_cause_to_common_label',
-            data=mapper_from_tlo_causes
-        )
-        logger.info(
-            key='mapper_from_gbd_cause_to_common_label',
-            data=mapper_from_gbd_causes
-        )
+        logger.info(key="mapper_from_tlo_cause_to_common_label", data=mapper_from_tlo_causes)
+        logger.info(key="mapper_from_gbd_cause_to_common_label", data=mapper_from_gbd_causes)
 
     def do_death(self, individual_id: int, cause: str, originating_module: Module):
         """Register and log the death of an individual from a specific cause.
@@ -610,80 +618,84 @@ class Demography(Module):
         * 'originating_module' is the disease module that is causing the death.
         """
 
-        assert not hasattr(individual_id, '__iter__'), 'do_death must be called for one individual at a time.'
+        assert not hasattr(individual_id, "__iter__"), "do_death must be called for one individual at a time."
 
         df = self.sim.population.props
 
-        if not df.at[individual_id, 'is_alive']:
+        if not df.at[individual_id, "is_alive"]:
             return
 
         # Check that the cause is declared, and declared for use by the originating module:
-        assert cause in self.causes_of_death, f'The cause of death {cause} is not declared.'
+        assert cause in self.causes_of_death, f"The cause of death {cause} is not declared."
         if originating_module is not self:
-            assert cause in originating_module.CAUSES_OF_DEATH, \
-                f'The cause of death {cause} is not declared for use by the module {originating_module.name}.'
+            assert (
+                cause in originating_module.CAUSES_OF_DEATH
+            ), f"The cause of death {cause} is not declared for use by the module {originating_module.name}."
 
         # Register the death:
-        df.loc[individual_id, ['is_alive', 'date_of_death', 'cause_of_death']] = (False, self.sim.date, cause)
+        df.loc[individual_id, ["is_alive", "date_of_death", "cause_of_death"]] = (False, self.sim.date, cause)
 
         person = df.loc[individual_id]
 
         # Log the death
         # - log the line-list of summary information about each death
         data_to_log_for_each_death = {
-            'age': person['age_years'],
-            'sex': person['sex'],
-            'cause': str(cause),
-            'label': self.causes_of_death[cause].label,
-            'person_id': individual_id,
-            'district_of_residence': person['district_of_residence'],
-            'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
+            "age": person["age_years"],
+            "sex": person["sex"],
+            "cause": str(cause),
+            "label": self.causes_of_death[cause].label,
+            "person_id": individual_id,
+            "district_of_residence": person["district_of_residence"],
+            "li_wealth": person["li_wealth"] if "li_wealth" in person else -99,
         }
 
-        if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
+        if ("Contraception" in self.sim.modules) or ("SimplifiedBirths" in self.sim.modules):
             # If possible, append to the log additional information about pregnancy:
-            data_to_log_for_each_death.update({
-                'pregnancy': person['is_pregnant'],
-            })
+            data_to_log_for_each_death.update(
+                {
+                    "pregnancy": person["is_pregnant"],
+                }
+            )
 
-        logger.info(key='death', data=data_to_log_for_each_death)
+        logger.info(key="death", data=data_to_log_for_each_death)
 
         # - log all the properties for the deceased person
-        logger_detail.info(key='properties_of_deceased_persons',
-                           data=get_dataframe_row_as_dict_for_logging(df, individual_id),
-                           description='values of all properties at the time of death for deceased persons')
+        logger_detail.info(
+            key="properties_of_deceased_persons",
+            data=get_dataframe_row_as_dict_for_logging(df, individual_id),
+            description="values of all properties at the time of death for deceased persons",
+        )
 
         # - log the death in the Deviance module (if it is registered)
-        if 'Deviance' in self.sim.modules:
-            self.sim.modules['Deviance'].record_death(
-                year=self.sim.date.year, age_years=person['age_years'], sex=person['sex'], cause=cause)
+        if "Deviance" in self.sim.modules:
+            self.sim.modules["Deviance"].record_death(
+                year=self.sim.date.year, age_years=person["age_years"], sex=person["sex"], cause=cause
+            )
 
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
-        if 'HealthBurden' in self.sim.modules.keys():
+        if "HealthBurden" in self.sim.modules.keys():
             # report the death so that a computation of lost life-years due to this cause to be recorded
-            self.sim.modules['HealthBurden'].report_live_years_lost(sex=person['sex'],
-                                                                    wealth=person['li_wealth'],
-                                                                    date_of_birth=person['date_of_birth'],
-                                                                    age_range=person['age_range'],
-                                                                    district_of_residence=person['district_of_residence'],
-                                                                    cause_of_death=cause,
-                                                                    )
+            self.sim.modules["HealthBurden"].report_live_years_lost(
+                sex=person["sex"],
+                wealth=person["li_wealth"],
+                date_of_birth=person["date_of_birth"],
+                age_range=person["age_range"],
+                district_of_residence=person["district_of_residence"],
+                cause_of_death=cause,
+            )
 
         # Release any beds-days that would be used by this person:
-        if 'HealthSystem' in self.sim.modules:
+        if "HealthSystem" in self.sim.modules:
             if person.hs_is_inpatient:
-                self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
+                self.sim.modules["HealthSystem"].remove_beddays_footprint(person_id=individual_id)
 
         # Clear symptoms for the deceased person
-        if 'SymptomManager' in self.sim.modules:
-            self.sim.modules['SymptomManager'].clear_symptoms_for_deceased_person(individual_id)
+        if "SymptomManager" in self.sim.modules:
+            self.sim.modules["SymptomManager"].clear_symptoms_for_deceased_person(individual_id)
 
     def create_mappers_from_causes_of_death_to_label(self):
         """Use a helper function to create mappers for causes of death to label."""
-        return create_mappers_from_causes_to_label(
-            causes=self.causes_of_death,
-            all_gbd_causes=self.gbd_causes_of_death
-        )
+        return create_mappers_from_causes_to_label(causes=self.causes_of_death, all_gbd_causes=self.gbd_causes_of_death)
 
     def calc_py_lived_in_last_year(self, delta=pd.DateOffset(years=1), mask=None):
         """
@@ -700,45 +712,43 @@ class Demography(Module):
         # get everyone who was alive during the previous year
         one_year_ago = self.sim.date - delta
         condition = df.is_alive | (df.date_of_death > one_year_ago)
-        df_py = df.loc[condition, ['sex', 'age_exact_years', 'age_years', 'date_of_birth']]
+        df_py = df.loc[condition, ["sex", "age_exact_years", "age_years", "date_of_birth"]]
 
         # renaming columns for clarity
-        df_py = df_py.rename({'age_exact_years': 'age_exact_end', 'age_years': 'age_years_end'}, axis=1)
+        df_py = df_py.rename({"age_exact_years": "age_exact_end", "age_years": "age_years_end"}, axis=1)
 
         # exact age at the start
-        df_py['age_exact_start'] = age_at_date(one_year_ago, df_py.date_of_birth)
-        df_py['age_years_start'] = np.floor(df_py.age_exact_start).astype(np.int64)  # int age at start of the period
-        df_py['years_in_age_start'] = df_py.age_years_end - df_py.age_exact_start  # time spent in age at start
-        df_py['years_in_age_end'] = df_py.age_exact_end - df_py.age_years_end  # time spent in age at end
+        df_py["age_exact_start"] = age_at_date(one_year_ago, df_py.date_of_birth)
+        df_py["age_years_start"] = np.floor(df_py.age_exact_start).astype(np.int64)  # int age at start of the period
+        df_py["years_in_age_start"] = df_py.age_years_end - df_py.age_exact_start  # time spent in age at start
+        df_py["years_in_age_end"] = df_py.age_exact_end - df_py.age_years_end  # time spent in age at end
 
         # correction for those individuals who started the year and then died at the same age
         condition = df_py.age_years_end == df_py.age_years_start
-        df_py.loc[condition, 'years_in_age_start'] = df_py.age_exact_end - df_py.age_exact_start
-        df_py.loc[condition, 'years_in_age_end'] = 0
+        df_py.loc[condition, "years_in_age_start"] = df_py.age_exact_end - df_py.age_exact_start
+        df_py.loc[condition, "years_in_age_end"] = 0
 
         # zero out entries for those born in the year passed (no time spend in age at start of year)
         condition = df_py.age_exact_start < 0
-        df_py.loc[condition, 'years_in_age_start'] = 0
-        df_py.loc[condition, 'age_years_start'] = 0
-        df_py.loc[condition, 'age_exact_start'] = 0
+        df_py.loc[condition, "years_in_age_start"] = 0
+        df_py.loc[condition, "age_years_start"] = 0
+        df_py.loc[condition, "age_exact_start"] = 0
 
         # collected all time spent in age at start of period
-        df1 = df_py[['sex', 'years_in_age_start', 'age_years_start']].groupby(by=['sex', 'age_years_start']).sum()
-        df1 = df1.unstack('sex')
+        df1 = df_py[["sex", "years_in_age_start", "age_years_start"]].groupby(by=["sex", "age_years_start"]).sum()
+        df1 = df1.unstack("sex")
         df1.columns = df1.columns.droplevel(0)
-        df1.index.rename('age_years', inplace=True)
+        df1.index.rename("age_years", inplace=True)
 
         # collect all time spent in age at end of period
-        df2 = df_py[['sex', 'years_in_age_end', 'age_years_end']].groupby(by=['sex', 'age_years_end']).sum()
-        df2 = df2.unstack('sex')
+        df2 = df_py[["sex", "years_in_age_end", "age_years_end"]].groupby(by=["sex", "age_years_end"]).sum()
+        df2 = df2.unstack("sex")
         df2.columns = df2.columns.droplevel(0)
-        df2.index.rename('age_years', inplace=True)
+        df2.index.rename("age_years", inplace=True)
 
         # add the two time spent together
         py = pd.DataFrame(
-            index=pd.Index(data=list(self.AGE_RANGE_LOOKUP.keys()), name='age_years'),
-            columns=['M', 'F'],
-            data=0.0
+            index=pd.Index(data=list(self.AGE_RANGE_LOOKUP.keys()), name="age_years"), columns=["M", "F"], data=0.0
         )
         py = py.add(df1, fill_value=0).add(df2, fill_value=0)
 
@@ -759,7 +769,7 @@ class Demography(Module):
 
         :returns: Ratio of ``initial_population`` to 2010 baseline population.
         """
-        return initial_population_size / self.parameters['pop_2010']['Count'].sum()
+        return initial_population_size / self.parameters["pop_2010"]["Count"].sum()
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
@@ -774,13 +784,11 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        dates_of_birth = df.loc[df.is_alive, 'date_of_birth']
-        df.loc[df.is_alive, 'age_exact_years'] = age_at_date(
-            self.module.sim.date, dates_of_birth
-        )
-        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
-        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.age_range_lookup)
-        df.loc[df.is_alive, 'age_days'] = (self.module.sim.date - dates_of_birth).dt.days
+        dates_of_birth = df.loc[df.is_alive, "date_of_birth"]
+        df.loc[df.is_alive, "age_exact_years"] = age_at_date(self.module.sim.date, dates_of_birth)
+        df.loc[df.is_alive, "age_years"] = df.loc[df.is_alive, "age_exact_years"].astype("int64")
+        df.loc[df.is_alive, "age_range"] = df.loc[df.is_alive, "age_years"].map(self.age_range_lookup)
+        df.loc[df.is_alive, "age_days"] = (self.module.sim.date - dates_of_birth).dt.days
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
@@ -808,22 +816,24 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # Get the proportion of the total death rates that the OtherDeathPollEvent must represent (and log it)
         prop_of_deaths_to_represent = self.get_proportion_of_deaths_to_represent_as_other_deaths()
         logger.info(
-            key='other_deaths',
+            key="other_deaths",
             data=prop_of_deaths_to_represent.reset_index().to_dict(),
-            description='proportion of all deaths that are represented as OtherDeaths'
+            description="proportion of all deaths that are represented as OtherDeaths",
         )
 
         # Mulitiply probabilities by the proportion of deaths that are to be represented by OtherDeathPollEvent
-        all_cause_mort_risk['age_group'] = all_cause_mort_risk['age_years'].map(self.module.AGE_RANGE_LOOKUP)
-        mort_risk = all_cause_mort_risk.merge(prop_of_deaths_to_represent.reset_index(name='prop'),
-                                              left_on=['sex', 'age_group'],
-                                              right_on=['Sex', 'Age_Grp'],
-                                              how='left')
-        mort_risk['prop'] = mort_risk['prop'].fillna(method='ffill')
-        mort_risk['prob_of_dying_before_next_poll'] *= mort_risk['prop']
-        assert not mort_risk['prob_of_dying_before_next_poll'].isna().any()
+        all_cause_mort_risk["age_group"] = all_cause_mort_risk["age_years"].map(self.module.AGE_RANGE_LOOKUP)
+        mort_risk = all_cause_mort_risk.merge(
+            prop_of_deaths_to_represent.reset_index(name="prop"),
+            left_on=["sex", "age_group"],
+            right_on=["Sex", "Age_Grp"],
+            how="left",
+        )
+        mort_risk["prop"] = mort_risk["prop"].fillna(method="ffill")
+        mort_risk["prob_of_dying_before_next_poll"] *= mort_risk["prop"]
+        assert not mort_risk["prob_of_dying_before_next_poll"].isna().any()
 
-        return mort_risk[['fallbackyear', 'sex', 'age_years', 'prob_of_dying_before_next_poll']]
+        return mort_risk[["fallbackyear", "sex", "age_years", "prob_of_dying_before_next_poll"]]
 
     def get_all_cause_mort_risk_per_poll(self):
         """Compute the all-cause risk of death per poll"""
@@ -831,14 +841,16 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         dur_in_years_between_polls = self.frequency.months * DAYS_IN_MONTH / DAYS_IN_YEAR
 
         # Compute all-cause mortality risk per poll
-        return self.module.parameters['all_cause_mortality_schedule'].assign(
-            prob_of_dying_before_next_poll=lambda x: (1.0 - np.exp(-x.death_rate * dur_in_years_between_polls))
-        ).drop(columns={'death_rate'})
+        return (
+            self.module.parameters["all_cause_mortality_schedule"]
+            .assign(prob_of_dying_before_next_poll=lambda x: (1.0 - np.exp(-x.death_rate * dur_in_years_between_polls)))
+            .drop(columns={"death_rate"})
+        )
 
     def get_proportion_of_deaths_to_represent_as_other_deaths(self):
         """Compute the fraction of deaths that will be reprsented by the OtherDeathPoll"""
         # Get the breakdown of deaths by cause from GBD data:
-        gbd_deaths = self.module.parameters['gbd_causes_of_death_data']
+        gbd_deaths = self.module.parameters["gbd_causes_of_death_data"]
 
         # Find the proportion of deaths to be represented by the OtherDeathPoll
         return gbd_deaths[sorted(self.causes_to_represent)].sum(axis=1)
@@ -852,34 +864,37 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # Cause the death immediately for anyone that the maximum age or older
         max_age_or_older = df.index[df.is_alive & (df.age_years >= MAX_AGE)]
         for individual_id in max_age_or_older:
-            self.module.do_death(individual_id=individual_id, cause='Other', originating_module=self.module)
+            self.module.do_death(individual_id=individual_id, cause="Other", originating_module=self.module)
 
         # Get the mortality schedule for the five-year calendar period we are currently in.
         fallbackyear = int(math.floor(self.sim.date.year / 5) * 5)
 
         mort_risk = self.mort_risk_per_poll.loc[
-            self.mort_risk_per_poll.fallbackyear == fallbackyear, [
-                'age_years', 'sex', 'prob_of_dying_before_next_poll']].copy()
+            self.mort_risk_per_poll.fallbackyear == fallbackyear, ["age_years", "sex", "prob_of_dying_before_next_poll"]
+        ].copy()
 
         # get the population
-        alive = df.loc[df.is_alive & (df.age_years < MAX_AGE), ['sex', 'age_years']].copy()
+        alive = df.loc[df.is_alive & (df.age_years < MAX_AGE), ["sex", "age_years"]].copy()
 
         # merge the population dataframe with the parameter dataframe to pick-up the death_rate for each person
         length_before_merge = len(alive)
-        alive = alive.reset_index().merge(mort_risk,
-                                          left_on=['age_years', 'sex'],
-                                          right_on=['age_years', 'sex'],
-                                          how='inner').set_index('person')
+        alive = (
+            alive.reset_index()
+            .merge(mort_risk, left_on=["age_years", "sex"], right_on=["age_years", "sex"], how="inner")
+            .set_index("person")
+        )
         assert length_before_merge == len(alive)
 
         # flipping the coin to determine if this person will die
-        will_die = (self.module.rng.random_sample(size=len(alive)) < alive.prob_of_dying_before_next_poll)
+        will_die = self.module.rng.random_sample(size=len(alive)) < alive.prob_of_dying_before_next_poll
 
         # loop through to see who is going to die:
         for person in alive.index[will_die]:
             # schedule the death for some point in the next month
-            self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),
-                                    self.sim.date + DateOffset(days=self.module.rng.randint(0, 30)))
+            self.sim.schedule_event(
+                InstantaneousDeath(self.module, person, cause="Other"),
+                self.sim.date + DateOffset(days=self.module.rng.randint(0, 30)),
+            )
 
 
 class InstantaneousDeath(Event, IndividualScopeEventMixin):
@@ -898,7 +913,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
         self.cause = cause
 
     def apply(self, individual_id):
-        self.sim.modules['Demography'].do_death(individual_id, cause=self.cause, originating_module=self.module)
+        self.sim.modules["Demography"].do_death(individual_id, cause=self.cause, originating_module=self.module)
 
 
 class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -919,34 +934,37 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.popsize_by_year[self.sim.date.year] = df.is_alive.sum()
 
         # 2) Compute Statistics for the log
-        sex_count = df[df.is_alive].groupby('sex').size()
-        district_count = df[df.is_alive].groupby('district_of_residence').size()
+        sex_count = df[df.is_alive].groupby("sex").size()
+        district_count = df[df.is_alive].groupby("district_of_residence").size()
         logger.info(
-            key='population',
-            data={'total': sum(sex_count),
-                  'male': sex_count['M'],
-                  'female': sex_count['F'],
-                  'district_of_residence': district_count.to_dict()
-                  })
+            key="population",
+            data={
+                "total": sum(sex_count),
+                "male": sex_count["M"],
+                "female": sex_count["F"],
+                "district_of_residence": district_count.to_dict(),
+            },
+        )
 
         # (nb. if you groupby both sex and age_range, you weirdly lose categories where size==0, so
         # get the counts separately.)
-        m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
-        f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
+        m_age_counts = df[df.is_alive & (df.sex == "M")].groupby("age_range").size()
+        f_age_counts = df[df.is_alive & (df.sex == "F")].groupby("age_range").size()
 
-        logger.info(key='age_range_m', data=m_age_counts.to_dict())
+        logger.info(key="age_range_m", data=m_age_counts.to_dict())
 
-        logger.info(key='age_range_f', data=f_age_counts.to_dict())
+        logger.info(key="age_range_f", data=f_age_counts.to_dict())
 
         # Output by single year of age for under-fives
         # (need to guarantee output always is for each of the years - even if size() is 0)
-        num_children = pd.Series(index=range(5), data=0).add(
-            df[df.is_alive & (df.age_years < 5)].groupby('age_years').size(),
-            fill_value=0
-        ).astype(int)
+        num_children = (
+            pd.Series(index=range(5), data=0)
+            .add(df[df.is_alive & (df.age_years < 5)].groupby("age_years").size(), fill_value=0)
+            .astype(int)
+        )
 
-        logger.info(key='num_children', data=num_children.to_dict())
+        logger.info(key="num_children", data=num_children.to_dict())
 
         # Output the person-years lived by single year of age in the past year
         py = self.module.calc_py_lived_in_last_year()
-        logger.info(key='person_years', data=py.to_dict())
+        logger.info(key="person_years", data=py.to_dict())

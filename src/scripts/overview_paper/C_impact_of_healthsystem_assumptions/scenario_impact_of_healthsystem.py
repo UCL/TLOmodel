@@ -36,20 +36,21 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'healthsystem_under_different_assumptions',
-            'directory': Path('./outputs'),
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-            }
+            "filename": "healthsystem_under_different_assumptions",
+            "directory": Path("./outputs"),
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+            },
         }
 
     def modules(self):
         return fullmodel(resourcefilepath=self.resources) + [
-            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
+            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)
+        ]
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
@@ -59,65 +60,41 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
-            "No Healthcare System":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                        'HealthSystem': {
-                            'Service_Availability': []
-                        }
-                    },
-                ),
-
+            "No Healthcare System": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {"HealthSystem": {"Service_Availability": []}},
+            ),
             "With Hard Constraints":
-                # N.B. This is for Mode 2 on continuously from the beginning of the simulation.
-                # ... And with the "natural" (i.e., as coded in each disease module and not-overwritten) `tclose`
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     'HealthSystem': {
-                        'mode_appt_constraints': 2,
+            # N.B. This is for Mode 2 on continuously from the beginning of the simulation.
+            # ... And with the "natural" (i.e., as coded in each disease module and not-overwritten) `tclose`
+            mix_scenarios(
+                get_parameters_for_status_quo(),
+                {
+                    "HealthSystem": {
+                        "mode_appt_constraints": 2,
                         "policy_name": "Naive",
-                        }
-                    },
-                ),
-
-            "Status Quo":
-                mix_scenarios(
-                    get_parameters_for_status_quo()
-                ),
-
-            "Perfect Healthcare Seeking":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {
-                        'max_healthsystem_function': [False] * 2,
-                        'max_healthcare_seeking': [True] * 2
-                    }},
-                    # (These changes start immediately and last for the full length of the simulation.)
-                ),
-
-            "+ Perfect Clinical Practice":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {
-                        'max_healthsystem_function': [True] * 2,
-                        'max_healthcare_seeking': [True] * 2
-                    }},
-                ),
-
-            "+ Perfect Consumables Availability":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {
-                        'max_healthsystem_function': [False] * 2,
-                        'max_healthcare_seeking': [True] * 2}},
-                    {'HealthSystem': {'cons_availability': 'all'}}
-                ),
+                    }
+                },
+            ),
+            "Status Quo": mix_scenarios(get_parameters_for_status_quo()),
+            "Perfect Healthcare Seeking": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {"ScenarioSwitcher": {"max_healthsystem_function": [False] * 2, "max_healthcare_seeking": [True] * 2}},
+                # (These changes start immediately and last for the full length of the simulation.)
+            ),
+            "+ Perfect Clinical Practice": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {"ScenarioSwitcher": {"max_healthsystem_function": [True] * 2, "max_healthcare_seeking": [True] * 2}},
+            ),
+            "+ Perfect Consumables Availability": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {"ScenarioSwitcher": {"max_healthsystem_function": [False] * 2, "max_healthcare_seeking": [True] * 2}},
+                {"HealthSystem": {"cons_availability": "all"}},
+            ),
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

@@ -61,7 +61,7 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],
         mode_appt_constraints=1,
-        cons_availability='default',
+        cons_availability="default",
         ignore_priority=True,
         capabilities_coefficient=1.0,
         disable=False,
@@ -81,7 +81,7 @@ sim.register(
     ),
     epi.Epi(
         resourcefilepath=resourcefilepath,
-    )
+    ),
 )
 
 # update parameters

@@ -34,23 +34,22 @@ class HSSElements(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'hss_elements',
-            'directory': Path('./outputs'),
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.WARNING,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-            }
+            "filename": "hss_elements",
+            "directory": Path("./outputs"),
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem": logging.WARNING,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+            },
         }
 
     def modules(self):
-        return (
-            fullmodel(resourcefilepath=self.resources)
-            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
-        )
+        return fullmodel(resourcefilepath=self.resources) + [
+            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)
+        ]
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
@@ -63,81 +62,57 @@ class HSSElements(BaseScenario):
 
         return {
             "Baseline": scenario_definitions.baseline(),
-
             # ***************************
             # HEALTH SYSTEM STRENGTHENING
             # ***************************
-
             # - - - Human Resource for Health - - -
-
-            "Double Capacity at Primary Care":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.double_capacity_at_primary_care(),
-                ),
-
-            "HRH Keeps Pace with Population Growth":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions._hrh_at_pop_growth(),
-                ),
-
-            "HRH Increases at GDP Growth":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions._hrh_at_grp_growth(),
-                ),
-
-            "HRH Increases above GDP Growth":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hrh_above_gdp_growth(),
-                ),
-
-
+            "Double Capacity at Primary Care": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.double_capacity_at_primary_care(),
+            ),
+            "HRH Keeps Pace with Population Growth": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions._hrh_at_pop_growth(),
+            ),
+            "HRH Increases at GDP Growth": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions._hrh_at_grp_growth(),
+            ),
+            "HRH Increases above GDP Growth": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.hrh_above_gdp_growth(),
+            ),
             # - - - Quality of Care - - -
-            "Perfect Clinical Practice":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions._perfect_clinical_practice(),
-                ),
-
-            "Perfect Healthcare Seeking":
-               mix_scenarios(
-                   scenario_definitions.baseline(),
-                   scenario_definitions.perfect_healthcare_seeking(),
-               ),
-
+            "Perfect Clinical Practice": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions._perfect_clinical_practice(),
+            ),
+            "Perfect Healthcare Seeking": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.perfect_healthcare_seeking(),
+            ),
             # - - - Supply Chains - - -
-            "Perfect Availability of Vital Items":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.vital_items_available(),
-                ),
-
-            "Perfect Availability of Medicines":
-            mix_scenarios(
+            "Perfect Availability of Vital Items": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.vital_items_available(),
+            ),
+            "Perfect Availability of Medicines": mix_scenarios(
                 scenario_definitions.baseline(),
                 scenario_definitions.medicines_available(),
-
             ),
-
-            "Perfect Availability of All Consumables":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.all_consumables_available(),
-                ),
-
+            "Perfect Availability of All Consumables": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.all_consumables_available(),
+            ),
             # - - - FULL PACKAGE OF HEALTH SYSTEM STRENGTHENING - - -
-            "FULL PACKAGE":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hss_package(),
-                ),
+            "FULL PACKAGE": mix_scenarios(
+                scenario_definitions.baseline(),
+                scenario_definitions.hss_package(),
+            ),
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

@@ -43,9 +43,9 @@ def check_dtypes(simulation):
 @pytest.mark.group2
 def test_epi_scheduling_hsi_events(tmpdir, seed):
     log_config = {
-        'filename': 'test_log',
-        'directory': tmpdir,
-        'custom_levels': {"*": logging.FATAL, "tlo.methods.epi": logging.INFO}
+        "filename": "test_log",
+        "directory": tmpdir,
+        "custom_levels": {"*": logging.FATAL, "tlo.methods.epi": logging.INFO},
     }
 
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -54,10 +54,7 @@ def test_epi_scheduling_hsi_events(tmpdir, seed):
         demography.Demography(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            disable=True
-        ),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -98,7 +95,6 @@ def test_all_doses_properties(seed):
 
     # Make Dummy class and event to check alignment of the properties:
     class DummyModule(Module):
-
         def read_parameters(self, data_folder):
             pass
 
@@ -106,10 +102,7 @@ def test_all_doses_properties(seed):
             pass
 
         def initialise_simulation(self, sim):
-            self.sim.schedule_event(
-                CheckProperties(self.sim.modules['Epi']),
-                self.sim.date
-            )
+            self.sim.schedule_event(CheckProperties(self.sim.modules["Epi"]), self.sim.date)
 
         def on_birth(self, mother, child):
             pass
@@ -127,8 +120,10 @@ def test_all_doses_properties(seed):
                 properties_aligned = (
                     df.loc[df.is_alive, f"va_{_vacc}_all_doses"] == (df.loc[df.is_alive, f"va_{_vacc}"] >= _max)
                 ).all()
-                assert properties_aligned, f"On {self.sim.date} and for vaccine {_vacc}, there is a mismatch between" \
-                                           f" the all-doses and number-of-doses."
+                assert properties_aligned, (
+                    f"On {self.sim.date} and for vaccine {_vacc}, there is a mismatch between"
+                    f" the all-doses and number-of-doses."
+                )
 
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
@@ -138,7 +133,7 @@ def test_all_doses_properties(seed):
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
         epi.Epi(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        DummyModule()
+        DummyModule(),
     )
 
     sim.make_initial_population(n=popsize)
@@ -149,11 +144,13 @@ def test_all_doses_properties(seed):
 # check distribution of facility levels for vaccines
 def test_facility_level_distribution(tmpdir, seed):
     log_config = {
-        'filename': 'test_log',
-        'directory': tmpdir,
-        'custom_levels': {"*": logging.FATAL,
-                          "tlo.methods.epi": logging.INFO,
-                          "tlo.methods.healthsystem.summary": logging.INFO}
+        "filename": "test_log",
+        "directory": tmpdir,
+        "custom_levels": {
+            "*": logging.FATAL,
+            "tlo.methods.epi": logging.INFO,
+            "tlo.methods.healthsystem.summary": logging.INFO,
+        },
     }
 
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -179,7 +176,7 @@ def test_facility_level_distribution(tmpdir, seed):
 
     # change distribution of vaccine delivery
     # make all vaccines occur at level 3
-    sim.modules['Epi'].parameters['prob_facility_level_for_vaccine'] = [0, 0, 0, 1.0]
+    sim.modules["Epi"].parameters["prob_facility_level_for_vaccine"] = [0, 0, 0, 1.0]
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=Date(2014, 1, 1))
@@ -198,7 +195,7 @@ def test_facility_level_distribution(tmpdir, seed):
     epi_levels = pd.DataFrame(columns=["level0", "level1a", "level1b", "level2", "level3", "level4"])
 
     for i in range(len(t2.index)):
-        out = [d.get('EPI') for d in t2.iloc[i]]
+        out = [d.get("EPI") for d in t2.iloc[i]]
         epi_levels.loc[i] = out
     epi_levels = epi_levels.fillna(0.0)
 
@@ -225,14 +222,15 @@ def test_hsi_epi_footprint(seed):
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='default'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability="default"),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
+    )
 
     # set up initial population
     sim.make_initial_population(n=popsize)
@@ -245,26 +243,26 @@ def test_hsi_epi_footprint(seed):
     df.at[person_id, "age_years"] = 0
 
     # Run the BCG vaccine event
-    t = HSI_BcgVaccine(module=sim.modules['Epi'], person_id=person_id)
+    t = HSI_BcgVaccine(module=sim.modules["Epi"], person_id=person_id)
     t.apply(person_id=person_id, squeeze_factor=0.0)
 
     # Check the footprint returned by this event
-    assert t.EXPECTED_APPT_FOOTPRINT.get('EPI') == 0.5
+    assert t.EXPECTED_APPT_FOOTPRINT.get("EPI") == 0.5
 
     # Run the Rotavirus vaccine event
-    t = HSI_RotaVaccine(module=sim.modules['Epi'], person_id=person_id)
+    t = HSI_RotaVaccine(module=sim.modules["Epi"], person_id=person_id)
     t.apply(person_id=person_id, squeeze_factor=0.0)
 
     # Check the footprint returned by this event
-    assert t.EXPECTED_APPT_FOOTPRINT.get('EPI') == 0.5
+    assert t.EXPECTED_APPT_FOOTPRINT.get("EPI") == 0.5
 
     # Run the HPV vaccine event - this should have one full EPI appt as footprint
     # Get target person and eligible for a childhood vaccine
     person_id = 1
     df.at[person_id, "age_years"] = 9
 
-    t = HSI_HpvVaccine(module=sim.modules['Epi'], person_id=person_id)
+    t = HSI_HpvVaccine(module=sim.modules["Epi"], person_id=person_id)
     t.apply(person_id=person_id, squeeze_factor=0.0)
 
     # Check the footprint returned by this event
-    assert t.EXPECTED_APPT_FOOTPRINT.get('EPI') == 1
+    assert t.EXPECTED_APPT_FOOTPRINT.get("EPI") == 1

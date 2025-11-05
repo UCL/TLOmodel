@@ -30,11 +30,7 @@ if TYPE_CHECKING:
 BYTE_WIDTH = 8
 BooleanArray: TypeAlias = np.ndarray[bool]
 CastableForPandasOps: TypeAlias = (
-    "ElementType"
-    | Iterable["ElementType"]
-    | NDArray[np.uint8]
-    | NDArray[np.bytes_]
-    | "BitsetArray"
+    "ElementType" | Iterable["ElementType"] | NDArray[np.uint8] | NDArray[np.bytes_] | "BitsetArray"
 )
 SingletonForPandasOps: TypeAlias = "ElementType" | Iterable["ElementType"]
 # Assume nodes are strings, else we can't construct from string when passed the name!
@@ -57,6 +53,7 @@ class BitsetDtype(ExtensionDtype):
     corresponding string-character index, and the latter the uint8 representation of the element within that
     string character.
     """
+
     _element_map: Dict[ElementType, Tuple[int, np.uint8]]
     _elements: Tuple[ElementType]
     _index_map: Dict[Tuple[int, np.uint8], ElementType]
@@ -71,7 +68,7 @@ class BitsetDtype(ExtensionDtype):
         """
         Construct an instance of this class by passing in a string of the form
         that str(<instance of this class>) produces.
-        
+
         That is, given a string of the form
         bitset(#elements): e1, e2, e3, ...
 
@@ -94,9 +91,7 @@ class BitsetDtype(ExtensionDtype):
             # Extract number of elements if provided though
             n_elements = int(re.search(r"(\d+)", prefix).group(0))
         if "," not in string:
-            raise TypeError(
-                "Need at least 2 (comma-separated) elements in string to construct bitset."
-            )
+            raise TypeError("Need at least 2 (comma-separated) elements in string to construct bitset.")
         else:
             iterable_values = tuple(s.strip() for s in string.split(","))
         if n_elements is not None and len(iterable_values) != n_elements:
@@ -143,21 +138,16 @@ class BitsetDtype(ExtensionDtype):
         # Cast all element types to strings so that construct_from_string does not need
         # metadata about the type of each element.
         provided_elements = sorted([e for e in elements])
-        if not all(
-            isinstance(e, ElementType) for e in provided_elements
-        ):
+        if not all(isinstance(e, ElementType) for e in provided_elements):
             raise TypeError(f"BitSet elements must type {ElementType}")
-        self._elements = tuple(
-            sorted(set(provided_elements), key=lambda x: provided_elements.index(x))
-        )
+        self._elements = tuple(sorted(set(provided_elements), key=lambda x: provided_elements.index(x)))
 
         if len(self._elements) <= 1:
             raise ValueError("Bitsets must have at least 2 possible elements (use bool for 1-element sets).")
 
         # Setup the element map and its inverse, one-time initialisation cost.
         self._element_map = {
-            e: (index // BYTE_WIDTH, np.uint8(2 ** (index % BYTE_WIDTH)))
-            for index, e in enumerate(self._elements)
+            e: (index // BYTE_WIDTH, np.uint8(2 ** (index % BYTE_WIDTH))) for index, e in enumerate(self._elements)
         }
         self._index_map = {loc: element for element, loc in self._element_map.items()}
 
@@ -181,9 +171,7 @@ class BitsetDtype(ExtensionDtype):
         for char_index, byte_value in enumerate(binary_repr):
             bin_rep = format(byte_value, "b")
             elements_in_set |= {
-                self._index_map[(char_index, np.uint8(2**i))]
-                for i, bit in enumerate(reversed(bin_rep))
-                if bit == "1"
+                self._index_map[(char_index, np.uint8(2**i))] for i, bit in enumerate(reversed(bin_rep)) if bit == "1"
             }
         return elements_in_set
 
@@ -351,7 +339,7 @@ class BitsetArray(ExtensionArray):
         Each row ``i`` of this view corresponds to a bitset stored in this array.
         The value at index ``i, j`` in this view is the ``uint8`` that represents
         character ``j`` in ``self._data[i]``, which can have bitwise operations
-        performed on it.  
+        performed on it.
         """
         return self._data.view(self._uint8_view_format)
 
@@ -384,9 +372,7 @@ class BitsetArray(ExtensionArray):
         self._data = np.array(data, copy=copy, dtype=dtype.type)
         self._dtype = dtype
 
-    def __add__(
-        self, other: CastableForPandasOps
-    ) -> BitsetArray:
+    def __add__(self, other: CastableForPandasOps) -> BitsetArray:
         """
         Entry-wise union with other.
 
@@ -398,14 +384,11 @@ class BitsetArray(ExtensionArray):
         Under the hood this is bitwise OR with other; self OR other.
         """
         return BitsetArray(
-            self.__operate_bitwise(
-                lambda A, B: A | B, other, return_as_bytestring=True
-            ),
+            self.__operate_bitwise(lambda A, B: A | B, other, return_as_bytestring=True),
             dtype=self.dtype,
         )
 
-    def __and__(self, other: CastableForPandasOps
-    ) -> BitsetArray:
+    def __and__(self, other: CastableForPandasOps) -> BitsetArray:
         """
         Entry-wise intersection with other.
 
@@ -417,15 +400,11 @@ class BitsetArray(ExtensionArray):
         Under the hood this is bitwise AND with other; self AND other.
         """
         return BitsetArray(
-            self.__operate_bitwise(
-                lambda A, B: A & B, other, return_as_bytestring=True
-            ),
+            self.__operate_bitwise(lambda A, B: A & B, other, return_as_bytestring=True),
             dtype=self.dtype,
         )
 
-    def __cast_before_comparison_op(
-        self, value: CastableForPandasOps
-    ) -> Set[ElementType] | bool:
+    def __cast_before_comparison_op(self, value: CastableForPandasOps) -> Set[ElementType] | bool:
         """
         Common steps taken before employing comparison operations on this class.
 
@@ -442,10 +421,7 @@ class BitsetArray(ExtensionArray):
         elif isinstance(value, BitsetArray):
             return value.as_sets, True
         elif isinstance(value, np.ndarray):
-            return [
-                self.dtype.as_set(bytestr)
-                for bytestr in self.uint8s_to_byte_string(self.__cast_to_uint8(value))
-            ]
+            return [self.dtype.as_set(bytestr) for bytestr in self.uint8s_to_byte_string(self.__cast_to_uint8(value))]
         # Last ditch attempt - we might have been given a list of sets, for example...
         try:
             value = set(value)
@@ -463,17 +439,17 @@ class BitsetArray(ExtensionArray):
 
         Scalar elements:
             Cast to single-element sets, then treated as set.
-        
+
         Sets:
             Are converted to the (array of) uint8s that represents the set.
-        
+
         ``np.ndarray``s of ``np.uint8``
             Are returned if they have the same number of columns as ``self._uint8_view``.
-        
+
         ``np.ndarray``s of ``np.dtype("Sx")``
             If ``x`` corresponds to the same fixed-width as ``self.dtype.np_array_dtype``, are cast
             to the corresponding ``np.uint8`` view, like ``self._uint8_view`` is from ``self._data``.
-        
+
         BitsetArrays
             Return their ``_uint8_view`` attribute.
         """
@@ -508,13 +484,15 @@ class BitsetArray(ExtensionArray):
             cast = self.dtype.as_uint8_array(other)
         return cast
 
-    def __comparison_op(self, other: CastableForPandasOps, op: Callable[[Set[ElementType], Set[ElementType]], bool]) -> BooleanArray:
+    def __comparison_op(
+        self, other: CastableForPandasOps, op: Callable[[Set[ElementType], Set[ElementType]], bool]
+    ) -> BooleanArray:
         """
         Abstract method for strict and non-strict comparison operations.
 
         Notably, __eq__ does not redirect here since it is more efficient for us to convert
         the single value to a bytestring and use numpy array comparison.
-        
+
         For the other set comparison methods however, it's easier as a first implementation
         for us to convert to sets and run the set operations.  If there was a Pythonic way
         of doing "bitwise less than" and "bitwise greater than", we could instead take the
@@ -615,9 +593,7 @@ class BitsetArray(ExtensionArray):
             op_result = self.uint8s_to_byte_string(op_result)
         return op_result
 
-    def __or__(
-        self, other: CastableForPandasOps
-    ) -> BitsetArray:
+    def __or__(self, other: CastableForPandasOps) -> BitsetArray:
         """
         Entry-wise union with other, delegating to ``self.__add__``.
 
@@ -628,12 +604,7 @@ class BitsetArray(ExtensionArray):
     def __setitem__(
         self,
         key: int | slice | NDArray,
-        value: (
-            np.bytes_
-            | ElementType
-            | Set[ElementType]
-            | Sequence[np.bytes_ | ElementType| Set[ElementType]]
-        ),
+        value: (np.bytes_ | ElementType | Set[ElementType] | Sequence[np.bytes_ | ElementType | Set[ElementType]]),
     ) -> None:
         if isinstance(value, ElementType) or isinstance(value, set):
             # Interpret this as a "scalar" set that we want to set all values to
@@ -643,14 +614,10 @@ class BitsetArray(ExtensionArray):
             pass
         else:
             # Assume value is a sequence, and we will have to convert each value in turn
-            value = [
-                v if isinstance(v, np.bytes_) else self.dtype.as_bytes(v) for v in value
-            ]
+            value = [v if isinstance(v, np.bytes_) else self.dtype.as_bytes(v) for v in value]
         self._data[key] = value
 
-    def __sub__(
-        self, other: CastableForPandasOps
-    ) -> BitsetArray:
+    def __sub__(self, other: CastableForPandasOps) -> BitsetArray:
         """
         Remove elements from the Bitsets represented here.
 
@@ -662,16 +629,14 @@ class BitsetArray(ExtensionArray):
         Under the hood this the bitwise operation self AND (NOT other).
         """
         return BitsetArray(
-            self.__operate_bitwise(
-                lambda A, B: A & (~B), other, return_as_bytestring=True
-            ),
+            self.__operate_bitwise(lambda A, B: A & (~B), other, return_as_bytestring=True),
             dtype=self.dtype,
         )
 
     def _formatter(self, boxed: bool = False) -> Callable[[np.bytes_], str | None]:
-        if boxed: # If rendering an individual data value
+        if boxed:  # If rendering an individual data value
             return lambda x: ",".join(x) if x else "{}"
-        return repr # Render the table itself
+        return repr  # Render the table itself
 
     def copy(self) -> BitsetArray:
         return BitsetArray(self._data, self.dtype, copy=True)
@@ -695,10 +660,8 @@ class BitsetArray(ExtensionArray):
             elif fill_value is None:
                 fill_value = self.dtype.na_value
             elif not isinstance(fill_value, self.dtype.type):
-                raise TypeError(
-                    f"Fill value must be of type {self.dtype.type} (got {type(fill_value).__name__})"
-                )
-            scalars = np.empty((len(indices), ), dtype=self.dtype.type)
+                raise TypeError(f"Fill value must be of type {self.dtype.type} (got {type(fill_value).__name__})")
+            scalars = np.empty((len(indices),), dtype=self.dtype.type)
             scalars[indices[indices >= 0]] = self._data[indices[indices >= 0]]
             scalars[indices[indices < 0]] = fill_value
         else:

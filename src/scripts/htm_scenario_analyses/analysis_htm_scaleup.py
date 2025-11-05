@@ -1,4 +1,3 @@
-
 """
 This scenario file sets up the scenarios for simulating the effects of scaling up programs
 
@@ -58,19 +57,18 @@ class EffectOfProgrammes(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'scaleup_tests',
-            'directory': Path('./outputs'),  # <- (specified only for local running)
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.hiv': logging.INFO,
-                'tlo.methods.tb': logging.INFO,
-                'tlo.methods.malaria': logging.INFO,
-                'tlo.methods.demography': logging.INFO,
-            }
+            "filename": "scaleup_tests",
+            "directory": Path("./outputs"),  # <- (specified only for local running)
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.hiv": logging.INFO,
+                "tlo.methods.tb": logging.INFO,
+                "tlo.methods.malaria": logging.INFO,
+                "tlo.methods.demography": logging.INFO,
+            },
         }
 
     def modules(self):
-
         return [
             demography.Demography(resourcefilepath=self.resources),
             simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
@@ -89,24 +87,22 @@ class EffectOfProgrammes(BaseScenario):
         scaleup_start_year = 2019
 
         return {
-            'Hiv': {
-                'do_scaleup': [False, True, False, False, True][draw_number],
-                'scaleup_start_year': scaleup_start_year
+            "Hiv": {
+                "do_scaleup": [False, True, False, False, True][draw_number],
+                "scaleup_start_year": scaleup_start_year,
             },
-            'Tb': {
-                'do_scaleup': [False, False, True, False, True][draw_number],
-                'scaleup_start_year':  scaleup_start_year
+            "Tb": {
+                "do_scaleup": [False, False, True, False, True][draw_number],
+                "scaleup_start_year": scaleup_start_year,
             },
-            'Malaria': {
-                'do_scaleup': [False, False, False, True, True][draw_number],
-                'scaleup_start_year':  scaleup_start_year
+            "Malaria": {
+                "do_scaleup": [False, False, False, True, True][draw_number],
+                "scaleup_start_year": scaleup_start_year,
             },
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])
-
-

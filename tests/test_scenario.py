@@ -9,7 +9,7 @@ from tlo.scenario import BaseScenario, SampleRunner, ScenarioLoader
 
 @pytest.fixture
 def scenario_path():
-    return Path(f'{os.path.dirname(__file__)}/resources/scenario.py')
+    return Path(f"{os.path.dirname(__file__)}/resources/scenario.py")
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def loaded_scenario(scenario_path):
 
 @pytest.fixture
 def arguments(pop_size):
-    return ['--pop-size', str(pop_size)]
+    return ["--pop-size", str(pop_size)]
 
 
 @pytest.fixture
@@ -49,20 +49,20 @@ def test_parse_arguments(loaded_scenario_with_parsed_arguments, pop_size):
 def test_config(tmp_path, loaded_scenario_with_parsed_arguments, arguments):
     """Create the run configuration and check we've got the right values in there."""
     config = loaded_scenario_with_parsed_arguments.save_draws(return_config=True)
-    assert config['scenario_seed'] == loaded_scenario_with_parsed_arguments.seed
-    assert config['arguments'] == arguments
-    assert len(config['draws']) == loaded_scenario_with_parsed_arguments.number_of_draws
+    assert config["scenario_seed"] == loaded_scenario_with_parsed_arguments.seed
+    assert config["arguments"] == arguments
+    assert len(config["draws"]) == loaded_scenario_with_parsed_arguments.number_of_draws
 
 
 def test_runner(tmp_path, loaded_scenario_with_parsed_arguments, pop_size):
     """Check we can load the scenario from a configuration file."""
     config = loaded_scenario_with_parsed_arguments.save_draws(return_config=True)
-    config_path = tmp_path / 'scenario.json'
-    with open(config_path, 'w') as f:
+    config_path = tmp_path / "scenario.json"
+    with open(config_path, "w") as f:
         f.write(json.dumps(config, indent=2))
     runner = SampleRunner(config_path)
     scenario = runner.scenario
     assert isinstance(scenario, BaseScenario)
-    assert scenario.__class__.__name__ == 'TestScenario'
+    assert scenario.__class__.__name__ == "TestScenario"
     assert scenario.pop_size == pop_size
     assert runner.number_of_draws == loaded_scenario_with_parsed_arguments.number_of_draws

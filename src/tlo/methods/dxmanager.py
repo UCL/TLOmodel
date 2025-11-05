@@ -37,7 +37,7 @@ class DxManager:
         """
         for name, dx_test in dict_of_tests_to_register.items():
             # Examine the proposed name of the dx_test:
-            assert isinstance(name, str), f'Name is not a string: {name}'
+            assert isinstance(name, str), f"Name is not a string: {name}"
 
             # Examine the proposed dx_test:
             # Make each item provided into a tuple of DxTest objects.
@@ -45,20 +45,21 @@ class DxManager:
                 dx_test = (dx_test,)
 
             # Check that the objects given are each a DxTest object
-            assert all([isinstance(d, DxTest) for d in dx_test]), 'One of the passed objects is not a DxTest object.'
+            assert all([isinstance(d, DxTest) for d in dx_test]), "One of the passed objects is not a DxTest object."
 
             # Checks on each DxTest
             df = self.hs_module.sim.population.props
             for d in dx_test:
-                assert isinstance(d, DxTest), 'One of the passed objects is not a DxTest object'
-                assert d.property in df.columns, f'Column {d.property} does exist in population dataframe'
+                assert isinstance(d, DxTest), "One of the passed objects is not a DxTest object"
+                assert d.property in df.columns, f"Column {d.property} does exist in population dataframe"
                 # if property is category, check target categories have been provided
                 if d.target_categories is not None:
-                    assert is_categorical_dtype(df[d.property]), f'{d.property} is not categorical'
-                    assert isinstance(d.target_categories, list), 'target_categories must be list of categories'
+                    assert is_categorical_dtype(df[d.property]), f"{d.property} is not categorical"
+                    assert isinstance(d.target_categories, list), "target_categories must be list of categories"
                     property_categories = df[d.property].cat.categories
-                    assert all(elem in property_categories
-                               for elem in d.target_categories), 'not all target_categories are valid categories'
+                    assert all(
+                        elem in property_categories for elem in d.target_categories
+                    ), "not all target_categories are valid categories"
 
             # Ensure that name is unique and will not over-write a test already registered
             if name not in self.dx_tests:
@@ -69,23 +70,22 @@ class DxManager:
                 try:
                     # If the name is already used, then the DxTest must be identical to the one already registered
                     assert self.dx_tests[name] == dx_test
-                except (AssertionError):
-                    raise ValueError(
-                        "The same name have been registered previously for a different DxTest.")
+                except AssertionError:
+                    raise ValueError("The same name have been registered previously for a different DxTest.")
 
     def print_info_about_dx_test(self, name_of_dx_test):
-        assert name_of_dx_test in self.dx_tests, f'This DxTest is not recognised: {name_of_dx_test}'
+        assert name_of_dx_test in self.dx_tests, f"This DxTest is not recognised: {name_of_dx_test}"
         the_dx_test = self.dx_tests[name_of_dx_test]
         print()
-        print('----------------------')
-        print(f'** {name_of_dx_test} **')
+        print("----------------------")
+        print(f"** {name_of_dx_test} **")
         for num, test in enumerate(the_dx_test):
-            print(f'   Position in tuple #{num}')
-            print(f'consumables item_codes: {test.item_codes}')
-            print(f'sensitivity: {test.sensitivity}')
-            print(f'specificity: {test.specificity}')
-            print(f'property: {test.property}')
-            print('----------------------')
+            print(f"   Position in tuple #{num}")
+            print(f"consumables item_codes: {test.item_codes}")
+            print(f"sensitivity: {test.sensitivity}")
+            print(f"specificity: {test.specificity}")
+            print(f"property: {test.property}")
+            print("----------------------")
 
     def print_info_about_all_dx_tests(self):
         for dx_test in self.dx_tests:
@@ -102,13 +102,13 @@ class DxManager:
 
         # Check that the thing passed to hsi_event is usable as an hsi_event
         assert isinstance(hsi_event, HSI_Event)
-        assert hasattr(hsi_event, 'TREATMENT_ID')
+        assert hasattr(hsi_event, "TREATMENT_ID")
 
         # Make dx_tests_to_run into a list if it is not already one
         if not isinstance(dx_tests_to_run, list):
             dx_tests_to_run = [dx_tests_to_run]
 
-        assert all([name in self.dx_tests for name in dx_tests_to_run]), 'A DxTest name is not recognised.'
+        assert all([name in self.dx_tests for name in dx_tests_to_run]), "A DxTest name is not recognised."
 
         # Create the dict() of results that will be returned
         result_dict_for_list_of_dx_tests = dict()
@@ -176,36 +176,37 @@ class DxTest:
                                       to a positive result.
     """
 
-    def __init__(self,
-                 property: str,
-                 item_codes: Union[np.integer, int, list, set, dict] = None,
-                 optional_item_codes: Union[np.integer, int, list, set, dict] = None,
-                 sensitivity: float = None,
-                 specificity: float = None,
-                 measure_error_stdev: float = None,
-                 threshold: float = None,
-                 target_categories: List[str] = None
-                 ):
-
+    def __init__(
+        self,
+        property: str,
+        item_codes: Union[np.integer, int, list, set, dict] = None,
+        optional_item_codes: Union[np.integer, int, list, set, dict] = None,
+        sensitivity: float = None,
+        specificity: float = None,
+        measure_error_stdev: float = None,
+        threshold: float = None,
+        target_categories: List[str] = None,
+    ):
         # Store the property on which it acts (This is the only required parameter)
         assert isinstance(property, str), 'argument "property" is required'
         self.property = property
 
         # Store consumable code (None means that no consumables are required)
         if item_codes is not None:
-            assert isinstance(item_codes, (np.integer, int, list, set, dict)), 'item_codes in incorrect format.'
+            assert isinstance(item_codes, (np.integer, int, list, set, dict)), "item_codes in incorrect format."
         self.item_codes = item_codes
 
         if optional_item_codes is not None:
-            assert isinstance(optional_item_codes, (np.integer, int, list, set, dict)), \
-                'optional_item_codes in incorrect format.'
+            assert isinstance(
+                optional_item_codes, (np.integer, int, list, set, dict)
+            ), "optional_item_codes in incorrect format."
         self.optional_item_codes = optional_item_codes
 
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
-        _assert_float_or_none(sensitivity, 'Sensitivity is given in incorrect format.')
-        _assert_float_or_none(specificity, 'Sensitivity is given in incorrect format.')
-        _assert_float_or_none(measure_error_stdev, 'measure_error_stdev is given in incorrect format.')
-        _assert_float_or_none(threshold, 'threshold is given in incorrect format.')
+        _assert_float_or_none(sensitivity, "Sensitivity is given in incorrect format.")
+        _assert_float_or_none(specificity, "Sensitivity is given in incorrect format.")
+        _assert_float_or_none(measure_error_stdev, "measure_error_stdev is given in incorrect format.")
+        _assert_float_or_none(threshold, "threshold is given in incorrect format.")
 
         self.sensitivity = _default_if_none(sensitivity, 1.0)
         self.specificity = _default_if_none(specificity, 1.0)
@@ -228,7 +229,7 @@ class DxTest:
             self.property,
             self.sensitivity,
             self.specificity,
-            self.measure_error_stdev
+            self.measure_error_stdev,
         )
 
     def __hash__(self):
@@ -248,15 +249,15 @@ class DxTest:
         :return: value of test or None.
         """
         # Must be an individual level HSI and not a population level HSI
-        assert isinstance(hsi_event, IndividualScopeEventMixin), 'DxManager requires individual-level HSI_Event'
-        assert pd.notnull(hsi_event.target) and isinstance(hsi_event.target, (
-            int, np.integer)), f'DxManager error "{hsi_event.target}" is not an integer'
+        assert isinstance(hsi_event, IndividualScopeEventMixin), "DxManager requires individual-level HSI_Event"
+        assert pd.notnull(hsi_event.target) and isinstance(
+            hsi_event.target, (int, np.integer)
+        ), f'DxManager error "{hsi_event.target}" is not an integer'
         person_id = hsi_event.target
 
         # Get the "true value" of the property being examined
         df: pd.DataFrame = hsi_event.sim.population.props
-        assert self.property in df.columns, \
-            f'The property "{self.property}" is not found in the population dataframe'
+        assert self.property in df.columns, f'The property "{self.property}" is not found in the population dataframe'
         true_value = df.at[person_id, self.property]
 
         # If a consumable is required and it is not available, return None
@@ -285,7 +286,7 @@ class DxTest:
 
         elif self.target_categories is not None:
             # Categorical property: compare the value to the 'target_categories' if its specified
-            is_match_to_cat = (true_value in self.target_categories)
+            is_match_to_cat = true_value in self.target_categories
 
             if is_match_to_cat:
                 # Apply the sensitivity:

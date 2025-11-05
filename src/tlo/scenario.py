@@ -95,6 +95,7 @@ class BaseScenario(abc.ABC):
 
     * ``draw_parameters`` - override parameters for draws from the scenario.
     """
+
     def __init__(
         self,
         seed: Optional[int] = None,
@@ -285,6 +286,7 @@ class BaseScenario(abc.ABC):
 
 class ScenarioLoader:
     """A utility class to load a scenario class from a file path"""
+
     def __init__(self, scenario_path):
         scenario_module = ScenarioLoader._load_scenario_script(scenario_path)
         scenario_class = ScenarioLoader._get_scenario_class(scenario_module)
@@ -294,6 +296,7 @@ class ScenarioLoader:
     @staticmethod
     def _load_scenario_script(path):
         import importlib.util
+
         spec = importlib.util.spec_from_file_location(Path(path).stem, path)
         foo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(foo)
@@ -302,6 +305,7 @@ class ScenarioLoader:
     @staticmethod
     def _get_scenario_class(scenario_module):
         import inspect
+
         classes = inspect.getmembers(scenario_module, inspect.isclass)
         classes = [c for (n, c) in classes if BaseScenario == c.__base__]
         assert len(classes) == 1, "Exactly one subclass of BaseScenario should be defined in the scenario script"
@@ -313,6 +317,7 @@ class ScenarioLoader:
 
 class DrawGenerator:
     """Creates and saves a JSON representation of draws from a scenario."""
+
     def __init__(self, scenario_class, number_of_draws, runs_per_draw):
         self.scenario = scenario_class
 
@@ -353,6 +358,7 @@ class DrawGenerator:
 
 class SampleRunner:
     """Reads scenario draws from a JSON configuration and handles running of samples"""
+
     def __init__(self, run_configuration_path):
         with open(run_configuration_path, "r") as f:
             self.run_config = json.load(f)
@@ -380,8 +386,9 @@ class SampleRunner:
             yield self.get_sample(draw, sample_number)
 
     def get_sample(self, draw, sample_number):
-        assert sample_number < self.scenario.runs_per_draw, \
-            f"Cannot get sample {sample_number}; samples/draw={self.scenario.runs_per_draw}"
+        assert (
+            sample_number < self.scenario.runs_per_draw
+        ), f"Cannot get sample {sample_number}; samples/draw={self.scenario.runs_per_draw}"
         sample = draw.copy()
         sample["sample_number"] = sample_number
 
@@ -403,10 +410,7 @@ class SampleRunner:
         )
 
         # if user has specified a restore simulation, we load it from a pickle file
-        if (
-            hasattr(self.scenario, "resume_simulation")
-            and self.scenario.resume_simulation is not None
-        ):
+        if hasattr(self.scenario, "resume_simulation") and self.scenario.resume_simulation is not None:
             suspended_simulation_path = (
                 Path(self.scenario.resume_simulation)
                 / str(draw_number)
@@ -425,7 +429,7 @@ class SampleRunner:
                 log_config=log_config,
             )
             sim.register(*self.scenario.modules())
-            logger.info(key="draw_name", data={'draw_name': draw['draw_name']}, description="The draw name")
+            logger.info(key="draw_name", data={"draw_name": draw["draw_name"]}, description="The draw name")
 
             if sample["parameters"] is not None:
                 self.override_parameters(sim, sample["parameters"])
@@ -435,10 +439,7 @@ class SampleRunner:
 
         # if user has specified a suspend date, we run the simulation to that date and
         # save it to a pickle file
-        if (
-            hasattr(self.scenario, "suspend_date")
-            and self.scenario.suspend_date is not None
-        ):
+        if hasattr(self.scenario, "suspend_date") and self.scenario.suspend_date is not None:
             sim.run_simulation_to(to_date=self.scenario.suspend_date)
             suspended_simulation_path = Path(log_config["directory"]) / "suspended_simulation.pickle"
             sim.save_to_pickle(pickle_path=suspended_simulation_path)
@@ -488,8 +489,8 @@ class SampleRunner:
                             "module": module_name,
                             "name": param_name,
                             "old_value": old_value,
-                            "new_value": module.parameters[param_name]
-                        }
+                            "new_value": module.parameters[param_name],
+                        },
                     )
 
     @staticmethod
@@ -506,11 +507,11 @@ class SampleRunner:
         :param: x an integer
         :returns: an integer
         """
-        x *= 0x7feb352d
+        x *= 0x7FEB352D
         x ^= x >> 15
-        x *= 0x846ca68b
+        x *= 0x846CA68B
         x ^= x >> 16
-        return x % (2 ** 32)
+        return x % (2**32)
 
 
 def _nested_dictionary_from_flat(flat_dict):
@@ -571,10 +572,7 @@ def make_cartesian_parameter_grid(module_parameter_values_dict):
     }
     return [
         _nested_dictionary_from_flat(
-            {
-                key: value
-                for key, value in zip(flattened_parameter_values_dict, parameter_values)
-            }
+            {key: value for key, value in zip(flattened_parameter_values_dict, parameter_values)}
         )
         for parameter_values in product(*flattened_parameter_values_dict.values())
     ]

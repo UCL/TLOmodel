@@ -21,16 +21,16 @@ def setup_simulation(pop_size=100_000, num_symptoms=50):
     sim = Simulation(
         start_date=start_date,
         seed=0,
-        #log_config={"filename": "symptom_profiling", "directory": "./outputs"},
-        resourcefilepath=resource_dir
+        # log_config={"filename": "symptom_profiling", "directory": "./outputs"},
+        resourcefilepath=resource_dir,
     )
 
     sim.register(demography.Demography(), symptommanager.SymptomManager())
 
     # Register symptoms
-    sm = sim.modules['SymptomManager']
+    sm = sim.modules["SymptomManager"]
     for i in range(num_symptoms):
-        sm.register_symptom(symptommanager.Symptom(name=f'symptom_{i}'))
+        sm.register_symptom(symptommanager.Symptom(name=f"symptom_{i}"))
 
     # Initialize population - this will create the symptom properties
     sim.make_initial_population(n=pop_size)
@@ -41,7 +41,7 @@ def setup_simulation(pop_size=100_000, num_symptoms=50):
 def assign_random_symptoms(sim, symptom_prob=0.1):
     """Assign random symptoms to the population."""
     df = sim.population.props
-    sm = sim.modules['SymptomManager']
+    sm = sim.modules["SymptomManager"]
 
     # Assign symptoms randomly
     for symptom in sm.symptom_names:
@@ -53,16 +53,16 @@ def assign_random_symptoms(sim, symptom_prob=0.1):
             sm.change_symptom(
                 person_id=person_ids,
                 symptom_string=symptom,
-                add_or_remove='+',
+                add_or_remove="+",
                 disease_module=sm,
-                duration_in_days=None
+                duration_in_days=None,
             )
 
 
 def profile_has_what(sim, num_tests=1000000):
     """Profiling has_what function by calling it repeatedly."""
     df = sim.population.props
-    sm = sim.modules['SymptomManager']
+    sm = sim.modules["SymptomManager"]
 
     # Get random sample of person_ids to test
     test_ids = np.random.choice(df.index[df.is_alive], size=num_tests, replace=True)

@@ -16,7 +16,6 @@ logger.setLevel(logging.INFO)
 
 
 class Predictor(object):
-
     def __init__(
         self,
         property_name: str = None,
@@ -55,7 +54,7 @@ class Predictor(object):
         # If this is a property that is not part of the population dataframe
         if external:
             assert property_name is not None, "Can't have an unnamed external predictor"
-            self.property_name = f'__{self.property_name}__'
+            self.property_name = f"__{self.property_name}__"
 
         self.conditions = list()
         self.callback = None
@@ -63,23 +62,23 @@ class Predictor(object):
         self.conditions_are_mutually_exclusive = conditions_are_mutually_exclusive
         self.conditions_are_exhaustive = conditions_are_exhaustive
 
-    def when(self, condition: Union[str, float, bool], value: float) -> 'Predictor':
+    def when(self, condition: Union[str, float, bool], value: float) -> "Predictor":
         assert self.callback is None, "Can't use `when` on Predictor with function"
         return self._coeff(condition=condition, coefficient=value)
 
-    def otherwise(self, value: float) -> 'Predictor':
+    def otherwise(self, value: float) -> "Predictor":
         assert self.property_name is not None, "Can't use `otherwise` condition on unnamed Predictor"
         assert self.callback is None, "Can't use `otherwise` on Predictor with function"
         return self._coeff(coefficient=value)
 
-    def apply(self, callback: Callable[[Any], float]) -> 'Predictor':
+    def apply(self, callback: Callable[[Any], float]) -> "Predictor":
         assert self.property_name is not None, "Can't use `apply` on unnamed Predictor"
         assert len(self.conditions) == 0, "Can't specify `apply` on Predictor with when/otherwise conditions"
         assert self.callback is None, "Can't specify more than one callback for a Predictor"
         self.callback = callback
         return self
 
-    def _coeff(self, *, coefficient, condition=None) -> 'Predictor':
+    def _coeff(self, *, coefficient, condition=None) -> "Predictor":
         """Adds the coefficient for the Predictor. The arguments can be two:
                 `coeff(condition, value)` where the condition evaluates the property value to true/false
                 `coeff(value)` where the value is given to all unconditioned values of the property
@@ -94,21 +93,21 @@ class Predictor(object):
         # Otherwise, the condition is applied on a specific property
         if isinstance(condition, str):
             # Handle either a complex condition (begins with an operator) or implicit equality
-            if condition[0] in ['!', '=', '<', '>', '~', '(', '.']:
-                parsed_condition = f'({self.property_name}{condition})'
+            if condition[0] in ["!", "=", "<", ">", "~", "(", "."]:
+                parsed_condition = f"({self.property_name}{condition})"
             else:
                 # numeric values don't need to be quoted
                 if condition.isnumeric():
-                    parsed_condition = f'({self.property_name} == {condition})'
+                    parsed_condition = f"({self.property_name} == {condition})"
                 else:
                     parsed_condition = f'({self.property_name} == "{condition}")'
         elif isinstance(condition, bool):
             if condition:
-                parsed_condition = f'({self.property_name} == True)'
+                parsed_condition = f"({self.property_name} == True)"
             else:
-                parsed_condition = f'({self.property_name} == False)'
+                parsed_condition = f"({self.property_name} == False)"
         elif isinstance(condition, numbers.Number):
-            parsed_condition = f'({self.property_name} == {condition})'
+            parsed_condition = f"({self.property_name} == {condition})"
         elif condition is None:
             assert not self.has_otherwise, "You can only give one unconditioned value to predictor"
             self.has_otherwise = True
@@ -120,7 +119,7 @@ class Predictor(object):
         return self
 
     def __str__(self):
-        if self.property_name and self.property_name.startswith('__'):
+        if self.property_name and self.property_name.startswith("__"):
             name = f'{self.property_name.strip("__")} (external)'
         else:
             name = self.property_name
@@ -146,6 +145,7 @@ class LinearModelType(Enum):
     and the prediction is a probability.]
     'multiplicative' -> multiplies the effect_sizes from the predictors
     """
+
     ADDITIVE = auto()
     LOGISTIC = auto()
     MULTIPLICATIVE = auto()
@@ -154,27 +154,17 @@ class LinearModelType(Enum):
 
 
 class LinearModel(object):
-
-    def __init__(
-        self,
-        lm_type: LinearModelType,
-        intercept: Union[float, int],
-        *predictors: Predictor
-    ):
+    def __init__(self, lm_type: LinearModelType, intercept: Union[float, int], *predictors: Predictor):
         """A linear model has an intercept and zero or more ``Predictor`` variables.
 
         :param lm_type: Model type to use.
         :param intercept: Intercept term for the model.
         :param *predictors: Any ``Predictor`` instances to use in computing output.
         """
-        assert lm_type in LinearModelType, (
-            "Model should be one of the prescribed LinearModelTypes"
-        )
+        assert lm_type in LinearModelType, "Model should be one of the prescribed LinearModelTypes"
         self._lm_type = lm_type
 
-        assert isinstance(intercept, (float, int)), (
-            "Intercept is not specified or wrong type."
-        )
+        assert isinstance(intercept, (float, int)), "Intercept is not specified or wrong type."
         assert np.isfinite(intercept), "Intercept must not be NaN or infinite"
         self._intercept = intercept
 
@@ -182,9 +172,7 @@ class LinearModel(object):
         # updates after model initialisation
         self._predictors = tuple(predictors)
         non_predictors = [p for p in self._predictors if not isinstance(p, Predictor)]
-        assert len(non_predictors) == 0, (
-            f"One or more predictors are of invalid type: {non_predictors}"
-        )
+        assert len(non_predictors) == 0, f"One or more predictors are of invalid type: {non_predictors}"
 
         self._parse_predictors()
 
@@ -238,8 +226,7 @@ class LinearModel(object):
         # save value to any keyword arguments inside of this linear model
         for k, v in kwargs.items():
             # check the name doesn't already exist
-            assert not hasattr(custom_model, k), (
-                f"Cannot store argument '{k}' as name already exists; change name.")
+            assert not hasattr(custom_model, k), f"Cannot store argument '{k}' as name already exists; change name."
             setattr(custom_model, k, v)
         return custom_model
 
@@ -274,8 +261,7 @@ class LinearModel(object):
                     # check if names are actually columns before using
                     for condition, _ in predictor.conditions:
                         self._predictor_names.update(
-                            node.id for node in ast.walk(ast.parse(condition))
-                            if isinstance(node, ast.Name)
+                            node.id for node in ast.walk(ast.parse(condition)) if isinstance(node, ast.Name)
                         )
                 has_catch_all_condition = False
                 for i, (condition, value) in enumerate(predictor.conditions):
@@ -310,8 +296,7 @@ class LinearModel(object):
                             # conditions are potentially non-mutually exclusive and
                             # are applied sequentially in order specified on subset
                             # not matching any previous conditions
-                            predictor_str += (
-                                f" + (~({any_prev_conds}) & {condition}) * {value}")
+                            predictor_str += f" + (~({any_prev_conds}) & {condition}) * {value}"
                             any_prev_conds += f" | {condition}"
                 # If the predictor neither declares that the conditions are exhaustive
                 # (i.e. all cases are covered an any_prev_conds is guaranteed to be
@@ -328,7 +313,6 @@ class LinearModel(object):
         self._callback_predictors = tuple(callback_predictors)
 
         if len(predictor_strings) > 0:
-
             if self.intercept != null_coeff_value:
                 # Only need to include intercept if its non-zero in additive models
                 # or non-unity in multiplicative/logistic models
@@ -339,11 +323,7 @@ class LinearModel(object):
         else:
             self._model_string = " * ".join(predictor_strings)
 
-    def _get_column_resolvers(
-        self,
-        df: pd.DataFrame,
-        **external_variables
-    ) -> Dict[str, pd.Series]:
+    def _get_column_resolvers(self, df: pd.DataFrame, **external_variables) -> Dict[str, pd.Series]:
         """Construct mapping from predictor column names to column values.
 
         For use in ``resolvers`` argument to ``pandas.eval`` call.
@@ -362,10 +342,7 @@ class LinearModel(object):
             col = df.get(name)
             if col is not None:
                 cleaned_name = clean_column_name(name)
-                if (
-                    isinstance(col.dtype, pd.CategoricalDtype)
-                    and np.issubdtype(col.dtype.categories.dtype, np.integer)
-                ):
+                if isinstance(col.dtype, pd.CategoricalDtype) and np.issubdtype(col.dtype.categories.dtype, np.integer):
                     # `pandas.eval` raises an error when using boolean operations
                     # on series with a categorical dtype with integer categories
                     # therefore if any such columns are present we convert to
@@ -380,11 +357,7 @@ class LinearModel(object):
         return column_resolvers
 
     def predict(
-        self,
-        df: pd.DataFrame,
-        rng: Optional[np.random.RandomState] = None,
-        squeeze_single_row_output=True,
-        **kwargs
+        self, df: pd.DataFrame, rng: Optional[np.random.RandomState] = None, squeeze_single_row_output=True, **kwargs
     ) -> Union[pd.Series, np.bool_]:
         """Evaluate linear model output for a given set of input data.
 
@@ -406,32 +379,19 @@ class LinearModel(object):
         for name in self._predictor_names:
             assert (
                 name in df
-                or (
-                    name.startswith("__")
-                    and name.endswith("__")
-                    and name.strip("__") in kwargs
-                )
+                or (name.startswith("__") and name.endswith("__") and name.strip("__") in kwargs)
                 or name in builtins.__dict__
-            ), (
-                f"Predictors include unknown name {name}"
-            )
+            ), f"Predictors include unknown name {name}"
 
         column_resolvers = self._get_column_resolvers(df, **kwargs)
 
         if self._model_string != "":
-            result = pd.eval(
-                self._model_string,
-                resolvers=(column_resolvers,),
-                engine="python"
-            )
+            result = pd.eval(self._model_string, resolvers=(column_resolvers,), engine="python")
         else:
             result = pd.Series(data=self.intercept, index=df.index)
 
         if len(self._callback_predictors) > 0:
-            callback_results = [
-                column_resolvers[p.property_name].apply(p.callback)
-                for p in self._callback_predictors
-            ]
+            callback_results = [column_resolvers[p.property_name].apply(p.callback) for p in self._callback_predictors]
             if self.lm_type == LinearModelType.ADDITIVE:
                 result += sum(callback_results)
             else:
@@ -448,7 +408,7 @@ class LinearModel(object):
         if self.lm_type == LinearModelType.LOGISTIC:
             # Below is equivalent to result = result / (1 + result) but will give correct
             # output where any elements in result are inf (--> 1.0) or 0.0 (--> 0.0).
-            result = (1 / (1 + 1 / result))
+            result = 1 / (1 + 1 / result)
 
         # If the user supplied a random number generator then they want outcomes,
         # not probabilities
@@ -464,10 +424,8 @@ class LinearModel(object):
             return result
 
     def __str__(self):
-        out = "LinearModel(\n"\
-              f"  {self.lm_type},\n"\
-              f"  intercept = {self.intercept},\n"
+        out = "LinearModel(\n" f"  {self.lm_type},\n" f"  intercept = {self.intercept},\n"
         for predictor in self.predictors:
-            out += f'  {predictor}\n'
+            out += f"  {predictor}\n"
         out += ")"
         return out

@@ -25,14 +25,7 @@ _TLO_RESOURCES_DIR: Path = (_TLO_ROOT / "resources").resolve()
 def save_arguments_to_json(arguments_dict: dict, output_path: Path):
     """Save run arguments to a JSON file converting any paths to strings."""
     with open(output_path, "w") as f:
-        json.dump(
-            {
-                k: str(v) if isinstance(v, Path) else v 
-                for k, v in arguments_dict.items()
-            }, 
-            f, 
-            indent=4
-        )
+        json.dump({k: str(v) if isinstance(v, Path) else v for k, v in arguments_dict.items()}, f, indent=4)
 
 
 def scale_run(
@@ -71,7 +64,7 @@ def scale_run(
         "custom_levels": {"*": getattr(logging, log_level), "tlo.profiling": logging.INFO},
         "suppress_stdout": disable_log_output_to_stdout,
     }
-    
+
     # Start profiler if one has been passed
     if profiler is not None:
         profiler.start()
@@ -93,9 +86,7 @@ def scale_run(
                     "disable": disable_health_system,
                     "mode_appt_constraints": mode_appt_constraints,
                     "capabilities_coefficient": capabilities_coefficient,
-                    "hsi_event_count_log_period": "simulation"
-                    if record_hsi_event_details
-                    else None,
+                    "hsi_event_count_log_period": "simulation" if record_hsi_event_details else None,
                 },
                 "SymptomManager": {"spurious_symptoms": not disable_spurious_symptoms},
             },
@@ -106,7 +97,7 @@ def scale_run(
     sim.make_initial_population(n=initial_population)
     schedule_profile_log(sim, frequency_months=1)
     sim.simulate(end_date=end_date)
-    
+
     # Stop profiling session
     if profiler is not None:
         profiler.stop()
@@ -120,15 +111,10 @@ def scale_run(
     if record_hsi_event_details:
         with open(output_dir / "hsi_event_details.json", "w") as json_file:
             json.dump(
-                [
-                    event_details._asdict()
-                    for event_details in sim.modules[
-                        "HealthSystem"
-                    ].hsi_event_counts.keys()
-                ],
+                [event_details._asdict() for event_details in sim.modules["HealthSystem"].hsi_event_counts.keys()],
                 json_file,
             )
-            
+
     if parse_log_file:
         logs_dict = parse_log_file_fn(sim.log_filepath)
         return sim, logs_dict
@@ -158,14 +144,12 @@ if __name__ == "__main__":
         help="Number of months to simulate for (plus any years specified by --years)",
         default=0,
     )
-    parser.add_argument(
-        "--initial-population", type=int, help="Initial population size", default=50000
-    )
+    parser.add_argument("--initial-population", type=int, help="Initial population size", default=50000)
     parser.add_argument(
         "--resources-dir",
         type=Path,
         help="Directory containing resources files for simulation",
-        default=_TLO_RESOURCES_DIR
+        default=_TLO_RESOURCES_DIR,
     )
     parser.add_argument(
         "--output-dir",
@@ -188,10 +172,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--parse-log-file",
-        help=(
-            "Parse log file to create log dataframe at end of simulation (only useful with "
-            "interactive -i runs)"
-        ),
+        help=("Parse log file to create log dataframe at end of simulation (only useful with " "interactive -i runs)"),
         action="store_true",
     )
     parser.add_argument(
@@ -212,10 +193,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--disable-health-system",
-        help=(
-            "Disable health system - i.e. no processing happens by the health system but "
-            "all HSI Events run"
-        ),
+        help=("Disable health system - i.e. no processing happens by the health system but " "all HSI Events run"),
         action="store_true",
     )
     parser.add_argument(

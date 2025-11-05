@@ -1,7 +1,7 @@
 from typing import Dict
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
+from tlo.analysis.utils import mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
@@ -21,63 +21,59 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'climate_scenario_runs',
-            'directory': './outputs',
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.INFO,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.population': logging.INFO,
-                "tlo.methods.enhanced_lifestyle": logging.INFO
-            }
+            "filename": "climate_scenario_runs",
+            "directory": "./outputs",
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.INFO,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+                "tlo.methods.population": logging.INFO,
+                "tlo.methods.enhanced_lifestyle": logging.INFO,
+            },
         }
 
     def modules(self):
-        return (
-            fullmodel(resourcefilepath=self.resources)
-            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
-        )
+        return fullmodel(resourcefilepath=self.resources) + [
+            ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)
+        ]
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
-
             return list(self._scenarios.values())[draw_number]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
-        return {'SSP 1.26 High': self._ssp126_high(),
-                }
-
+        return {
+            "SSP 1.26 High": self._ssp126_high(),
+        }
 
     def _ssp126_high(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
+        """Return the Dict with values for the parameter changes that define the baseline scenario."""
         return mix_scenarios(
-            #get_parameters_for_status_quo(),
-
-             {"HealthSystem": {
-                "mode_appt_constraints": 1,
-                "cons_availability": "default",
-                "cons_availability_postSwitch": "all",
-                "tclose_overwrite": 1,
-                "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                "beds_availability": "all",
-                "equip_availability": "default",
-                "equip_availability_postSwitch": "all",
-                "year_equip_availability_switch": self.YEAR_OF_CHANGE,
-                "use_funded_or_actual_staffing": "funded_plus",
-                "climate_ssp":'ssp126',
-                "climate_model_ensemble_model":'highest',
-                 "services_affected_precip":'all'
-                }}
-
+            # get_parameters_for_status_quo(),
+            {
+                "HealthSystem": {
+                    "mode_appt_constraints": 1,
+                    "cons_availability": "default",
+                    "cons_availability_postSwitch": "all",
+                    "tclose_overwrite": 1,
+                    "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                    "beds_availability": "all",
+                    "equip_availability": "default",
+                    "equip_availability_postSwitch": "all",
+                    "year_equip_availability_switch": self.YEAR_OF_CHANGE,
+                    "use_funded_or_actual_staffing": "funded_plus",
+                    "climate_ssp": "ssp126",
+                    "climate_model_ensemble_model": "highest",
+                    "services_affected_precip": "all",
+                }
+            }
         )
 
 
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

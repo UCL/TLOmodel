@@ -16,6 +16,7 @@ from shared import memory_statistics
 
 try:
     from ansi2html import Ansi2HTMLConverter
+
     ANSI2HTML_AVAILABLE = True
 except ImportError:
     ANSI2HTML_AVAILABLE = False
@@ -78,8 +79,7 @@ def simulation_statistics(
     return {
         "pop_df_rows": population_dataframe.shape[0],
         "pop_df_cols": population_dataframe.shape[1],
-        "pop_df_mem_MB": population_dataframe.memory_usage(index=True, deep=True).sum()
-        / 1e6,
+        "pop_df_mem_MB": population_dataframe.memory_usage(index=True, deep=True).sum() / 1e6,
         "pop_df_times_extended": int(
             np.ceil(
                 (population_dataframe.shape[0] - simulation.population.initial_size)
@@ -89,9 +89,7 @@ def simulation_statistics(
     }
 
 
-def disk_statistics(
-    disk_usage: Dict[str, Union[int, float]]
-) -> Dict[str, Union[int, float]]:
+def disk_statistics(disk_usage: Dict[str, Union[int, float]]) -> Dict[str, Union[int, float]]:
     """
     Extract disk I/O statistics from the profiled run.
     Statistics are returned as a dictionary.
@@ -248,9 +246,7 @@ def run_profiling(
 
     # Profile scale_run
     disk_at_start = disk_io_counters()
-    completed_simulation, logs_dict = scale_run(
-        **scale_run_args, output_dir=output_dir, profiler=profiler
-    )
+    completed_simulation, logs_dict = scale_run(**scale_run_args, output_dir=output_dir, profiler=profiler)
     disk_at_end = disk_io_counters()
 
     print(f"[{current_time('%H:%M:%S')}:INFO] Profiling runs complete")
@@ -260,10 +256,7 @@ def run_profiling(
     # and p needs to be re-initialised before starting the next model run.
     scale_run_session = profiler.last_session
     # Infer disk usage statistics
-    disk_usage = {
-        key: getattr(disk_at_end, key) - getattr(disk_at_start, key)
-        for key in disk_at_start._fields
-    }
+    disk_usage = {key: getattr(disk_at_end, key) - getattr(disk_at_start, key) for key in disk_at_start._fields}
 
     # Write outputs to files
     # HTML (if requested)
@@ -273,9 +266,7 @@ def run_profiling(
         # show_all: removes library calls where identifiable
         # timeline: if true, samples are left in chronological order rather than total time
         html_renderer = HTMLRenderer(
-            show_all=False,
-            timeline=False,
-            processor_options={"show_regex": ".*/tlo/.*", "hide_regex": ".*/pandas/.*"}
+            show_all=False, timeline=False, processor_options={"show_regex": ".*/tlo/.*", "hide_regex": ".*/pandas/.*"}
         )
         print(f"Writing {output_html_file}", end="...", flush=True)
         with open(output_html_file, "w") as f:
@@ -298,7 +289,7 @@ def run_profiling(
         print(f"Writing {output_ipysession_file}", end="...", flush=True)
         scale_run_session.save(output_ipysession_file)
         print("done")
-        
+
     if write_flat_html:
         output_html_file = output_dir / f"{output_name}.flat.html"
         console_renderer = ConsoleRenderer(
@@ -306,7 +297,7 @@ def run_profiling(
             timeline=False,
             color=True,
             flat=True,
-            processor_options={"show_regex": ".*/tlo/.*", "hide_regex": ".*/pandas/.*", "filter_threshold": 1e-3}
+            processor_options={"show_regex": ".*/tlo/.*", "hide_regex": ".*/pandas/.*", "filter_threshold": 1e-3},
         )
         converter = Ansi2HTMLConverter(title=output_name)
         print(f"Writing {output_html_file}", end="...", flush=True)
@@ -326,13 +317,12 @@ def run_profiling(
         additional_stats=additional_stats,
     )
     print("done")
-    
+
     # Write out logged profiling statistics
     logged_statistics_file = output_dir / f"{output_name}.logged-stats.csv"
     print(f"Writing {logged_statistics_file}", end="...", flush=True)
     logs_dict["tlo.profiling"]["stats"].to_csv(logged_statistics_file, index=False)
     print("done")
-
 
 
 if __name__ == "__main__":
@@ -357,10 +347,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output-name",
         type=str,
-        help=(
-            "Name to give to the output file(s). "
-            "File extensions will be automatically appended."
-        ),
+        help=("Name to give to the output file(s). " "File extensions will be automatically appended."),
         default="profiling",
     )
     parser.add_argument(

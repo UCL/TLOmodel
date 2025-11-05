@@ -22,11 +22,7 @@ def initial_size(request):
 
 @pytest.fixture(params=[None, 0.02, 0.1])
 def append_size(request, initial_size):
-    return (
-        request.param
-        if request.param is None
-        else max(int(initial_size * request.param), 1)
-    )
+    return request.param if request.param is None else max(int(initial_size * request.param), 1)
 
 
 @pytest.fixture
@@ -55,7 +51,6 @@ def _generate_random_values(property, rng, size=None):
 
 @pytest.fixture
 def population_with_random_property_values(population, properties, initial_size, rng):
-
     for name, property in properties.items():
         population.props[name] = pd.Series(
             _generate_random_values(property, rng, initial_size),
@@ -80,10 +75,7 @@ def test_population_attributes(population, properties, initial_size, append_size
     assert len(population.props.index) == initial_size
     assert len(population.props.columns) == len(properties)
     assert set(population.props.columns) == properties.keys()
-    assert all(
-        properties[name].pandas_type == col.dtype
-        for name, col in population.props.items()
-    )
+    assert all(properties[name].pandas_type == col.dtype for name, col in population.props.items())
 
 
 def test_population_do_birth(population):
@@ -95,9 +87,7 @@ def test_population_do_birth(population):
         expected_next_person_id = initial_size + birth_number
         # population size should increase by append_size on first birth and after
         # every subsequent append_size births by a further append_size
-        expected_size = (
-            initial_size + ((birth_number - 1) // append_size + 1) * append_size
-        )
+        expected_size = initial_size + ((birth_number - 1) // append_size + 1) * append_size
         assert all(initial_population_props_copy.columns == population.props.columns)
         assert all(initial_population_props_copy.dtypes == population.props.dtypes)
         assert population.next_person_id == expected_next_person_id
@@ -108,12 +98,8 @@ def test_population_do_birth(population):
         check_population(population, birth_number)
 
 
-def test_population_individual_properties_read_only_write_raises(
-    population, properties
-):
-    with population.individual_properties(
-        person_id=0, read_only=True
-    ) as individual_properties:
+def test_population_individual_properties_read_only_write_raises(population, properties):
+    with population.individual_properties(person_id=0, read_only=True) as individual_properties:
         for property_name in properties:
             with pytest.raises(ValueError, match="read-only"):
                 individual_properties[property_name] = 0
@@ -130,19 +116,13 @@ def test_population_individual_properties_read(
         person_id=person_id, read_only=read_only
     ) as individual_properties:
         for property_name in properties:
-            assert (
-                individual_properties[property_name]
-                == population_dataframe.at[person_id, property_name]
-            )
+            assert individual_properties[property_name] == population_dataframe.at[person_id, property_name]
         # Try reading all properties (in a new random order) a second time to check any
         # caching mechanism is working as expected
         shuffled_property_names = list(properties.keys())
         rng.shuffle(shuffled_property_names)
         for property_name in shuffled_property_names:
-            assert (
-                individual_properties[property_name]
-                == population_dataframe.at[person_id, property_name]
-            )
+            assert individual_properties[property_name] == population_dataframe.at[person_id, property_name]
 
 
 @pytest.mark.parametrize("read_only", [True, False])
@@ -178,8 +158,7 @@ def test_population_individual_properties_write_with_context_manager(
     # Population dataframe should see updated properties for person_id row
     for property_name, property in properties.items():
         assert (
-            population_with_random_property_values.props.at[person_id, property_name]
-            == updated_values[property_name]
+            population_with_random_property_values.props.at[person_id, property_name] == updated_values[property_name]
         )
     # All other rows in population dataframe should be unchanged
     all_rows_except_updated = ~initial_population_dataframe.index.isin([person_id])
@@ -202,15 +181,11 @@ def test_population_individual_properties_write_with_sync(
             updated_values[property_name] = _generate_random_values(property, rng)
             individual_properties[property_name] = updated_values[property_name]
         # Before synchronization all values in population dataframe should be unchanged
-        assert initial_population_dataframe.equals(
-            population_with_random_property_values.props
-        )
+        assert initial_population_dataframe.equals(population_with_random_property_values.props)
         individual_properties.synchronize_updates_to_dataframe()
         # After synchronization all values in population dataframe should be updated
         for property_name, property in properties.items():
             assert (
-                population_with_random_property_values.props.at[
-                    person_id, property_name
-                ]
+                population_with_random_property_values.props.at[person_id, property_name]
                 == updated_values[property_name]
             )

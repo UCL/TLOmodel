@@ -11,65 +11,65 @@ import os
 import sys
 from importlib.metadata import version as get_version
 
-sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
+sys.path.insert(0, os.path.abspath("../..")), os.path.abspath("../src")
 
 sys.path.append(os.path.abspath("./_ext"))
 
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.coverage',
-    'sphinx.ext.doctest',
-    'sphinx.ext.extlinks',
-    'sphinx.ext.ifconfig',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.todo',
-    'rawfiles',
-    'sphinxcontrib.youtube',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.coverage",
+    "sphinx.ext.doctest",
+    "sphinx.ext.extlinks",
+    "sphinx.ext.ifconfig",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
+    "rawfiles",
+    "sphinxcontrib.youtube",
 ]
 
-if os.getenv('SPELLCHECK'):
-    extensions += 'sphinxcontrib.spelling',
+if os.getenv("SPELLCHECK"):
+    extensions += ("sphinxcontrib.spelling",)
     spelling_show_suggestions = True
-    spelling_lang = 'en_GB'
+    spelling_lang = "en_GB"
 
-source_suffix = '.rst'
-master_doc = 'index'
-project = 'TLOmodel'
-year = '2021'
-author = 'The TLOmodel Team'
-copyright = '{0}, {1}'.format(year, author)
-release = get_version('tlo')
-version = ".".join(release.split('.')[:2])
+source_suffix = ".rst"
+master_doc = "index"
+project = "TLOmodel"
+year = "2021"
+author = "The TLOmodel Team"
+copyright = "{0}, {1}".format(year, author)
+release = get_version("tlo")
+version = ".".join(release.split(".")[:2])
 
-pygments_style = 'trac'
-templates_path = ['.']
+pygments_style = "trac"
+templates_path = ["."]
 extlinks = {
-    'issue': ('https://github.com/UCL/TLOmodel/issues/%s', '#'),
-    'pr': ('https://github.com/UCL/TLOmodel/pull/%s', 'PR #'),
+    "issue": ("https://github.com/UCL/TLOmodel/issues/%s", "#"),
+    "pr": ("https://github.com/UCL/TLOmodel/pull/%s", "PR #"),
 }
 # on_rtd is whether we are on readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 
 if not on_rtd:  # only set the theme if we're building docs locally
-    html_theme = 'sphinx_rtd_theme'
+    html_theme = "sphinx_rtd_theme"
 
 html_use_smartypants = True
 html_split_index = False
 html_show_copyright = False
 html_sidebars = {
-    '**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html'],
+    "**": ["searchbox.html", "globaltoc.html", "sourcelink.html"],
 }
-html_short_title = '%s-%s' % (project, version)
+html_short_title = "%s-%s" % (project, version)
 
-html_static_path = ['_static']
-html_extra_path = ['./.nojekyll', './.gitattributes']
-html_favicon = 'favicon.png'
+html_static_path = ["_static"]
+html_extra_path = ["./.nojekyll", "./.gitattributes"]
+html_favicon = "favicon.png"
 
-html_css_files = ['theme_overrides.css']
+html_css_files = ["theme_overrides.css"]
 
-rawfiles = ['.github']
+rawfiles = [".github"]
 
 napoleon_use_ivar = True
 napoleon_use_rtype = False
@@ -94,23 +94,19 @@ napoleon_use_param = False
 # 'show-inheritance', 'ignore-module-all', 'imported-members'
 # and 'exclude-members'.
 autodoc_default_options = {
-
-    'undoc-members': False,
-
+    "undoc-members": False,
     # Keep HTML output order the same as in the
     # source code, rather than alphabetically:
-    'member-order': 'bysource',
-
+    "member-order": "bysource",
     # List below what you don't want to see documented:
-    'exclude-members': '__dict__, name, rng, sim'  # , read_parameters',
+    "exclude-members": "__dict__, name, rng, sim",  # , read_parameters',
 }
 
 # Include both class level and __init__ docstring content in class documentation
-autoclass_content = 'both'
+autoclass_content = "both"
 
 # The checker can't see private repos
-linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*',
-                    'https://www.who.int/bulletin/volumes/88/8/09-068213/en/nn']
+linkcheck_ignore = ["^https://github.com/UCL/TLOmodel.*", "https://www.who.int/bulletin/volumes/88/8/09-068213/en/nn"]
 linkcheck_timeout = 10
 linkcheck_anchors = False
 

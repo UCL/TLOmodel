@@ -56,9 +56,9 @@ def construct_module_dependency_graph(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "output_file", type=Path, help=(
-            "Path to output graph to. File extension will determine output format - for example: dot, dia, png, svg"
-        )
+        "output_file",
+        type=Path,
+        help=("Path to output graph to. File extension will determine output format - for example: dot, dia, png, svg"),
     )
     args = parser.parse_args()
     excluded_modules = {
@@ -76,7 +76,5 @@ if __name__ == "__main__":
         disease_module_node_defaults={"fontname": "Arial", "shape": "box"},
         other_module_node_defaults={"fontname": "Arial", "shape": "ellipse"},
     )
-    format = (
-        args.output_file.suffix[1:] if args.output_file.suffix else "raw"
-    )
+    format = args.output_file.suffix[1:] if args.output_file.suffix else "raw"
     module_graph.write(args.output_file, format=format)

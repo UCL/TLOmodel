@@ -12,10 +12,7 @@ def github_download_url(resource_file_path: Path) -> str:
 
 
 def rst_download_link(resource_file_path: Path, file_type: str) -> str:
-    return (
-        f":download:`Download original {file_type} file "
-        f"from GitHub <{github_download_url(resource_file_path)}>`"
-    )
+    return f":download:`Download original {file_type} file " f"from GitHub <{github_download_url(resource_file_path)}>`"
 
 
 def rst_header(title: str, level: int = 0) -> str:
@@ -33,31 +30,17 @@ def _remove_prefix(text, prefix):
 
 def rst_resource_file_header(resource_file_path: Path) -> str:
     resource_file_name = (
-        _remove_prefix(resource_file_path.stem, "ResourceFile_").replace("_", " ")
-        + f" ({resource_file_path.suffix})"
+        _remove_prefix(resource_file_path.stem, "ResourceFile_").replace("_", " ") + f" ({resource_file_path.suffix})"
     )
-    return (
-        rst_header(resource_file_name)
-        + rst_download_link(resource_file_path, resource_file_path.suffix)
-        + "\n\n"
-    )
+    return rst_header(resource_file_name) + rst_download_link(resource_file_path, resource_file_path.suffix) + "\n\n"
 
 
 def rst_toc(entries: List[str], max_depth: int = 1) -> str:
-    return (
-        ".. toctree::\n    "
-        + f":maxdepth: {max_depth}\n\n    "
-        + "\n    ".join(entries)
-        + "\n\n"
-    )
+    return ".. toctree::\n    " + f":maxdepth: {max_depth}\n\n    " + "\n    ".join(entries) + "\n\n"
 
 
-def rst_file_index_toc(
-    filenames: List[str], subdirectories: List[str], max_depth: int = 1
-) -> str:
-    index_files = [
-        str(Path(subdirectory) / "index.rst") for subdirectory in subdirectories
-    ]
+def rst_file_index_toc(filenames: List[str], subdirectories: List[str], max_depth: int = 1) -> str:
+    index_files = [str(Path(subdirectory) / "index.rst") for subdirectory in subdirectories]
     return rst_toc(sorted(index_files) + sorted(filenames), max_depth)
 
 
@@ -103,22 +86,14 @@ def generate_docs_pages_from_resource_files(
 ) -> None:
     root_output_directory = docs_directory / "resources"
     root_output_directory.mkdir(exist_ok=True)
-    for current_path, subdirectories, resource_file_names in os.walk(
-        resources_directory
-    ):
+    for current_path, subdirectories, resource_file_names in os.walk(resources_directory):
         current_path = Path(current_path)
-        output_directory = root_output_directory / current_path.relative_to(
-            resources_directory
-        )
+        output_directory = root_output_directory / current_path.relative_to(resources_directory)
         if not output_directory.exists():
             output_directory.mkdir(parents=True)
         index_file_path = output_directory / "index.rst"
         with open(index_file_path, "w") as index_file:
-            title = (
-                index_file_path.parent.stem
-                if current_path != resources_directory
-                else "Resource files"
-            )
+            title = index_file_path.parent.stem if current_path != resources_directory else "Resource files"
             index_file.write(rst_header(title))
             if current_path == resources_directory:
                 index_file.write("Resource  files used in ``TLOmodel`` simulations\n\n")
@@ -138,15 +113,11 @@ def generate_docs_pages_from_resource_files(
                     print(f"Converted {resource_file_path} to table")
                 except UnicodeDecodeError:
                     write_placeholder(resource_file_path, output_path)
-                    print(
-                        f"Wrote placeholder only for {resource_file_path} as not UTF-8 encoded"
-                    )
+                    print(f"Wrote placeholder only for {resource_file_path} as not UTF-8 encoded")
 
             else:
                 write_placeholder(resource_file_path, output_path)
-                print(
-                    f"Wrote placeholder only for {resource_file_path} with unknown file extension"
-                )
+                print(f"Wrote placeholder only for {resource_file_path} with unknown file extension")
 
 
 if __name__ == "__main__":

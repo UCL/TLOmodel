@@ -34,7 +34,7 @@ class Deviance(Module):
         # that is used by the `Deviance` module
         self.__demog_outputs__ = defaultdict(list)
 
-    INIT_DEPENDENCIES = {'Demography', 'Hiv', 'Tb'}
+    INIT_DEPENDENCIES = {"Demography", "Hiv", "Tb"}
 
     # Declare Metadata
     METADATA = {}
@@ -70,21 +70,15 @@ class Deviance(Module):
         # hiv prevalence
         self.data_dict["mphia_prev_2015_adult"] = data_hiv_mphia_prev.loc[
             data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
-        ].values[
-            0
-        ]
+        ].values[0]
         self.data_dict["mphia_prev_2015_child"] = data_hiv_mphia_prev.loc[
             data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"
-        ].values[
-            0
-        ]
+        ].values[0]
 
         # hiv incidence
         self.data_dict["mphia_inc_2015_adult"] = data_hiv_mphia_inc.loc[
             (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence"
-        ].values[
-            0
-        ]
+        ].values[0]
 
         # DHS HIV data
         data_hiv_dhs_prev = xls["DHS_prevalence"]
@@ -105,9 +99,7 @@ class Deviance(Module):
 
         # TB active incidence per 100k 2010-2017
         data_tb_who = xls_tb["WHO_activeTB2023"]
-        self.data_dict["who_tb_inc_per_100k"] = data_tb_who.loc[
-            (data_tb_who.year >= 2010), "incidence_per_100k"
-        ]
+        self.data_dict["who_tb_inc_per_100k"] = data_tb_who.loc[(data_tb_who.year >= 2010), "incidence_per_100k"]
 
         # TB mortality per 100k excluding HIV: 2010-2017
         self.data_dict["who_tb_deaths_per_100k"] = data_tb_who.loc[
@@ -115,14 +107,14 @@ class Deviance(Module):
         ]
 
     def read_model_outputs(self):
-        hiv = self.sim.modules['Hiv'].hiv_outputs
-        tb = self.sim.modules['Tb'].tb_outputs
+        hiv = self.sim.modules["Hiv"].hiv_outputs
+        tb = self.sim.modules["Tb"].tb_outputs
         demog = self.__demog_outputs__
 
         # get logged outputs for calibration into dict
         # population size each year
         pop = pd.Series(hiv["population"])
-        pop.index = hiv['date']
+        pop.index = hiv["date"]
         pop.index = pd.to_datetime(pop.index, format="%Y")
 
         # ------------------ HIV disease ------------------ #
@@ -144,16 +136,14 @@ class Deviance(Module):
         # ------------------ DEATHS ------------------ #
         # convert dict to df for easier processing
         deaths = pd.DataFrame()
-        deaths['date'] = demog['date']
-        deaths['age'] = demog['age']
-        deaths['sex'] = demog['sex']
-        deaths['cause'] = demog['cause']
+        deaths["date"] = demog["date"]
+        deaths["age"] = demog["age"]
+        deaths["sex"] = demog["sex"]
+        deaths["cause"] = demog["cause"]
 
         # AIDS DEATHS
         # limit to deaths among aged 15+, include HIV/TB deaths
-        keep = (deaths.age >= 15) & (
-            (deaths.cause == "AIDS_TB") | (deaths.cause == "AIDS_non_TB")
-        )
+        keep = (deaths.age >= 15) & ((deaths.cause == "AIDS_TB") | (deaths.cause == "AIDS_non_TB"))
         deaths_AIDS = deaths.loc[keep].copy()
         tot_aids_deaths = deaths_AIDS.groupby(by=["date"]).size()
         tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format="%Y")
@@ -197,163 +187,136 @@ class Deviance(Module):
         # ------------------ HIV ------------------ #
 
         # hiv prevalence in adults 15-49: dhs 2010, 2015, mphia
-        hiv_prev_adult = (deviance_function(data_dict["dhs_prev_2010"], model_dict["hiv_prev_adult_2010"]) +
-                          deviance_function(data_dict["dhs_prev_2015"], model_dict["hiv_prev_adult_2015"]) +
-                          deviance_function(data_dict["mphia_prev_2015_adult"], model_dict["hiv_prev_adult_2015"])
-                          ) / 3
+        hiv_prev_adult = (
+            deviance_function(data_dict["dhs_prev_2010"], model_dict["hiv_prev_adult_2010"])
+            + deviance_function(data_dict["dhs_prev_2015"], model_dict["hiv_prev_adult_2015"])
+            + deviance_function(data_dict["mphia_prev_2015_adult"], model_dict["hiv_prev_adult_2015"])
+        ) / 3
 
-        hiv_prev_child = deviance_function(
-            data_dict["mphia_prev_2015_child"], model_dict["hiv_prev_child_2015"]
-        )
+        hiv_prev_child = deviance_function(data_dict["mphia_prev_2015_child"], model_dict["hiv_prev_child_2015"])
 
         # hiv incidence mphia
-        hiv_inc_adult = deviance_function(
-            data_dict["mphia_inc_2015_adult"], model_dict["hiv_inc_adult_2015"]
-        )
+        hiv_inc_adult = deviance_function(data_dict["mphia_inc_2015_adult"], model_dict["hiv_inc_adult_2015"])
 
         # ------------------ TB ------------------ #
 
         # tb active incidence (WHO estimates) 2010-2021
         tb_incidence_who = (
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[0], model_dict["TB_active_inc_per100k"][0]
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[1], model_dict["TB_active_inc_per100k"][1]
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[2], model_dict["TB_active_inc_per100k"][2]
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[3], model_dict["TB_active_inc_per100k"][3]
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[4], model_dict["TB_active_inc_per100k"][4]
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[5], model_dict["TB_active_inc_per100k"][5]
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[6], model_dict["TB_active_inc_per100k"][6]
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[7], model_dict["TB_active_inc_per100k"][7]
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[8], model_dict["TB_active_inc_per100k"][8]
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[9], model_dict["TB_active_inc_per100k"][9]
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[10], model_dict["TB_active_inc_per100k"][10]
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_inc_per_100k"].values[11], model_dict["TB_active_inc_per100k"][11]
-                               )
-                           ) / 12
+            deviance_function(data_dict["who_tb_inc_per_100k"].values[0], model_dict["TB_active_inc_per100k"][0])
+            + deviance_function(data_dict["who_tb_inc_per_100k"].values[1], model_dict["TB_active_inc_per100k"][1])
+            + deviance_function(data_dict["who_tb_inc_per_100k"].values[2], model_dict["TB_active_inc_per100k"][2])
+            + deviance_function(data_dict["who_tb_inc_per_100k"].values[3], model_dict["TB_active_inc_per100k"][3])
+            + deviance_function(data_dict["who_tb_inc_per_100k"].values[4], model_dict["TB_active_inc_per100k"][4])
+            + deviance_function(data_dict["who_tb_inc_per_100k"].values[5], model_dict["TB_active_inc_per100k"][5])
+            + deviance_function(data_dict["who_tb_inc_per_100k"].values[6], model_dict["TB_active_inc_per100k"][6])
+            + deviance_function(data_dict["who_tb_inc_per_100k"].values[7], model_dict["TB_active_inc_per100k"][7])
+            + deviance_function(data_dict["who_tb_inc_per_100k"].values[8], model_dict["TB_active_inc_per100k"][8])
+            + deviance_function(data_dict["who_tb_inc_per_100k"].values[9], model_dict["TB_active_inc_per100k"][9])
+            + deviance_function(data_dict["who_tb_inc_per_100k"].values[10], model_dict["TB_active_inc_per100k"][10])
+            + deviance_function(data_dict["who_tb_inc_per_100k"].values[11], model_dict["TB_active_inc_per100k"][11])
+        ) / 12
 
         # ------------------ DEATHS ------------------ #
 
         # aids deaths unaids 2010-2021
         hiv_deaths_unaids = (
-                                deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][0],
-                                    model_dict["AIDS_mortality_per_100k"][0],
-                                )
-                                + deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][1],
-                                    model_dict["AIDS_mortality_per_100k"][1],
-                                )
-                                + deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][2],
-                                    model_dict["AIDS_mortality_per_100k"][2],
-                                )
-                                + deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][3],
-                                    model_dict["AIDS_mortality_per_100k"][3],
-                                )
-                                + deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][4],
-                                    model_dict["AIDS_mortality_per_100k"][4],
-                                )
-                                + deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][5],
-                                    model_dict["AIDS_mortality_per_100k"][5],
-                                )
-                                + deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][6],
-                                    model_dict["AIDS_mortality_per_100k"][6],
-                                )
-                                + deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][7],
-                                    model_dict["AIDS_mortality_per_100k"][7],
-                                )
-                                + deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][8],
-                                    model_dict["AIDS_mortality_per_100k"][8],
-                                )
-                                + deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][9],
-                                    model_dict["AIDS_mortality_per_100k"][9],
-                                )
-                                + deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][10],
-                                    model_dict["AIDS_mortality_per_100k"][10],
-                                )
-                                + deviance_function(
-                                    data_dict["unaids_deaths_per_100k"][11],
-                                    model_dict["AIDS_mortality_per_100k"][11],
-                                )
-                            ) / 12
+            deviance_function(
+                data_dict["unaids_deaths_per_100k"][0],
+                model_dict["AIDS_mortality_per_100k"][0],
+            )
+            + deviance_function(
+                data_dict["unaids_deaths_per_100k"][1],
+                model_dict["AIDS_mortality_per_100k"][1],
+            )
+            + deviance_function(
+                data_dict["unaids_deaths_per_100k"][2],
+                model_dict["AIDS_mortality_per_100k"][2],
+            )
+            + deviance_function(
+                data_dict["unaids_deaths_per_100k"][3],
+                model_dict["AIDS_mortality_per_100k"][3],
+            )
+            + deviance_function(
+                data_dict["unaids_deaths_per_100k"][4],
+                model_dict["AIDS_mortality_per_100k"][4],
+            )
+            + deviance_function(
+                data_dict["unaids_deaths_per_100k"][5],
+                model_dict["AIDS_mortality_per_100k"][5],
+            )
+            + deviance_function(
+                data_dict["unaids_deaths_per_100k"][6],
+                model_dict["AIDS_mortality_per_100k"][6],
+            )
+            + deviance_function(
+                data_dict["unaids_deaths_per_100k"][7],
+                model_dict["AIDS_mortality_per_100k"][7],
+            )
+            + deviance_function(
+                data_dict["unaids_deaths_per_100k"][8],
+                model_dict["AIDS_mortality_per_100k"][8],
+            )
+            + deviance_function(
+                data_dict["unaids_deaths_per_100k"][9],
+                model_dict["AIDS_mortality_per_100k"][9],
+            )
+            + deviance_function(
+                data_dict["unaids_deaths_per_100k"][10],
+                model_dict["AIDS_mortality_per_100k"][10],
+            )
+            + deviance_function(
+                data_dict["unaids_deaths_per_100k"][11],
+                model_dict["AIDS_mortality_per_100k"][11],
+            )
+        ) / 12
 
         # tb death rate who 2010-2021
         tb_mortality_who = (
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[0],
-                                   model_dict["TB_mortality_per_100k"][0],
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[1],
-                                   model_dict["TB_mortality_per_100k"][1],
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[2],
-                                   model_dict["TB_mortality_per_100k"][2],
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[3],
-                                   model_dict["TB_mortality_per_100k"][3],
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[4],
-                                   model_dict["TB_mortality_per_100k"][4],
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[5],
-                                   model_dict["TB_mortality_per_100k"][5],
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[6],
-                                   model_dict["TB_mortality_per_100k"][6],
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[8],
-                                   model_dict["TB_mortality_per_100k"][8],
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[9],
-                                   model_dict["TB_mortality_per_100k"][9],
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[10],
-                                   model_dict["TB_mortality_per_100k"][10],
-                               ) +
-                               deviance_function(
-                                   data_dict["who_tb_deaths_per_100k"].values[11],
-                                   model_dict["TB_mortality_per_100k"][11],
-                               )
-                           ) / 12
+            deviance_function(
+                data_dict["who_tb_deaths_per_100k"].values[0],
+                model_dict["TB_mortality_per_100k"][0],
+            )
+            + deviance_function(
+                data_dict["who_tb_deaths_per_100k"].values[1],
+                model_dict["TB_mortality_per_100k"][1],
+            )
+            + deviance_function(
+                data_dict["who_tb_deaths_per_100k"].values[2],
+                model_dict["TB_mortality_per_100k"][2],
+            )
+            + deviance_function(
+                data_dict["who_tb_deaths_per_100k"].values[3],
+                model_dict["TB_mortality_per_100k"][3],
+            )
+            + deviance_function(
+                data_dict["who_tb_deaths_per_100k"].values[4],
+                model_dict["TB_mortality_per_100k"][4],
+            )
+            + deviance_function(
+                data_dict["who_tb_deaths_per_100k"].values[5],
+                model_dict["TB_mortality_per_100k"][5],
+            )
+            + deviance_function(
+                data_dict["who_tb_deaths_per_100k"].values[6],
+                model_dict["TB_mortality_per_100k"][6],
+            )
+            + deviance_function(
+                data_dict["who_tb_deaths_per_100k"].values[8],
+                model_dict["TB_mortality_per_100k"][8],
+            )
+            + deviance_function(
+                data_dict["who_tb_deaths_per_100k"].values[9],
+                model_dict["TB_mortality_per_100k"][9],
+            )
+            + deviance_function(
+                data_dict["who_tb_deaths_per_100k"].values[10],
+                model_dict["TB_mortality_per_100k"][10],
+            )
+            + deviance_function(
+                data_dict["who_tb_deaths_per_100k"].values[11],
+                model_dict["TB_mortality_per_100k"][11],
+            )
+        ) / 12
 
         # tb who is a model estimate, also tb cnr depends on estimated incidence
         calibration_score = (
@@ -380,7 +343,6 @@ class Deviance(Module):
         self.__demog_outputs__["cause"] += [cause]
 
     def on_simulation_end(self):
-
         if self.sim.date.year >= 2020:
             self.read_data_files()
             self.read_model_outputs()
@@ -389,8 +351,9 @@ class Deviance(Module):
             logger.info(
                 key="deviance_measure",
                 description="Deviance measure for HIV and TB",
-                data={"deviance_measure": deviance_measure[0],
-                      "hiv_transmission_rate": deviance_measure[1],
-                      "tb_scaling_factor_WHO": deviance_measure[2]
-                      }
+                data={
+                    "deviance_measure": deviance_measure[0],
+                    "hiv_transmission_rate": deviance_measure[1],
+                    "tb_scaling_factor_WHO": deviance_measure[2],
+                },
             )

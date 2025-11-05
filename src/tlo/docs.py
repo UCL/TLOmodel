@@ -47,7 +47,7 @@ def generate_module_dict(topdir):
     """
     data = {}  # key = path to dir, value = list of .py files
 
-    for (dirpath, dirnames, filenames) in walk(topdir):
+    for dirpath, dirnames, filenames in walk(topdir):
         # print(f"**path:{dirpath}, dirnames:{dirnames}, files:{filenames}\n")
         if "__pycache__" in dirpath:
             continue
@@ -84,7 +84,6 @@ def get_classes_in_module(fqn, module_obj):
     classes = []
     module_info = inspect.getmembers(module_obj)  # Gets everything
     for name, obj in module_info:
-
         # Pick out only the classes defined in this module:
         if inspect.isclass(obj) and fqn in str(obj):
             # only generate documentation for tlo subclasses (considers other classes internal implementation detail)
@@ -138,8 +137,7 @@ def write_rst_file(rst_dir, fqn, mobj):
     :param mobj: the module object
     """
     filename = f"{rst_dir}/{fqn}.rst"
-    with open(filename, 'w') as out:
-
+    with open(filename, "w") as out:
         # Header
         title = f"{fqn} module"
         out.write(f"{title}\n")
@@ -180,7 +178,7 @@ def get_class_output_string(classinfo):
     # This is needed to keep information neatly aligned
     # with each class.
     numspaces = 5
-    spacer = numspaces * ' '
+    spacer = numspaces * " "
 
     # Now we want to add base classes, class members, comments and methods
     # Presumably in source file order.
@@ -236,7 +234,7 @@ def get_class_output_string(classinfo):
 
     my_attributes = []  # (name, value) pairs of class attributes.
 
-    ignored_attributes = ['__doc__', '__module__', '__weakref__']
+    ignored_attributes = ["__doc__", "__module__", "__weakref__"]
 
     misc = []
 
@@ -247,8 +245,7 @@ def get_class_output_string(classinfo):
         # In this case, obj is a dictionary.
         # We want to display PARAMETERS before PROPERTIES. We should get that
         # for free as inspect.getmembers() returns results sorted by name.
-        if name in ("PARAMETERS", "PROPERTIES") and \
-                name in class_obj.__dict__:
+        if name in ("PARAMETERS", "PROPERTIES") and name in class_obj.__dict__:
             # (only included if defined/overridden in this class)
             table_list = create_table(obj)
             if table_list == []:
@@ -259,18 +256,21 @@ def get_class_output_string(classinfo):
             mystr += "\n\n"
 
         # Get source-code line numbering where possible.
-        elif isfunction(obj) and func_objects_to_document \
-                and obj in func_objects_to_document and \
-                name in class_obj.__dict__:
+        elif (
+            isfunction(obj)
+            and func_objects_to_document
+            and obj in func_objects_to_document
+            and name in class_obj.__dict__
+        ):
             _, start_line_num = inspect.getsourcelines(obj)
             name_func_lines.append((name, obj, start_line_num))
 
         # Get source-code line numbering where possible.
         # inspect.getsourcelines() only works for module, class, method,
         # function, traceback, frame, or code objects
-        elif (ismodule(obj) or isclass(obj) or ismethod(obj)
-                or istraceback(obj) or isframe(obj) or iscode(obj)) \
-                and (name in class_obj.__dict__):
+        elif (ismodule(obj) or isclass(obj) or ismethod(obj) or istraceback(obj) or isframe(obj) or iscode(obj)) and (
+            name in class_obj.__dict__
+        ):
             # pass  # _, start_line_num = inspect.getsourcelines(obj)
             misc.append(name, obj, start_line_num)
 
@@ -307,10 +307,8 @@ def get_class_output_string(classinfo):
 
     # New or overridden functions only.
     if func_objects_to_document:
-        mystr += f"{spacer}**Functions (defined or overridden in " \
-                 f"class {class_name}):**\n\n"
+        mystr += f"{spacer}**Functions (defined or overridden in " f"class {class_name}):**\n\n"
         for name, obj, _ in name_func_lines:  # Now in source code order
-
             if obj in func_objects_to_document:  # Should be always True!
                 mystr += f"{spacer}.. automethod:: {name}\n\n"
     else:
@@ -338,8 +336,7 @@ def which_functions_to_print(clazz):
     Written by Asif
     """
     # get all the functions in this class
-    class_functions = dict(inspect.getmembers(clazz,
-                                              predicate=inspect.isfunction))
+    class_functions = dict(inspect.getmembers(clazz, predicate=inspect.isfunction))
 
     ok_to_print = []
 
@@ -355,9 +352,7 @@ def which_functions_to_print(clazz):
             # skip over the class we're checking
             if baseclass != clazz:
                 # get the functions of the base class
-                functions_base_class = dict(
-                    inspect.getmembers(baseclass,
-                                       predicate=inspect.isfunction))
+                functions_base_class = dict(inspect.getmembers(baseclass, predicate=inspect.isfunction))
 
                 # if there is a function with the same name as base class
                 if func_name in functions_base_class:
@@ -423,7 +418,7 @@ def extract_bases(class_name, class_obj, spacer=""):
         # We don't want to include the name of the child class.
         # Or the "object" class, which all objects will
         # ultimately inherit from.
-        if ("object" not in str(b) and class_name not in str(b)):
+        if "object" not in str(b) and class_name not in str(b):
             relevant_bases.append(b)
 
     if len(parents) > 0:
@@ -464,7 +459,7 @@ def get_base_string(class_name, class_obj, base_obj):
     # or "tlo.core.Module"
     if "." in fqn:
         parts = fqn.split(".")
-        name = parts[-1]   # e.g. Mockitis or Module
+        name = parts[-1]  # e.g. Mockitis or Module
     else:
         name = fqn
 
@@ -541,7 +536,7 @@ def create_table(mydict):
     If there is no data, an empty list is returned.
     """
 
-    examplestr = '''
+    examplestr = """
 .. list-table::
    :widths: 25 25 50
    :header-rows: 1
@@ -549,7 +544,7 @@ def create_table(mydict):
    * - Item
      - Type
      - Description
-'''
+"""
     if len(mydict) == 0:
         return []
     else:
@@ -559,17 +554,17 @@ def create_table(mydict):
             mytype = item.type_  # e.g. <Types.REAL: 4>
             the_type = mytype.name  # e.g. 'REAL'
 
-            if the_type == 'CATEGORICAL':
+            if the_type == "CATEGORICAL":
                 description += ".  Possible values are: ["
                 mylist = item.categories
                 for mything in mylist:
-                    description += f'{mything}, '
+                    description += f"{mything}, "
                 description += "]"
 
-            row = f'''   * - {key}
+            row = f"""   * - {key}
      - {the_type}
      - {description}
-'''
+"""
             examplestr += row
     mylist = examplestr.splitlines()
     return mylist

@@ -57,19 +57,19 @@ class Symptom:
     The characteristics of Symptoms is separate for adults (peron aged 15+) and children (those aged aged <15).
     """
 
-    def __init__(self,
-                 name: str = None,
-                 no_healthcareseeking_in_adults: bool = False,
-                 no_healthcareseeking_in_children: bool = False,
-                 odds_ratio_health_seeking_in_adults: float = None,
-                 odds_ratio_health_seeking_in_children: float = None,
-                 prob_seeks_emergency_appt_in_adults: float = None,
-                 prob_seeks_emergency_appt_in_children: float = None,
-                 ):
-
+    def __init__(
+        self,
+        name: str = None,
+        no_healthcareseeking_in_adults: bool = False,
+        no_healthcareseeking_in_children: bool = False,
+        odds_ratio_health_seeking_in_adults: float = None,
+        odds_ratio_health_seeking_in_children: float = None,
+        prob_seeks_emergency_appt_in_adults: float = None,
+        prob_seeks_emergency_appt_in_children: float = None,
+    ):
         # Check that the types are correct and not nonsensical
         assert isinstance(name, str)
-        assert name, 'name of symptom cannot be blank'
+        assert name, "name of symptom cannot be blank"
 
         assert isinstance(no_healthcareseeking_in_adults, bool)
         assert isinstance(no_healthcareseeking_in_children, bool)
@@ -124,10 +124,10 @@ class Symptom:
         from tlo.methods.healthseekingbehaviour import HIGH_ODDS_RATIO
 
         if name is None:
-            raise ValueError('No name given.')
+            raise ValueError("No name given.")
 
         if which not in ("adults", "children", "both"):
-            raise ValueError('Argument not recognised.')
+            raise ValueError("Argument not recognised.")
 
         emergency_in_adults = which in ("adults", "both")
         emergency_in_children = which in ("children", "both")
@@ -151,15 +151,19 @@ class Symptom:
         places. Without this two instance of the object with the same properties are not recognised as being the 'same'.
         This is done in conjunction with over-riding the hash property."""
         return isinstance(other, Symptom) and all(
-            [getattr(self, p) == getattr(other, p) for p in [
-                'name',
-                'no_healthcareseeking_in_children',
-                'no_healthcareseeking_in_adults',
-                'prob_seeks_emergency_appt_in_adults',
-                'prob_seeks_emergency_appt_in_children',
-                'odds_ratio_health_seeking_in_adults',
-                'odds_ratio_health_seeking_in_children']
-             ])
+            [
+                getattr(self, p) == getattr(other, p)
+                for p in [
+                    "name",
+                    "no_healthcareseeking_in_children",
+                    "no_healthcareseeking_in_adults",
+                    "prob_seeks_emergency_appt_in_adults",
+                    "prob_seeks_emergency_appt_in_children",
+                    "odds_ratio_health_seeking_in_adults",
+                    "odds_ratio_health_seeking_in_children",
+                ]
+            ]
+        )
 
     def __hash__(self):
         """Override the hash function to force set to rely on __eq__."""
@@ -178,7 +182,7 @@ class SymptomManager(Module):
      caused by conditions not represented explicitly in the model).
     """
 
-    INIT_DEPENDENCIES = {'Demography'}
+    INIT_DEPENDENCIES = {"Demography"}
 
     # Declare Metadata
     METADATA = {}
@@ -186,11 +190,14 @@ class SymptomManager(Module):
     PROPERTIES = dict()  # updated at ```pre-initialise population``` once symptoms have been registered.
 
     PARAMETERS = {
-        'generic_symptoms_spurious_occurrence': Parameter(
-            Types.DATA_FRAME, 'probability and duration of spurious occureneces of generic symptoms'),
-        'spurious_symptoms': Parameter(
-            Types.BOOL, 'whether or not there will be the spontaneous occurrence of generic symptoms. '
-                        'NB. This is over-ridden if a module key-word argument is provided.'),
+        "generic_symptoms_spurious_occurrence": Parameter(
+            Types.DATA_FRAME, "probability and duration of spurious occureneces of generic symptoms"
+        ),
+        "spurious_symptoms": Parameter(
+            Types.BOOL,
+            "whether or not there will be the spontaneous occurrence of generic symptoms. "
+            "NB. This is over-ridden if a module key-word argument is provided.",
+        ),
     }
 
     def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=None):
@@ -201,19 +208,19 @@ class SymptomManager(Module):
         self._persons_with_newly_onset_symptoms = set()
 
         self.generic_symptoms = {
-            'fever',
-            'vomiting',
-            'stomachache',
-            'sore_throat',
-            'respiratory_symptoms',
-            'headache',
-            'skin_complaint',
-            'dental_complaint',
-            'backache',
-            'injury',
-            'eye_complaint',
-            'diarrhoea',
-            'spurious_emergency_symptom'
+            "fever",
+            "vomiting",
+            "stomachache",
+            "sore_throat",
+            "respiratory_symptoms",
+            "headache",
+            "skin_complaint",
+            "dental_complaint",
+            "backache",
+            "injury",
+            "eye_complaint",
+            "diarrhoea",
+            "spurious_emergency_symptom",
         }
 
         self.all_registered_symptoms = set()
@@ -226,14 +233,16 @@ class SymptomManager(Module):
 
     def get_column_name_for_symptom(self, symptom_name):
         """get the column name that corresponds to the symptom_name"""
-        return f'sy_{symptom_name}'
+        return f"sy_{symptom_name}"
 
     def read_parameters(self, data_folder):
         """Read in the generic symptoms and register them"""
-        self.parameters['generic_symptoms_spurious_occurrence'] = \
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
+        self.parameters["generic_symptoms_spurious_occurrence"] = pd.read_csv(
+            Path(self.resourcefilepath) / "ResourceFile_GenericSymptoms_and_HealthSeeking.csv"
+        )
         self.load_parameters_from_dataframe(
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_SymptomManager.csv'))
+            pd.read_csv(Path(self.resourcefilepath) / "ResourceFile_SymptomManager.csv")
+        )
 
     def register_symptom(self, *symptoms_to_register: Symptom):
         """
@@ -253,20 +262,25 @@ class SymptomManager(Module):
 
     def register_generic_symptoms(self):
         """Register the genric symptoms, using information read in from the ResourceFile."""
-        df = self.parameters['generic_symptoms_spurious_occurrence']
+        df = self.parameters["generic_symptoms_spurious_occurrence"]
 
         # Check that information is contained in the ResourceFile for every generic symptom that must be defined
-        assert self.generic_symptoms == set(df['name'].to_list())
+        assert self.generic_symptoms == set(df["name"].to_list())
 
-        symptoms_to_register = df[
-            [
-                'name',
-                'odds_ratio_health_seeking_in_children',
-                'odds_ratio_health_seeking_in_adults',
-                'prob_seeks_emergency_appt_in_adults',
-                'prob_seeks_emergency_appt_in_children',
+        symptoms_to_register = (
+            df[
+                [
+                    "name",
+                    "odds_ratio_health_seeking_in_children",
+                    "odds_ratio_health_seeking_in_adults",
+                    "prob_seeks_emergency_appt_in_adults",
+                    "prob_seeks_emergency_appt_in_children",
+                ]
             ]
-        ].set_index('name').loc[sorted(self.generic_symptoms)].reset_index()  # order as `sorted(self.generic_symptoms)`
+            .set_index("name")
+            .loc[sorted(self.generic_symptoms)]
+            .reset_index()
+        )  # order as `sorted(self.generic_symptoms)`
 
         for _, _r in symptoms_to_register.iterrows():
             self.register_symptom(Symptom(**_r.to_dict()))
@@ -281,8 +295,9 @@ class SymptomManager(Module):
         SymptomManager.PROPERTIES = dict()
         for symptom_name in sorted(self.symptom_names):
             symptom_column_name = self.get_column_name_for_symptom(symptom_name)
-            SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.BITSET,
-                                                                      f'Presence of symptom {symptom_name}')
+            SymptomManager.PROPERTIES[symptom_column_name] = Property(
+                Types.BITSET, f"Presence of symptom {symptom_name}"
+            )
 
     def initialise_population(self, population):
         """
@@ -295,9 +310,7 @@ class SymptomManager(Module):
 
         # Establish the BitSetHandler for the symptoms
         self.bsh = BitsetHandler(
-            population=self.sim.population,
-            column=None,
-            elements=self.modules_that_can_impose_symptoms
+            population=self.sim.population, column=None, elements=self.modules_that_can_impose_symptoms
         )
         # NB. Bitset handler will establish such that everyone has no symptoms. i.e. can check below:
         # symptom_col_names = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
@@ -308,24 +321,19 @@ class SymptomManager(Module):
         #     assert not u.any().any()
 
         # Determine whether there will be spurious symptoms. Use parameter value, unless a module kwarg provided.
-        self.spurious_symptoms = self.parameters['spurious_symptoms'] \
-            if self.arg_spurious_symptoms is None else self.arg_spurious_symptoms
+        self.spurious_symptoms = (
+            self.parameters["spurious_symptoms"] if self.arg_spurious_symptoms is None else self.arg_spurious_symptoms
+        )
 
     def initialise_simulation(self, sim):
         """Schedule SpuriousSymptomsOnset/Resolve if the parameter 'spurious_symptoms' is True"""
         if self.spurious_symptoms:
             # Create and schedule the Onset Event
-            sim.schedule_event(
-                SymptomManager_SpuriousSymptomOnset(module=self),
-                self.sim.date
-            )
+            sim.schedule_event(SymptomManager_SpuriousSymptomOnset(module=self), self.sim.date)
 
             # Create and schedule the Resolve event (and retain pointer to the event)
             self.spurious_symptom_resolve_event = SymptomManager_SpuriousSymptomResolve(module=self)
-            sim.schedule_event(
-                self.spurious_symptom_resolve_event,
-                self.sim.date
-            )
+            sim.schedule_event(self.spurious_symptom_resolve_event, self.sim.date)
 
     def on_birth(self, mother_id, child_id):
         """Give a value of 0 for each symptom.
@@ -335,8 +343,9 @@ class SymptomManager(Module):
         for property in self.PROPERTIES:
             df.at[child_id, property] = 0
 
-    def change_symptom(self, person_id, symptom_string, add_or_remove, disease_module,
-                       duration_in_days=None, date_of_onset=None):
+    def change_symptom(
+        self, person_id, symptom_string, add_or_remove, disease_module, duration_in_days=None, date_of_onset=None
+    ):
         """
         This is how disease module report that a person has developed a new symptom or an existing symptom has resolved.
         The sy_ property contains a set of of the disease_module names that currently cause the symptom.
@@ -363,10 +372,10 @@ class SymptomManager(Module):
 
         # Check that all symptoms in symptom_string are legitimate
         for sym in symptom_string:
-            assert sym in self.symptom_names, f'Symptom {sym} is not recognised'
+            assert sym in self.symptom_names, f"Symptom {sym} is not recognised"
 
         # Check that the add/remove signal is legitimate
-        assert add_or_remove in ['+', '-']
+        assert add_or_remove in ["+", "-"]
 
         # Check that the duration in days makes sense
         if duration_in_days is not None:
@@ -377,24 +386,25 @@ class SymptomManager(Module):
 
         # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (
-            (isinstance(date_of_onset, pd.Timestamp))
-            and (date_of_onset >= self.sim.date)
+            (isinstance(date_of_onset, pd.Timestamp)) and (date_of_onset >= self.sim.date)
         )
 
         # If the date of onset if not equal to today's date, then schedule the auto_onset event
         if (date_of_onset is not None) and (date_of_onset > self.sim.date):
-            auto_onset_event = SymptomManager_AutoOnsetEvent(self,
-                                                             person_id=person_id,
-                                                             symptom_string=symptom_string,
-                                                             disease_module=disease_module,
-                                                             duration_in_days=duration_in_days)
+            auto_onset_event = SymptomManager_AutoOnsetEvent(
+                self,
+                person_id=person_id,
+                symptom_string=symptom_string,
+                disease_module=disease_module,
+                duration_in_days=duration_in_days,
+            )
             self.sim.schedule_event(event=auto_onset_event, date=date_of_onset)
             return
 
         sy_columns = [self.get_column_name_for_symptom(sym) for sym in symptom_string]
 
         # Make the operation:
-        if add_or_remove == '+':
+        if add_or_remove == "+":
             # Add this disease module as a cause of this symptom
 
             self.bsh.set(person_id, disease_module.name, columns=sy_columns)
@@ -406,22 +416,25 @@ class SymptomManager(Module):
 
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
             if duration_in_days is not None:
-                auto_resolve_event = SymptomManager_AutoResolveEvent(self,
-                                                                     person_id=person_id,
-                                                                     symptom_string=symptom_string,
-                                                                     disease_module=disease_module)
-                self.sim.schedule_event(event=auto_resolve_event,
-                                        date=self.sim.date + DateOffset(days=int(duration_in_days)))
+                auto_resolve_event = SymptomManager_AutoResolveEvent(
+                    self, person_id=person_id, symptom_string=symptom_string, disease_module=disease_module
+                )
+                self.sim.schedule_event(
+                    event=auto_resolve_event, date=self.sim.date + DateOffset(days=int(duration_in_days))
+                )
 
         else:
             # Remove this disease module as a cause of this symptom
             # But, first, check that this symptom is being caused by this disease module.
-            the_disease_module_is_causing_the_symptom = \
+            the_disease_module_is_causing_the_symptom = (
                 self.bsh.has(person_id, disease_module.name, columns=sy_columns).all().all()
+            )
             if not the_disease_module_is_causing_the_symptom:
-                logger.debug(key="message",
-                             data=f"Request from disease module '{disease_module.name}' to remove the symptom(s) "
-                                  f"'{symptom_string}', which it is not currently causing.")
+                logger.debug(
+                    key="message",
+                    data=f"Request from disease module '{disease_module.name}' to remove the symptom(s) "
+                    f"'{symptom_string}', which it is not currently causing.",
+                )
 
             # Do the remove:
             self.bsh.unset(person_id, disease_module.name, columns=sy_columns)
@@ -450,7 +463,7 @@ class SymptomManager(Module):
         assert len(list_of_symptoms) > 0
 
         # Check that these are legitimate symptoms
-        assert all([symp in self.symptom_names for symp in list_of_symptoms]), 'Symptom not registered'
+        assert all([symp in self.symptom_names for symp in list_of_symptoms]), "Symptom not registered"
 
         # Find who has all the symptoms
         df = self.sim.population.props
@@ -470,15 +483,12 @@ class SymptomManager(Module):
 
         # Check that symptom string is OK
         assert isinstance(symptom_string, str)
-        assert symptom_string in self.symptom_names, 'Symptom not registered'
+        assert symptom_string in self.symptom_names, "Symptom not registered"
 
         # Does not have symptom:
         return df.index[
-            df.is_alive
-            & self.bsh.is_empty(
-                slice(None), columns=self.get_column_name_for_symptom(symptom_string)
-            )
-            ]
+            df.is_alive & self.bsh.is_empty(slice(None), columns=self.get_column_name_for_symptom(symptom_string))
+        ]
 
     def has_what(
         self,
@@ -503,9 +513,7 @@ class SymptomManager(Module):
         :return: list of strings for the symptoms that are currently being experienced.
         """
         assert (
-            disease_module.name in ([self.name] + self.recognised_module_names)
-            if disease_module is not None
-            else True
+            disease_module.name in ([self.name] + self.recognised_module_names) if disease_module is not None else True
         ), "Disease Module Name is not recognised"
 
         # Faster to get current symptoms using tracker when no disease is specified
@@ -522,11 +530,8 @@ class SymptomManager(Module):
                 return [
                     symptom
                     for symptom in self.symptom_names
-                    if individual_details[
-                           self.bsh._get_columns(self.get_column_name_for_symptom(symptom))
-                       ]
-                       & int_repr
-                       != 0
+                    if individual_details[self.bsh._get_columns(self.get_column_name_for_symptom(symptom))] & int_repr
+                    != 0
                 ]
             else:
                 return [
@@ -543,12 +548,8 @@ class SymptomManager(Module):
             assert df.at[person_id, "is_alive"], "The person is not alive"
 
             if disease_module is not None:
-                sy_columns = [
-                    self.get_column_name_for_symptom(s) for s in self.symptom_names
-                ]
-                person_has = self.bsh.has(
-                    [person_id], disease_module.name, first=True, columns=sy_columns
-                )
+                sy_columns = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
+                person_has = self.bsh.has([person_id], disease_module.name, first=True, columns=sy_columns)
                 return [s for s in self.symptom_names if person_has[self.get_column_name_for_symptom(s)]]
             else:
                 return [s for s in self.symptom_names if df.at[person_id, self.get_column_name_for_symptom(s)] > 0]
@@ -557,9 +558,11 @@ class SymptomManager(Module):
         """Find the set of symptoms for a list of person_ids.
         NB. This is a fast implementation without the same amount checking as 'has_what'"""
         df = self.sim.population.props
-        return df.loc[person_ids].apply(
-            lambda p: [s for s in self.symptom_names if p[f'sy_{s}'] > 0], axis=1, result_type='reduce'
-        ).rename('symptoms')
+        return (
+            df.loc[person_ids]
+            .apply(lambda p: [s for s in self.symptom_names if p[f"sy_{s}"] > 0], axis=1, result_type="reduce")
+            .rename("symptoms")
+        )
 
     def causes_of(self, person_id: int, symptom_string):
         """
@@ -569,20 +572,14 @@ class SymptomManager(Module):
         :param disease_module:
         :return: list of strings for the disease module name
         """
-        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
-        assert isinstance(symptom_string, str), 'symptom_string must be a string'
+        assert isinstance(person_id, (int, np.integer)), "person_id must be a single integer for one particular person"
+        assert isinstance(symptom_string, str), "symptom_string must be a string"
 
         df = self.sim.population.props
-        assert df.at[person_id, 'is_alive'], "The person is not alive"
+        assert df.at[person_id, "is_alive"], "The person is not alive"
         assert symptom_string in self.symptom_names
 
-        return list(
-            self.bsh.get(
-                [person_id],
-                first=True,
-                columns=self.get_column_name_for_symptom(symptom_string)
-            )
-        )
+        return list(self.bsh.get([person_id], first=True, columns=self.get_column_name_for_symptom(symptom_string)))
 
     def clear_symptoms(self, person_id: Union[int, Sequence[int]], disease_module: Module):
         """
@@ -595,10 +592,10 @@ class SymptomManager(Module):
 
         if isinstance(person_id, (int, np.integer)):
             person_id = [person_id]
-        assert df.loc[person_id, 'is_alive'].all(), "One or more persons not alive"
-        assert disease_module.name in ([self.name] + self.recognised_module_names), (
-            "Disease module name is not recognised"
-        )
+        assert df.loc[person_id, "is_alive"].all(), "One or more persons not alive"
+        assert disease_module.name in (
+            [self.name] + self.recognised_module_names
+        ), "Disease module name is not recognised"
         sy_columns = [self.get_column_name_for_symptom(sym) for sym in self.symptom_names]
         self.bsh.unset(person_id, disease_module.name, columns=sy_columns)
 
@@ -666,11 +663,13 @@ class SymptomManager_AutoOnsetEvent(Event, PopulationScopeEventMixin):
         self.duration_in_days = duration_in_days
 
     def apply(self, population):
-        self.module.change_symptom(person_id=self.person_id,
-                                   symptom_string=self.symptom_string,
-                                   add_or_remove='+',
-                                   disease_module=self.disease_module,
-                                   duration_in_days=self.duration_in_days)
+        self.module.change_symptom(
+            person_id=self.person_id,
+            symptom_string=self.symptom_string,
+            add_or_remove="+",
+            disease_module=self.disease_module,
+            duration_in_days=self.duration_in_days,
+        )
 
 
 class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
@@ -690,15 +689,16 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
         self.disease_module = disease_module
 
     def apply(self, population):
-        self.module.change_symptom(person_id=self.person_id,
-                                   symptom_string=self.symptom_string,
-                                   add_or_remove='-',
-                                   disease_module=self.disease_module)
+        self.module.change_symptom(
+            person_id=self.person_id,
+            symptom_string=self.symptom_string,
+            add_or_remove="-",
+            disease_module=self.disease_module,
+        )
 
 
 class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixin):
-    """ This event gives the occurrence of generic symptoms that are not caused by a disease module in the TLO model.
-    """
+    """This event gives the occurrence of generic symptoms that are not caused by a disease module in the TLO model."""
 
     def __init__(self, module):
         """This event occurs every day"""
@@ -706,22 +706,23 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
 
         assert isinstance(module, SymptomManager)
         self.generic_symptoms = self.get_generic_symptoms_dict(
-            self.module.parameters['generic_symptoms_spurious_occurrence'])
+            self.module.parameters["generic_symptoms_spurious_occurrence"]
+        )
         self.rand = self.module.rng.rand
 
     def get_generic_symptoms_dict(self, generic_sympoms_df):
         """Helper function to store contents of the generic_symptoms dataframe as dicts"""
-        df = generic_sympoms_df.set_index('name')
+        df = generic_sympoms_df.set_index("name")
 
         return {
-            'prob_per_day': {
-                'children': df['prob_spurious_occurrence_in_children_per_day'].to_dict(),
-                'adults': df['prob_spurious_occurrence_in_adults_per_day'].to_dict()
+            "prob_per_day": {
+                "children": df["prob_spurious_occurrence_in_children_per_day"].to_dict(),
+                "adults": df["prob_spurious_occurrence_in_adults_per_day"].to_dict(),
             },
-            'duration_in_days': {
-                'children': df['duration_in_days_of_spurious_occurrence_in_children'].astype(int).to_dict(),
-                'adults': df['duration_in_days_of_spurious_occurrence_in_adults'].astype(int).to_dict()
-            }
+            "duration_in_days": {
+                "children": df["duration_in_days_of_spurious_occurrence_in_children"].astype(int).to_dict(),
+                "adults": df["duration_in_days_of_spurious_occurrence_in_adults"].astype(int).to_dict(),
+            },
         }
 
     def apply(self, population):
@@ -729,28 +730,26 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
 
         df = self.sim.population.props
         group_indices = {
-            'children': df.index[df.is_alive & (df.age_years < 15)],
-            'adults': df.index[df.is_alive & (df.age_years >= 15)]
+            "children": df.index[df.is_alive & (df.age_years < 15)],
+            "adults": df.index[df.is_alive & (df.age_years >= 15)],
         }
 
         # For each generic symptom, impose it on a random sample of persons who do not have that symptom currently:
         for symp in sorted(self.module.generic_symptoms):
             do_not_have_symptom = self.module.who_not_have(symptom_string=symp)
 
-            for group in ['children', 'adults']:
-                p = self.generic_symptoms['prob_per_day'][group][symp]
-                dur = self.generic_symptoms['duration_in_days'][group][symp]
-                persons_eligible_to_get_symptom = group_indices[group][
-                    group_indices[group].isin(do_not_have_symptom)
-                ]
+            for group in ["children", "adults"]:
+                p = self.generic_symptoms["prob_per_day"][group][symp]
+                dur = self.generic_symptoms["duration_in_days"][group][symp]
+                persons_eligible_to_get_symptom = group_indices[group][group_indices[group].isin(do_not_have_symptom)]
                 persons_to_onset_with_this_symptom = persons_eligible_to_get_symptom[
                     self.rand(len(persons_eligible_to_get_symptom)) < p
-                    ]
+                ]
 
                 # Do onset
-                self.sim.modules['SymptomManager'].change_symptom(
+                self.sim.modules["SymptomManager"].change_symptom(
                     symptom_string=symp,
-                    add_or_remove='+',
+                    add_or_remove="+",
                     person_id=persons_to_onset_with_this_symptom,
                     duration_in_days=None,  # <- resolution for these is handled by the SpuriousSymptomsResolve Event
                     disease_module=self.module,
@@ -760,13 +759,12 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
                 self.module.spurious_symptom_resolve_event.schedule_symptom_resolve(
                     person_id=persons_to_onset_with_this_symptom,
                     symptom_string=symp,
-                    date_of_resolution=(self.sim.date + pd.DateOffset(days=dur)).date()
+                    date_of_resolution=(self.sim.date + pd.DateOffset(days=dur)).date(),
                 )
 
 
 class SymptomManager_SpuriousSymptomResolve(RegularEvent, PopulationScopeEventMixin):
-    """ This event resolves the generic symptoms that have been onset by this module.
-    """
+    """This event resolves the generic symptoms that have been onset by this module."""
 
     def __init__(self, module):
         """This event occurs every day"""
@@ -792,8 +790,5 @@ class SymptomManager_SpuriousSymptomResolve(RegularEvent, PopulationScopeEventMi
                 person_ids = self.to_resolve[symp].pop(date_today)
                 person_ids_alive = df.index[df.index.isin(person_ids) & df.is_alive]
                 self.module.change_symptom(
-                    person_id=person_ids_alive,
-                    add_or_remove='-',
-                    symptom_string=symp,
-                    disease_module=self.module
+                    person_id=person_ids_alive, add_or_remove="-", symptom_string=symp, disease_module=self.module
                 )

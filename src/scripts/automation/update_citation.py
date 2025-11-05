@@ -27,9 +27,7 @@ CFF_PERSON_ALLOWED_KEYS = (
 
 
 def strip_non_cff_fields(person):
-    return {
-        key: value for key, value in person.items() if key in CFF_PERSON_ALLOWED_KEYS
-    }
+    return {key: value for key, value in person.items() if key in CFF_PERSON_ALLOWED_KEYS}
 
 
 def strip_and_filter_contributors(contributors):
@@ -42,9 +40,7 @@ def strip_and_filter_contributors(contributors):
 
 if __name__ == "__main__":
     root_directory = Path(__file__).parent.parent.parent.parent
-    parser = argparse.ArgumentParser(
-        description="Update author list in citation file format (CFF) file"
-    )
+    parser = argparse.ArgumentParser(description="Update author list in citation file format (CFF) file")
     parser.add_argument(
         "--contributors-file-path",
         type=Path,
@@ -60,10 +56,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--check",
         action="store_true",
-        help=(
-            "Whether to check if citation file will be updated without modifying file "
-            "and raise an error if so."
-        ),
+        help=("Whether to check if citation file will be updated without modifying file " "and raise an error if so."),
     )
     args = parser.parse_args()
     assert args.contributors_file_path.exists()

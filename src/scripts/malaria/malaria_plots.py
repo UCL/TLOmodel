@@ -54,12 +54,12 @@ scaling_factor = output["tlo.methods.population"]["scaling_factor"].values[0][1]
 
 # numbers rdt requested
 cons = output["tlo.methods.healthsystem.summary"]["Consumables"]
-rdt_item_code = '163'
+rdt_item_code = "163"
 
 rdt_usage_model = []
 # extract item rdt values for each year
 for row in range(cons.shape[0]):
-    cons_dict = cons.at[row, 'Item_Available']
+    cons_dict = cons.at[row, "Item_Available"]
     rdt_usage_model.append(cons_dict.get(rdt_item_code))
 
 scaled_rdt_usage_model = [i * scaling_factor for i in rdt_usage_model]
@@ -89,8 +89,7 @@ ax = plt.subplot(221)  # numrows, numcols, fignum
 plt.plot(incMAP_data.Year, incMAP_data.IncidenceRatePer1000, color="crimson")  # MAP data
 plt.plot(WHO_data.Year, WHO_data.IncidencePer1000, color="darkorchid")  # WHO data
 plt.fill_between(
-    WHO_data.Year, WHO_data.IncidencePer1000Low, WHO_data.IncidencePer1000High,
-    color="darkorchid", alpha=0.1
+    WHO_data.Year, WHO_data.IncidencePer1000Low, WHO_data.IncidencePer1000High, color="darkorchid", alpha=0.1
 )
 plt.plot(
     model_years, inc.inc_1000py, color="mediumseagreen"
@@ -129,7 +128,9 @@ plt.xticks(rotation=90)
 plt.ylabel("Numbers of RDTs used")
 plt.gca().set_xlim(start_date, end_date)
 plt.gca().set_ylim(0.0, 4.0e7)
-plt.legend(labels=["MAP", "WHO", "NMCP", "Model"], )
+plt.legend(
+    labels=["MAP", "WHO", "NMCP", "Model"],
+)
 plt.tight_layout()
 
 # malaria rdt yield
@@ -165,7 +166,7 @@ plt.errorbar(
     yerr=[[10.6], [21.9]],
     fmt="o",
 )
-plt.axhline(y=27.34, color='g', linestyle='-')
+plt.axhline(y=27.34, color="g", linestyle="-")
 plt.title("malaria prevalence in HIV population")
 plt.xlabel("Year")
 plt.ylabel("Prevalence")
@@ -195,7 +196,7 @@ rdt_facilities = output["tlo.methods.malaria"]["rdt_log"]
 
 # limit to first tests only?
 # rdt_all = rdt_facilities
-rdt_all = rdt_facilities.loc[~(rdt_facilities.called_by == 'Malaria_Treatment')]
+rdt_all = rdt_facilities.loc[~(rdt_facilities.called_by == "Malaria_Treatment")]
 
 # todo exclude people having repeat diagnostic tests (through malaria module and hsi_generic)
 # just exclude for this plot - they can occur in reality
@@ -204,36 +205,42 @@ rdt_all = rdt_facilities.loc[~(rdt_facilities.called_by == 'Malaria_Treatment')]
 # limit to children <5 yrs with fever
 rdt_child = rdt_facilities.loc[(rdt_facilities.age <= 5) & rdt_facilities.fever_present]
 # remove tests given for confirmation with treatment
-rdt_child = rdt_child.loc[~(rdt_child.called_by == 'Malaria_Treatment')]
+rdt_child = rdt_child.loc[~(rdt_child.called_by == "Malaria_Treatment")]
 
-colours = ['#B7C3F3', '#DD7596', '#FFF68F']
+colours = ["#B7C3F3", "#DD7596", "#FFF68F"]
 
 plt.rcParams["axes.titlesize"] = 9
 
 ax = plt.subplot(121)  # numrows, numcols, fignum
 # calculate proportion of rdt delivered by facility level
-level0 = rdt_all['facility_level'].value_counts()['0'] / len(rdt_all)
-level1a = rdt_all['facility_level'].value_counts()['1a'] / len(rdt_all)
+level0 = rdt_all["facility_level"].value_counts()["0"] / len(rdt_all)
+level1a = rdt_all["facility_level"].value_counts()["1a"] / len(rdt_all)
 # level1b = rdt_all['facility_level'].value_counts()['1b'] / len(rdt_all)
-level2 = rdt_all['facility_level'].value_counts()['2'] / len(rdt_all)
+level2 = rdt_all["facility_level"].value_counts()["2"] / len(rdt_all)
 
-plt.pie([level0, level1a, level2], labels=['level 0', 'level 1a', 'level 2'],
-        wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
-        autopct='%.1f%%',
-        colors=colours)
+plt.pie(
+    [level0, level1a, level2],
+    labels=["level 0", "level 1a", "level 2"],
+    wedgeprops={"linewidth": 3, "edgecolor": "white"},
+    autopct="%.1f%%",
+    colors=colours,
+)
 plt.title("Facility level giving first rdt \n all ages")
 
 ax2 = plt.subplot(122)  # numrows, numcols, fignum
 # calculate proportion of rdt delivered by facility level - children with fever
-level0 = rdt_child['facility_level'].value_counts()['0'] / len(rdt_child)
-level1a = rdt_child['facility_level'].value_counts()['1a'] / len(rdt_child)
+level0 = rdt_child["facility_level"].value_counts()["0"] / len(rdt_child)
+level1a = rdt_child["facility_level"].value_counts()["1a"] / len(rdt_child)
 # level1b = rdt_child['facility_level'].value_counts()['1b'] / len(rdt_child)
-level2 = rdt_child['facility_level'].value_counts()['2'] / len(rdt_child)
+level2 = rdt_child["facility_level"].value_counts()["2"] / len(rdt_child)
 
-plt.pie([level0, level1a, level2], labels=['level 0', 'level 1a', 'level 2'],
-        wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
-        autopct='%.1f%%',
-        colors=colours)
+plt.pie(
+    [level0, level1a, level2],
+    labels=["level 0", "level 1a", "level 2"],
+    wedgeprops={"linewidth": 3, "edgecolor": "white"},
+    autopct="%.1f%%",
+    colors=colours,
+)
 plt.title("Facility level giving first rdt  \n children with fever")
 plt.tight_layout()
 
@@ -260,7 +267,7 @@ deaths = deaths.set_index("date")
 
 # Malaria deaths
 # keep if cause = malaria
-keep = (deaths.cause == "Malaria")
+keep = deaths.cause == "Malaria"
 deaths = deaths.loc[keep].copy()
 deaths["year"] = deaths.index.year  # count by year
 deaths_yr = deaths.groupby(by=["year"]).size()
@@ -285,16 +292,21 @@ t_mask = np.isfinite(deaths_rate_100kpy)
 ax = plt.subplot(111)  # numrows, numcols, fignum
 plt.plot(MAP_mort.Year, MAP_mort.mortality_rate_median * 100_000, color="crimson")  # MAP data
 plt.fill_between(
-    MAP_mort.Year, MAP_mort.mortality_rate_LCI * 100_000, MAP_mort.mortality_rate_UCI * 100_000,
-    color="crimson", alpha=0.5
+    MAP_mort.Year,
+    MAP_mort.mortality_rate_LCI * 100_000,
+    MAP_mort.mortality_rate_UCI * 100_000,
+    color="crimson",
+    alpha=0.5,
 )
 plt.plot(WHO_data.Year, WHO_data.MortalityRatePer100_000, color="seagreen")  # WHO data
 plt.fill_between(
-    WHO_data.Year, WHO_data.MortalityRatePer100_000Low, WHO_data.MortalityRatePer100_000_High,
-    color="seagreen", alpha=0.5
+    WHO_data.Year,
+    WHO_data.MortalityRatePer100_000Low,
+    WHO_data.MortalityRatePer100_000_High,
+    color="seagreen",
+    alpha=0.5,
 )
-plt.plot(
-    x_labels[t_mask], deaths_rate_100kpy[t_mask], color="blue")  # model
+plt.plot(x_labels[t_mask], deaths_rate_100kpy[t_mask], color="blue")  # model
 plt.title("Malaria deaths /100_000py")
 plt.xlabel("Year")
 plt.ylabel("Deaths (/100_000py)")

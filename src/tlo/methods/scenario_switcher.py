@@ -31,17 +31,17 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
     PARAMETERS = {
         # Each of these parameter is a list of two booleans -- [bool, bool] -- which represent (i) the state during the
         # period before the date of a switch in state, (ii) the state at the date of switch and the period thereafter.
-
         # -- Health System Strengthening Switches
         "max_healthsystem_function": Parameter(
-            Types.LIST, "If True, over-writes parameters that define maximal health system function."
-                        "Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`."
+            Types.LIST,
+            "If True, over-writes parameters that define maximal health system function."
+            "Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`.",
         ),
         "max_healthcare_seeking": Parameter(
-            Types.LIST, "If True, over-writes parameters that define maximal healthcare-seeking behaviour. "
-                        "Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`."
+            Types.LIST,
+            "If True, over-writes parameters that define maximal healthcare-seeking behaviour. "
+            "Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`.",
         ),
-
         # This parameter specifies the year in which the state changes. The change occurs on 1st January of that year.
         # If there should not be any switch, then this year can be set to a year that is beyond the end of the
         # simulation.
@@ -64,11 +64,11 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
 
     def pre_initialise_population(self):
         """Set the parameters for the first period of the simulation.
-         Note that this is happening here and not in initialise_simulation because we want to make sure that the
-         parameters are changed before other modules call `pre_initialise_population`. We ensure that this module's
-         method is the first to be called as this module is declared as an (Optional) dependency of the module that is
-         loaded first in the simulation (i.e. `Demography`). This provides a close approximation to what would happen if
-         the parameters were being changed by the `Scenario` class."""
+        Note that this is happening here and not in initialise_simulation because we want to make sure that the
+        parameters are changed before other modules call `pre_initialise_population`. We ensure that this module's
+        method is the first to be called as this module is declared as an (Optional) dependency of the module that is
+        loaded first in the simulation (i.e. `Demography`). This provides a close approximation to what would happen if
+        the parameters were being changed by the `Scenario` class."""
         self.update_parameters()
 
     def update_parameters(self):
@@ -80,8 +80,8 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
 
         params_to_update = get_parameters_for_improved_healthsystem_and_healthcare_seeking(
             resourcefilepath=self.resourcefilepath,
-            max_healthsystem_function=self.parameters['max_healthsystem_function'][phase_of_simulation],
-            max_healthcare_seeking=self.parameters['max_healthcare_seeking'][phase_of_simulation],
+            max_healthsystem_function=self.parameters["max_healthsystem_function"][phase_of_simulation],
+            max_healthcare_seeking=self.parameters["max_healthcare_seeking"][phase_of_simulation],
         )
 
         for module, params in params_to_update.items():
@@ -108,12 +108,9 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
 
 
 class ScenarioSwitchEvent(Event, PopulationScopeEventMixin):
-
     def __init__(self, module):
         super().__init__(module)
 
     def apply(self, population):
         """Run the function that updates the simulation parameters."""
         self.module.update_parameters()
-
-

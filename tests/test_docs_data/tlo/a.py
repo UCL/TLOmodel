@@ -1,14 +1,15 @@
 class Person:
-    '''The basic Person class.'''
+    """The basic Person class."""
+
     def __init__(self, name):
         self._name = name
 
     def set_name(self, name):
-        '''Set the name.'''
+        """Set the name."""
         self._name = name
 
     def get_name(self):
-        '''Get the name.'''
+        """Get the name."""
         return self._name
 
 
@@ -41,7 +42,7 @@ class Mother:
         return self._job
 
 
-class Offspring (Father, Mother):
+class Offspring(Father, Mother):
     def __init__(self, age, job, name):
         # super(Father, self).__init__(age)
         # super(Mother, self).__init__(job)
@@ -57,7 +58,7 @@ class Offspring (Father, Mother):
         return str
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     p = Person("John")
     print(f"The name of this person is {p.get_name()}")
     e = Employee("Peter")

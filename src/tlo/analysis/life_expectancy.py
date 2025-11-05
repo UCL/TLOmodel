@@ -29,20 +29,16 @@ def _map_age_to_age_group(age: pd.Series) -> pd.Series:
     - pd.Series: Series of the 'age-group', corresponding the `age` argument.
     """
     # Define age groups in 5-year intervals
-    age_groups = ['0'] + ['1-4'] + [f'{start}-{start + 4}' for start in range(5, 90, 5)] + ['90']
+    age_groups = ["0"] + ["1-4"] + [f"{start}-{start + 4}" for start in range(5, 90, 5)] + ["90"]
 
-    return pd.cut(
-        age,
-        bins=[0] + [1] + list(range(5, 95, 5)) + [float('inf')],
-        labels=age_groups, right=False
-    )
+    return pd.cut(age, bins=[0] + [1] + list(range(5, 95, 5)) + [float("inf")], labels=age_groups, right=False)
 
 
 def _extract_person_years(results_folder, _draw, _run) -> pd.Series:
     """Returns the person-years that are logged."""
-    return load_pickled_dataframes(
-        results_folder, _draw, _run, 'tlo.methods.demography'
-    )['tlo.methods.demography']['person_years']
+    return load_pickled_dataframes(results_folder, _draw, _run, "tlo.methods.demography")["tlo.methods.demography"][
+        "person_years"
+    ]
 
 
 def _num_deaths_by_age_group(results_folder, target_period) -> pd.DataFrame:
@@ -51,22 +47,24 @@ def _num_deaths_by_age_group(results_folder, target_period) -> pd.DataFrame:
     """
 
     def extract_deaths_by_age_group(df: pd.DataFrame) -> pd.Series:
-        age_group = _map_age_to_age_group(df['age'])
-        return df.loc[
-            pd.to_datetime(df.date).dt.date.between(*target_period, inclusive='both')
-        ].groupby([age_group, df["sex"]]).size()
+        age_group = _map_age_to_age_group(df["age"])
+        return (
+            df.loc[pd.to_datetime(df.date).dt.date.between(*target_period, inclusive="both")]
+            .groupby([age_group, df["sex"]])
+            .size()
+        )
 
     return extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=extract_deaths_by_age_group,
-        do_scaling=False
+        do_scaling=False,
     )
 
 
 def _aggregate_person_years_by_age(results_folder, target_period) -> pd.DataFrame:
-    """ Returns person-years in each sex/age-group for each draw/run (as pd.DataFrame with index=sex/age-groups and
+    """Returns person-years in each sex/age-group for each draw/run (as pd.DataFrame with index=sex/age-groups and
     columns=draw/run)
     """
     info = get_scenario_info(results_folder)
@@ -79,60 +77,58 @@ def _aggregate_person_years_by_age(results_folder, target_period) -> pd.DataFram
             mask = _df.date.dt.date.between(*target_period, inclusive="both")
 
             # Compute PY within time-period and summing within age-group, for each sex
-            py_by_sex_and_agegroup[(draw, run)] = pd.concat({
-                sex: _df.loc[mask, sex]
-                        .apply(pd.Series)
-                        .sum(axis=0)
-                        .pipe(lambda x: x.groupby(_map_age_to_age_group(x.index.astype(float))).sum())
-                for sex in ["M", "F"]}
+            py_by_sex_and_agegroup[(draw, run)] = pd.concat(
+                {
+                    sex: _df.loc[mask, sex]
+                    .apply(pd.Series)
+                    .sum(axis=0)
+                    .pipe(lambda x: x.groupby(_map_age_to_age_group(x.index.astype(float))).sum())
+                    for sex in ["M", "F"]
+                }
             )
 
     # Format as pd.DataFrame with multiindex in index (sex/age-group) and columns (draw/run)
     py_by_sex_and_agegroup = pd.DataFrame.from_dict(py_by_sex_and_agegroup)
-    py_by_sex_and_agegroup.index = py_by_sex_and_agegroup.index.set_names(
-        level=[0, 1], names=["sex", "age_group"]
-    )
-    py_by_sex_and_agegroup.columns = py_by_sex_and_agegroup.columns.set_names(
-        level=[0, 1], names=["draw", "run"]
-    )
+    py_by_sex_and_agegroup.index = py_by_sex_and_agegroup.index.set_names(level=[0, 1], names=["sex", "age_group"])
+    py_by_sex_and_agegroup.columns = py_by_sex_and_agegroup.columns.set_names(level=[0, 1], names=["draw", "run"])
 
     return py_by_sex_and_agegroup
 
 
-def calculate_probability_of_dying(interval_width, fraction_of_last_age_survived, sex, _person_years_at_risk,
-                                   _number_of_deaths_in_interval) -> pd.DataFrame:
+def calculate_probability_of_dying(
+    interval_width, fraction_of_last_age_survived, sex, _person_years_at_risk, _number_of_deaths_in_interval
+) -> pd.DataFrame:
     """Returns the probability of dying in each interval"""
 
-    person_years_by_sex = _person_years_at_risk.xs(key=sex, level='sex')
+    person_years_by_sex = _person_years_at_risk.xs(key=sex, level="sex")
 
-    number_of_deaths_by_sex = _number_of_deaths_in_interval.xs(key=sex, level='sex')
+    number_of_deaths_by_sex = _number_of_deaths_in_interval.xs(key=sex, level="sex")
 
     death_rate_in_interval = number_of_deaths_by_sex / person_years_by_sex
 
     death_rate_in_interval = death_rate_in_interval.fillna(0)
 
-    if death_rate_in_interval.loc['90'] == 0:
-        death_rate_in_interval.loc['90'] = death_rate_in_interval.loc['85-89']
+    if death_rate_in_interval.loc["90"] == 0:
+        death_rate_in_interval.loc["90"] = death_rate_in_interval.loc["85-89"]
 
-    condition = number_of_deaths_by_sex > (
-
-        person_years_by_sex / interval_width / interval_width)
+    condition = number_of_deaths_by_sex > (person_years_by_sex / interval_width / interval_width)
 
     probability_of_dying_in_interval = pd.Series(index=number_of_deaths_by_sex.index, dtype=float)
 
     probability_of_dying_in_interval[condition] = 1
 
-    probability_of_dying_in_interval[~condition] = interval_width * death_rate_in_interval / (
+    probability_of_dying_in_interval[~condition] = (
+        interval_width
+        * death_rate_in_interval
+        / (1 + interval_width * (1 - fraction_of_last_age_survived) * death_rate_in_interval)
+    )
 
-        1 + interval_width * (1 - fraction_of_last_age_survived) * death_rate_in_interval)
-
-    probability_of_dying_in_interval.at['90'] = 1
+    probability_of_dying_in_interval.at["90"] = 1
     return probability_of_dying_in_interval, death_rate_in_interval
 
 
 def _estimate_life_expectancy(
-    _person_years_at_risk: pd.Series,
-    _number_of_deaths_in_interval: pd.Series
+    _person_years_at_risk: pd.Series, _number_of_deaths_in_interval: pd.Series
 ) -> Dict[str, float]:
     """
     For a single run, estimate life expectancy for males and females
@@ -142,47 +138,53 @@ def _estimate_life_expectancy(
     estimated_life_expectancy_at_birth = dict()
 
     # first age-group is 0, then 1-4, 5-9, 10-14 etc. 22 categories in total
-    age_group_labels = _person_years_at_risk.index.get_level_values('age_group').unique()
+    age_group_labels = _person_years_at_risk.index.get_level_values("age_group").unique()
 
     # Extract interval width
     interval_width = [
-        5 if '90' in interval else int(interval.split('-')[1]) - int(interval.split('-')[0]) + 1
-        if '-' in interval else 1 for interval in age_group_labels.categories
+        5
+        if "90" in interval
+        else int(interval.split("-")[1]) - int(interval.split("-")[0]) + 1
+        if "-" in interval
+        else 1
+        for interval in age_group_labels.categories
     ]
     number_age_groups = len(interval_width)
     fraction_of_last_age_survived = pd.Series([0.5] * number_age_groups, index=age_group_labels)
 
     # separate male and female data
-    for sex in ['M', 'F']:
-        probability_of_dying_in_interval, death_rate_in_interval = calculate_probability_of_dying(interval_width,
-                                                                                                  fraction_of_last_age_survived,
-                                                                                                  sex,
-                                                                                                  _person_years_at_risk,
-                                                                                                  _number_of_deaths_in_interval)
+    for sex in ["M", "F"]:
+        probability_of_dying_in_interval, death_rate_in_interval = calculate_probability_of_dying(
+            interval_width, fraction_of_last_age_survived, sex, _person_years_at_risk, _number_of_deaths_in_interval
+        )
         # number_alive_at_start_of_interval
         # keep dtype as float in case using aggregated outputs
         # note range stops BEFORE the specified number
         number_alive_at_start_of_interval = pd.Series(index=range(number_age_groups), dtype=float)
         number_alive_at_start_of_interval[0] = 100_000  # hypothetical cohort
         for i in range(1, number_age_groups):
-            number_alive_at_start_of_interval[i] = (1 - probability_of_dying_in_interval[i - 1]) * \
-                                                   number_alive_at_start_of_interval[i - 1]
+            number_alive_at_start_of_interval[i] = (
+                1 - probability_of_dying_in_interval[i - 1]
+            ) * number_alive_at_start_of_interval[i - 1]
 
         # number_dying_in_interval
         number_dying_in_interval = pd.Series(index=range(number_age_groups), dtype=float)
         for i in range(0, number_age_groups - 1):
-            number_dying_in_interval[i] = number_alive_at_start_of_interval[i] - number_alive_at_start_of_interval[
-                i + 1]
+            number_dying_in_interval[i] = (
+                number_alive_at_start_of_interval[i] - number_alive_at_start_of_interval[i + 1]
+            )
         number_dying_in_interval[number_age_groups - 1] = number_alive_at_start_of_interval[number_age_groups - 1]
 
         # person-years lived in interval
         py_lived_in_interval = pd.Series(index=range(number_age_groups), dtype=float)
         for i in range(0, number_age_groups - 1):
             py_lived_in_interval[i] = interval_width[i] * (
-                number_alive_at_start_of_interval[i + 1] + fraction_of_last_age_survived[i] * number_dying_in_interval[
-                i])
-        py_lived_in_interval[number_age_groups - 1] = number_alive_at_start_of_interval[number_age_groups - 1] / \
-                                                      death_rate_in_interval[number_age_groups - 1]
+                number_alive_at_start_of_interval[i + 1]
+                + fraction_of_last_age_survived[i] * number_dying_in_interval[i]
+            )
+        py_lived_in_interval[number_age_groups - 1] = (
+            number_alive_at_start_of_interval[number_age_groups - 1] / death_rate_in_interval[number_age_groups - 1]
+        )
 
         # person-years lived beyond start of interval
         # have to iterate backwards for this
@@ -205,9 +207,7 @@ def _estimate_life_expectancy(
 
 
 def get_life_expectancy_estimates(
-    results_folder: Path,
-    target_period: Tuple[datetime.date, datetime.date],
-    summary: bool = True
+    results_folder: Path, target_period: Tuple[datetime.date, datetime.date], summary: bool = True
 ) -> pd.DataFrame:
     """
     produces sets of life expectancy estimates for each draw/run
@@ -244,16 +244,15 @@ def get_life_expectancy_estimates(
     # Initialize an empty list to collect life expectancies
     le_for_each_draw_and_run = dict()
 
-    for draw in range(info['number_of_draws']):
-        for run in range(info['runs_per_draw']):
+    for draw in range(info["number_of_draws"]):
+        for run in range(info["runs_per_draw"]):
             le_for_each_draw_and_run[(draw, run)] = _estimate_life_expectancy(
-                _number_of_deaths_in_interval=deaths[(draw, run)],
-                _person_years_at_risk=person_years[(draw, run)]
+                _number_of_deaths_in_interval=deaths[(draw, run)], _person_years_at_risk=person_years[(draw, run)]
             )
 
     output = pd.DataFrame.from_dict(le_for_each_draw_and_run)
     output.index.name = "sex"
-    output.columns = output.columns.set_names(level=[0, 1], names=['draw', 'run'])
+    output.columns = output.columns.set_names(level=[0, 1], names=["draw", "run"])
 
     if not summary:
         return output
@@ -265,7 +264,7 @@ def get_life_expectancy_estimates(
 def _calculate_probability_of_premature_death_for_single_run(
     age_before_which_death_is_defined_as_premature: int,
     person_years_at_risk: pd.Series,
-    number_of_deaths_in_interval: pd.Series
+    number_of_deaths_in_interval: pd.Series,
 ) -> Dict[str, float]:
     """
     For a single run, estimate the probability of dying before the defined premature age for males and females.
@@ -274,30 +273,32 @@ def _calculate_probability_of_premature_death_for_single_run(
     """
     probability_of_premature_death = dict()
 
-    age_group_labels = person_years_at_risk.index.get_level_values('age_group').unique()
+    age_group_labels = person_years_at_risk.index.get_level_values("age_group").unique()
     interval_width = [
-        5 if '90' in interval else int(interval.split('-')[1]) - int(interval.split('-')[0]) + 1
-        if '-' in interval else 1 for interval in age_group_labels.categories
+        5
+        if "90" in interval
+        else int(interval.split("-")[1]) - int(interval.split("-")[0]) + 1
+        if "-" in interval
+        else 1
+        for interval in age_group_labels.categories
     ]
     number_age_groups = len(interval_width)
     fraction_of_last_age_survived = pd.Series([0.5] * number_age_groups, index=age_group_labels)
 
-    for sex in ['M', 'F']:
-        probability_of_dying_in_interval, death_rate_in_interval = calculate_probability_of_dying(interval_width,
-                                                                                                  fraction_of_last_age_survived,
-                                                                                                  sex,
-                                                                                                  person_years_at_risk,
-                                                                                                  number_of_deaths_in_interval)
+    for sex in ["M", "F"]:
+        probability_of_dying_in_interval, death_rate_in_interval = calculate_probability_of_dying(
+            interval_width, fraction_of_last_age_survived, sex, person_years_at_risk, number_of_deaths_in_interval
+        )
 
         # Calculate cumulative probability of dying before the defined premature age
         cumulative_probability_of_dying = 0
         proportion_alive_at_start_of_interval = 1.0
 
         for age_group, prob in probability_of_dying_in_interval.items():
-            if int(age_group.split('-')[0]) >= age_before_which_death_is_defined_as_premature:
+            if int(age_group.split("-")[0]) >= age_before_which_death_is_defined_as_premature:
                 break
             cumulative_probability_of_dying += proportion_alive_at_start_of_interval * prob
-            proportion_alive_at_start_of_interval *= (1 - prob)
+            proportion_alive_at_start_of_interval *= 1 - prob
 
         probability_of_premature_death[sex] = cumulative_probability_of_dying
 
@@ -308,7 +309,7 @@ def get_probability_of_premature_death(
     results_folder: Path,
     target_period: Tuple[datetime.date, datetime.date],
     summary: bool = True,
-    age_before_which_death_is_defined_as_premature: int = 70
+    age_before_which_death_is_defined_as_premature: int = 70,
 ) -> pd.DataFrame:
     """
     Produces sets of probability of premature death for each draw/run.
@@ -330,17 +331,17 @@ def get_probability_of_premature_death(
 
     prob_for_each_draw_and_run = dict()
 
-    for draw in range(info['number_of_draws']):
-        for run in range(info['runs_per_draw']):
+    for draw in range(info["number_of_draws"]):
+        for run in range(info["runs_per_draw"]):
             prob_for_each_draw_and_run[(draw, run)] = _calculate_probability_of_premature_death_for_single_run(
                 age_before_which_death_is_defined_as_premature=age_before_which_death_is_defined_as_premature,
                 number_of_deaths_in_interval=deaths[(draw, run)],
-                person_years_at_risk=person_years[(draw, run)]
+                person_years_at_risk=person_years[(draw, run)],
             )
 
     output = pd.DataFrame.from_dict(prob_for_each_draw_and_run)
     output.index.name = "sex"
-    output.columns = output.columns.set_names(level=[0, 1], names=['draw', 'run'])
+    output.columns = output.columns.set_names(level=[0, 1], names=["draw", "run"])
 
     if not summary:
         return output

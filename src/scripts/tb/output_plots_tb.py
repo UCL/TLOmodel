@@ -34,9 +34,7 @@ def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_st
     plt.title(title_str)
     plt.legend(["Model", "Data"])
     plt.gca().set_ylim(bottom=0)
-    plt.savefig(
-        outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-    )
+    plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf")
     # plt.show()
 
 
@@ -52,9 +50,7 @@ end_date = 2020
 xls_tb = read_csv_files(resourcefilepath / "ResourceFile_TB", files=None)
 
 data_tb_who = xls_tb["WHO_activeTB2020"]
-data_tb_who = data_tb_who.loc[
-    (data_tb_who.year >= 2010)
-]  # include only years post-2010
+data_tb_who = data_tb_who.loc[(data_tb_who.year >= 2010)]  # include only years post-2010
 data_tb_who.index = pd.to_datetime(data_tb_who["year"], format="%Y")
 data_tb_who = data_tb_who.drop(columns=["year"])
 
@@ -62,14 +58,8 @@ data_tb_who = data_tb_who.drop(columns=["year"])
 data_tb_latent = xls_tb["latent_TB2014_summary"]
 data_tb_latent_all_ages = data_tb_latent.loc[data_tb_latent.Age_group == "0_80"]
 data_tb_latent_estimate = data_tb_latent_all_ages.proportion_latent_TB.values[0]
-data_tb_latent_lower = abs(
-    data_tb_latent_all_ages.proportion_latent_TB_lower.values[0]
-    - data_tb_latent_estimate
-)
-data_tb_latent_upper = abs(
-    data_tb_latent_all_ages.proportion_latent_TB_upper.values[0]
-    - data_tb_latent_estimate
-)
+data_tb_latent_lower = abs(data_tb_latent_all_ages.proportion_latent_TB_lower.values[0] - data_tb_latent_estimate)
+data_tb_latent_upper = abs(data_tb_latent_all_ages.proportion_latent_TB_upper.values[0] - data_tb_latent_estimate)
 data_tb_latent_yerr = [data_tb_latent_lower, data_tb_latent_upper]
 
 # TB treatment coverage
@@ -87,9 +77,7 @@ data_hiv_unaids = data_hiv_unaids.drop(columns=["year"])
 
 # HIV UNAIDS data
 data_hiv_unaids_deaths = xls["unaids_mortality_dalys2021"]
-data_hiv_unaids_deaths.index = pd.to_datetime(
-    data_hiv_unaids_deaths["year"], format="%Y"
-)
+data_hiv_unaids_deaths.index = pd.to_datetime(data_hiv_unaids_deaths["year"], format="%Y")
 data_hiv_unaids_deaths = data_hiv_unaids_deaths.drop(columns=["year"])
 
 # AIDSinfo (UNAIDS)
@@ -250,9 +238,7 @@ plt.show()
 
 # ----------------------------- HIV -------------------------------------- #
 
-prev_and_inc_over_time = output["tlo.methods.hiv"][
-    "summary_inc_and_prev_for_adults_and_children_and_fsw"
-]
+prev_and_inc_over_time = output["tlo.methods.hiv"]["summary_inc_and_prev_for_adults_and_children_and_fsw"]
 prev_and_inc_over_time = prev_and_inc_over_time.set_index("date")
 
 # HIV - prevalence among in adults aged 15-49
@@ -268,17 +254,13 @@ make_plot(
 # MPHIA
 plt.plot(
     prev_and_inc_over_time.index[6],
-    data_hiv_mphia_prev.loc[
-        data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
-    ].values[0],
+    data_hiv_mphia_prev.loc[data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"].values[0],
     "gx",
 )
 
 # DHS
 x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[5]]
-y_values = data_hiv_dhs_prev.loc[
-    (data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49"
-]
+y_values = data_hiv_dhs_prev.loc[(data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49"]
 y_lower = abs(
     y_values
     - (
@@ -305,14 +287,10 @@ plt.ylabel("Prevalence (%)")
 # handles for legend
 red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
 blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
-green_cross = mlines.Line2D(
-    [], [], linewidth=0, color="g", marker="x", markersize=7, label="MPHIA"
-)
+green_cross = mlines.Line2D([], [], linewidth=0, color="g", marker="x", markersize=7, label="MPHIA")
 orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="DHS")
 plt.legend(handles=[red_line, blue_line, green_cross, orange_ci])
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
+plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf")
 plt.show()
 
 
@@ -341,9 +319,7 @@ red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
 blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
 orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="MPHIA")
 plt.legend(handles=[red_line, blue_line, orange_ci])
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
+plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf")
 plt.show()
 
 # ---------------------------------------------------------------------- #
@@ -360,22 +336,16 @@ make_plot(
 # MPHIA
 plt.plot(
     prev_and_inc_over_time.index[6],
-    data_hiv_mphia_prev.loc[
-        data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"
-    ].values[0],
+    data_hiv_mphia_prev.loc[data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"].values[0],
     "gx",
 )
 
 # handles for legend
 red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
 blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
-green_cross = mlines.Line2D(
-    [], [], linewidth=0, color="g", marker="x", markersize=7, label="MPHIA"
-)
+green_cross = mlines.Line2D([], [], linewidth=0, color="g", marker="x", markersize=7, label="MPHIA")
 plt.legend(handles=[red_line, blue_line, green_cross])
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
+plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf")
 plt.show()
 
 
@@ -418,14 +388,14 @@ deaths = deaths.set_index("date")
 
 # TB deaths will exclude TB/HIV
 # keep if cause = TB
-keep = (deaths.cause == "TB")
+keep = deaths.cause == "TB"
 deaths_TB = deaths.loc[keep].copy()
 deaths_TB["year"] = deaths_TB.index.year  # count by year
 tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["year"]).size()
 tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
 
 # TB/HIV deaths
-keep = (deaths.cause == "AIDS_TB")
+keep = deaths.cause == "AIDS_TB"
 deaths_TB_HIV = deaths.loc[keep].copy()
 deaths_TB_HIV["year"] = deaths_TB_HIV.index.year  # count by year
 tot_tb_hiv_deaths = deaths_TB_HIV.groupby(by=["year"]).size()
@@ -442,9 +412,7 @@ tot_tb_non_hiv_deaths_rate_100kpy = (tot_tb_non_hiv_deaths / py) * 100000
 
 # AIDS DEATHS
 # limit to deaths among aged 15+, include HIV/TB deaths
-keep = (deaths.age >= 15) & (
-    (deaths.cause == "AIDS_TB") | (deaths.cause == "AIDS_non_TB")
-)
+keep = (deaths.age >= 15) & ((deaths.cause == "AIDS_TB") | (deaths.cause == "AIDS_non_TB"))
 deaths_AIDS = deaths.loc[keep].copy()
 deaths_AIDS["year"] = deaths_AIDS.index.year
 tot_aids_deaths = deaths_AIDS.groupby(by=["year"]).size()
@@ -501,7 +469,7 @@ plt.show()
 
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-list_of_paths = outputpath.glob('*.log')  # gets latest log file
+list_of_paths = outputpath.glob("*.log")  # gets latest log file
 latest_path = max(list_of_paths, key=lambda p: p.stat().st_ctime)
 
 # latest_path = sim.log_filepath
@@ -598,7 +566,7 @@ plt.xticks(ticks=x_vals, labels=labels)
 plt.title("Deaths per year due to non-AIDS TB")
 plt.legend(handles=[blue_patch, green_patch])
 plt.tight_layout()
-plt.savefig(outputpath / ("TB_deaths_with_GBD" + datestamp + ".png"), format='png')
+plt.savefig(outputpath / ("TB_deaths_with_GBD" + datestamp + ".png"), format="png")
 plt.show()
 
 # ---------------------------------------------------------------------- #
@@ -686,7 +654,7 @@ plt.errorbar(
     ecolor="g",
 )
 plt.ylim((20, 100))
-plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format="pdf")
 
 plt.show()
 
@@ -742,26 +710,24 @@ make_plot(
     model=cov_over_time["prop_men_circ"],
 )
 plt.plot(
-    cov_over_time["prop_men_circ"].index[3], 0.23,
+    cov_over_time["prop_men_circ"].index[3],
+    0.23,
     "gx",
 )
 plt.plot(
-    cov_over_time["prop_men_circ"].index[5], 0.279,
+    cov_over_time["prop_men_circ"].index[5],
+    0.279,
     "bx",
 )
 plt.ylim((0, 0.4))
 
 # handles for legend
 red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
-green_cross = mlines.Line2D(
-    [], [], linewidth=0, color="g", marker="x", markersize=7, label="KABP"
-)
-blue_cross = mlines.Line2D(
-    [], [], linewidth=0, color="b", marker="x", markersize=7, label="MDHS"
-)
+green_cross = mlines.Line2D([], [], linewidth=0, color="g", marker="x", markersize=7, label="KABP")
+blue_cross = mlines.Line2D([], [], linewidth=0, color="b", marker="x", markersize=7, label="MDHS")
 # orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="DHS")
 plt.legend(handles=[red_line, green_cross, blue_cross])
-plt.savefig(outputpath / ("Proportion_men_circumcised" + datestamp + ".png"), format='png')
+plt.savefig(outputpath / ("Proportion_men_circumcised" + datestamp + ".png"), format="png")
 plt.show()
 
 

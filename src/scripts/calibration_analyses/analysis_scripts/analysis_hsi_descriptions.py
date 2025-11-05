@@ -25,7 +25,7 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging,
 )
 
-PREFIX_ON_FILENAME = '3'
+PREFIX_ON_FILENAME = "3"
 
 # Declare period for which the results will be generated (defined inclusively)
 TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
@@ -33,106 +33,108 @@ TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
-    return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
+    return _df.drop(index=_df.index[~_df["date"].between(*TARGET_PERIOD)])
 
 
 def formatting_hsi_df(_df):
     """Standard formatting for the HSI_Event log."""
-    _df = _df.pipe(drop_outside_period) \
-        .drop(_df.index[~_df.did_run]) \
-        .reset_index(drop=True) \
-        .drop(columns=['Person_ID', 'Squeeze_Factor', 'Facility_ID', 'did_run'])
+    _df = (
+        _df.pipe(drop_outside_period)
+        .drop(_df.index[~_df.did_run])
+        .reset_index(drop=True)
+        .drop(columns=["Person_ID", "Squeeze_Factor", "Facility_ID", "did_run"])
+    )
 
     # Unpack the dictionary in `Number_By_Appt_Type_Code`.
-    _df = _df.join(_df['Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0.0)).drop(
-        columns='Number_By_Appt_Type_Code')
+    _df = _df.join(_df["Number_By_Appt_Type_Code"].apply(pd.Series).fillna(0.0)).drop(
+        columns="Number_By_Appt_Type_Code"
+    )
 
     # Produce coarse version of TREATMENT_ID (just first level, which is the module)
-    _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].str.split('_').apply(lambda x: x[0])
+    _df["TREATMENT_ID_SHORT"] = _df["TREATMENT_ID"].str.split("_").apply(lambda x: x[0])
 
     return _df
 
 
-def table1_description_of_hsi_events(
-    results_folder: Path,
-    output_folder: Path,
-    resourcefilepath: Path
-):
-    """ `Table 1`: A summary table of all the HSI Events seen in the simulation.
+def table1_description_of_hsi_events(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    """`Table 1`: A summary table of all the HSI Events seen in the simulation.
     This is similar to that created by `hsi_events.py` but records all the different forms (levels/appt-type) that
     an HSI Event can take."""
 
     # Pick the first draw/run only -- assume that it is indicative of all the HSI Events seen in a simulation
     log = load_pickled_dataframes(results_folder, 0, 0)
     h = pd.DataFrame(
-        log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
+        log["tlo.methods.healthsystem.summary"]["hsi_event_details"].iloc[0]["hsi_event_key_to_event_details"]
     ).T
 
     # Re-order columns & sort; Remove 'HSI_' prefix from event name
-    h = h[['module_name', 'treatment_id', 'event_name', 'facility_level', 'appt_footprint', 'beddays_footprint']]
-    h = h.sort_values(['module_name', 'treatment_id', 'event_name', 'facility_level']).reset_index(drop=True)
-    h['event_name'] = h['event_name'].str.replace('HSI_', '')
+    h = h[["module_name", "treatment_id", "event_name", "facility_level", "appt_footprint", "beddays_footprint"]]
+    h = h.sort_values(["module_name", "treatment_id", "event_name", "facility_level"]).reset_index(drop=True)
+    h["event_name"] = h["event_name"].str.replace("HSI_", "")
 
     # Rename columns
-    h = h.rename(columns={
-        "module_name": 'Module',
-        "treatment_id": 'TREATMENT_ID',
-        "event_name": 'HSI Event',
-        "facility_level": 'Facility Level',
-        "appt_footprint": 'Appointment Types',
-        "beddays_footprint": 'Bed-Days',
-    })
+    h = h.rename(
+        columns={
+            "module_name": "Module",
+            "treatment_id": "TREATMENT_ID",
+            "event_name": "HSI Event",
+            "facility_level": "Facility Level",
+            "appt_footprint": "Appointment Types",
+            "beddays_footprint": "Bed-Days",
+        }
+    )
 
     # Reformat 'Appointment Types' and 'Bed-types' column to remove the number and then remove duplicate rows
     # (otherwise there are many rows with similar number of appointments, especially from Schistosomiasis.)
     def reformat_col(col):
-        return col.apply(pd.Series) \
-                  .applymap(lambda x: x[0], na_action='ignore') \
-                  .apply(lambda row: ', '.join(_r for _r in row.sort_values() if not pd.isnull(_r)), axis=1)
+        return (
+            col.apply(pd.Series)
+            .applymap(lambda x: x[0], na_action="ignore")
+            .apply(lambda row: ", ".join(_r for _r in row.sort_values() if not pd.isnull(_r)), axis=1)
+        )
 
-    h['Appointment Types'] = h['Appointment Types'].pipe(reformat_col)
+    h["Appointment Types"] = h["Appointment Types"].pipe(reformat_col)
     h["Bed-Days"] = h["Bed-Days"].pipe(reformat_col)
     h = h.drop_duplicates()
 
     # Put something in for blanks/nan (helps with imported into Excel/Word)
-    h = h.fillna('-').replace('', '-')
+    h = h.fillna("-").replace("", "-")
 
     # Save table as csv
-    h.to_csv(
-        output_folder / f"{PREFIX_ON_FILENAME}_Table1.csv",
-        index=False
-    )
+    h.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Table1.csv", index=False)
 
 
-def figure1_distribution_of_hsi_event_by_treatment_id(results_folder: Path, output_folder: Path,
-                                                      resourcefilepath: Path):
-    """ 'Figure 1': The Distribution of HSI_Events that occur by TREATMENT_ID.
+def figure1_distribution_of_hsi_event_by_treatment_id(
+    results_folder: Path, output_folder: Path, resourcefilepath: Path
+):
+    """'Figure 1': The Distribution of HSI_Events that occur by TREATMENT_ID.
     N.B. This uses the summary logger for speed. All other figures use the full logger as that is necessary."""
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig1_{stub}.png"  # noqa: E731
 
     def get_counts_of_hsi_by_treatment_id(_df):
         """Get the counts of the short TREATMENT_IDs occurring"""
-        _counts_by_treatment_id = _df \
-            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
-            .apply(pd.Series) \
-            .sum() \
+        _counts_by_treatment_id = (
+            _df.loc[pd.to_datetime(_df["date"]).between(*TARGET_PERIOD), "TREATMENT_ID"]
+            .apply(pd.Series)
+            .sum()
             .astype(int)
+        )
         return _counts_by_treatment_id.groupby(level=0).sum()
 
     def get_counts_of_hsi_by_short_treatment_id(_df):
         """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
         _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
-        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
+        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split("_")[0] + "*")
         return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
 
     counts_of_hsi_by_treatment_id = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem.summary',
-            key='HSI_Event',
+            module="tlo.methods.healthsystem.summary",
+            key="HSI_Event",
             custom_generate_series=get_counts_of_hsi_by_treatment_id,
-            do_scaling=True
+            do_scaling=True,
         ),
         only_mean=True,
         collapse_columns=True,
@@ -141,32 +143,32 @@ def figure1_distribution_of_hsi_event_by_treatment_id(results_folder: Path, outp
     counts_of_hsi_by_treatment_id_short = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem.summary',
-            key='HSI_Event',
+            module="tlo.methods.healthsystem.summary",
+            key="HSI_Event",
             custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
-            do_scaling=True
+            do_scaling=True,
         ),
         only_mean=True,
         collapse_columns=True,
     )
 
     fig, ax = plt.subplots()
-    name_of_plot = 'Proportion of HSI Events by TREATMENT_ID'
+    name_of_plot = "Proportion of HSI Events by TREATMENT_ID"
     squarify.plot(
         sizes=counts_of_hsi_by_treatment_id.values,
         label=counts_of_hsi_by_treatment_id.index,
         alpha=1,
         pad=True,
         ax=ax,
-        text_kwargs={'color': 'black', 'size': 8},
+        text_kwargs={"color": "black", "size": 8},
     )
     ax.set_axis_off()
-    ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    ax.set_title(name_of_plot, {"size": 12, "color": "black"})
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     plt.close(fig)
 
     fig, ax = plt.subplots()
-    name_of_plot = 'HSI Events by TREATMENT_ID (Short)'
+    name_of_plot = "HSI Events by TREATMENT_ID (Short)"
     squarify_neat(
         sizes=counts_of_hsi_by_treatment_id_short.values,
         label=counts_of_hsi_by_treatment_id_short.index,
@@ -174,16 +176,16 @@ def figure1_distribution_of_hsi_event_by_treatment_id(results_folder: Path, outp
         alpha=1,
         pad=True,
         ax=ax,
-        text_kwargs={'color': 'black', 'size': 8}
+        text_kwargs={"color": "black", "size": 8},
     )
     ax.set_axis_off()
-    ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    ax.set_title(name_of_plot, {"size": 12, "color": "black"})
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     plt.close(fig)
 
 
 def figure2_appointments_used(results_folder: Path, output_folder: Path, resourcefilepath: Path):
-    """ 'Figure 2': The Appointments Used"""
+    """'Figure 2': The Appointments Used"""
     # Get counts of number of HSI events run for each treatment ID and coarse
     # appointment type pair, taking mean across scenario runs and scaling by population
     # scale factor
@@ -192,102 +194,85 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
             results_folder,
             lambda event_details, count: sum(
                 [
-                    Counter({
-                        (
-                            event_details["treatment_id"].split("_")[0],
-                            get_coarse_appt_type(appt_type)
-                        ):
-                        count * appt_number
-                    })
+                    Counter(
+                        {
+                            (event_details["treatment_id"].split("_")[0], get_coarse_appt_type(appt_type)): count
+                            * appt_number
+                        }
+                    )
                     for appt_type, appt_number in event_details["appt_footprint"]
                 ],
-                Counter()
+                Counter(),
             ),
             *TARGET_PERIOD,
-            True
+            True,
         )
     )[0]
 
-    name_of_plot = 'Appointment Used by Each TREATMENT_ID'
+    name_of_plot = "Appointment Used by Each TREATMENT_ID"
     fig, ax = plt.subplots()
     plot_stacked_bar_chart(
-        ax,
-        counts_by_treatment_id_and_coarse_appt_type,
-        COARSE_APPT_TYPE_TO_COLOR_MAP,
-        count_scale=1e-6
+        ax, counts_by_treatment_id_and_coarse_appt_type, COARSE_APPT_TYPE_TO_COLOR_MAP, count_scale=1e-6
     )
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.tick_params(axis='x', labelrotation=90)
-    ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.tick_params(axis="x", labelrotation=90)
+    ax.legend(ncol=2, prop={"size": 8}, loc="upper left")
     ax.legend().set_visible(False)  # suppress legend
-    ax.set_ylabel('Number of appointments (millions)')
-    ax.set_xlabel('TREATMENT_ID (Short)')
+    ax.set_ylabel("Number of appointments (millions)")
+    ax.set_xlabel("TREATMENT_ID (Short)")
     ax.set_ylim(0, 600)
-    ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
+    ax.set_title(name_of_plot, {"size": 12, "color": "black"})
     fig.tight_layout()
-    fig.savefig(
-        output_folder
-        / f"{PREFIX_ON_FILENAME}_Fig2_{name_of_plot.replace(' ', '_')}.png"
-    )
+    fig.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Fig2_{name_of_plot.replace(' ', '_')}.png")
     plt.close(fig)
 
     # Pivot the data so that Appt Types are on Horizontal Axis
     df = pd.Series(counts_by_treatment_id_and_coarse_appt_type).reset_index()
-    df['Appt_Type'] = df.level_1\
-        .astype(pd.CategoricalDtype(categories=list(COARSE_APPT_TYPE_TO_COLOR_MAP.keys()), ordered=True))
-    df['TREATMENT_ID'] = df.level_0\
-        .map(lambda x: _standardize_short_treatment_id(x))\
-        .astype(pd.CategoricalDtype(categories=list(SHORT_TREATMENT_ID_TO_COLOR_MAP.keys()), ordered=True))
-    df = df.sort_values(by=['Appt_Type', 'TREATMENT_ID'])
-    df = df.groupby(by=['Appt_Type', 'TREATMENT_ID'])[0].sum().unstack(fill_value=0).stack()
+    df["Appt_Type"] = df.level_1.astype(
+        pd.CategoricalDtype(categories=list(COARSE_APPT_TYPE_TO_COLOR_MAP.keys()), ordered=True)
+    )
+    df["TREATMENT_ID"] = df.level_0.map(lambda x: _standardize_short_treatment_id(x)).astype(
+        pd.CategoricalDtype(categories=list(SHORT_TREATMENT_ID_TO_COLOR_MAP.keys()), ordered=True)
+    )
+    df = df.sort_values(by=["Appt_Type", "TREATMENT_ID"])
+    df = df.groupby(by=["Appt_Type", "TREATMENT_ID"])[0].sum().unstack(fill_value=0).stack()
     counts_by_coarse_appt_type_and_treatment_id = Counter(df.to_dict())
 
-    name_of_plot = 'Appointment Types Used'
+    name_of_plot = "Appointment Types Used"
     fig, ax = plt.subplots()
     plot_stacked_bar_chart(
-        ax,
-        counts_by_coarse_appt_type_and_treatment_id,
-        SHORT_TREATMENT_ID_TO_COLOR_MAP,
-        count_scale=1e-6
+        ax, counts_by_coarse_appt_type_and_treatment_id, SHORT_TREATMENT_ID_TO_COLOR_MAP, count_scale=1e-6
     )
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.tick_params(axis='x', labelrotation=90)
-    ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.tick_params(axis="x", labelrotation=90)
+    ax.legend(ncol=2, prop={"size": 8}, loc="upper left")
     ax.legend().set_visible(False)  # suppress legend
-    ax.set_ylabel('Number (/millions)')
-    ax.set_xlabel('Appointment Type')
+    ax.set_ylabel("Number (/millions)")
+    ax.set_xlabel("Appointment Type")
     ax.set_ylim(0, 150)
     ax.set_yticks(np.arange(0, 151, 50))
-    ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
-    ax.grid(axis='y')
+    ax.set_title(name_of_plot, {"size": 12, "color": "black"})
+    ax.grid(axis="y")
     fig.tight_layout()
-    fig.savefig(
-        output_folder
-        / f"{PREFIX_ON_FILENAME}_Fig2_{name_of_plot.replace(' ', '_')}.png"
-    )
+    fig.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Fig2_{name_of_plot.replace(' ', '_')}.png")
     plt.close(fig)
 
 
-def figure3_fraction_of_time_of_hcw_used_by_treatment(results_folder: Path, output_folder: Path,
-                                                      resourcefilepath: Path):
-    """ 'Figure 3': The Fraction of the time of each HCW used by each TREATMENT_ID (Short)"""
+def figure3_fraction_of_time_of_hcw_used_by_treatment(
+    results_folder: Path, output_folder: Path, resourcefilepath: Path
+):
+    """'Figure 3': The Fraction of the time of each HCW used by each TREATMENT_ID (Short)"""
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig3_{stub}.png"  # noqa: E731
 
     appointment_time_table = pd.read_csv(
-        resourcefilepath
-        / 'healthsystem'
-        / 'human_resources'
-        / 'definitions'
-        / 'ResourceFile_Appt_Time_Table.csv',
-        index_col=["Appt_Type_Code", "Facility_Level", "Officer_Category"]
+        resourcefilepath / "healthsystem" / "human_resources" / "definitions" / "ResourceFile_Appt_Time_Table.csv",
+        index_col=["Appt_Type_Code", "Facility_Level", "Officer_Category"],
     )
 
-    appt_type_facility_level_officer_category_to_appt_time = (
-        appointment_time_table.Time_Taken_Mins.to_dict()
-    )
+    appt_type_facility_level_officer_category_to_appt_time = appointment_time_table.Time_Taken_Mins.to_dict()
 
     officer_categories = appointment_time_table.index.levels[
         appointment_time_table.index.names.index("Officer_Category")
@@ -297,44 +282,33 @@ def figure3_fraction_of_time_of_hcw_used_by_treatment(results_folder: Path, outp
         results_folder,
         lambda event_details, count: sum(
             [
-                Counter({
-                    (
-                        officer_category,
-                        event_details["treatment_id"].split("_")[0]
-                    ):
-                    count
-                    * appt_number
-                    * appt_type_facility_level_officer_category_to_appt_time.get(
-                        (
-                            appt_type,
-                            event_details["facility_level"],
-                            officer_category
-                        ),
-                        0
-                    )
-                    for officer_category in officer_categories
-                })
+                Counter(
+                    {
+                        (officer_category, event_details["treatment_id"].split("_")[0]): count
+                        * appt_number
+                        * appt_type_facility_level_officer_category_to_appt_time.get(
+                            (appt_type, event_details["facility_level"], officer_category), 0
+                        )
+                        for officer_category in officer_categories
+                    }
+                )
                 for appt_type, appt_number in event_details["appt_footprint"]
             ],
-            Counter()
+            Counter(),
         ),
         *TARGET_PERIOD,
-        False
+        False,
     )
 
     proportions_per_treatment_id_by_officer_category_for_all_runs = defaultdict(list)
 
-    for _, times_by_officer_category_treatment_id in (
-        times_by_officer_category_treatment_id_per_run.items()
-    ):
+    for _, times_by_officer_category_treatment_id in times_by_officer_category_treatment_id_per_run.items():
         total_times_by_officer_category = Counter()
         times_per_treatment_id_by_officer_category = defaultdict(dict)
         for (cat, treatment_id), time in times_by_officer_category_treatment_id.items():
             total_times_by_officer_category[cat] += time
             times_per_treatment_id_by_officer_category[cat][treatment_id] = time
-        for cat, times_per_treatment_id in (
-            times_per_treatment_id_by_officer_category.items()
-        ):
+        for cat, times_per_treatment_id in times_per_treatment_id_by_officer_category.items():
             proportions_per_treatment_id_by_officer_category_for_all_runs[cat].append(
                 Counter(
                     {
@@ -351,24 +325,20 @@ def figure3_fraction_of_time_of_hcw_used_by_treatment(results_folder: Path, outp
 
     proportions_per_treatment_id_by_officer_category = {
         officer_category: mean_of_counters(proportions_per_treatment_id_for_all_runs)
-        for officer_category, proportions_per_treatment_id_for_all_runs
-        in proportions_per_treatment_id_by_officer_category_for_all_runs.items()
+        for officer_category, proportions_per_treatment_id_for_all_runs in proportions_per_treatment_id_by_officer_category_for_all_runs.items()
     }
 
-    for officer_category, proportions_per_treatment_id in (
-        proportions_per_treatment_id_by_officer_category.items()
-    ):
+    for officer_category, proportions_per_treatment_id in proportions_per_treatment_id_by_officer_category.items():
         proportions_per_treatment_id_by_officer_category[officer_category] = dict(
             sorted(
-                proportions_per_treatment_id.items(),
-                key=lambda key_value: order_of_short_treatment_ids(key_value[0])
+                proportions_per_treatment_id.items(), key=lambda key_value: order_of_short_treatment_ids(key_value[0])
             )
         )
 
-    cadres_to_plot = ['DCSA', 'Nursing_and_Midwifery', 'Clinical', 'Pharmacy']
+    cadres_to_plot = ["DCSA", "Nursing_and_Midwifery", "Clinical", "Pharmacy"]
 
     fig, ax = plt.subplots(nrows=2, ncols=2)
-    name_of_plot = 'Proportion of Time Used For Selected Cadre by TREATMENT_ID (Short)'
+    name_of_plot = "Proportion of Time Used For Selected Cadre by TREATMENT_ID (Short)"
     for cadre, ax in zip(cadres_to_plot, ax.flat):
         p_by_treatment_id = proportions_per_treatment_id_by_officer_category[cadre]
         squarify_neat(
@@ -379,173 +349,191 @@ def figure3_fraction_of_time_of_hcw_used_by_treatment(results_folder: Path, outp
             alpha=1,
             pad=True,
             ax=ax,
-            text_kwargs={'color': 'black', 'size': 8},
+            text_kwargs={"color": "black", "size": 8},
         )
         ax.set_axis_off()
-        ax.set_title(f'{cadre}', {'size': 10, 'color': 'black'})
-    fig.suptitle(name_of_plot, fontproperties={'size': 12})
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+        ax.set_title(f"{cadre}", {"size": 10, "color": "black"})
+    fig.suptitle(name_of_plot, fontproperties={"size": 12})
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     plt.close(fig)
 
 
 def figure4_hr_use_overall(results_folder: Path, output_folder: Path, resourcefilepath: Path):
-    """ 'Figure 4': The level of usage of the HealthSystem HR Resources """
+    """'Figure 4': The level of usage of the HealthSystem HR Resources"""
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig4_{stub}.png"  # noqa: E731
 
     def get_share_of_time_for_hw_in_each_facility_by_short_treatment_id(_df):
         _df = drop_outside_period(_df)
-        _df = _df.set_index('date')
-        _all = _df['Frac_Time_Used_Overall']
-        _df = _df['Frac_Time_Used_By_Facility_ID'].apply(pd.Series)
+        _df = _df.set_index("date")
+        _all = _df["Frac_Time_Used_Overall"]
+        _df = _df["Frac_Time_Used_By_Facility_ID"].apply(pd.Series)
         _df.columns = _df.columns.astype(int)
         _df = _df.reindex(columns=sorted(_df.columns))
-        _df['All'] = _all
+        _df["All"] = _all
         return _df.groupby(pd.Grouper(freq="M")).mean().stack()  # find monthly averages and stack into series
 
     def get_share_of_time_used_for_each_officer_at_each_level(_df):
         _df = drop_outside_period(_df)
-        _df = _df.set_index('date')
-        _df = _df['Frac_Time_Used_By_OfficerType'].apply(pd.Series).mean()  # find mean over the period
+        _df = _df.set_index("date")
+        _df = _df["Frac_Time_Used_By_OfficerType"].apply(pd.Series).mean()  # find mean over the period
         _df.index = unflatten_flattened_multi_index_in_logging(_df.index)
         return _df
 
     capacity_by_facility = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem',
-            key='Capacity',
+            module="tlo.methods.healthsystem",
+            key="Capacity",
             custom_generate_series=get_share_of_time_for_hw_in_each_facility_by_short_treatment_id,
-            do_scaling=False
+            do_scaling=False,
         ),
         only_mean=True,
-        collapse_columns=True
+        collapse_columns=True,
     )
 
     capacity_by_officer = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem',
-            key='Capacity',
+            module="tlo.methods.healthsystem",
+            key="Capacity",
             custom_generate_series=get_share_of_time_used_for_each_officer_at_each_level,
-            do_scaling=False
+            do_scaling=False,
         ),
         only_mean=True,
-        collapse_columns=True
+        collapse_columns=True,
     )
 
     # Find the levels of each facility
     mfl = pd.read_csv(
-        resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv'
-    ).set_index('Facility_ID')
+        resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv"
+    ).set_index("Facility_ID")
 
     def find_level_for_facility(id):
-        return mfl.loc[id].Facility_Level if mfl.loc[id].Facility_Level != '1b' else '2'
+        return mfl.loc[id].Facility_Level if mfl.loc[id].Facility_Level != "1b" else "2"
 
-    color_for_level = {'0': 'blue', '1a': 'yellow', '1b': 'green', '2': 'grey', '3': 'orange', '4': 'black',
-                       '5': 'white'}
+    color_for_level = {
+        "0": "blue",
+        "1a": "yellow",
+        "1b": "green",
+        "2": "grey",
+        "3": "orange",
+        "4": "black",
+        "5": "white",
+    }
 
     fig, ax = plt.subplots()
-    name_of_plot = 'Usage of Healthcare Worker Time By Month'
+    name_of_plot = "Usage of Healthcare Worker Time By Month"
     capacity_unstacked = capacity_by_facility.unstack()
     for i in capacity_unstacked.columns:
-        if i != 'All':
+        if i != "All":
             level = find_level_for_facility(i)
-            h1, = ax.plot(capacity_unstacked[i].index, capacity_unstacked[i].values,
-                          color=color_for_level[level], linewidth=0.5, label=f'Facility_Level {level}')
+            (h1,) = ax.plot(
+                capacity_unstacked[i].index,
+                capacity_unstacked[i].values,
+                color=color_for_level[level],
+                linewidth=0.5,
+                label=f"Facility_Level {level}",
+            )
 
-    h2, = ax.plot(capacity_unstacked['All'].index, capacity_unstacked['All'].values, color='red', linewidth=1.5)
+    (h2,) = ax.plot(capacity_unstacked["All"].index, capacity_unstacked["All"].values, color="red", linewidth=1.5)
     ax.set_title(name_of_plot)
-    ax.set_xlabel('Month')
-    ax.set_ylabel('Fraction of all time used\n(Average for the month)')
-    ax.legend([h1, h2], ['Each Facility', 'All Facilities'])
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
+    ax.set_xlabel("Month")
+    ax.set_ylabel("Fraction of all time used\n(Average for the month)")
+    ax.legend([h1, h2], ["Each Facility", "All Facilities"])
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     plt.close(fig)
 
     fig, ax = plt.subplots()
-    name_of_plot = 'Usage of Healthcare Worker Time (Average)'
+    name_of_plot = "Usage of Healthcare Worker Time (Average)"
     capacity_unstacked_average = capacity_by_facility.unstack().mean()
     # levels = [find_level_for_facility(i) if i != 'All' else 'All' for i in capacity_unstacked_average.index]
     xpos_for_level = dict(zip((color_for_level.keys()), range(len(color_for_level))))
-    xpos_for_level.update({'1b': 2, '2': 2, '3': 3, '4': 4, '5': 5})
+    xpos_for_level.update({"1b": 2, "2": 2, "3": 3, "4": 4, "5": 5})
     for id, val in capacity_unstacked_average.items():
-        if id != 'All':
+        if id != "All":
             _level = find_level_for_facility(id)
-            if _level != '5':
+            if _level != "5":
                 xpos = xpos_for_level[_level]
                 scatter = (np.random.rand() - 0.5) * 0.25
-                h1, = ax.plot(xpos + scatter, val * 100, color=color_for_level[_level],
-                              marker='.', markersize=15, label='Each Facility', linestyle='none')
-    h2 = ax.axhline(y=capacity_unstacked_average['All'] * 100,
-                    color='red', linestyle='--', label='Average')
+                (h1,) = ax.plot(
+                    xpos + scatter,
+                    val * 100,
+                    color=color_for_level[_level],
+                    marker=".",
+                    markersize=15,
+                    label="Each Facility",
+                    linestyle="none",
+                )
+    h2 = ax.axhline(y=capacity_unstacked_average["All"] * 100, color="red", linestyle="--", label="Average")
     ax.set_title(name_of_plot)
-    ax.set_xlabel('Facility_Level')
+    ax.set_xlabel("Facility_Level")
     ax.set_xticks(list(xpos_for_level.values()))
     ax.set_xticklabels(xpos_for_level.keys())
-    ax.set_ylabel('Percent of Time Available That is Used\n')
+    ax.set_ylabel("Percent of Time Available That is Used\n")
     ax.legend(handles=[h1, h2])
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     plt.close(fig)
 
     fig, ax = plt.subplots()
-    name_of_plot = 'Usage of Healthcare Worker Time by Cadre and Facility_Level'
+    name_of_plot = "Usage of Healthcare Worker Time by Cadre and Facility_Level"
     (100.0 * capacity_by_officer.unstack()).T.plot.bar(ax=ax)
     ax.legend()
-    ax.set_xlabel('Facility_Level')
-    ax.set_ylabel('Percent of time that is used')
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
+    ax.set_xlabel("Facility_Level")
+    ax.set_ylabel("Percent of time that is used")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
     ax.set_title(name_of_plot)
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     plt.close(fig)
 
 
 def figure5_bed_use(results_folder: Path, output_folder: Path, resourcefilepath: Path):
-    """ 'Figure 5': The level of usage of the Beds in the HealthSystem"""
+    """'Figure 5': The level of usage of the Beds in the HealthSystem"""
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig5_{stub}.png"  # noqa: E731
 
     def get_frac_of_beddays_used(_df):
         _df = drop_outside_period(_df)
-        _df = _df.set_index('date')
+        _df = _df.set_index("date")
         return _df.mean()
 
     frac_of_beddays_used = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem.summary',
-            key='FractionOfBedDaysUsed',
+            module="tlo.methods.healthsystem.summary",
+            key="FractionOfBedDaysUsed",
             custom_generate_series=get_frac_of_beddays_used,
-            do_scaling=False
+            do_scaling=False,
         ),
         only_mean=True,
-        collapse_columns=True
+        collapse_columns=True,
     )
 
     fig, ax = plt.subplots()
-    name_of_plot = 'Usage of Bed-Days Used'
+    name_of_plot = "Usage of Bed-Days Used"
     (100.0 * frac_of_beddays_used).plot.bar(ax=ax)
     ax.legend()
-    ax.set_xlabel('Type of Bed')
-    ax.set_ylabel('Percent of time that is used')
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
+    ax.set_xlabel("Type of Bed")
+    ax.set_ylabel("Percent of time that is used")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
     ax.set_title(name_of_plot)
     ax.get_legend().remove()
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     plt.close(fig)
 
 
 def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath: Path):
-    """ 'Figure 6': Usage of consumables in the HealthSystem"""
+    """'Figure 6': Usage of consumables in the HealthSystem"""
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig6_{stub}.png"  # noqa: E731
 
@@ -556,68 +544,77 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
         counts_of_not_available = defaultdict(int)
 
         for _, row in _df.iterrows():
-            for item, num in eval(row['Item_Available']).items():
+            for item, num in eval(row["Item_Available"]).items():
                 counts_of_available[item] += num
-            for item, num in eval(row['Item_NotAvailable']).items():
+            for item, num in eval(row["Item_NotAvailable"]).items():
                 counts_of_not_available[item] += num
 
-        return pd.concat(
-            {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
-            axis=1
-        ).fillna(0).astype(int).stack()
+        return (
+            pd.concat(
+                {"Available": pd.Series(counts_of_available), "Not_Available": pd.Series(counts_of_not_available)},
+                axis=1,
+            )
+            .fillna(0)
+            .astype(int)
+            .stack()
+        )
 
     cons_req = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem',
-            key='Consumables',
+            module="tlo.methods.healthsystem",
+            key="Consumables",
             custom_generate_series=get_counts_of_items_requested,
-            do_scaling=True
+            do_scaling=True,
         ),
         only_mean=True,
-        collapse_columns=True
+        collapse_columns=True,
     )
 
     # Merge in item names and prepare to plot:
     cons = cons_req.unstack()
-    cons_names = pd.read_csv(
-        resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv'
-    )[['Item_Code', 'Items']].set_index('Item_Code').drop_duplicates()
-    cons = cons.merge(cons_names, left_index=True, right_index=True, how='left').set_index('Items').astype(int)
-    cons = cons.assign(total=cons.sum(1)).sort_values('total', ascending=False).drop(columns='total')
+    cons_names = (
+        pd.read_csv(
+            resourcefilepath / "healthsystem" / "consumables" / "ResourceFile_Consumables_Items_and_Packages.csv"
+        )[["Item_Code", "Items"]]
+        .set_index("Item_Code")
+        .drop_duplicates()
+    )
+    cons = cons.merge(cons_names, left_index=True, right_index=True, how="left").set_index("Items").astype(int)
+    cons = cons.assign(total=cons.sum(1)).sort_values("total", ascending=False).drop(columns="total")
 
     # Find top 30 most requested items
     top30 = (cons / 1e6).head(30)
-    top30.index = top30.index.str.replace("(country-specific)", '')  # remove confusing suffix
-    top30.index = (
-        pd.Series(top30.index).apply(lambda x: x if len(x) < 30 else x[0:30] + '...')
+    top30.index = top30.index.str.replace("(country-specific)", "")  # remove confusing suffix
+    top30.index = pd.Series(top30.index).apply(
+        lambda x: x if len(x) < 30 else x[0:30] + "..."
     )  # shorten the names for plotting
 
     fig, ax = plt.subplots()
-    name_of_plot = 'Demand For Consumables'
+    name_of_plot = "Demand For Consumables"
     top30.plot.barh(ax=ax, stacked=True)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('Item (30 most requested)')
-    ax.set_xlabel('Number of requests (Millions)')
+    ax.set_ylabel("Item (30 most requested)")
+    ax.set_xlabel("Number of requests (Millions)")
     ax.yaxis.set_tick_params(labelsize=7)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
     ax.legend()
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     plt.close(fig)
 
     fig, ax = plt.subplots()
-    name_of_plot = 'Consumables Not Available'
-    (cons['Not_Available'] / 1e6).sort_values().head(20).plot.barh(ax=ax)
+    name_of_plot = "Consumables Not Available"
+    (cons["Not_Available"] / 1e6).sort_values().head(20).plot.barh(ax=ax)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('Item (20 most frequently not available when requested)')
-    ax.set_xlabel('Number of requests (Millions)')
+    ax.set_ylabel("Item (20 most frequently not available when requested)")
+    ax.set_xlabel("Number of requests (Millions)")
     ax.yaxis.set_tick_params(labelsize=7)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     plt.close(fig)
 
     # HSI affected by missing consumables
@@ -625,35 +622,35 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     def get_treatment_id_affecting_by_missing_consumables(_df):
         """Return frequency that a (short) TREATMENT_ID suffers from consumables not being available."""
         _df = drop_outside_period(_df)
-        _df = _df.loc[(_df['Item_NotAvailable'] != '{}'), ['TREATMENT_ID', 'Item_NotAvailable']]
-        _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].map(lambda x: x.split('_')[0])
-        return _df['TREATMENT_ID_SHORT'].value_counts()
+        _df = _df.loc[(_df["Item_NotAvailable"] != "{}"), ["TREATMENT_ID", "Item_NotAvailable"]]
+        _df["TREATMENT_ID_SHORT"] = _df["TREATMENT_ID"].map(lambda x: x.split("_")[0])
+        return _df["TREATMENT_ID_SHORT"].value_counts()
 
     treatment_id_affecting_by_missing_consumables = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem',
-            key='Consumables',
+            module="tlo.methods.healthsystem",
+            key="Consumables",
             custom_generate_series=get_treatment_id_affecting_by_missing_consumables,
-            do_scaling=True
+            do_scaling=True,
         ),
         only_mean=True,
-        collapse_columns=True
+        collapse_columns=True,
     )
 
     fig, ax = plt.subplots()
-    name_of_plot = 'HSI Affected by Unavailable Consumables (by Short TREATMENT_ID)'
+    name_of_plot = "HSI Affected by Unavailable Consumables (by Short TREATMENT_ID)"
     squarify_neat(
         sizes=treatment_id_affecting_by_missing_consumables.values,
         label=treatment_id_affecting_by_missing_consumables.index,
         colormap=get_color_short_treatment_id,
         alpha=1,
         ax=ax,
-        text_kwargs={'color': 'black', 'size': 8}
+        text_kwargs={"color": "black", "size": 8},
     )
     ax.set_axis_off()
-    ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    ax.set_title(name_of_plot, {"size": 12, "color": "black"})
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     plt.close(fig)
 
 
@@ -661,9 +658,13 @@ def table_2_relative_frequency_of_cons_use(results_folder: Path, output_folder: 
     """Table 2: The relative frequency Consumables that are used."""
 
     # Load the mapping between item_code and item_name
-    cons_names = pd.read_csv(
-        resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv'
-    )[['Item_Code', 'Items']].set_index('Item_Code').drop_duplicates()
+    cons_names = (
+        pd.read_csv(
+            resourcefilepath / "healthsystem" / "consumables" / "ResourceFile_Consumables_Items_and_Packages.csv"
+        )[["Item_Code", "Items"]]
+        .set_index("Item_Code")
+        .drop_duplicates()
+    )
 
     def get_number_of_call_to_an_item_code(_df):
         """This summarizes the number of calls to a particular item_code, irrespective of the quantity requested."""
@@ -673,52 +674,59 @@ def table_2_relative_frequency_of_cons_use(results_folder: Path, output_folder: 
         counts_of_not_available = defaultdict(int)
 
         for _, row in _df.iterrows():
-            for item, _ in eval(row['Item_Available']).items():
+            for item, _ in eval(row["Item_Available"]).items():
                 counts_of_available[item] += 1
-            for item, _ in eval(row['Item_NotAvailable']).items():
+            for item, _ in eval(row["Item_NotAvailable"]).items():
                 counts_of_not_available[item] += 1
 
-        return pd.concat(
-            {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
-            axis=1
-        ).fillna(0).astype(int).stack()
+        return (
+            pd.concat(
+                {"Available": pd.Series(counts_of_available), "Not_Available": pd.Series(counts_of_not_available)},
+                axis=1,
+            )
+            .fillna(0)
+            .astype(int)
+            .stack()
+        )
 
     items_called = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem',
-            key='Consumables',
+            module="tlo.methods.healthsystem",
+            key="Consumables",
             custom_generate_series=get_number_of_call_to_an_item_code,
-            do_scaling=True
+            do_scaling=True,
         ),
         only_mean=True,
-        collapse_columns=True
+        collapse_columns=True,
     )
 
     total_calls = items_called.unstack().sum(axis=1)  # total calls by item_code (summing Available and Not_Availbale)
-    rfreq_calls = (total_calls / total_calls.sum()).sort_values(ascending=False).reset_index(name='rel_freq').rename(columns={'index': 'Item_Code'})
-    rfreq_calls = rfreq_calls.merge(cons_names.reset_index(), left_on='Item_Code', right_on='Item_Code', how='left')
+    rfreq_calls = (
+        (total_calls / total_calls.sum())
+        .sort_values(ascending=False)
+        .reset_index(name="rel_freq")
+        .rename(columns={"index": "Item_Code"})
+    )
+    rfreq_calls = rfreq_calls.merge(cons_names.reset_index(), left_on="Item_Code", right_on="Item_Code", how="left")
     rfreq_calls.to_csv(
-        output_folder / f"{PREFIX_ON_FILENAME}_Table_Of_Frequency_Consumables_Requested.csv",
-        index=False
+        output_folder / f"{PREFIX_ON_FILENAME}_Table_Of_Frequency_Consumables_Requested.csv", index=False
     )
 
+
 def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcefilepath: Path):
-    """ 'Figure 7': Squeeze Factors for the HSIs"""
+    """'Figure 7': Squeeze Factors for the HSIs"""
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig7_{stub}.png"  # noqa: E731
 
     def get_mean_squeeze_factor_by_hsi(_df):
         """Get the counts of the short TREATMENT_IDs occurring"""
-        return _df \
-            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'squeeze_factor'] \
-            .apply(pd.Series) \
-            .mean()
+        return _df.loc[pd.to_datetime(_df["date"]).between(*TARGET_PERIOD), "squeeze_factor"].apply(pd.Series).mean()
 
     squeeze_factor_by_hsi = summarize(
         extract_results(
             results_folder,
-            module='tlo.methods.healthsystem.summary',
-            key='HSI_Event',
+            module="tlo.methods.healthsystem.summary",
+            key="HSI_Event",
             custom_generate_series=get_mean_squeeze_factor_by_hsi,
             do_scaling=False,
         ),
@@ -727,45 +735,43 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
     )
 
     # Index by Treatment_ID / HSI:
-    squeeze_factor_by_hsi.index = squeeze_factor_by_hsi.index.str.split(':', expand=True)
-    squeeze_factor_by_hsi = squeeze_factor_by_hsi.reset_index().rename(columns={
-        'level_0': '_TREATMENT_ID',
-        'level_1': 'HSI',
-        'mean': 'squeeze_factor',
-    })
+    squeeze_factor_by_hsi.index = squeeze_factor_by_hsi.index.str.split(":", expand=True)
+    squeeze_factor_by_hsi = squeeze_factor_by_hsi.reset_index().rename(
+        columns={
+            "level_0": "_TREATMENT_ID",
+            "level_1": "HSI",
+            "mean": "squeeze_factor",
+        }
+    )
 
     # Add in short TREATMENT_ID
-    squeeze_factor_by_hsi['TREATMENT_ID'] = squeeze_factor_by_hsi['_TREATMENT_ID'].map(lambda x: x.split('_')[0] + "*")
+    squeeze_factor_by_hsi["TREATMENT_ID"] = squeeze_factor_by_hsi["_TREATMENT_ID"].map(lambda x: x.split("_")[0] + "*")
 
     # Could Sort to collect the same TREATMENT_ID together
     # squeeze_factor_by_hsi = squeeze_factor_by_hsi.sort_values('TREATMENT_ID',
     #                                                           key=order_of_short_treatment_ids,
     #                                                           ascending=False).reset_index(drop=True)
     # But, we sort by the value of squeeze_factor
-    sorted_squeeze_factors = squeeze_factor_by_hsi.sort_values(['squeeze_factor']).reset_index(drop=True)
+    sorted_squeeze_factors = squeeze_factor_by_hsi.sort_values(["squeeze_factor"]).reset_index(drop=True)
 
     fig, ax = plt.subplots(figsize=(7.2, 10.5))
-    name_of_plot = 'Average Squeeze Factors for each Health System Interaction Event'
+    name_of_plot = "Average Squeeze Factors for each Health System Interaction Event"
     for i, row in sorted_squeeze_factors.iterrows():
         ax.plot(
-            row['squeeze_factor'],
-            i,
-            marker='.',
-            markersize=10,
-            color=get_color_short_treatment_id(row['TREATMENT_ID'])
+            row["squeeze_factor"], i, marker=".", markersize=10, color=get_color_short_treatment_id(row["TREATMENT_ID"])
         )
     # ax.set_xscale('log')
-    ax.set_xlabel('Average Squeeze Factor')
-    ax.set_ylabel('Health System Interaction Event')
+    ax.set_xlabel("Average Squeeze Factor")
+    ax.set_ylabel("Health System Interaction Event")
     ax.set_yticks(sorted_squeeze_factors.index)
-    ax.set_yticklabels(sorted_squeeze_factors['HSI'].str.replace('HSI_', ''), fontsize=6)
-    ax.grid(axis='x', which='both')
-    ax.grid(axis='y')
+    ax.set_yticklabels(sorted_squeeze_factors["HSI"].str.replace("HSI_", ""), fontsize=6)
+    ax.grid(axis="x", which="both")
+    ax.grid(axis="y")
     ax.set_xlim([0, 60])
-    ax.axvline(0.0, color='black', linewidth=2)
-    fig.suptitle(name_of_plot, fontsize=12, weight='bold')
+    ax.axvline(0.0, color="black", linewidth=2)
+    fig.suptitle(name_of_plot, fontsize=12, weight="bold")
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
     plt.close(fig)
 
 
@@ -792,13 +798,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
     )
 
-    figure5_bed_use(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
+    figure5_bed_use(results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
-    figure6_cons_use(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
+    figure6_cons_use(results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
     table_2_relative_frequency_of_cons_use(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
@@ -814,8 +816,4 @@ if __name__ == "__main__":
     parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
 
-    apply(
-        results_folder=args.results_folder,
-        output_folder=args.results_folder,
-        resourcefilepath=Path('./resources')
-    )
+    apply(results_folder=args.results_folder, output_folder=args.results_folder, resourcefilepath=Path("./resources"))

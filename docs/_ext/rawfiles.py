@@ -2,6 +2,7 @@
 import os
 import shutil
 
+
 def on_html_collect_pages(app):
     for f in app.builder.config.rawfiles:
         src = os.path.join(app.srcdir, f)
@@ -19,14 +20,15 @@ def on_html_collect_pages(app):
             elif os.path.isfile(src):
                 shutil.copy(src, dst)
             else:
-                msg = ('rawfiles target is not directory or file "%s".' % src)
+                msg = 'rawfiles target is not directory or file "%s".' % src
                 app.builder.warn(msg)
         else:
-            msg = ('rawfiles can not find "%s".' % src)
+            msg = 'rawfiles can not find "%s".' % src
             app.builder.warn(msg)
 
     return ()
 
+
 def setup(app):
-    app.add_config_value('rawfiles', [], 'html')
+    app.add_config_value("rawfiles", [], "html")
     app.connect("html-collect-pages", on_html_collect_pages)

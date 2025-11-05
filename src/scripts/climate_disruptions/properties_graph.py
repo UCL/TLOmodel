@@ -22,43 +22,45 @@ try:
 except ImportError:
     pydot = None
 
-SHORT_TREATMENT_ID_TO_COLOR_MAP_EXTRA = MappingProxyType({
-    '*': 'black',
-    'FirstAttendance*': 'darkgrey',
-    'Inpatient*': 'silver',
-    'Contraception*': 'darkseagreen',
-    'AntenatalCare*': 'green',
-    'DeliveryCare*': 'limegreen',
-    'PostnatalCare*': 'springgreen',
-    'CareOfWomenDuringPregnancy*': '#4D804D',
-    'Labour*': '#19A719',
-    'NewbornOutcomes*': '#19E659',
-    'PostnatalSupervisor*': '#5D8C5D',
-    'PregnancySupervisor*': '#27C066',
-    'Alri*': 'darkorange',
-    'Diarrhoea*': 'tan',
-    'Undernutrition*': 'gold',
-    'Epi*': 'darkgoldenrod',
-    'Stunting*': '#D58936',
-    'StuntingPropertiesOfOtherModules*': "#EAC143",
-    'Wasting*': '#DE9F0E',
-    'Hiv*': 'deepskyblue',
-    'Malaria*': 'lightsteelblue',
-    'Measles*': 'cornflowerblue',
-    'Tb*': 'mediumslateblue',
-    'Schisto*': 'skyblue',
-    'CardioMetabolicDisorders*': 'brown',
-    'BladderCancer*': 'orchid',
-    'BreastCancer*': 'mediumvioletred',
-    'OesophagealCancer*': 'deeppink',
-    'ProstateCancer*': 'hotpink',
-    'OtherAdultCancer*': 'palevioletred',
-    'Depression*': 'indianred',
-    'Epilepsy*': 'red',
-    'Copd*': 'lightcoral',
-    'RTI*': 'lightsalmon',
-    'Lifestyle*': 'silver',
-})
+SHORT_TREATMENT_ID_TO_COLOR_MAP_EXTRA = MappingProxyType(
+    {
+        "*": "black",
+        "FirstAttendance*": "darkgrey",
+        "Inpatient*": "silver",
+        "Contraception*": "darkseagreen",
+        "AntenatalCare*": "green",
+        "DeliveryCare*": "limegreen",
+        "PostnatalCare*": "springgreen",
+        "CareOfWomenDuringPregnancy*": "#4D804D",
+        "Labour*": "#19A719",
+        "NewbornOutcomes*": "#19E659",
+        "PostnatalSupervisor*": "#5D8C5D",
+        "PregnancySupervisor*": "#27C066",
+        "Alri*": "darkorange",
+        "Diarrhoea*": "tan",
+        "Undernutrition*": "gold",
+        "Epi*": "darkgoldenrod",
+        "Stunting*": "#D58936",
+        "StuntingPropertiesOfOtherModules*": "#EAC143",
+        "Wasting*": "#DE9F0E",
+        "Hiv*": "deepskyblue",
+        "Malaria*": "lightsteelblue",
+        "Measles*": "cornflowerblue",
+        "Tb*": "mediumslateblue",
+        "Schisto*": "skyblue",
+        "CardioMetabolicDisorders*": "brown",
+        "BladderCancer*": "orchid",
+        "BreastCancer*": "mediumvioletred",
+        "OesophagealCancer*": "deeppink",
+        "ProstateCancer*": "hotpink",
+        "OtherAdultCancer*": "palevioletred",
+        "Depression*": "indianred",
+        "Epilepsy*": "red",
+        "Copd*": "lightcoral",
+        "RTI*": "lightsalmon",
+        "Lifestyle*": "silver",
+    }
+)
 
 
 def get_color_short_treatment_id_extra_modules(short_treatment_id: str) -> str:
@@ -66,9 +68,7 @@ def get_color_short_treatment_id_extra_modules(short_treatment_id: str) -> str:
 
     Returns `np.nan` if treatment_id is not recognised.
     """
-    return SHORT_TREATMENT_ID_TO_COLOR_MAP_EXTRA.get(
-        _standardize_short_treatment_id(short_treatment_id), np.nan
-    )
+    return SHORT_TREATMENT_ID_TO_COLOR_MAP_EXTRA.get(_standardize_short_treatment_id(short_treatment_id), np.nan)
 
 
 def get_properties(
@@ -79,7 +79,7 @@ def get_properties(
     :param module: ``Module`` subclass to get properties for.
     :return: Set of ``Module`` subclass names corresponding to properties of ``module``.
     """
-    if hasattr(module, 'PROPERTIES'):
+    if hasattr(module, "PROPERTIES"):
         return module.PROPERTIES
     return None
 
@@ -114,7 +114,7 @@ def get_module_property_map(excluded_modules: Set[str]) -> Mapping[str, Set[Type
     methods_package_path = os.path.dirname(inspect.getfile(tlo.methods))
 
     for _, main_module_name, _ in pkgutil.iter_modules([methods_package_path]):
-        methods_module = importlib.import_module(f'tlo.methods.{main_module_name}')
+        methods_module = importlib.import_module(f"tlo.methods.{main_module_name}")
         for _, obj in inspect.getmembers(methods_module):
             if is_valid_tlo_module_subclass(obj, excluded_modules):
                 properties_dictionary[obj.__name__] = obj
@@ -141,16 +141,17 @@ def construct_property_dependency_graph(
         raise RuntimeError("pydot package must be installed")
 
     property_class_map = get_module_property_map(excluded_modules)
-    property_graph = pydot.Dot("properties", graph_type="digraph", rankdir='LR')
+    property_graph = pydot.Dot("properties", graph_type="digraph", rankdir="LR")
 
-    cancer_module_names = [
-        'BladderCancer', 'BreastCancer', 'OtherAdultCancer',
-        'OesophagealCancer', 'ProstateCancer'
-    ]
+    cancer_module_names = ["BladderCancer", "BreastCancer", "OtherAdultCancer", "OesophagealCancer", "ProstateCancer"]
 
     pregnancy_module_names = [
-        'Contraception', 'Labour', 'PregnancySupervisor',
-        'PostnatalSupervisor', 'NewbornOutcomes', 'CareOfWomenDuringPregnancy'
+        "Contraception",
+        "Labour",
+        "PregnancySupervisor",
+        "PostnatalSupervisor",
+        "NewbornOutcomes",
+        "CareOfWomenDuringPregnancy",
     ]
 
     # Subgraphs for different groups of modules - attempt at aesthetics
@@ -164,7 +165,7 @@ def construct_property_dependency_graph(
     property_graph.add_subgraph(other_module_subgraph)
 
     cancer_modules_subgraph = pydot.Subgraph("cancer_modules")
-    cancer_modules_subgraph.set_rank('same')
+    cancer_modules_subgraph.set_rank("same")
     property_graph.add_subgraph(cancer_modules_subgraph)
 
     infectious_diseases_subgraph = pydot.Subgraph("infectious_diseases")
@@ -229,7 +230,7 @@ def construct_property_dependency_graph(
                         node_attributes.update(properies_node_defaults)
                         node_attributes["shape"] = "square"
                         properties_diseases_subgraph.add_node(pydot.Node(property, **node_attributes))
-                        properties_diseases_subgraph.set_rank('same')
+                        properties_diseases_subgraph.set_rank("same")
                         property_graph.add_edge(pydot.Edge(property, main_module))
 
     return property_graph
@@ -266,7 +267,7 @@ def property_dependency_map_by_module(
                 "shape": "square",
                 "style": "filled",
             }
-            property_graph = pydot.Dot("properties", graph_type="digraph", rankdir='LR')
+            property_graph = pydot.Dot("properties", graph_type="digraph", rankdir="LR")
             property_graph.add_node(pydot.Node(key, **node_attributes))
             for property_key, property_module in property_class_map.items():
                 if key != property_key and property_module not in excluded_modules:
@@ -276,17 +277,17 @@ def property_dependency_map_by_module(
                         property_graph.add_node(pydot.Node(property, **property_node_attributes))
                         property_graph.add_edge(pydot.Edge(property, key))
 
-        graph_name = output_path/f"{key}.png"
-        #print(property_graph)
-        property_graph.write(graph_name,  format="png")
+        graph_name = output_path / f"{key}.png"
+        # print(property_graph)
+        property_graph.write(graph_name, format="png")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "output_file", type=Path, help=(
-            "Path to output graph to. File extension will determine output format - for example: dot, dia, png, svg"
-        )
+        "output_file",
+        type=Path,
+        help=("Path to output graph to. File extension will determine output format - for example: dot, dia, png, svg"),
     )
     args = parser.parse_args()
 
@@ -308,10 +309,11 @@ if __name__ == "__main__":
         "Deviance",
         "SimplifiedPregnancyAndLabour",
         "DummyDisease",
-        "Module"
+        "Module",
     }
-    property_dependency_map_by_module(excluded_modules, properies_node_defaults={"shape": "square"},
-                                      output_path=args.output_file)
+    property_dependency_map_by_module(
+        excluded_modules, properies_node_defaults={"shape": "square"}, output_path=args.output_file
+    )
 
     module_graph = construct_property_dependency_graph(
         excluded_modules,
@@ -319,8 +321,7 @@ if __name__ == "__main__":
         other_module_node_defaults={"shape": "ellipse"},
         pregnancy_related_module_node_defaults={"shape": "diamond"},
         cancer_related_module_node_defaults={"shape": "invtrapezium"},
-        properies_node_defaults={"shape": "square"}
+        properies_node_defaults={"shape": "square"},
     )
 
-    module_graph.write(args.output_file/"property_graph_full.png", format="png")
-
+    module_graph.write(args.output_file / "property_graph_full.png", format="png")

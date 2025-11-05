@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 class Priority(Enum):
     """Enumeration for the Priority, which is used in sorting the events in the simulation queue."""
+
     START_OF_DAY = 0
     FIRST_HALF_OF_DAY = 25
     LAST_HALF_OF_DAY = 75

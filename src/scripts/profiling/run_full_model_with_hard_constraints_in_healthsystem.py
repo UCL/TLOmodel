@@ -43,11 +43,7 @@ popsize = 20_000
 # The resource files
 resourcefilepath = Path("./resources")
 
-log_config = {
-    "filename": "for_profiling",
-    "directory": "./outputs",
-    "custom_levels": {"*": logging.WARNING}
-}
+log_config = {"filename": "for_profiling", "directory": "./outputs", "custom_levels": {"*": logging.WARNING}}
 
 sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -59,16 +55,12 @@ sim.register(
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-
     # HealthSystem
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                              mode_appt_constraints=2,
-                              capabilities_coefficient=0.01
-                              ),
-
+    healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath, mode_appt_constraints=2, capabilities_coefficient=0.01
+    ),
     # Modules for birth/labour/newborns --> Simplified Births
     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-
     # Disease modules considered complete:
     cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
     depression.Depression(resourcefilepath=resourcefilepath),
@@ -78,7 +70,7 @@ sim.register(
     hiv.Hiv(resourcefilepath=resourcefilepath),
     malaria.Malaria(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
+    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
 )
 
 # Run the simulation

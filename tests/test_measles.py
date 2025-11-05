@@ -37,8 +37,8 @@ log_config = {
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.measles": logging.INFO,
         "tlo.methods.healthsystem": logging.INFO,
-        "tlo.methods.demography": logging.INFO
-    }
+        "tlo.methods.demography": logging.INFO,
+    },
 }
 
 
@@ -74,7 +74,7 @@ def test_single_person(sim):
     check symptoms resolved correctly
     """
     # set high death rate - change all symptom probabilities to 1
-    sim.modules['Measles'].parameters["symptom_prob"]["probability"] = 1
+    sim.modules["Measles"].parameters["symptom_prob"]["probability"] = 1
 
     sim.make_initial_population(n=1)  # why does this throw an error if n=1??
     # ValueError: Wrong number of items passed 5, placement implies 1
@@ -83,7 +83,7 @@ def test_single_person(sim):
     df.at[person_id, "me_has_measles"] = True
 
     # measles onset event
-    inf_event = measles.MeaslesOnsetEvent(person_id=person_id, module=sim.modules['Measles'])
+    inf_event = measles.MeaslesOnsetEvent(person_id=person_id, module=sim.modules["Measles"])
     inf_event.apply(person_id)
     assert not pd.isnull(df.at[person_id, "me_date_measles"])
 
@@ -96,7 +96,7 @@ def test_single_person(sim):
 
 @pytest.mark.slow
 def test_measles_cases_and_hsi_occurring(sim):
-    """ Run the measles module
+    """Run the measles module
     check dtypes consistency
     check infections occurring
     check measles onset event scheduled
@@ -108,12 +108,12 @@ def test_measles_cases_and_hsi_occurring(sim):
     popsize = 1000
 
     # set high transmission probability
-    sim.modules['Measles'].parameters['beta_baseline'] = 1.0
+    sim.modules["Measles"].parameters["beta_baseline"] = 1.0
 
     # set high death rate and change all symptom probabilities to 1
-    cfr = sim.modules['Measles'].parameters["case_fatality_rate"]
-    sim.modules['Measles'].parameters["case_fatality_rate"] = {k: 1.0 for k, v in cfr.items()}
-    sim.modules['Measles'].parameters["symptom_prob"]["probability"] = 1
+    cfr = sim.modules["Measles"].parameters["case_fatality_rate"]
+    sim.modules["Measles"].parameters["case_fatality_rate"] = {k: 1.0 for k, v in cfr.items()}
+    sim.modules["Measles"].parameters["symptom_prob"]["probability"] = 1
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -126,7 +126,7 @@ def test_measles_cases_and_hsi_occurring(sim):
     df = sim.population.props
 
     # check people getting measles
-    assert df['me_has_measles'].values.sum() > 0  # current cases of measles
+    assert df["me_has_measles"].values.sum() > 0  # current cases of measles
 
     # check that everyone who is currently infected gets a measles onset or symptom resolve event
     # they can have multiple symptom resolve events scheduled (by symptom onset and by treatment)
@@ -144,31 +144,30 @@ def test_measles_cases_and_hsi_occurring(sim):
     # check symptoms assigned
     # there is an incubation period, so infected people may not have rash immediately
     # if on treatment for measles, must have rash for diagnosis
-    has_rash = sim.modules['SymptomManager'].who_has('rash')
+    has_rash = sim.modules["SymptomManager"].who_has("rash")
     current_measles_tx = df.index[df.is_alive & df.me_has_measles & df.me_on_treatment]
     if current_measles_tx.any():
         assert set(current_measles_tx) <= set(has_rash)
 
     # check if any measles deaths occurred
-    assert df.cause_of_death.loc[~df.is_alive].str.startswith('Measles').any()
+    assert df.cause_of_death.loc[~df.is_alive].str.startswith("Measles").any()
 
 
 @pytest.mark.slow
 def test_measles_zero_death_rate(sim):
-
     end_date = Date(2010, 12, 31)
     popsize = 10_000
 
     # set zero death rate
-    cfr = sim.modules['Measles'].parameters["case_fatality_rate"]
-    sim.modules['Measles'].parameters["case_fatality_rate"] = {k: 0.0 for k, v in cfr.items()}
+    cfr = sim.modules["Measles"].parameters["case_fatality_rate"]
+    sim.modules["Measles"].parameters["case_fatality_rate"] = {k: 0.0 for k, v in cfr.items()}
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     df = sim.population.props
 
     # no symptoms should equal no treatment (unless other rash has prompted incorrect tx: unlikely)
-    assert not (df.loc[df.is_alive, 'me_on_treatment']).all()
+    assert not (df.loc[df.is_alive, "me_on_treatment"]).all()
 
     # check that there have been no deaths caused by measles
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Measles').any()
+    assert not df.cause_of_death.loc[~df.is_alive].str.startswith("Measles").any()

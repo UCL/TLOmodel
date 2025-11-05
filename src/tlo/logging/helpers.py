@@ -17,12 +17,12 @@ def set_logging_levels(custom_levels: Dict[str, int]) -> None:
     loggers = {
         _logging.getLogger(name)
         for name in _logging.root.manager.loggerDict  # pylint: disable=E1101
-        if name.startswith('tlo.methods')
+        if name.startswith("tlo.methods")
     }
 
     # set the baseline logging level from methods, if it's been set
-    if '*' in custom_levels:
-        getLogger('tlo.methods').setLevel(custom_levels['*'])
+    if "*" in custom_levels:
+        getLogger("tlo.methods").setLevel(custom_levels["*"])
 
     # loop over each of the tlo loggers
     for logger in loggers:
@@ -35,16 +35,16 @@ def set_logging_levels(custom_levels: Dict[str, int]) -> None:
                 getLogger(logger_name).setLevel(custom_levels[logger_name])
                 matched = True
                 break
-            elif logger_name == 'tlo.methods':
+            elif logger_name == "tlo.methods":
                 # we've reached the top-level of the `tlo.methods` logger
                 break
             else:
                 # get the parent logger name
-                logger_name = '.'.join(logger_name.split(".")[:-1])
+                logger_name = ".".join(logger_name.split(".")[:-1])
         # if we exited without finding a matching logger in custom levels
         if not matched:
-            if '*' in custom_levels:
-                getLogger(logger.name).setLevel(custom_levels['*'])
+            if "*" in custom_levels:
+                getLogger(logger.name).setLevel(custom_levels["*"])
 
     # loggers named in custom_level but, for some reason, haven't been getLogger-ed yet
     loggers = {logger.name for logger in loggers}
@@ -59,11 +59,11 @@ def get_dataframe_row_as_dict_for_logging(
     columns: Optional[Iterable[str]] = None,
 ) -> dict:
     """Get row of a pandas dataframe in a format suitable for logging.
-    
+
     Retrieves entries for all or a subset of columns for a particular row in a dataframe
     and returns a dict keyed by column name, with values NumPy or pandas extension types
     which should be the same for all rows in dataframe.
-    
+
     :param dataframe: Population properties dataframe to get properties from.
     :param row_label: Unique index label identifying row in dataframe.
     :param columns: Set of column names to extract - if ``None``, the default, all
@@ -75,15 +75,14 @@ def get_dataframe_row_as_dict_for_logging(
     columns = dataframe.columns if columns is None else columns
     row_index = dataframe.index.get_loc(row_label)
     return {
-        column_name:
-        dataframe[column_name].values[row_index]
+        column_name: dataframe[column_name].values[row_index]
         # pandas extension array datatypes such as nullable types and categoricals, will
         # be type unstable if a scalar is returned as NA / NaT / NaN entries will have a
         # different type from non-missing entries, therefore use a length 1 array of
         # relevant NumPy or pandas extension type in these cases to ensure type
         # stability across different rows.
-        if not is_extension_array_dtype(dataframe[column_name].dtype) else
-        dataframe[column_name].values[row_index:row_index+1]
+        if not is_extension_array_dtype(dataframe[column_name].dtype)
+        else dataframe[column_name].values[row_index : row_index + 1]
         for column_name in columns
     }
 
@@ -113,15 +112,11 @@ def grouped_counts_with_all_combinations(
     # Convert any bool(ean) columns to categoricals
     for column_name in group_by_columns:
         if subset[column_name].dtype in ("bool", "boolean"):
-            subset[column_name] = pd.Categorical(
-                subset[column_name], categories=[True, False]
-            )
+            subset[column_name] = pd.Categorical(subset[column_name], categories=[True, False])
     # For other non-categorical columns possible values need to be explicitly stated
     if column_possible_values is not None:
         for column_name, possible_values in column_possible_values.items():
-            subset[column_name] = pd.Categorical(
-                subset[column_name], categories=possible_values
-            )
+            subset[column_name] = pd.Categorical(subset[column_name], categories=possible_values)
     if not (subset.dtypes == "category").all():
         msg = "At least one column not convertable to categorical dtype:\n" + str(
             {subset.dtypes[subset.dtypes != "categorical"]}

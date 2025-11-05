@@ -36,6 +36,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         from scripts.comparison_of_horizontal_and_vertical_programs.scenario_hss_elements import (
             HSSElements,
         )
+
         e = HSSElements()
         return tuple(e._scenarios.keys())
 
@@ -51,10 +52,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         years_needed = [i.year for i in TARGET_PERIOD]
         assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
         return pd.Series(
-            data=_df
-            .loc[_df.year.between(*years_needed)]
-            .drop(columns=['date', 'sex', 'age_range', 'year'])
-            .sum().sum()
+            data=_df.loc[_df.year.between(*years_needed)].drop(columns=["date", "sex", "age_range", "year"]).sum().sum()
         )
 
     def set_param_names_as_column_index_level_0(_df):
@@ -65,30 +63,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
         return _df
 
-    def find_difference_relative_to_comparison(_ser: pd.Series,
-                                               comparison: str,
-                                               scaled: bool = False,
-                                               drop_comparison: bool = True,
-                                               ):
+    def find_difference_relative_to_comparison(
+        _ser: pd.Series,
+        comparison: str,
+        scaled: bool = False,
+        drop_comparison: bool = True,
+    ):
         """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
         within the runs (level 1), relative to where draw = `comparison`.
         The comparison is `X - COMPARISON`."""
-        return _ser \
-            .unstack(level=0) \
-            .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
-            .drop(columns=([comparison] if drop_comparison else [])) \
+        return (
+            _ser.unstack(level=0)
+            .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1)
+            .drop(columns=([comparison] if drop_comparison else []))
             .stack()
+        )
 
     def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False, put_labels_in_legend=True):
         """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
-         extent of the error bar."""
+        extent of the error bar."""
 
-        substitute_labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        substitute_labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-        yerr = np.array([
-            (_df['mean'] - _df['lower']).values,
-            (_df['upper'] - _df['mean']).values,
-        ])
+        yerr = np.array(
+            [
+                (_df["mean"] - _df["lower"]).values,
+                (_df["upper"] - _df["mean"]).values,
+            ]
+        )
 
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
@@ -100,26 +102,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
             xticks.keys(),
-            _df['mean'].values,
+            _df["mean"].values,
             yerr=yerr,
             alpha=0.8,
-            ecolor='black',
+            ecolor="black",
             color=colors,
             capsize=10,
-            label=xticks.values()
+            label=xticks.values(),
         )
         if annotations:
-            for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-                ax.text(xpos, ypos*1.15, text, horizontalalignment='center', rotation='vertical', fontsize='x-small')
+            for xpos, ypos, text in zip(xticks.keys(), _df["upper"].values, annotations):
+                ax.text(xpos, ypos * 1.15, text, horizontalalignment="center", rotation="vertical", fontsize="x-small")
         ax.set_xticks(list(xticks.keys()))
 
         if put_labels_in_legend:
             # Update xticks label with substitute labels
             # Insert legend with updated labels that shows correspondence between substitute label and original label
             xtick_values = [letter for letter, label in zip(substitute_labels, xticks.values())]
-            xtick_legend = [f'{letter}: {label}' for letter, label in zip(substitute_labels, xticks.values())]
+            xtick_legend = [f"{letter}: {label}" for letter, label in zip(substitute_labels, xticks.values())]
             h, legs = ax.get_legend_handles_labels()
-            ax.legend(h, xtick_legend, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
+            ax.legend(h, xtick_legend, loc="center left", fontsize="small", bbox_to_anchor=(1, 0.5))
             ax.set_xticklabels(list(xtick_values))
         else:
             if not xticklabels_horizontal_and_wrapped:
@@ -130,8 +132,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 ax.set_xticklabels(wrapped_labs)
 
         ax.grid(axis="y")
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
         fig.tight_layout()
 
         return fig, ax
@@ -144,113 +146,104 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Absolute Number of Deaths and DALYs
     num_deaths = extract_results(
         results_folder,
-        module='tlo.methods.demography',
-        key='death',
+        module="tlo.methods.demography",
+        key="death",
         custom_generate_series=get_num_deaths,
-        do_scaling=True
+        do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
     num_dalys = extract_results(
         results_folder,
-        module='tlo.methods.healthburden',
-        key='dalys_stacked',
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
         custom_generate_series=get_num_dalys,
-        do_scaling=True
+        do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
     # %% Charts of total numbers of deaths / DALYS
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
 
-    name_of_plot = f'Deaths, {target_period()}'
+    name_of_plot = f"Deaths, {target_period()}"
     fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
+    ax.set_ylabel("(Millions)")
     fig.tight_layout()
-    ax.axhline(num_deaths_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    ax.axhline(num_deaths_summarized.loc["Baseline", "mean"] / 1e6, color="black", alpha=0.5)
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_").replace(",", "")))
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'All Scenarios: DALYs, {target_period()}'
+    name_of_plot = f"All Scenarios: DALYs, {target_period()}"
     fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    ax.axhline(num_dalys_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
+    ax.set_ylabel("(Millions)")
+    ax.axhline(num_dalys_summarized.loc["Baseline", "mean"] / 1e6, color="black", alpha=0.5)
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_").replace(",", "")))
     fig.show()
     plt.close(fig)
 
-
     # %% Deaths and DALYS averted relative to Status Quo
-    num_deaths_averted = summarize(
-        -1.0 *
-        pd.DataFrame(
-            find_difference_relative_to_comparison(
-                num_deaths.loc[0],
-                comparison='Baseline')
-        ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    num_deaths_averted = (
+        summarize(
+            -1.0 * pd.DataFrame(find_difference_relative_to_comparison(num_deaths.loc[0], comparison="Baseline")).T
+        )
+        .iloc[0]
+        .unstack()
+        .reindex(param_names)
+        .drop(["Baseline"])
+    )
 
     pc_deaths_averted = 100.0 * summarize(
-        -1.0 *
-        pd.DataFrame(
-            find_difference_relative_to_comparison(
-                num_deaths.loc[0],
-                comparison='Baseline',
-                scaled=True)
-        ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+        -1.0
+        * pd.DataFrame(find_difference_relative_to_comparison(num_deaths.loc[0], comparison="Baseline", scaled=True)).T
+    ).iloc[0].unstack().reindex(param_names).drop(["Baseline"])
 
-    num_dalys_averted = summarize(
-        -1.0 *
-        pd.DataFrame(
-            find_difference_relative_to_comparison(
-                num_dalys.loc[0],
-                comparison='Baseline')
-        ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    num_dalys_averted = (
+        summarize(
+            -1.0 * pd.DataFrame(find_difference_relative_to_comparison(num_dalys.loc[0], comparison="Baseline")).T
+        )
+        .iloc[0]
+        .unstack()
+        .reindex(param_names)
+        .drop(["Baseline"])
+    )
 
     pc_dalys_averted = 100.0 * summarize(
-        -1.0 *
-        pd.DataFrame(
-            find_difference_relative_to_comparison(
-                num_dalys.loc[0],
-                comparison='Baseline',
-                scaled=True)
-        ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+        -1.0
+        * pd.DataFrame(find_difference_relative_to_comparison(num_dalys.loc[0], comparison="Baseline", scaled=True)).T
+    ).iloc[0].unstack().reindex(param_names).drop(["Baseline"])
 
     # DEATHS
-    name_of_plot = f'Additional Deaths Averted vs Baseline, {target_period()}'
+    name_of_plot = f"Additional Deaths Averted vs Baseline, {target_period()}"
     fig, ax = do_bar_plot_with_ci(
         num_deaths_averted.clip(lower=0.0),
         annotations=[
             f"{round(row['mean'], 0)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
             for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
-        ]
+        ],
     )
     ax.set_title(name_of_plot)
-    ax.set_ylabel('Additional Deaths Averted')
+    ax.set_ylabel("Additional Deaths Averted")
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_").replace(",", "")))
     fig.show()
     plt.close(fig)
 
     # DALYS
-    name_of_plot = f'Additional DALYs Averted vs Baseline, {target_period()}'
+    name_of_plot = f"Additional DALYs Averted vs Baseline, {target_period()}"
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
             f"{round(row['mean'])} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
-        ]
+        ],
     )
     ax.set_title(name_of_plot)
-    ax.set_ylabel('Additional DALYS Averted \n(Millions)')
+    ax.set_ylabel("Additional DALYS Averted \n(Millions)")
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_").replace(",", "")))
     fig.show()
     plt.close(fig)
 
@@ -260,13 +253,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # todo: other metrics of health
     # todo: other graphs, broken down by age/sex (this can also be cribbed from overview paper stuff)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)  # outputs/horizontal_and_vertical_programs-2024-05-16
     args = parser.parse_args()
 
-    apply(
-        results_folder=args.results_folder,
-        output_folder=args.results_folder,
-        resourcefilepath=Path('./resources')
-    )
+    apply(results_folder=args.results_folder, output_folder=args.results_folder, resourcefilepath=Path("./resources"))

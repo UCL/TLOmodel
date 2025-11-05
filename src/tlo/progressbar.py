@@ -39,13 +39,9 @@ def _in_shell_with_ansi_support() -> bool:
     Based on https://gist.github.com/ssbarnea/1316877
     """
     return (
-        (
-            hasattr(sys.stdout, "isatty")
-            and sys.stdout.isatty()
-            and platform.system() != 'Windows'
-        )
-        or os.environ.get('TERM') == "ANSI"
-        or os.environ.get('PYCHARM_HOSTED') == "1"
+        (hasattr(sys.stdout, "isatty") and sys.stdout.isatty() and platform.system() != "Windows")
+        or os.environ.get("TERM") == "ANSI"
+        or os.environ.get("PYCHARM_HOSTED") == "1"
     )
 
 
@@ -58,10 +54,7 @@ def _create_display(obj):
     if _in_zmq_interactive_shell():
         return ipython_display(obj, display_id=True)
     else:
-        display = (
-            AnsiStreamDisplay() if _in_shell_with_ansi_support()
-            else BasicStreamDisplay()
-        )
+        display = AnsiStreamDisplay() if _in_shell_with_ansi_support() else BasicStreamDisplay()
         display.update(obj)
         return display
 
@@ -101,7 +94,7 @@ class ProgressBar:
         description: Optional[str] = None,
         n_col: int = 10,
         unit: str = "step",
-        min_refresh_time: float = 1.,
+        min_refresh_time: float = 1.0,
     ):
         """
         :param n_step: Total number of steps in task.
@@ -135,7 +128,7 @@ class ProgressBar:
 
     @property
     def description(self):
-        """"Description of task being tracked."""
+        """ "Description of task being tracked."""
         return self._description
 
     @property
@@ -169,11 +162,7 @@ class ProgressBar:
             return "?"
         else:
             mean_time = self._elapsed_time / self.step
-            return (
-                f"{mean_time:.2f}s/{self._unit}"
-                if mean_time > 1
-                else f"{1/mean_time:.2f}{self._unit}/s"
-            )
+            return f"{mean_time:.2f}s/{self._unit}" if mean_time > 1 else f"{1/mean_time:.2f}{self._unit}/s"
 
     @property
     def est_remaining_time(self):
@@ -237,17 +226,12 @@ class ProgressBar:
     @property
     def stats(self):
         """Comma-delimited string list of statistic key=value pairs."""
-        return ", ".join(
-            f"{k}={_format_stat(v)}" for k, v in self._stats_dict.items()
-        )
+        return ", ".join(f"{k}={_format_stat(v)}" for k, v in self._stats_dict.items())
 
     @property
     def prefix(self):
         """Text to prefix progress bar with."""
-        return (
-            f'{self.description + ": "if self.description else ""}'
-            f"{self.perc_complete}"
-        )
+        return f'{self.description + ": "if self.description else ""}' f"{self.perc_complete}"
 
     @property
     def postfix(self):
@@ -266,12 +250,7 @@ class ProgressBar:
         self._last_refresh_time = -float("inf")
         self._stats_dict = {}
 
-    def update(
-        self,
-        step: int,
-        stats_dict: Optional[Dict] = None,
-        refresh: bool = True
-    ):
+    def update(self, step: int, stats_dict: Optional[Dict] = None, refresh: bool = True):
         """Update progress bar state.
 
         :param step: New value for step counter.
@@ -286,11 +265,7 @@ class ProgressBar:
             if stats_dict is not None:
                 self._stats_dict.update(stats_dict)
             self._elapsed_time = timer() - self._start_time
-        if (
-            refresh
-            and step == self.n_step
-            or (timer() - self._last_refresh_time > self._min_refresh_time)
-        ):
+        if refresh and step == self.n_step or (timer() - self._last_refresh_time > self._min_refresh_time):
             self.refresh()
             self._last_refresh_time = timer()
 

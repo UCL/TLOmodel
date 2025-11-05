@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Literal, NamedTuple, Optional,
 
 import numpy as np
 
-from tlo import Date, logging, DateOffset
+from tlo import Date, logging
 from tlo.events import Event
 
 if TYPE_CHECKING:
@@ -77,7 +77,7 @@ class HSI_Event:
     """
 
     module: Module
-    target: int # Will be overwritten by the mixin on derived classes
+    target: int  # Will be overwritten by the mixin on derived classes
 
     TREATMENT_ID: str
     ACCEPTED_FACILITY_LEVEL: str
@@ -181,8 +181,7 @@ class HSI_Event:
         if self.facility_info is not None:
             # If there is a facility_info (e.g., healthsystem not running in disabled mode), then record equipment used
             self.healthcare_system.equipment.record_use_of_equipment(
-                item_codes=self._EQUIPMENT,
-                facility_id=self.facility_info.id
+                item_codes=self._EQUIPMENT, facility_id=self.facility_info.id
             )
 
     def run(self, squeeze_factor):
@@ -259,8 +258,7 @@ class HSI_Event:
     def is_all_beddays_allocated(self) -> bool:
         """Check if the entire footprint requested is allocated"""
         return all(
-            self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k]
-            for k in self.BEDDAYS_FOOTPRINT
+            self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT
         )
 
     def make_appt_footprint(self, dict_of_appts) -> Counter:
@@ -331,20 +329,15 @@ class HSI_Event:
         # missed in the declaration of the `EXPECTED_APPT_FOOTPRINT` in the HSI.)
         # NB. The in-patient day Appointment time is automatically applied on subsequent days.
         if sum(self.BEDDAYS_FOOTPRINT.values()):
-            self.EXPECTED_APPT_FOOTPRINT = (
-                health_system.bed_days.add_first_day_inpatient_appts_to_footprint(
-                    self.EXPECTED_APPT_FOOTPRINT
-                )
+            self.EXPECTED_APPT_FOOTPRINT = health_system.bed_days.add_first_day_inpatient_appts_to_footprint(
+                self.EXPECTED_APPT_FOOTPRINT
             )
 
         # Write the time requirements for staff of the appointments to the HSI:
-        self.expected_time_requests = (
-            health_system.get_appt_footprint_as_time_request(
-                facility_info=self.facility_info,
-                appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
-            )
+        self.expected_time_requests = health_system.get_appt_footprint_as_time_request(
+            facility_info=self.facility_info,
+            appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
         )
-
 
         # Do checks
         self._check_if_appt_footprint_can_run()
@@ -353,9 +346,7 @@ class HSI_Event:
         """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
         this does not demand officers that are _never_ available), and issue warning if not.
         """
-        if self.healthcare_system._officers_with_availability.issuperset(
-            self.expected_time_requests.keys()
-        ):
+        if self.healthcare_system._officers_with_availability.issuperset(self.expected_time_requests.keys()):
             return True
         else:
             logger.debug(
@@ -368,9 +359,7 @@ class HSI_Event:
             return False
 
     @staticmethod
-    def _return_item_codes_in_dict(
-        item_codes: Union[None, np.integer, int, list, set, dict]
-    ) -> dict:
+    def _return_item_codes_in_dict(item_codes: Union[None, np.integer, int, list, set, dict]) -> dict:
         """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
         dict(<item_code>:quantity)."""
 
@@ -395,21 +384,15 @@ class HSI_Event:
                     for code, quantity in item_codes.items()
                 ]
             ):
-                raise ValueError(
-                    "item_codes must be integers and quantities must be integers or floats."
-                )
+                raise ValueError("item_codes must be integers and quantities must be integers or floats.")
             return {int(i): float(q) for i, q in item_codes.items()}
 
         else:
             raise ValueError("The item_codes are given in an unrecognised format")
 
-    def as_namedtuple(
-        self, actual_appt_footprint: Optional[dict] = None
-    ) -> HSIEventDetails:
+    def as_namedtuple(self, actual_appt_footprint: Optional[dict] = None) -> HSIEventDetails:
         appt_footprint = (
-            getattr(self, "EXPECTED_APPT_FOOTPRINT", {})
-            if actual_appt_footprint is None
-            else actual_appt_footprint
+            getattr(self, "EXPECTED_APPT_FOOTPRINT", {}) if actual_appt_footprint is None else actual_appt_footprint
         )
         return HSIEventDetails(
             event_name=type(self).__name__,
@@ -417,9 +400,7 @@ class HSI_Event:
             treatment_id=self.TREATMENT_ID,
             facility_level=getattr(self, "ACCEPTED_FACILITY_LEVEL", None),
             appt_footprint=tuple(sorted(appt_footprint.items())),
-            beddays_footprint=tuple(
-                sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
-            ),
+            beddays_footprint=tuple(sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)),
             equipment=tuple(sorted(self._EQUIPMENT)),
         )
 
@@ -448,16 +429,11 @@ class HSIEventWrapper(Event):
         # Check that the person is still alive (this check normally happens in the HealthSystemScheduler and silently
         # do not run the HSI event)
 
-        if self.hsi_event.module.sim.population.props.at[
-                self.hsi_event.target, "is_alive"
-            ]:
-
+        if self.hsi_event.module.sim.population.props.at[self.hsi_event.target, "is_alive"]:
             if self.run_hsi:
                 # Run the event (with 0 squeeze_factor) and ignore the output
                 _ = self.hsi_event.run(squeeze_factor=0.0)
             else:
-                self.hsi_event.module.sim.modules[
-                    "HealthSystem"
-                ].call_and_record_never_ran_hsi_event(
+                self.hsi_event.module.sim.modules["HealthSystem"].call_and_record_never_ran_hsi_event(
                     hsi_event=self.hsi_event, priority=-1
                 )

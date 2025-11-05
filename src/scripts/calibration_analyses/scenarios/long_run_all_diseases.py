@@ -28,17 +28,17 @@ class LongRun(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'long_run_all_diseases',  # <- (specified only for local running)
-            'directory': './outputs',  # <- (specified only for local running)
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
+            "filename": "long_run_all_diseases",  # <- (specified only for local running)
+            "directory": "./outputs",  # <- (specified only for local running)
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
-            }
+            },
         }
 
     def modules(self):
@@ -48,7 +48,7 @@ class LongRun(BaseScenario):
         return get_parameters_for_status_quo()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

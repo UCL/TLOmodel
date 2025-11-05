@@ -30,7 +30,7 @@ resourcefilepath = Path("./resources")
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-log_filename = outputpath / 'baseline_alri_outputs__2022-03-16T165848.log'
+log_filename = outputpath / "baseline_alri_outputs__2022-03-16T165848.log"
 # <-- insert name of log file to avoid re-running the simulation // GBD_lri_comparison_50k_pop__2022-03-15T111444.log
 
 if not os.path.exists(log_filename):
@@ -49,7 +49,7 @@ if not os.path.exists(log_filename):
             "tlo.methods.alri": logging.DEBUG,
             "tlo.methods.demography": logging.INFO,
             "tlo.methods.healthburden": logging.INFO,
-        }
+        },
     }
 
     seed = random.randint(0, 50000)
@@ -65,10 +65,9 @@ if not os.path.exists(log_filename):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  service_availability=['*']),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=["*"]),
         alri.Alri(resourcefilepath=resourcefilepath),
-        alri.AlriPropertiesOfOtherModules()
+        alri.AlriPropertiesOfOtherModules(),
     )
 
     # Run the simulation
@@ -83,22 +82,18 @@ output = parse_log_file(log_filename)
 
 # ----------------------------------------------------------------------------------------
 # Set the baseline output plots
-counts = output['tlo.methods.alri']['event_counts']
-counts['year'] = pd.to_datetime(counts['date']).dt.year
-counts.drop(columns='date', inplace=True)
-counts.set_index(
-    'year',
-    drop=True,
-    inplace=True
-)
+counts = output["tlo.methods.alri"]["event_counts"]
+counts["year"] = pd.to_datetime(counts["date"]).dt.year
+counts.drop(columns="date", inplace=True)
+counts.set_index("year", drop=True, inplace=True)
 
 mean_per_year = counts.sum() / counts.index.value_counts().count()
 
 fig, ax = plt.subplots()
 labels = mean_per_year.index.values
 ax.bar(labels, mean_per_year)
-plt.title('key events')
+plt.title("key events")
 plt.xticks(rotation=90)
-plt.ylabel('Number of cases')
+plt.ylabel("Number of cases")
 fig.tight_layout()
 plt.show()

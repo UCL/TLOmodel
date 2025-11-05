@@ -43,65 +43,65 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         self.daly_wts = dict()
         self.item_codes_other_can = dict()
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    INIT_DEPENDENCIES = {"Demography", "HealthSystem", "SymptomManager"}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
+    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden", "Hiv"}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
     }
 
     gbd_causes_of_cancer_represented_in_this_module = [
-        'Other malignant neoplasms',
-        'Nasopharynx cancer',
-        'Other pharynx cancer',
-        'Gallbladder and biliary tract cancer',
-        'Pancreatic cancer',
-        'Malignant skin melanoma',
-        'Non-melanoma skin cancer',
-        'Ovarian cancer',
-        'Testicular cancer',
-        'Kidney cancer',
+        "Other malignant neoplasms",
+        "Nasopharynx cancer",
+        "Other pharynx cancer",
+        "Gallbladder and biliary tract cancer",
+        "Pancreatic cancer",
+        "Malignant skin melanoma",
+        "Non-melanoma skin cancer",
+        "Ovarian cancer",
+        "Testicular cancer",
+        "Kidney cancer",
         # 'Brain and central nervous system cancer',
-        'Thyroid cancer',
-        'Mesothelioma',
-        'Hodgkin lymphoma',
-        'Non-Hodgkin lymphoma',
-        'Multiple myeloma',
-        'Leukemia',
-        'Other neoplasms',
-        'Cervical cancer',
-        'Uterine cancer',
-        'Colon and rectum cancer',
-        'Lip and oral cavity cancer',
-        'Stomach cancer',
-        'Liver cancer']
+        "Thyroid cancer",
+        "Mesothelioma",
+        "Hodgkin lymphoma",
+        "Non-Hodgkin lymphoma",
+        "Multiple myeloma",
+        "Leukemia",
+        "Other neoplasms",
+        "Cervical cancer",
+        "Uterine cancer",
+        "Colon and rectum cancer",
+        "Lip and oral cavity cancer",
+        "Stomach cancer",
+        "Liver cancer",
+    ]
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer (Other)')
+        "OtherAdultCancer": Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label="Cancer (Other)")
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer (Other)')
+        "OtherAdultCancer": Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label="Cancer (Other)")
     }
 
     PARAMETERS = {
         "init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of those with other adult cancer categories that have other "
-                        "adult_ca_symptom"
+            Types.LIST,
+            "initial proportions of those with other adult cancer categories that have other " "adult_ca_symptom",
         ),
         "in_prop_other_adult_cancer_stage": Parameter(
-            Types.LIST,
-            "initial proportions in other adult cancer stages for person aged 15-29"
+            Types.LIST, "initial proportions in other adult cancer stages for person aged 15-29"
         ),
         "init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage": Parameter(
-            Types.LIST, "initial proportions of people that have symptom of other_adult_ca_symptom that "
-                        "have been diagnosed"
+            Types.LIST,
+            "initial proportions of people that have symptom of other_adult_ca_symptom that " "have been diagnosed",
         ),
         "init_prop_treatment_status_other_adult_cancer": Parameter(
             Types.LIST, "initial proportions of people with other_adult cancer previously given treatment"
@@ -132,8 +132,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "rr_local_ln_other_adult_ca_undergone_curative_treatment": Parameter(
             Types.REAL,
-            "rate ratio for local_ln for people with site_confined "
-            "if had curative treatment at site_confined stage",
+            "rate ratio for local_ln for people with site_confined " "if had curative treatment at site_confined stage",
         ),
         "r_metastatic_local_ln": Parameter(
             Types.REAL, "probabilty per 3 months of metastatic other_adult cancer amongst people with local_ln"
@@ -149,7 +148,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "r_early_other_adult_ca_symptom_site_confined_other_adult_ca": Parameter(
             Types.REAL,
-            "probability per 3 months of other_adult_ca_symptom in a person with site confined other_adult cancer"
+            "probability per 3 months of other_adult_ca_symptom in a person with site confined other_adult cancer",
         ),
         "rr_early_other_adult_ca_symptom_local_ln_other_adult_ca": Parameter(
             Types.REAL, "rate ratio for other_adult_ca_symptom if have high grade other_adult cancer"
@@ -167,17 +166,20 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "relative prevalence at baseline of bladder cancer/cancer age 70+"
         ),
         "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_site_confined": Parameter(
-            Types.REAL, "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
-                        "other_adult_ca_site-confined"
+            Types.REAL,
+            "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
+            "other_adult_ca_site-confined",
         ),
         "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_local_ln": Parameter(
-            Types.REAL, "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
-                        "other_adult_local_ln"
+            Types.REAL,
+            "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
+            "other_adult_local_ln",
         ),
         "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_metastatic": Parameter(
-            Types.REAL, "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
-                        "other_adult_ca metastatic"
-        )
+            Types.REAL,
+            "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
+            "other_adult_ca metastatic",
+        ),
     }
 
     PROPERTIES = {
@@ -186,17 +188,12 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             "Current status of the health condition, other_adult cancer",
             categories=["none", "site_confined", "local_ln", "metastatic"],
         ),
-
         "oac_date_diagnosis": Property(
-            Types.DATE,
-            "the date of diagnosis of the other_adult_cancer (pd.NaT if never diagnosed)"
+            Types.DATE, "the date of diagnosis of the other_adult_cancer (pd.NaT if never diagnosed)"
         ),
-
         "oac_date_treatment": Property(
-            Types.DATE,
-            "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
+            Types.DATE, "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
         ),
-
         "oac_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
@@ -204,13 +201,9 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             categories=["none", "site_confined", "local_ln", "metastatic"],
         ),
         "oac_date_palliative_care": Property(
-            Types.DATE,
-            "date of first receiving palliative care (pd.NaT is never had palliative care)"
+            Types.DATE, "date of first receiving palliative care (pd.NaT is never had palliative care)"
         ),
-        "oac_date_death": Property(
-            Types.DATE,
-            "date of oac death"
-        )
+        "oac_date_death": Property(Types.DATE, "date of oac death"),
     }
 
     def read_parameters(self, data_folder):
@@ -218,15 +211,16 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            read_csv_files(Path(self.resourcefilepath) / "ResourceFile_Other_Adult_Cancers",
-                           files="parameter_values")
+            read_csv_files(Path(self.resourcefilepath) / "ResourceFile_Other_Adult_Cancers", files="parameter_values")
         )
 
         # Register Symptom that this module will use
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='early_other_adult_ca_symptom',
-                    odds_ratio_health_seeking_in_adults=4.00,
-                    no_healthcareseeking_in_children=True)
+        self.sim.modules["SymptomManager"].register_symptom(
+            Symptom(
+                name="early_other_adult_ca_symptom",
+                odds_ratio_health_seeking_in_adults=4.00,
+                no_healthcareseeking_in_children=True,
+            )
         )
 
     def initialise_population(self, population):
@@ -245,30 +239,30 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         # -------------------- oac_status -----------
         # Determine who has cancer at ANY cancer stage:
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
-        assert sum(p['in_prop_other_adult_cancer_stage']) <= 1.0
+        assert sum(p["in_prop_other_adult_cancer_stage"]) <= 1.0
 
         lm_init_oac_status_any_stage = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            sum(p['in_prop_other_adult_cancer_stage']),
-            Predictor('age_years', conditions_are_mutually_exclusive=True)
-            .when('.between(30,49)', p['rp_other_adult_cancer_age3049'])
-            .when('.between(50,69)', p['rp_other_adult_cancer_age5069'])
-            .when('.between(70,120)', p['rp_other_adult_cancer_agege70'])
-            .when('.between(0,14)', 0.0)
+            sum(p["in_prop_other_adult_cancer_stage"]),
+            Predictor("age_years", conditions_are_mutually_exclusive=True)
+            .when(".between(30,49)", p["rp_other_adult_cancer_age3049"])
+            .when(".between(50,69)", p["rp_other_adult_cancer_age5069"])
+            .when(".between(70,120)", p["rp_other_adult_cancer_agege70"])
+            .when(".between(0,14)", 0.0),
         )
 
         oac_status_ = lm_init_oac_status_any_stage.predict(df.loc[df.is_alive], self.rng)
 
         # Determine the stage of the cancer for those who do have a cancer:
         if sum(oac_status_):
-            sum_probs = sum(p['in_prop_other_adult_cancer_stage'])
+            sum_probs = sum(p["in_prop_other_adult_cancer_stage"])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i / sum_probs for i in p['in_prop_other_adult_cancer_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i / sum_probs for i in p["in_prop_other_adult_cancer_stage"]]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[oac_status_, "oac_status"] = self.rng.choice(
-                    [val for val in df.oac_status.cat.categories if val != 'none'],
+                    [val for val in df.oac_status.cat.categories if val != "none"],
                     size=sum(oac_status_),
-                    p=prob_by_stage_of_cancer_if_cancer
+                    p=prob_by_stage_of_cancer_if_cancer,
                 )
 
         # -------------------- SYMPTOMS -----------
@@ -276,54 +270,36 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         # other_adult_ca_symptom:
         lm_init_early_other_adult_ca_symptom = LinearModel.multiplicative(
             Predictor(
-                'oac_status',
+                "oac_status",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
             .when("none", 0.0)
-            .when(
-                "site_confined",
-                p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][0]
-            )
-            .when(
-                "local_ln",
-                p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][1]
-            )
-            .when(
-                "metastatic",
-                p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][2]
-            )
+            .when("site_confined", p["init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage"][0])
+            .when("local_ln", p["init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage"][1])
+            .when("metastatic", p["init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage"][2])
         )
         has_early_other_adult_ca_symptom_at_init = lm_init_early_other_adult_ca_symptom.predict(
             df.loc[df.is_alive], self.rng
         )
-        self.sim.modules['SymptomManager'].change_symptom(
+        self.sim.modules["SymptomManager"].change_symptom(
             person_id=has_early_other_adult_ca_symptom_at_init.index[has_early_other_adult_ca_symptom_at_init].tolist(),
-            symptom_string='early_other_adult_ca_symptom',
-            add_or_remove='+',
-            disease_module=self
+            symptom_string="early_other_adult_ca_symptom",
+            add_or_remove="+",
+            disease_module=self,
         )
 
         # -------------------- oac_date_diagnosis -----------
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor(
-                'oac_status',
+                "oac_status",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
             .when("none", 0.0)
-            .when(
-                "site_confined",
-                p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][0]
-            )
-            .when(
-                "local_ln",
-                p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][1]
-            )
-            .when(
-                "metastatic",
-                p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][2]
-            )
+            .when("site_confined", p["init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage"][0])
+            .when("local_ln", p["init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage"][1])
+            .when("metastatic", p["init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage"][2])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -336,14 +312,14 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         # -------------------- oac_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
             Predictor(
-                'oac_status',
+                "oac_status",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
             .when("none", 0.0)
-            .when("site_confined", p['init_prop_treatment_status_other_adult_cancer'][0])
-            .when("local_ln", p['init_prop_treatment_status_other_adult_cancer'][1])
-            .when("metastatic", p['init_prop_treatment_status_other_adult_cancer'][2])
+            .when("site_confined", p["init_prop_treatment_status_other_adult_cancer"][0])
+            .when("local_ln", p["init_prop_treatment_status_other_adult_cancer"][1])
+            .when("metastatic", p["init_prop_treatment_status_other_adult_cancer"][2])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -358,10 +334,10 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
 
         # -------------------- oac_date_palliative_care -----------
         in_metastatic_diagnosed = df.index[
-            df.is_alive & (df.oac_status == 'metastatic') & ~pd.isnull(df.oac_date_diagnosis)
-            ]
+            df.is_alive & (df.oac_status == "metastatic") & ~pd.isnull(df.oac_date_diagnosis)
+        ]
 
-        select_for_care = self.rng.random_sample(size=len(in_metastatic_diagnosed)) < p['init_prob_palliative_care']
+        select_for_care = self.rng.random_sample(size=len(in_metastatic_diagnosed)) < p["init_prob_palliative_care"]
         select_for_care = in_metastatic_diagnosed[select_for_care]
 
         # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
@@ -398,70 +374,66 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         lm = self.linear_models_for_progession_of_oac_status
 
         predictors = [
-            Predictor('age_years', conditions_are_mutually_exclusive=True)
-            .when('.between(30,49)', p['rr_site_confined_age3049'])
-            .when('.between(50,69)', p['rr_site_confined_age5069'])
-            .when('.between(0,14)', 0.0)
-            .when('.between(70,120)', p['rr_site_confined_agege70']),
-            Predictor('oac_status').when('none', 1.0).otherwise(0.0)
+            Predictor("age_years", conditions_are_mutually_exclusive=True)
+            .when(".between(30,49)", p["rr_site_confined_age3049"])
+            .when(".between(50,69)", p["rr_site_confined_age5069"])
+            .when(".between(0,14)", 0.0)
+            .when(".between(70,120)", p["rr_site_confined_agege70"]),
+            Predictor("oac_status").when("none", 1.0).otherwise(0.0),
         ]
 
-        conditional_predictors = [
-            Predictor().when(
-                'hv_inf & '
-                '(hv_art != "on_VL_suppressed")',
-                p["rr_site_confined_hiv"]),
-        ] if "Hiv" in self.sim.modules else []
-
-        lm['site_confined'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_site_confined_none'],
-            *(predictors + conditional_predictors)
+        conditional_predictors = (
+            [
+                Predictor().when("hv_inf & " '(hv_art != "on_VL_suppressed")', p["rr_site_confined_hiv"]),
+            ]
+            if "Hiv" in self.sim.modules
+            else []
         )
 
-        lm['local_ln'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_local_ln_site_confined_other_adult_ca'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_local_ln_other_adult_ca_undergone_curative_treatment']),
-            Predictor('oac_status').when('site_confined', 1.0)
-            .otherwise(0.0)
+        lm["site_confined"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE, p["r_site_confined_none"], *(predictors + conditional_predictors)
         )
 
-        lm['metastatic'] = LinearModel(
+        lm["local_ln"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_metastatic_local_ln'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_metastatic_undergone_curative_treatment']),
-            Predictor('oac_status').when('local_ln', 1.0)
-            .otherwise(0.0)
+            p["r_local_ln_site_confined_other_adult_ca"],
+            Predictor("had_treatment_during_this_stage", external=True).when(
+                True, p["rr_local_ln_other_adult_ca_undergone_curative_treatment"]
+            ),
+            Predictor("oac_status").when("site_confined", 1.0).otherwise(0.0),
+        )
+
+        lm["metastatic"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p["r_metastatic_local_ln"],
+            Predictor("had_treatment_during_this_stage", external=True).when(
+                True, p["rr_metastatic_undergone_curative_treatment"]
+            ),
+            Predictor("oac_status").when("local_ln", 1.0).otherwise(0.0),
         )
 
         # Check that the dict labels are correct as these are used to set the value of oac_status
-        assert set(lm).union({'none'}) == set(df.oac_status.cat.categories)
+        assert set(lm).union({"none"}) == set(df.oac_status.cat.categories)
 
         # Linear Model for the onset of other_adult_ca_symptom, in each 3 month period
         self.lm_onset_early_other_adult_ca_symptom = LinearModel.multiplicative(
             Predictor(
-                'oac_status',
+                "oac_status",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
+            .when("site_confined", p["r_early_other_adult_ca_symptom_site_confined_other_adult_ca"])
             .when(
-                'site_confined',
-                p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca']
+                "local_ln",
+                p["rr_early_other_adult_ca_symptom_local_ln_other_adult_ca"]
+                * p["r_early_other_adult_ca_symptom_site_confined_other_adult_ca"],
             )
             .when(
-                'local_ln',
-                p['rr_early_other_adult_ca_symptom_local_ln_other_adult_ca'] *
-                p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca']
+                "metastatic",
+                p["rr_early_other_adult_ca_symptom_metastatic_other_adult_ca"]
+                * p["r_early_other_adult_ca_symptom_site_confined_other_adult_ca"],
             )
-            .when(
-                'metastatic',
-                p['rr_early_other_adult_ca_symptom_metastatic_other_adult_ca'] *
-                p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca']
-            )
-            .when('none', 0.0)
+            .when("none", 0.0)
         )
 
         # ----- DX TESTS -----
@@ -469,12 +441,13 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         # This properties of conditional on the test being done only to persons with the Symptom,
         # 'early_other_adult_ca_symptom'.
         # todo: note dependent on underlying status not symptoms + add for other stages
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
             diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom=DxTest(
-                property='oac_status',
-                sensitivity=self.parameters['sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_'
-                                            'adult_ca_site_confined'],
-                target_categories=["site_confined", "local_ln", "metastatic"]
+                property="oac_status",
+                sensitivity=self.parameters[
+                    "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_" "adult_ca_site_confined"
+                ],
+                target_categories=["site_confined", "local_ln", "metastatic"],
             )
         )
 
@@ -511,11 +484,11 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         # ----- HSI FOR PALLIATIVE CARE -----
         on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.oac_date_palliative_care)]
         for person_id in on_palliative_care_at_initiation:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
+                tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1),
             )
 
     def on_birth(self, mother_id, child_id):
@@ -545,34 +518,28 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         # Assign daly_wt to those with cancer stages before metastatic and have either never been treated or are no
         # longer in the stage in which they were treated
         disability_series_for_alive_persons.loc[
-            (
-                (df.oac_status == "site_confined") |
-                (df.oac_status == "local_ln")
-            )
-        ] = self.daly_wts['site_confined_local_ln']
+            ((df.oac_status == "site_confined") | (df.oac_status == "local_ln"))
+        ] = self.daly_wts["site_confined_local_ln"]
 
         # Assign daly_wt to those with cancer stages before metastatic and who have been treated and who are still in
         # the stage in which they were treated.
         disability_series_for_alive_persons.loc[
             (
-                ~pd.isnull(df.oac_date_treatment) & (
-                (df.oac_status == "site_confined") |
-                (df.oac_status == "local_ln")
-            ) & (df.oac_status == df.oac_stage_at_which_treatment_given)
+                ~pd.isnull(df.oac_date_treatment)
+                & ((df.oac_status == "site_confined") | (df.oac_status == "local_ln"))
+                & (df.oac_status == df.oac_stage_at_which_treatment_given)
             )
-        ] = self.daly_wts['site_confined_local_ln_treated']
+        ] = self.daly_wts["site_confined_local_ln_treated"]
 
         # Assign daly_wt to those in metastatic cancer (who have not had palliative care)
         disability_series_for_alive_persons.loc[
-            (df.oac_status == "metastatic") &
-            (pd.isnull(df.oac_date_palliative_care))
-            ] = self.daly_wts['metastatic']
+            (df.oac_status == "metastatic") & (pd.isnull(df.oac_date_palliative_care))
+        ] = self.daly_wts["metastatic"]
 
         # Assign daly_wt to those in metastatic cancer, who have had palliative care
         disability_series_for_alive_persons.loc[
-            (df.oac_status == "metastatic") &
-            (~pd.isnull(df.oac_date_palliative_care))
-            ] = self.daly_wts['metastatic_palliative_care']
+            (df.oac_status == "metastatic") & (~pd.isnull(df.oac_date_palliative_care))
+        ] = self.daly_wts["metastatic_palliative_care"]
 
         return disability_series_for_alive_persons
 
@@ -582,7 +549,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         individual_properties: IndividualProperties,
         symptoms: List[str],
         schedule_hsi_event: HSIEventScheduler,
-        **kwargs
+        **kwargs,
     ) -> None:
         if individual_properties["age_years"] > 5 and "early_other_adult_ca_symptom" in symptoms:
             event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
@@ -595,6 +562,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -622,15 +590,16 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: I am guessing this is somehow a consequence of this way of looping through the stages
         # todo: I imagine this issue is the same for bladder cancer and oesophageal cancer
 
-        had_treatment_during_this_stage = \
-            df.is_alive & ~pd.isnull(df.oac_date_treatment) & \
-            (df.oac_status == df.oac_stage_at_which_treatment_given)
+        had_treatment_during_this_stage = (
+            df.is_alive & ~pd.isnull(df.oac_date_treatment) & (df.oac_status == df.oac_stage_at_which_treatment_given)
+        )
 
         for stage, lm in self.module.linear_models_for_progession_of_oac_status.items():
-            gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
-                                        had_treatment_during_this_stage=had_treatment_during_this_stage)
+            gets_new_stage = lm.predict(
+                df.loc[df.is_alive], rng, had_treatment_during_this_stage=had_treatment_during_this_stage
+            )
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
-            df.loc[idx_gets_new_stage, 'oac_status'] = stage
+            df.loc[idx_gets_new_stage, "oac_status"] = stage
 
         # -------------------- UPDATING OF SYMPTOM OF early_other_adult_ca_symptom OVER TIME ---------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of other_adult_ca_symptom.
@@ -638,29 +607,29 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         onset_early_other_adult_ca_symptom = self.module.lm_onset_early_other_adult_ca_symptom.predict(
             df.loc[df.is_alive], rng
         )
-        self.sim.modules['SymptomManager'].change_symptom(
+        self.sim.modules["SymptomManager"].change_symptom(
             person_id=onset_early_other_adult_ca_symptom[onset_early_other_adult_ca_symptom].index.tolist(),
-            symptom_string='early_other_adult_ca_symptom',
-            add_or_remove='+',
-            disease_module=self.module
+            symptom_string="early_other_adult_ca_symptom",
+            add_or_remove="+",
+            disease_module=self.module,
         )
 
         # -------------------- DEATH FROM Other_adult CANCER ---------------------------------------
         # There is a risk of death for those in metastatic only. Death is assumed to go instantly.
         metastatic_idx = df.index[df.is_alive & (df.oac_status == "metastatic")]
         selected_to_die = metastatic_idx[
-            rng.random_sample(size=len(metastatic_idx)) < self.module.parameters['r_death_other_adult_cancer']]
+            rng.random_sample(size=len(metastatic_idx)) < self.module.parameters["r_death_other_adult_cancer"]
+        ]
 
         for person_id in selected_to_die:
-            self.sim.schedule_event(
-                InstantaneousDeath(self.module, person_id, "OtherAdultCancer"), self.sim.date
-            )
-        df.loc[selected_to_die, 'oac_date_death'] = self.sim.date
+            self.sim.schedule_event(InstantaneousDeath(self.module, person_id, "OtherAdultCancer"), self.sim.date)
+        df.loc[selected_to_die, "oac_date_death"] = self.sim.date
 
 
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(HSI_Event, IndividualScopeEventMixin):
     """
@@ -676,70 +645,63 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
 
         self.TREATMENT_ID = "OtherAdultCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ACCEPTED_FACILITY_LEVEL = "1b"
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
         # Ignore this event if the person is no longer alive:
-        if not df.at[person_id, 'is_alive']:
+        if not df.at[person_id, "is_alive"]:
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the symptom other_adult_ca_symptom
-        assert 'early_other_adult_ca_symptom' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+        assert "early_other_adult_ca_symptom" in self.sim.modules["SymptomManager"].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "oac_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
         # Check consumables are available
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_other_can['screening_biopsy_core'],
-                                          optional_item_codes=
-                                          self.module.item_codes_other_can[
-                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
+        cons_avail = self.get_consumables(
+            item_codes=self.module.item_codes_other_can["screening_biopsy_core"],
+            optional_item_codes=self.module.item_codes_other_can["screening_biopsy_endoscopy_cystoscopy_optional"],
+        )
 
         if cons_avail:
             # If consumables are available add used equipment and run the dx_test representing the biopsy
-            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
+            self.add_equipment({"Ultrasound scanning machine", "Ordinary Microscope"})
 
             # Use a diagnostic_device to diagnose whether the person has other adult cancer:
             dx_result = hs.dx_manager.run_dx_test(
-                dx_tests_to_run='diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom',
-                hsi_event=self
+                dx_tests_to_run="diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom", hsi_event=self
             )
 
             if dx_result:
                 # record date of diagnosis:
-                df.at[person_id, 'oac_date_diagnosis'] = self.sim.date
+                df.at[person_id, "oac_date_diagnosis"] = self.sim.date
 
                 # Check if is in metastatic:
-                in_metastatic = df.at[person_id, 'oac_status'] == 'metastatic'
+                in_metastatic = df.at[person_id, "oac_status"] == "metastatic"
                 # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is
                 # made accurately.
 
                 if not in_metastatic:
                     # start treatment:
                     hs.schedule_hsi_event(
-                        hsi_event=HSI_OtherAdultCancer_StartTreatment(
-                            module=self.module,
-                            person_id=person_id
-                        ),
+                        hsi_event=HSI_OtherAdultCancer_StartTreatment(module=self.module, person_id=person_id),
                         priority=0,
                         topen=self.sim.date,
-                        tclose=None
+                        tclose=None,
                     )
 
                 else:
                     # start palliative care:
                     hs.schedule_hsi_event(
-                        hsi_event=HSI_OtherAdultCancer_PalliativeCare(
-                            module=self.module,
-                            person_id=person_id
-                        ),
+                        hsi_event=HSI_OtherAdultCancer_PalliativeCare(module=self.module, person_id=person_id),
                         priority=0,
                         topen=self.sim.date,
-                        tclose=None
+                        tclose=None,
                     )
 
 
@@ -755,19 +717,22 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "OtherAdultCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.ACCEPTED_FACILITY_LEVEL = "3"
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
-        if not df.at[person_id, 'is_alive']:
+        if not df.at[person_id, "is_alive"]:
             return hs.get_blank_appt_footprint()
 
-        if df.at[person_id, "oac_status"] == 'metastatic':
-            logger.warning(key="warning", data="Cancer is metastatic- aborting HSI_OtherAdultCancer_StartTreatment,"
-                                               "scheduling HSI_OtherAdultCancer_PalliativeCare")
+        if df.at[person_id, "oac_status"] == "metastatic":
+            logger.warning(
+                key="warning",
+                data="Cancer is metastatic- aborting HSI_OtherAdultCancer_StartTreatment,"
+                "scheduling HSI_OtherAdultCancer_PalliativeCare",
+            )
 
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PalliativeCare(
@@ -776,22 +741,22 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=0,
             )
             return self.make_appt_footprint({})
         # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
-        assert not df.at[person_id, "oac_status"] == 'none'
+        assert not df.at[person_id, "oac_status"] == "none"
         assert not pd.isnull(df.at[person_id, "oac_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "oac_date_treatment"])
 
         cons_available = self.get_consumables(
-            item_codes=self.module.item_codes_other_can['treatment_surgery_core'],
-            optional_item_codes=self.module.item_codes_other_can['treatment_surgery_optional'],
+            item_codes=self.module.item_codes_other_can["treatment_surgery_core"],
+            optional_item_codes=self.module.item_codes_other_can["treatment_surgery_optional"],
         )
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names("Major Surgery"))
 
             # Record date and stage of starting treatment
             df.at[person_id, "oac_date_treatment"] = self.sim.date
@@ -805,7 +770,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date + DateOffset(months=3),
                 tclose=None,
-                priority=0
+                priority=0,
             )
 
     def did_not_run(self):
@@ -825,42 +790,36 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
 
         self.TREATMENT_ID = "OtherAdultCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.ACCEPTED_FACILITY_LEVEL = "3"
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
-        if not df.at[person_id, 'is_alive']:
+        if not df.at[person_id, "is_alive"]:
             return hs.get_blank_appt_footprint()
 
         # Check that the person is has cancer and is on treatment
-        assert not df.at[person_id, "oac_status"] == 'none'
+        assert not df.at[person_id, "oac_status"] == "none"
         assert not pd.isnull(df.at[person_id, "oac_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "oac_date_treatment"])
 
-        if df.at[person_id, 'oac_status'] == 'metastatic':
+        if df.at[person_id, "oac_status"] == "metastatic":
             # If has progressed to metastatic, then start Palliative Care immediately:
             hs.schedule_hsi_event(
-                hsi_event=HSI_OtherAdultCancer_PalliativeCare(
-                    module=self.module,
-                    person_id=person_id
-                ),
+                hsi_event=HSI_OtherAdultCancer_PalliativeCare(module=self.module, person_id=person_id),
                 topen=self.sim.date,
                 tclose=None,
-                priority=0
+                priority=0,
             )
 
         else:
             # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in one month
             hs.schedule_hsi_event(
-                hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
-                    module=self.module,
-                    person_id=person_id
-                ),
+                hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(module=self.module, person_id=person_id),
                 topen=self.sim.date + DateOffset(months=3),
                 tclose=None,
-                priority=0
+                priority=0,
             )
 
     def did_not_run(self):
@@ -884,26 +843,25 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "OtherAdultCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.ACCEPTED_FACILITY_LEVEL = "2"
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 15})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
-        if not df.at[person_id, 'is_alive']:
+        if not df.at[person_id, "is_alive"]:
             return hs.get_blank_appt_footprint()
 
         # Check that the person is in metastatic
-        assert df.at[person_id, "oac_status"] == 'metastatic'
+        assert df.at[person_id, "oac_status"] == "metastatic"
 
         # Check consumables are available
-        cons_available = self.get_consumables(
-            item_codes=self.module.item_codes_other_can['palliation'])
+        cons_available = self.get_consumables(item_codes=self.module.item_codes_other_can["palliation"])
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.add_equipment({'Infusion pump', 'Drip stand'})
+            self.add_equipment({"Infusion pump", "Drip stand"})
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oac_date_palliative_care"]):
@@ -911,13 +869,10 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
             # Schedule another instance of the event for one month
             hs.schedule_hsi_event(
-                hsi_event=HSI_OtherAdultCancer_PalliativeCare(
-                    module=self.module,
-                    person_id=person_id
-                ),
+                hsi_event=HSI_OtherAdultCancer_PalliativeCare(module=self.module, person_id=person_id),
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=None,
-                priority=0
+                priority=0,
             )
 
     def did_not_run(self):
@@ -928,18 +883,17 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
+
 class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
     def __init__(self, module):
-        """schedule logging to repeat every 1 month
-        """
+        """schedule logging to repeat every 1 month"""
         self.repeat = 30
         super().__init__(module, frequency=DateOffset(days=self.repeat))
 
     def apply(self, population):
-        """Compute statistics regarding the current status of persons and output to the logger
-        """
+        """Compute statistics regarding the current status of persons and output to the logger"""
         df = population.props
 
         # CURRENT STATUS COUNTS
@@ -947,25 +901,51 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out = {}
 
         # Current counts, total
-        out.update({
-            f'total_{k}': v for k, v in df.loc[df.is_alive].oac_status.value_counts().items()})
+        out.update({f"total_{k}": v for k, v in df.loc[df.is_alive].oac_status.value_counts().items()})
 
         # Current counts, undiagnosed
-        out.update({f'undiagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            pd.isnull(df.oac_date_diagnosis), 'oac_status'].value_counts().items()})
+        out.update(
+            {
+                f"undiagnosed_{k}": v
+                for k, v in df.loc[df.is_alive]
+                .loc[pd.isnull(df.oac_date_diagnosis), "oac_status"]
+                .value_counts()
+                .items()
+            }
+        )
 
         # Current counts, diagnosed
-        out.update({f'diagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.oac_date_diagnosis), 'oac_status'].value_counts().items()})
+        out.update(
+            {
+                f"diagnosed_{k}": v
+                for k, v in df.loc[df.is_alive]
+                .loc[~pd.isnull(df.oac_date_diagnosis), "oac_status"]
+                .value_counts()
+                .items()
+            }
+        )
 
         # Current counts, on treatment (excl. palliative care)
-        out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
-            df.oac_date_treatment) & pd.isnull(
-            df.oac_date_palliative_care)), 'oac_status'].value_counts().items()})
+        out.update(
+            {
+                f"treatment_{k}": v
+                for k, v in df.loc[df.is_alive]
+                .loc[(~pd.isnull(df.oac_date_treatment) & pd.isnull(df.oac_date_palliative_care)), "oac_status"]
+                .value_counts()
+                .items()
+            }
+        )
 
         # Current counts, on palliative care
-        out.update({f'palliative_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.oac_date_palliative_care), 'oac_status'].value_counts().items()})
+        out.update(
+            {
+                f"palliative_{k}": v
+                for k, v in df.loc[df.is_alive]
+                .loc[~pd.isnull(df.oac_date_palliative_care), "oac_status"]
+                .value_counts()
+                .items()
+            }
+        )
 
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
@@ -977,42 +957,51 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: the .between function I think includes the two dates so events on these dates counted twice
         # todo:_ I think we need to replace with date_lastlog <= x < date_now
         n_newly_diagnosed_site_confined = (
-            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'site_confined1')).sum()
+            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == "site_confined1")
+        ).sum()
         n_newly_diagnosed_local_ln = (
-            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'local_ln')).sum()
+            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == "local_ln")
+        ).sum()
         n_newly_diagnosed_metastatic = (
-            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'metastatic')).sum()
+            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == "metastatic")
+        ).sum()
 
         n_sy_early_other_adult_ca_symptom = (df.is_alive & (df.sy_early_other_adult_ca_symptom >= 1)).sum()
 
-        n_diagnosed_age_15_29 = (df.is_alive & (df.age_years >= 15) & (df.age_years < 30)
-                                 & ~pd.isnull(df.oac_date_diagnosis)).sum()
-        n_diagnosed_age_30_49 = (df.is_alive & (df.age_years >= 30) & (df.age_years < 50)
-                                 & ~pd.isnull(df.oac_date_diagnosis)).sum()
+        n_diagnosed_age_15_29 = (
+            df.is_alive & (df.age_years >= 15) & (df.age_years < 30) & ~pd.isnull(df.oac_date_diagnosis)
+        ).sum()
+        n_diagnosed_age_30_49 = (
+            df.is_alive & (df.age_years >= 30) & (df.age_years < 50) & ~pd.isnull(df.oac_date_diagnosis)
+        ).sum()
         n_diagnosed_age_50p = (df.is_alive & (df.age_years >= 50) & ~pd.isnull(df.oac_date_diagnosis)).sum()
 
         n_diagnosed = (df.is_alive & ~pd.isnull(df.oac_date_diagnosis)).sum()
 
-        out.update({
-            'diagnosed_since_last_log': df.oac_date_diagnosis.between(date_lastlog, date_now).sum(),
-            'treated_since_last_log': df.oac_date_treatment.between(date_lastlog, date_now).sum(),
-            'palliative_since_last_log': df.oac_date_palliative_care.between(date_lastlog, date_now).sum(),
-            'death_other_adult_cancer_since_last_log': df.oac_date_death.between(date_lastlog, date_now).sum(),
-            'n age 15+': n_ge15,
-            'n_newly_diagnosed_site_confined': n_newly_diagnosed_site_confined,
-            'n_newly_diagnosed_local_ln': n_newly_diagnosed_local_ln,
-            'n_newly_diagnosed_metastatic': n_newly_diagnosed_metastatic,
-            'n_diagnosed_age_15_29': n_diagnosed_age_15_29,
-            'n_diagnosed_age_30_49': n_diagnosed_age_30_49,
-            'n_diagnosed_age_50p': n_diagnosed_age_50p,
-            'n_sy_early_other_adult_ca_symptom': n_sy_early_other_adult_ca_symptom,
-            'n_diagnosed': n_diagnosed
-        })
+        out.update(
+            {
+                "diagnosed_since_last_log": df.oac_date_diagnosis.between(date_lastlog, date_now).sum(),
+                "treated_since_last_log": df.oac_date_treatment.between(date_lastlog, date_now).sum(),
+                "palliative_since_last_log": df.oac_date_palliative_care.between(date_lastlog, date_now).sum(),
+                "death_other_adult_cancer_since_last_log": df.oac_date_death.between(date_lastlog, date_now).sum(),
+                "n age 15+": n_ge15,
+                "n_newly_diagnosed_site_confined": n_newly_diagnosed_site_confined,
+                "n_newly_diagnosed_local_ln": n_newly_diagnosed_local_ln,
+                "n_newly_diagnosed_metastatic": n_newly_diagnosed_metastatic,
+                "n_diagnosed_age_15_29": n_diagnosed_age_15_29,
+                "n_diagnosed_age_30_49": n_diagnosed_age_30_49,
+                "n_diagnosed_age_50p": n_diagnosed_age_50p,
+                "n_sy_early_other_adult_ca_symptom": n_sy_early_other_adult_ca_symptom,
+                "n_diagnosed": n_diagnosed,
+            }
+        )
 
         # logger.info('%s|summary_stats|%s', self.sim.date, out)
-        logger.info(key='summary_stats',
-                    data=out,
-                    description='The summary information for the other adult cancer modules')
+        logger.info(
+            key="summary_stats", data=out, description="The summary information for the other adult cancer modules"
+        )
+
+
 #       logger.info('%s|person_one|%s',
 #                        self.sim.date,
 #                       df.loc[3].to_dict())

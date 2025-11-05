@@ -50,25 +50,22 @@ def get_num_deaths_by_cause_label(_df):
     values are summed for all ages
     df returned: rows=COD, columns=draw
     """
-    return _df \
-        .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
-        .groupby(_df['label']) \
-        .size()
+    return _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)].groupby(_df["label"]).size()
 
 
 TARGET_PERIOD = (Date(2020, 1, 1), Date(2025, 1, 1))
 
 num_deaths_by_cause_label = extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='death',
-        custom_generate_series=get_num_deaths_by_cause_label,
-        do_scaling=False
-    )
+    results_folder,
+    module="tlo.methods.demography",
+    key="death",
+    custom_generate_series=get_num_deaths_by_cause_label,
+    do_scaling=False,
+)
 
 
 def summarise_deaths_for_one_cause(results_folder, label):
-    """ returns mean deaths for each year of the simulation
+    """returns mean deaths for each year of the simulation
     values are aggregated across the runs of each draw
     for the specified cause
     """
@@ -78,8 +75,7 @@ def summarise_deaths_for_one_cause(results_folder, label):
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=(
-            lambda df: df.assign(year=df["date"].dt.year).groupby(
-                ["year", "label"])["person_id"].count()
+            lambda df: df.assign(year=df["date"].dt.year).groupby(["year", "label"])["person_id"].count()
         ),
         do_scaling=True,
     )
@@ -87,26 +83,24 @@ def summarise_deaths_for_one_cause(results_folder, label):
     results_deaths = results_deaths.reset_index()
 
     # select only cause specified
-    tmp = results_deaths.loc[
-        (results_deaths.label == label)
-    ]
+    tmp = results_deaths.loc[(results_deaths.label == label)]
 
     # group deaths by year
     tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
 
     # get mean for each draw
-    mean_deaths = pd.concat({'mean': tmp.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
+    mean_deaths = pd.concat({"mean": tmp.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
 
     return mean_deaths
 
 
-aids_deaths = summarise_deaths_for_one_cause(results_folder, 'AIDS')
-tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB (non-AIDS)')
-malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
+aids_deaths = summarise_deaths_for_one_cause(results_folder, "AIDS")
+tb_deaths = summarise_deaths_for_one_cause(results_folder, "TB (non-AIDS)")
+malaria_deaths = summarise_deaths_for_one_cause(results_folder, "Malaria")
 
-draw_labels = ['No scale-up', 'HIV, scale-up', 'TB scale-up', 'Malaria scale-up', 'HTM scale-up']
+draw_labels = ["No scale-up", "HIV, scale-up", "TB scale-up", "Malaria scale-up", "HTM scale-up"]
 
-colors = sns.color_palette("Set1", 5) # Blue, Orange, Green, Red
+colors = sns.color_palette("Set1", 5)  # Blue, Orange, Green, Red
 
 
 # Create subplots
@@ -115,26 +109,25 @@ fig, axs = plt.subplots(3, 1, figsize=(6, 10))
 # Plot for df1
 for i, col in enumerate(aids_deaths.columns):
     axs[0].plot(aids_deaths.index, aids_deaths[col], label=draw_labels[i], color=colors[i])
-axs[0].set_title('HIV/AIDS')
+axs[0].set_title("HIV/AIDS")
 axs[0].legend()
-axs[0].axvline(x=2019, color='gray', linestyle='--')
+axs[0].axvline(x=2019, color="gray", linestyle="--")
 
 # Plot for df2
 for i, col in enumerate(tb_deaths.columns):
     axs[1].plot(tb_deaths.index, tb_deaths[col], color=colors[i])
-axs[1].set_title('TB')
-axs[1].axvline(x=2019, color='gray', linestyle='--')
+axs[1].set_title("TB")
+axs[1].axvline(x=2019, color="gray", linestyle="--")
 
 # Plot for df3
 for i, col in enumerate(malaria_deaths.columns):
     axs[2].plot(malaria_deaths.index, malaria_deaths[col], color=colors[i])
-axs[2].set_title('Malaria')
-axs[2].axvline(x=2019, color='gray', linestyle='--')
+axs[2].set_title("Malaria")
+axs[2].axvline(x=2019, color="gray", linestyle="--")
 
 for ax in axs:
-    ax.set_xlabel('Years')
-    ax.set_ylabel('Number deaths')
+    ax.set_xlabel("Years")
+    ax.set_ylabel("Number deaths")
 
 plt.tight_layout()
 plt.show()
-

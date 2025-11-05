@@ -22,8 +22,7 @@ from tlo.docs import (
     write_rst_file,
 )
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     # Add command-line processing here
     # Ideally make these defaults but have command-line options.
     root_dir = Path(__file__).resolve().parents[1]  # e.g. TLOmodel directory.

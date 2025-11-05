@@ -38,14 +38,14 @@ ConsumablesChecker: TypeAlias = Callable[
 
 
 class HSIEventScheduler(Protocol):
-
     def __call__(
         self,
         hsi_event: HSI_Event,
         priority: int,
         topen: Date,
         tclose: Optional[Date] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
 
 
 class GenericFirstAppointmentsMixin:
@@ -125,7 +125,6 @@ class GenericFirstAppointmentsMixin:
 
 
 class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
-
     def __init__(self, module, person_id) -> None:
         super().__init__(module, person_id=person_id)
         # No footprint, as this HSI (mostly just) determines which further HSI will be
@@ -133,9 +132,7 @@ class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         # diagnosis, or the provision of inhaler).
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
 
-    def _diagnosis_function(
-        self, tests, use_dict: bool = False, report_tried: bool = False
-    ) -> DiagnosisTestReturnType:
+    def _diagnosis_function(self, tests, use_dict: bool = False, report_tried: bool = False) -> DiagnosisTestReturnType:
         """
         Passed to modules when determining HSI events to be scheduled based on
         this generic appointment. Intended as the ``diagnosis_function`` argument to
@@ -178,16 +175,12 @@ class _BaseHSIGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         # Create a memoized view of target individuals' properties as a context manager
         # that will automatically synchronize any updates back to the population
         # dataframe on exit
-        with self.sim.population.individual_properties(
-            self.target, read_only=False
-        ) as individual_properties:
+        with self.sim.population.individual_properties(self.target, read_only=False) as individual_properties:
             if not individual_properties["is_alive"]:
                 return
             # Pre-evaluate symptoms for individual to avoid repeat accesses
             # Use the individual_properties context here to save independent DF lookups
-            symptoms = self.sim.modules["SymptomManager"].has_what(
-                individual_details=individual_properties
-            )
+            symptoms = self.sim.modules["SymptomManager"].has_what(individual_details=individual_properties)
             schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
             for module in self.sim.modules.values():
                 if isinstance(module, GenericFirstAppointmentsMixin):
@@ -272,9 +265,7 @@ class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
         assert module is self.sim.modules["HealthSeekingBehaviour"]
 
         self.TREATMENT_ID = "FirstAttendance_SpuriousEmergencyCare"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint(
-            {"AccidentsandEmerg": 1}
-        )
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"AccidentsandEmerg": 1})
         self.ACCEPTED_FACILITY_LEVEL = (
             accepted_facility_level  # '1a' in default or '1b' as an alternative
         )

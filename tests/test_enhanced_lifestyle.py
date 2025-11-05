@@ -12,7 +12,7 @@ from tlo import Date, DateOffset, Module, Simulation
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography, enhanced_lifestyle
 
-resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 4, 1)
 popsize = 10000
@@ -20,11 +20,12 @@ popsize = 10000
 
 @pytest.fixture
 def simulation(seed):
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
     sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath)
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    )
     return sim
 
 
@@ -47,12 +48,12 @@ def check_properties(df):
     assert not ((df.age_years > 20) & df.li_in_ed).any()
 
     # Check sex workers, only women and non-zero:
-    assert df.loc[df.sex == 'F'].li_is_sexworker.any()
-    assert not df.loc[df.sex == 'M'].li_is_sexworker.any()
+    assert df.loc[df.sex == "F"].li_is_sexworker.any()
+    assert not df.loc[df.sex == "M"].li_is_sexworker.any()
 
     # Check circumcision (no women circumcised, some men circumcised)
-    assert not df.loc[df.sex == 'F'].li_is_circ.any()
-    assert df.loc[df.sex == 'M'].li_is_circ.any()
+    assert not df.loc[df.sex == "F"].li_is_circ.any()
+    assert df.loc[df.sex == "M"].li_is_circ.any()
 
 
 def test_properties_and_dtypes(simulation):
@@ -67,34 +68,36 @@ def test_properties_and_dtypes(simulation):
 
 
 def test_assign_rural_urban_by_district(simulation):
-    """ test linear model integrity in assigning individual rural urban status based on their districts """
+    """test linear model integrity in assigning individual rural urban status based on their districts"""
     # make an initial population
     simulation.make_initial_population(n=1)
 
     # Make this individual rural
     df = simulation.population.props
-    df.loc[0, 'is_alive'] = True
-    df.loc[0, 'is_urban'] = False
-    df.loc[0, 'district_of_residence'] = 'Lilongwe'
+    df.loc[0, "is_alive"] = True
+    df.loc[0, "is_urban"] = False
+    df.loc[0, "district_of_residence"] = "Lilongwe"
 
     # confirm an individual is rural
-    assert not df.loc[0, 'li_urban']
+    assert not df.loc[0, "li_urban"]
 
     # reset district of residence to an urban district(Here we choose a district of residence with 1.0 urban
     # probability i.e Lilongwe City), run the rural urban linear model and check the individual is now urban.
-    df.loc[0, 'district_of_residence'] = 'Lilongwe City'
-    rural_urban_lm = enhanced_lifestyle.LifestyleModels(simulation.modules['Lifestyle']).rural_urban_linear_model()
-    df.loc[df.is_alive, 'li_urban'] = rural_urban_lm.predict(df.loc[df.is_alive], rng=np.random)
+    df.loc[0, "district_of_residence"] = "Lilongwe City"
+    rural_urban_lm = enhanced_lifestyle.LifestyleModels(simulation.modules["Lifestyle"]).rural_urban_linear_model()
+    df.loc[df.is_alive, "li_urban"] = rural_urban_lm.predict(df.loc[df.is_alive], rng=np.random)
 
     # check an individual is now urban
-    assert df.loc[0, 'li_urban']
+    assert df.loc[0, "li_urban"]
 
 
 def test_check_properties_daily_event():
-    """ A test that seeks to test the integrity of lifestyle properties. It contains a dummy module with an event that
-    runs daily to ensure properties what they are expected """
+    """A test that seeks to test the integrity of lifestyle properties. It contains a dummy module with an event that
+    runs daily to ensure properties what they are expected"""
+
     class DummyModule(Module):
-        """ a dummy module for testing lifestyle properties """
+        """a dummy module for testing lifestyle properties"""
+
         def read_parameters(self, data_folder):
             pass
 
@@ -109,17 +112,16 @@ def test_check_properties_daily_event():
             pass
 
     class DummyLifestyleEvent(RegularEvent, PopulationScopeEventMixin):
-        """ An event that runs daily to check the integrity of lifestyle properties """
+        """An event that runs daily to check the integrity of lifestyle properties"""
 
         def __init__(self, module):
-            """schedule to run everyday
-            """
+            """schedule to run everyday"""
             self.repeat_months = 1
             self.module = module
             super().__init__(module, frequency=DateOffset(days=1))
 
         def apply(self, population):
-            """ Apply this event to the population.
+            """Apply this event to the population.
             :param population: the current population
             """
             # check lifestyle properties
@@ -130,7 +132,7 @@ def test_check_properties_daily_event():
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        DummyModule()
+        DummyModule(),
     )
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=end_date)

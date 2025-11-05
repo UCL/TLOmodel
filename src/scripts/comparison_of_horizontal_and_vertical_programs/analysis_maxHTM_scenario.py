@@ -65,15 +65,15 @@ class EffectOfProgrammes(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'scaleup_tests',
-            'directory': Path('./outputs'),  # <- (specified only for local running)
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.hiv': logging.INFO,
-                'tlo.methods.tb': logging.INFO,
-                'tlo.methods.malaria': logging.INFO,
-                'tlo.methods.demography': logging.INFO,
-            }
+            "filename": "scaleup_tests",
+            "directory": Path("./outputs"),  # <- (specified only for local running)
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.hiv": logging.INFO,
+                "tlo.methods.tb": logging.INFO,
+                "tlo.methods.malaria": logging.INFO,
+                "tlo.methods.demography": logging.INFO,
+            },
         }
 
     def modules(self):
@@ -92,28 +92,26 @@ class EffectOfProgrammes(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-
         return {
-            'Hiv': {
-                'type_of_scaleup': ['none', 'max', 'none', 'none', 'max'][draw_number],
-                'scaleup_start_year': scaleup_start_year,
+            "Hiv": {
+                "type_of_scaleup": ["none", "max", "none", "none", "max"][draw_number],
+                "scaleup_start_year": scaleup_start_year,
             },
-            'Tb': {
-                'type_of_scaleup': ['none', 'none', 'max', 'none', 'max'][draw_number],
-                'scaleup_start_year': scaleup_start_year,
+            "Tb": {
+                "type_of_scaleup": ["none", "none", "max", "none", "max"][draw_number],
+                "scaleup_start_year": scaleup_start_year,
             },
-            'Malaria': {
-                'type_of_scaleup': ['none', 'none', 'none', 'max', 'max'][draw_number],
-                'scaleup_start_year': scaleup_start_year,
+            "Malaria": {
+                "type_of_scaleup": ["none", "none", "none", "max", "max"][draw_number],
+                "scaleup_start_year": scaleup_start_year,
             },
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])
-
 
 
 # %% Produce some figures and summary info

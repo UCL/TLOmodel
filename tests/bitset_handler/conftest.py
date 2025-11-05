@@ -40,8 +40,11 @@ def _1st_3_entries() -> List[Set[ElementType]]:
     values that we can directly change if needed.
     """
     return [
-        {"1", "e"}, {"a", "d"}, {"2", "4", "5"},
+        {"1", "e"},
+        {"a", "d"},
+        {"2", "4", "5"},
     ]
+
 
 @pytest.fixture(scope="session")
 def _raw_sets(
@@ -54,21 +57,13 @@ def _raw_sets(
     """
     set_entries = list(_1st_3_entries)
     elements = list(_set_elements)
-    for _ in range(100-len(_1st_3_entries)):
-        set_entries.append(
-            {
-                elements[i]
-                for i in _rng.integers(
-                    0, len(elements), size=_rng.integers(0, len(elements))
-                )
-            }
-        )
+    for _ in range(100 - len(_1st_3_entries)):
+        set_entries.append({elements[i] for i in _rng.integers(0, len(elements), size=_rng.integers(0, len(elements)))})
     return set_entries
 
+
 @pytest.fixture(scope="session")
-def _raw_data(
-    _raw_sets: List[Set[ElementType]], dtype: BitsetDtype
-) -> NDArray[np.bytes_]:
+def _raw_data(_raw_sets: List[Set[ElementType]], dtype: BitsetDtype) -> NDArray[np.bytes_]:
     data = np.zeros((100,), dtype=dtype.np_array_dtype)
     for i, set_value in enumerate(_raw_sets):
         data[i] = dtype.as_bytes(set_value)
@@ -76,9 +71,7 @@ def _raw_data(
 
 
 @pytest.fixture(scope="session")
-def data(
-    _raw_data: NDArray[np.bytes_], dtype: BitsetDtype
-) -> BitsetArray:
+def data(_raw_data: NDArray[np.bytes_], dtype: BitsetDtype) -> BitsetArray:
     return BitsetArray(data=_raw_data, dtype=dtype, copy=True)
 
 

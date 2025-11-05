@@ -16,20 +16,20 @@ from tlo import Date, Property, Types, logging
 #   CLASS DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
-logger = logging.getLogger('tlo.methods.healthsystem')
-logger_summary = logging.getLogger('tlo.methods.healthsystem.summary')
+logger = logging.getLogger("tlo.methods.healthsystem")
+logger_summary = logging.getLogger("tlo.methods.healthsystem.summary")
 
 # Define the appointment types that should be associated with the use of bed-days (of any type), for a given number of
 # patients.
-IN_PATIENT_ADMISSION = {'IPAdmission': 2}
+IN_PATIENT_ADMISSION = {"IPAdmission": 2}
 # One of these appointments is for the admission and the other is for the discharge (even patients who die whilst an
 # in-patient require discharging). The limitation is that the discharge appointment occurs on the same day as the
 # admission. See: https://github.com/UCL/TLOmodel/issues/530
 
-IN_PATIENT_DAY_FIRST_DAY = {'InpatientDays': 0}
+IN_PATIENT_DAY_FIRST_DAY = {"InpatientDays": 0}
 # There is no in-patient appointment day needed on the first day, as the care is covered under the admission.
 
-IN_PATIENT_DAY_SUBSEQUENT_DAYS = {'InpatientDays': 1}
+IN_PATIENT_DAY_SUBSEQUENT_DAYS = {"InpatientDays": 1}
 # Care required on days after the day of admission (including the day of discharge).
 
 
@@ -38,7 +38,7 @@ class BedDays:
     The BedDays class. This is expected to be registered in the HealthSystem module.
     """
 
-    def __init__(self, hs_module, availability: str = 'default'):
+    def __init__(self, hs_module, availability: str = "default"):
         self.hs_module = hs_module
 
         # Number of days to the last day of bed_tracker
@@ -66,55 +66,62 @@ class BedDays:
     def get_bed_types(self):
         """Helper function to get the bed_types from the resource file imported to parameter 'BedCapacity' of the
         health system module"""
-        return [x for x in self.hs_module.parameters['BedCapacity'].columns if x != 'Facility_ID']
+        return [x for x in self.hs_module.parameters["BedCapacity"].columns if x != "Facility_ID"]
 
     def pre_initialise_population(self):
         """Define the properties that will then be added to the sim.population.props dataframe by the healthsystem
-        module """
+        module"""
 
         self.bed_types = self.get_bed_types()
         for bed_type in self.bed_types:
             self.hs_module.PROPERTIES[f"hs_next_first_day_in_bed_{bed_type}"] = Property(
-                Types.DATE, f"Date when person will next enter bed_type {bed_type}. (pd.NaT) is nothing scheduled")
+                Types.DATE, f"Date when person will next enter bed_type {bed_type}. (pd.NaT) is nothing scheduled"
+            )
             self.hs_module.PROPERTIES[f"hs_next_last_day_in_bed_{bed_type}"] = Property(
                 Types.DATE,
-                f"Date of the last day in the next stay in bed_type {bed_type}. (pd.NaT) is nothing scheduled")
+                f"Date of the last day in the next stay in bed_type {bed_type}. (pd.NaT) is nothing scheduled",
+            )
 
         # Create store for columns names
-        self.list_of_cols_with_internal_dates['entries'] = [
-            f"hs_next_first_day_in_bed_{bed_type}" for bed_type in self.bed_types]
-        self.list_of_cols_with_internal_dates['exits'] = [
-            f"hs_next_last_day_in_bed_{bed_type}" for bed_type in self.bed_types]
-        self.list_of_cols_with_internal_dates['all'] = \
-            self.list_of_cols_with_internal_dates['entries'] + self.list_of_cols_with_internal_dates['exits']
+        self.list_of_cols_with_internal_dates["entries"] = [
+            f"hs_next_first_day_in_bed_{bed_type}" for bed_type in self.bed_types
+        ]
+        self.list_of_cols_with_internal_dates["exits"] = [
+            f"hs_next_last_day_in_bed_{bed_type}" for bed_type in self.bed_types
+        ]
+        self.list_of_cols_with_internal_dates["all"] = (
+            self.list_of_cols_with_internal_dates["entries"] + self.list_of_cols_with_internal_dates["exits"]
+        )
 
     def initialise_population(self, df):
-        df.loc[df.is_alive, 'hs_is_inpatient'] = False
+        df.loc[df.is_alive, "hs_is_inpatient"] = False
 
         # Put pd.NaT for all the properties concerned with entry/exit of different types of bed.
-        df.loc[df.is_alive, self.list_of_cols_with_internal_dates['all']] = pd.NaT
+        df.loc[df.is_alive, self.list_of_cols_with_internal_dates["all"]] = pd.NaT
 
     def on_birth(self, df, mother_id, child_id):
-        df.at[child_id, 'hs_is_inpatient'] = False
-        df.loc[child_id, self.list_of_cols_with_internal_dates['all']] = pd.NaT
+        df.at[child_id, "hs_is_inpatient"] = False
+        df.loc[child_id, self.list_of_cols_with_internal_dates["all"]] = pd.NaT
 
     def on_simulation_end(self):
         pass
 
     def set_scaled_capacity(self, model_to_data_popsize_ratio):
         """Set the internal `_scaled_capacity` variable to represent the number of beds available of each type in each
-         facility, after scaling according to the model population relative to the real population size. """
+        facility, after scaling according to the model population relative to the real population size."""
 
-        if self.availability == 'all':
+        if self.availability == "all":
             _scaling_factor = 1.0
-        elif self.availability == 'none':
+        elif self.availability == "none":
             _scaling_factor = 0.0
         else:
             _scaling_factor = model_to_data_popsize_ratio
 
         self._scaled_capacity = (
-            self.hs_module.parameters['BedCapacity'].set_index('Facility_ID') * _scaling_factor
-        ).apply(np.ceil).astype(int)
+            (self.hs_module.parameters["BedCapacity"].set_index("Facility_ID") * _scaling_factor)
+            .apply(np.ceil)
+            .astype(int)
+        )
 
     def initialise_beddays_tracker(self, model_to_data_popsize_ratio=1.0):
         """Initialise the bed days tracker:
@@ -133,13 +140,13 @@ class BedDays:
 
         max_number_of_bed_days = self.days_until_last_day_of_bed_tracker
         end_date = self.hs_module.sim.start_date + pd.DateOffset(days=max_number_of_bed_days)
-        date_range = pd.date_range(self.hs_module.sim.start_date, end_date, freq='D')
+        date_range = pd.date_range(self.hs_module.sim.start_date, end_date, freq="D")
 
         for bed_type in self.bed_types:
             df = pd.DataFrame(
                 index=date_range,  # <- Days in the simulation
                 columns=self._scaled_capacity.index,  # <- Facility_ID
-                data=1
+                data=1,
             )
             df = df.mul(self._scaled_capacity[bed_type], axis=1)
             assert not df.isna().any().any()
@@ -196,7 +203,6 @@ class BedDays:
             self.move_each_tracker_by_one_day()
 
     def move_each_tracker_by_one_day(self):
-
         for bed_type, tracker in self.bed_tracker.items():
             start_date = min(tracker.index)
 
@@ -230,18 +236,20 @@ class BedDays:
             occupancy_info = tracker.loc[today].to_dict()
 
             logger.info(
-                key=f'bed_tracker_{bed_type}',
+                key=f"bed_tracker_{bed_type}",
                 data=occupancy_info,
-                description=f'Use of bed_type {bed_type}, by day and facility'
+                description=f"Use of bed_type {bed_type}, by day and facility",
             )
 
         # 2) Record the total usage of each bed type today (across all facilities)
         self._summary_counter.record_usage_of_beds(
             {
-                bed_type:
-                    (self._scaled_capacity[bed_type].sum(), tracker.iloc[0].sum())  # (Total, Number-available-now)
+                bed_type: (
+                    self._scaled_capacity[bed_type].sum(),
+                    tracker.iloc[0].sum(),
+                )  # (Total, Number-available-now)
                 for bed_type, tracker in self.bed_tracker.items()
-             }
+            }
         )
 
     def get_blank_beddays_footprint(self):
@@ -258,8 +266,8 @@ class BedDays:
         assert len(self.bed_types) == len(beddays_footprint)
         assert all([(bed_type in beddays_footprint) for bed_type in self.bed_types])
         assert all([((v >= 0) and isinstance(v, int)) for v in beddays_footprint.values()])
-        if 'non_bed_space' in self.bed_types:
-            assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for a non-bed space"
+        if "non_bed_space" in self.bed_types:
+            assert beddays_footprint["non_bed_space"] == 0, "A request cannot be made for a non-bed space"
 
     def issue_bed_days_according_to_availability(self, facility_id: int, footprint: dict) -> dict:
         """Return the 'best possible' footprint can be provided to an HSI, given the current status of the trackers.
@@ -281,10 +289,12 @@ class BedDays:
         dates_for_bed_use_date_range = pd.date_range(min(dates_for_bed_use_not_null), max(dates_for_bed_use_not_null))
         footprint_as_date_ranges = dict()
         for _bed_type in self.bed_types:
-            if pd.notnull(dates_for_bed_use[f'hs_next_first_day_in_bed_{_bed_type}']):
-                footprint_as_date_ranges[_bed_type] = list(pd.date_range(
-                    dates_for_bed_use[f'hs_next_first_day_in_bed_{_bed_type}'],
-                    dates_for_bed_use[f'hs_next_last_day_in_bed_{_bed_type}'])
+            if pd.notnull(dates_for_bed_use[f"hs_next_first_day_in_bed_{_bed_type}"]):
+                footprint_as_date_ranges[_bed_type] = list(
+                    pd.date_range(
+                        dates_for_bed_use[f"hs_next_first_day_in_bed_{_bed_type}"],
+                        dates_for_bed_use[f"hs_next_last_day_in_bed_{_bed_type}"],
+                    )
                 )
             else:
                 footprint_as_date_ranges[_bed_type] = list()
@@ -305,7 +315,7 @@ class BedDays:
             if not available.all():
                 # If the bed is not available on all days, assume it cannot be used after the first day
                 # that it is not available.
-                available.loc[available[~available].index[0]:] = False
+                available.loc[available[~available].index[0] :] = False
 
                 # Add any days for which a bed of this type is not available to the footprint for next bed-type:
                 hold_over_dates_for_next_bed_type = list(available.loc[~available].index)
@@ -318,9 +328,7 @@ class BedDays:
 
         return available_footprint
 
-    def combine_footprints_for_same_patient(
-        self, fp1: Dict[str, int], fp2: Dict[str, int]
-    ) -> Dict[str, int]:
+    def combine_footprints_for_same_patient(self, fp1: Dict[str, int], fp2: Dict[str, int]) -> Dict[str, int]:
         """
         Given two footprints that are due to start on the same day, combine the two footprints by
         overlaying the higher-priority bed over the lower-priority beds.
@@ -357,9 +365,9 @@ class BedDays:
         for priority, bed_type in enumerate(self.bed_types):
             # Bed type priority is dictated by list order, so it is safe to loop here.
             # We will start with the highest-priority bed type and work to the lowest
-            fp1_priority[fp1_at:fp1_at + fp1[bed_type]] = priority
+            fp1_priority[fp1_at : fp1_at + fp1[bed_type]] = priority
             fp1_at += fp1[bed_type]
-            fp2_priority[fp2_at:fp2_at + fp2[bed_type]] = priority
+            fp2_priority[fp2_at : fp2_at + fp2[bed_type]] = priority
             fp2_at += fp2[bed_type]
 
         # Element-wise minimum of the two priority arrays is then the bed to assign
@@ -380,18 +388,18 @@ class BedDays:
 
          NB. If multiple bed types are required, then it is assumed that these run in the sequence given in
          ```bed_types```.
-         """
+        """
         # Exit if the footprint is empty
         if footprint == self.get_blank_beddays_footprint():
             return
 
         df = self.hs_module.sim.population.props
 
-        if not df.at[person_id, 'hs_is_inpatient']:
+        if not df.at[person_id, "hs_is_inpatient"]:
             # apply the new footprint if the person is not already an in-patient
             self.apply_footprint(person_id, footprint)
             # label person as an in-patient
-            df.at[person_id, 'hs_is_inpatient'] = True
+            df.at[person_id, "hs_is_inpatient"] = True
 
         else:
             # if person is already an in-patient:
@@ -411,13 +419,13 @@ class BedDays:
         # check that the number of inpatient days does not exceed the maximum of 150 days
         if self.days_until_last_day_of_bed_tracker < sum(footprint.values()):
             logger.warning(
-                key='warning',
-                data=f'the requested bed days in footprint is greater than the tracking period, {footprint}'
+                key="warning",
+                data=f"the requested bed days in footprint is greater than the tracking period, {footprint}",
             )
 
         df = self.hs_module.sim.population.props
         # reset all internal properties about dates of transition between bed use states:
-        df.loc[person_id, self.list_of_cols_with_internal_dates['all']] = pd.NaT
+        df.loc[person_id, self.list_of_cols_with_internal_dates["all"]] = pd.NaT
 
         # compute the entry/exit dates of bed use states:
         dates_of_bed_use = self.compute_dates_of_bed_use(footprint)
@@ -426,11 +434,7 @@ class BedDays:
         df.loc[person_id, dates_of_bed_use.keys()] = dates_of_bed_use.values()
 
         # enter these to tracker
-        self.edit_bed_tracker(
-            dates_of_bed_use=dates_of_bed_use,
-            person_id=person_id,
-            add_footprint=True
-        )
+        self.edit_bed_tracker(dates_of_bed_use=dates_of_bed_use, person_id=person_id, add_footprint=True)
 
     def edit_bed_tracker(self, dates_of_bed_use, person_id, add_footprint=True):
         """Helper function to record the usage (or freeing-up) of beds in the bed-tracker
@@ -440,7 +444,7 @@ class BedDays:
             The latter is used to when a footprint is removed when a person dies or before a new footprint is added.
         """
         # Exit silently if bed_tracker has not been initialised
-        if not hasattr(self, 'bed_tracker'):
+        if not hasattr(self, "bed_tracker"):
             return
 
         the_facility_id = self.get_facility_id_for_beds(person_id)
@@ -453,13 +457,12 @@ class BedDays:
             if pd.isna(date_start_this_bed or date_end_this_bed):  # filter empty bed days
                 pass
             else:
-                self.bed_tracker[bed_type].loc[date_start_this_bed: date_end_this_bed, the_facility_id] += \
-                    operation
+                self.bed_tracker[bed_type].loc[date_start_this_bed:date_end_this_bed, the_facility_id] += operation
 
     def compute_dates_of_bed_use(self, footprint):
         """Helper function to compute the dates of entry/exit from beds of each type according to a bed-days footprint
          (which provides information in terms of number of whole days).
-        NB. It is always assumed that the footprint begins with today's date. """
+        NB. It is always assumed that the footprint begins with today's date."""
         now = self.hs_module.sim.date
         start_allbeds = now
         end_allbeds = now + pd.DateOffset(days=sum(footprint.values()) - 1)
@@ -491,16 +494,17 @@ class BedDays:
         df = self.hs_module.sim.population.props
         now = self.hs_module.sim.date
 
-        d = df.loc[person_id, self.list_of_cols_with_internal_dates['all']]
+        d = df.loc[person_id, self.list_of_cols_with_internal_dates["all"]]
         remaining_footprint = self.get_blank_beddays_footprint()
 
         for bed_type in self.bed_types:
-            if d[f'hs_next_last_day_in_bed_{bed_type}'] >= now:
-                remaining_footprint[bed_type] = 1 + \
-                                                (
-                                                    d[f'hs_next_last_day_in_bed_{bed_type}']
-                                                    - max(now, d[f'hs_next_first_day_in_bed_{bed_type}'])
-                                                ).days
+            if d[f"hs_next_last_day_in_bed_{bed_type}"] >= now:
+                remaining_footprint[bed_type] = (
+                    1
+                    + (
+                        d[f"hs_next_last_day_in_bed_{bed_type}"] - max(now, d[f"hs_next_first_day_in_bed_{bed_type}"])
+                    ).days
+                )
                 # NB. The '+1' accounts for the fact that 'today' is included
         return remaining_footprint
 
@@ -508,8 +512,8 @@ class BedDays:
         """Helper function to find the facility at which an HSI event will take place.
         We say that all the beds are pooled at the level 3."""
 
-        the_district = self.hs_module.sim.population.props.at[persons_id, 'district_of_residence']
-        facility_level = '3'
+        the_district = self.hs_module.sim.population.props.at[persons_id, "district_of_residence"]
+        facility_level = "3"
 
         # Return an id of the (one) health_facility available to this person (based on their district)
         return self.hs_module._facilities_for_each_district[facility_level][the_district][0]
@@ -520,20 +524,16 @@ class BedDays:
 
         remaining_footprint = self.get_remaining_footprint(person_id)
         dates_of_bed_use = self.compute_dates_of_bed_use(remaining_footprint)
-        self.edit_bed_tracker(
-            dates_of_bed_use=dates_of_bed_use,
-            person_id=person_id,
-            add_footprint=False
-        )
+        self.edit_bed_tracker(dates_of_bed_use=dates_of_bed_use, person_id=person_id, add_footprint=False)
 
     def refresh_in_patient_status(self):
         df = self.hs_module.sim.population.props
-        exit_cols = self.list_of_cols_with_internal_dates['exits']
+        exit_cols = self.list_of_cols_with_internal_dates["exits"]
 
         # if any "date of last day in bed" in not null and in the future, then the person is an in-patient:
-        df.loc[df.is_alive, "hs_is_inpatient"] = \
-            (df.loc[df.is_alive, exit_cols].notnull() & (
-                df.loc[df.is_alive, exit_cols] >= self.hs_module.sim.date)).any(axis=1)
+        df.loc[df.is_alive, "hs_is_inpatient"] = (
+            df.loc[df.is_alive, exit_cols].notnull() & (df.loc[df.is_alive, exit_cols] >= self.hs_module.sim.date)
+        ).any(axis=1)
 
     @staticmethod
     def add_first_day_inpatient_appts_to_footprint(appt_footprint):
@@ -545,10 +545,12 @@ class BedDays:
         """Return a dict of the form {<facility_id>: APPT_FOOTPRINT} giving the total APPT_FOOTPRINT required for the
         servicing of the in-patients (in beds of any types) for each Facility_ID."""
 
-        total_inpatients = pd.DataFrame([
-            (self._scaled_capacity[_bed_type] - self.bed_tracker[_bed_type].loc[self.hs_module.sim.date]).to_dict()
-            for _bed_type in self.bed_types
-        ]).sum()
+        total_inpatients = pd.DataFrame(
+            [
+                (self._scaled_capacity[_bed_type] - self.bed_tracker[_bed_type].loc[self.hs_module.sim.date]).to_dict()
+                for _bed_type in self.bed_types
+            ]
+        ).sum()
 
         def multiply_footprint(_footprint, _num):
             """Multiply the number of appointments of each type in a footprint by a number"""
@@ -586,7 +588,7 @@ class BedDaysSummaryCounter:
         {<bed_type>: tuple(total_numbers_of_bed_available, total_number_available_now)}."""
 
         for _bed_type, (_total, _num_available) in bed_days_used.items():
-            self._bed_days_used[_bed_type] += (_total - _num_available)
+            self._bed_days_used[_bed_type] += _total - _num_available
             self._bed_days_available[_bed_type] += _total
 
     def write_to_log_and_reset_counters(self):
@@ -604,7 +606,7 @@ class BedDaysSummaryCounter:
             data={
                 _bed_type: self._bed_days_used[_bed_type] / _total
                 for _bed_type, _total in self._bed_days_available.items()
-            }
+            },
         )
 
         self._reset_internal_stores()

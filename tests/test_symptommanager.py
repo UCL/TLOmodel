@@ -31,10 +31,10 @@ if TYPE_CHECKING:
     from tlo.methods.symptommanager import SymptomManager
 
 try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 except NameError:
     # running interactively
-    resourcefilepath = './resources'
+    resourcefilepath = "./resources"
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
@@ -42,18 +42,18 @@ popsize = 200
 
 
 def test_make_a_symptom():
-    symp = Symptom(name='weird_sense_of_deja_vu')
+    symp = Symptom(name="weird_sense_of_deja_vu")
 
     assert isinstance(symp, Symptom)
 
     # check contents and the values defaulted to.
-    assert hasattr(symp, 'name')
-    assert hasattr(symp, 'no_healthcareseeking_in_children')
-    assert hasattr(symp, 'no_healthcareseeking_in_adults')
-    assert hasattr(symp, 'prob_seeks_emergency_appt_in_children')
-    assert hasattr(symp, 'prob_seeks_emergency_appt_in_adults')
-    assert hasattr(symp, 'odds_ratio_health_seeking_in_children')
-    assert hasattr(symp, 'odds_ratio_health_seeking_in_adults')
+    assert hasattr(symp, "name")
+    assert hasattr(symp, "no_healthcareseeking_in_children")
+    assert hasattr(symp, "no_healthcareseeking_in_adults")
+    assert hasattr(symp, "prob_seeks_emergency_appt_in_children")
+    assert hasattr(symp, "prob_seeks_emergency_appt_in_adults")
+    assert hasattr(symp, "odds_ratio_health_seeking_in_children")
+    assert hasattr(symp, "odds_ratio_health_seeking_in_adults")
 
     assert symp.no_healthcareseeking_in_children is False
     assert symp.no_healthcareseeking_in_adults is False
@@ -68,7 +68,7 @@ def test_make_a_symptom():
 def test_emergency_symptom_defined_through_static_method():
     """Check that can create an emergency symptom and that is has the expected properties by default"""
     # Emergency in adults and children
-    symp = Symptom.emergency('emergency_symptom')
+    symp = Symptom.emergency("emergency_symptom")
     assert isinstance(symp, Symptom)
     assert symp.no_healthcareseeking_in_children is False
     assert symp.no_healthcareseeking_in_adults is False
@@ -78,7 +78,7 @@ def test_emergency_symptom_defined_through_static_method():
     assert symp.odds_ratio_health_seeking_in_adults >= HIGH_ODDS_RATIO
 
     # Emergency in adults only
-    symp = Symptom.emergency(name='emergency_symptom', which='adults')
+    symp = Symptom.emergency(name="emergency_symptom", which="adults")
     assert isinstance(symp, Symptom)
     assert symp.no_healthcareseeking_in_children is False
     assert symp.no_healthcareseeking_in_adults is False
@@ -88,7 +88,7 @@ def test_emergency_symptom_defined_through_static_method():
     assert symp.odds_ratio_health_seeking_in_adults >= HIGH_ODDS_RATIO
 
     # Emergency in children only
-    symp = Symptom.emergency(name='emergency_symptom', which='children')
+    symp = Symptom.emergency(name="emergency_symptom", which="children")
     assert isinstance(symp, Symptom)
     assert symp.no_healthcareseeking_in_children is False
     assert symp.no_healthcareseeking_in_adults is False
@@ -99,10 +99,10 @@ def test_emergency_symptom_defined_through_static_method():
 
 
 def test_register_duplicate_symptoms():
-    symp = Symptom(name='symptom')
-    symp_duplicate = Symptom(name='symptom')
-    symp_with_different_properties = Symptom.emergency(name='symptom')
-    symp_with_different_name = Symptom(name='symptom_a')
+    symp = Symptom(name="symptom")
+    symp_duplicate = Symptom(name="symptom")
+    symp_with_different_properties = Symptom.emergency(name="symptom")
+    symp_with_different_name = Symptom(name="symptom_a")
 
     sm = symptommanager.SymptomManager(resourcefilepath=resourcefilepath)
 
@@ -135,37 +135,37 @@ def test_no_symptoms_if_no_diseases(seed):
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    for symp in sim.modules['SymptomManager'].generic_symptoms:
+    for symp in sim.modules["SymptomManager"].generic_symptoms:
         # No one should have any symptom currently (as no disease modules registered)
-        assert list() == sim.modules['SymptomManager'].who_has(symp)
+        assert list() == sim.modules["SymptomManager"].who_has(symp)
 
 
 def test_adding_quering_and_removing_symptoms(seed):
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome()
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        mockitis.Mockitis(),
+        chronicsyndrome.ChronicSyndrome(),
+    )
 
     # Make the population:
     sim.make_initial_population(n=popsize)
@@ -173,23 +173,20 @@ def test_adding_quering_and_removing_symptoms(seed):
     # Check that symptoms are add to checked and removed correctly
     df = sim.population.props
 
-    symp = 'backache'  # this is a generic symptoms that is not added by any disease module that is registered
+    symp = "backache"  # this is a generic symptoms that is not added by any disease module that is registered
 
     # No one should have any symptom currently
-    assert list() == sim.modules['SymptomManager'].who_has(symp)
+    assert list() == sim.modules["SymptomManager"].who_has(symp)
 
     # Add the symptom to a random selection of people
     ids = list(sim.rng.choice(list(df.index[df.is_alive]), 5))
 
-    sim.modules['SymptomManager'].change_symptom(
-        symptom_string=symp,
-        person_id=ids,
-        add_or_remove='+',
-        disease_module=sim.modules['Mockitis']
+    sim.modules["SymptomManager"].change_symptom(
+        symptom_string=symp, person_id=ids, add_or_remove="+", disease_module=sim.modules["Mockitis"]
     )
 
     # Check who_has() and has_what()
-    has_symp = sim.modules['SymptomManager'].who_has(symp)
+    has_symp = sim.modules["SymptomManager"].who_has(symp)
     assert set(has_symp) == set(ids)
 
     for person_id in ids:
@@ -199,15 +196,15 @@ def test_adding_quering_and_removing_symptoms(seed):
 
     # Check cause of the symptom:
     for person in ids:
-        causes = sim.modules['SymptomManager'].causes_of(person, symp)
-        assert 'Mockitis' in causes
+        causes = sim.modules["SymptomManager"].causes_of(person, symp)
+        assert "Mockitis" in causes
         assert 1 == len(causes)
 
     # Remove the symptoms:
     for person in ids:
-        sim.modules['SymptomManager'].clear_symptoms(person, disease_module=sim.modules['Mockitis'])
+        sim.modules["SymptomManager"].clear_symptoms(person, disease_module=sim.modules["Mockitis"])
 
-    assert list() == sim.modules['SymptomManager'].who_has(symp)
+    assert list() == sim.modules["SymptomManager"].who_has(symp)
 
 
 @pytest.mark.parametrize(
@@ -237,7 +234,7 @@ def test_has_what_via_individual_properties(seed, supply_disease_module: bool):
     5     0           1           0
     6     0           0           1
     7     0           0           0
-    
+
     We will then assert that has_what returns the expected symptoms for the
     individuals, and that supplying either the person_id keyword or the
     individual_properties keyword gives the same answer.
@@ -248,9 +245,7 @@ def test_has_what_via_individual_properties(seed, supply_disease_module: bool):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(
-            resourcefilepath=resourcefilepath
-        ),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         mockitis.Mockitis(),
         chronicsyndrome.ChronicSyndrome(),
@@ -260,7 +255,7 @@ def test_has_what_via_individual_properties(seed, supply_disease_module: bool):
 
     # Generate the symptoms and select the people to infect
     n_symptoms = 3
-    n_patients = 2 ** n_symptoms
+    n_patients = 2**n_symptoms
     symptoms = [f"test_symptom{i}" for i in range(n_symptoms)]
     symptom_manager.register_symptom(*[Symptom(name=symptom) for symptom in symptoms])
 
@@ -269,9 +264,7 @@ def test_has_what_via_individual_properties(seed, supply_disease_module: bool):
     df = sim.population.props
 
     # Infect the people with the corresponding symptoms
-    persons_infected_with: List[int] = [
-        id for id in sim.rng.choice(list(df.index[df.is_alive]), n_patients)
-    ]
+    persons_infected_with: List[int] = [id for id in sim.rng.choice(list(df.index[df.is_alive]), n_patients)]
     for i, id in enumerate(persons_infected_with):
         bin_rep = format(i, f"0{n_symptoms}b")
         for symptom_number, digit in enumerate(bin_rep):
@@ -290,34 +283,28 @@ def test_has_what_via_individual_properties(seed, supply_disease_module: bool):
             person_id=person_id,
             disease_module=disease_module if supply_disease_module else None,
         )
-        with sim.population.individual_properties(
-            person_id, read_only=True
-        ) as individual_properties:
+        with sim.population.individual_properties(person_id, read_only=True) as individual_properties:
             symptoms_via_iprops = symptom_manager.has_what(
                 individual_details=individual_properties,
                 disease_module=disease_module if supply_disease_module else None,
             )
 
         # Assert all returned symptoms are in agreement
-        assert len(symptoms_via_pid) == len(
-            symptoms_via_iprops
-        ), "Method does not return same number of symptoms."
-        assert set(symptoms_via_pid) == set(
-            symptoms_via_iprops
-        ), "Method does not return the same symptoms"
+        assert len(symptoms_via_pid) == len(symptoms_via_iprops), "Method does not return same number of symptoms."
+        assert set(symptoms_via_pid) == set(symptoms_via_iprops), "Method does not return the same symptoms"
 
 
 def test_baby_born_has_no_symptoms(seed):
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -325,33 +312,33 @@ def test_baby_born_has_no_symptoms(seed):
 
     # do a birth (from a randomly chosen mother)
     df = sim.population.props
-    mother_id = df.loc[df.sex == 'F'].index[0]
-    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
+    mother_id = df.loc[df.sex == "F"].index[0]
+    df.at[mother_id, "date_of_last_pregnancy"] = sim.date - DateOffset(months=9)
 
     person_id = sim.do_birth(mother_id)
 
     # check that the new person does not have symptoms:
-    assert [] == sim.modules['SymptomManager'].has_what(person_id=person_id)
+    assert [] == sim.modules["SymptomManager"].has_what(person_id=person_id)
 
 
 def test_auto_onset_symptom(seed):
-    """Test to check that symptoms that are delayed in onset work as expected.
-    """
+    """Test to check that symptoms that are delayed in onset work as expected."""
     # Generate a simulation:
     sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 mockitis.Mockitis()
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+        mockitis.Mockitis(),
+    )
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + DateOffset(days=0))
     sim.event_queue.queue = []
 
-    sm = sim.modules['SymptomManager']
+    sm = sim.modules["SymptomManager"]
 
     # Select a person and make them alive and no symptoms
     person_id = 0
-    sim.population.props.loc[person_id, 'is_alive'] = True
+    sim.population.props.loc[person_id, "is_alive"] = True
     for symptom in sm.symptom_names:
         sim.population.props.loc[person_id, sm.get_column_name_for_symptom(symptom)] = 0
     assert 0 == len(sm.has_what(person_id=person_id))
@@ -362,7 +349,7 @@ def test_auto_onset_symptom(seed):
     assert 0 == len(get_events_in_sim())
 
     # The symptom:
-    symptom_string = 'weird_sense_of_deja_vu'
+    symptom_string = "weird_sense_of_deja_vu"
     duration_in_days = 10
     date_of_onset = sim.date + DateOffset(days=5)
 
@@ -370,10 +357,10 @@ def test_auto_onset_symptom(seed):
     sm.change_symptom(
         person_id=person_id,
         symptom_string=symptom_string,
-        add_or_remove='+',
+        add_or_remove="+",
         duration_in_days=duration_in_days,
         date_of_onset=date_of_onset,
-        disease_module=sim.modules['Mockitis']
+        disease_module=sim.modules["Mockitis"],
     )
 
     # check that the symptom is not imposed
@@ -404,31 +391,29 @@ def test_auto_onset_symptom(seed):
 
 def test_nonemergency_spurious_symptoms_during_simulation(seed):
     """Test on the functionality of a generic non-emergency spurious symptom"""
-    the_generic_symptom = 'fever'
+    the_generic_symptom = "fever"
 
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+    )
 
     # Make the probability of onset of one of the generic symptoms be 1.0 and duration of one day
-    generic_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
+    generic_symptoms = sim.modules["SymptomManager"].parameters["generic_symptoms_spurious_occurrence"]
 
     generic_symptoms.loc[
-        (the_generic_symptom == generic_symptoms['name']),
-        ['prob_spurious_occurrence_in_children_per_day',
-         'prob_spurious_occurrence_in_adults_per_day']
+        (the_generic_symptom == generic_symptoms["name"]),
+        ["prob_spurious_occurrence_in_children_per_day", "prob_spurious_occurrence_in_adults_per_day"],
     ] = (1.0, 1.0)
 
     generic_symptoms.loc[
-        (the_generic_symptom == generic_symptoms['name']),
-        ['duration_in_days_of_spurious_occurrence_in_children',
-         'duration_in_days_of_spurious_occurrence_in_adults']
+        (the_generic_symptom == generic_symptoms["name"]),
+        ["duration_in_days_of_spurious_occurrence_in_children", "duration_in_days_of_spurious_occurrence_in_adults"],
     ] = (1, 1)
 
     # Run the simulation
@@ -436,46 +421,44 @@ def test_nonemergency_spurious_symptoms_during_simulation(seed):
     sim.simulate(end_date=start_date + DateOffset(days=0))
 
     # Check that no one has symptoms
-    assert [] == sim.modules['SymptomManager'].who_has(the_generic_symptom)
+    assert [] == sim.modules["SymptomManager"].who_has(the_generic_symptom)
 
     # Run the onset event & check that all persons now have the generic symptom
-    onset = SymptomManager_SpuriousSymptomOnset(module=sim.modules['SymptomManager'])
+    onset = SymptomManager_SpuriousSymptomOnset(module=sim.modules["SymptomManager"])
     onset.apply(sim.population)
     df = sim.population.props
-    assert set(df.is_alive.index) == set(sim.modules['SymptomManager'].who_has(the_generic_symptom))
+    assert set(df.is_alive.index) == set(sim.modules["SymptomManager"].who_has(the_generic_symptom))
 
     # Update time, run resolve event and check that no one has symptom
     sim.date += DateOffset(days=1)
-    sim.modules['SymptomManager'].spurious_symptom_resolve_event.apply(sim.population)
-    assert [] == sim.modules['SymptomManager'].who_has(the_generic_symptom)
+    sim.modules["SymptomManager"].spurious_symptom_resolve_event.apply(sim.population)
+    assert [] == sim.modules["SymptomManager"].who_has(the_generic_symptom)
 
 
 def test_emergency_spurious_symptom_during_simulation(seed):
     """Test on the functionality of the spurious emergency symptom"""
-    emergency_spurious_symptom = 'spurious_emergency_symptom'
+    emergency_spurious_symptom = "spurious_emergency_symptom"
 
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+    )
 
     # Make the probability of onset of the spurious emergency symptom be 1.0 and duration of one day
-    generic_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
+    generic_symptoms = sim.modules["SymptomManager"].parameters["generic_symptoms_spurious_occurrence"]
     generic_symptoms.loc[
-        (emergency_spurious_symptom == generic_symptoms['name']),
-        ['prob_spurious_occurrence_in_children_per_day',
-         'prob_spurious_occurrence_in_adults_per_day']
+        (emergency_spurious_symptom == generic_symptoms["name"]),
+        ["prob_spurious_occurrence_in_children_per_day", "prob_spurious_occurrence_in_adults_per_day"],
     ] = (1.0, 1.0)
 
     generic_symptoms.loc[
-        (emergency_spurious_symptom == generic_symptoms['name']),
-        ['duration_in_days_of_spurious_occurrence_in_children',
-         'duration_in_days_of_spurious_occurrence_in_adults']
+        (emergency_spurious_symptom == generic_symptoms["name"]),
+        ["duration_in_days_of_spurious_occurrence_in_children", "duration_in_days_of_spurious_occurrence_in_adults"],
     ] = (1, 1)
 
     # Run the simulation
@@ -483,19 +466,19 @@ def test_emergency_spurious_symptom_during_simulation(seed):
     sim.simulate(end_date=start_date + DateOffset(days=0))
 
     # Check that no one has symptoms
-    assert [] == sim.modules['SymptomManager'].who_has(emergency_spurious_symptom)
+    assert [] == sim.modules["SymptomManager"].who_has(emergency_spurious_symptom)
 
     # Run the onset event & check that all persons now have the generic symptom
-    onset = SymptomManager_SpuriousSymptomOnset(module=sim.modules['SymptomManager'])
+    onset = SymptomManager_SpuriousSymptomOnset(module=sim.modules["SymptomManager"])
     onset.apply(sim.population)
     df = sim.population.props
     assert len(df.is_alive.index) > 0
-    assert set(df.is_alive.index) == set(sim.modules['SymptomManager'].who_has(emergency_spurious_symptom))
+    assert set(df.is_alive.index) == set(sim.modules["SymptomManager"].who_has(emergency_spurious_symptom))
 
     # Update time, run resolve event and check that no one has symptom
     sim.date += DateOffset(days=1)
-    sim.modules['SymptomManager'].spurious_symptom_resolve_event.apply(sim.population)
-    assert [] == sim.modules['SymptomManager'].who_has(emergency_spurious_symptom)
+    sim.modules["SymptomManager"].spurious_symptom_resolve_event.apply(sim.population)
+    assert [] == sim.modules["SymptomManager"].who_has(emergency_spurious_symptom)
 
 
 @pytest.fixture
@@ -510,9 +493,7 @@ def disease_module():
 
 @pytest.fixture()
 def disease_module_symptoms():
-    return (
-        'weird_sense_of_deja_vu', 'coughing_and_irritable', 'extreme_pain_in_the_nose'
-    )
+    return ("weird_sense_of_deja_vu", "coughing_and_irritable", "extreme_pain_in_the_nose")
 
 
 @pytest.fixture
@@ -526,92 +507,62 @@ def register_modules_and_initialise(simulation, *modules):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        *modules
+        *modules,
     )
     simulation.make_initial_population(n=popsize)
 
 
-def test_disease_module_in_recognised_module_names(
-    symptom_manager, disease_module, simulation
-):
+def test_disease_module_in_recognised_module_names(symptom_manager, disease_module, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     assert disease_module.name in symptom_manager.recognised_module_names
 
 
-def test_disease_module_symptoms_registered(
-    symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+def test_disease_module_symptoms_registered(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     assert symptom_manager.symptom_names.issuperset(disease_module_symptoms)
 
 
-def test_who_has_single_symptom(
-    symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+def test_who_has_single_symptom(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     for symptom in disease_module_symptoms:
-        persons_with_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)
-        ]
+        persons_with_symptom = df.index[df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)]
         # Check at least some people have symptom so that check is non-trivial
-        assert len(persons_with_symptom) != 0, 'Initial population too small'
+        assert len(persons_with_symptom) != 0, "Initial population too small"
         assert set(symptom_manager.who_has(symptom)) == set(persons_with_symptom)
 
 
-def test_who_has_multiple_symptoms(
-    symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+def test_who_has_multiple_symptoms(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     persons_with_symptom = df.index[
         df.is_alive
-        & (
-            df[symptom_manager.get_column_name_for_symptom(disease_module_symptoms[0])]
-            > 0
-        )
-        & (
-            df[symptom_manager.get_column_name_for_symptom(disease_module_symptoms[1])]
-            > 0
-        )
+        & (df[symptom_manager.get_column_name_for_symptom(disease_module_symptoms[0])] > 0)
+        & (df[symptom_manager.get_column_name_for_symptom(disease_module_symptoms[1])] > 0)
     ]
-    assert set(
-        symptom_manager.who_has(disease_module_symptoms[:2])
-    ) == set(persons_with_symptom)
+    assert set(symptom_manager.who_has(disease_module_symptoms[:2])) == set(persons_with_symptom)
 
 
-def test_who_not_have(
-    symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+def test_who_not_have(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     for symptom in disease_module_symptoms:
         persons_without_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
+            df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
         ]
         # Check at least some people do not have symptom so that check is non-trivial
         assert len(persons_without_symptom) != 0
-        assert set(
-            df.index[symptom_manager.who_not_have(symptom)]
-        ) == set(persons_without_symptom)
+        assert set(df.index[symptom_manager.who_not_have(symptom)]) == set(persons_without_symptom)
 
 
-def test_has_what(
-    symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+def test_has_what(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     for symptom in disease_module_symptoms:
-        person_with_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)
-        ][0]
+        person_with_symptom = df.index[df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)][0]
         assert symptom in symptom_manager.has_what(person_id=person_with_symptom)
         person_without_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
+            df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
         ][0]
         assert symptom not in symptom_manager.has_what(person_id=person_without_symptom)
 
@@ -619,87 +570,50 @@ def test_has_what(
         with simulation.population.individual_properties(
             person_with_symptom, read_only=True
         ) as with_symptom_properties:
-            assert symptom in symptom_manager.has_what(
-                individual_details=with_symptom_properties
-            )
+            assert symptom in symptom_manager.has_what(individual_details=with_symptom_properties)
         with simulation.population.individual_properties(
             person_without_symptom, read_only=True
         ) as without_symptom_properties:
-            assert symptom not in symptom_manager.has_what(
-                individual_details=without_symptom_properties
-            )
+            assert symptom not in symptom_manager.has_what(individual_details=without_symptom_properties)
 
-def test_has_what_disease_module(
-    symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+
+def test_has_what_disease_module(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     for symptom in disease_module_symptoms:
-        person_with_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)
-        ][0]
-        assert symptom in symptom_manager.has_what(
-            person_id=person_with_symptom, disease_module=disease_module
-        )
+        person_with_symptom = df.index[df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)][0]
+        assert symptom in symptom_manager.has_what(person_id=person_with_symptom, disease_module=disease_module)
         person_without_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
+            df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
         ][0]
-        assert symptom not in symptom_manager.has_what(
-            person_id=person_without_symptom, disease_module=disease_module
-        )
+        assert symptom not in symptom_manager.has_what(person_id=person_without_symptom, disease_module=disease_module)
 
 
-def test_have_what(
-    symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+def test_have_what(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     for symptom in disease_module_symptoms:
-        persons_with_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)
-        ]
-        assert all(
-            symptom in symptom_set
-            for symptom_set in symptom_manager.have_what(persons_with_symptom)
-        )
+        persons_with_symptom = df.index[df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)]
+        assert all(symptom in symptom_set for symptom_set in symptom_manager.have_what(persons_with_symptom))
         persons_without_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
+            df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
         ]
-        assert all(
-            symptom not in symptom_set
-            for symptom_set in symptom_manager.have_what(persons_without_symptom)
-        )
+        assert all(symptom not in symptom_set for symptom_set in symptom_manager.have_what(persons_without_symptom))
 
 
-def test_causes_of(
-    symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+def test_causes_of(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     for symptom in disease_module_symptoms:
-        person_with_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)
-        ][0]
-        assert disease_module.name in symptom_manager.causes_of(
-            person_with_symptom, symptom
-        )
+        person_with_symptom = df.index[df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)][0]
+        assert disease_module.name in symptom_manager.causes_of(person_with_symptom, symptom)
 
 
-def test_clear_symptoms_individual(
-    symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+def test_clear_symptoms_individual(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     for symptom in disease_module_symptoms:
-        person_with_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)
-        ][0]
+        person_with_symptom = df.index[df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)][0]
         symptom_manager.clear_symptoms(person_with_symptom, disease_module)
         assert all(
             disease_module.name not in symptom_manager.causes_of(person_with_symptom, s)
@@ -707,16 +621,11 @@ def test_clear_symptoms_individual(
         )
 
 
-def test_clear_symptoms_multiple_persons(
-        symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+def test_clear_symptoms_multiple_persons(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     for symptom in disease_module_symptoms:
-        persons_with_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)
-        ]
+        persons_with_symptom = df.index[df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)]
         symptom_manager.clear_symptoms(persons_with_symptom, disease_module)
         assert all(
             disease_module.name not in symptom_manager.causes_of(p, s)
@@ -725,22 +634,13 @@ def test_clear_symptoms_multiple_persons(
         )
 
 
-def test_remove_symptom_individual_single_symptom(
-        symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+def test_remove_symptom_individual_single_symptom(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     for symptom in disease_module_symptoms:
-        person_with_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)
-        ][0]
-        symptom_manager.change_symptom(
-            person_with_symptom, symptom, '-', disease_module
-        )
-        assert disease_module.name not in symptom_manager.causes_of(
-            person_with_symptom, symptom
-        )
+        person_with_symptom = df.index[df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)][0]
+        symptom_manager.change_symptom(person_with_symptom, symptom, "-", disease_module)
+        assert disease_module.name not in symptom_manager.causes_of(person_with_symptom, symptom)
 
 
 def test_remove_symptom_multiple_persons_single_symptom(
@@ -749,35 +649,20 @@ def test_remove_symptom_multiple_persons_single_symptom(
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     for symptom in disease_module_symptoms:
-        persons_with_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)
-        ]
-        symptom_manager.change_symptom(
-            persons_with_symptom, symptom, '-', disease_module
-        )
-        assert all(
-            disease_module.name not in symptom_manager.causes_of(p, symptom)
-            for p in persons_with_symptom
-        )
+        persons_with_symptom = df.index[df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] > 0)]
+        symptom_manager.change_symptom(persons_with_symptom, symptom, "-", disease_module)
+        assert all(disease_module.name not in symptom_manager.causes_of(p, symptom) for p in persons_with_symptom)
 
 
-def test_add_symptom_individual_single_symptom(
-        symptom_manager, disease_module, disease_module_symptoms, simulation
-):
+def test_add_symptom_individual_single_symptom(symptom_manager, disease_module, disease_module_symptoms, simulation):
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     for symptom in disease_module_symptoms:
         person_without_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
+            df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
         ][0]
-        symptom_manager.change_symptom(
-            person_without_symptom, symptom, '+', disease_module
-        )
-        assert disease_module.name in symptom_manager.causes_of(
-            person_without_symptom, symptom
-        )
+        symptom_manager.change_symptom(person_without_symptom, symptom, "+", disease_module)
+        assert disease_module.name in symptom_manager.causes_of(person_without_symptom, symptom)
 
 
 def test_add_symptom_multiple_persons_single_symptom(
@@ -787,16 +672,10 @@ def test_add_symptom_multiple_persons_single_symptom(
     df = simulation.population.props
     for symptom in disease_module_symptoms:
         persons_without_symptom = df.index[
-            df.is_alive
-            & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
+            df.is_alive & (df[symptom_manager.get_column_name_for_symptom(symptom)] == 0)
         ]
-        symptom_manager.change_symptom(
-            persons_without_symptom, symptom, '+', disease_module
-        )
-        assert all(
-            disease_module.name in symptom_manager.causes_of(p, symptom)
-            for p in persons_without_symptom
-        )
+        symptom_manager.change_symptom(persons_without_symptom, symptom, "+", disease_module)
+        assert all(disease_module.name in symptom_manager.causes_of(p, symptom) for p in persons_without_symptom)
 
 
 def test_change_symptom_individual_multiple_symptoms(
@@ -805,20 +684,10 @@ def test_change_symptom_individual_multiple_symptoms(
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     alive_person = df.index[df.is_alive][0]
-    symptom_manager.change_symptom(
-        alive_person, disease_module_symptoms, '+', disease_module
-    )
-    assert all(
-        disease_module.name in symptom_manager.causes_of(alive_person, s)
-        for s in disease_module_symptoms
-    )
-    symptom_manager.change_symptom(
-        alive_person, disease_module_symptoms, '-', disease_module
-    )
-    assert all(
-        disease_module.name not in symptom_manager.causes_of(alive_person, s)
-        for s in disease_module_symptoms
-    )
+    symptom_manager.change_symptom(alive_person, disease_module_symptoms, "+", disease_module)
+    assert all(disease_module.name in symptom_manager.causes_of(alive_person, s) for s in disease_module_symptoms)
+    symptom_manager.change_symptom(alive_person, disease_module_symptoms, "-", disease_module)
+    assert all(disease_module.name not in symptom_manager.causes_of(alive_person, s) for s in disease_module_symptoms)
 
 
 def test_change_symptom_multiple_persons_multiple_symptoms(
@@ -827,17 +696,11 @@ def test_change_symptom_multiple_persons_multiple_symptoms(
     register_modules_and_initialise(simulation, symptom_manager, disease_module)
     df = simulation.population.props
     alive_persons = df.index[df.is_alive]
-    symptom_manager.change_symptom(
-        alive_persons, disease_module_symptoms, '+', disease_module
-    )
+    symptom_manager.change_symptom(alive_persons, disease_module_symptoms, "+", disease_module)
     assert all(
-        disease_module.name in symptom_manager.causes_of(p, s)
-        for s in disease_module_symptoms
-        for p in alive_persons
+        disease_module.name in symptom_manager.causes_of(p, s) for s in disease_module_symptoms for p in alive_persons
     )
-    symptom_manager.change_symptom(
-        alive_persons, disease_module_symptoms, '-', disease_module
-    )
+    symptom_manager.change_symptom(alive_persons, disease_module_symptoms, "-", disease_module)
     assert all(
         disease_module.name not in symptom_manager.causes_of(p, s)
         for s in disease_module_symptoms

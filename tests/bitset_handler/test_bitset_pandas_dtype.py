@@ -14,15 +14,11 @@ class TestBitsetDtype(BaseDtypeTests):
     Additional tests can be added to this class if we so desire.
     """
 
-    def test_construct_from_string_another_type_raises(
-        self, dtype: BitsetDtype
-    ) -> None:
+    def test_construct_from_string_another_type_raises(self, dtype: BitsetDtype) -> None:
         """
         Reimplementation as the error message we expect is different from that provided
         by base ``pandas`` implementation.
         """
-        msg = (
-            "Need at least 2 (comma-separated) elements in string to construct bitset."
-        )
+        msg = "Need at least 2 (comma-separated) elements in string to construct bitset."
         with pytest.raises(TypeError, match=re.escape(msg)):
             type(dtype).construct_from_string("another_type")

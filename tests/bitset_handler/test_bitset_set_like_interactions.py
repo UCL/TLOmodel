@@ -129,7 +129,7 @@ def test_series_operation_with_value(
     dtype: BitsetDtype,
     op: List[Callable[[Any, Any], Any]] | Callable[[Any, Any], Any],
     r_value: CastableForPandasOps,
-    expected: List[Set[ElementType]] | pd.Series
+    expected: List[Set[ElementType]] | pd.Series,
 ) -> None:
     """
     The expected value can be passed in as either a list of sets that will be
@@ -141,11 +141,7 @@ def test_series_operation_with_value(
     - In cases such as this, the two results are expected to be the same,
       which saves us verbiage in the list of test cases above.
     """
-    expected = (
-        seq_of_sets_to_series(expected, dtype)
-        if isinstance(expected, list)
-        else expected
-    )
+    expected = seq_of_sets_to_series(expected, dtype) if isinstance(expected, list) else expected
 
     if not isinstance(op, list):
         op = [op]

@@ -21,10 +21,7 @@ class MultipleModuleInstanceError(Exception):
 DependencyGetter = Callable[[Union[Module, Type[Module]], Set[str]], Set[str]]
 
 
-def get_init_dependencies(
-    module: Union[Module, Type[Module]],
-    module_names_present: Set[str]
-) -> Set[str]:
+def get_init_dependencies(module: Union[Module, Type[Module]], module_names_present: Set[str]) -> Set[str]:
     """Get the initialisation dependencies for a ``Module`` subclass.
 
     :param module: ``Module`` subclass to get dependencies for.
@@ -33,16 +30,10 @@ def get_init_dependencies(
     :return: Set of ``Module`` subclass names corresponding to initialisation
         dependencies of ``module``, including any optional dependencies present.
     """
-    return (
-        module.INIT_DEPENDENCIES
-        | (module.OPTIONAL_INIT_DEPENDENCIES & module_names_present)
-    )
+    return module.INIT_DEPENDENCIES | (module.OPTIONAL_INIT_DEPENDENCIES & module_names_present)
 
 
-def get_all_dependencies(
-    module: Union[Module, Type[Module]],
-    module_names_present: Set[str]
-) -> Set[str]:
+def get_all_dependencies(module: Union[Module, Type[Module]], module_names_present: Set[str]) -> Set[str]:
     """Get all dependencies for a ``Module`` subclass.
 
     :param module: ``Module`` subclass to get dependencies for.
@@ -51,10 +42,7 @@ def get_all_dependencies(
     :return: Set of ``Module`` subclass names corresponding to dependencies of
         ``module``, including any optional dependencies present.
     """
-    return (
-        get_init_dependencies(module, module_names_present)
-        | module.ADDITIONAL_DEPENDENCIES
-    )
+    return get_init_dependencies(module, module_names_present) | module.ADDITIONAL_DEPENDENCIES
 
 
 def get_missing_dependencies(
@@ -75,14 +63,10 @@ def get_missing_dependencies(
         # Force conversion to set to avoid errors when using set.union with frozenset
         *(set(module.ALTERNATIVE_TO) for module in module_instances)
     )
-    modules_required = set.union(
-        *(set(get_dependencies(module, modules_present)) for module in module_instances)
-    )
+    modules_required = set.union(*(set(get_dependencies(module, modules_present)) for module in module_instances))
 
     missing_dependencies = modules_required - modules_present
-    return (
-        missing_dependencies - modules_present_are_alternatives_to
-    )
+    return missing_dependencies - modules_present_are_alternatives_to
 
 
 def initialise_missing_dependencies(modules: Iterable[Module], **module_kwargs) -> Set[Module]:
@@ -98,18 +82,15 @@ def initialise_missing_dependencies(modules: Iterable[Module], **module_kwargs) 
     all_module_instances: list[Module] = list(modules)
 
     def add_missing_module_instances(modules: list[Module], all_missing_module_names: set[str]) -> None:
-        """ add missing module instances to all_module_instances list
+        """add missing module instances to all_module_instances list
         :param modules: Iterable of registered modules
         :param all_missing_module_names: Set of missing module names
         """
-        missing_dependencies: set[str] = get_missing_dependencies(
-            modules, get_all_dependencies
-        )
+        missing_dependencies: set[str] = get_missing_dependencies(modules, get_all_dependencies)
         if len(missing_dependencies) > 0:
             all_missing_module_names |= missing_dependencies
             missing_module_instances: list[Module] = [
-                module_class_map[dependency](**module_kwargs)
-                for dependency in missing_dependencies
+                module_class_map[dependency](**module_kwargs) for dependency in missing_dependencies
             ]
             modules.extend(missing_module_instances)
             add_missing_module_instances(modules, all_missing_module_names)
@@ -119,8 +100,7 @@ def initialise_missing_dependencies(modules: Iterable[Module], **module_kwargs) 
 
 
 def get_all_required_dependencies(
-    module: Union[Module, Type[Module]],
-    module_names_present: Optional[Set[str]] = None
+    module: Union[Module, Type[Module]], module_names_present: Optional[Set[str]] = None
 ) -> Set[str]:
     """Get all non-optional dependencies for a ``Module`` subclass.
 
@@ -136,8 +116,7 @@ def get_all_required_dependencies(
 
 
 def topologically_sort_modules(
-    module_instances: Iterable[Module],
-    get_dependencies: DependencyGetter = get_init_dependencies
+    module_instances: Iterable[Module], get_dependencies: DependencyGetter = get_init_dependencies
 ) -> Generator[Module, None, None]:
     """Generator which yields topological sort of modules based on their dependencies.
 
@@ -164,42 +143,36 @@ def topologically_sort_modules(
     module_instance_map = {type(module).__name__: module for module in module_instances}
     if len(module_instance_map) != len(module_instances):
         raise MultipleModuleInstanceError(
-            'Multiple instances of one or more `Module` subclasses were passed to the '
-            'Simulation.register method. If you are sure this is correct, you can '
-            'disable this check (and the automatic dependency sorting) by setting '
-            'sort_modules=False in Simulation.register.'
+            "Multiple instances of one or more `Module` subclasses were passed to the "
+            "Simulation.register method. If you are sure this is correct, you can "
+            "disable this check (and the automatic dependency sorting) by setting "
+            "sort_modules=False in Simulation.register."
         )
     visited, currently_processing = set(), set()
 
     def depth_first_search(module):
         if module not in visited:
             if module in currently_processing:
-                raise ModuleDependencyError(
-                    f'Module {module} has circular dependencies.'
-                )
+                raise ModuleDependencyError(f"Module {module} has circular dependencies.")
             currently_processing.add(module)
-            dependencies = get_dependencies(
-                module_instance_map[module], module_instance_map.keys()
-            )
+            dependencies = get_dependencies(module_instance_map[module], module_instance_map.keys())
 
             for dependency in sorted(dependencies):
                 if dependency not in module_instance_map:
                     alternatives_with_instances = [
-                        name for name, instance in module_instance_map.items()
-                        if dependency in instance.ALTERNATIVE_TO
+                        name for name, instance in module_instance_map.items() if dependency in instance.ALTERNATIVE_TO
                     ]
                     if len(alternatives_with_instances) != 1:
                         message = (
-                            f'Module {module} depends on {dependency} which is '
-                            'missing from modules to register'
+                            f"Module {module} depends on {dependency} which is " "missing from modules to register"
                         )
                         if len(alternatives_with_instances) == 0:
-                            message += f' as are any alternatives to {dependency}.'
+                            message += f" as are any alternatives to {dependency}."
                         else:
                             message += (
-                                ' and there are multiple alternatives '
-                                f'({alternatives_with_instances}) so which '
-                                'to use to resolve dependency is ambiguous.'
+                                " and there are multiple alternatives "
+                                f"({alternatives_with_instances}) so which "
+                                "to use to resolve dependency is ambiguous."
                             )
                         raise ModuleDependencyError(message)
 
@@ -227,10 +200,7 @@ def is_valid_tlo_module_subclass(obj: Any, excluded_modules: Set[str]) -> bool:
         ``excluded_modules`` set.
     """
     return (
-        inspect.isclass(obj)
-        and issubclass(obj, Module)
-        and obj is not Module
-        and obj.__name__ not in excluded_modules
+        inspect.isclass(obj) and issubclass(obj, Module) and obj is not Module and obj.__name__ not in excluded_modules
     )
 
 
@@ -249,13 +219,11 @@ def get_module_class_map(excluded_modules: Set[str]) -> Mapping[str, Type[Module
     methods_package_path = os.path.dirname(inspect.getfile(tlo.methods))
     module_classes = {}
     for _, methods_module_name, _ in pkgutil.iter_modules([methods_package_path]):
-        methods_module = importlib.import_module(f'tlo.methods.{methods_module_name}')
+        methods_module = importlib.import_module(f"tlo.methods.{methods_module_name}")
         for _, obj in inspect.getmembers(methods_module):
             if is_valid_tlo_module_subclass(obj, excluded_modules):
                 if module_classes.get(obj.__name__) not in {None, obj}:
-                    raise RuntimeError(
-                        f'Multiple modules with name {obj.__name__} are defined'
-                    )
+                    raise RuntimeError(f"Multiple modules with name {obj.__name__} are defined")
                 else:
                     module_classes[obj.__name__] = obj
     return module_classes
@@ -266,7 +234,7 @@ def get_dependencies_and_initialise(
     module_class_map: Mapping[str, Type[Module]],
     excluded_module_classes: Optional[Set[Module]] = None,
     get_dependencies: DependencyGetter = get_init_dependencies,
-    **module_class_kwargs
+    **module_class_kwargs,
 ) -> Generator[Module, None, None]:
     """Generate a sequence of ``Module`` instances including all dependencies.
 
@@ -295,10 +263,7 @@ def get_dependencies_and_initialise(
 
     def initialise_module(module_class):
         signature = inspect.signature(module_class)
-        relevant_kwargs = {
-            key: value for key, value in module_class_kwargs.items()
-            if key in signature.parameters
-        }
+        relevant_kwargs = {key: value for key, value in module_class_kwargs.items() if key in signature.parameters}
         bound_args = signature.bind(**relevant_kwargs)
         return module_class(*bound_args.args, **bound_args.kwargs)
 
@@ -326,12 +291,10 @@ def check_dependencies_present(
 
     :raises ModuleDependencyError: Raised if any dependencies are missing.
     """
-    missing_dependencies = get_missing_dependencies(
-        module_instances, get_dependencies
-    )
+    missing_dependencies = get_missing_dependencies(module_instances, get_dependencies)
     if len(missing_dependencies) > 0:
         raise ModuleDependencyError(
-            'One or more required dependency is missing from the module list and no '
-            'alternative to this / these modules are available either: '
-            f'{missing_dependencies}'
+            "One or more required dependency is missing from the module list and no "
+            "alternative to this / these modules are available either: "
+            f"{missing_dependencies}"
         )

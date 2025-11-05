@@ -14,22 +14,22 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'directory': None,
-            'custom_levels': {
-                '*': logging.INFO,
-            }
+            "directory": None,
+            "custom_levels": {
+                "*": logging.INFO,
+            },
         }
 
     def modules(self):
         return []
 
     def add_arguments(self, parser):
-        parser.add_argument('--pop-size', type=int)
+        parser.add_argument("--pop-size", type=int)
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'Lifestyle': {
-                'init_p_urban': rng.randint(10, 20) / 100.0,
-                'init_p_high_sugar': 0.52,
+            "Lifestyle": {
+                "init_p_urban": rng.randint(10, 20) / 100.0,
+                "init_p_high_sugar": 0.52,
             },
         }

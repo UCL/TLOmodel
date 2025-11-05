@@ -35,7 +35,6 @@ SIMULATION_DATE = "2010-01-01T00:00:00"
 
 
 class UpdateableSimulateDateGetter:
-
     def __init__(self, start_date=pd.Timestamp(2010, 1, 1)):
         self._date = start_date
 
@@ -85,9 +84,7 @@ def initialise_logging(
 
 @pytest.mark.parametrize("add_stdout_handler", [True, False])
 @pytest.mark.parametrize("root_level", LOGGING_LEVELS, ids=_logging.getLevelName)
-@pytest.mark.parametrize(
-    "stdout_handler_level", LOGGING_LEVELS, ids=_logging.getLevelName
-)
+@pytest.mark.parametrize("stdout_handler_level", LOGGING_LEVELS, ids=_logging.getLevelName)
 def test_initialise_logging(
     add_stdout_handler: bool,
     simulation_date_getter: core.SimulationDateGetter,
@@ -107,9 +104,7 @@ def test_initialise_logging(
     assert core._get_simulation_date is simulation_date_getter
 
 
-def _check_handlers(
-    logger: core.Logger, expected_number_handlers: int, expected_log_path: Path
-) -> None:
+def _check_handlers(logger: core.Logger, expected_number_handlers: int, expected_log_path: Path) -> None:
     assert len(logger.handlers) == expected_number_handlers
     file_handlers = [h for h in logger.handlers if isinstance(h, _logging.FileHandler)]
     assert len(file_handlers) == 1
@@ -148,18 +143,14 @@ def test_getLogger_invalid_name_raises(logger_name: str) -> None:
 
 @pytest.mark.parametrize("mapping_data", MAPPING_DATA_VALUES)
 @pytest.mark.parametrize("mapping_type", SUPPORTED_MAPPING_TYPES)
-def test_get_log_data_as_dict_with_mapping_types(
-    mapping_data: Mapping, mapping_type: Callable
-) -> None:
+def test_get_log_data_as_dict_with_mapping_types(mapping_data: Mapping, mapping_type: Callable) -> None:
     log_data = mapping_type(mapping_data)
     data_dict = core._get_log_data_as_dict(log_data)
     assert len(data_dict) == len(mapping_data)
     assert set(data_dict.keys()) == set(map(str, mapping_data.keys()))
     assert set(data_dict.values()) == set(mapping_data.values())
     # Dictionary returned should be invariant to original ordering
-    assert data_dict == core._get_log_data_as_dict(
-        mapping_type(dict(reversed(mapping_data.items())))
-    )
+    assert data_dict == core._get_log_data_as_dict(mapping_type(dict(reversed(mapping_data.items()))))
 
 
 @pytest.mark.parametrize("mapping_data", MAPPING_DATA_VALUES)
@@ -173,9 +164,7 @@ def test_get_log_data_as_dict_with_multirow_dataframe_raises(
 
 @pytest.mark.parametrize("values", ITERABLE_DATA_VALUES)
 @pytest.mark.parametrize("sequence_type", SUPPORTED_SEQUENCE_TYPES)
-def test_get_log_data_as_dict_with_sequence_types(
-    values: Iterable, sequence_type: Callable
-) -> None:
+def test_get_log_data_as_dict_with_sequence_types(values: Iterable, sequence_type: Callable) -> None:
     log_data = sequence_type(values)
     data_dict = core._get_log_data_as_dict(log_data)
     assert len(data_dict) == len(log_data)

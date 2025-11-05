@@ -101,10 +101,7 @@ class SummarizedStyle(UnsrtStyle):
     def _format_details_as_table(self, details):
         return tag("table")[
             toplevel[
-                *(
-                    tag("tr")[toplevel[tag("td")[tag("em")[key]], tag("td")[value]]]
-                    for key, value in details.items()
-                )
+                *(tag("tr")[toplevel[tag("td")[tag("em")[key]], tag("td")[value]]] for key, value in details.items())
             ]
         ]
 
@@ -179,18 +176,14 @@ def write_publications_list(stream, bibliography_data, section_names, backend, s
             warn(msg, stacklevel=2)
     for section_name in section_names:
         stream.write(f"<h2>{section_name.capitalize()}</h2>\n")
-        formatted_bibliography = style.format_bibliography(
-            bibliography_data, keys_by_section[section_name]
-        )
+        formatted_bibliography = style.format_bibliography(bibliography_data, keys_by_section[section_name])
         backend.write_to_stream(formatted_bibliography, stream)
         stream.write("\n")
 
 
 if __name__ == "__main__":
     docs_directory = Path(__file__).parent
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--bib-file",
         type=Path,
@@ -220,17 +213,12 @@ if __name__ == "__main__":
         # to be explicitly specified for export formats such as bibtex and allows a
         # maximum value of 100 - if we exceed this number of publications will need
         # to switch to making multiple requests with different start indices
-        response = requests.get(
-            endpoint_url, params={"format": "bibtex", "limit": "100"}
-        )
+        response = requests.get(endpoint_url, params={"format": "bibtex", "limit": "100"})
         if response.ok:
             with open(args.bib_file, "w") as bib_file:
                 bib_file.write(response.text)
         else:
-            msg = (
-                f"Request to {endpoint_url} failed with status code "
-                f"{response.status_code} ({response.reason})"
-            )
+            msg = f"Request to {endpoint_url} failed with status code " f"{response.status_code} ({response.reason})"
             raise RuntimeError(msg)
     with open(args.output_file, "w") as output_file:
         write_publications_list(

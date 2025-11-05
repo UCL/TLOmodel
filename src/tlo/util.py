@@ -34,18 +34,18 @@ def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> 
     def chunks(items, n):
         """Takes a list and divides it into parts of size n"""
         for index in range(0, len(items), n):
-            yield items[index:index + n]
+            yield items[index : index + n]
 
     # split all the ages from min to limit
     parts = chunks(range(min_age, max_age), range_size)
 
-    default_category = f'{max_age}+'
+    default_category = f"{max_age}+"
     lookup = defaultdict(lambda: default_category)
     age_categories = []
 
     # create category for minimum age
     if min_age > 0:
-        under_min_age_category = f'0-{min_age}'
+        under_min_age_category = f"0-{min_age}"
         age_categories.append(under_min_age_category)
         for i in range(0, min_age):
             lookup[i] = under_min_age_category
@@ -54,7 +54,7 @@ def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> 
     for part in parts:
         start = part.start
         end = part.stop - 1
-        value = f'{start}-{end}'
+        value = f"{start}-{end}"
         age_categories.append(value)
         for i in range(start, part.stop):
             lookup[i] = value
@@ -95,7 +95,7 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
 
 
 def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
-    """ Helper function to randomly sample an outcome for each individual in a population from a set of probabilities
+    """Helper function to randomly sample an outcome for each individual in a population from a set of probabilities
     that are specific to each individual.
     :param probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The
     values are the probability of that outcome for that individual. For each individual, the probabilities of each
@@ -111,14 +111,14 @@ def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
 
     # Compare uniform deviate to cumulative sum across columns, after including a "null" column (for no event).
     _probs = probs.copy()
-    _probs['_'] = 1.0 - _probs.sum(axis=1)  # add implied "none of these events" category
+    _probs["_"] = 1.0 - _probs.sum(axis=1)  # add implied "none of these events" category
     cumsum = _probs.cumsum(axis=1)
     draws = pd.Series(rng.rand(len(cumsum)), index=cumsum.index)
     y = cumsum.gt(draws, axis=0)
     outcome = y.idxmax(axis=1)
 
     # return as a dict of form {person_id: outcome} only in those cases where the outcome is one of the events.
-    return outcome.loc[outcome != '_'].to_dict()
+    return outcome.loc[outcome != "_"].to_dict()
 
 
 BitsetDType = Property.PANDAS_TYPE_MAP[Types.BITSET]
@@ -136,23 +136,15 @@ class BitsetHandler:
         :param elements: A list of strings specifying the elements of the bitset.
         :returns: Instance of BitsetHandler for supplied arguments.
         """
-        assert isinstance(population, Population), (
-            'First argument is the population object (not the `props` dataframe)'
-        )
+        assert isinstance(population, Population), "First argument is the population object (not the `props` dataframe)"
         dtype_bitwidth = BitsetDType(0).nbytes * 8
-        assert len(elements) <= dtype_bitwidth, (
-            f"A maximum of {dtype_bitwidth} elements are supported"
-        )
+        assert len(elements) <= dtype_bitwidth, f"A maximum of {dtype_bitwidth} elements are supported"
         self._elements = elements
-        self._element_to_int_map = {el: 2 ** i for i, el in enumerate(elements)}
+        self._element_to_int_map = {el: 2**i for i, el in enumerate(elements)}
         self._population = population
         if column is not None:
-            assert column in population.props.columns, (
-                'Column not found in population dataframe'
-            )
-            assert population.props[column].dtype == BitsetDType, (
-                f'Column must be of {BitsetDType} type'
-            )
+            assert column in population.props.columns, "Column not found in population dataframe"
+            assert population.props[column].dtype == BitsetDType, f"Column must be of {BitsetDType} type"
         self._column = column
 
     @property
@@ -169,17 +161,12 @@ class BitsetHandler:
         :param integer: The integer value for the bitset.
         :return: Set of strings corresponding to integer value.
         """
-        bin_repr = format(integer, 'b')
-        return {
-            self._elements[index]
-            for index, bit in enumerate(reversed(bin_repr)) if bit == '1'
-        }
+        bin_repr = format(integer, "b")
+        return {self._elements[index] for index, bit in enumerate(reversed(bin_repr)) if bit == "1"}
 
     def _get_columns(self, columns):
         if columns is None and self._column is None:
-            raise ValueError(
-                'columns argument must be specified as not set when constructing handler'
-            )
+            raise ValueError("columns argument must be specified as not set when constructing handler")
         return self._column if columns is None else columns
 
     def set(self, where, *elements: str, columns: Optional[Union[str, List[str]]] = None):
@@ -225,33 +212,25 @@ class BitsetHandler:
         self.df.loc[where, self._get_columns(columns)] = 0
 
     def has(
-        self,
-        where,
-        element: str,
-        first: bool = False,
-        columns: Optional[Union[str, List[str]]] = None
+        self, where, element: str, first: bool = False, columns: Optional[Union[str, List[str]]] = None
     ) -> Union[pd.DataFrame, pd.Series, bool]:
         """Test whether bit(s) for a specified element are set.
 
-        :param where: Condition to filter rows that will checked.
-       :param element: Element string to test if bit is set for.
-        :param first: Boolean keyword argument specifying whether to return only the
-            first item / row in the computed column / dataframe.
-        :param columns: Optional argument specifying column(s) containing bitsets to
-            update. If set to ``None`` (the default) a ``column`` argument must have
-            been specified when constructing the ``BitsetHandler`` object.
-        :return: Boolean value(s) indicating whether element bit(s) are set.
+         :param where: Condition to filter rows that will checked.
+        :param element: Element string to test if bit is set for.
+         :param first: Boolean keyword argument specifying whether to return only the
+             first item / row in the computed column / dataframe.
+         :param columns: Optional argument specifying column(s) containing bitsets to
+             update. If set to ``None`` (the default) a ``column`` argument must have
+             been specified when constructing the ``BitsetHandler`` object.
+         :return: Boolean value(s) indicating whether element bit(s) are set.
         """
         int_repr = self._element_to_int_map[element]
         matched = (self.df.loc[where, self._get_columns(columns)] & int_repr) != 0
         return matched.iloc[0] if first else matched
 
     def has_all(
-        self,
-        where,
-        *elements: str,
-        first: bool = False,
-        columns: Optional[Union[str, List[str]]] = None
+        self, where, *elements: str, first: bool = False, columns: Optional[Union[str, List[str]]] = None
     ) -> Union[pd.DataFrame, pd.Series, bool]:
         """Check whether individual(s) have all the elements given set to True.
 
@@ -274,11 +253,7 @@ class BitsetHandler:
         return matched.iloc[0] if first else matched
 
     def has_any(
-        self,
-        where,
-        *elements: str,
-        first: bool = False,
-        columns: Optional[Union[str, List[str]]] = None
+        self, where, *elements: str, first: bool = False, columns: Optional[Union[str, List[str]]] = None
     ) -> Union[pd.DataFrame, pd.Series, bool]:
         """Check whether individual(s) have any of the elements given set to True.
 
@@ -301,10 +276,7 @@ class BitsetHandler:
         return matched.iloc[0] if first else matched
 
     def get(
-        self,
-        where,
-        first: bool = False,
-        columns: Optional[Union[str, List[str]]] = None
+        self, where, first: bool = False, columns: Optional[Union[str, List[str]]] = None
     ) -> Union[pd.DataFrame, pd.Series, Set[str]]:
         """Returns a series or dataframe with set of string elements where bit is True.
 
@@ -329,9 +301,7 @@ class BitsetHandler:
         return sets.iloc[0] if first else sets
 
     def uncompress(
-        self,
-        where=None,
-        columns: Optional[Union[str, List[str]]] = None
+        self, where=None, columns: Optional[Union[str, List[str]]] = None
     ) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
         """Returns an exploded representation of the bitset(s).
 
@@ -363,10 +333,7 @@ class BitsetHandler:
         return uncompressed[columns] if isinstance(columns, str) else uncompressed
 
     def not_empty(
-        self,
-        where,
-        first=False,
-        columns: Optional[Union[str, List[str]]] = None
+        self, where, first=False, columns: Optional[Union[str, List[str]]] = None
     ) -> Union[pd.DataFrame, pd.Series, bool]:
         """Returns Series of bool indicating whether the BitSet entry is not empty.
 
@@ -383,10 +350,7 @@ class BitsetHandler:
         return ~self.is_empty(where, first=first, columns=columns)
 
     def is_empty(
-        self,
-        where,
-        first=False,
-        columns: Optional[Union[str, List[str]]] = None
+        self, where, first=False, columns: Optional[Union[str, List[str]]] = None
     ) -> Union[pd.DataFrame, pd.Series, bool]:
         """Returns Series of bool indicating whether the BitSet entry is empty.
 
@@ -425,15 +389,14 @@ def hash_dataframe(dataframe: pd.DataFrame):
 
 
 def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng):
-    """Get index of person to inherit properties from.
-    """
+    """Get index of person to inherit properties from."""
 
     if mother_id == DEFAULT_MOTHER_ID:
         # Get indices of alive persons and try to drop child_id from these indices if
         # present, ignoring any errors if child_id not currently in population dataframe
-        alive_persons_not_including_child = population_dataframe.index[
-            population_dataframe.is_alive
-        ].drop(child_id, errors="ignore")
+        alive_persons_not_including_child = population_dataframe.index[population_dataframe.is_alive].drop(
+            child_id, errors="ignore"
+        )
         return rng.choice(alive_persons_not_including_child)
     elif 0 > mother_id > DEFAULT_MOTHER_ID:
         return abs(mother_id)
@@ -441,8 +404,10 @@ def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng
         return mother_id
 
 
-def convert_excel_files_to_csv(folder: Path, files: Optional[list[str]] = None, *, delete_excel_files: bool = False) -> None:
-    """ convert Excel files to csv files.
+def convert_excel_files_to_csv(
+    folder: Path, files: Optional[list[str]] = None, *, delete_excel_files: bool = False
+) -> None:
+    """convert Excel files to csv files.
 
     :param folder: Folder containing Excel files.
     :param files: List of Excel file names to convert to csv files. When `None`, all Excel files in the folder and
@@ -469,16 +434,16 @@ def convert_excel_files_to_csv(folder: Path, files: Optional[list[str]] = None, 
             excel_file_directory.mkdir()
         # Write a CSV for each worksheet
         for sheet_name, dataframe in sheet_dataframes.items():
-            dataframe.to_csv(f'{excel_file_directory / sheet_name}.csv', index=False)
+            dataframe.to_csv(f"{excel_file_directory / sheet_name}.csv", index=False)
 
         if delete_excel_files:
             # Remove no longer needed Excel file
-            Path(folder/excel_file_path).unlink()
+            Path(folder / excel_file_path).unlink()
 
 
-def read_csv_files(folder: Path,
-                   dtype: DtypeArg | dict[str, DtypeArg] | None = None,
-                   files: str | int | list[str] | None = 0) -> DataFrame | dict[str, DataFrame]:
+def read_csv_files(
+    folder: Path, dtype: DtypeArg | dict[str, DtypeArg] | None = None, files: str | int | list[str] | None = 0
+) -> DataFrame | dict[str, DataFrame]:
     """
     A function to read CSV files in a similar way pandas reads Excel files (:py:func:`pandas.read_excel`).
 
@@ -507,14 +472,14 @@ def read_csv_files(folder: Path,
     all_data: dict[str, DataFrame] = {}  # dataframes dictionary
 
     def clean_dataframe(dataframes_dict: dict[str, DataFrame]) -> None:
-        """ silently drop all columns that have no relevant data to simulation (all columns with a name starting with
+        """silently drop all columns that have no relevant data to simulation (all columns with a name starting with
         Unnamed
         :param dataframes_dict: Dictionary of dataframes to clean
         """
         for _key, dataframe in dataframes_dict.items():
-            all_data[_key] = dataframe.drop(dataframe.filter(like='Unnamed'), axis=1)  # filter and drop Unnamed columns
+            all_data[_key] = dataframe.drop(dataframe.filter(like="Unnamed"), axis=1)  # filter and drop Unnamed columns
 
-    return_dict = False # a flag that will determine whether the output should be a dictionary or a DatFrame
+    return_dict = False  # a flag that will determine whether the output should be a dictionary or a DatFrame
     if isinstance(files, list):
         return_dict = True
     elif isinstance(files, int) or files is None:
@@ -534,7 +499,7 @@ def read_csv_files(folder: Path,
 
 
 def parse_csv_values_for_columns_with_mixed_datatypes(value: Any):
-    """ Pandas :py:func:`pandas.read_csv` function handles columns with mixed data types by defaulting to the object
+    """Pandas :py:func:`pandas.read_csv` function handles columns with mixed data types by defaulting to the object
     data type, which often results in values being interpreted as strings. The most common place for this in TLO is
     when we are reading parameters. This is not a problem when the parameters are read in read parameters method
     using load_parameters_from_dataframe method as parameter values are mapped to their defined datatypes.
@@ -552,14 +517,14 @@ def parse_csv_values_for_columns_with_mixed_datatypes(value: Any):
     value = value.strip()  # Remove leading/trailing whitespace
     # It is important to catch booleans early to avoid int(value) which will convert them into an interger value
     # 0(False) or 1(True)
-    if value.lower() in ['true', 'false']:
-        return value.lower() == 'true'
+    if value.lower() in ["true", "false"]:
+        return value.lower() == "true"
 
     try:
-        return int(value) # try converting the value to an interger, throw excepetion otherwise
+        return int(value)  # try converting the value to an interger, throw excepetion otherwise
     except ValueError:
         try:
-            return float(value) # try converting the value to a float, throw excepetion otherwise
+            return float(value)  # try converting the value to a float, throw excepetion otherwise
         except ValueError:
             # Check if it's a list using `ast.literal_eval`
             try:

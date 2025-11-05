@@ -51,9 +51,7 @@ def test_basic_stream_display(capfd):
 def test_progress_bar_init(n_step):
     description = "Test"
     n_col = 10
-    pb = progressbar.ProgressBar(
-        n_step=n_step, description=description, n_col=n_col
-    )
+    pb = progressbar.ProgressBar(n_step=n_step, description=description, n_col=n_col)
     assert pb.n_step == n_step
     assert pb.description == description
     assert pb.step == 0
@@ -91,9 +89,7 @@ def test_progress_bar_raises():
 @pytest.mark.parametrize("n_step", ((1, 5, 10)))
 def test_progress_bar_update(capfd, n_step):
     description = "Test"
-    pb = progressbar.ProgressBar(
-        n_step=n_step, description=description, min_refresh_time=0
-    )
+    pb = progressbar.ProgressBar(n_step=n_step, description=description, min_refresh_time=0)
     pb.start()
     pb_strings = [str(pb)]
     for i in range(n_step):
