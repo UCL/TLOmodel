@@ -12,10 +12,10 @@ import json
 YEAR_OF_CHANGE = 2020
 full_grid = make_cartesian_parameter_grid({
     "HealthSystem": {
-        "scale_factor_delay_in_seeking_care_weather": [float(x) for x in [0, 1, 2, 10, 20, 60]],
-        "rescaling_prob_seeking_after_disruption": np.arange(0.01, 1.51, 0.5),
-        "rescaling_prob_disruption": np.arange(0.0, 2.01, 0.5),
-        "scale_factor_severity_disruption_and_delay": [float(x) for x in np.linspace(0.11, 1.0, 4)],
+        "scale_factor_delay_in_seeking_care_weather": [1], #[float(x) for x in [0, 1, 2, 10, 20, 60]],
+        "rescaling_prob_seeking_after_disruption": [1], #np.arange(0.01, 1.51, 0.5),
+        "rescaling_prob_disruption": [1], #np.arange(0.0, 2.01, 0.5),
+        "scale_factor_severity_disruption_and_delay": [1], #[float(x) for x in np.linspace(0.11, 1.0, 4)],
         "mode_appt_constraints": [1],
         "cons_availability": ["default"],
         "cons_availability_postSwitch": ["all"],
@@ -39,11 +39,11 @@ class ClimateDisruptionScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2014, 1, 12)
         self.pop_size = 100_000
-        self.runs_per_draw = 10
+        self.runs_per_draw = 1
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
 
-        self._parameter_grid = random.sample(full_grid, 9)
+        self._parameter_grid = random.sample(full_grid, 1)
         print(self._parameter_grid)
         self.number_of_draws = len(self._parameter_grid)
 
