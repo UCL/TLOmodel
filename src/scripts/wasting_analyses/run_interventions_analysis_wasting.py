@@ -37,10 +37,10 @@ scenarios_dict = {
     'GM_CS': {'GM_CS': 0},
 }
 # Set the intervention to be analysed, and for which years they were simulated
-intervs_all = ['SQ', 'GM', 'CS', 'FS', 'GM_FS', 'CS_FS', 'GM_CS_FS', 'GM_CS']
-intervs_of_interest = ['GM', 'CS', 'FS', 'GM_FS', 'CS_FS', 'GM_CS_FS', 'GM_CS']
+intervs_all = ['SQ', 'GM', 'CS', 'FS', 'GM_CS', 'GM_FS', 'CS_FS', 'GM_CS_FS']
+intervs_of_interest = ['GM', 'CS', 'FS', 'GM_CS', 'GM_FS', 'CS_FS', 'GM_CS_FS']
 intervention_years = list(range(2026, 2031))
-scenarios_to_compare = ['GM', 'CS', 'FS', 'GM_FS', 'CS_FS', 'GM_CS_FS', 'GM_CS'] # ['GM_FullAttend', 'CS_100', 'FS_Full']
+scenarios_to_compare = ['GM', 'CS', 'FS', 'GM_CS', 'GM_FS', 'CS_FS', 'GM_CS_FS']
 # Which years to plot (from post burn-in period)
 plot_years = list(range(2015, 2032))
 # Plot settings
@@ -188,16 +188,27 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         print("\nloading dalys outcomes from file ...")
         with dalys_outcomes_path.open("rb") as f:
             dalys_outcomes_dict = pickle.load(f)
+            SQ_dalys = dalys_outcomes_dict['SQ']
     else:
         print("\ndalys outcomes for intervention period calculation ...")
+        sq_dalys = util_fncs.extract_daly_data_frames_and_outcomes(
+            iterv_folders_dict['SQ'], datayears, interventionyears, 'SQ'
+        )
         dalys_outcomes_dict = {
             interv: util_fncs.extract_daly_data_frames_and_outcomes(
-                iterv_folders_dict[interv], datayears, interventionyears, interv
+                iterv_folders_dict[interv], datayears, interventionyears, interv, sq_dalys
             ) for interv in scenario_folders
         }
         print("saving dalys outcomes for intervention period to file ...")
         with dalys_outcomes_path.open("wb") as f:
             pickle.dump(dalys_outcomes_dict, f)
+    # # TODO: rm
+    # print("\nDALY OUTCOMES")
+    # for interv in scenario_folders:
+    #     print(f"### {interv=}")
+    #     for outcome in dalys_outcomes_dict[interv]:
+    #         print(f"{outcome}:\n{dalys_outcomes_dict[interv][outcome]}")
+    #
 
     # --------------------------------------------- Main Analyses Plots  --------------------------------------------- #
     # Prepare scenarios_tocompare_prefix
@@ -288,16 +299,19 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     with PdfPages(pdf_path) as pdf:
         # Outcome 1: figures with mortality rates for each interv of interest, comparing different settings
         for page_start in range(0, len(intervs_ofinterest), 2):
-            fig1, axes1 = plt.subplots(
-                min(2, len(intervs_ofinterest) - page_start),
-                len(cohorts_to_plot),
-                figsize=(12, 12)
-            )
+            nrows = min(2, len(intervs_ofinterest) - page_start)
+            ncols = len(cohorts_to_plot)
+            fig1, axes1 = plt.subplots(nrows, ncols, figsize=(12, 12))
 
-            # Ensure `axes` is always a 2D array for consistent indexing
-            if len(cohorts_to_plot) == 1:
-                axes1 = np.expand_dims(axes1, axis=-1)
-
+            # Normalize axes1 to a 2D numpy array so indexing axes1[i, j] always works
+            if nrows == 1 and ncols == 1:
+                axes1 = np.array([[axes1]])
+            elif nrows == 1:
+                # axes1 is 1D array of length ncols -> make it shape (1, ncols)
+                axes1 = np.expand_dims(axes1, axis=0)
+            elif ncols == 1:
+                # axes1 is 1D array of length nrows -> make it shape (nrows, 1)
+                axes1 = np.expand_dims(axes1, axis=1)
             for i, interv in enumerate(intervs_ofinterest[page_start:page_start + 2]):
                 for j, cohort in enumerate(cohorts_to_plot):
                     if interv == 'SQ':
@@ -507,34 +521,34 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             fig5.savefig(fig5_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
         plt.close('all')
 
-        # Outcome 6: figures with averted sum of deaths and CI, scenarios comparison to SQ
-        for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
-            fig6, axes6 = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
-
-            # Ensure `axes` is always a 2D array for consistent indexing
-            if len(cohorts_to_plot) == 1:
-                axes6 = np.expand_dims(axes6, axis=-1)
-
-            # ### Sum of averted deaths over intervention period by cause
-            for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
-                for j, cohort in enumerate(cohorts_to_plot):
-                    sum_deaths_png_file_path = outputs_path / (
-                        f"{cohort}_sum_averted_{cause_of_death}_deaths_CI_intervention_period_scenarios_comparison__"
-                        f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
-                    )
-                    if sum_deaths_png_file_path.exists():
-                        img = plt.imread(sum_deaths_png_file_path)
-                        axes6[i, j].imshow(img)
-                        axes6[i, j].axis('off')
-            plt.tight_layout()
-            pdf.savefig(fig6)  # Save the current page to the PDF
-            fig6_png_file_path = outputs_path / (
-                f"{cohort_prefix}_averted_sum_deaths_comparison_"
-                f"{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
-                f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
-            )
-            fig6.savefig(fig6_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
-        plt.close('all')
+        # # Outcome 6: figures with averted sum of deaths and CI, scenarios comparison to SQ
+        # for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
+        #     fig6, axes6 = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
+        #
+        #     # Ensure `axes` is always a 2D array for consistent indexing
+        #     if len(cohorts_to_plot) == 1:
+        #         axes6 = np.expand_dims(axes6, axis=-1)
+        #
+        #     # ### Sum of averted deaths over intervention period by cause
+        #     for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
+        #         for j, cohort in enumerate(cohorts_to_plot):
+        #             sum_deaths_png_file_path = outputs_path / (
+        #                 f"{cohort}_sum_averted_{cause_of_death}_deaths_CI_intervention_period_scenarios_comparison__"
+        #                 f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+        #             )
+        #             if sum_deaths_png_file_path.exists():
+        #                 img = plt.imread(sum_deaths_png_file_path)
+        #                 axes6[i, j].imshow(img)
+        #                 axes6[i, j].axis('off')
+        #     plt.tight_layout()
+        #     pdf.savefig(fig6)  # Save the current page to the PDF
+        #     fig6_png_file_path = outputs_path / (
+        #         f"{cohort_prefix}_averted_sum_deaths_comparison_"
+        #         f"{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
+        #         f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+        #     )
+        #     fig6.savefig(fig6_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
+        # plt.close('all')
 
         # Outcome 7: figures with averted sum of DALYs and CI, scenarios comparison
         for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):

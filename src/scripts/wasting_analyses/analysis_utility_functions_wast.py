@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as st
 import seaborn as sns
+from matplotlib import lines as mpl_lines
 from matplotlib import pyplot as plt
 from run_costing_analysis_wast import run_costing_analysis_wast as run_costing
 
@@ -334,7 +335,8 @@ def extract_daly_data_frames_and_outcomes(
     folder,
     years_of_interest,
     intervention_years,
-    interv
+    interv,
+    sq_dalys: dict = None,
 ) -> Dict[str, pd.DataFrame]:
     """
     Extracts DALYs by cause for under-5s (age_range '0-4'), summed over both sexes, for the specified years.
@@ -342,7 +344,9 @@ def extract_daly_data_frames_and_outcomes(
     :param years_of_interest: years for which to extract the data
     :param intervention_years: List of years during which the intervention was implemented (if any).
     :param interv: Name or identifier of the intervention.
-    :return: DataFrame with index ['year'] and columns for each cause, values are summed DALYs for both sexes
+    :param sq_dalys: Dict of DataFrames with DALYs outcomes for SQ.
+    :return: Dict of DataFrames with index ['year'] and columns for each (draw, run), or columns for reach draw with
+        mean_ci across all runs.
     """
 
     print(f"    -{interv=}")
@@ -427,19 +431,75 @@ def extract_daly_data_frames_and_outcomes(
     interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_under5_Diarrhoea_dalys_df)
 
-    return {'under5_dalys_df': under5_dalys_df,
-            'under5_SAM_dalys_df': under5_SAM_dalys_df,
-            'under5_ALRI_dalys_df': under5_ALRI_dalys_df,
-            'under5_Diarrhoea_dalys_df': under5_Diarrhoea_dalys_df,
-            'under5_dalys_mean_ci_df': under5_dalys_mean_ci_per_year_per_draw_df,
-            'under5_SAM_dalys_mean_ci_df': under5_SAM_dalys_mean_ci_per_year_per_draw_df,
-            'under5_ALRI_dalys_mean_ci_df': under5_ALRI_dalys_mean_ci_per_year_per_draw_df,
-            'under5_Diarrhoea_dalys_mean_ci_df': under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df,
-            'interv_under5_dalys_sum_ci_df': interv_under5_dalys_sum_per_draw_CI_across_runs_df,
-            'interv_under5_SAM_dalys_sum_ci_df': interv_under5_SAM_dalys_sum_per_draw_CI_across_runs_df,
-            'interv_under5_ALRI_dalys_sum_ci_df': interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df,
-            'interv_under5_Diarrhoea_dalys_sum_ci_df': interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df,
-            'interv_years': intervention_years}
+    def compute_scen_sum_and_averted(
+        interv_dalys_df: pd.DataFrame, sq_sum_dalys_df_name: str, limit_to_zero: bool
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Sum `interv_dalys_df` across years into a single-row DataFrame labeled "start-end", then compute averted DALYs
+        as compared to sum of DALYs under SQ. If limit_to_zero True, averted DALYs cannot be negative.
+        Returns (scen_sum_dalys_df, averted_dalys_mean_ci_df).
+        """
+        # Sum Series -> single-row DataFrame and set new index 'year' as "first-last"
+        scen_sum_dalys = interv_dalys_df.sum(axis=0)
+        start_year = str(interv_dalys_df.index.min())
+        end_year = str(interv_dalys_df.index.max())
+        year_label = f"{start_year}-{end_year}"
+        scen_sum_dalys_df = scen_sum_dalys.to_frame().T
+        scen_sum_dalys_df.index.name = "year"
+        scen_sum_dalys_df.index = [year_label]
+
+        # Obtain SQ sum DALYs
+        if interv != "SQ":
+            sq_sum_dalys_df = sq_dalys[sq_sum_dalys_df_name]
+        else:
+            sq_sum_dalys_df = scen_sum_dalys_df
+
+        # Compute averted DALYs, mean and CI across runs
+        if limit_to_zero:
+            sum_averted_dalys_df = (sq_sum_dalys_df - scen_sum_dalys_df).clip(lower=0)
+            assert (sum_averted_dalys_df >= 0).all().all(), "Negative averted DALYs found in under_sum_averted_dalys_df, which should be limited to zero"
+        else:
+            sum_averted_dalys_df = sq_sum_dalys_df - scen_sum_dalys_df
+        averted_dalys_mean_ci_df = return_mean_95_CI_across_runs(sum_averted_dalys_df)
+
+        return scen_sum_dalys_df, averted_dalys_mean_ci_df
+
+    under5_scen_sum_dalys_df, under5_averted_dalys_mean_ci_df = compute_scen_sum_and_averted(
+        interv_under5_dalys_df, 'under5_scen_sum_dalys_df', True
+    )
+    under5_scen_sum_SAM_dalys_df, under5_averted_SAM_dalys_mean_ci_df = compute_scen_sum_and_averted(
+        interv_under5_SAM_dalys_df, 'under5_scen_sum_SAM_dalys_df', True
+    )
+    under5_scen_sum_ALRI_dalys_df, under5_averted_ALRI_dalys_mean_ci_df = compute_scen_sum_and_averted(
+        interv_under5_ALRI_dalys_df, 'under5_scen_sum_ALRI_dalys_df', False
+    )
+    under5_scen_sum_Diarrhoea_dalys_df, under5_averted_Diarrhoea_dalys_mean_ci_df = compute_scen_sum_and_averted(
+        interv_under5_Diarrhoea_dalys_df, 'under5_scen_sum_Diarrhoea_dalys_df', False
+    )
+
+    return {
+        "under5_dalys_df": under5_dalys_df,
+        "under5_SAM_dalys_df": under5_SAM_dalys_df,
+        "under5_ALRI_dalys_df": under5_ALRI_dalys_df,
+        "under5_Diarrhoea_dalys_df": under5_Diarrhoea_dalys_df,
+        "under5_dalys_mean_ci_df": under5_dalys_mean_ci_per_year_per_draw_df,
+        "under5_SAM_dalys_mean_ci_df": under5_SAM_dalys_mean_ci_per_year_per_draw_df,
+        "under5_ALRI_dalys_mean_ci_df": under5_ALRI_dalys_mean_ci_per_year_per_draw_df,
+        "under5_Diarrhoea_dalys_mean_ci_df": under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df,
+        "interv_under5_dalys_sum_ci_df": interv_under5_dalys_sum_per_draw_CI_across_runs_df,
+        "interv_under5_SAM_dalys_sum_ci_df": interv_under5_SAM_dalys_sum_per_draw_CI_across_runs_df,
+        "interv_under5_ALRI_dalys_sum_ci_df": interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df,
+        "interv_under5_Diarrhoea_dalys_sum_ci_df": interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df,
+        "under5_scen_sum_dalys_df": under5_scen_sum_dalys_df,
+        "under5_averted_dalys_mean_ci_df": under5_averted_dalys_mean_ci_df,
+        "under5_scen_sum_SAM_dalys_df": under5_scen_sum_SAM_dalys_df,
+        "under5_averted_SAM_dalys_mean_ci_df": under5_averted_SAM_dalys_mean_ci_df,
+        "under5_scen_sum_ALRI_dalys_df": under5_scen_sum_ALRI_dalys_df,
+        "under5_averted_ALRI_dalys_mean_ci_df": under5_averted_ALRI_dalys_mean_ci_df,
+        "under5_scen_sum_Diarrhoea_dalys_df": under5_scen_sum_Diarrhoea_dalys_df,
+        "under5_averted_Diarrhoea_dalys_mean_ci_df": under5_averted_Diarrhoea_dalys_mean_ci_df,
+        "interv_years": intervention_years,
+    }
 
 def regenerate_pickles_with_debug_logs(iterv_folders_dict) -> None:
     for interv_folder_path in iterv_folders_dict.values():
@@ -691,18 +751,20 @@ def plot_mortality_rate__by_interv_multiple_settings(
 
         # Save plot as PNG
         if interv == 'SQ':
-            plt.savefig(
+            fig.savefig(
                 outputs_path / f"{cohort}_mort_rate_{interv}_UNICEF_WPP__"
                                f"{interv_timestamps_dict[interv]}.png",
                 bbox_inches='tight'
             )
+            plt.close(fig)
 
         else:
-            plt.savefig(
+            fig.savefig(
                 outputs_path / f"{cohort}_mort_rate_{interv}_multiple_settings__"
                                f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png",
                 bbox_inches='tight'
             )
+            plt.close(fig)
 
 def plot_mean_outcome_and_CIs__scenarios_comparison(
     cohort: str,
@@ -793,6 +855,7 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
                 ),
                 bbox_inches='tight'
             )
+            plt.close(fig)
 
 def plot_percentage_deaths_with_SAM(
     cohort: str,
@@ -832,8 +895,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
     force_calculation: list = None,
 ) -> None:
     """
-    Plots sum of deaths or DALYs and confidence intervals (mean across runs) over the intervention period for the
-    specified cohort for multiple scenarios.
+    Plots sum & averted sum of averted deaths or DALYs over the intervention period for the specified cohort for
+    multiple scenarios (means and confidence intervals across runs).
     If outcome is DALYs, also plots and tables the cost-effectiveness.
     :param cohort: 'Neonatal' or 'Under-5'
     :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
@@ -854,19 +917,15 @@ def plot_sum_outcome_and_CIs_intervention_period(
     assert outcome_type in ['deaths', 'deaths_with_SAM', 'DALYs'], \
         f"Invalid value for 'outcome_type': expected 'deaths' or 'DALYs'. Received {outcome_type} instead."
 
-    averted_DALYs_bycause = dict()
-    averted_deaths_bycause = dict()
-
-    # Outcome to plot
+    # Outcomes to plot
     for i, cause in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea']):
-        averted_DALYs_bycause[cause] = {}
-        averted_deaths_bycause[cause] = {}
 
         if outcome_type == "deaths":
             neonatal_outcomes = ['interv_neo_deaths_sum_ci_df', 'interv_neo_SAM_deaths_sum_ci_df',
                                  'interv_neo_ALRI_deaths_sum_ci_df', 'interv_neo_Diarrhoea_deaths_sum_ci_df']
             under5_outcomes = ['interv_under5_deaths_sum_ci_df', 'interv_under5_SAM_deaths_sum_ci_df',
                                'interv_under5_ALRI_deaths_sum_ci_df', 'interv_under5_Diarrhoea_deaths_sum_ci_df']
+            under5_averted_outcomes = [None, None, None, None] # only prepared for DALYs
         elif outcome_type == "deaths_with_SAM":
             neonatal_outcomes = [None, None,
                                  'interv_neo_ALRI_deaths_with_SAM_sum_ci_df',
@@ -874,11 +933,16 @@ def plot_sum_outcome_and_CIs_intervention_period(
             under5_outcomes = [None, None,
                                'interv_under5_ALRI_deaths_with_SAM_sum_ci_df',
                                'interv_under5_Diarrhoea_deaths_with_SAM_sum_ci_df']
+            under5_averted_outcomes = [None, None, None, None] # only prepared for DALYs
         else:  # outcome_type == "DALYs"
             neonatal_outcomes = [None, None, None, None]  # No DALYs for neonatal
             under5_outcomes = ['interv_under5_dalys_sum_ci_df', 'interv_under5_SAM_dalys_sum_ci_df',
                                'interv_under5_ALRI_dalys_sum_ci_df', 'interv_under5_Diarrhoea_dalys_sum_ci_df']
-        outcome = neonatal_outcomes[i] if cohort == 'Neonatal' else under5_outcomes[i]
+            under5_averted_outcomes = ['under5_averted_dalys_mean_ci_df', 'under5_averted_SAM_dalys_mean_ci_df',
+                                       'under5_averted_ALRI_dalys_mean_ci_df',
+                                       'under5_averted_Diarrhoea_dalys_mean_ci_df']
+        outcome = under5_outcomes[i] if cohort == 'Under-5' else neonatal_outcomes[i]
+        averted_outcome = under5_averted_outcomes[i] if cohort =='Under-5' else None
 
         if outcome:
             # Plot comparison of sum of outcome_type over intervention period (absolute numbers of outcome_type)
@@ -949,29 +1013,26 @@ def plot_sum_outcome_and_CIs_intervention_period(
             plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             plt.xticks(rotation=45, fontsize=8)
 
-            plt.savefig(
+            fig.savefig(
                 outputs_path / (
                     f"{cohort}_sum_{cause}_{outcome_type}_CI_intervention_period_scenarios_comparison__"
                     f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
                 ),
                 bbox_inches='tight'
             )
+            plt.close(fig)
 
-            # Plot sum of averted outcome_type compared to SQ over intervention period,
-            # horizontal lines for SQ, bars for interventions
+        # noinspection PyUnreachableCode
+        if averted_outcome:
             fig2, ax2 = plt.subplots()
 
-            # Get SQ values
-            sq_data = outcomes_dict['SQ'][outcome][0]
-            sq_sum, sq_ci_lower, sq_ci_upper = zip(*sq_data.values.flatten())
-            sq_sum, sq_ci_lower, sq_ci_upper = sq_sum[0], sq_ci_lower[0], sq_ci_upper[0]
-
+            averted_DALYs = {}
             for scenario in scenarios_to_compare:
                 if scenario == 'Status Quo':
                     # Only horizontal lines, no bar
                     ax2.axhline(y=0, color=get_scen_colour('Status Quo'), linestyle='-', linewidth=2)
                 else:
-                    # Find the corresponding intervention and draw number
+                    # Iterate over scenarios to compare
                     interv, draw = next(
                         (interv, draw)
                         for interv, scenarios_for_interv_dict in scenarios_dict.items()
@@ -980,29 +1041,19 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         if scen_name == scenario
                     )
 
-                    scen_data = outcomes_dict[interv][outcome][draw]
-                    interv_sum, interv_ci_lower, interv_ci_upper = zip(*scen_data.values.flatten())
-                    interv_sum, interv_ci_lower, interv_ci_upper = interv_sum[0], interv_ci_lower[0], interv_ci_upper[0]
-                    averted_sum = sq_sum - interv_sum
-                    confidence_level = 0.95
-                    z_score = st.norm.ppf(1 - (1 - confidence_level) / 2)
-                    averted_SE = (
-                        ((sq_ci_upper - sq_ci_lower)/(2*z_score))**2 +
-                        ((interv_ci_upper - interv_ci_lower)/(2*z_score))**2
-                    ) ** 0.5
-                    averted_ci_lower = averted_sum - (z_score * averted_SE)
-                    averted_ci_upper = averted_sum + (z_score * averted_SE)
-                    if outcome_type == "deaths":
-                            averted_deaths_bycause[cause][scenario] = [averted_sum, averted_ci_lower, averted_ci_upper]
-                    if outcome_type == "DALYs":
-                        averted_DALYs_bycause[cause][scenario] = [averted_sum, averted_ci_lower, averted_ci_upper]
-                    ax2.bar(scenario, averted_sum,
-                            yerr=[[averted_sum - averted_ci_lower], [averted_ci_upper - averted_sum]],
+                    # Extract data for the scenario
+                    scen_averted_data = \
+                        outcomes_dict[interv][averted_outcome][draw][f'{min_interv_year}-{max_interv_year}']
+                    averted_DALYs[scenario] = scen_averted_data
+
+                    ax2.bar(scenario, scen_averted_data[0],
+                            yerr=[[scen_averted_data[0] - scen_averted_data[1]],
+                                  [scen_averted_data[2] - scen_averted_data[0]]],
                             label=scenario, color=get_scen_colour(scenario), capsize=5)
                     y_top2 = ax2.get_ylim()[1]
                     s1 = y_top2 * 0.02  # space between bar and value of the bar
-                    ax2.text(scenario, averted_sum + s1 if averted_sum >= 0 else 0 + s1,
-                             f"{averted_sum:,.0f}", color=get_scen_colour(scenario), ha='right', va='bottom',
+                    ax2.text(scenario, scen_averted_data[0] + s1 if scen_averted_data[0] >= 0 else 0 + s1,
+                             f"{scen_averted_data[0]:,.0f}", color=get_scen_colour(scenario), ha='right', va='bottom',
                              fontsize=12.5, fontweight='bold')
                     # ax2.text(scenario, averted_ci_upper / 2 + averted_ci_upper / 4 if \
                     #     averted_ci_upper < y_top2 / 2 + y_top2 / 15 else y_top2 / 2 + y_top2 / 15,
@@ -1020,13 +1071,14 @@ def plot_sum_outcome_and_CIs_intervention_period(
             plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             plt.xticks(rotation=45, fontsize=8)
 
-            plt.savefig(
+            fig2.savefig(
                 outputs_path / (
                     f"{cohort}_sum_averted_{cause}_{outcome_type}_CI_intervention_period_scenarios_comparison__"
                     f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
                 ),
                 bbox_inches='tight'
             )
+            plt.close(fig2)
 
             def plot_and_table_cost_effectiveness(averted_DALYs: dict) -> None:
                 # path to outcome calculated data
@@ -1034,10 +1086,11 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 # SQ timestamp associated with scenarios for which we want the costs to be calculated
                 SQ_results_timestamp = interv_timestamps_dict['SQ']
                 # -----------
-                # Implementation costs estimates based on number of births and unit costs from REFs, dicounted by 3%
+                # Implementation costs estimates based on number of births and unit costs from REFs, discounted by 3%
                 def calculate_implementation_costs():
                     # Implementation costs for education/promotion interventions (ie GM & CS)
-                    # Gelli et al., 2021 (incl food, not the best choice as we already have food supplements modelled separtely)
+                    # Gelli et al., 2021 (incl food, not the best choice as we already have food supplements modelled
+                    # separately)
                     # start_up_cost_Gelli_etal2021 = 58.41 * 0.3
                     # unit_cost_Gelli_etal2021 = 58.41 * 0.7
                     # Pearson et al, 2018 (seems to include purely implementation costs, and assume coverage for the
@@ -1051,9 +1104,6 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                     # Implementation costs GM, CS & FS:
                     # #####
-                    # Generate all combinations of start-up cost, unit cost, and coverage
-                    import itertools
-
                     scenarios_without_SQ = [scen for scen in scenarios_to_compare if scen != 'Status Quo']
                     start_up_unit_cost = start_up_Pearson_etal2018 #, start_up_cost_Gelli_etal2021
                     unit_cost = unit_cost_Pearson_etal2018 #, unit_cost_Gelli_etal2021
@@ -1100,7 +1150,9 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         output_costs_medical_df = pd.read_pickle(output_costs_medical_file_path)
                     else:
                         print("\noutput costs medical calculation ...")
-                        run_costing(cost_outcome_folder_path, SQ_results_timestamp, timestamps_suffix, force_calculation)
+                        run_costing(
+                            cost_outcome_folder_path, SQ_results_timestamp, timestamps_suffix, force_calculation
+                        )
                         output_costs_medical_df = pd.read_pickle(output_costs_medical_file_path)
                     incremental_consumable_costs = dict()
                     for scen in output_costs_medical_df.index:
@@ -1112,10 +1164,11 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     # TODO: use also incremental_consumable_costs CIs
                     #  (saved as output_costs_medical_df.loc[scen, ['lower_bound', 'upper_bound']])
                     #  How the net_health_benefit & net_monetary_benefit then will need to account for both uncertainty
-                    #  around Averted DALYs and around Incremental Costs (hence similar calculation as when calculated CI
-                    #  for Averted DALYs)
+                    #  around Averted DALYs and around Incremental Costs (hence similar calculation as when calculated
+                    #  CI for Averted DALYs)
 
-                    # 2. Implementation costs estimates based on number of births and unit costs from REFs, dicounted by 3%
+                    # 2. Implementation costs estimates based on number of births and unit costs from REFs,
+                    # discounted by 3%
                     implementation_costs = calculate_implementation_costs()
                     print("\nimplementation_costs")
                     print(implementation_costs)
@@ -1202,7 +1255,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     "GM_FS": "dominated",
                     "CS_FS": "",
                     "GM_CS_FS": "",
-                    "GM_CS": "",
+                    "GM_CS": "extendedly dominated",
                 }
                 # print("\nICER:")
                 for _, row in all_costs_df.iterrows():
@@ -1211,11 +1264,15 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         scen_cons_cost_per_DALY = 0
                     else:
                         scen_cons_cost_per_DALY = row["total_cost"] / averted_DALYs[scen][0]
+                        # print(f'\nscenario: {scen}')
+                        # print(f'total costs: {row["total_cost"]}')
+                        # print(f'averted DALYs: {averted_DALYs[scen][0]}')
+                        #
                         # scen_cons_cost_per_DALY_lower = \
                         #     min(row["total_cost"] / averted_DALYs[scen][1], row["total_cost"] / averted_DALYs[scen][2])
                         # scen_cons_cost_per_DALY_upper = \
                         #     max(row["total_cost"] / averted_DALYs[scen][1], row["total_cost"] / averted_DALYs[scen][2])
-                        # print(f"{scen=}: "
+                        # print(f"\nICER for {scen=}: "
                         #       f"${scen_cons_cost_per_DALY:,.2f} ({scen_cons_cost_per_DALY_lower:,.2f}–"
                         #       f"{scen_cons_cost_per_DALY_upper:,.2f})")
                     ICER = (
@@ -1236,9 +1293,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 ax_ce.legend([scen for scen in all_costs_df['scenario']],
                              loc="center left", bbox_to_anchor=(1, 0.5), fontsize=12)
 
-                # Add cost-effectiveness frontier
-                # Add cost-effectiveness frontier (dotted line connecting CS -> CS_FS -> GM_CS_FS)
-                scen_frontier = ["SQ", "CS", "GM_CS", "CS_FS", "GM_CS_FS"]
+                # Add cost-effectiveness frontier (dotted line connecting non-dominated scenarios)
+                scen_frontier = [scen for scen, dom in domination.items() if dom == ""]
                 frontier_x = [averted_DALYs[scen][0] if scen != 'SQ' else 0 for scen in scen_frontier]
                 frontier_y = [all_costs_df.loc[all_costs_df['scenario'] == scen, 'total_cost'].values[0]
                               for scen in scen_frontier]
@@ -1268,12 +1324,20 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     color="black", fontsize=9, ha="left", va="top",
                 )
 
-                # Add indicator of negative DALYs
-                ax_ce.axvline(x=0, color="red", linestyle="--", linewidth=1.5)
-                ax_ce.axvspan(ax_ce.get_xlim()[0], 0, color="red", alpha=0.08)
+                # Order legend labels by y (total_cost) so largest value appears at the top and smallest at the bottom
+                ordered_scenarios = list(
+                    all_costs_df.sort_values("total_cost", ascending=False)["scenario"].tolist()
+                )
+                # Create proxy handles with matching colours for the ordered scenarios
+                proxy_handles = [
+                    mpl_lines.Line2D([], [], marker="o", color=get_scen_colour(scen), linestyle="-",
+                                     markersize=8)
+                    for scen in ordered_scenarios
+                ]
+                ax_ce.legend(proxy_handles, ordered_scenarios, loc="center left", bbox_to_anchor=(1, 0.5), fontsize=12)
 
                 plt.tight_layout()
-                plt.savefig(
+                fig_ce.savefig(
                     outputs_path
                     / (
                         f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
@@ -1281,6 +1345,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     ),
                     bbox_inches="tight",
                 )
+                plt.close(fig_ce)
 
                 # TABLE cost-effectiveness
                 # #####
@@ -1313,10 +1378,10 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         {
                             "Scenario": scen,
                             "Averted DALYs (95% CI)": f"{averted_dalys:,.0f} ({averted_dalys_lower:,.0f}; {averted_dalys_upper:,.0f})",
+                            "Total costs (2023 USD)": f"{total_cost:,.0f}",
                             "Incremental consumable-related costs (2023 USD)": f"{incremental_costs:,.0f}",
                             "Maximum additional implementation costs (2023 USD, 95% CI)": f"{max_impl_costs:,.0f} ({max_impl_costs_lower:,.0f}; {max_impl_costs_upper:,.0f})",
-                            "Implementation costs estimates (2023 USD)": f"{impl_cost:,.0f}",
-                            "Total costs (2023 USD)": f"{total_cost:,.0f}",
+                            "Implementation costs estimate (2023 USD)": f"{impl_cost:,.0f}",
                             "Incremental net health benefit (95% CI)": f"{net_health_benefit:,.0f} ({net_health_benefit_lower:,.0f}; {net_health_benefit_upper:,.0f})",
                             "Incremental net monetary benefit (95% CI)": f"{net_monetary_benefit:,.0f} ({net_monetary_benefit_lower:,.0f}; {net_monetary_benefit_upper:,.0f})",
                         }
@@ -1336,7 +1401,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 eff_table = pd.DataFrame(
                     {
                         "Scenario": list(averted_outcome.keys()),
-                        "Averted deaths": [
+                        f"Averted {outcome_type}": [
                             f"{int(round(vals[0])):,} ({int(round(vals[1])):,}; {int(round(vals[2])):,})"
                             for vals in averted_outcome.values()
                         ],
@@ -1347,11 +1412,11 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
             if outcome_type == "DALYs":
                 if cause == "any cause":
-                    plot_and_table_cost_effectiveness(averted_DALYs_bycause[cause])
+                    plot_and_table_cost_effectiveness(averted_DALYs)
                 else:
-                    table_effectiveness(averted_DALYs_bycause[cause], f"{outcome_type}_{cause}")
-            if outcome_type == "deaths":
-                table_effectiveness(averted_deaths_bycause[cause], f"{outcome_type}_{cause}")
+                    table_effectiveness(averted_DALYs, f"{outcome_type}_{cause}")
+            # if outcome_type == "deaths":
+            #     table_effectiveness(averted_deaths, f"{outcome_type}_{cause}")
 
 # ----------------------------------------------------------------------------------------------------------------------
 def plot_availability_heatmaps(outputs_path: Path) -> None:
@@ -1497,19 +1562,15 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
                                "1227_1b": "RUTF\nfacility level 2",
                                "1220_1b": "F-75 therapeutic milk\nfacility level 2"}
     heatmap_data_requested_fac_level = heatmap_data_requested_fac_level_raw.copy()
-    print(f"\nheatmap_data_requested_fac_level-to begin with:\n{heatmap_data_requested_fac_level}")
     heatmap_data_requested_fac_level.index = \
         heatmap_data_requested_fac_level.index.map(item_level_labels_to_map)
-    print(f"\nheatmap_data_requested_fac_level-labeled:\n{heatmap_data_requested_fac_level}")
     heatmap_data_requested_fac_level = \
         heatmap_data_requested_fac_level.reindex([item_level_labels_to_map[item_level] for item_level in ess_cons_requested_at])
-    print(f"\nheatmap_data_requested_fac_level-reindexed:\n{heatmap_data_requested_fac_level}")
     heatmap_data_requested_fac_level["Average"] = heatmap_data_requested_fac_level.mean(axis=1)
     heatmap_data_requested_fac_level[""] = np.nan  # Add empty column for spacing
     # Reorder columns: months 1-12, empty column, then Average
     ordered_cols = list(range(1, 13)) + ["", "Average"]
     heatmap_data_requested_fac_level = heatmap_data_requested_fac_level[ordered_cols]
-    print(f"\nheatmap_data_requested_fac_level-with empty column and Average col:\n{heatmap_data_requested_fac_level}")
     plt.figure(figsize=(12, 4))
     sns.heatmap(
         heatmap_data_requested_fac_level,
@@ -1557,6 +1618,7 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     plt.xticks(rotation=90)
     plt.yticks(rotation=0)
     plt.savefig(outputs_path / 'treatment_availability_heatmap.png', dpi=300, bbox_inches='tight')
+    plt.close(fig)
 
     # B2) Treatments: average for each month at each facility level
     # ###
@@ -1603,7 +1665,7 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
             ax.set_ylabel("")
             ax.set_yticklabels([])
     plt.tight_layout()
-    plt.savefig(outputs_path / "treatment_monthly_availability_heatmaps.png", dpi=300, bbox_inches="tight")
+    fig.savefig(outputs_path / "treatment_monthly_availability_heatmaps.png", dpi=300, bbox_inches="tight")
 
     # B3) Treatments: average for each month at requested facility level
     # ###
@@ -1644,3 +1706,4 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     plt.yticks(rotation=0)
     plt.savefig(outputs_path / "treatment_availability_heatmap_requested_fac_level.png",
                 dpi=300, bbox_inches="tight")
+    plt.close(fig)
