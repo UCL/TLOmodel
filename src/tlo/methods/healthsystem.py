@@ -2616,6 +2616,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                     will_seek_care = 0
                                     if random.random() < will_seek_care_prob:
                                         will_seek_care = 1
+                                    will_seek_care = 1
                                     if will_seek_care:
                                             self.sim.modules[
                                                 'HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
