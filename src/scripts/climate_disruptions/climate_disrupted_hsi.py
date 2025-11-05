@@ -18,9 +18,9 @@ min_year = 2026
 max_year = 2041
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
-climate_sensitivity_analysis = False
-parameter_sensitivity_analysis = True
-main_text = False
+climate_sensitivity_analysis = True
+parameter_sensitivity_analysis = False
+main_text = True
 scenario_names_all = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low",
                   "SSP 2.45 Mean", "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
 
@@ -559,11 +559,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         final_data[scenario_labels_final[i]] = result_data['mean']
 
     df_final = pd.DataFrame(final_data).fillna(0)
+    df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_{suffix}.csv")
 
     # --- Plot: stacked bar chart (Baseline vs SSP2.45)
     fig_final, ax_final = plt.subplots(figsize=(10, 7))
     bottom = np.zeros(len(scenario_labels_final))
-
     for treatment in df_final.index:
         values = df_final.loc[treatment]
         ax_final.bar(scenario_labels_final, values, bottom=bottom,
@@ -576,7 +576,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax_final.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Treatment Type')
     ax_final.tick_params(axis='both', labelsize=11)
     fig_final.tight_layout()
-    fig_final.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_StackedBar_all_years.png")
+    fig_final.savefig(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_StackedBar_all_years_{suffix}.png")
     plt.close(fig_final)
 
         # Calculate differences relative to baseline
