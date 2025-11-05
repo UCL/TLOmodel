@@ -2583,7 +2583,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         ]
                         prob_disruption = pd.DataFrame(prob_disruption)
                         #prob_disruption = min(float(prob_disruption.iloc[0]) * self.module.parameters['rescaling_prob_disruption'], 1) # to account for some structural differences
-                        prob_disruption = 1
+                        prob_disruption = 0
                         if np.random.binomial(1, prob_disruption) == 1:
                             climate_disrupted = True
                             if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
