@@ -42,7 +42,7 @@ class ClimateDisruptionScenario(BaseScenario):
         self.runs_per_draw = 1
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
-        self._parameter_grid = random.sample(full_grid, 1)
+        self._parameter_grid = full_grid #random.sample(full_grid, 1)
         print(self._parameter_grid)
         self.number_of_draws = 1#len(self._parameter_grid)
 
