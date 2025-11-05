@@ -71,7 +71,7 @@ class ClimateDisruptionScenario(BaseScenario):
         )
 
     def draw_parameters(self, draw_number, rng):
-        return self._parameter_grid[draw_number]
+        return self._parameter_grid#[draw_number]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
