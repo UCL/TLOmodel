@@ -2624,9 +2624,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 # First, check for climate disruption
                 if (
-                    year >= 2025
-                    and self.module.parameters["services_affected_precip"] != "none"
-                    and self.module.parameters["services_affected_precip"] is not None
+                    year >= 2010 #>= 2025
+                    #and self.module.parameters["services_affected_precip"] != "none"
+                    #and self.module.parameters["services_affected_precip"] is not None
                 ):
                     fac_level = item.hsi_event.facility_info.level
                     facility_used = self.sim.population.props.at[item.hsi_event.target, f"level_{fac_level}"]
@@ -2646,10 +2646,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         ]
                         base_scale = self.module.parameters["scale_factor_delay_in_seeking_care_weather"]
                         scale_factor_delay = max(1, base_scale + np.random.uniform(-2, 2))
-                        prob_disruption = pd.DataFrame(prob_disruption)
-                        prob_disruption = min(
-                            float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
-                        )  # to account for some structural differences
+                        #prob_disruption = pd.DataFrame(prob_disruption)
+                        #prob_disruption = min(
+                        #    float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
+                        #)  # to account for some structural differences
+                        prob_disruption = 0.5
                         if np.random.binomial(1, prob_disruption) == 1:
                             climate_disrupted = True
                             if self.sim.modules[
