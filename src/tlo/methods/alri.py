@@ -1943,7 +1943,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Compute the incidence rate for each person getting Alri and then convert into a probability
         # getting all children that do not currently have an Alri episode (never had or last episode resolved)
         mask_could_get_new_alri_event = (
-            df.is_alive & (df.age_years < 5) & ~df.ri_current_infection_status &
+            df.is_alive & (df.age_years < m.parameters['child_age_threshold']) & ~df.ri_current_infection_status &
             ((df.ri_end_of_current_episode < self.sim.date) | pd.isnull(df.ri_end_of_current_episode))
         )
 
