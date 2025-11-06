@@ -1451,6 +1451,11 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
 
     tlo_availability_df = tlo_availability_df[tlo_availability_df.Facility_Level.isin(correct_order_of_fac_levels)]
 
+    # Month labels used for any plot showing months (A2, A3, B2, B3)
+    month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    # Mapping integer month columns (1-12) to month labels
+    month_map = {i + 1: month_labels[i] for i in range(12)}
+
     # A) HEATMAP OF ESSENTIAL CONSUMABLES AVAILABILITY
     # A1) Essential consumables: average over the entire year at each facility level
     # ###
@@ -1549,14 +1554,12 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
                            pd.DataFrame([{'item_level': item_level, "month": month,
                                           "available_prop": val.values[0] if not val.empty else None}])],
                           ignore_index=True)
-    print(f"\nmonthly_aggregated_data_requested_fac_level:\n{monthly_aggregated_data_requested_fac_level}")
 
     # Pivot for heatmap
     heatmap_data_requested_fac_level_raw = \
         monthly_aggregated_data_requested_fac_level.pivot(
             index="item_level", columns="month", values="available_prop"
         )
-    print(f"\nheatmap_data_requested_fac_level_raw:\n{heatmap_data_requested_fac_level_raw}")
     # Map item codes to names
     item_level_labels_to_map = {"208_1a": "CSB++*\nfacility level 1", "1227_1a": "RUTF\nfacility level 1",
                                "1227_1b": "RUTF\nfacility level 2",
@@ -1568,8 +1571,9 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
         heatmap_data_requested_fac_level.reindex([item_level_labels_to_map[item_level] for item_level in ess_cons_requested_at])
     heatmap_data_requested_fac_level["Average"] = heatmap_data_requested_fac_level.mean(axis=1)
     heatmap_data_requested_fac_level[""] = np.nan  # Add empty column for spacing
-    # Reorder columns: months 1-12, empty column, then Average
-    ordered_cols = list(range(1, 13)) + ["", "Average"]
+    # Reorder columns: months Jan-Dec, empty column, then Average
+    heatmap_data_requested_fac_level = heatmap_data_requested_fac_level.rename(columns=month_map)
+    ordered_cols = month_labels + ["", "Average"]
     heatmap_data_requested_fac_level = heatmap_data_requested_fac_level[ordered_cols]
     plt.figure(figsize=(12, 4))
     sns.heatmap(
@@ -1689,8 +1693,9 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
         pd.DataFrame.from_dict(treatment_availability_requested_fac_level, orient='index',columns=months)
     treatment_heatmap_data_requested_fac_level['Average'] = treatment_heatmap_data_requested_fac_level.mean(axis=1)
     treatment_heatmap_data_requested_fac_level[''] = np.nan
-    # Reorder columns: months 1-12, empty column, then Average
-    ordered_cols = list(range(1, 13)) + ["", "Average"]
+    # Reorder columns: months Jan-Dec, empty column, then Average
+    treatment_heatmap_data_requested_fac_level = treatment_heatmap_data_requested_fac_level.rename(columns=month_map)
+    ordered_cols = month_labels + ["", "Average"]
     treatment_heatmap_data_requested_fac_level = treatment_heatmap_data_requested_fac_level[ordered_cols]
 
     # Generate the heatmap
