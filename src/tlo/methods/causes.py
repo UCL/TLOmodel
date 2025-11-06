@@ -7,7 +7,6 @@ from copy import copy
 from typing import Union
 
 import pandas as pd
-
 from tlo.methods import Metadata
 
 

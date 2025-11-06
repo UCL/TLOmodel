@@ -4,7 +4,6 @@ currently, and eventually."""
 from pathlib import Path
 
 import pandas as pd
-
 from tlo import Date, Module, Simulation
 from tlo.analysis.utils import format_gbd
 from tlo.methods import (

@@ -9,7 +9,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,

@@ -2,7 +2,6 @@ import re
 
 import pytest
 from pandas.tests.extension.base import BaseDtypeTests
-
 from tlo.bitset_handler.bitset_extension import BitsetDtype
 
 

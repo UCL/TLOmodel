@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (

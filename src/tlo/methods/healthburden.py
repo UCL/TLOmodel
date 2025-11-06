@@ -8,7 +8,6 @@ from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
-
 from tlo import Date, DateOffset, Module, Parameter, Types, logging
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata

@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
-
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,

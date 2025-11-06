@@ -1,5 +1,4 @@
 import pytest
-
 from tlo import progressbar
 
 

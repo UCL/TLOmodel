@@ -30,7 +30,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 from tlo.analysis.utils import make_calendar_period_lookup
 from tlo.util import create_age_range_lookup
 

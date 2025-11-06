@@ -4,7 +4,6 @@ from typing import Counter, Dict, Iterable, Literal, Set, Union
 
 import numpy as np
 import pandas as pd
-
 from tlo import logging
 from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 

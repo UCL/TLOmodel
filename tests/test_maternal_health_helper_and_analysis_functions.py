@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 import pandas as pd
-
 from tlo import Date, Simulation
 from tlo.methods import (
     care_of_women_during_pregnancy,

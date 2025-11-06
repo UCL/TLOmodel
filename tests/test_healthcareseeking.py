@@ -7,7 +7,6 @@ from typing import Iterable, List, Optional
 import numpy as np
 import pandas as pd
 from pandas import DateOffset
-
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin

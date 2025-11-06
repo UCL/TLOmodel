@@ -6,7 +6,6 @@ from contextlib import contextmanager
 from typing import Any, Dict, Optional, Set
 
 import pandas as pd
-
 from tlo import Property, logging
 
 logger = logging.getLogger(__name__)

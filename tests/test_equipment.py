@@ -7,7 +7,6 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 import pytest
-
 from tlo import Date, Module, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin

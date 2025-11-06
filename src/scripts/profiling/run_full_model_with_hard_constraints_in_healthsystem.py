@@ -13,7 +13,6 @@ from pathlib import Path
 
 import pandas as pd
 import shared
-
 from tlo import Date, Simulation, logging
 from tlo.methods import (
     cardio_metabolic_disorders,

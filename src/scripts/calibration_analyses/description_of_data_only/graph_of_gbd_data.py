@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 from matplotlib import pyplot as plt
-
 from tlo.analysis.utils import format_gbd
 
 # Where will outputs go

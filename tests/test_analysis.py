@@ -5,7 +5,6 @@ from typing import List
 import numpy as np
 import pandas as pd
 import pytest
-
 from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
 from tlo.analysis.utils import (
     colors_in_matplotlib,

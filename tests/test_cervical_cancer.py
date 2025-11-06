@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-
 from tlo import DAYS_IN_YEAR, Date, DateOffset, Simulation
 from tlo.methods import (
     cervical_cancer,

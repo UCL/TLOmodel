@@ -6,7 +6,6 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 import pytest
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager

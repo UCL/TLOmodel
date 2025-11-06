@@ -3,7 +3,6 @@ from operator import itemgetter
 from pathlib import Path
 
 import pandas as pd
-
 from tlo import Date, Simulation
 from tlo.methods import (
     chronicsyndrome,

@@ -8,7 +8,6 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from pandas.core.computation.parsing import clean_column_name
-
 from tlo import logging
 
 logger = logging.getLogger(__name__)

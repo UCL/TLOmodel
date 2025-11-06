@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import squarify
-
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,

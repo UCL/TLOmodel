@@ -6,7 +6,6 @@ from typing import Any, Callable, Iterable, List, Set
 
 import pandas as pd
 import pytest
-
 from tlo.bitset_handler.bitset_extension import BitsetDtype, CastableForPandasOps, ElementType
 
 

@@ -1,7 +1,6 @@
 import importlib
 
 import pytest
-
 from tlo.docs import (
     extract_bases,
     generate_module_dict,

@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 import pandas as pd
-
 from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.test import random_birth, random_death
