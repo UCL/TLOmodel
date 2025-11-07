@@ -196,6 +196,9 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         "main_polling_frequency_months": Parameter(
             Types.INT, "frequency in months for main polling event"
         ),
+        "delay_initial_main_polling_event_days": Parameter(
+            Types.INT, "delay in months for initial main polling event"
+        ),
         "beddays_treatment": Parameter(
             Types.INT, "number of bed days required for bladder cancer treatment"
         ),
@@ -427,7 +430,8 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(BladderCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(BladderCancerMainPollingEvent(self), sim.date +
+                           DateOffset(months=self.parameters['delay_initial_main_polling_event_days']))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
