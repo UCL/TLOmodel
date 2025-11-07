@@ -2710,7 +2710,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                     1,
                                 )
                                 will_seek_care = 0
-                                will_seek_care_prob = 0.5
+                                will_seek_care_prob = 1
                                 if random.random() < will_seek_care_prob:
                                     will_seek_care = 1
                                 if will_seek_care:
