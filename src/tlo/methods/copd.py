@@ -139,7 +139,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         ),
 
         # Time-related parameters
-        'poll_frequency_months': Parameter(
+        'main_polling_frequency_months': Parameter(
             Types.INT, 'Frequency of COPD polling events in months'
         ),
         'exacerbation_symptom_duration_days': Parameter(
@@ -150,7 +150,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         ),
 
         # Healthcare system parameters
-        'beddays_general_bed': Parameter(
+        'beddays_severe_exacerbation': Parameter(
             Types.INT, 'Number of general bed days required for severe exacerbation'
         ),
 
@@ -510,7 +510,7 @@ class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
     """An event that controls the COPD infection process and logs current states. It repeats every 3 months."""
 
     def __init__(self, module):
-        super().__init__(module, frequency=pd.DateOffset(months=module.parameters['poll_frequency_months']))
+        super().__init__(module, frequency=pd.DateOffset(months=module.parameters['main_polling_frequency_months']))
 
     def apply(self, population):
         """
@@ -539,7 +539,7 @@ class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
     def gen_random_date_in_next_three_months(self):
         """Returns a datetime for a day that is chosen randomly to be within the next polling period."""
         return random_date(self.sim.date, self.sim.date + pd.DateOffset(
-            months=self.module.parameters['poll_frequency_months']), self.module.rng)
+            months=self.module.parameters['main_polling_frequency_months']), self.module.rng)
 
     @staticmethod
     def increment_category(ser: pd.Series) -> pd.Series:
@@ -647,7 +647,8 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
         self.TREATMENT_ID = "Copd_Treatment"
         self.ACCEPTED_FACILITY_LEVEL = self.all_facility_levels[self.facility_levels_index]
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': module.parameters['beddays_general_bed']})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'general_bed': module.parameters['beddays_severe_exacerbation']}))
 
     def apply(self, person_id, squeeze_factor):
         """What to do when someone presents for care with an exacerbation.
