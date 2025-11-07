@@ -4,7 +4,6 @@ from io import StringIO
 
 import pandas as pd
 import pytest
-
 from tlo import Module, Parameter, Property, Types
 
 

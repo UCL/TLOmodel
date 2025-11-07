@@ -7,7 +7,6 @@ Run on the batch system using:
 """
 
 import numpy as np
-
 from tlo import Date, logging
 from tlo.methods import (
     demography,

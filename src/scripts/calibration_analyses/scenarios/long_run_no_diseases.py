@@ -10,7 +10,6 @@ or locally using:
 
 """
 import pandas as pd
-
 from tlo import Date, logging
 from tlo.methods import contraception, demography, hiv
 from tlo.scenario import BaseScenario

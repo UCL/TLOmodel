@@ -5,7 +5,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 from tlo.analysis.life_expectancy import (
     get_life_expectancy_estimates,
     get_probability_of_premature_death,

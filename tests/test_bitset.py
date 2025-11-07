@@ -3,7 +3,6 @@ from unittest.mock import Mock
 import numpy as np
 import pandas as pd
 import pytest
-
 from tlo import Population
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.util import BitsetDType, BitsetHandler

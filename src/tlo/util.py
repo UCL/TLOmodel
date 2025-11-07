@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, DateOffset
 from pandas._typing import DtypeArg
-
 from tlo import Population, Property, Types
 
 # Default mother_id value, assigned to individuals initialised as adults at the start of the simulation.

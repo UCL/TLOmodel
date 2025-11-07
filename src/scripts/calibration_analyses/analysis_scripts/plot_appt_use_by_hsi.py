@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pandas as pd
 from matplotlib import pyplot as plt
-
 from tlo import Date
 from tlo.analysis.utils import (
     bin_hsi_event_details,

@@ -10,7 +10,6 @@ from typing import Dict, NamedTuple, Optional
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import ticker
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
 from tlo.methods import demography, enhanced_lifestyle, simplified_births

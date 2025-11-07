@@ -10,7 +10,6 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-
 from scripts.calibration_analyses.analysis_scripts import plot_legends
 from scripts.healthsystem.org_chart_of_hsi import plot_org_chart_treatment_ids
 from scripts.overview_paper.B_finding_effects_of_each_treatment.scenario_effect_of_each_treatment import (

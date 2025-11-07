@@ -1,7 +1,6 @@
 import numpy as np
 import scipy.stats as st
 from matplotlib import pyplot as plt
-
 from tlo.analysis.utils import extract_results
 
 plt.style.use('seaborn-darkgrid')

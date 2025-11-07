@@ -9,9 +9,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from scipy.stats import chisquare
-
 import tlo.util
+from scipy.stats import chisquare
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography

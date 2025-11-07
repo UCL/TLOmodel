@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-
 from tlo import Module, logging
 from tlo.util import read_csv_files
 

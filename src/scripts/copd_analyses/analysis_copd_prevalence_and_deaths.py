@@ -8,7 +8,6 @@ from pathlib import Path
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.font_manager import FontProperties
-
 from tlo import Date, Simulation
 from tlo.analysis.utils import (
     compare_number_of_deaths,

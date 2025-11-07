@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 import pandas as pd
-
 from tlo.analysis.utils import (
     extract_results,
     get_scenario_info,

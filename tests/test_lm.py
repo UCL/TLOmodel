@@ -6,7 +6,6 @@ from textwrap import dedent
 import numpy as np
 import pandas as pd
 import pytest
-
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
 

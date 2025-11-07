@@ -5,7 +5,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
 

@@ -10,7 +10,6 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 import pytest
-
 import tlo.logging as logging
 import tlo.logging.core as core
 

@@ -10,7 +10,6 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-
 from scripts.calibration_analyses.analysis_scripts import plot_legends
 from tlo import Date
 from tlo.analysis.utils import (

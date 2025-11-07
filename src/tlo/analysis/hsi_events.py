@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any, Iterable, List, Mapping, Optional, Set, Union
 
 import pandas as pd
-
 import tlo.methods
 from tlo import Date, Module, Simulation
 from tlo.analysis.utils import get_root_path

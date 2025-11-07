@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Optional
 import numpy as np
 import pandas as pd
 import scipy.stats
-
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType

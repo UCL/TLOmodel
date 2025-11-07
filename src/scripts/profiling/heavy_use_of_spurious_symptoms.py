@@ -4,7 +4,6 @@
 from pathlib import Path
 
 from pandas import DateOffset
-
 from tlo import Date, Simulation, logging
 from tlo.methods import demography, healthsystem, simplified_births, symptommanager
 

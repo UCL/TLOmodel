@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pandas as pd
 import pydot
-
 from tlo.analysis.utils import (
     get_color_short_treatment_id,
     get_filtered_treatment_ids,

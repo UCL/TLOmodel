@@ -7,7 +7,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from tlo.util import read_csv_files
 
 resourcefilepath = Path("./resources")

@@ -15,7 +15,6 @@ from pathlib import Path
 
 import pandas as pd
 import shared
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType

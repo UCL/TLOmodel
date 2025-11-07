@@ -5,7 +5,6 @@ modelled against the GBD data.
 """
 
 import matplotlib.pyplot as plt
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths, get_root_path
 from tlo.methods import (

@@ -14,7 +14,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-
 from scripts.costing.cost_estimation import (
     create_summary_treemap_by_cost_subgroup,
     do_line_plot_of_cost,

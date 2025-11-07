@@ -3,7 +3,6 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata

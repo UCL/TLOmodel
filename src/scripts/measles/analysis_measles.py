@@ -3,7 +3,6 @@
 # import time
 
 import matplotlib.pyplot as plt
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (

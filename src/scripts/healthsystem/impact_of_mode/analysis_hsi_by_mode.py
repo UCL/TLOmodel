@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Tuple
 
 import pandas as pd
-
 from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
 

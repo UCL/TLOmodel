@@ -20,7 +20,6 @@ import numpy as np
 import pandas as pd
 import scipy.stats as st
 import squarify
-
 from tlo import Date, Simulation, logging, util
 from tlo.logging.reader import LogData
 from tlo.util import (

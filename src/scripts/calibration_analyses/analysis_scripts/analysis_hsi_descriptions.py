@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import squarify
 from matplotlib import pyplot as plt
-
 from tlo import Date
 from tlo.analysis.utils import (
     COARSE_APPT_TYPE_TO_COLOR_MAP,

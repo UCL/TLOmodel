@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from pytest import approx
-
 from tlo import DAYS_IN_YEAR, Date, Module, Simulation, logging
 from tlo.analysis.utils import get_mappers_in_fullmodel, parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin

@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 
 import pytest
-
 from tlo.scenario import BaseScenario, SampleRunner, ScenarioLoader
 
 

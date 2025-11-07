@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 from pytest import fixture
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 

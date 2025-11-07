@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, List, Optional, Union
 
 import numpy as np
 import pandas as pd
-
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
