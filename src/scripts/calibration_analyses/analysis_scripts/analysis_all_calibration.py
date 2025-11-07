@@ -8,6 +8,7 @@ import analysis_cause_of_death_and_disability_calibrations
 import analysis_demography_calibrations
 import analysis_hsi_descriptions
 import plot_legends
+
 from scripts.calibration_analyses.analysis_scripts import (
     analysis_compare_appt_usage_real_and_simulation,
     plot_appt_use_by_hsi,

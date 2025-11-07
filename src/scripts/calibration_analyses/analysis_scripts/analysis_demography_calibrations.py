@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
+
 from tlo.analysis.utils import (
     extract_results,
     format_gbd,

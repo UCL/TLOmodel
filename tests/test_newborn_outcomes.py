@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (

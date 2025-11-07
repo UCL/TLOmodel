@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
 from tlo.methods import (

@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 from pytest import approx
 from scipy.stats import norm
+
 from tlo import Date, Simulation
 from tlo.lm import LinearModel, Predictor
 from tlo.methods import demography, enhanced_lifestyle, healthsystem, simplified_births, stunting

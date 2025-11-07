@@ -9,6 +9,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+
 from scripts.impact_of_historical_changes_in_hr.scenario_historical_changes_in_hr import (
     HistoricalChangesInHRH,
 )

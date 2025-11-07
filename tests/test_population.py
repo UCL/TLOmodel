@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+
 from tlo.core import Property, Types
 from tlo.population import Population
 

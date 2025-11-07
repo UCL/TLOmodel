@@ -3,6 +3,7 @@ from typing import Dict, List
 
 import numpy as np
 import pytest
+
 from tlo import Date, DateOffset, Module, Population, Simulation, logging
 from tlo.analysis.utils import merge_log_files, parse_log_file
 from tlo.methods.fullmodel import fullmodel

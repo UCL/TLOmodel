@@ -6,6 +6,7 @@ from typing import Dict
 
 import pandas as pd
 import pytest
+
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent

@@ -9,6 +9,7 @@ from typing import Dict, Literal, Tuple
 
 import numpy as np
 import pandas as pd
+
 from tlo import Date, Property, Types, logging
 
 # ---------------------------------------------------------------------------------------------------------

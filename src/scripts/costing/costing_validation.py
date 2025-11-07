@@ -7,6 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 from scripts.costing.cost_estimation import (
     do_stacked_bar_plot_of_cost_by_category,
     estimate_input_cost_of_scenarios,

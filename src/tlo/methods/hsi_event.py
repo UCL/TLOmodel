@@ -4,6 +4,7 @@ from collections import Counter
 from typing import TYPE_CHECKING, Dict, Iterable, Literal, NamedTuple, Optional, Set, Tuple, Union
 
 import numpy as np
+
 from tlo import Date, logging
 from tlo.events import Event
 

@@ -6,6 +6,7 @@ from random import shuffle
 from types import GeneratorType
 
 import pytest
+
 from tlo import Date, Module, Simulation, logging
 from tlo.dependencies import (
     ModuleDependencyError,

@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
+
 from tlo import Date, DateOffset, Module, Parameter, Types
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel

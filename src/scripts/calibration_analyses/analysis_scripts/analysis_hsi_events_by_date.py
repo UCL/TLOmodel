@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,

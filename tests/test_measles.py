@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+
 from tlo import Date, Simulation, logging
 from tlo.methods import (
     demography,

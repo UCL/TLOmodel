@@ -6,6 +6,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths
 from tlo.methods import (

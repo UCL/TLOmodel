@@ -9,6 +9,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 from tlo.analysis.utils import compare_number_of_deaths
 from tlo.util import read_csv_files
 

@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Set
 
 import numpy as np
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata

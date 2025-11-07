@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Tuple, TypeAlias, Union
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_bool_dtype, is_categorical_dtype, is_float_dtype
+
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
 

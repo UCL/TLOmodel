@@ -5,6 +5,7 @@ module suite
 
 import numpy as np
 import pandas as pd
+
 from tlo import logging
 
 

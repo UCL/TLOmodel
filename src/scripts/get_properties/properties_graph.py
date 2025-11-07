@@ -10,6 +10,7 @@ from types import MappingProxyType
 from typing import Any, Mapping, Set, Type, Union
 
 import numpy as np
+
 import tlo.methods
 from tlo import Module
 from tlo.analysis.utils import _standardize_short_treatment_id

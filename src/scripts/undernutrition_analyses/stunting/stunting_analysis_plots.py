@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.stats import norm
+
 from tlo import Date, Simulation
 from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 from tlo.methods import demography, enhanced_lifestyle, healthsystem, simplified_births, stunting

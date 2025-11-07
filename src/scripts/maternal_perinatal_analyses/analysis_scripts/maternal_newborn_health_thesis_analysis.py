@@ -10,6 +10,7 @@ from analysis_utility_functions import (
     return_95_CI_across_runs,
 )
 from matplotlib import pyplot as plt
+
 from tlo.analysis.utils import extract_results, get_scenario_outputs
 
 plt.style.use('seaborn-darkgrid')

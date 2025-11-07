@@ -12,6 +12,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Dict, List, Protocol, Set, Union
 
 import numpy as np
+
 from tlo import Date, Module, logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.hsi_event import HSI_Event

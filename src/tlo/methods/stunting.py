@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Optional, Union
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
+
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor

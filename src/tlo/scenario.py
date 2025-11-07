@@ -69,6 +69,7 @@ from pathlib import Path, PurePosixPath
 from typing import List, Optional
 
 import numpy as np
+
 from tlo import Date, Simulation, logging
 from tlo.util import str_to_pandas_date
 

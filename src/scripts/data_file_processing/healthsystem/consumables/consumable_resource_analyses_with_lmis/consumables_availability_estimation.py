@@ -29,6 +29,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 from tlo.methods.consumables import check_format_of_consumables_file
 
 # Set local shared folder source

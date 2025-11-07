@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from adjustText import adjust_text  # For the CEA plane figure to avoid overlaps in data labels
+
 from scripts.costing.cost_estimation import (
     apply_discounting_to_cost_data,
     do_line_plot_of_cost,

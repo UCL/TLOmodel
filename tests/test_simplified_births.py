@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+
 from tlo import Date, Simulation, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography, simplified_births

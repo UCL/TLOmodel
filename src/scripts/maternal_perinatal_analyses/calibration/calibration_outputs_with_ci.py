@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 import scipy.stats as st
 from matplotlib import pyplot as plt
-from tlo.analysis.utils import extract_results, get_scenario_outputs
 
 from src.scripts.maternal_perinatal_analyses.analysis_scripts import analysis_utility_functions
+from tlo.analysis.utils import extract_results, get_scenario_outputs
 
 plt.style.use('seaborn')
 

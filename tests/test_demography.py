@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from pytest import approx
+
 from tlo import DAYS_IN_MONTH, DAYS_IN_YEAR, Date, Module, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import Metadata, demography

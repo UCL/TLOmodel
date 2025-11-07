@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas import DateOffset
+
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (

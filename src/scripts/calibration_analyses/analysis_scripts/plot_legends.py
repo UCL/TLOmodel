@@ -4,6 +4,7 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     get_coarse_appt_type,

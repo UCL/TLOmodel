@@ -6,6 +6,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+
 from tlo.analysis.utils import (
     extract_params,
     extract_results,

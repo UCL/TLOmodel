@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 from matplotlib import dates as mdates
+
 from tlo.analysis.utils import parse_log_file
 
 # ### TO SET #################################################################################################

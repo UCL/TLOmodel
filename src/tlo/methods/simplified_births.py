@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import List, Optional
 
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods.contraception import get_medium_variant_asfr_from_wpp_resourcefile

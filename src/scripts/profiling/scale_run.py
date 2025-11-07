@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from pyinstrument import Profiler
 
 from shared import print_checksum, schedule_profile_log
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import LogsDict
 from tlo.analysis.utils import parse_log_file as parse_log_file_fn

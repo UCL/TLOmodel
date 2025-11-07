@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pytest
+
 from tlo import Date, Simulation
 from tlo.methods import (
     demography,

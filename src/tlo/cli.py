@@ -22,6 +22,7 @@ from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from azure.storage.fileshare import ShareClient, ShareDirectoryClient, ShareFileClient
 from git import Repo
+
 from tlo.analysis.utils import parse_log_file
 from tlo.scenario import SampleRunner, ScenarioLoader
 

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, List
 
 import pytest
 from pandas import DateOffset
+
 from tlo import Date, Simulation
 from tlo.methods import (
     chronicsyndrome,

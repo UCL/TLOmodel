@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+
 from tlo import DAYS_IN_YEAR, Date, Simulation
 from tlo.methods import (
     bladder_cancer,

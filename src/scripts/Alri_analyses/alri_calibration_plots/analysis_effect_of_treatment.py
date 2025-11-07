@@ -6,6 +6,7 @@ from typing import List
 
 import pandas as pd
 from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation
 from tlo.methods import (
     alri,
