@@ -204,6 +204,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             "Proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; 1.0 for perfect efficacy.",
         ),
         # Natural history - survival (adults)
+        "min_months_between_aids_and_death": Parameter(
+            Types.INT,
+            "Minimum number of months for the time between AIDS and AIDS Death",
+        ),
         "mean_months_between_aids_and_death": Parameter(
             Types.REAL,
             "Mean number of months (distributed exponentially) for the time between AIDS and AIDS Death",
@@ -393,8 +397,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             "number of repeat visits assumed for healthcare services",
         ),
         "dispensation_period_months": Parameter(
-            Types.REAL,
+            Types.INT,
             "length of prescription for ARVs in months, same for all PLHIV",
+        ),
+        "dispensation_min_days": Parameter(
+            Types.REAL,
+            "Minimum days to attain ARV dispensation",
         ),
         "length_of_inpatient_stay_if_terminal": Parameter(
             Types.LIST,
@@ -426,6 +434,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         "hiv_regular_polling_event_frequency_months": Parameter(
             Types.INT,
             "Frequency in months for HivRegularPollingEvent"
+        ),
+        "regular_polling_event_initialisation_delay_days": Parameter(
+            Types.INT,
+            "Delay in days for initial HivRegularPollingEvent"
         ),
         "hiv_check_properties_event_delay_months": Parameter(
             Types.INT,
@@ -1041,7 +1053,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # all those on ART need to have event scheduled for continuation/cessation of treatment
         # this window is 1-90 days (3-monthly prescribing)
         for person in art_idx:
-            days = self.rng.randint(low=1, high=params['dispensation_period_months'] * 30.5, dtype=np.int64)
+            days = self.rng.randint(low=params['dispensation_min_days'],
+                                    high=params['dispensation_period_months'] * 30.5, dtype=np.int64)
 
             date_treated = (params['dispensation_period_months'] * 30.5) - days
             df.at[person, "hv_date_treated"] = self.sim.date - pd.to_timedelta(date_treated, unit="days")
@@ -1139,7 +1152,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # 1) Schedule the Main HIV Regular Polling Event
         sim.schedule_event(
-            HivRegularPollingEvent(self), sim.date + DateOffset(days=0)
+            HivRegularPollingEvent(self), sim.date +
+                DateOffset(days=p['regular_polling_event_initialisation_delay_days'])
         )
 
         # 2) Schedule the Logging Event
@@ -1221,7 +1235,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
             date_aids_death = (
                 self.sim.date + pd.DateOffset(
-                months=self.rng.randint(low=0, high=p['mean_months_between_aids_and_death']))
+                months=self.rng.randint(low=p['min_months_between_aids_and_death'],
+                                        high=p['mean_months_between_aids_and_death']))
             )
 
             # proportion of AIDS deaths that have TB co-infection
