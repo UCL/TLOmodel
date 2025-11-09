@@ -241,6 +241,8 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         'probability_of_severe_dehydration_if_some_dehydration':
             Parameter(Types.REAL, 'probability that someone with diarrhoea and some dehydration develops severe '
                                   'dehydration'),
+        'prob_remove_dehydration_no_treatment':
+            Parameter(Types.REAL, 'probability that someone with diarrhoea stops without treatment'),
 
         # Parameters governing the duration of the episode
         'prob_prolonged_diarr_rotavirus':
@@ -441,6 +443,9 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
             Parameter(Types.INT, 'number of days reduced duration with zinc'),
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
+        'prob_clear_bacterial_infection_no_treatment':
+            Parameter(Types.REAL,
+                      'probability clear bacterial infection no treatment.'),
 
         # Parameters describing efficacy of the monovalent rotavirus vaccine (R1)
         'rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo':
@@ -449,11 +454,20 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         'rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo':
             Parameter(Types.REAL,
                       'relative risk of severe dehydration with rotavirus vaccine, for those aged 1 year and older.'),
+        'relative_prob_severe_dehydration_no_vaccine':
+            Parameter(Types.REAL,
+                      'relative probability of severe dehydration without rotavirus vaccine.'),
+
 
         # Parameters describing thresholds for severity of diarrhoea
         'persistent_diarrhoea_threshold_days':
             Parameter(Types.REAL,
                       'Days of symptoms after which classification is persistent diarrhoea.'),
+
+        # Parameters module design
+        'main_polling_frequency':
+            Parameter(Types.INT,
+              'Main polling frequency for event that runs acquisition of pathogens that cause Diarrhoea.'),
 
     }
 
@@ -723,7 +737,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         )
 
         # STEP ONE: Aim to alleviate dehydration:
-        prob_remove_dehydration = 0.0
+        prob_remove_dehydration = p['prob_remove_dehydration_no_treatment']
         if is_in_patient:
             if hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
                 # In-patient receiving IV fluids (WHO Plan C)
@@ -747,7 +761,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         ):
             prob_clear_bacterial_infection = self.parameters['prob_antibiotic_cures_dysentery']
         else:
-            prob_clear_bacterial_infection = 0.0
+            prob_clear_bacterial_infection = p['prob_clear_bacterial_infection_no_treatment']
 
         # Determine type after treatment
         type_after_treatment = 'watery' if self.rng.rand() < prob_clear_bacterial_infection else person.gi_type
@@ -1116,7 +1130,7 @@ class Models:
                 self.p['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] if age_years < 1 \
                 else self.p['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo']
         else:
-            relative_prob_severe_dehydration_due_to_vaccine = 1.0
+            relative_prob_severe_dehydration_due_to_vaccine = self.p['relative_prob_severe_dehydration_no_vaccine']
 
         if self.rng.rand() < self.p[f'prob_dehydration_by_{pathogen}']:
             if self.rng.rand() < (
@@ -1271,7 +1285,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+        super().__init__(module, frequency=DateOffset(months= module.parameters['main_polling_frequency']))
         # NB. The frequency of the occurrences of this event can be edited safely.
         self.fraction_of_a_year_until_next_polling_event = self.compute_fraction_of_year_between_polling_event()
 
