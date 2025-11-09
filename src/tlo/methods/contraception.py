@@ -378,7 +378,7 @@ class Contraception(Module):
             # Input 'probs' must include probs for all methods including 'not_using'
             assert set(probs.index) == set(self.all_contraception_states)
 
-            # Prevent women below sterilization_age_limit years having 'female_sterilization'
+            # Prevent women below sterilization age limit from having 'female_sterilization'
             probs_below_limit = probs.copy()
             probs_below_limit['female_sterilization'] = 0.0
             # Scale so that the probability of all outcomes sum to 1.0
@@ -457,7 +457,7 @@ class Contraception(Module):
             # Columns = "current method"; Row = "new method"
             switching_matrix = self.parameters['Prob_Switch_From_And_To'].set_index('switchfrom').transpose()
 
-            # Prevent women below sterilization_age_limit years having 'female_sterilization'
+            # Prevent women below sterilization age limit from having 'female_sterilization'
             switching_matrix_below_limit = switching_matrix.copy()
             switching_matrix_below_limit.loc['female_sterilization', :] = 0.0
             switching_matrix_below_limit = switching_matrix_below_limit.apply(lambda col: col / col.sum())
