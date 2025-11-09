@@ -134,6 +134,8 @@ class PostnatalSupervisor(Module):
             Types.LIST, 'case fatality rate of severe pre-eclampsia in the postnatal period'),
         'weekly_prob_death_severe_gest_htn': Parameter(
             Types.LIST, 'weekly risk of death from  severe hypertension in the postnatal period'),
+        'bmi_obesity': Parameter(
+            Types.LIST, 'BMI for obesity classification'),
 
         # ANAEMIA
         'baseline_prob_anaemia_per_week': Parameter(
@@ -208,6 +210,10 @@ class PostnatalSupervisor(Module):
                         'hypertension'),
 
         # TIMING AND SCHEDULING PARAMETERS
+        'initial_event_delay_days': Parameter(
+            Types.INT, 'Initial PostnatalSupervisorEvent delay days'),
+        'main_polling_event_frequency_weeks': Parameter(
+            Types.INT, ' PostnatalSupervisorEvent polling frequency in weeks'),
         'fistula_repair_min_days': Parameter(
             Types.LIST, 'Minimum days after birth to schedule obstetric fistula repair'),
         'fistula_repair_max_days': Parameter(
@@ -279,12 +285,14 @@ class PostnatalSupervisor(Module):
         df.loc[df.is_alive, 'pn_emergency_event_mother'] = False
 
     def initialise_simulation(self, sim):
+        p = self.parameters
+
         # For the first period (2010-2015) we use the first value in each list as a parameter
         pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # Schedule the first instance of the PostnatalSupervisorEvent
         sim.schedule_event(PostnatalSupervisorEvent(self),
-                           sim.date + DateOffset(days=0))
+                           sim.date + DateOffset(days=p['initial_event_delay_days']))
 
         # Register dx_tests used as assessment for postnatal conditions during PNC visits
         params = self.current_parameters
@@ -895,7 +903,8 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
       event ensures that the relevant postnatal/neonatal variables are reset for those who survive.
     """
     def __init__(self, module, ):
-        super().__init__(module, frequency=DateOffset(weeks=1))
+        p = module.parameters
+        super().__init__(module, frequency=DateOffset(weeks=p['main_polling_event_frequency_weeks']))
 
     def apply(self, population):
         df = population.props
