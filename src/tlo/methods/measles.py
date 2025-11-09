@@ -307,7 +307,8 @@ class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
             for person_index in new_inf:
                 self.sim.schedule_event(
                     MeaslesOnsetEvent(self.module, person_index),
-                    random_date(start=self.sim.date, end=self.sim.date + pd.DateOffset(months=1), rng=rng)
+                    random_date(start=self.sim.date,
+                      end=self.sim.date + pd.DateOffset(months=p['main_polling_event_frequency_months']), rng=rng)
                 )
 
 
