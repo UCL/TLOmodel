@@ -557,6 +557,19 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             'A parameter to determine which level of injury severity corresponds to the emergency health care seeking '
             'symptom and which to the non-emergency generic injury symptom'
         ),
+        'prob_death_non_serious': Parameter(
+            Types.REAL,
+            'A parameter to determine the probability of death for non serious condition'
+        ),        'prob_death_MAIS1': Parameter(
+            Types.REAL,
+            'A parameter to determine the probability of death without medical intervention with a military AIS'
+            'score of 1'
+        ),
+        'prob_death_MAIS2': Parameter(
+            Types.REAL,
+            'A parameter to determine the probability of death without medical intervention with a military AIS'
+            'score of 2'
+        ),
         'prob_death_MAIS3': Parameter(
             Types.REAL,
             'A parameter to determine the probability of death without medical intervention with a military AIS'
@@ -1029,6 +1042,14 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             Types.INT,
             'Frequency in months for RTI polling events that determine new injuries'
         ),
+        'rti_check_death_no_med_event_frequency_days': Parameter(
+            Types.INT,
+            'Frequency in days for RTI check death no med event'
+        ),
+        'rti_recovery_event_frequency_days': Parameter(
+            Types.INT,
+            'Frequency in days for RTI recovery event'
+        ),
         'incidence_rate_frequency': Parameter(
             Types.INT,
             'Number of months per year for rate conversion calculations'
@@ -1057,7 +1078,35 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         'hsi_opening_delay_days': Parameter(
             Types.INT,
             'Number of days delay before HSI appointments can be scheduled'
-        )
+        ),
+        'main_polling_initialisation_delay_months': Parameter(
+            Types.INT,
+            'Delay in months at initialisation for first main polling event'
+        ),
+        'rti_recovery_initialisation_delay_months': Parameter(
+            Types.INT,
+            'Delay in months at initialisation for rti recovery event'
+        ),
+        'rti_check_death_no_med_initialisation_delay_months': Parameter(
+            Types.INT,
+            'Delay in months at initialisation for rti check death no med event'
+        ),
+        'non_permanent_tbi_recovery_months': Parameter(
+            Types.INT,
+            'Recovery duration in months for tbi if non permanent; sets  date for date_to_remove_daly_column'
+        ),
+        'rti_fracture_cast_recovery_weeks': Parameter(
+            Types.INT,
+            'Recovery duration in weeks for fracture cast; sets  date for date_to_remove_daly_column'
+        ),
+        'rti_open_fracture_recovery_months': Parameter(
+            Types.INT,
+            'Recovery duration in months for open fracture; sets  date for date_to_remove_daly_column'
+        ),
+        'rti_burn_recovery_weeks': Parameter(
+            Types.INT,
+            'Recovery duration in weeks for rti burn; sets  date for date_to_remove_daly_column'
+        ),
 
     }
 
@@ -1558,12 +1607,16 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         The final event is one which checks if this person has not sought sought care or been given care, if they
         haven't then it asks whether they should die away from their injuries
         """
+        p = self.parameters
         # Begin modelling road traffic injuries
-        sim.schedule_event(RTIPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(RTIPollingEvent(self), sim.date +
+                           DateOffset(months=p['main_polling_initialisation_delay_months']))
         # Begin checking whether the persons injuries are healed
-        sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(RTI_Recovery_Event(self), sim.date +
+                           DateOffset(months=p['rti_recovery_initialisation_delay_months']))
         # Begin checking whether those with untreated injuries die
-        sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date +
+                           DateOffset(months=p['rti_check_death_no_med_initialisation_delay_months']))
         # Begin logging the RTI events
         sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
         # Look-up consumable item codes
@@ -3132,10 +3185,13 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(days=1))
+        super().__init__(module, frequency=DateOffset(
+            days= module.parameters['rti_check_death_no_med_event_frequency_days']))
         assert isinstance(module, RTI)
         p = module.parameters
         # Load parameters used by this event
+        self.prob_death_MAIS1 = p['prob_death_MAIS1']
+        self.prob_death_MAIS2 = p['prob_death_MAIS2']
         self.prob_death_MAIS3 = p['prob_death_MAIS3']
         self.prob_death_MAIS4 = p['prob_death_MAIS4']
         self.prob_death_MAIS5 = p['prob_death_MAIS5']
@@ -3164,9 +3220,11 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
         now = self.sim.date
+        p = self.module.parameters
+
         probabilities_of_death = {
-            '1': 0,
-            '2': 0,
+            '1': self.prob_death_MAIS1,
+            '2': self.prob_death_MAIS2,
             '3': self.prob_death_MAIS3,
             '4': self.prob_death_MAIS4,
             '5': self.prob_death_MAIS5,
@@ -3196,7 +3254,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                 prob_death = probabilities_of_death[str(max_untreated_injury)]
                 if df.loc[person, 'rt_med_int'] and (max_untreated_injury < self.no_treatment_mortality_mais_cutoff):
                     # filter out non serious injuries from the consideration of mortality
-                    prob_death = 0
+                    prob_death = p['prob_death_non_serious']
                 if (rand_for_death < prob_death) and (df.at[person, 'rt_ISS_score'] > self.no_treatment_ISS_cut_off):
                     # If determined to die, schedule a death without med
                     df.loc[person, 'rt_no_med_death'] = True
@@ -3339,7 +3397,8 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(days=1))
+        super().__init__(module, frequency=DateOffset(
+            days= module.parameters['rti_recovery_event_frequency_days']))
         assert isinstance(module, RTI)
 
     def apply(self, population):
@@ -3873,7 +3932,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 else:
                     heal_with_time_codes.append(tbi_injury[0])
                     # using estimated 6 months PLACEHOLDER FOR TRAUMATIC BRAIN INJURY
-                    df.loc[person_id, date_to_remove_daly_column] = self.sim.date + DateOffset(months=6)
+                    df.loc[person_id, date_to_remove_daly_column] = (self.sim.date +
+                                                DateOffset(months=p['non_permanent_tbi_recovery_months']))
                     assert df.loc[person_id, date_to_remove_daly_column] > self.sim.date
             # swap potentially swappable codes
             swapping_codes = RTI.SWAPPING_CODES[:]
@@ -4129,6 +4189,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # Get the population and health system
         df = self.sim.population.props
         p = df.loc[person_id]
+        params = self.module.parameters
         self._number_of_times_this_event_has_run += 1
 
         # if the person isn't alive return a blank footprint
@@ -4212,7 +4273,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                 # todo: update this with recovery times for casted dislocated hip
                 date_to_remove_daly_column = RTI.INJURY_DATE_COLUMN_MAP[injury_column]
                 df.loc[person_id, date_to_remove_daly_column] = (
-                    self.sim.date + DateOffset(weeks=7)
+                    self.sim.date + DateOffset(weeks=params['rti_fracture_cast_recovery_weeks'])
                 )
                 # make sure the assigned injury recovery date is in the future
                 assert df.loc[person_id, date_to_remove_daly_column] > self.sim.date
@@ -4276,6 +4337,8 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        params = self.module.parameters
+
         self._number_of_times_this_event_has_run += 1
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
@@ -4330,7 +4393,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             # estimated 6-9 months recovery times for open fractures
             date_to_remove_daly_column = RTI.INJURY_DATE_COLUMN_MAP[columns[0]]
             df.loc[person_id, date_to_remove_daly_column] = (
-                self.sim.date + DateOffset(months=7)
+                self.sim.date + DateOffset(months= params['rti_open_fracture_recovery_months'])
             )
             assert df.loc[person_id, date_to_remove_daly_column] > self.sim.date
             assert not pd.isnull(
@@ -4540,7 +4603,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 date_to_remove_daly_column = RTI.INJURY_DATE_COLUMN_MAP[injury_column]
                 # estimate burns take 4 weeks to heal
                 df.loc[person_id, date_to_remove_daly_column] = (
-                    self.sim.date + DateOffset(weeks=4)
+                    self.sim.date + DateOffset(weeks=p['rti_burn_recovery_weeks'])
                 )
                 assert df.loc[person_id, date_to_remove_daly_column] > self.sim.date
                 persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
@@ -5490,6 +5553,8 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         self.prob_death_TBI_SCI_no_treatment = p['prob_death_TBI_SCI_no_treatment']
         self.prob_death_fractures_no_treatment = p['prob_death_fractures_no_treatment']
         self.prop_death_burns_no_treatment = p['prop_death_burns_no_treatment']
+        self.prob_death_MAIS1 = p['prob_death_MAIS1']
+        self.prob_death_MAIS2 = p['prob_death_MAIS2']
         self.prob_death_MAIS3 = p['prob_death_MAIS3']
         self.prob_death_MAIS4 = p['prob_death_MAIS4']
         self.prob_death_MAIS5 = p['prob_death_MAIS5']
@@ -5499,8 +5564,8 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
 
     def apply(self, person_id):
         probabilities_of_death = {
-            '1': 0,
-            '2': 0,
+            '1': self.prob_death_MAIS1,
+            '2': self.prob_death_MAIS2,
             '3': self.prob_death_MAIS3,
             '4': self.prob_death_MAIS4,
             '5': self.prob_death_MAIS5,
