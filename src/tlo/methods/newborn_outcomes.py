@@ -282,6 +282,10 @@ class NewbornOutcomes(Module):
             Types.INT, 'time interval for breastfeeding status update for neonates'),
         'breastfeeding_update_interval_after_6mo': Parameter(
             Types.INT, 'time interval for breastfeeding status update after infant is 6mo'),
+        'postnatal_check_early_event_min_days': Parameter(
+            Types.INT, 'minimum days to schedule postnatal check for early event'),
+        'postnatal_check_early_event_max_days':  Parameter(
+            Types.INT, 'maximum days to schedule postnatal check for early event'),
 
 
     }
@@ -1080,11 +1084,10 @@ class NewbornOutcomes(Module):
                     m['pnc_twin_one'] = 'early'
 
                 early_event = HSI_NewbornOutcomes_ReceivesPostnatalCheck(module=self, person_id=child_id)
-
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     early_event, priority=0,
-                    topen=self.sim.date + pd.DateOffset(days=1),
-                    tclose=self.sim.date + pd.DateOffset(days=2))
+                    topen=self.sim.date + pd.DateOffset(days=params['postnatal_check_early_event_min_days']),
+                    tclose=self.sim.date + pd.DateOffset(days=params['postnatal_check_early_event_max_days']))
 
             else:
                 # 'Late' PNC is scheduled in the postnatal supervisor module
