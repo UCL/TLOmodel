@@ -116,6 +116,9 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         'main_polling_event_frequency_months': Parameter(
             Types.INT, 'frequency in months for the main polling event that checks epilepsy status changes'
         ),
+        'main_polling_event_initial_delay_months': Parameter(
+            Types.INT, 'delay in months for the initial main polling event'
+        ),
         'age_threshold_epilepsy_transition': Parameter(
             Types.REAL, 'age threshold in years at which probability of developing epilepsy changes'
         ),
@@ -256,10 +259,10 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         """
         p = self.parameters
         epilepsy_poll = EpilepsyEvent(self)
-        sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=int(p['main_polling_event_frequency_months'])))
+        sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=p['main_polling_event_frequency_months']))
 
         event = EpilepsyLoggingEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=0))
+        sim.schedule_event(event, sim.date + DateOffset(months=p['main_polling_event_initial_delay_months']))
 
         # Get item_codes for the consumables used in the HSI
         hs = self.sim.modules['HealthSystem']
