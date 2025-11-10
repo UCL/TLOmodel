@@ -2636,7 +2636,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     ):
                         prob_disruption = self.module.parameters["projected_precip_disruptions"].loc[
                             (self.module.parameters["projected_precip_disruptions"]["RealFacility_ID"] == facility_used)
-                            & (self.module.parameters["projected_precip_disruptions"]["year"] == "2025")
+                            & (self.module.parameters["projected_precip_disruptions"]["year"] == 2025)
                             & (self.module.parameters["projected_precip_disruptions"]["month"] == month)
                             & (
                                 self.module.parameters["projected_precip_disruptions"]["service"]
