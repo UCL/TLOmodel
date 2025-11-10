@@ -1775,6 +1775,15 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         df = self.sim.population.props
         m = self.sim.modules["CardioMetabolicDisorders"]
         person_id = self.target
+        dose = {
+            "diabetes": 30_500,
+            "hypertension": 610,
+            "chronic_kidney_disease": 1,
+            "chronic_lower_back_pain": 73_200,
+            "chronic_ischemic_hd": 2288,
+            "ever_stroke": 2288,
+            "ever_heart_attack": 2288,
+        }
 
         # Check availability of medication for condition
         if self.get_consumables(
