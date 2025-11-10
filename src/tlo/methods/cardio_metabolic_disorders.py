@@ -1770,9 +1770,44 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
                 )
 
     def did_not_run(self):
-        # If this HSI event did not run, then the persons ceases to be taking medication
+        # If this HSI event did not run, then check the consumables and reschedule
+
+        df = self.sim.population.props
+        m = self.sim.modules["CardioMetabolicDisorders"]
         person_id = self.target
-        self.sim.population.props.at[person_id, f"nc_{self.condition}_on_medication"] = False
+
+        # Check availability of medication for condition
+        if self.get_consumables(
+            item_codes={
+                self.module.parameters[f"{self.condition}_hsi"].get("medication_item_code").astype(int): dose[
+                    self.condition
+                ]
+            }
+        ):
+            # Schedule their next HSI for a refill of medication, one month from now
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=self,
+                priority=1,
+                topen=self.sim.date + DateOffset(months=1),
+                tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7),
+            )
+        else:
+            # If medication was not available, the person ceases to be taking medication
+            df.at[person_id, f"nc_{self.condition}_on_medication"] = False
+            # If person 'decides to' seek another appointment, schedule a new HSI appointment for tomorrow.
+            # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
+            # pick-up medication.
+            if m.rng.random_sample() < m.parameters[f"{self.condition}_hsi"].get(
+                "pr_seeking_further_appt_if_drug_not_available"
+            ):
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=self,
+                    topen=self.sim.date + pd.DateOffset(days=1),
+                    tclose=self.sim.date + pd.DateOffset(days=15),
+                    priority=1,
+                )
+        # If this HSI event did not run, then the persons ceases to be taking medication
+        #self.sim.population.props.at[person_id, f"nc_{self.condition}_on_medication"] = False
 
 
 class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -1893,4 +1928,41 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                 )
 
     def did_not_run(self):
-        logger.debug(key="debug", data="HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: did not run")
+        # If this HSI event did not run, then check the consumables and reschedule
+
+        df = self.sim.population.props
+        m = self.sim.modules["CardioMetabolicDisorders"]
+        person_id = self.target
+
+        # Check availability of medication for condition
+        if self.get_consumables(
+            item_codes={
+                self.module.parameters[f"{self.condition}_hsi"].get("medication_item_code").astype(int): dose[
+                    self.condition
+                ]
+            }
+        ):
+            # Schedule their next HSI for a refill of medication, one month from now
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=self,
+                priority=1,
+                topen=self.sim.date + DateOffset(months=1),
+                tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7),
+            )
+        else:
+            # If medication was not available, the person ceases to be taking medication
+            df.at[person_id, f"nc_{self.condition}_on_medication"] = False
+            # If person 'decides to' seek another appointment, schedule a new HSI appointment for tomorrow.
+            # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
+            # pick-up medication.
+            if m.rng.random_sample() < m.parameters[f"{self.condition}_hsi"].get(
+                "pr_seeking_further_appt_if_drug_not_available"
+            ):
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=self,
+                    topen=self.sim.date + pd.DateOffset(days=1),
+                    tclose=self.sim.date + pd.DateOffset(days=15),
+                    priority=1,
+                )
+        # If this HSI event did not run, then the persons ceases to be taking medication
+        #self.sim.population.props.at[person_id, f"nc_{self.condition}_on_medication"] = False
