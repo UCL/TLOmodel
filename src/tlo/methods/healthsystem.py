@@ -1992,7 +1992,7 @@ class HealthSystem(Module):
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         """
         # Invoke never ran function here
-        hsi_event.never_ran()
+        hsi_event.did_not_run()
 
         if hsi_event.facility_info is not None:
             # Fully-defined HSI Event
@@ -2636,7 +2636,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     ):
                         prob_disruption = self.module.parameters["projected_precip_disruptions"].loc[
                             (self.module.parameters["projected_precip_disruptions"]["RealFacility_ID"] == facility_used)
-                            & (self.module.parameters["projected_precip_disruptions"]["year"] == year)
+                            & (self.module.parameters["projected_precip_disruptions"]["year"] == "2025")
                             & (self.module.parameters["projected_precip_disruptions"]["month"] == month)
                             & (
                                 self.module.parameters["projected_precip_disruptions"]["service"]
@@ -2646,11 +2646,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         ]
                         base_scale = self.module.parameters["scale_factor_delay_in_seeking_care_weather"]
                         scale_factor_delay = max(1, base_scale + np.random.uniform(-2, 2))
-                        #prob_disruption = pd.DataFrame(prob_disruption)
-                        #prob_disruption = min(
-                        #    float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
-                        #)  # to account for some structural differences
-                        prob_disruption = 0.5
+                        prob_disruption = pd.DataFrame(prob_disruption)
+                        prob_disruption = min(
+                           float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
+                        )  # to account for some structural differences
                         if np.random.binomial(1, prob_disruption) == 1:
                             climate_disrupted = True
                             if self.sim.modules[
@@ -2709,8 +2708,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                     ).iloc[0],
                                     1,
                                 )
+
                                 will_seek_care = 0
-                                will_seek_care_prob = 1
                                 if random.random() < will_seek_care_prob:
                                     will_seek_care = 1
                                 if will_seek_care:
