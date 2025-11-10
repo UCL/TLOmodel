@@ -31,8 +31,8 @@ scenario_names_all = [
     "SSP 5.85 Low",
     "SSP 5.85 Mean",
 ]
-climate_sensitivity_analysis = True
-parameter_sensitivity_analysis = False
+climate_sensitivity_analysis = False
+parameter_sensitivity_analysis = True
 main_text = False
 if climate_sensitivity_analysis:
     scenario_names = [
@@ -50,7 +50,9 @@ if climate_sensitivity_analysis:
     suffix = "climate_SA"
     scenarios_of_interest = range(len(scenario_names))
 if parameter_sensitivity_analysis:
-    scenario_names = range(0, 10, 1)
+    scenario_names = range(0, 9, 1)
+    scenarios_of_interest = scenario_names
+
     suffix = "parameter_SA"
 if main_text:
     scenario_names = [
@@ -507,6 +509,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].bar(
         deaths_totals_mean.index, deaths_totals_mean.values, color=scenario_colours, yerr=deaths_totals_err, capsize=20
     )
+    print(deaths_totals_mean)
+    print(scenario_names)
     axes[0].set_title(f"Total Deaths (2025-{max_year})")
     axes[0].set_xlabel("Scenario")
     axes[0].set_ylabel("Total Deaths")
