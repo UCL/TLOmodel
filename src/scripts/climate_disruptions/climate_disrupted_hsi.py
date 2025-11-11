@@ -566,8 +566,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #
     # target_year_final = max_year
     #target_period_final = (Date(2026, 1, 1), Date(target_year_final, 12, 31))
-    target_period_final = (Date(2010, 1, 1), Date(2012, 1, 12))
-    target_period_final = (Date(2026, 1, 1), Date(2028, 1, 12))
+    target_period_final = (Date(2010, 1, 1), Date(2011, 1, 12))
+    #target_period_final = (Date(2026, 1, 1), Date(2028, 1, 12))
 
     #scenario_labels_final = ["Baseline", "SSP2-4.5", "SSP5-8.5"]
     #scenario_indices_final = [0, 6, 7]
@@ -599,8 +599,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ),
             only_mean=True,
             collapse_columns=True,
-        )[draw]
-        final_data[scenario_labels_final[i]] = result_data["mean"]
+        )#[draw]
+        final_data[scenario_labels_final[i]] = result_data#["mean"]
     df_final = pd.DataFrame(final_data).fillna(0)
     df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_{suffix}_{HSI_of_interest}.csv")
 
@@ -627,8 +627,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ),
             only_mean=True,
             collapse_columns=True,
-        )[draw]
-        final_data[scenario_labels_final[i]] = result_data["mean"]
+        )#[draw]
+        final_data[scenario_labels_final[i]] = result_data#["mean"]
 
     df_final = pd.DataFrame(final_data).fillna(0)
     df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Coarse_Treatments_{suffix}_{HSI_of_interest}.csv")

@@ -26,7 +26,7 @@ full_grid = make_cartesian_parameter_grid(
             "use_funded_or_actual_staffing": ["funded_plus"],
             "climate_ssp": ["ssp245"],
             "climate_model_ensemble_model": ["mean"],
-            "services_affected_precip": ["none"],
+            "services_affected_precip": ["all"],
             "tclose_overwrite": [1000],
         }
     }
@@ -39,7 +39,7 @@ class ClimateDisruptionScenario(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 12)
-        self.pop_size = 50_000
+        self.pop_size = 100_000
         self.runs_per_draw = 1
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
