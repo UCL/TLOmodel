@@ -2,10 +2,10 @@
 scenarios (scenario_impact_of_healthsystem.py)
 
 job ID:
-/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-09-16T141811Z
+/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-10-14T084418Z
 
-results_folder=Path("/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-09-16T141811Z")
-output_folder=Path("/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-09-16T141811Z")
+results_folder=Path("/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-10-14T084418Z")
+output_folder=Path("/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-10-14T084418Z")
 
 
 """
@@ -1316,8 +1316,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Set the title and labels
         ax.set_title("")
         ax.set_ylabel(f'DALYs Averted vs Baseline, {target_period()}\n(Millions)')
-        ax.set_ylim([0, 35])
-        ax.set_yticks(range(0, 36, 5))  # Tick marks from 0 to 35 with a step of 5
+        ax.set_ylim([0, 25])
+        ax.set_yticks(range(0, 26, 5))  # Tick marks from 0 to 35 with a step of 5
         ax.tick_params(axis='y', which='both', length=5)  # Ensure tick marks are shown on y-axis
         ax.set_xlabel("Scenarios")
         ax.set_xticks(range(len(x_labels)))
