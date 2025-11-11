@@ -1,3 +1,2 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0aaee61e0fd9ddbf05f816f7b22ee6848edd27d9061474f4a39d90d896c457a0
-size 68
+Facility_ID,Officer_Type_Code,Clinic1,GenericClinic
+20.0,DCSA,0.6,0.4
