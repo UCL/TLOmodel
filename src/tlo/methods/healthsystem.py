@@ -1094,13 +1094,13 @@ class HealthSystem(Module):
     def get_clinic_eligibility(self, hsi_event):
         """
         Determine the clinic mapped to the HSI Event treatment ID. If no clinic is mapped, then a default value of
-        'OtherClinic' is returned. Note that we assume that a treatment ID is mapped to at most one clinic, returning
+        'GenericClinic' is returned. Note that we assume that a treatment ID is mapped to at most one clinic, returning
         the first match.
         """
         eligible_treatment_ids = self.parameters["clinic_mapping"].loc[
             self.parameters["clinic_mapping"]["Treatment"] == hsi_event.TREATMENT_ID, "Clinic"
         ]
-        clinic = eligible_treatment_ids.iloc[0] if not eligible_treatment_ids.empty else "OtherClinic"
+        clinic = eligible_treatment_ids.iloc[0] if not eligible_treatment_ids.empty else "GenericClinic"
         return clinic
 
     def format_daily_capabilities(
@@ -1196,9 +1196,9 @@ class HealthSystem(Module):
 
     def format_clinic_capabilities(self) -> pd.DataFrame:
         """
-        The breakdown of capabilities across clinics and a catch-all OtherClinic is read in from the
+        The breakdown of capabilities across clinics and a catch-all GenericClinic is read in from the
         resource file in ResourceFile_ClinicConfigurations. This function will fill out the capabilities dataframe
-        so that for facility, officer type combinations that are not present in the file, the proportion of OtherClinic
+        so that for facility, officer type combinations that are not present in the file, the proportion of GenericClinic
         is set to 1, and capabilities for all other clinics are set to 0.
         """
 
@@ -1223,10 +1223,10 @@ class HealthSystem(Module):
             on=["Facility_ID", "Officer_Type_Code"],
             how="left",
         )
-        ## OtherClinic set to 1 for missing facility/office_code combinations
-        capabilities_ex["OtherClinic"] = capabilities_ex["OtherClinic"].fillna(1)
+        ## GenericClinic set to 1 for missing facility/office_code combinations
+        capabilities_ex["GenericClinic"] = capabilities_ex["GenericClinic"].fillna(1)
         ## All other columns are set to 0
-        other_cols = capabilities_ex.columns.difference(["Facility_ID", "Officer_Type_Code", "OtherClinic"])
+        other_cols = capabilities_ex.columns.difference(["Facility_ID", "Officer_Type_Code", "GenericClinic"])
         capabilities_ex[other_cols] = capabilities_ex[other_cols].fillna(0)
 
         # Give the standard index:
