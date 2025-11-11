@@ -12,6 +12,6 @@ from tlo.analysis.utils import create_pickles_locally
 #             parse_log_file(log_file)
 
 scenario_output_dir = (
-    "/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/climate_scenario_runs-2025-10-08T103626Z"
+    "/Users/rem76/PycharmProjects/TLOmodel/outputs/climate_scenario_runs-2025-11-11T095228Z"
 )
 create_pickles_locally(scenario_output_dir=scenario_output_dir, compressed_file_name_prefix="climate_scenario_runs_")

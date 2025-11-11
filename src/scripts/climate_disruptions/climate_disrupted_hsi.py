@@ -566,8 +566,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #
     # target_year_final = max_year
     #target_period_final = (Date(2026, 1, 1), Date(target_year_final, 12, 31))
-    target_period_final = (Date(2010, 1, 1), Date(2013, 12, 31))
-    #target_period_final = (Date(2026, 1, 1), Date(2040, 12, 31))
+    target_period_final = (Date(2010, 1, 1), Date(2012, 1, 12))
+    target_period_final = (Date(2026, 1, 1), Date(2028, 1, 12))
 
     #scenario_labels_final = ["Baseline", "SSP2-4.5", "SSP5-8.5"]
     #scenario_indices_final = [0, 6, 7]
