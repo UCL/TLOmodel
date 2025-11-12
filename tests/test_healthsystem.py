@@ -1984,8 +1984,8 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     )
     hsi1.initialise()
     for k, v in hsi1.expected_time_requests.items():
-        print(k, sim.modules["HealthSystem"]._daily_capabilities["OtherClinic"][k])
-        sim.modules["HealthSystem"]._daily_capabilities["OtherClinic"][k] = v * (tot_population / 4)
+        print(k, sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k])
+        sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * (tot_population / 4)
 
     # In second district, make capabilities tuned to be those required to run all priority=2 events under
     # maximum squeezed allowed for this priority, which currently is zero.
@@ -2000,7 +2000,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     )
     hsi2.initialise()
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules["HealthSystem"]._daily_capabilities["OtherClinic"][k] = (v / scale) * (tot_population / 4)
+        sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = (v / scale) * (tot_population / 4)
 
     # Run healthsystemscheduler
     healthsystemscheduler.apply(sim.population)
@@ -2051,12 +2051,12 @@ def test_mode_2_clinics(seed, tmpdir):
     - An HSI Event whose treatment id is mapped to a specific clinic runs if corresponding
     clinic capabilities are available;
     - Conversely, if the clinic specific capabilities run out, then the event DOES NOT run even if
-    OtherClinic capabilities are available; this test checks that that events query
+    GenericClinic capabilities are available; this test checks that that events query
     the correct capabilities and that correct counters are run down;
-    - An event whose treatment id is not mapped to a specific clinic runs if OtherClinic
+    - An event whose treatment id is not mapped to a specific clinic runs if GenericClinic
     capabilities are available;
     - Conversely, an event whose treatment id is not mapped to a specific clinic does not run
-    if OtherClinic capabilities are not available;
+    if GenericClinic capabilities are not available;
     """
 
     # Create a dummy HSI event class
@@ -2073,7 +2073,7 @@ def test_mode_2_clinics(seed, tmpdir):
             self.this_hsi_event_ran = True
 
     def create_simulation(tmpdir: Path, tot_population) -> dict:
-        class DummyModuleOtherClinic(Module):
+        class DummyModuleGenericClinic(Module):
             METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
 
             def read_parameters(self, data_folder):
@@ -2115,19 +2115,19 @@ def test_mode_2_clinics(seed, tmpdir):
                 policy_name="",
                 use_funded_or_actual_staffing="funded_plus",
             ),
-            DummyModuleOtherClinic(),
+            DummyModuleGenericClinic(),
             DummyModuleClinic1(),
         )
         sim.make_initial_population(n=tot_population)
 
         sim.modules["HealthSystem"].parameters["clinic_configuration"] = pd.DataFrame(
-            [{"Facility_ID": 20.0, "Officer_Type_Code": "DCSA", "Clinic1": 0.6, "OtherClinic": 0.4}]
+            [{"Facility_ID": 20.0, "Officer_Type_Code": "DCSA", "Clinic1": 0.6, "GenericClinic": 0.4}]
         )
         sim.modules["HealthSystem"].parameters["clinic_mapping"] = pd.DataFrame(
             [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
         )
-        sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "OtherClinic"]
-
+        sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "GenericClinic"]
+        breakpoint()
         sim.modules["HealthSystem"].setup_daily_capabilities("funded_plus")
 
         # Assign the entire population to the first district, so that all events are run in the same district
@@ -2144,11 +2144,11 @@ def test_mode_2_clinics(seed, tmpdir):
     def schedule_hsi_events(notherclinic, nclinic1, sim):
         for i in range(0, notherclinic):
             hsi = DummyHSIEvent(
-                module=sim.modules["DummyModuleOtherClinic"],
+                module=sim.modules["DummyModuleGenericClinic"],
                 person_id=i,
                 appt_type="ConWithDCSA",
                 level="0",
-                treatment_id="DummyHSIEventOtherClinic",
+                treatment_id="DummyHSIEventGenericClinic",
             )
             sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
@@ -2173,25 +2173,25 @@ def test_mode_2_clinics(seed, tmpdir):
 
     ## Test that capabilities are split according the proportion specified for the Facility Id
     ## and officer combination in the Resource file.
-    ## 40% of capabilities are OtherClinic and 60% Clinic1 capabilities
-    other_clinic = sim.modules["HealthSystem"]._daily_capabilities["OtherClinic"]
+    ## 40% of capabilities are GenericClinic and 60% Clinic1 capabilities
+    other_clinic = sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"]
     clinic1 = sim.modules["HealthSystem"]._daily_capabilities["Clinic1"]
 
     # 'FacilityID_20_Officer_DCSA' is coming from the resource file
     ratio = clinic1["FacilityID_20_Officer_DCSA"] / other_clinic["FacilityID_20_Officer_DCSA"]
     expect = 0.6 / 0.4
-    assert abs(ratio - expect) < 1e-7, "OtherClinic capabilities are not split correctly"
+    assert abs(ratio - expect) < 1e-7, "GenericClinic capabilities are not split correctly"
 
     # Schedule an identical appointment for all individuals, assigning clinic as follows:
-    # half individuals have clinic_eligibility=OtherClinic and half clinic_eligibility=Hiv
+    # half individuals have clinic_eligibility=GenericClinic and half clinic_eligibility=Hiv
     sim = schedule_hsi_events(50, 50, sim)
     ## This hsi is only created to get the expected items; therefore the treatment_id is not important
     hsi1 = DummyHSIEvent(
-        module=sim.modules["DummyModuleOtherClinic"],
+        module=sim.modules["DummyModuleGenericClinic"],
         person_id=0,  # Ensures call is on officers in first district
         appt_type="ConWithDCSA",
         level="0",
-        treatment_id="DummyHSIEventOtherClinic",
+        treatment_id="DummyHSIEventGenericClinic",
     )
     hsi1.initialise()
 
@@ -2200,7 +2200,7 @@ def test_mode_2_clinics(seed, tmpdir):
 
     sim.modules["HealthSystem"]._daily_capabilities["Clinic1"] = {}
     for k, v in hsi1.expected_time_requests.items():
-        sim.modules["HealthSystem"]._daily_capabilities["OtherClinic"][k] = v * tot_population
+        sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * tot_population
         sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][k] = v * tot_population
 
     # Run healthsystemscheduler and read the results
@@ -2212,13 +2212,13 @@ def test_mode_2_clinics(seed, tmpdir):
     assert hs_output["did_run"].sum() == tot_population, "All events did not run!!"
     Nevents = hs_output.groupby("Clinic")["did_run"].value_counts()
     assert Nevents.loc[("Clinic1", True)] == tot_population // 2, "Unexpected count of Clinic1 events"
-    assert Nevents.loc[("OtherClinic", True)] == tot_population // 2, "Unexpected count of OtherClinic events"
+    assert Nevents.loc[("GenericClinic", True)] == tot_population // 2, "Unexpected count of GenericClinic events"
 
-    ## Test 2: Events requiring OtherClinic capabilities do not run if those capabilities are unavailable
+    ## Test 2: Events requiring GenericClinic capabilities do not run if those capabilities are unavailable
     sim = create_simulation(tmpdir, tot_population)
     sim = schedule_hsi_events(tot_population // 2, tot_population // 2, sim)
 
-    sim.modules["HealthSystem"]._daily_capabilities["OtherClinic"] = {"FacilityID_20_Officer_DCSA": 0.0}
+    sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"] = {"FacilityID_20_Officer_DCSA": 0.0}
     for k, v in hsi1.expected_time_requests.items():
         sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][k] = v * (tot_population)
 
@@ -2229,9 +2229,9 @@ def test_mode_2_clinics(seed, tmpdir):
 
     assert hs_output["did_run"].sum() == tot_population // 2, "Unexpected number of events ran"
     Nevents = hs_output.groupby("Clinic")["did_run"].value_counts()
-    ## No OtherClinic events should have run, but all Clinic1 ones should have
+    ## No GenericClinic events should have run, but all Clinic1 ones should have
     assert Nevents.loc[("Clinic1", True)] == tot_population // 2, "Unexpected count of Clinic1 events"
-    assert Nevents.loc[("OtherClinic", False)] == tot_population // 2, "Unexpected count of OtherClinic events"
+    assert Nevents.loc[("GenericClinic", False)] == tot_population // 2, "Unexpected count of GenericClinic events"
 
     ## Test 3: Events requiring Clinic1 capabilities do not run if those capabilities are unavailable
     ## Mirror of test 2 above
@@ -2241,7 +2241,7 @@ def test_mode_2_clinics(seed, tmpdir):
     # Now adjust capabilities available using hsi2 created above
     sim.modules["HealthSystem"]._daily_capabilities["Clinic1"] = {"FacilityID_20_Officer_DCSA": 0.0}
     for k, v in hsi1.expected_time_requests.items():
-        sim.modules["HealthSystem"]._daily_capabilities["OtherClinic"][k] = v * (tot_population)
+        sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * (tot_population)
 
     sim.modules["HealthSystem"].healthsystemscheduler.apply(sim.population)
 
@@ -2250,12 +2250,12 @@ def test_mode_2_clinics(seed, tmpdir):
 
     assert hs_output["did_run"].sum() == tot_population // 2, "Half of the events ran"
     Nevents = hs_output.groupby("Clinic")["did_run"].value_counts()
-    ## No more non-fungible events should have run, but all OtherClinic ones should have
+    ## No more non-fungible events should have run, but all GenericClinic ones should have
     assert Nevents.loc[("Clinic1", False)] == tot_population // 2
-    assert Nevents.loc[("OtherClinic", True)] == tot_population // 2
+    assert Nevents.loc[("GenericClinic", True)] == tot_population // 2
 
-    ## Test 4: Queue up OtherClinic/Clinic1/OtherClinic; have Clinic1 capabilities run out
-    ## and ensure OtherClinic events still run.
+    ## Test 4: Queue up GenericClinic/Clinic1/GenericClinic; have Clinic1 capabilities run out
+    ## and ensure GenericClinic events still run.
     sim = create_simulation(tmpdir, tot_population)
     sim = schedule_hsi_events(25, 0, sim)
     sim = schedule_hsi_events(0, 25, sim)
@@ -2265,7 +2265,7 @@ def test_mode_2_clinics(seed, tmpdir):
     # Now adjust capabilities available.
     sim.modules["HealthSystem"]._daily_capabilities["Clinic1"] = {"FacilityID_20_Officer_DCSA": 0.0}
     for k, v in hsi1.expected_time_requests.items():
-        sim.modules["HealthSystem"]._daily_capabilities["OtherClinic"][k] = v * (tot_population / 2)
+        sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * (tot_population / 2)
 
     sim.modules["HealthSystem"].healthsystemscheduler.apply(sim.population)
 
@@ -2274,9 +2274,9 @@ def test_mode_2_clinics(seed, tmpdir):
 
     assert hs_output["did_run"].sum() == tot_population // 2, "Unexpected number of events"
     Nevents = hs_output.groupby("Clinic")["did_run"].value_counts()
-    ## No more non-fungible events should have run, but all OtherClinic ones should have
+    ## No more non-fungible events should have run, but all GenericClinic ones should have
     assert Nevents.loc[("Clinic1", False)] == tot_population // 2, "No additional NonFungible events ran"
-    assert Nevents.loc[("OtherClinic", True)] == tot_population // 2, "Scheduled OtherClinic events ran"
+    assert Nevents.loc[("GenericClinic", True)] == tot_population // 2, "Scheduled GenericClinic events ran"
 
 
 @pytest.mark.slow

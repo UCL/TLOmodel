@@ -734,6 +734,8 @@ class HealthSystem(Module):
         """Validate the contents of the clinics capabilities dataframe.
         :param clinic_capabilities_df: DataFrame read from ResourceFile_Clinics.csv
         Checks that the fractions sum to 1 for each row; raises ValueError otherwise
+        Checks that the mapping does not contain any clinics for which there is no column in the configuration file;
+        raises ValueError otherwise.
         """
 
         ## This is the default configuration, which is empty. No further checks needed.
@@ -749,6 +751,15 @@ class HealthSystem(Module):
             raise ValueError(
                 f"Row(s) {clinic_capabilities_df[mask][id_cols].values} in the clinics file do not sum to 1.0."
                 "Please ensure that the fractions for clinic types sum to 1.0."
+            )
+
+        ## Check that mapping does not contain any clinics for which there is no column in the configuration file
+        all_valid = self.parameters["clinic_mapping"]["Clinic"].isin(self._clinic_names).all()
+        if not all_valid:
+            raise ValueError(
+                "The clinic mapping file contains at least one clinic name that is not present in the "
+                "clinic configuration file. Please ensure that all clinic names in the mapping file "
+                "are also present in the configuration file."
             )
 
     def pre_initialise_population(self):
