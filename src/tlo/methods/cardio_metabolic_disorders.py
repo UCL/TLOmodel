@@ -1775,6 +1775,12 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         self.sim.population.props.at[person_id, f"nc_{self.condition}_on_medication"] = False
 
 
+    def did_not_run_weather(self):
+        """Define what happens if the appointment is delayed due to a weather event.
+            Doesn't take someone off treatment"""
+        logger.debug(key="debug", data="HSI_CardioMetabolicDisorders_Refill_Medication: did not run")
+
+
 class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
