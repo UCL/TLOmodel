@@ -7,27 +7,30 @@ from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScen
 from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
 import json
 
-YEAR_OF_CHANGE = 2020
+YEAR_OF_CHANGE = 2025
 full_grid = make_cartesian_parameter_grid(
     {
         "HealthSystem": {
-            "scale_factor_delay_in_seeking_care_weather": [1.0],  # [float(x) for x in [0, 1, 2, 10, 20, 60]],
-            "rescaling_prob_seeking_after_disruption": [1.0],  # np.arange(0.01, 1.51, 0.5),
-            "rescaling_prob_disruption": [1.0],  # np.arange(0.0, 2.01, 0.5),
-            "scale_factor_severity_disruption_and_delay": [1.0],  # [float(x) for x in np.linspace(0.11, 1.0, 4)],
-            "mode_appt_constraints": [1],
-            "cons_availability": ["default"],
-            "cons_availability_postSwitch": ["all"],
-            "year_cons_availability_switch": [YEAR_OF_CHANGE],
-            "beds_availability": ["all"],
-            "equip_availability": ["default"],
-            "equip_availability_postSwitch": ["all"],
-            "year_equip_availability_switch": [YEAR_OF_CHANGE],
-            "use_funded_or_actual_staffing": ["funded_plus"],
-            "climate_ssp": ["ssp245"],
-            "climate_model_ensemble_model": ["mean"],
-            "services_affected_precip": ["all"],
-            "tclose_overwrite": [1000],
+            "scale_factor_delay_in_seeking_care_weather": [60.0]*2,  # [float(x) for x in [0, 1, 2, 10, 20, 60]],
+            "rescaling_prob_seeking_after_disruption": [1.0]*2,  # np.arange(0.01, 1.51, 0.5),
+            "rescaling_prob_disruption": [1.0]*2,  # np.arange(0.0, 2.01, 0.5),
+            "scale_factor_severity_disruption_and_delay": [1.0]*2,  # [float(x) for x in np.linspace(0.11, 1.0, 4)],
+            "mode_appt_constraints": [1]*2,
+            "mode_appt_constraints_postSwitch": [2]*2,
+            "cons_availability": ["default"]*2,
+            "cons_availability_postSwitch": ["default"]*2,
+            "year_cons_availability_switch": [YEAR_OF_CHANGE]*2,
+            "beds_availability": ["default"]*2,
+            "equip_availability": ["default"]*2,
+            "equip_availability_postSwitch": ["default"]*2,
+            "year_equip_availability_switch": [YEAR_OF_CHANGE]*2,
+            "use_funded_or_actual_staffing": ["actual"]*2,
+            "scale_to_effective_capabilities": [True]*2,
+            "policy_name": ["Naive"]*2,
+            "climate_ssp": ["ssp585"]*2,
+            "climate_model_ensemble_model": ["mean"]*2,
+            "services_affected_precip": ["none", "all"], # so one is effectively baseline, one is climate disruptions
+            "tclose_overwrite": [1000]*2,
         }
     }
 )
@@ -38,14 +41,14 @@ class ClimateDisruptionScenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2011, 1, 12)
+        self.end_date = Date(2041, 1, 12)
         self.pop_size = 100_000
-        self.runs_per_draw = 1
-        self.YEAR_OF_CHANGE = 2020
+        self.runs_per_draw = 10
+        self.YEAR_OF_CHANGE = 2025
         self._scenarios = self._get_scenarios()
         self._parameter_grid = full_grid  # random.sample(full_grid, 1)
         print(self._parameter_grid)
-        self.number_of_draws = 1  # len(self._parameter_grid)
+        self.number_of_draws = len(self._parameter_grid)
 
         with open("selected_parameter_combinations.json", "w") as f:
             json.dump(self._parameter_grid, f, indent=2)
@@ -71,39 +74,53 @@ class ClimateDisruptionScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        return self._parameter_grid[0]  # [draw_number]
+        return self._parameter_grid[draw_number]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {
-            "SSP 2.45 Mean": self._ssp245_mean(),
+            "Baseline": self._baseline(),
+            "SSP 585 Mean": self._ssp585_mean(),
         }
 
-    def _ssp245_mean(self) -> Dict:
+    def _baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario."""
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {
                 "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-                    "max_healthsystem_function": [False, True],
+                    "max_healthsystem_function": [False, False],
                     "max_healthcare_seeking": [False, False],
                     "year_of_switch": self.YEAR_OF_CHANGE,
                 },
-                "HealthSystem": {
-                    "mode_appt_constraints": 1,
-                    "cons_availability": "default",
-                    "cons_availability_postSwitch": "all",
-                    "year_cons_availability_switch": self.YEAR_OF_CHANGE,
-                    "beds_availability": "all",
-                    "equip_availability": "default",
-                    "equip_availability_postSwitch": "all",
-                    "year_equip_availability_switch": self.YEAR_OF_CHANGE,
-                    "use_funded_or_actual_staffing": "funded_plus",
-                    "climate_ssp": "ssp245",
-                    "climate_model_ensemble_model": "mean",
-                    "services_affected_precip": "all",
-                    "tclose_overwrite": 1000,  # days of t close overwrite
+                # Health system params are in grid
+                "Malaria": {
+                    "type_of_scaleup": "max",
+                    "scaleup_start_year": self.YEAR_OF_CHANGE,
                 },
+                "Tb": {
+                    "type_of_scaleup": "max",
+                    "scaleup_start_year": self.YEAR_OF_CHANGE,
+                },
+                "Hiv": {
+                    "type_of_scaleup": "max",
+                    "scaleup_start_year": self.YEAR_OF_CHANGE,
+                },
+            },
+        )
+
+
+    def _ssp585_mean(self) -> Dict:
+        """Return the Dict with values for the parameter changes that define the baseline scenario."""
+        return mix_scenarios(
+            get_parameters_for_status_quo(),
+            {
+                "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
+                    "max_healthsystem_function": [False, False],
+                    "max_healthcare_seeking": [False, False],
+                    "year_of_switch": self.YEAR_OF_CHANGE,
+                },
+                # Health system params are in grid
                 "Malaria": {
                     "type_of_scaleup": "max",
                     "scaleup_start_year": self.YEAR_OF_CHANGE,
