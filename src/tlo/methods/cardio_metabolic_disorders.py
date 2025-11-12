@@ -1775,10 +1775,25 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         self.sim.population.props.at[person_id, f"nc_{self.condition}_on_medication"] = False
 
 
-    def did_not_run_weather(self):
-        """Define what happens if the appointment is delayed due to a weather event.
-            Doesn't take someone off treatment"""
-        logger.debug(key="debug", data="HSI_CardioMetabolicDisorders_Refill_Medication: did not run")
+    # def did_not_run_weather(self):
+    #     """Define what happens if the appointment is delayed due to a weather event.
+    #         Doesn't take someone off treatment"""
+    #     logger.debug(key="debug", data="HSI_CardioMetabolicDisorders_Refill_Medication: did not run")
+    #     person_id = self.target
+    #     self.sim.population.props.at[person_id, f"nc_{self.condition}_on_medication"] = False
+    #     if self.module.rng.random_sample() < self.module.parameters["probability_of_seeking_further_medication_appointment_if_appointment_not_available"]:
+    #         # schedule a "start medication" appointment
+    #         self.sim.modules["HealthSystem"].schedule_hsi_event(
+    #             hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+    #                 module=self.module, person_id=person_id, condition=self.condition
+    #             ),
+    #             priority=0,
+    #             topen=self.sim.date,
+    #             tclose=None,
+    #         )
+
+
+
 
 
 class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):

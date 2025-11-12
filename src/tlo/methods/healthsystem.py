@@ -1991,7 +1991,10 @@ class HealthSystem(Module):
         If this is an individual-level HSI_Event, it will also record the actual appointment footprint
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         """
-        # Invoke never ran function here
+        # Invoke did not run function here
+        # if "CardioMetabolicDisorders_Treatment" in hsi_event.as_namedtuple():
+        #     hsi_event.did_not_run_weather()
+        # else:
         hsi_event.did_not_run()
 
         if hsi_event.facility_info is not None:
