@@ -2908,6 +2908,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if (self.module.rng.random_sample(size=1) <
             p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']):
             _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
+            self.add_equipment({'Centrifuge'})
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"])

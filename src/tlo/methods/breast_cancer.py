@@ -741,7 +741,26 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         if cons_avail:
             # Use a biopsy to diagnose whether the person has breast Cancer
             # If consumables are available, add the used equipment and run the dx_test representing the biopsy
-            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
+
+            # Equipment for breast cancer biopsy and diagnosis
+            self.add_equipment({
+                'Ultrasound scanning machine',
+                'Ordinary Microscope',
+                'Cusco\'s/ bivalved Speculum',
+                'Biological Microscopes',
+                'Examination couch',
+                'Lamp, Anglepoise',
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
+                'Anatomical marker L-R',
+                'Analyser, Hormones',
+                'Apron protective x-ray lead',
+                'Safety Goggles',
+                'Magnetic resonance imaging (MRI)',
+                'Manual Rotary Microtome',
+                'Sample Rack',
+                'Shaker'
+            })
 
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
@@ -840,7 +859,31 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - add the used equipment
+            # Major surgery equipment package (already includes core surgical equipment)
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+
+            # Additional breast cancer treatment equipment
+            self.add_equipment({
+                'Infusion pump',
+                'Drip stand',
+                'Pulse oximeter',
+                'Blood pressure machine',
+                'Laparotomy Set',
+                'Examination couch',
+                'Light, operating, mobile',
+                'Trolley, emergency',
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
+                'Automatic Cell washer',
+                'Backsplit cotton gown',
+                'Coagulation machine',
+                'Sterilizing unit, steam, medium, 240 litre',
+                'Magnetic Stirrer',
+                'Micropipettes 10 - 100ul',
+                'Flow Cytometer',
+                'Bone Densitometry',
+                'Automatic staining machine'
+            })
 
             # Log the use of adjuvant chemotherapy
             self.get_consumables(
@@ -890,6 +933,25 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         assert not df.at[person_id, "brc_status"] == 'none'
         assert not pd.isnull(df.at[person_id, "brc_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "brc_date_treatment"])
+
+        # Equipment for breast cancer follow-up monitoring
+        self.add_equipment({
+            'Ultrasound scanning machine',
+            'Examination couch',
+            'Lamp, Anglepoise',
+            'Ordinary Microscope',
+            'Blood pressure machine',
+            'Pulse oximeter',
+            'Computed Tomography',
+            'Analyser, Haematology',
+            'Analyzer, Clinical immunoassay',
+            'Analyser, Hormones',
+            'Coagulation machine',
+            'Bone Densitometry',
+            'Backsplit cotton gown',
+            'Safety Goggles',
+            'Sample Rack'
+        })
 
         if df.at[person_id, 'brc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
@@ -953,7 +1015,26 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - add the used equipment
-            self.add_equipment({'Infusion pump', 'Drip stand'})
+            # Equipment for palliative care
+            self.add_equipment({
+                'Infusion pump',
+                'Drip stand',
+                'Bed, adult',
+                'Mattress for hospital bed',
+                'Blood pressure machine',
+                'Pulse oximeter',
+                'Trolley, emergency',
+                'Examination couch',
+                'Stethoscope',
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
+                'Backsplit cotton gown',
+                'Coagulation machine',
+                'Automatic Cell washer',
+                'Sterilizing unit, steam, 39 ltr',
+                'Safety Goggles',
+                'Sample Rack'
+            })
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "brc_date_palliative_care"]):
