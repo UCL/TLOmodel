@@ -1279,7 +1279,8 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
 
         self.get_consumables(item_codes=of_repair_cons)
 
-        self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+        self.add_equipment({'VVF and RVF set',
+                           *self.healthcare_system.equipment.from_pkg_names('Major Surgery')})
 
         # Log the end of disability in the MNI
         pregnancy_helper_functions.store_dalys_in_mni(
