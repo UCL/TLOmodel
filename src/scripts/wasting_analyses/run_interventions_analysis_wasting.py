@@ -54,10 +54,10 @@ scenario_filename_prefix = 'wasting_analysis__full_model'
 # Where to save the outcomes
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
 cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
-# force_calculation of [births_data, deaths_data, dalys_data, tx_data, cost_data],
+# force_calculation of [births_data, deaths_data, dalys_data, tx_data, medical_cost_data, all_cost_data],
 #   if True, enables to force recalculation of the corresponding data
-force_calculation = [False, False, False, False, False]
-# force_calculation = [True, True, True, True, True]
+force_calculation = [False, False, False, False, False, False]
+# force_calculation = [False, False, False, False, False, True]
 ######################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")

@@ -1193,7 +1193,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 output_all_costs_file_path = (
                     cost_outcome_folder_path / f"all_costs_{SQ_results_timestamp}.pkl"
                 )
-                if output_all_costs_file_path.exists() and not force_calculation[4]:
+                if output_all_costs_file_path.exists() and not force_calculation[4] and not force_calculation[5] :
                     print("\nloading all costs from file ...")
                     all_costs_df = pd.read_pickle(output_all_costs_file_path)
                 else:
