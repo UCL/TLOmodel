@@ -356,10 +356,10 @@ class HSI_Event:
                 appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
             )
         )
-        self.eligible_clinic = health_system.get_clinic_eligibility(self)
+
 
         # Do checks
-        self._check_if_appt_footprint_can_run()
+        #self._check_if_appt_footprint_can_run()
 
     def _check_if_appt_footprint_can_run(self) -> bool:
         """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
