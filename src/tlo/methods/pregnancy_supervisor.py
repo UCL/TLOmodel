@@ -1476,7 +1476,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             if current_gestation == 22:
                 poss_day_onset = (params['preterm_labour_gestation_22_max'] - current_gestation) * 7
                 # We only allow labour to onset from 24 weeks (to match with our definition of preterm labour)
-                onset_day = self.rng.randint((params['preterm_labour_min_weeks'] - current_gestation) * 7, poss_day_onset)
+                onset_day = self.rng.randint((params['preterm_labour_min_weeks'] - current_gestation) * 7,
+                                             poss_day_onset)
 
             elif current_gestation == 27:
                 onset_day = return_onset_day(params['preterm_labour_gestation_27_max'] )
