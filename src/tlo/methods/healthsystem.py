@@ -1557,10 +1557,8 @@ class HealthSystem(Module):
             hsi_event.initialise()
             ## Create a dummy item so that we can query the clinic eligibility
             clinic_eligibility = "GenericClinic"
-           _dummy_item: HSIEventQueueItem = HSIEventQueueItem(
-               clinic_eligibility, priority, topen, 1, 1, tclose, hsi_event
-           )
-           clinic_eligibility = self.get_clinic_eligibility(_dummy_item)
+            dummy_item: HSIEventQueueItem = HSIEventQueueItem(clinic_eligibility, priority, topen, 1, 1, tclose, hsi_event)
+            clinic_eligibility = self.get_clinic_eligibility(dummy_item)
 
             self._add_hsi_event_queue_item_to_hsi_event_queue(
                 clinic_eligibility=clinic_eligibility, priority=priority, topen=topen, tclose=tclose, hsi_event=hsi_event
