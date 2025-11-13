@@ -1465,17 +1465,17 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             current_gestation = df.at[person, 'ps_gestational_age_in_weeks']
 
             if current_gestation == 22:
-                poss_day_onset = (params['preterm_labour_gestation_22_max'] - 22) * 7
+                poss_day_onset = (params['preterm_labour_gestation_22_max'] - current_gestation) * 7
                 # We only allow labour to onset from 24 weeks (to match with our definition of preterm labour)
-                onset_day = self.rng.randint((params['preterm_labour_min_weeks'] - 22) * 7, poss_day_onset)
+                onset_day = self.rng.randint((params['preterm_labour_min_weeks'] - current_gestation) * 7, poss_day_onset)
             elif current_gestation == 27:
-                poss_day_onset = (params['preterm_labour_gestation_27_max'] - 27) * 7
+                poss_day_onset = (params['preterm_labour_gestation_27_max'] - current_gestation) * 7
                 onset_day = self.rng.randint(0, poss_day_onset)
             elif current_gestation == 31:
-                poss_day_onset = (params['preterm_labour_gestation_31_max'] - 31) * 7
+                poss_day_onset = (params['preterm_labour_gestation_31_max'] - current_gestation) * 7
                 onset_day = self.rng.randint(0, poss_day_onset)
             elif current_gestation == 35:
-                poss_day_onset = (params['preterm_labour_gestation_35_max'] - 35) * 7
+                poss_day_onset = (params['preterm_labour_gestation_35_max'] - current_gestation) * 7
                 onset_day = self.rng.randint(0, poss_day_onset)
             else:
                 # If any other gestational ages are pass, the function should end
