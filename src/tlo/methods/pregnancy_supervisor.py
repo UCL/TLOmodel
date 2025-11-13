@@ -422,10 +422,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             Types.INT, 'Minimum weeks before ectopic rupture event'),
         'ectopic_rupture_max_weeks': Parameter(
             Types.INT, 'Maximum weeks before ectopic rupture event'),
-        'anc_care_seeking_initial_weeks': Parameter(
+        'week_anc_care_seeking_applied': Parameter(
             Types.INT, 'Weeks of gestation at which initial care seeking is applied'),
-        'anc_one_scheduling_window': Parameter(
-            Types.INT, 'Window in days for scheduling of first ANC event'),
+        'week_length_minus_one': Parameter(
+            Types.INT, 'Length of a week minus one day, allows for scheduling of early ANC cases'),
 
         # AGE & GESTATIONAL THRESHOLDS...
         'min_age_reproductive': Parameter(
@@ -466,6 +466,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         'anc_month_8_max_week': Parameter(Types.INT, 'Maximum week for ANC month 8'),
         'anc_month_9_min_week': Parameter(Types.INT, 'Minimum week for ANC month 9'),
         'anc_month_9_max_week': Parameter(Types.INT, 'Maximum week for ANC month 9'),
+        'earliest_anc_care_seeking_month': Parameter(Types.INT, 'Earliest month ANC can be scheduled'),
     }
 
     PROPERTIES = {
@@ -968,26 +969,28 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # Define the weeks of each month of pregnancy using parameters
         months_min_max = {
-            2: [params['anc_month_2_min_week'], params['anc_month_2_max_week']],
-            3: [params['anc_month_3_min_week'], params['anc_month_3_max_week']],
-            4: [params['anc_month_4_min_week'], params['anc_month_4_max_week']],
-            5: [params['anc_month_5_min_week'], params['anc_month_5_max_week']],
-            6: [params['anc_month_6_min_week'], params['anc_month_6_max_week']],
-            7: [params['anc_month_7_min_week'], params['anc_month_7_max_week']],
-            8: [params['anc_month_8_min_week'], params['anc_month_8_max_week']],
-            9: [params['anc_month_9_min_week'], params['anc_month_9_max_week']]
+            month: (
+                params[f'anc_month_{month}_min_week'],
+                params[f'anc_month_{month}_max_week']
+            )
+            for month in range(2, 10)  # months 2–9 inclusive
         }
+
+        week_length = 7
 
         # As care seeking is applied at week 8 gestational age, women who seek care within month two must attend within
         # the next week
-        if anc_month == params['anc_care_seeking_initial_weeks']/4:
-            days_until_anc = self.rng.randint(0, params['anc_one_scheduling_window'])
+        if anc_month == params['earliest_anc_care_seeking_month']:
+            days_until_anc = self.rng.randint(0, params['week_length_minus_one'])
+
         else:
             # Otherwise we draw a week between the min max weeks for predicted month of visit, and then a random day
-            weeks_of_visit = (
-                self.rng.randint(months_min_max[anc_month][0], months_min_max[anc_month][1]) -
-                params['anc_care_seeking_initial_weeks'])
-            days_until_anc = (weeks_of_visit * 7) + self.rng.randint(0, params['anc_one_scheduling_window'])
+            min_week, max_week = months_min_max[anc_month]
+
+            weeks_of_visit = self.rng.randint(min_week, max_week) - params['week_anc_care_seeking_applied']
+
+            days_until_anc = weeks_of_visit * week_length + self.rng.randint(0, params['week_length_minus_one'])
+
 
         first_anc_date = self.sim.date + DateOffset(days=days_until_anc)
 
