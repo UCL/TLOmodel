@@ -1748,9 +1748,10 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             self.module.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
-                topen=self.sim.date + pd.DateOffset(days=1),
+                topen=self.sim.date +  pd.DateOffset(
+                    days= (self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"] * 1)),
                 tclose=self.sim.date + pd.DateOffset(
-                    days=self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"] * 1),
+                    days=(self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"] * 1 + 15)),
                 # number of days of climate disruption
                 priority=1
             )
@@ -1764,9 +1765,10 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             self.module.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
-                topen=self.sim.date + pd.DateOffset(days=1),
+                topen=self.sim.date +  pd.DateOffset(
+                    days= (self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"])),
                 tclose=self.sim.date + pd.DateOffset(
-                    days=self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"] * 1),
+                    days=(self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"] + 15)), # keep gap as above
                 # number of days of climate disruption
                 priority=1
             )
