@@ -1102,14 +1102,14 @@ class HealthSystem(Module):
             # never available.)
             self._officers_with_availability[clinic] = {k for k, v in self._daily_capabilities[clinic].items() if v > 0}
 
-    def get_clinic_eligibility(self, hsi_event):
+    def get_clinic_eligibility(self, queue_item:HSIEventQueueItem):
         """
         Determine the clinic mapped to the HSI Event treatment ID. If no clinic is mapped, then a default value of
         'GenericClinic' is returned. Note that we assume that a treatment ID is mapped to at most one clinic, returning
         the first match.
         """
         eligible_treatment_ids = self.parameters["clinic_mapping"].loc[
-            self.parameters["clinic_mapping"]["Treatment"] == hsi_event.TREATMENT_ID, "Clinic"
+            self.parameters["clinic_mapping"]["Treatment"] == queue_item.hsi_event.TREATMENT_ID, "Clinic"
         ]
         clinic = eligible_treatment_ids.iloc[0] if not eligible_treatment_ids.empty else "GenericClinic"
         return clinic
@@ -1544,6 +1544,7 @@ class HealthSystem(Module):
         if do_hsi_event_checks:
             self.check_hsi_event_is_valid(hsi_event)
 
+
         # Check that this request is allowable under current policy (i.e. included in service_availability).
         if not self.is_treatment_id_allowed(hsi_event.TREATMENT_ID, self.service_availability):
             # HSI is not allowable under the services_available parameter: run the HSI's 'never_ran' method on the date
@@ -1554,12 +1555,18 @@ class HealthSystem(Module):
             # The HSI is allowed and will be added to the HSI_EVENT_QUEUE.
             # Let the HSI gather information about itself (facility_id and appt-footprint time requirements):
             hsi_event.initialise()
+            ## Create a dummy item so that we can query the clinic eligibility
+            clinic_eligibility = "GenericClinic"
+           _dummy_item: HSIEventQueueItem = HSIEventQueueItem(
+               clinic_eligibility, priority, topen, 1, 1, tclose, hsi_event
+           )
+           clinic_eligibility = self.get_clinic_eligibility(_dummy_item)
 
             self._add_hsi_event_queue_item_to_hsi_event_queue(
-                priority=priority, topen=topen, tclose=tclose, hsi_event=hsi_event
+                clinic_eligibility=clinic_eligibility, priority=priority, topen=topen, tclose=tclose, hsi_event=hsi_event
             )
 
-    def _add_hsi_event_queue_item_to_hsi_event_queue(self, priority, topen, tclose, hsi_event) -> None:
+    def _add_hsi_event_queue_item_to_hsi_event_queue(self, clinic_eligibility, priority, topen, tclose, hsi_event) -> None:
         """Add an event to the HSI_EVENT_QUEUE."""
         # Create HSIEventQueue Item, including a counter for the number of HSI_Events, to assist with sorting in the
         # queue (NB. the sorting is done ascending and by the order of the items in the tuple).
@@ -1572,7 +1579,6 @@ class HealthSystem(Module):
         else:
             rand_queue = self.hsi_event_queue_counter
 
-        clinic_eligibility = self.get_clinic_eligibility(hsi_event)
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
             clinic_eligibility, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event
         )
@@ -2285,8 +2291,8 @@ class HealthSystem(Module):
 
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
+                clinic = event.clinic_eligibility
                 event = event.hsi_event
-                clinic = self.get_clinic_eligibility(event)
                 squeeze_factor = squeeze_factor_per_hsi_event[clinic][ev_num]  # todo use zip here!
 
                 # store appt_footprint before running
