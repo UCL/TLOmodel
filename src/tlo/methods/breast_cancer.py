@@ -150,6 +150,37 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         "sensitivity_of_biopsy_for_stage4_breast_cancer": Parameter(
             Types.REAL, "sensitivity of biopsy_for diagnosis of stage 4 breast cancer"
         ),
+        "health_seeking_odds_ratio_adults": Parameter(
+            Types.REAL, "odds ratio for health seeking behavior in adults"
+        ),
+        "age_threshold_symptom_investigation": Parameter(
+            Types.INT, "age threshold for investigating symptoms"
+        ),
+        "post_intial_treatment_followup_months": Parameter(
+            Types.REAL, "months until first post-treatment follow-up"
+        ),
+        "post_treatment_check_interval_months": Parameter(
+            Types.REAL, "interval in months between post-treatment checks"
+        ),
+        "rp_breast_cancer_age0014": Parameter(
+            Types.REAL, "relative prevalence at baseline of breast cancer if 0-14 age group"
+        ),
+        "initial_polling_start_months": Parameter(
+            Types.INT, "months before initial polling event at initialization"
+        ),
+        "palliative_treatment_interval_months": Parameter(
+            Types.INT, "interval between palliative treatment"
+        ),
+        "main_polling_event_frequency_months": Parameter(
+            Types.INT, "frequency between main polling events"
+        ),
+        "initial_polling_start_months_palliative_care": Parameter(
+            Types.INT, "months before palliative care for at initialization"
+        ),
+        "initial_polling_start_delay_weeks_palliative_care": Parameter(
+            Types.INT, "delay in weeks after initial_polling_start_months_palliative_care for "
+                       "palliative care at initialization"
+        ),
     }
 
     PROPERTIES = {
@@ -194,7 +225,7 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Setup parameters used by the module, now including disability weights"""
-
+        p = self.parameters
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
             read_csv_files(resourcefilepath / "ResourceFile_Breast_Cancer",
@@ -204,7 +235,7 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='breast_lump_discernible',
-                    odds_ratio_health_seeking_in_adults=4.00)
+                    odds_ratio_health_seeking_in_adults=p['health_seeking_odds_ratio_adults'])
         )
 
     def initialise_population(self, population):
@@ -233,7 +264,7 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('sex').when('F', 1.0).otherwise(0.0),
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(30,49)', p['rp_breast_cancer_age3049'])
-            .when('.between(0,14)', 0.0)
+            .when('.between(0,14)', p['rp_breast_cancer_age0014'])
             .when('.between(50,120)', p['rp_breast_cancer_agege50']),
         )
 
@@ -349,6 +380,7 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
+        p = self.parameters
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
         self.item_codes_breast_can = get_consumable_item_codes_cancers(self)
@@ -359,7 +391,8 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(BreastCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(BreastCancerMainPollingEvent(self), sim.date +
+                           DateOffset(months=p['initial_polling_start_months']))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -479,8 +512,9 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_BreastCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
+                topen=self.sim.date + DateOffset(months=p['initial_polling_start_months_palliative_care']),
+                tclose=self.sim.date + DateOffset(months=p['initial_polling_start_months_palliative_care']) +
+                       DateOffset(weeks=p['initial_polling_start_delay_weeks_palliative_care'])
             )
 
     def on_birth(self, mother_id, child_id):
@@ -555,7 +589,9 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
     ) -> None:
         # If the patient is not a child and symptoms include breast
         # lump discernible
-        if individual_properties["age_years"] > 5 and "breast_lump_discernible" in symptoms:
+        p = self.parameters
+        if (individual_properties["age_years"] > p['age_threshold_symptom_investigation']
+            and "breast_lump_discernible" in symptoms):
             event = HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
                 person_id=person_id,
                 module=self,
@@ -576,7 +612,8 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        p = module.parameters
+        super().__init__(module, frequency=DateOffset(months=p['main_polling_event_frequency_months']))
         # scheduled to run every month: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
@@ -755,6 +792,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -824,13 +862,13 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "brc_date_treatment"] = self.sim.date
             df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
 
-            # Schedule a post-treatment check for 12 months:
+            # Schedule a post-treatment check for specified months:
             hs.schedule_hsi_event(
                 hsi_event=HSI_BreastCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(months=12),
+                topen=self.sim.date + DateOffset(months=p['post_intial_treatment_followup_months']),
                 tclose=None,
                 priority=0
             )
@@ -854,6 +892,7 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -902,7 +941,7 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=3),
+                topen=self.sim.date + DateOffset(months=p['post_treatment_check_interval_months']),
                 tclose=None,
                 priority=0
             )
@@ -930,6 +969,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -974,7 +1014,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=3),
+                topen=self.sim.date + DateOffset(months=p['palliative_treatment_interval_months']),
                 tclose=None,
                 priority=0
             )
