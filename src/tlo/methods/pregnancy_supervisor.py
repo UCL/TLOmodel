@@ -1461,6 +1461,12 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         # To prevent clustering of labour onset we scatter women to go into labour on a random day before their
         # next month gestation
         params = self.current_parameters
+
+        def return_onset_day(max_week_param):
+            """return day in which labour will onset randomly distributed across possible days based on gestation"""
+            poss_day_onset = (max_week_param - current_gestation) * 7
+            return self.rng.randint(0, poss_day_onset)
+
         for person in preterm_labour.loc[preterm_labour].index:
             current_gestation = df.at[person, 'ps_gestational_age_in_weeks']
 
@@ -1468,15 +1474,16 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                 poss_day_onset = (params['preterm_labour_gestation_22_max'] - current_gestation) * 7
                 # We only allow labour to onset from 24 weeks (to match with our definition of preterm labour)
                 onset_day = self.rng.randint((params['preterm_labour_min_weeks'] - current_gestation) * 7, poss_day_onset)
+
             elif current_gestation == 27:
-                poss_day_onset = (params['preterm_labour_gestation_27_max'] - current_gestation) * 7
-                onset_day = self.rng.randint(0, poss_day_onset)
+                onset_day = return_onset_day(params['preterm_labour_gestation_27_max'] )
+
             elif current_gestation == 31:
-                poss_day_onset = (params['preterm_labour_gestation_31_max'] - current_gestation) * 7
-                onset_day = self.rng.randint(0, poss_day_onset)
+                onset_day = return_onset_day(params['preterm_labour_gestation_31_max'] )
+
             elif current_gestation == 35:
-                poss_day_onset = (params['preterm_labour_gestation_35_max'] - current_gestation) * 7
-                onset_day = self.rng.randint(0, poss_day_onset)
+                onset_day = return_onset_day(params['preterm_labour_gestation_35_max'] )
+
             else:
                 # If any other gestational ages are pass, the function should end
                 return
