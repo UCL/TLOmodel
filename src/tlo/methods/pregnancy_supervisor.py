@@ -1844,12 +1844,14 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # a woman will develop ectopic pregnancy, multiple pregnancy, placenta praevia and if/when she will seek care
         # for her first antenatal visit
 
+        init_preg_risk_app = params['gestation_week_for_first_risk_application']
+
         #  ------------------------------APPLYING RISK OF ECTOPIC PREGNANCY -------------------------------------------
         # We use the apply_linear_model function to determine which women will develop ectopic pregnancy - this format
         # is similar to the functions which apply risk of complication
         new_pregnancy = (
             df.is_alive & df.is_pregnant &
-            (df.ps_gestational_age_in_weeks == params['gestation_week_for_first_risk_application'])
+            (df.ps_gestational_age_in_weeks == init_preg_risk_app)
         )
         ectopic_risk = pd.Series(self.module.rng.random_sample(len(new_pregnancy.loc[new_pregnancy])) <
                                  params['prob_ectopic_pregnancy'], index=new_pregnancy.loc[new_pregnancy].index)
@@ -1862,10 +1864,13 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         for person in ectopic_risk.loc[ectopic_risk].index:
             self.module.mnh_outcome_counter['ectopic_unruptured'] += 1
 
-            days_until_event = (
-                7 * params['ectopic_event_min_weeks'] +
-                self.module.rng.randint(0, 7 * (params['ectopic_event_max_weeks'] -params['ectopic_event_min_weeks']) )
-            )
+            week_length = 7
+
+            min_days = params['ectopic_event_min_weeks'] * week_length
+            max_days = params['ectopic_event_max_weeks'] * week_length
+
+            days_until_event = self.module.rng.randint(min_days, max_days)
+
             self.sim.schedule_event(
                 EctopicPregnancyEvent(self.module, person),
                 self.sim.date + pd.Timedelta(days=days_until_event)
@@ -2068,11 +2073,14 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
             # For women who dont seek care (and get treatment) we schedule EctopicPregnancyRuptureEvent (simulating
             # fallopian tube rupture) in an additional 2-4 weeks from this event (if care seeking is unsuccessful
             # then this event is scheduled by the HSI (did_not_run)
-            days_until_rupture = (
-                7 * params['ectopic_rupture_min_weeks'] +
-                self.module.rng.randint(0, 7 *
-                                        (params['ectopic_rupture_max_weeks']-params['ectopic_rupture_min_weeks']))
-            )
+
+            week_length = 7
+
+            min_days = params['ectopic_rupture_min_weeks'] * week_length
+            max_days = params['ectopic_rupture_max_weeks'] * week_length
+
+            days_until_rupture = self.module.rng.randint(min_days, max_days)
+
             self.sim.schedule_event(
                 EctopicPregnancyRuptureEvent(self.module, individual_id),
                 self.sim.date + pd.Timedelta(days=days_until_rupture)
