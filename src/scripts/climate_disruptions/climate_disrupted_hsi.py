@@ -14,7 +14,7 @@ spacing_of_years = 1
 PREFIX_ON_FILENAME = "1"
 climate_sensitivity_analysis = True
 parameter_sensitivity_analysis = False
-main_text = False
+main_text = True
 scenario_names_all = [
     "Baseline",
     "SSP 1.26 High",
@@ -498,33 +498,50 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # --------------------------
     # weather disruptions
     # --------------------------
-    x = np.arange(2)  # only two bars: Delayed and Cancelled
+
+
+
+    x = np.arange(len(scenario_names[1:]))
+    bar_width = width / 2
+
+    # Delayed
+    yerr_delayed = np.vstack([
+        weather_delayed_totals_err[1:, 1],  # lower error
+        weather_delayed_totals_err[1:, 2],  # upper error
+    ])
+
+    # Cancelled
+    yerr_cancelled = np.vstack([
+        weather_cancelled_totals_err[1:, 1],  # lower error
+        weather_cancelled_totals_err[1:, 2],  # upper error
+    ])
+
     axes[1].bar(
-        x,
-        weather_delayed_totals_mean,
-        width,
+        x - bar_width / 2,  # shift left
+        weather_delayed_totals_mean.values[1:],
+        bar_width,
         label="Weather Delayed",
         color="#FEB95F",
-        yerr=weather_delayed_totals_err,
+        yerr=yerr_delayed,
         capsize=10,
     )
     axes[1].bar(
-        x,
-        weather_cancelled_totals_mean,
-        width,
+        x + bar_width / 2,  # shift right
+        weather_cancelled_totals_mean.values[1:],
+        bar_width,
         label="Weather Cancelled",
         color="#f07167",
-        yerr=weather_cancelled_totals_err,
+        yerr=yerr_cancelled,
         capsize=10,
     )
     axes[1].text(-0.0, 1.05, "(B)", transform=axes[1].transAxes, fontsize=14, va="top", ha="right")
     axes[1].set_title("Weather-Disrupted Health System Interactions (2020–2040)")
-    axes[1].set_xlabel("Disruption Type")
-    axes[1].set_ylabel("")
+    axes[1].set_xlabel("Scenario")
+    axes[1].set_ylabel("Total Weather-Disrupted HSIs")
     axes[1].set_xticks(x)
-    axes[1].set_xticklabels(["Delayed", "Cancelled"])
+    axes[1].set_xticklabels(scenario_names[1:])  # Use scenario names, not ["Delayed", "Cancelled"]
     axes[1].grid(False)
-
+    axes[1].legend(loc='upper left', frameon=False)
     fig.tight_layout()
     fig.savefig(output_folder / f"treatments_and_weather_disruptions_{suffix}.png")
     plt.close(fig)
