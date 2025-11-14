@@ -1905,6 +1905,24 @@ class HealthSystem(Module):
                 },
                 description="record of each HSI event",
             )
+            if  len(event_details.appt_footprint) > 0:
+                logger_summary.info(
+                    key="HSI_Event_non_blank_full_details",  # New key for non-blank footprints
+                    data={
+                        "Event_Name": event_details.event_name,
+                        "TREATMENT_ID": event_details.treatment_id,
+                        "Number_By_Appt_Type_Code": dict(event_details.appt_footprint),
+                        "Person_ID": person_id,
+                        "Squeeze_Factor": squeeze_factor,
+                        "priority": priority,
+                        "did_run": did_run,
+                        "Facility_Level": event_details.facility_level if event_details.facility_level is not None else -99,
+                        "Facility_ID": facility_id if facility_id is not None else -99,
+                        "Equipment": sorted(event_details.equipment),
+                    },
+                    description="record of each HSI event with non-blank footprint at specified facilities",
+                )
+
         else:
             logger.debug(
                 key="HSI_Event",
