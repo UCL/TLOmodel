@@ -500,7 +500,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # --------------------------
     x = np.arange(2)  # only two bars: Delayed and Cancelled
     axes[1].bar(
-        x[0],
+        x,
         weather_delayed_totals_mean,
         width,
         label="Weather Delayed",
@@ -509,7 +509,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         capsize=10,
     )
     axes[1].bar(
-        x[1],
+        x,
         weather_cancelled_totals_mean,
         width,
         label="Weather Cancelled",
@@ -599,8 +599,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ),
             only_mean=True,
             collapse_columns=True,
-        )#[draw]
-        final_data[scenario_labels_final[i]] = result_data#["mean"]
+        )[draw]
+        final_data[scenario_labels_final[i]] = result_data["mean"]
     df_final = pd.DataFrame(final_data).fillna(0)
     df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_{suffix}_{HSI_of_interest}.csv")
 
@@ -627,8 +627,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ),
             only_mean=True,
             collapse_columns=True,
-        )#[draw]
-        final_data[scenario_labels_final[i]] = result_data#["mean"]
+        )[draw]
+        final_data[scenario_labels_final[i]] = result_data["mean"]
 
     df_final = pd.DataFrame(final_data).fillna(0)
     df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Coarse_Treatments_{suffix}_{HSI_of_interest}.csv")
