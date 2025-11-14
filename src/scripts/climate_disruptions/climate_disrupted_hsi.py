@@ -564,75 +564,75 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(output_folder / f"treatments_and_appointments_per_1000_all_draws_with_weather_{max_year}_{suffix}.png")
     plt.close(fig)
 
-    # # target_year_final = max_year
-    # #target_period_final = (Date(2026, 1, 1), Date(target_year_final, 12, 31))
-    # target_period_final = (Date(2010, 1, 1), Date(2011, 1, 12))
-    # #target_period_final = (Date(2026, 1, 1), Date(2028, 1, 12))
-    #
-    # #scenario_labels_final = ["Baseline", "SSP2-4.5", "SSP5-8.5"]
-    # #scenario_indices_final = [0, 6, 7]
-    # scenario_labels_final = ["Baseline"]
-    # scenario_indices_final = [0]
-    #
-    #
-    # def get_counts_of_hsi_by_treatment_id(_df):
-    #     _df = _df.loc[pd.to_datetime(_df["date"]).between(*target_period_final)]
-    #     print(_df["TREATMENT_ID"])
-    #     _counts_by_treatment_id = _df["TREATMENT_ID"].apply(pd.Series).sum().astype(int)
-    #     return _counts_by_treatment_id.groupby(level=0).sum()
-    #
-    # def get_counts_of_hsi_by_short_treatment_id(_df):
-    #     _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
-    #     _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split("_")[0] + "*")
-    #     return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
-    #
-    # final_data = {}
-    # HSI_of_interest = "HSI_Event_non_blank_appt_footprint"
-    # for i, draw in enumerate(scenario_indices_final):
-    #     result_data = summarize(
-    #         extract_results(
-    #             results_folder,
-    #             module="tlo.methods.healthsystem.summary",
-    #             key=HSI_of_interest,
-    #             custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
-    #             do_scaling=True,
-    #         ),
-    #         only_mean=True,
-    #         collapse_columns=True,
-    #     )#[draw]
-    #     final_data[scenario_labels_final[i]] = result_data#["mean"]
-    # df_final = pd.DataFrame(final_data).fillna(0)
-    # df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_{suffix}_{HSI_of_interest}.csv")
-    #
-    # # Now do by coarse treatment ID
-    # def get_num_treatments_group(_df):
-    #     """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
-    #     _df = _df.loc[pd.to_datetime(_df.date).between(*target_period_final), 'TREATMENT_ID'].apply(
-    #         pd.Series).sum()
-    #     print(_df.index)
-    #     _df.index = _df.index.map(lambda x: "_".join(x.split('_')[:2]) + "*")
-    #     # _df = _df.rename(index=treatment_group)
-    #     _df = _df.groupby(level=0).sum()
-    #     return _df
-    #
-    # final_data = {}
-    # for i, draw in enumerate(scenario_indices_final):
-    #     result_data = summarize(
-    #         extract_results(
-    #             results_folder,
-    #             module="tlo.methods.healthsystem.summary",
-    #             key=HSI_of_interest,
-    #             custom_generate_series=get_num_treatments_group,
-    #             do_scaling=True,
-    #         ),
-    #         only_mean=True,
-    #         collapse_columns=True,
-    #     )#[draw]
-    #     final_data[scenario_labels_final[i]] = result_data#["mean"]
-    #
-    # df_final = pd.DataFrame(final_data).fillna(0)
-    # df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Coarse_Treatments_{suffix}_{HSI_of_interest}.csv")
-    #
+    target_year_final = max_year
+    target_period_final = (Date(2026, 1, 1), Date(target_year_final, 12, 31))
+    target_period_final = (Date(2010, 1, 1), Date(2011, 1, 12))
+    #target_period_final = (Date(2026, 1, 1), Date(2028, 1, 12))
+
+    scenario_labels_final = ["Baseline", "SSP2-4.5", "SSP5-8.5"]
+    scenario_indices_final = [0, 6, 7]
+    #scenario_labels_final = ["Baseline"]
+    #scenario_indices_final = [0]
+
+
+    def get_counts_of_hsi_by_treatment_id(_df):
+        _df = _df.loc[pd.to_datetime(_df["date"]).between(*target_period_final)]
+        print(_df["TREATMENT_ID"])
+        _counts_by_treatment_id = _df["TREATMENT_ID"].apply(pd.Series).sum().astype(int)
+        return _counts_by_treatment_id.groupby(level=0).sum()
+
+    def get_counts_of_hsi_by_short_treatment_id(_df):
+        _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
+        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split("_")[0] + "*")
+        return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
+
+    final_data = {}
+    HSI_of_interest = "HSI_Event_non_blank_appt_footprint"
+    for i, draw in enumerate(scenario_indices_final):
+        result_data = summarize(
+            extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key=HSI_of_interest,
+                custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
+                do_scaling=True,
+            ),
+            only_mean=True,
+            collapse_columns=True,
+        )#[draw]
+        final_data[scenario_labels_final[i]] = result_data#["mean"]
+    df_final = pd.DataFrame(final_data).fillna(0)
+    df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_{suffix}_{HSI_of_interest}.csv")
+
+    # Now do by coarse treatment ID
+    def get_num_treatments_group(_df):
+        """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
+        _df = _df.loc[pd.to_datetime(_df.date).between(*target_period_final), 'TREATMENT_ID'].apply(
+            pd.Series).sum()
+        print(_df.index)
+        _df.index = _df.index.map(lambda x: "_".join(x.split('_')[:2]) + "*")
+        # _df = _df.rename(index=treatment_group)
+        _df = _df.groupby(level=0).sum()
+        return _df
+
+    final_data = {}
+    for i, draw in enumerate(scenario_indices_final):
+        result_data = summarize(
+            extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key=HSI_of_interest,
+                custom_generate_series=get_num_treatments_group,
+                do_scaling=True,
+            ),
+            only_mean=True,
+            collapse_columns=True,
+        )#[draw]
+        final_data[scenario_labels_final[i]] = result_data#["mean"]
+
+    df_final = pd.DataFrame(final_data).fillna(0)
+    df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Coarse_Treatments_{suffix}_{HSI_of_interest}.csv")
+
 
 
     # --- Plot: stacked bar chart

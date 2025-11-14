@@ -41,7 +41,7 @@ class ClimateDisruptionScenario(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2041, 1, 12)
-        self.pop_size = 100_000
+        self.pop_size = 1_000
         self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2025
         self._scenarios = self._get_scenarios()
@@ -79,7 +79,7 @@ class ClimateDisruptionScenario(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {
             "Baseline": self._baseline(),
-            "SSP 585 Mean": self._ssp585_mean(),
+            #"SSP 585 Mean": self._ssp585_mean(),
         }
 
     def _baseline(self) -> Dict:
