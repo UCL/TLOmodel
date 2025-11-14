@@ -239,6 +239,7 @@ if __name__ == "__main__":
             section_names=[
                 "Overview of the model",
                 "Analyses using the model",
+                "Other analyses",
                 "Healthcare seeking behaviour",
                 "Healthcare provision",
                 "Data Collection - Protocol and Analyses",
