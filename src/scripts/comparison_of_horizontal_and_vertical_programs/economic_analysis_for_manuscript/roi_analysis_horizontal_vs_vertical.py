@@ -611,7 +611,7 @@ def reorder_rows_for_csv(_df, desired_order):
 # %% CONFIG
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('htm_and_hss_runs-2025-09-16T141811Z.py', outputfilepath)[0]
+results_folder = get_scenario_outputs('htm_and_hss_runs-2025-10-14T084418Z.py', outputfilepath)[0]
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
@@ -1082,7 +1082,7 @@ for rates in alternative_discount_rates:
     )
     ax.set_title(name_of_plot)
     ax.set_ylabel('ICERs \n($/DALY averted)')
-    ax.set_ylim(bottom=0)
+    ax.set_ylim(bottom=0, top = icers_summarized_subset_for_figure['upper'].max() * 1.1)
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
     plt.close(fig)
