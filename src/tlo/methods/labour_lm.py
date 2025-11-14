@@ -501,7 +501,7 @@ def predict_postnatal_check(self, df, rng=None, **externals):
 
     result[(df.la_parity > 4)] *= params['or_pnc_parity_>4']
 
-    result[(df.ac_total_anc_visits_current_pregnancy > 3)] *= params['or_pnc_anc4+']
+    result[(df.ac_total_anc_visits_current_pregnancy > 3)] *= params['or_pnc_anc4+'] #changing for DFF
 
     result[externals['mode_of_delivery'] == 'caesarean_section'] *= params['or_pnc_caesarean_delivery']
     result[(externals['delivery_setting'] == 'health_centre') | (externals['delivery_setting'] == 'hospital')] \
