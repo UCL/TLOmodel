@@ -18,7 +18,8 @@ import statsmodels.api as sm
 import seaborn as sns
 from collections import defaultdict
 import textwrap
-from typing import Tuple, Union
+from typing import Tuple, Union, Sequence
+
 
 from scipy.stats import norm
 
@@ -45,8 +46,7 @@ resourcefilepath = Path("./resources")
 
 output_folder = Path("./outputs/t.mangal@imperial.ac.uk")
 
-results_folder = get_scenario_outputs("schisto_scenarios-2025.py", output_folder)[-1]
-# results_folder = get_scenario_outputs("schisto_scenarios_SI.py", output_folder)[-1]
+results_folder = get_scenario_outputs("schisto_scenarios_SI.py", output_folder)[-1]
 
 
 # Declare path for output graphs from this script
@@ -66,12 +66,8 @@ scenario_info = get_scenario_info(results_folder)
 # Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
 
-# todo the scaling factors were calculated incorrectly
-# tmp = log['tlo.methods.population']['scaling_factor_district']
-# district_scaling_factor = pd.DataFrame(tmp.iloc[0]['scaling_factor_district'], index=[0]).T
-# district_scaling_factor.columns = ['scaling_factor']
-
-district_scaling_factor = pd.read_excel(results_folder / 'scaling_factor_district.xlsx',
+folder = get_scenario_outputs("schisto_scenarios-2025.py", output_folder)[-1]
+district_scaling_factor = pd.read_excel(folder / 'scaling_factor_district.xlsx',
                                         index_col=0)
 
 district_scaling_factor = 1/ district_scaling_factor  # because logger usually scales this
@@ -85,7 +81,7 @@ TARGET_PERIOD = (Date(2024, 1, 1), Date(2050, 12, 31))
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.schistosomiasis.scenario_runs import (
+    from scripts.schistosomiasis.scenario_runs_SI import (
         SchistoScenarios,
     )
     e = SchistoScenarios()
@@ -169,7 +165,7 @@ def compute_stepwise_effects_by_wash_strategy(df: pd.DataFrame) -> pd.DataFrame:
 
     Returns a DataFrame with same index as input and columns for each comparison.
     """
-    wash_strategies = ['Pause WASH', 'Continue WASH', 'Scale-up WASH']
+    wash_strategies = ['Continue WASH']
     comparisons = [
         ('MDA SAC', 'no MDA'),
         ('MDA PSAC+SAC', 'MDA SAC'),
@@ -200,98 +196,202 @@ def compute_stepwise_effects_by_wash_strategy(df: pd.DataFrame) -> pd.DataFrame:
 
 
 
+
+
+
 def compute_number_averted_vs_noMDA_within_wash_strategies(
     df: pd.DataFrame,
-    wash_strategies: tuple = ("Pause WASH", "Continue WASH", "Scale-up WASH"),
+    wash_strategies: Union[str, Sequence[str], None] = 'Continue WASH',
     results_path: Path = None,
     filename_prefix: str = 'dalys_averted_by_year_run_district',
-    target_period: tuple = None,
+    target_period: Tuple = None,
     averted_or_incurred: str = 'averted',
 ) -> pd.DataFrame:
     """
-    Computes value (dalys or number py) averted by comparing each WASH strategy's MDA scenarios
-    to the corresponding 'no MDA' baseline within the same strategy group.
+    Compute DALYs (or other quantity) averted by comparing each WASH strategy's MDA
+    scenarios to the corresponding 'no MDA' baseline within the same strategy.
+
+    Assumes:
+      - Columns MultiIndex levels: ['draw', 'run', 'district_of_residence']
+      - 'draw' values look like 'Continue WASH, no MDA', 'Continue WASH, MDA SAC', etc.
+
+    Returns
+    -------
+    pd.DataFrame
+        Same index as `df`.
+        Columns: one per (draw, run, district_of_residence) for MDA scenarios,
+        containing scaled differences vs the 'no MDA' draw within each strategy.
     """
-    if averted_or_incurred == 'averted':
-        scale = -1.0
+
+    cols = df.columns
+    if cols.nlevels < 2 or cols.names[0] != 'draw':
+        raise ValueError("Expected columns MultiIndex with level 0 named 'draw'.")
+
+    draw_labels = cols.get_level_values('draw')
+    unique_draws = pd.Index(draw_labels.unique())
+
+    # Sign convention
+    scale = -1.0 if averted_or_incurred == 'averted' else 1.0
+
+    # Normalise wash_strategies
+    if wash_strategies is None:
+        # infer strategies as the prefix before the first comma
+        strategies = sorted({s.split(',')[0].strip() for s in unique_draws})
+    elif isinstance(wash_strategies, str):
+        strategies = [wash_strategies]
     else:
-        scale = 1.0
+        strategies = list(wash_strategies)
 
     comparator_results = []
 
-    for strategy in wash_strategies:
+    for strategy in strategies:
         comparator_draw = f"{strategy}, no MDA"
-        # Skip the comparator in selection
-        relevant_draws = [col for col in df.columns.get_level_values(0).unique()
-                          if strategy in col and col != comparator_draw]
-        if not relevant_draws:
+        if comparator_draw not in unique_draws:
+            # No comparator for this strategy in the dataframe – skip it
             continue
 
-        # Filter to relevant columns for this strategy
-        df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
+        # Comparator columns (all runs for this strategy's 'no MDA')
+        comp_mask = (draw_labels == comparator_draw)
+        comp_cols = df.loc[:, comp_mask]
 
-        # Compute difference relative to the strategy's 'no MDA' comparator
-        diff_df = scale * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+        # All draws belonging to this strategy
+        strat_draws = [d for d in unique_draws if d.startswith(strategy)]
+        # Exclude the comparator itself
+        relevant_draws = [d for d in strat_draws if d != comparator_draw]
 
-        # Select only the relevant MDA draws
-        comparator_results.append(diff_df)
+        for draw_label in relevant_draws:
+            mda_mask = (draw_labels == draw_label)
+            mda_cols = df.loc[:, mda_mask]
+            if mda_cols.shape[1] == 0:
+                continue
 
-    # Concatenate results across all strategies
-    combined_df = pd.concat(comparator_results, axis=1)
+            # Require same number of columns (same runs) for comparator and MDA scenario
+            if mda_cols.shape[1] != comp_cols.shape[1]:
+                raise ValueError(
+                    f"Shape mismatch for draw '{draw_label}': "
+                    f"{mda_cols.shape[1]} vs comparator {comp_cols.shape[1]}"
+                )
 
-    if results_path:
-        period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
-        output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
+            diff_vals = scale * (mda_cols.values - comp_cols.values)
+            diff_df = pd.DataFrame(diff_vals, index=df.index, columns=mda_cols.columns)
+            comparator_results.append(diff_df)
+
+    if not comparator_results:
+        # Nothing computed (e.g. no matching strategies/comparators)
+        combined_df = pd.DataFrame(index=df.index)
+    else:
+        combined_df = pd.concat(comparator_results, axis=1)
+
+    # Optional write to Excel
+    if results_path is not None:
+        if target_period is not None:
+            start, end = target_period
+            start_y = start.year if hasattr(start, "year") else int(start)
+            end_y   = end.year   if hasattr(end, "year")   else int(end)
+            period_str = f"_{start_y}-{end_y}"
+        else:
+            period_str = ""
+        output_file = Path(results_path) / f"{filename_prefix}{period_str}_SI.xlsx"
         combined_df.to_excel(output_file)
 
     return combined_df
 
+
+
+import pandas as pd
+import numpy as np
+from pathlib import Path
+from typing import Union, Sequence, Tuple
 
 def compute_number_averted_vs_SAC_within_wash_strategies(
     df: pd.DataFrame,
-    wash_strategies: tuple = ("Pause WASH", "Continue WASH", "Scale-up WASH"),
+    wash_strategies: Union[str, Sequence[str]] = ("Pause WASH", "Continue WASH", "Scale-up WASH"),
     results_path: Path = None,
     filename_prefix: str = 'dalys_averted_by_year_run_district',
-    target_period: tuple = None,
+    target_period: Tuple = None,
     averted_or_incurred: str = 'averted',
 ) -> pd.DataFrame:
     """
-    Computes value (dalys or number py) averted by comparing each WASH strategy's MDA scenarios
-    to the corresponding 'no MDA' baseline within the same strategy group.
+    Computes value (DALYs or number py) averted by comparing each WASH strategy's MDA scenarios
+    to the corresponding 'MDA SAC' baseline within the same strategy group.
+
+    Assumes:
+      - Columns MultiIndex with level 0 named 'draw', containing labels such as
+        'Continue WASH, MDA SAC', 'Continue WASH, MDA PSAC', etc.
+      - There are multiple runs per draw in other column levels (e.g. 'run').
     """
-    if averted_or_incurred == 'averted':
-        scale = -1.0
+
+    cols = df.columns
+    if cols.nlevels < 1 or cols.names[0] != 'draw':
+        raise ValueError("Expected columns MultiIndex with level 0 named 'draw'.")
+
+    draw_labels = cols.get_level_values('draw')
+    unique_draws = pd.Index(draw_labels.unique())
+
+    # Sign convention
+    scale = -1.0 if averted_or_incurred == 'averted' else 1.0
+
+    # Normalise wash_strategies to a list
+    if isinstance(wash_strategies, str):
+        strategies = [wash_strategies]
     else:
-        scale = 1.0
+        strategies = list(wash_strategies)
 
     comparator_results = []
 
-    for strategy in wash_strategies:
+    for strategy in strategies:
         comparator_draw = f"{strategy}, MDA SAC"
-        # Skip the comparator in selection
-        relevant_draws = [col for col in df.columns.get_level_values(0).unique()
-                          if strategy in col and col != comparator_draw]
-        if not relevant_draws:
+        if comparator_draw not in unique_draws:
+            # No SAC comparator for this strategy – skip it
             continue
 
-        # Filter to relevant columns for this strategy
-        df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
+        # Comparator columns: all runs for this strategy's MDA SAC
+        comp_mask = (draw_labels == comparator_draw)
+        comp_cols = df.loc[:, comp_mask]
 
-        # Compute difference relative to the strategy's 'no MDA' comparator
-        diff_df = scale * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+        # All draws belonging to this strategy
+        strat_draws = [d for d in unique_draws if d.startswith(strategy)]
+        # Exclude the comparator itself
+        relevant_draws = [d for d in strat_draws if d != comparator_draw]
 
-        # Select only the relevant MDA draws
-        comparator_results.append(diff_df)
+        for draw_label in relevant_draws:
+            mda_mask = (draw_labels == draw_label)
+            mda_cols = df.loc[:, mda_mask]
+            if mda_cols.shape[1] == 0:
+                continue
 
-    # Concatenate results across all strategies
-    combined_df = pd.concat(comparator_results, axis=1)
+            # Require same number of columns (runs) for comparator and scenario
+            if mda_cols.shape[1] != comp_cols.shape[1]:
+                raise ValueError(
+                    f"Shape mismatch for draw '{draw_label}': "
+                    f"{mda_cols.shape[1]} vs comparator {comp_cols.shape[1]}"
+                )
 
-    if results_path:
-        period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
-        output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
+            # Difference per run vs SAC comparator
+            diff_vals = scale * (mda_cols.values - comp_cols.values)
+            diff_df = pd.DataFrame(diff_vals, index=df.index, columns=mda_cols.columns)
+            comparator_results.append(diff_df)
+
+    if not comparator_results:
+        combined_df = pd.DataFrame(index=df.index)
+    else:
+        combined_df = pd.concat(comparator_results, axis=1)
+
+    # Optional Excel export
+    if results_path is not None:
+        if target_period is not None:
+            start, end = target_period
+            start_y = start.year if hasattr(start, "year") else int(start)
+            end_y   = end.year   if hasattr(end, "year")   else int(end)
+            period_str = f"_{start_y}-{end_y}"
+        else:
+            period_str = ""
+        output_file = Path(results_path) / f"{filename_prefix}{period_str}.xlsx"
         combined_df.to_excel(output_file)
 
     return combined_df
+
+
 
 
 def compute_number_averted_vs_continueWASH_noMDA(
@@ -324,7 +424,7 @@ def compute_number_averted_vs_continueWASH_noMDA(
 
     if results_path:
         period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
-        output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
+        output_file = results_path / f"{filename_prefix}{period_str}_SI.xlsx"
         diff_df.to_excel(output_file)
 
     return diff_df
@@ -366,92 +466,10 @@ def format_summary_for_output(
     formatted_df = formatted.unstack(level=-1)
 
     # Save to Excel
-    output_path = results_folder / f'{filename_prefix}_{filename}_{target_period()}.xlsx'
+    output_path = results_folder / f'{filename_prefix}_{filename}_{target_period()}_SI_SI.xlsx'
     formatted_df.to_excel(output_path)
 
     return formatted_df
-
-
-
-
-# def compute_icer_district(
-#     dalys_averted: pd.DataFrame,
-#     comparison_costs: pd.DataFrame,
-#     discount_rate_dalys: float = 0.0,
-#     discount_rate_costs: float = 0.0,
-#     return_summary: bool = True
-# ) -> pd.DataFrame | pd.Series:
-#     """
-#     Compute ICERs comparing costs and DALYs averted over a TARGET_PERIOD by district, run, and scenario.
-#
-#     Assumes:
-#     - Row MultiIndex: ['year', 'district_of_residence'] or ['year', 'District']
-#     - Column MultiIndex: ['wash_strategy', 'comparison', 'run']
-#     - TARGET_PERIOD is a global tuple of (start_year, end_year) as datetime or int
-#     """
-#     global TARGET_PERIOD
-#     start_year, end_year = TARGET_PERIOD
-#     start_year = start_year.year if hasattr(start_year, "year") else start_year
-#     end_year = end_year.year if hasattr(end_year, "year") else end_year
-#
-#     # --- Apply year masks separately
-#     years_dalys = dalys_averted.index.get_level_values('year')
-#     mask_dalys = (years_dalys >= start_year) & (years_dalys <= end_year)
-#     dalys_period = dalys_averted.loc[mask_dalys]
-#     # where daly values are tiny, assume 0 to avoid strange ICER values (huge and negative)
-#     dalys_period = dalys_period.applymap(
-#         lambda x: 0.0 if -10 <= x <= 10 else x
-#     )
-#
-#     years_costs = comparison_costs.index.get_level_values('year')
-#     mask_costs = (years_costs >= start_year) & (years_costs <= end_year)
-#     costs_period = comparison_costs.loc[mask_costs]
-#
-#     # --- Discounting
-#     years_since_start_dalys = years_dalys[mask_dalys] - start_year
-#     years_since_start_costs = years_costs[mask_costs] - start_year
-#
-#     discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start_dalys)
-#     discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start_costs)
-#
-#     if discount_rate_dalys != 0.0:
-#         dalys_period = dalys_period.mul(discount_weights_dalys.values, axis=0)
-#
-#     if discount_rate_costs != 0.0:
-#         costs_period = costs_period.mul(discount_weights_costs.values, axis=0)
-#
-#     # --- Aggregate over time (group by district)
-#     total_dalys = dalys_period.groupby(level='district_of_residence').sum()
-#     total_costs = costs_period.groupby(level='District').sum()
-#
-#     # --- Compute ICERs
-#     icers = total_costs.divide(total_dalys).replace([np.inf, -np.inf], np.nan)
-#
-#     # --- Convert to long format
-#     icers_long = (
-#         icers
-#         .stack(['wash_strategy', 'comparison', 'run'])
-#         .rename('icer')
-#         .reset_index()
-#     )
-#
-#     if return_summary:
-#         summary = (
-#             icers_long
-#             .groupby(['District', 'wash_strategy', 'comparison'])['icer']
-#             .agg(
-#                 mean='mean',
-#                 lower=lambda x: np.quantile(x, 0.025),
-#                 upper=lambda x: np.quantile(x, 0.975)
-#             )
-#             .reset_index()
-#         )
-#         return summary
-#     else:
-#         return icers_long
-
-
-
 
 
 
@@ -787,7 +805,7 @@ prev_haem_H_All_district = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_haem_H_All_district.to_excel(results_folder / (f'prev_haem_H_year_district {target_period()}.xlsx'))
+prev_haem_H_All_district.to_excel(results_folder / (f'prev_haem_H_year_district {target_period()}_SI.xlsx'))
 
 prev_mansoni_H_All_district = extract_results(
     results_folder,
@@ -797,7 +815,7 @@ prev_mansoni_H_All_district = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_mansoni_H_All_district.to_excel(results_folder / (f'prev_mansoni_H_year_district {target_period()}.xlsx'))
+prev_mansoni_H_All_district.to_excel(results_folder / (f'prev_mansoni_H_year_district {target_period()}_SI.xlsx'))
 
 
 # -------------------- prevalence of any infection
@@ -812,7 +830,7 @@ prev_haem_HML_All_district = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_haem_HML_All_district.to_excel(results_folder / (f'prev_haem_HML_All_district {target_period()}.xlsx'))
+prev_haem_HML_All_district.to_excel(results_folder / (f'prev_haem_HML_All_district {target_period()}_SI.xlsx'))
 
 prev_mansoni_HML_All_district = extract_results(
     results_folder,
@@ -822,7 +840,7 @@ prev_mansoni_HML_All_district = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_mansoni_HML_All_district.to_excel(results_folder / (f'prev_mansoni_HML_All_district {target_period()}.xlsx'))
+prev_mansoni_HML_All_district.to_excel(results_folder / (f'prev_mansoni_HML_All_district {target_period()}_SI.xlsx'))
 
 
 
@@ -837,7 +855,7 @@ prev_haem_HM_All_district = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_haem_HM_All_district.to_excel(results_folder / (f'prev_haem_HM_All_district {target_period()}.xlsx'))
+prev_haem_HM_All_district.to_excel(results_folder / (f'prev_haem_HM_All_district {target_period()}_SI.xlsx'))
 
 prev_mansoni_HM_All_district = extract_results(
     results_folder,
@@ -847,7 +865,7 @@ prev_mansoni_HM_All_district = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_mansoni_HM_All_district.to_excel(results_folder / (f'prev_mansoni_HM_All_district {target_period()}.xlsx'))
+prev_mansoni_HM_All_district.to_excel(results_folder / (f'prev_mansoni_HM_All_district {target_period()}_SI.xlsx'))
 
 
 
@@ -898,19 +916,19 @@ def calc_mean_and_ci(df, ci=0.95):
 
 
 prev_haem_HML_All_district_summary = calc_mean_and_ci(prev_haem_HML_All_district)
-prev_haem_HML_All_district_summary.to_excel(results_folder / (f'prev_haem_HML_All_district_summary {target_period()}.xlsx'))
+prev_haem_HML_All_district_summary.to_excel(results_folder / (f'prev_haem_HML_All_district_summary {target_period()}_SI.xlsx'))
 
 
 prev_mansoni_HML_All_district_summary = calc_mean_and_ci(prev_mansoni_HML_All_district)
-prev_mansoni_HML_All_district_summary.to_excel(results_folder / (f'prev_mansoni_HML_All_district_summary {target_period()}.xlsx'))
+prev_mansoni_HML_All_district_summary.to_excel(results_folder / (f'prev_mansoni_HML_All_district_summary {target_period()}_SI.xlsx'))
 
 
 prev_haem_HM_All_district_summary = calc_mean_and_ci(prev_haem_HM_All_district)
-prev_haem_HM_All_district_summary.to_excel(results_folder / (f'prev_haem_HM_All_district_summary {target_period()}.xlsx'))
+prev_haem_HM_All_district_summary.to_excel(results_folder / (f'prev_haem_HM_All_district_summary {target_period()}_SI.xlsx'))
 
 
 prev_mansoni_HM_All_district_summary = calc_mean_and_ci(prev_mansoni_HM_All_district)
-prev_mansoni_HM_All_district_summary.to_excel(results_folder / (f'prev_mansoni_HM_All_district_summary {target_period()}.xlsx'))
+prev_mansoni_HM_All_district_summary.to_excel(results_folder / (f'prev_mansoni_HM_All_district_summary {target_period()}_SI.xlsx'))
 
 
 
@@ -1017,7 +1035,7 @@ prev_haem_national = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_haem_national.to_excel(results_folder / (f'prev_haem_national {target_period()}.xlsx'))
+prev_haem_national.to_excel(results_folder / (f'prev_haem_national {target_period()}_SI.xlsx'))
 
 
 prev_mansoni_national = extract_results(
@@ -1028,7 +1046,7 @@ prev_mansoni_national = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_mansoni_national.to_excel(results_folder / (f'prev_mansoni_national {target_period()}.xlsx'))
+prev_mansoni_national.to_excel(results_folder / (f'prev_mansoni_national {target_period()}_SI.xlsx'))
 
 
 
@@ -1042,7 +1060,7 @@ prev_haem_national_heavy = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_haem_national_heavy.to_excel(results_folder / (f'prev_haem_national_heavy {target_period()}.xlsx'))
+prev_haem_national_heavy.to_excel(results_folder / (f'prev_haem_national_heavy {target_period()}_SI.xlsx'))
 
 
 prev_mansoni_national_heavy = extract_results(
@@ -1053,7 +1071,7 @@ prev_mansoni_national_heavy = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_mansoni_national_heavy.to_excel(results_folder / (f'prev_mansoni_national_heavy {target_period()}.xlsx'))
+prev_mansoni_national_heavy.to_excel(results_folder / (f'prev_mansoni_national_heavy {target_period()}_SI.xlsx'))
 
 
 # todo this returns very small CI
@@ -1155,19 +1173,19 @@ def calc_mean_and_range_ci(df):
 
 
 prev_haem_national_summary = calc_mean_and_range_ci(prev_haem_national)
-prev_haem_national_summary.to_excel(results_folder / (f'prev_haem_national_summary {target_period()}.xlsx'))
+prev_haem_national_summary.to_excel(results_folder / (f'prev_haem_national_summary {target_period()}_SI.xlsx'))
 
 
 prev_mansoni_national_summary = calc_mean_and_range_ci(prev_mansoni_national)
-prev_mansoni_national_summary.to_excel(results_folder / (f'prev_mansoni_national_summary {target_period()}.xlsx'))
+prev_mansoni_national_summary.to_excel(results_folder / (f'prev_mansoni_national_summary {target_period()}_SI.xlsx'))
 
 
 prev_haem_national_heavy_summary = calc_mean_and_range_ci(prev_haem_national_heavy)
-prev_haem_national_heavy_summary.to_excel(results_folder / (f'prev_haem_national_heavy_summary {target_period()}.xlsx'))
+prev_haem_national_heavy_summary.to_excel(results_folder / (f'prev_haem_national_heavy_summary {target_period()}_SI.xlsx'))
 
 
 prev_mansoni_national_heavy_summary = calc_mean_and_range_ci(prev_mansoni_national_heavy)
-prev_mansoni_national_heavy_summary.to_excel(results_folder / (f'prev_mansoni_national_heavy_summary {target_period()}.xlsx'))
+prev_mansoni_national_heavy_summary.to_excel(results_folder / (f'prev_mansoni_national_heavy_summary {target_period()}_SI.xlsx'))
 
 
 
@@ -1256,23 +1274,23 @@ def get_first_years_below_threshold(
 # prevalence <1% heavy infection
 first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_H_All_district,
                                                            threshold=0.01)
-first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem H_1percent_{target_period()}.xlsx'))
+first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem H_1percent_{target_period()}_SI.xlsx'))
 
 
 first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_H_All_district,
                                                            threshold=0.01)
-first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni H_1percent {target_period()}.xlsx'))
+first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni H_1percent {target_period()}_SI.xlsx'))
 
 
 # prevalence <1% any infection
 first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_HML_All_district,
                                                            threshold=0.01)
-first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HML_1percent_{target_period()}.xlsx'))
+first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HML_1percent_{target_period()}_SI.xlsx'))
 
 
 first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_HML_All_district,
                                                            threshold=0.01)
-first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HML_1percent {target_period()}.xlsx'))
+first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HML_1percent {target_period()}_SI.xlsx'))
 
 
 
@@ -1280,25 +1298,25 @@ first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HML
 first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_HML_All_district,
                                                            threshold=0.02,
                                                            year_range=(2010, 2050))
-first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HML_2percent_{target_period()}.xlsx'))
+first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HML_2percent_{target_period()}_SI.xlsx'))
 
 
 first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_HML_All_district,
                                                            threshold=0.02,
                                                               year_range=(2010, 2050))
-first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni_HML_2percent {target_period()}.xlsx'))
+first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni_HML_2percent {target_period()}_SI.xlsx'))
 
 
 
 # zero moderate or heavy infection
 first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_HM_All_district,
                                                            threshold=0.001)
-first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HM_1percent_{target_period()}.xlsx'))
+first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_haem HM_1percent_{target_period()}_SI.xlsx'))
 
 
 first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_HM_All_district,
                                                            threshold=0.001)
-first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HM_1percent {target_period()}.xlsx'))
+first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_mansoni HM_1percent {target_period()}_SI.xlsx'))
 
 
 
@@ -1403,7 +1421,7 @@ year_eliminated = first_dual_species_stop_year(prev_haem_HML_All_district,
                                                threshold=0.01,
                                                year_range=(2010, 2050))
 
-year_eliminated.to_excel(results_folder / ('year_eliminated.xlsx'))
+year_eliminated.to_excel(results_folder / ('year_eliminated_SI.xlsx'))
 
 
 year_eliminated_HM = first_dual_species_stop_year(prev_haem_HM_All_district,
@@ -1411,7 +1429,7 @@ year_eliminated_HM = first_dual_species_stop_year(prev_haem_HM_All_district,
                                                threshold=0.01,
                                                year_range=(2010, 2050))
 
-year_eliminated_HM.to_excel(results_folder / ('year_eliminated_HM.xlsx'))
+year_eliminated_HM.to_excel(results_folder / ('year_eliminated_HM_SI.xlsx'))
 
 
 
@@ -1493,11 +1511,11 @@ if total_number_infected.columns.equals(total_number_in_district.columns):
     result = total_number_infected / total_number_in_district
 
 result.index = pd.Index(range(2011, 2051), name="year")
-result.to_excel(results_folder / f'prevalence_any_infection_all_ages_district{target_period()}.xlsx')
+result.to_excel(results_folder / f'prevalence_any_infection_all_ages_district{target_period()}_SI.xlsx')
 
 # summarise the prevalence for each district by draw
 mean_by_draw_district = result.groupby(level=['draw', 'district'], axis=1).mean()
-mean_by_draw_district.to_excel(results_folder / (f'mean_prevalence_any_infection_all_ages_by_year_district{target_period()}.xlsx'))
+mean_by_draw_district.to_excel(results_folder / (f'mean_prevalence_any_infection_all_ages_by_year_district{target_period()}_SI.xlsx'))
 
 
 #################################################################################
@@ -1541,20 +1559,12 @@ py_district = extract_results(
 
 # need to multiply by district-level scaling factor
 scaled_py_district = py_district.mul(district_scaling_factor['scaling_factor'], axis=0)
-scaled_py_district.to_excel(results_folder / f'num_py_infected_by_district_{target_period()}.xlsx')
+scaled_py_district.to_excel(results_folder / f'num_py_infected_by_district_{target_period()}_SI.xlsx')
 
 # summarise the py infected for each district by draw
 mean_py_district = scaled_py_district.groupby(level=['draw'], axis=1).mean()
-mean_py_district.to_excel(results_folder / (f'mean_py_any_infection_by_year_district{target_period()}.xlsx'))
+mean_py_district.to_excel(results_folder / (f'mean_py_any_infection_by_year_district{target_period()}_SI.xlsx'))
 
-
-num_py_averted_pause = compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        scaled_py_district,
-        comparison='Pause WASH, no MDA'
-    ),
-    central_measure='mean'
-)
 num_py_averted_continue = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         scaled_py_district,
@@ -1562,34 +1572,20 @@ num_py_averted_continue = compute_summary_statistics(
     ),
     central_measure='mean'
 )
-num_py_averted_scaleup = compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        scaled_py_district,
-        comparison='Scale-up WASH, no MDA'
-    ),
-    central_measure='mean'
-)
+
 
 # Select desired columns from each dataframe
-df1_sel = select_draws_by_keyword(num_py_averted_pause, 'Pause', level=0)
 df2_sel = select_draws_by_keyword(num_py_averted_continue, 'Continue', level=0)
-df3_sel = select_draws_by_keyword(num_py_averted_scaleup, 'Scale-up', level=0)
 
 # Concatenate the selected columns horizontally
-num_py_averted_combined = pd.concat([df1_sel, df2_sel, df3_sel], axis=1)
-num_py_averted_combined.to_csv(results_folder / f'num_py_averted_by_district{target_period()}.xlsx')
+num_py_averted_combined = pd.concat([df2_sel], axis=1)
+num_py_averted_combined.to_csv(results_folder / f'num_py_averted_by_district{target_period()}_SI.xlsx')
 
 # to get total national-level py averted weighted by district
 # sum the total py across all districts
 num_py_summed_series = pd.DataFrame(scaled_py_district.sum(axis=0)).T
 
-py_averted_national_pause = compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        num_py_summed_series,
-        comparison='Pause WASH, no MDA'
-    ),
-    central_measure='mean'
-)
+
 py_averted_national_continue = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         num_py_summed_series,
@@ -1597,20 +1593,12 @@ py_averted_national_continue = compute_summary_statistics(
     ),
     central_measure='mean'
 )
-py_averted_national_scaleup = compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        num_py_summed_series,
-        comparison='Scale-up WASH, no MDA'
-    ),
-    central_measure='mean'
-)
-df1_sel = select_draws_by_keyword(py_averted_national_pause, 'Pause', level=0)
+
 df2_sel = select_draws_by_keyword(py_averted_national_continue, 'Continue', level=0)
-df3_sel = select_draws_by_keyword(py_averted_national_scaleup, 'Scale-up', level=0)
 
 # Concatenate the selected columns horizontally
-num_py_averted_combined_national = pd.concat([df1_sel, df2_sel, df3_sel], axis=1)
-num_py_averted_combined_national.to_excel(results_folder / f'num_py_averted_national{target_period()}.xlsx')
+num_py_averted_combined_national = pd.concat([df2_sel], axis=1)
+num_py_averted_combined_national.to_excel(results_folder / f'num_py_averted_national{target_period()}_SI.xlsx')
 
 
 #################################################################################
@@ -1692,14 +1680,14 @@ def run_analysis_for_period_and_levels(period_name, period_tuple,
 
     # Save district + age totals
     scaled_py_district_age.to_excel(
-        results_folder / f'num_py_infected_by_district_and_age_{period_name}_{levels_name}.xlsx'
+        results_folder / f'num_py_infected_by_district_and_age_{period_name}_{levels_name}_SI.xlsx'
     )
 
     # Summary statistics
     summary_py_by_district_age = compute_summary_statistics(scaled_py_district_age,
                                                             central_measure='mean')
     summary_py_by_district_age.to_excel(
-        results_folder / f'summary_num_py_infected_by_district_and_age_{period_name}_{levels_name}.xlsx'
+        results_folder / f'summary_num_py_infected_by_district_and_age_{period_name}_{levels_name}_SI.xlsx'
     )
 
     # Format into nice output table
@@ -1710,7 +1698,7 @@ def run_analysis_for_period_and_levels(period_name, period_tuple,
     )
     formatted_df = formatted.unstack(level=-1)
     formatted_df.to_excel(
-        results_folder / f'table_summary_py_by_district_age_{period_name}_{levels_name}.xlsx'
+        results_folder / f'table_summary_py_by_district_age_{period_name}_{levels_name}_SI.xlsx'
     )
 
     # National totals by age-group
@@ -1735,7 +1723,7 @@ def run_analysis_for_period_and_levels(period_name, period_tuple,
     )
     formatted_df = formatted.unstack(level=-1)
     formatted_df.to_excel(
-        results_folder / f'table_summary_py_national_age_{period_name}_{levels_name}.xlsx'
+        results_folder / f'table_summary_py_national_age_{period_name}_{levels_name}_SI.xlsx'
     )
 
     num_py_averted_age = compute_summary_statistics(
@@ -1745,7 +1733,7 @@ def run_analysis_for_period_and_levels(period_name, period_tuple,
         ),
         central_measure='mean'
     )
-    num_py_averted_age.to_excel(results_folder / f'num_py_averted_age_{period_name}_{levels_name}.xlsx')
+    num_py_averted_age.to_excel(results_folder / f'num_py_averted_age_{period_name}_{levels_name}_SI.xlsx')
 
     pc_py_averted_age = 100.0 * compute_summary_statistics(
         -1.0 * find_difference_relative_to_comparison_dataframe(
@@ -1755,7 +1743,7 @@ def run_analysis_for_period_and_levels(period_name, period_tuple,
         ),
         central_measure='mean'
     )
-    pc_py_averted_age.to_excel(results_folder / f'pc_py_averted_age_{period_name}_{levels_name}.xlsx')
+    pc_py_averted_age.to_excel(results_folder / f'pc_py_averted_age_{period_name}_{levels_name}_SI.xlsx')
 
     # -------------------------- national PY infected by age
     # Sum across districts for each age_group, for every (draw, run) combination
@@ -1765,10 +1753,10 @@ def run_analysis_for_period_and_levels(period_name, period_tuple,
     mean_by_draw = df_summed.groupby(axis=1, level='draw').mean()
     se_by_draw = df_summed.groupby(axis=1, level='draw').sem()  # standard error of the mean
 
-    output_path = results_folder / f'mean_py_age_national{period_name}_{levels_name}.xlsx'
+    output_path = results_folder / f'mean_py_age_national{period_name}_{levels_name}_SI.xlsx'
     mean_by_draw.to_excel(output_path)
 
-    output_path = results_folder / f'se_py_age_national{period_name}_{levels_name}.xlsx'
+    output_path = results_folder / f'se_py_age_national{period_name}_{levels_name}_SI.xlsx'
     se_by_draw.to_excel(output_path)
 
 
@@ -1814,14 +1802,14 @@ scaling_factors = district_scaling_factor.loc[districts].iloc[:, 0].values
 
 # Multiply df_schisto by scaling factors, broadcasting over rows
 dalys_schisto_district_scaled = dalys_schisto_district.multiply(scaling_factors, axis=0)
-dalys_schisto_district_scaled.to_excel(results_folder / f'schisto_dalys_by_year_run_district{target_period()}.xlsx')
+dalys_schisto_district_scaled.to_excel(results_folder / f'schisto_dalys_by_year_run_district{target_period()}_SI.xlsx')
 
 
 # === national total DALYs  =========================================================
 
 # get the total national level DALYs incurred 2024-2040 weighted by district
 dalys_summed_by_year = sum_by_year_all_districts(dalys_schisto_district_scaled, TARGET_PERIOD)
-dalys_summed_by_year.to_excel(results_folder / f'schisto_dalys_by_year_run_national{target_period()}.xlsx')
+dalys_summed_by_year.to_excel(results_folder / f'schisto_dalys_by_year_run_national{target_period()}_SI.xlsx')
 
 # get the total dalys nationally
 dalys_national = pd.DataFrame(dalys_summed_by_year.sum()).T
@@ -1840,7 +1828,7 @@ dalys_averted_district_compared_noMDA = compute_number_averted_vs_noMDA_within_w
     target_period=TARGET_PERIOD,
     averted_or_incurred='averted'
 )
-dalys_averted_district_compared_noMDA.to_excel(results_folder / f'dalys_averted_district_compared_noMDA{target_period()}.xlsx')
+dalys_averted_district_compared_noMDA.to_excel(results_folder / f'dalys_averted_district_compared_noMDA{target_period()}_SI.xlsx')
 
 
 dalys_averted_district_compared_ContinueWASHnoMDA = compute_number_averted_vs_continueWASH_noMDA(
@@ -1850,7 +1838,7 @@ dalys_averted_district_compared_ContinueWASHnoMDA = compute_number_averted_vs_co
     target_period=TARGET_PERIOD,
     averted_or_incurred='averted'
 )
-dalys_averted_district_compared_ContinueWASHnoMDA.to_excel(results_folder / f'dalys_averted_district_compared_continueWASHnoMDA{target_period()}.xlsx')
+dalys_averted_district_compared_ContinueWASHnoMDA.to_excel(results_folder / f'dalys_averted_district_compared_continueWASHnoMDA{target_period()}_SI.xlsx')
 
 
 
@@ -1862,14 +1850,14 @@ dalys_averted_district_compared_SAC = compute_number_averted_vs_SAC_within_wash_
     target_period=TARGET_PERIOD,
     averted_or_incurred='averted'
 )
-dalys_averted_district_compared_SAC.to_excel(results_folder / f'dalys_averted_district_compared_SAC{target_period()}.xlsx')
+dalys_averted_district_compared_SAC.to_excel(results_folder / f'dalys_averted_district_compared_SAC{target_period()}_SI.xlsx')
 
 
 # --- Incremental DALYs averted by district ---
 
 # incremental dalys averted - compare each prog in turn to the last one
 incremental_dalys_averted_district = -1 * compute_stepwise_effects_by_wash_strategy(dalys_schisto_district_scaled)
-incremental_dalys_averted_district.to_excel(results_folder / f'stepwise_dalys_averted_year_district{target_period()}.xlsx')
+incremental_dalys_averted_district.to_excel(results_folder / f'stepwise_dalys_averted_year_district{target_period()}_SI.xlsx')
 
 years = incremental_dalys_averted_district.index.get_level_values('year')
 mask = (years >= TARGET_PERIOD[0].year) & (years <= TARGET_PERIOD[1].year)
@@ -1879,7 +1867,7 @@ sum_incremental_dalys_averted_district = (
     .groupby('district_of_residence')
     .sum()
 )
-sum_incremental_dalys_averted_district.to_excel(results_folder / f'sum_incremental_dalys_averted_district{target_period()}.xlsx')
+sum_incremental_dalys_averted_district.to_excel(results_folder / f'sum_incremental_dalys_averted_district{target_period()}_SI.xlsx')
 
 
 # === DALYs averted national =========================================================
@@ -1894,7 +1882,7 @@ dalys_averted_national_compared_noMDA = compute_number_averted_vs_noMDA_within_w
 
 # incremental dalys averted - compare each prog in turn to the last one
 incremental_dalys_averted_national = -1 * compute_stepwise_effects_by_wash_strategy(dalys_summed_by_year)
-incremental_dalys_averted_national.to_excel(results_folder / f'stepwise_dalys_averted_year_national{target_period()}.xlsx')
+incremental_dalys_averted_national.to_excel(results_folder / f'stepwise_dalys_averted_year_national{target_period()}_SI.xlsx')
 
 
 #################################################################################
@@ -2090,7 +2078,7 @@ df_filtered = cons_costs_per_year_district.loc[start_year.year:end_year.year]
 cons_costs_total_by_district = df_filtered.groupby('District').sum()
 cons_costs_total_by_district_summary = compute_summary_statistics(cons_costs_total_by_district,
                                                                   central_measure='mean')
-cons_costs_total_by_district_summary.to_excel(results_folder / f'cons_costs_total_by_district_summary{target_period()}.xlsx')
+cons_costs_total_by_district_summary.to_excel(results_folder / f'cons_costs_total_by_district_summary{target_period()}_SI.xlsx')
 
 
 cons_costs_per_year_national = sum_by_year_all_districts(cons_costs_per_year_district, TARGET_PERIOD)
@@ -2116,11 +2104,11 @@ full_costs_relative_noMDA = compute_number_averted_vs_noMDA_within_wash_strategi
     target_period=TARGET_PERIOD,
     averted_or_incurred='incurred',
 )
-full_costs_relative_noMDA.to_excel(results_folder / f'full_costs_relative_noMDA{target_period()}.xlsx')
+full_costs_relative_noMDA.to_excel(results_folder / f'full_costs_relative_noMDA{target_period()}_SI.xlsx')
 
 # incremental costs incurred - compare each prog in turn to the last one
 incremental_full_costs_incurred_per_year_national = compute_stepwise_effects_by_wash_strategy(full_costs_per_year_national)
-incremental_full_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_full_costs_incurred_per_year_national{target_period()}.xlsx')
+incremental_full_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_full_costs_incurred_per_year_national{target_period()}_SI.xlsx')
 
 
 # --- Cons costs incurred relative to comparator ---
@@ -2132,12 +2120,12 @@ cons_costs_relative_noMDA = compute_number_averted_vs_noMDA_within_wash_strategi
     target_period=TARGET_PERIOD,
     averted_or_incurred='incurred',
 )
-cons_costs_relative_noMDA.to_excel(results_folder / f'cons_costs_relative_noMDA{target_period()}.xlsx')
+cons_costs_relative_noMDA.to_excel(results_folder / f'cons_costs_relative_noMDA{target_period()}_SI.xlsx')
 
 
 # incremental costs incurred - compare each prog in turn to the last one
 incremental_cons_costs_incurred_per_year_national = compute_stepwise_effects_by_wash_strategy(cons_costs_per_year_national)
-incremental_cons_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_cons_costs_incurred_per_year_national{target_period()}.xlsx')
+incremental_cons_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_cons_costs_incurred_per_year_national{target_period()}_SI.xlsx')
 
 
 # === Costs incurred relative to comparators DISTRICT =========================================================
@@ -2149,7 +2137,7 @@ full_costs_relative_noMDA_district = compute_number_averted_vs_noMDA_within_wash
     target_period=TARGET_PERIOD,
     averted_or_incurred='incurred',
 )
-full_costs_relative_noMDA_district.to_excel(results_folder / f'full_costs_relative_noMDA_district{target_period()}.xlsx')
+full_costs_relative_noMDA_district.to_excel(results_folder / f'full_costs_relative_noMDA_district{target_period()}_SI.xlsx')
 
 full_costs_relative_SAC_district = compute_number_averted_vs_SAC_within_wash_strategies(
     full_costs_per_year_district,
@@ -2158,11 +2146,11 @@ full_costs_relative_SAC_district = compute_number_averted_vs_SAC_within_wash_str
     target_period=TARGET_PERIOD,
     averted_or_incurred='incurred',
 )
-full_costs_relative_SAC_district.to_excel(results_folder / f'full_costs_relative_SAC_district{target_period()}.xlsx')
+full_costs_relative_SAC_district.to_excel(results_folder / f'full_costs_relative_SAC_district{target_period()}_SI.xlsx')
 
 # incremental costs incurred - compare each prog in turn to the last one
 incremental_full_costs_incurred_per_year_district = compute_stepwise_effects_by_wash_strategy(full_costs_per_year_district)
-incremental_full_costs_incurred_per_year_district.to_excel(results_folder / f'incremental_full_costs_incurred_per_year_district{target_period()}.xlsx')
+incremental_full_costs_incurred_per_year_district.to_excel(results_folder / f'incremental_full_costs_incurred_per_year_district{target_period()}_SI.xlsx')
 
 years = incremental_full_costs_incurred_per_year_district.index.get_level_values('year')
 mask = (years >= TARGET_PERIOD[0].year) & (years <= TARGET_PERIOD[1].year)
@@ -2172,7 +2160,7 @@ sum_incremental_full_costs_incurred_district = (
     .groupby('District')
     .sum()
 )
-sum_incremental_full_costs_incurred_district.to_excel(results_folder / f'sum_incremental_full_costs_incurred_district{target_period()}.xlsx')
+sum_incremental_full_costs_incurred_district.to_excel(results_folder / f'sum_incremental_full_costs_incurred_district{target_period()}_SI.xlsx')
 
 
 # --- Cons costs incurred relative to comparator ---
@@ -2183,7 +2171,7 @@ cons_costs_relative_noMDA_district = compute_number_averted_vs_noMDA_within_wash
     target_period=TARGET_PERIOD,
     averted_or_incurred='incurred',
 )
-cons_costs_relative_noMDA_district.to_excel(results_folder / f'cons_costs_relative_noMDA_district{target_period()}.xlsx')
+cons_costs_relative_noMDA_district.to_excel(results_folder / f'cons_costs_relative_noMDA_district{target_period()}_SI.xlsx')
 
 cons_costs_relative_SAC_district = compute_number_averted_vs_SAC_within_wash_strategies(
     cons_costs_per_year_district,
@@ -2192,12 +2180,12 @@ cons_costs_relative_SAC_district = compute_number_averted_vs_SAC_within_wash_str
     target_period=TARGET_PERIOD,
     averted_or_incurred='incurred',
 )
-cons_costs_relative_SAC_district.to_excel(results_folder / f'cons_costs_relative_SAC_district{target_period()}.xlsx')
+cons_costs_relative_SAC_district.to_excel(results_folder / f'cons_costs_relative_SAC_district{target_period()}_SI.xlsx')
 
 
 # incremental costs incurred - compare each prog in turn to the last one
 incremental_cons_costs_incurred_per_year_district = compute_stepwise_effects_by_wash_strategy(cons_costs_per_year_district)
-incremental_cons_costs_incurred_per_year_district.to_excel(results_folder / f'incremental_cons_costs_incurred_per_year_district{target_period()}.xlsx')
+incremental_cons_costs_incurred_per_year_district.to_excel(results_folder / f'incremental_cons_costs_incurred_per_year_district{target_period()}_SI.xlsx')
 
 
 years = incremental_cons_costs_incurred_per_year_district.index.get_level_values('year')
@@ -2208,7 +2196,7 @@ sum_incremental_cons_costs_incurred_district = (
     .groupby('District')
     .sum()
 )
-sum_incremental_cons_costs_incurred_district.to_excel(results_folder / f'sum_incremental_cons_costs_incurred_district{target_period()}.xlsx')
+sum_incremental_cons_costs_incurred_district.to_excel(results_folder / f'sum_incremental_cons_costs_incurred_district{target_period()}_SI.xlsx')
 
 
 
@@ -2228,7 +2216,7 @@ icer_national = compute_icer_national(
 icer_national["formatted"] = icer_national.apply(
     lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
 )
-icer_national.to_excel(results_folder / f'icer_national_{target_period()}.xlsx')
+icer_national.to_excel(results_folder / f'icer_national_{target_period()}_SI.xlsx')
 
 # --- ICERS for consumables costs only ---
 
@@ -2243,7 +2231,7 @@ icer_national_cons_only = compute_icer_national(
 icer_national_cons_only["formatted"] = icer_national_cons_only.apply(
     lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
 )
-icer_national_cons_only.to_excel(results_folder / f'icer_national_cons_only_{target_period()}.xlsx')
+icer_national_cons_only.to_excel(results_folder / f'icer_national_cons_only_{target_period()}_SI.xlsx')
 
 
 # --- ICERS district ---
@@ -2261,7 +2249,7 @@ icer_district["formatted"] = icer_district.apply(
 )
 
 
-icer_district.to_excel(results_folder / f'icer_district_{target_period()}.xlsx')
+icer_district.to_excel(results_folder / f'icer_district_{target_period()}_SI.xlsx')
 
 
 # --- ICERS district for consumables costs only ---
@@ -2277,7 +2265,7 @@ icer_district_cons_only = compute_icer_district(
 icer_district_cons_only["formatted"] = icer_district_cons_only.apply(
     lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
 )
-icer_district_cons_only.to_excel(results_folder / f'icer_district_cons_only_{target_period()}.xlsx')
+icer_district_cons_only.to_excel(results_folder / f'icer_district_cons_only_{target_period()}_SI.xlsx')
 
 
 
@@ -2376,7 +2364,7 @@ nhb_district_vs_noMDA = compute_nhb(
     return_summary=True
 )
 
-nhb_district_vs_noMDA.to_csv(results_folder / f'nhb_district_vs_noMDA{target_period()}.csv')
+nhb_district_vs_noMDA.to_csv(results_folder / f'nhb_district_vs_noMDA{target_period()}_SI.csv')
 
 nhb_district_vs_SAC = compute_nhb(
     dalys_averted=dalys_averted_district_compared_SAC,
@@ -2387,7 +2375,7 @@ nhb_district_vs_SAC = compute_nhb(
     return_summary=True
 )
 
-nhb_district_vs_SAC.to_csv(results_folder / f'nhb_district_vs_SAC{target_period()}.csv')
+nhb_district_vs_SAC.to_csv(results_folder / f'nhb_district_vs_SAC{target_period()}_SI.csv')
 
 nhb_district_vs_SAC_full_costs = compute_nhb(
     dalys_averted=dalys_averted_district_compared_SAC,
@@ -2398,7 +2386,7 @@ nhb_district_vs_SAC_full_costs = compute_nhb(
     return_summary=True
 )
 
-nhb_district_vs_SAC_full_costs.to_csv(results_folder / f'nhb_district_vs_SAC_full_costs{target_period()}.csv')
+nhb_district_vs_SAC_full_costs.to_csv(results_folder / f'nhb_district_vs_SAC_full_costs{target_period()}_SI.csv')
 
 
 
@@ -2443,22 +2431,14 @@ def get_best_draw_per_district(df, keyword):
 
 
 # Apply to each scenario
-pause_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Pause WASH")
 continue_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Continue WASH")
-scaleup_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Scale-up WASH")
 # 8 districts showing PSAC, 2 showing All as best strategy
 
 
-pause_wash_best_strategy.to_csv(results_folder / f'pause_wash_nhb_vs_SAC_{target_period()}.csv')
-continue_wash_best_strategy.to_csv(results_folder / f'continue_wash_nhb_vs_SAC_{target_period()}.csv')
-scaleup_wash_best_strategy.to_csv(results_folder / f'scaleup_wash_nhb_vs_SAC_{target_period()}.csv')
+continue_wash_best_strategy.to_csv(results_folder / f'continue_wash_nhb_vs_SAC_{target_period()}_SI.csv')
 
 
-pause_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Pause WASH")
 continue_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Continue WASH")
-scaleup_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Scale-up WASH")
-# todo this shows 21 districts with no MDA as best strategy,
-#  DALYs averted in MDA SAC probably small so nhb becomes negative
 
 
 
@@ -2569,7 +2549,7 @@ max_costs = calculate_max_hr_costs(dalys_df=dalys_averted_district_compared_SAC,
                                    start_year=2024,
                                    end_year=2050)
 
-max_costs.to_csv(results_folder / f'max_costs_comparedSAC{target_period()}.csv')
+max_costs.to_csv(results_folder / f'max_costs_comparedSAC{target_period()}_SI.csv')
 
 
 
@@ -2579,7 +2559,7 @@ max_costs_noMDA = calculate_max_hr_costs(dalys_df=dalys_averted_district_compare
                                    start_year=2024,
                                    end_year=2050)
 
-max_costs_noMDA.to_csv(results_folder / f'max_costs_compared_noMDA{target_period()}.csv')
+max_costs_noMDA.to_csv(results_folder / f'max_costs_compared_noMDA{target_period()}_SI.csv')
 
 
 

@@ -104,7 +104,7 @@ class SchistoScenarios(BaseScenario):
                 ),
 
             # MDA PSAC
-             "Continue WASH, MDA PSAC":
+             "Continue WASH, MDA PSAC+SAC":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.high_coverage_MDA(),
@@ -121,7 +121,7 @@ class SchistoScenarios(BaseScenario):
                     scenario_definitions.DALYs_light_infection(),
                 ),
 
-            "Scale-up WASH, No MDA":
+            "Scale-up WASH, no MDA":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.no_MDA(),

@@ -2791,7 +2791,96 @@ scaleup_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_fu
 
 
 
-def calculate_max_hr_costs(dalys_df, cons_costs_df, cet, start_year=2024, end_year=2050):
+# def calculate_max_hr_costs(dalys_df, cons_costs_df, cet, start_year=2024, end_year=2050):
+#     """
+#     Calculate maximum allowable HR costs given DALYs averted and consumable costs.
+#
+#     Parameters
+#     ----------
+#     dalys_df : pd.DataFrame
+#         DALYs averted relative to SAC MDA.
+#         Index: MultiIndex (year, district) [unnamed]
+#         Columns: MultiIndex (wash_strategy, comparison, run).
+#     cons_costs_df : pd.DataFrame
+#         Incremental consumable costs, same format as dalys_df.
+#     cet : float
+#         Cost-effectiveness threshold (per DALY).
+#     start_year : int
+#         First year to include in evaluation.
+#     end_year : int
+#         Last year to include in evaluation.
+#
+#     Returns
+#     -------
+#     pd.DataFrame
+#         MultiIndex (district, wash_strategy, comparison)
+#         Columns = ['mean', 'lower', 'upper'] based on run-level estimates.
+#     """
+#
+#     # --- 1. Restrict to evaluation years ---
+#     years = dalys_df.index.get_level_values(0)
+#     mask = (years >= start_year) & (years <= end_year)
+#     dalys_eval = dalys_df.loc[mask]
+#
+#     years = cons_costs_df.index.get_level_values(0)
+#     mask = (years >= start_year) & (years <= end_year)
+#     cons_eval = cons_costs_df.loc[mask]
+#
+#     # --- 2. Align indices ---
+#     dalys_eval, cons_eval = dalys_eval.align(cons_eval, join="inner")
+#
+#     # --- 3. Collapse over years (sum DALYs averted and costs) ---
+#     districts = dalys_eval.index.get_level_values(1)
+#     dalys_eval = dalys_eval.copy()
+#     cons_eval = cons_eval.copy()
+#     dalys_eval.index = districts
+#     cons_eval.index = districts
+#
+#     dalys_sum = dalys_eval.groupby(level=0).sum()
+#     cons_sum = cons_eval.groupby(level=0).sum()
+#
+#     # --- 4. Compute max HR costs: (DALYs * CET) - consumables ---
+#     max_hr = dalys_sum * cet - cons_sum
+#
+#     # --- 5. Summarise across runs ---
+#     results = []
+#     for (wash_strategy, comparison), df_sub in max_hr.groupby(level=[0,1], axis=1):
+#         for district, series in df_sub.iterrows():
+#             vals = series.dropna().values
+#             n = len(vals)
+#             if n == 0:
+#                 continue
+#             mean_val = vals.mean()
+#             if n > 1:
+#                 se = vals.std(ddof=1) / np.sqrt(n)
+#                 lower = mean_val - 1.96 * se
+#                 upper = mean_val + 1.96 * se
+#             else:  # only one run, no uncertainty
+#                 lower = upper = mean_val
+#
+#             results.append({
+#                 "district": district,
+#                 "wash_strategy": wash_strategy,
+#                 "comparison": comparison,
+#                 "mean": mean_val,
+#                 "lower": lower,
+#                 "upper": upper
+#             })
+#
+#     results_df = pd.DataFrame(results)
+#     results_df = results_df.set_index(["district", "wash_strategy", "comparison"])
+#
+#     return results_df
+
+
+
+def calculate_max_hr_costs(
+    dalys_df: pd.DataFrame,
+    cons_costs_df: pd.DataFrame,
+    cet: float,
+    start_year: int = 2024,
+    end_year: int = 2050
+) -> pd.DataFrame:
     """
     Calculate maximum allowable HR costs given DALYs averted and consumable costs.
 
@@ -2799,8 +2888,9 @@ def calculate_max_hr_costs(dalys_df, cons_costs_df, cet, start_year=2024, end_ye
     ----------
     dalys_df : pd.DataFrame
         DALYs averted relative to SAC MDA.
-        Index: MultiIndex (year, district) [unnamed]
-        Columns: MultiIndex (wash_strategy, comparison, run).
+        Index: MultiIndex (year, district)
+        Columns: MultiIndex (run, draw, [junk]) where 'draw' looks like
+                 'Pause WASH, no MDA', etc.
     cons_costs_df : pd.DataFrame
         Incremental consumable costs, same format as dalys_df.
     cet : float
@@ -2813,11 +2903,51 @@ def calculate_max_hr_costs(dalys_df, cons_costs_df, cet, start_year=2024, end_ye
     Returns
     -------
     pd.DataFrame
-        MultiIndex (district, wash_strategy, comparison)
-        Columns = ['mean', 'lower', 'upper'] based on run-level estimates.
+        Index: (district, wash_strategy, comparison)
+        Columns: ['mean', 'lower', 'upper', 'n_runs'] based on run-level estimates.
     """
 
-    # --- 1. Restrict to evaluation years ---
+    # ---------- 0. Standardise columns to (wash_strategy, comparison, run) ----------
+    def _standardise_cols(df: pd.DataFrame) -> pd.DataFrame:
+        cols = df.columns
+        if cols.nlevels < 2:
+            raise ValueError("Expected a MultiIndex on columns with at least (run, draw).")
+
+        # Try to get by name; if unnamed, fall back to levels 0/1
+        names = cols.names
+        if names is not None and 'run' in names and 'draw' in names:
+            run = cols.get_level_values('run')
+            draw = cols.get_level_values('draw')
+        else:
+            # assume level 0 = run, level 1 = draw
+            run = cols.get_level_values(0)
+            draw = cols.get_level_values(1)
+
+        wash_strategy = []
+        comparison = []
+        for s in draw:
+            # assume "WASH strategy, comparison"
+            parts = [p.strip() for p in str(s).split(',', 1)]
+            if len(parts) == 2:
+                ws, comp = parts
+            else:
+                ws, comp = str(s).strip(), ""
+            wash_strategy.append(ws)
+            comparison.append(comp)
+
+        new_cols = pd.MultiIndex.from_arrays(
+            [wash_strategy, comparison, run],
+            names=['wash_strategy', 'comparison', 'run']
+        )
+
+        df2 = df.copy()
+        df2.columns = new_cols
+        return df2
+
+    dalys_df = _standardise_cols(dalys_df)
+    cons_costs_df = _standardise_cols(cons_costs_df)
+
+    # ---------- 1. Restrict to evaluation years ----------
     years = dalys_df.index.get_level_values(0)
     mask = (years >= start_year) & (years <= end_year)
     dalys_eval = dalys_df.loc[mask]
@@ -2826,10 +2956,10 @@ def calculate_max_hr_costs(dalys_df, cons_costs_df, cet, start_year=2024, end_ye
     mask = (years >= start_year) & (years <= end_year)
     cons_eval = cons_costs_df.loc[mask]
 
-    # --- 2. Align indices ---
+    # ---------- 2. Align indices and columns ----------
     dalys_eval, cons_eval = dalys_eval.align(cons_eval, join="inner")
 
-    # --- 3. Collapse over years (sum DALYs averted and costs) ---
+    # ---------- 3. Collapse over years (sum DALYs averted and costs) ----------
     districts = dalys_eval.index.get_level_values(1)
     dalys_eval = dalys_eval.copy()
     cons_eval = cons_eval.copy()
@@ -2839,23 +2969,25 @@ def calculate_max_hr_costs(dalys_df, cons_costs_df, cet, start_year=2024, end_ye
     dalys_sum = dalys_eval.groupby(level=0).sum()
     cons_sum = cons_eval.groupby(level=0).sum()
 
-    # --- 4. Compute max HR costs: (DALYs * CET) - consumables ---
+    # ---------- 4. Compute max HR costs: (DALYs * CET) - consumables ----------
     max_hr = dalys_sum * cet - cons_sum
 
-    # --- 5. Summarise across runs ---
+    # ---------- 5. Summarise across runs ----------
+    # max_hr has columns (wash_strategy, comparison, run)
     results = []
-    for (wash_strategy, comparison), df_sub in max_hr.groupby(level=[0,1], axis=1):
+    for (wash_strategy, comparison), df_sub in max_hr.groupby(level=['wash_strategy', 'comparison'], axis=1):
+        # df_sub has one column per run
         for district, series in df_sub.iterrows():
-            vals = series.dropna().values
+            vals = series.dropna().values  # one value per run
             n = len(vals)
             if n == 0:
                 continue
-            mean_val = vals.mean()
+            mean_val = float(vals.mean())
             if n > 1:
                 se = vals.std(ddof=1) / np.sqrt(n)
                 lower = mean_val - 1.96 * se
                 upper = mean_val + 1.96 * se
-            else:  # only one run, no uncertainty
+            else:
                 lower = upper = mean_val
 
             results.append({
@@ -2864,11 +2996,20 @@ def calculate_max_hr_costs(dalys_df, cons_costs_df, cet, start_year=2024, end_ye
                 "comparison": comparison,
                 "mean": mean_val,
                 "lower": lower,
-                "upper": upper
+                "upper": upper,
+                "n_runs": n,
             })
 
-    results_df = pd.DataFrame(results)
-    results_df = results_df.set_index(["district", "wash_strategy", "comparison"])
+    if not results:
+        return pd.DataFrame(columns=["mean", "lower", "upper", "n_runs"]).set_index(
+            pd.MultiIndex.from_arrays([[], [], []], names=["district", "wash_strategy", "comparison"])
+        )
+
+    results_df = (
+        pd.DataFrame(results)
+        .set_index(["district", "wash_strategy", "comparison"])
+        .sort_index()
+    )
 
     return results_df
 

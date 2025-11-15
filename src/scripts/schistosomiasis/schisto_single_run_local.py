@@ -79,10 +79,10 @@ def run_simulation(popsize,
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
     # sim.modules["Schisto"].parameters["scaleup_WASH"] = 0.0  # 1.0=True
     # sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011
-    sim.modules["Schisto"].parameters['mda_coverage'] = 0.7
-    sim.modules["Schisto"].parameters['mda_target_group'] = 'SAC'
-    sim.modules["Schisto"].parameters['mda_frequency_months'] = 12
-    sim.modules["Schisto"].parameters["daly_weight_mild_schistosomiasis"] = 0.0
+    # sim.modules["Schisto"].parameters['mda_coverage'] = 0.7
+    # sim.modules["Schisto"].parameters['mda_target_group'] = 'SAC'
+    # sim.modules["Schisto"].parameters['mda_frequency_months'] = 12
+    sim.modules["Schisto"].parameters["daly_weight_mild_schistosomiasis"] = 0.006
 
     # initialise the population
     sim.make_initial_population(n=popsize)
