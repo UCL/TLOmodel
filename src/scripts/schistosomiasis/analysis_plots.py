@@ -1528,3 +1528,19 @@ fig, ax, shares_df = plot_optimal_share_curves_from_draws(
         "Continue WASH, MDA All",
     ),
 )
+
+
+
+
+#################################################################################
+# %% WASH indicators
+#################################################################################
+
+no_access_handwashing_district = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="Schisto_wash_properties_by_district",
+    column="no_access_handwashing_district",
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+

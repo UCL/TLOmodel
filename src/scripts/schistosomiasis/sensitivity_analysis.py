@@ -40,12 +40,6 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging,
 )
 
-from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
-                                             summarize_cost_data,
-                                             do_stacked_bar_plot_of_cost_by_category,
-                                             do_line_plot_of_cost,
-                                             create_summary_treemap_by_cost_subgroup,
-                                             estimate_projected_health_spending)
 
 resourcefilepath = Path("./resources")
 
@@ -53,7 +47,7 @@ output_folder = Path("./outputs/t.mangal@imperial.ac.uk")
 
 results_folder = get_scenario_outputs("schisto_scenarios-2025.py", output_folder)[-1]
 # results_folder = get_scenario_outputs("schisto_scenarios_SI.py", output_folder)[-1]
- # todo replace all 2040 with 2050
+
 
 # Declare path for output graphs from this script
 def make_graph_file_name(name):
@@ -723,51 +717,6 @@ def combine_on_keyword(df1: pd.DataFrame, df2: pd.DataFrame, keyword: str = "MDA
     result.loc[:, cols_to_replace] = df2.loc[:, cols_to_replace]
 
     return result
-
-
-
-def proportion_ce_districts_by_comparison(
-    icer_summary: pd.DataFrame,
-    wash_strategy: str,
-    threshold: float = 61.0
-) -> pd.DataFrame:
-    """
-    For a chosen wash_strategy, compute (for each comparison) the proportion of districts
-    whose *mean* ICER is below a specified threshold.
-
-    Returns
-    -------
-    pd.DataFrame
-        A tidy dataframe with one row per comparison:
-        columns = ['comparison', 'n_districts', 'n_below_threshold', 'prop_below_threshold'].
-    """
-
-    # Filter to the chosen wash_strategy
-    df = icer_summary[icer_summary['wash_strategy'] == wash_strategy].copy()
-
-    # Keep only districts with a defined mean ICER (i.e. at least one valid run)
-    df = df[~df['mean'].isna()].copy()
-
-    if df.empty:
-        # No evaluable districts for this strategy
-        return pd.DataFrame(columns=['comparison', 'n_districts', 'n_below_threshold', 'prop_below_threshold'])
-
-    # Indicator whether the mean ICER is below the threshold
-    df['below_threshold'] = df['mean'] < threshold
-
-    # Aggregate by comparison
-    out = (
-        df.groupby('comparison', as_index=False)
-          .agg(
-              n_districts       = ('district', 'nunique'),
-              n_below_threshold = ('below_threshold', 'sum')
-          )
-    )
-
-    # Proportion of districts cost-effective under this threshold
-    out['prop_below_threshold'] = out['n_below_threshold'] / out['n_districts']
-
-    return out
 
 
 
@@ -2100,14 +2049,9 @@ mda_episodes_per_year_district_scaled_adj = apply_stop_year_to_mda_counts(
 cons_cost_per_mda = 0.05  # assuming all children
 cons_cost_per_mda_incl_adults = 0.081  # weighted mean across children and adults
 prog_delivery_cost_per_mda = 2.21 # 1.27 financial costs only, 2.21 includes economic (opportunity) costs
-financial_delivery_cost_per_mda = 1.27
 
 full_cost_per_mda = prog_delivery_cost_per_mda + cons_cost_per_mda  # assuming all children
 full_cost_per_mda_incl_adults = prog_delivery_cost_per_mda + cons_cost_per_mda_incl_adults
-
-partial_cost_per_mda = financial_delivery_cost_per_mda + cons_cost_per_mda  # assuming all children
-partial_cost_per_mda_incl_adults = financial_delivery_cost_per_mda + cons_cost_per_mda_incl_adults
-
 
 
 # === Costs incurred =========================================================
@@ -2121,16 +2065,6 @@ full_costs_per_year_district = combine_on_keyword(full_costs_per_year_district_c
 full_costs_per_year_national = sum_by_year_all_districts(full_costs_per_year_district, TARGET_PERIOD)
 
 
-# --- Partial costs, using financial costs only plus cons ---
-partial_costs_per_year_district_child = mda_episodes_per_year_district_scaled * partial_cost_per_mda
-partial_costs_per_year_district_adults = mda_episodes_per_year_district_scaled * partial_cost_per_mda_incl_adults
-partial_costs_per_year_district = combine_on_keyword(partial_costs_per_year_district_child,
-                                                  partial_costs_per_year_district_adults, keyword="MDA All")
-
-partial_costs_per_year_national = sum_by_year_all_districts(partial_costs_per_year_district, TARGET_PERIOD)
-
-
-
 # --- Program costs only ---
 prog_costs_per_year_district = mda_episodes_per_year_district_scaled * prog_delivery_cost_per_mda
 prog_costs_per_year_national = sum_by_year_all_districts(prog_costs_per_year_district, TARGET_PERIOD)
@@ -2140,19 +2074,6 @@ prog_costs_per_year_national_sum = pd.DataFrame(prog_costs_per_year_national.sum
 prog_costs_per_year_national_summary = compute_summary_statistics(prog_costs_per_year_national_sum,
                                                 central_measure='mean')
 fmt = format_summary_for_output(prog_costs_per_year_national_summary, filename='prog_costs_per_year_national')
-
-
-
-# --- Financial costs only ---
-financial_costs_per_year_district = mda_episodes_per_year_district_scaled * financial_delivery_cost_per_mda
-financial_costs_per_year_national = sum_by_year_all_districts(financial_costs_per_year_district, TARGET_PERIOD)
-
-# sum across target period
-financial_costs_per_year_national_sum = pd.DataFrame(financial_costs_per_year_national.sum(axis=0)).T
-financial_costs_per_year_national_summary = compute_summary_statistics(financial_costs_per_year_national_sum,
-                                                central_measure='mean')
-fmt = format_summary_for_output(financial_costs_per_year_national_summary, filename='financial_costs_per_year_national')
-
 
 
 # --- Cons costs only ---
@@ -2200,23 +2121,6 @@ full_costs_relative_noMDA.to_excel(results_folder / f'full_costs_relative_noMDA{
 # incremental costs incurred - compare each prog in turn to the last one
 incremental_full_costs_incurred_per_year_national = compute_stepwise_effects_by_wash_strategy(full_costs_per_year_national)
 incremental_full_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_full_costs_incurred_per_year_national{target_period()}.xlsx')
-
-
-
-# --- Partial costs incurred relative to comparator ---
-
-partial_costs_relative_noMDA = compute_number_averted_vs_noMDA_within_wash_strategies(
-    partial_costs_per_year_national,
-    results_path=results_folder,
-    filename_prefix='partial_costs_per_year_national_compared_noMDA',
-    target_period=TARGET_PERIOD,
-    averted_or_incurred='incurred',
-)
-partial_costs_relative_noMDA.to_excel(results_folder / f'partial_costs_relative_noMDA{target_period()}.xlsx')
-
-# incremental costs incurred - compare each prog in turn to the last one
-incremental_partial_costs_incurred_per_year_national = compute_stepwise_effects_by_wash_strategy(partial_costs_per_year_national)
-incremental_partial_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_partial_costs_incurred_per_year_national{target_period()}.xlsx')
 
 
 # --- Cons costs incurred relative to comparator ---
@@ -2269,45 +2173,6 @@ sum_incremental_full_costs_incurred_district = (
     .sum()
 )
 sum_incremental_full_costs_incurred_district.to_excel(results_folder / f'sum_incremental_full_costs_incurred_district{target_period()}.xlsx')
-
-
-
-
-# --- Partial costs incurred relative to comparator ---
-partial_costs_relative_noMDA_district = compute_number_averted_vs_noMDA_within_wash_strategies(
-    partial_costs_per_year_district,
-    results_path=results_folder,
-    filename_prefix='partial_costs_per_year_district_compared_noMDA',
-    target_period=TARGET_PERIOD,
-    averted_or_incurred='incurred',
-)
-partial_costs_relative_noMDA_district.to_excel(results_folder / f'partial_costs_relative_noMDA_district{target_period()}.xlsx')
-
-partial_costs_relative_SAC_district = compute_number_averted_vs_SAC_within_wash_strategies(
-    partial_costs_per_year_district,
-    results_path=results_folder,
-    filename_prefix='partial_costs_per_year_district_compared_noMDA',
-    target_period=TARGET_PERIOD,
-    averted_or_incurred='incurred',
-)
-partial_costs_relative_SAC_district.to_excel(results_folder / f'partial_costs_relative_SAC_district{target_period()}.xlsx')
-
-
-# incremental costs incurred - compare each prog in turn to the last one
-incremental_partial_costs_incurred_per_year_district = compute_stepwise_effects_by_wash_strategy(partial_costs_per_year_district)
-incremental_partial_costs_incurred_per_year_district.to_excel(results_folder / f'incremental_partial_costs_incurred_per_year_district{target_period()}.xlsx')
-
-
-years = incremental_partial_costs_incurred_per_year_district.index.get_level_values('year')
-mask = (years >= TARGET_PERIOD[0].year) & (years <= TARGET_PERIOD[1].year)
-
-sum_incremental_partial_costs_incurred_district = (
-    incremental_partial_costs_incurred_per_year_district.loc[mask]
-    .groupby('District')
-    .sum()
-)
-sum_incremental_partial_costs_incurred_district.to_excel(results_folder / f'sum_incremental_partial_costs_incurred_district{target_period()}.xlsx')
-
 
 
 # --- Cons costs incurred relative to comparator ---
@@ -2365,35 +2230,6 @@ icer_national["formatted"] = icer_national.apply(
 )
 icer_national.to_excel(results_folder / f'icer_national_{target_period()}.xlsx')
 
-
-icer_national_discount_costs = compute_icer_national(
-    dalys_averted=incremental_dalys_averted_national,
-    comparison_costs=incremental_full_costs_incurred_per_year_national,
-    discount_rate_dalys=0.0,
-    discount_rate_costs=0.03,
-    return_summary=True
-)
-
-icer_national_discount_costs["formatted"] = icer_national_discount_costs.apply(
-    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
-)
-icer_national_discount_costs.to_excel(results_folder / f'icer_national_discount_costs_{target_period()}.xlsx')
-
-
-icer_national_discount_health = compute_icer_national(
-    dalys_averted=incremental_dalys_averted_national,
-    comparison_costs=incremental_full_costs_incurred_per_year_national,
-    discount_rate_dalys=0.03,
-    discount_rate_costs=0.0,
-    return_summary=True
-)
-
-icer_national_discount_health["formatted"] = icer_national_discount_health.apply(
-    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
-)
-icer_national_discount_health.to_excel(results_folder / f'icer_national_discount_health_{target_period()}.xlsx')
-
-
 # --- ICERS for consumables costs only ---
 
 icer_national_cons_only = compute_icer_national(
@@ -2408,52 +2244,6 @@ icer_national_cons_only["formatted"] = icer_national_cons_only.apply(
     lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
 )
 icer_national_cons_only.to_excel(results_folder / f'icer_national_cons_only_{target_period()}.xlsx')
-
-
-icer_national_cons_only_discount_costs = compute_icer_national(
-    dalys_averted=incremental_dalys_averted_national,
-    comparison_costs=incremental_cons_costs_incurred_per_year_national,
-    discount_rate_dalys=0.0,
-    discount_rate_costs=0.03,
-    return_summary=True
-)
-
-icer_national_cons_only_discount_costs["formatted"] = icer_national_cons_only_discount_costs.apply(
-    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
-)
-icer_national_cons_only_discount_costs.to_excel(results_folder / f'icer_national_cons_only_discount_costs_{target_period()}.xlsx')
-
-
-icer_national_cons_only_discount_health = compute_icer_national(
-    dalys_averted=incremental_dalys_averted_national,
-    comparison_costs=incremental_cons_costs_incurred_per_year_national,
-    discount_rate_dalys=0.03,
-    discount_rate_costs=0.0,
-    return_summary=True
-)
-
-icer_national_cons_only_discount_health["formatted"] = icer_national_cons_only_discount_health.apply(
-    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
-)
-icer_national_cons_only_discount_health.to_excel(results_folder / f'icer_national_cons_only_discount_health_{target_period()}.xlsx')
-
-
-
-# --- ICERS for consumables costs only ---
-
-icer_national_partial_only = compute_icer_national(
-    dalys_averted=incremental_dalys_averted_national,
-    comparison_costs=incremental_partial_costs_incurred_per_year_national,
-    discount_rate_dalys=0.0,
-    discount_rate_costs=0.0,
-    return_summary=True
-)
-
-icer_national_partial_only["formatted"] = icer_national_partial_only.apply(
-    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
-)
-icer_national_partial_only.to_excel(results_folder / f'icer_national_partial_only_{target_period()}.xlsx')
-
 
 
 # --- ICERS district ---
@@ -2474,23 +2264,6 @@ icer_district["formatted"] = icer_district.apply(
 icer_district.to_excel(results_folder / f'icer_district_{target_period()}.xlsx')
 
 
-# --- ICERS district for partial costs only ---
-
-icer_district_partial_only = compute_icer_district(
-    dalys_averted=incremental_dalys_averted_district,
-    comparison_costs=incremental_partial_costs_incurred_per_year_district,
-    discount_rate_dalys=0.0,
-    discount_rate_costs=0.0,
-    return_summary=True
-)
-
-icer_district_partial_only["formatted"] = icer_district_partial_only.apply(
-    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
-)
-icer_district_partial_only.to_excel(results_folder / f'icer_district_partial_only_{target_period()}.xlsx')
-
-
-
 # --- ICERS district for consumables costs only ---
 
 icer_district_cons_only = compute_icer_district(
@@ -2505,94 +2278,6 @@ icer_district_cons_only["formatted"] = icer_district_cons_only.apply(
     lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
 )
 icer_district_cons_only.to_excel(results_folder / f'icer_district_cons_only_{target_period()}.xlsx')
-
-
-icer_district_cons_only_discount_costs = compute_icer_district(
-    dalys_averted=incremental_dalys_averted_district,
-    comparison_costs=incremental_cons_costs_incurred_per_year_district,
-    discount_rate_dalys=0.0,
-    discount_rate_costs=0.03,
-    return_summary=True
-)
-
-icer_district_cons_only_discount_costs["formatted"] = icer_district_cons_only_discount_costs.apply(
-    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
-)
-icer_district_cons_only_discount_costs.to_excel(results_folder / f'icer_district_cons_only_discount_costs_{target_period()}.xlsx')
-
-
-
-icer_district_cons_only_discount_health = compute_icer_district(
-    dalys_averted=incremental_dalys_averted_district,
-    comparison_costs=incremental_cons_costs_incurred_per_year_district,
-    discount_rate_dalys=0.03,
-    discount_rate_costs=0.0,
-    return_summary=True
-)
-
-icer_district_cons_only_discount_health["formatted"] = icer_district_cons_only_discount_health.apply(
-    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
-)
-icer_district_cons_only_discount_health.to_excel(results_folder / f'icer_district_cons_only_discount_health_{target_period()}.xlsx')
-
-
-
-#################################################################################
-# %% Proportion of district ICERS below threshold
-#################################################################################
-
-
-
-# full costs
-tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district,
-                                            wash_strategy="Continue WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_fullcosts.xlsx')
-
-
-
-
-# cons costs
-tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_cons_only,
-                                            wash_strategy="Continue WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_cons.xlsx')
-
-tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_cons_only,
-                                            wash_strategy="Pause WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_61_cons.xlsx')
-
-tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_cons_only,
-                                            wash_strategy="Scale-up WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_61_cons.xlsx')
-
-
-# partial costs
-tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_partial_only,
-                                            wash_strategy="Continue WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_partial.xlsx')
-
-
-# discount costs
-tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_cons_only_discount_costs,
-                                            wash_strategy="Continue WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_discount_cost.xlsx')
-
-
-# discount health
-tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_cons_only_discount_health,
-                                            wash_strategy="Continue WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_discount_health.xlsx')
-
-
-
-
-
 
 
 
@@ -2898,154 +2583,3 @@ max_costs_noMDA.to_csv(results_folder / f'max_costs_compared_noMDA{target_period
 
 
 
-
-
-#################################################################################
-# %% WASH indicators
-#################################################################################
-
-no_access_handwashing_district = extract_results(
-    results_folder,
-    module="tlo.methods.schisto",
-    key="Schisto_wash_properties_by_district",
-    column="no_access_handwashing_district",
-    do_scaling=False,
-).pipe(set_param_names_as_column_index_level_0)
-
-
-no_access_drinking_water_district = extract_results(
-    results_folder,
-    module="tlo.methods.schisto",
-    key="Schisto_wash_properties_by_district",
-    column="no_clean_drinking_water_district",
-    do_scaling=False,
-).pipe(set_param_names_as_column_index_level_0)
-
-no_sanitation_district = extract_results(
-    results_folder,
-    module="tlo.methods.schisto",
-    key="Schisto_wash_properties_by_district",
-    column="unimproved_sanitation_district",
-    do_scaling=False,
-).pipe(set_param_names_as_column_index_level_0)
-
-
-
-
-def mean_WASH_property(
-    no_access_handwashing_district: pd.DataFrame,
-    scenario_name: str = "Pause WASH, no MDA",
-    first_year: int = 2010,
-    target_year: int = 2023,
-    lower_q: float = 0.025,
-    upper_q: float = 0.975,
-) -> pd.DataFrame:
-    """
-    Compute district-level mean and uncertainty bounds for the specified WASH
-    property under a given scenario and year.
-
-    Returns
-    -------
-    pd.DataFrame
-        Index = district names
-        Columns = ["mean", "lower", "upper"]
-    """
-
-    # Locate row for the requested year
-    row_pos = target_year - first_year
-    year_row = no_access_handwashing_district.iloc[row_pos]
-
-    # Extract all runs for the requested scenario
-    scenario_across_runs = year_row[scenario_name]
-
-    # Convert list of dict/Series across runs → DataFrame (rows = runs, columns = districts)
-    runs_df = pd.DataFrame(list(scenario_across_runs.values))
-
-    # Compute summary statistics
-    mean_vals = runs_df.mean(axis=0)
-    lower_vals = runs_df.quantile(lower_q, axis=0)
-    upper_vals = runs_df.quantile(upper_q, axis=0)
-
-    # Assemble output
-    out = pd.DataFrame({
-        "mean": mean_vals,
-        "lower": lower_vals,
-        "upper": upper_vals
-    })
-
-    return out
-
-
-
-district_means_2023_handwashing = mean_WASH_property(no_access_handwashing_district)
-district_means_2023_drinkingwater = mean_WASH_property(no_access_drinking_water_district)
-district_means_2023_sanitation = mean_WASH_property(no_sanitation_district)
-
-
-
-def plot_wash_property_horizontal(df, title, pad=0.02):
-        """
-        Produce a single horizontal point–range plot for one WASH property.
-        Districts in alphabetical order with mean and 95% bounds.
-        X-axis limits automatically expand to a 'pretty' range.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            Index = district, columns = ['mean', 'lower', 'upper'].
-        title : str
-            Title for the figure.
-        pad : float
-            Extra margin added to x-limits (as absolute proportion, default 0.02)
-
-        Returns
-        -------
-        fig : matplotlib.figure.Figure
-        """
-        # Ensure alphabetical order
-        df = df.reindex(sorted(df.index))
-
-        # Compute pretty axis limits:
-        # lower = min(lower bound) - pad
-        # upper = max(upper bound) + pad
-        xmin = df["lower"].min() - pad
-        xmax = df["upper"].max() + pad
-
-        # Constrain to [0,1] if values are proportions
-        xmin = max(0, xmin)
-        xmax = min(1, xmax)
-
-        fig, ax = plt.subplots(figsize=(5, 8))
-
-        # Y positions
-        y_positions = range(len(df.index))
-
-        # Horizontal point–range
-        ax.errorbar(
-            x=df["mean"],
-            y=y_positions,
-            xerr=[df["mean"] - df["lower"], df["upper"] - df["mean"]],
-            fmt="o",
-            capsize=3,
-            linestyle="none"
-        )
-
-        # Formatting
-        ax.set_yticks(y_positions)
-        ax.set_yticklabels(df.index)
-        ax.set_xlabel("Proportion")
-        ax.set_title(title)
-
-        ax.set_xlim(xmin, xmax)
-        ax.grid(axis="x", linestyle="--", alpha=0.3)
-
-        fig.tight_layout()
-        return fig
-
-
-fig1 = plot_wash_property_horizontal(district_means_2023_handwashing, "No access to handwashing (2023)")
-plt.show()
-fig2 = plot_wash_property_horizontal(district_means_2023_drinkingwater, "No access to clean drinking water (2023)")
-plt.show()
-fig3 = plot_wash_property_horizontal(district_means_2023_sanitation, "No access to improved sanitation (2023)")
-plt.show()
