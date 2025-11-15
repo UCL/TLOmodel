@@ -714,6 +714,53 @@ def compute_icer_national(
 
 
 
+
+def proportion_ce_districts_by_comparison(
+    icer_summary: pd.DataFrame,
+    wash_strategy: str,
+    threshold: float = 61.0
+) -> pd.DataFrame:
+    """
+    For a chosen wash_strategy, compute (for each comparison) the proportion of districts
+    whose *mean* ICER is below a specified threshold.
+
+    Returns
+    -------
+    pd.DataFrame
+        A tidy dataframe with one row per comparison:
+        columns = ['comparison', 'n_districts', 'n_below_threshold', 'prop_below_threshold'].
+    """
+
+    # Filter to the chosen wash_strategy
+    df = icer_summary[icer_summary['wash_strategy'] == wash_strategy].copy()
+
+    # Keep only districts with a defined mean ICER (i.e. at least one valid run)
+    df = df[~df['mean'].isna()].copy()
+
+    if df.empty:
+        # No evaluable districts for this strategy
+        return pd.DataFrame(columns=['comparison', 'n_districts', 'n_below_threshold', 'prop_below_threshold'])
+
+    # Indicator whether the mean ICER is below the threshold
+    df['below_threshold'] = df['mean'] < threshold
+
+    # Aggregate by comparison
+    out = (
+        df.groupby('comparison', as_index=False)
+          .agg(
+              n_districts       = ('district', 'nunique'),
+              n_below_threshold = ('below_threshold', 'sum')
+          )
+    )
+
+    # Proportion of districts cost-effective under this threshold
+    out['prop_below_threshold'] = out['n_below_threshold'] / out['n_districts']
+
+    return out
+
+
+
+
 def combine_on_keyword(df1: pd.DataFrame, df2: pd.DataFrame, keyword: str = "MDA All") -> pd.DataFrame:
     """
     Combine two DataFrames with identical MultiIndex columns (draw, run),
@@ -1819,6 +1866,7 @@ dalys_national_summary = compute_summary_statistics(dalys_national,
 formatted_table = format_summary_for_output(dalys_national_summary, filename='summary_dalys_national')
 
 
+
 # === DALYs averted by district =========================================================
 
 dalys_averted_district_compared_noMDA = compute_number_averted_vs_noMDA_within_wash_strategies(
@@ -2266,6 +2314,34 @@ icer_district_cons_only["formatted"] = icer_district_cons_only.apply(
     lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
 )
 icer_district_cons_only.to_excel(results_folder / f'icer_district_cons_only_{target_period()}_SI.xlsx')
+
+
+
+
+#################################################################################
+# %% Proportion of district ICERS below threshold
+#################################################################################
+
+
+
+# full costs
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district,
+                                            wash_strategy="Continue WASH",
+                                            threshold=61.0)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_fullcosts.xlsx')
+
+
+
+# cons costs
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_cons_only,
+                                            wash_strategy="Continue WASH",
+                                            threshold=61.0)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_cons.xlsx')
+
+
+
+
+
 
 
 

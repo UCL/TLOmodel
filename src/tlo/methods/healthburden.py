@@ -520,10 +520,10 @@ class HealthBurden(Module):
         )
 
         log_df_line_by_line(
-            key='dalys_by_district_stacked_by_age_and_time',
+            key='dalys_by_district_stacked_by_and_time',
             description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                         ', broken down by year and district category.'
-                        'Stacking by age and time: i.e., all the year of life lost '
+                        'Stacking by time: i.e., all the year of life lost '
                         'are ascribed to the age of the death and the year of the death.',
             df=self.get_dalys(yld=yld_by_district, yll=yll_by_district),
             force_cols=self._causes_of_dalys,
