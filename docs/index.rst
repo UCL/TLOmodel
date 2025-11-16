@@ -24,7 +24,7 @@ It benefits from a close partnership between this team and the Ministry of Healt
 
 News
 ===========
-TLO Model and the 17th Think Tank in Malawi featured in new `article <https://ecsahc.org/ecsa-hc-driving-policy-transformation-how-the-thanzi-model-is-empowering-smarter-health-decisions-in-malawi/>`_ by ECSA-HC.
+*TLO Model* featured in new `article <https://ecsahc.org/ecsa-hc-driving-policy-transformation-how-the-thanzi-model-is-empowering-smarter-health-decisions-in-malawi/>`_ by ECSA-HC.
 
 
 Latest Release
