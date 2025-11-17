@@ -108,9 +108,11 @@ class Simulation:
         self.date = self.start_date = start_date
         self.modules = OrderedDict()
         self.event_queue = EventQueue()
+        
         self.generate_event_chains = True
         self.generate_event_chains_modules_of_interest = []
         self.generate_event_chains_ignore_events = []
+        
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
