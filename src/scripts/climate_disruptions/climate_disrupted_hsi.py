@@ -14,7 +14,7 @@ spacing_of_years = 1
 PREFIX_ON_FILENAME = "1"
 climate_sensitivity_analysis = True
 parameter_sensitivity_analysis = False
-main_text = True
+main_text = False
 scenario_names_all = [
     "Baseline",
     "SSP 1.26 High",
@@ -583,14 +583,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     target_year_final = max_year
     target_period_final = (Date(2026, 1, 1), Date(target_year_final, 12, 31))
-    target_period_final = (Date(2010, 1, 1), Date(2011, 1, 12))
-    #target_period_final = (Date(2026, 1, 1), Date(2028, 1, 12))
 
-    scenario_labels_final = ["Baseline", "SSP2-4.5", "SSP5-8.5"]
-    scenario_indices_final = [0, 6, 7]
-    #scenario_labels_final = ["Baseline"]
-    #scenario_indices_final = [0]
-
+    scenario_labels_final = scenario_names
+    scenario_indices_final = scenarios_of_interest
 
     def get_counts_of_hsi_by_treatment_id(_df):
         _df = _df.loc[pd.to_datetime(_df["date"]).between(*target_period_final)]
