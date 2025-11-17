@@ -1668,7 +1668,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # ----------------------------------------------
         # 9 Adherence support
         # ----------------------------------------------
-        # this is through VL monitoring
+        # this is through same as VL monitoring but without costs of VL test
 
         if p["select_mihpsa_scenario"] == 9:
             p["prob_circ_after_hiv_test"] = 0
@@ -1678,28 +1678,60 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_prep_for_fsw_after_hiv_test"] = 0
             p["prob_prep_for_agyw"] = 0
 
+            # no viral load tests available
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {190: 0.0})  # 190 for VL test
+
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
 
 
+        # ----------------------------------------------
+        # 10 Worst case
+        # ----------------------------------------------
+        # todo
+        if p["select_mihpsa_scenario"] == 1:
+            # no prevention, no VL testing, testing rates very low, keep ANC/TB etc passive case finding
+            p["prob_circ_after_hiv_test"] = 0
+            p["increase_in_prob_circ_2019"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
 
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+            p["prob_prep_for_agyw"] = 0
+
+            # no viral load tests available
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {190: 0.0})  # 190 for VL test
+
+            # reduce general testing
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
+
+            # drop availability of ARVs by 50%
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {190: 0.0})  #
 
         # ----------------------------------------------
-        # 10 Minimum package
+        # 11 HalfHTS
         # ----------------------------------------------
+        # todo
+        if p["select_mihpsa_scenario"] == 1:
+            # no prevention, no VL testing, testing rates very low, keep ANC/TB etc passive case finding
+            p["prob_circ_after_hiv_test"] = 0
+            p["increase_in_prob_circ_2019"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
 
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+            p["prob_prep_for_agyw"] = 0
 
+            # no viral load tests available
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {190: 0.0})  # 190 for VL test
 
-
-        # ----------------------------------------------
-        # 12 Worst case
-        # ----------------------------------------------
-
-
-
-
-
+            # reduce general testing
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
 
         # todo these are mihpsa CE scenarios
         # if p['select_mihpsa_scenario'] == 1:
@@ -4019,7 +4051,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 elif test_type == 'VL' and self.get_consumables(
                     self.module.item_codes_for_consumables_required['vl_measurement']):
 
-                    # todo add logic around unsuppressed person receiving and acting on result
+                    # logic around unsuppressed person receiving and acting on result
                     if person["hv_art"] == "on_not_VL_suppressed":
 
                         q = p["prob_receive_viral_load_test_result"] * p["sensitivity_viral_load_test"]
@@ -4039,6 +4071,22 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                             'person_id': person_id
                         }
                     )
+
+            if p["select_mihpsa_scenario"] == 9:
+                # refer to adherence counselling with same probability as viral load test -> referral
+                # mechanism the same as viral load test -> adh counselling but without costs
+                if person["hv_art"] == "on_not_VL_suppressed":
+
+                    q = p["prob_receive_viral_load_test_result"] * p["sensitivity_viral_load_test"]
+
+                    if self.module.rng.random_sample() < q:
+                        delay_months = self.module.rng.randint(3, 7)
+
+                        self.sim.schedule_event(
+                            Hiv_AdherenceCounselling(person_id=person_id, module=self.module),
+                            self.sim.date + pd.DateOffset(months=delay_months),
+                        )
+
 
         return drugs_available
 
