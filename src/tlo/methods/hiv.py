@@ -1513,6 +1513,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
+            p["annual_rate_selftest"] = p["annual_rate_selftest"] * 0.75
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
         # ----------------------------------------------
         # 2 PrEP oral only in FSW, switch everything else off
@@ -1531,6 +1534,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
+            p["annual_rate_selftest"] = p["annual_rate_selftest"] * 0.75
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
 
         # ----------------------------------------------
@@ -1558,6 +1564,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
+            p["annual_rate_selftest"] = p["annual_rate_selftest"] * 0.75
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
         # ----------------------------------------------
         # 4 PrEP oral only AGYW and Pregnant women
@@ -1577,6 +1586,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
+            p["annual_rate_selftest"] = p["annual_rate_selftest"] * 0.75
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
         # ----------------------------------------------
         # 5 PrEP oral + inj AGYW and Pregnant women
@@ -1597,11 +1609,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
+            p["annual_rate_selftest"] = p["annual_rate_selftest"] * 0.75
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
         # ----------------------------------------------
         # 6 Retain VMMC
         # ----------------------------------------------
-        # todo this needs to be ramped up to get to 90%
+        # this needs to be ramped up to get to 90%
 
         if p["select_mihpsa_scenario"] == 6:
 
@@ -1619,13 +1634,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
+            p["annual_rate_selftest"] = p["annual_rate_selftest"] * 0.75
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
         # ----------------------------------------------
         # 7 Key population outreach FSW
         # ----------------------------------------------
-        # todo some decline in risk
+        # some decline in risk for FSW
         if p["select_mihpsa_scenario"] == 7:
-            p["rr_fsw"] = p["rr_fsw"] * 0.9
+            p["rr_fsw"] = p["rr_fsw"] * 0.5
 
             # no prevention, no VL testing, testing rates very low, keep ANC/TB etc passive case finding
             p["prob_circ_after_hiv_test"] = 0
@@ -1642,6 +1660,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
+            p["annual_rate_selftest"] = p["annual_rate_selftest"] * 0.75
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
         # ----------------------------------------------
         # 8 Testing
@@ -1660,15 +1681,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
 
-            # reduce general testing
-            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
-                                                                       "annual_testing_rate_adults"] * 0.75
-
 
         # ----------------------------------------------
         # 9 Adherence support
         # ----------------------------------------------
         # this is through same as VL monitoring but without costs of VL test
+        # operationalised through the HS_StartOrContinueTreatment on art_continuation
 
         if p["select_mihpsa_scenario"] == 9:
             p["prob_circ_after_hiv_test"] = 0
@@ -1685,13 +1703,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
+            p["annual_rate_selftest"] = p["annual_rate_selftest"] * 0.75
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
 
         # ----------------------------------------------
         # 10 Worst case
         # ----------------------------------------------
-        # todo
-        if p["select_mihpsa_scenario"] == 1:
+
+        if p["select_mihpsa_scenario"] == 10:
             # no prevention, no VL testing, testing rates very low, keep ANC/TB etc passive case finding
             p["prob_circ_after_hiv_test"] = 0
             p["increase_in_prob_circ_2019"] = 0
@@ -1706,17 +1727,26 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
-                                                                       "annual_testing_rate_adults"] * 0.75
+                                                                       "annual_testing_rate_adults"] * 0.5
+
+            p["annual_rate_selftest"] = 0
+            p["prob_hiv_test_at_anc_or_delivery"] = 0  # no ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
             # drop availability of ARVs by 50%
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {190: 0.0})  #
+                {2671: 0.0})  # Adult ART
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {2672: 0.0})  # Child ART
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {2673: 0.0})  # Infant ART
+
 
         # ----------------------------------------------
         # 11 HalfHTS
         # ----------------------------------------------
-        # todo
-        if p["select_mihpsa_scenario"] == 1:
+
+        if p["select_mihpsa_scenario"] == 11:
             # no prevention, no VL testing, testing rates very low, keep ANC/TB etc passive case finding
             p["prob_circ_after_hiv_test"] = 0
             p["increase_in_prob_circ_2019"] = 0
@@ -1731,7 +1761,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
-                                                                       "annual_testing_rate_adults"] * 0.75
+                                                                       "annual_testing_rate_adults"] * 0.5
+            p["annual_rate_selftest"] = 0
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.5 # ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.5 # infant screening
+
+
+
 
         # todo these are mihpsa CE scenarios
         # if p['select_mihpsa_scenario'] == 1:
@@ -3537,7 +3573,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         """ Do the circumcision for this man. If he is already circumcised, this is a follow-up appointment."""
 
-        if (self.module.parameters['select_mihpsa_scenario'] == 7) and self.sim.date.year >= 2030:
+        if (self.module.parameters['select_mihpsa_scenario'] == 6) and self.sim.date.year >= 2030:
             return
 
         self.number_of_occurrences += 1  # The current appointment is included in the count.
