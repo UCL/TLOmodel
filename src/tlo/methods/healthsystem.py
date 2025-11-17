@@ -316,6 +316,35 @@ class HealthSystem(Module):
                           "a worksheet of the file `ResourceFile_dynamic_HR_scaling.xlsx`."
         ),
 
+        'HR_expansion_by_officer_type': Parameter(
+            Types.DICT, "This DICT has keys of nine officer types, each with a float value that "
+                        "specifies the proportion of extra budget allocated to that officer type."
+                        "The extra budget for this year is (100 * HR_budget_growth_rate) percent of the total salary "
+                        "of these officers in last year. Given the allocated extra budget and annual salary, "
+                        "we calculate the extra minutes for these staff of this year. The expansion is done "
+                        "on 1 Jan of every year from start_year_HR_expansion_by_officer_type."
+        ),
+        "HR_budget_growth_rate": Parameter(
+            Types.REAL, "This number is the annual growth rate of HR budget. "
+                        "The default value is 0.042 (4.2%), assuming the annual GDP growth rate is 4.2% and "
+                        "the proportion of GDP expenditure on paying salaries of these staff is fixed "
+        ),
+
+        'start_year_HR_expansion_by_officer_type': Parameter(
+            Types.INT, "Year from which the HR expansion by officer type will take place. The change happens "
+                       "on 1 Jan of every year onwards."
+        ),
+
+        'end_year_HR_expansion_by_officer_type': Parameter(
+            Types.INT, "Year in which the HR expansion by officer type will stop. This happens on 1 Jan of "
+                       "that year. When submit the scenario to run, this should be the same year of the end year of "
+                       "the run."
+        ),
+
+        'minute_salary': Parameter(
+            Types.DATA_FRAME, "This specifies the minute salary in USD per officer type per facility id."
+        ),
+
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
 
@@ -637,6 +666,20 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
+        # Read in ResourceFile_Annual_Salary_Per_Cadre.csv
+        self.parameters['minute_salary'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'costing' / 'Minute_Salary_HR.csv')
+
+        # Set default values for HR_expansion_by_officer_type, start_year_HR_expansion_by_officer_type,
+        # end_year_HR_expansion_by_officer_type
+        self.parameters['HR_expansion_by_officer_type'] = {
+            'Clinical': 0, 'DCSA': 0, 'Nursing_and_Midwifery': 0, 'Pharmacy': 0,
+            'Dental': 0, 'Laboratory': 0, 'Mental': 0, 'Nutrition': 0, 'Radiography': 0
+        }
+        self.parameters['HR_budget_growth_rate'] = 0.042
+        self.parameters['start_year_HR_expansion_by_officer_type'] = 2025
+        self.parameters['end_year_HR_expansion_by_officer_type'] = 2035
+
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
 
@@ -794,6 +837,12 @@ class HealthSystem(Module):
         # The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,
         # whilst the actual scaling will only take effect from 2011 onwards.
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
+
+        # Schedule recurring event that expands HR by officer type
+        # from the start_year_HR_expansion_by_officer_type to the end_year_HR_expansion_by_officer_type.
+        for yr in range(self.parameters["start_year_HR_expansion_by_officer_type"],
+                        self.parameters["end_year_HR_expansion_by_officer_type"]):
+            sim.schedule_event(HRExpansionByOfficerType(self), Date(yr, 1, 1))
 
         # Schedule the logger to occur at the start of every year
         sim.schedule_event(HealthSystemLogger(self), Date(sim.date.year, 1, 1))
@@ -1063,6 +1112,11 @@ class HealthSystem(Module):
         # Note: Currently relying on module variable rather than parameter for
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
+
+        # In addition, for Class HRExpansionByOfficerType,
+        # for the purpose of keep cost not scaled, need to scale down minute salary when capabilities are scaled up
+
+        minute_salary = self.parameters['minute_salary']
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
         for officer in self._daily_capabilities.keys():
             matches = re.match(pattern, officer)
@@ -1072,6 +1126,9 @@ class HealthSystem(Module):
             level = self._facility_by_facility_id[facility_id].level
             # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
             # available capabilities if these were under-used the previous year).
+            # Later, we might want to rescale capabilities by rescaling factor of officer type and facility id
+            # (i.e., officer type, district and level specific),
+            # which will need fraction of time used by officer type and facility id.
             rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
                 officer_type=officer_type, level=level
             )
@@ -1082,6 +1139,9 @@ class HealthSystem(Module):
                 # daily patient facing time per day than contracted (or equivalently performing appts more
                 # efficiently).
                 self._daily_capabilities_per_staff[officer] *= rescaling_factor
+                minute_salary.loc[(minute_salary.Facility_ID == facility_id)
+                                  & (minute_salary.Officer_Type_Code == officer_type),
+                                  'Minute_Salary_USD'] /= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
@@ -1788,6 +1848,7 @@ class HealthSystem(Module):
                 squeeze_factor=squeeze_factor,
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
+                fac_id=facility_id if facility_id is not None else -99,
             )
 
     def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None):
@@ -1846,6 +1907,7 @@ class HealthSystem(Module):
             hsi_event_name=event_details.event_name,
             appt_footprint=event_details.appt_footprint,
             level=event_details.facility_level,
+            fac_id=facility_id if facility_id is not None else -99,
         )
 
     def log_current_capabilities_and_usage(self):
@@ -1869,22 +1931,40 @@ class HealthSystem(Module):
             comparison['Minutes_Used'].sum() / total_available if total_available > 0 else 0
         )
 
-        # Compute Fraction of Time Used In Each Facility
-        facility_id = [_f.split('_')[1] for _f in comparison.index]
-        summary_by_fac_id = comparison.groupby(by=facility_id)[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
-        summary_by_fac_id['Fraction_Time_Used'] = (
-            summary_by_fac_id['Minutes_Used'] / summary_by_fac_id['Total_Minutes_Per_Day']
-        ).replace([np.inf, -np.inf, np.nan], 0.0)
+        def compute_fraction_of_time_used(groups):
+            """
+            This will take in the groups for the groupby and calculate the fraction of time used for each group.
+            :param groups: list of groups
+            :return: dataframe with groups as the index and time measures as the columns
+            """
+            _summary = comparison.groupby(by=groups)[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
+            _summary['Fraction_Time_Used'] = (
+                _summary['Minutes_Used'] / _summary['Total_Minutes_Per_Day']
+            ).replace([np.inf, -np.inf, np.nan], 0.0)
 
-        # Compute Fraction of Time For Each Officer and level
+            return _summary
+
+        # Get facility id, officer, level, district groups
+        facility_id = [_f.split('_')[1] for _f in comparison.index]
         officer = [_f.rsplit('Officer_')[1] for _f in comparison.index]
         level = [self._facility_by_facility_id[int(_fac_id)].level for _fac_id in facility_id]
         level = list(map(lambda x: x.replace('1b', '2'), level))
-        summary_by_officer = comparison.groupby(by=[officer, level])[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
-        summary_by_officer['Fraction_Time_Used'] = (
-            summary_by_officer['Minutes_Used'] / summary_by_officer['Total_Minutes_Per_Day']
-        ).replace([np.inf, -np.inf, np.nan], 0.0)
+        district = [self._facility_by_facility_id[int(_fac_id)].name.split('_')[-1] for _fac_id in facility_id]
+
+        # Compute Fraction of Time Used In Each Facility
+        summary_by_fac_id = compute_fraction_of_time_used(facility_id)
+
+        # Compute Fraction of Time For Each Officer and Level
+        summary_by_officer = compute_fraction_of_time_used([officer, level])
         summary_by_officer.index.names = ['Officer_Type', 'Facility_Level']
+
+        # Compute raction of Time For Each Officer and District
+        summary_by_officer_district = compute_fraction_of_time_used([officer, district])
+        summary_by_officer_district.index.names = ['Officer_Type', 'District']
+
+        # Compute Fraction of Time by Officer, Level and District
+        summary_by_officer_level_district = compute_fraction_of_time_used([officer, level, district])
+        summary_by_officer_level_district.index.names = ['Officer_Type', 'Facility_Level', 'District']
 
         logger.info(key='Capacity',
                     data={
@@ -1898,7 +1978,10 @@ class HealthSystem(Module):
 
         self._summary_counter.record_hs_status(
             fraction_time_used_across_all_facilities=fraction_time_used_overall,
-            fraction_time_used_by_officer_type_and_level=summary_by_officer["Fraction_Time_Used"].to_dict()
+            fraction_time_used_by_officer_type_and_level=summary_by_officer["Fraction_Time_Used"].to_dict(),
+            fraction_time_used_by_officer_district=summary_by_officer_district["Fraction_Time_Used"].to_dict(),
+            fraction_time_used_by_officer_level_district=summary_by_officer_level_district[
+                'Fraction_Time_Used'].to_dict(),
         )
 
     def remove_beddays_footprint(self, person_id):
@@ -2668,14 +2751,19 @@ class HealthSystemSummaryCounter:
         self._no_blank_appt_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s with non-blank footprint
         self._no_blank_appt_appts = defaultdict(int)  # As above, but for `HSI_Event`s that with non-blank footprint
         self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        fac_ids = list(range(133)) + [-1, -99]  # 133 "real" facilities + 2 dummy facilities
+        self._no_blank_appt_by_fac_id = {_fac_id: defaultdict(int) for _fac_id in fac_ids}
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        self._never_ran_appts_by_fac_id = {_fac_id: defaultdict(int) for _fac_id in fac_ids}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
+        self._sum_of_daily_frac_time_used_by_officer_district = Counter()
+        self._sum_of_daily_frac_time_used_by_officer_level_district = Counter()
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
         #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
@@ -2685,7 +2773,8 @@ class HealthSystemSummaryCounter:
                          hsi_event_name: str,
                          squeeze_factor: float,
                          appt_footprint: Counter,
-                         level: str
+                         level: str,
+                         fac_id: int,
                          ) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
 
@@ -2708,12 +2797,14 @@ class HealthSystemSummaryCounter:
             for appt_type, number in appt_footprint:
                 self._no_blank_appt_appts[appt_type] += number
                 self._no_blank_appt_by_level[level][appt_type] += number
+                self._no_blank_appt_by_fac_id[fac_id][appt_type] += number
 
     def record_never_ran_hsi_event(self,
                                    treatment_id: str,
                                    hsi_event_name: str,
                                    appt_footprint: Counter,
-                                   level: str
+                                   level: str,
+                                   fac_id: int,
                                    ) -> None:
         """Add information about a never-ran `HSI_Event` to the running summaries."""
 
@@ -2724,17 +2815,24 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._never_ran_appts[appt_type] += number
             self._never_ran_appts_by_level[level][appt_type] += number
+            self._never_ran_appts_by_fac_id[fac_id][appt_type] += number
 
     def record_hs_status(
         self,
         fraction_time_used_across_all_facilities: float,
         fraction_time_used_by_officer_type_and_level: Dict[Tuple[str, int], float],
+        fraction_time_used_by_officer_district: Dict[Tuple[str, str], float],
+        fraction_time_used_by_officer_level_district: Dict[Tuple[str, str, str], float],
     ) -> None:
         """Record a current status metric of the HealthSystem."""
         # The fraction of all healthcare worker time that is used:
         self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
         for officer_type_facility_level, fraction_time in fraction_time_used_by_officer_type_and_level.items():
             self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type_facility_level] += fraction_time
+        for officer_district, fraction_time in fraction_time_used_by_officer_district.items():
+            self._sum_of_daily_frac_time_used_by_officer_district[officer_district] += fraction_time
+        for officer_level_district, fraction_time in fraction_time_used_by_officer_level_district.items():
+            self._sum_of_daily_frac_time_used_by_officer_level_district[officer_level_district] += fraction_time
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
@@ -2757,9 +2855,10 @@ class HealthSystemSummaryCounter:
             key="HSI_Event_non_blank_appt_footprint",
             description="Same as for key 'HSI_Event' but limited to HSI_Event that have non-blank footprints",
             data={
-            "TREATMENT_ID": self._no_blank_appt_treatment_ids,
-            "Number_By_Appt_Type_Code": self._no_blank_appt_appts,
-            "Number_By_Appt_Type_Code_And_Level": self._no_blank_appt_by_level,
+                "TREATMENT_ID": self._no_blank_appt_treatment_ids,
+                "Number_By_Appt_Type_Code": self._no_blank_appt_appts,
+                "Number_By_Appt_Type_Code_And_Level": self._no_blank_appt_by_level,
+                "Number_By_Appt_Type_Code_And_FacilityID": self._no_blank_appt_by_fac_id,
             },
         )
 
@@ -2772,6 +2871,7 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._never_ran_treatment_ids,
                 "Number_By_Appt_Type_Code": self._never_ran_appts,
                 "Number_By_Appt_Type_Code_And_Level": self._never_ran_appts_by_level,
+                "Number_By_Appt_Type_Code_And_FacilityID": self._never_ran_appts_by_fac_id,
             },
         )
 
@@ -2793,6 +2893,26 @@ class HealthSystemSummaryCounter:
                         "calendar year, for each officer type at each facility level.",
             data=flatten_multi_index_series_into_dict_for_logging(
                 self.frac_time_used_by_officer_type_and_level()),
+        )
+
+        # Log mean of 'fraction time used by officer type and district' from daily entries from the previous
+        # year.
+        logger_summary.info(
+            key="Capacity_By_OfficerType_And_District",
+            description="The fraction of healthcare worker time that is used each day, averaged over this "
+                        "calendar year, for each officer type in each district.",
+            data=flatten_multi_index_series_into_dict_for_logging(
+                self.frac_time_used_by_officer_district()),
+        )
+
+        # Log mean of 'fraction time used by officer type and facility level and district' from daily entries from the
+        # previous year.
+        logger_summary.info(
+            key="Capacity_By_OfficerType_And_FacilityLevel_And_District",
+            description="The fraction of healthcare worker time that is used each day, averaged over this "
+                        "calendar year, for each officer type at each facility level in each district.",
+            data=flatten_multi_index_series_into_dict_for_logging(
+                self.frac_time_used_by_officer_level_district()),
         )
 
         self._reset_internal_stores()
@@ -2826,6 +2946,70 @@ class HealthSystemSummaryCounter:
                 ),
                 data=mean_frac_time_used.values()
             ).sort_index()
+
+    def frac_time_used_by_officer_district(
+        self,
+        officer_type: Optional[str]=None,
+        district: Optional[str]=None,
+    ) -> Union[float, pd.Series]:
+        """Average fraction of time used by officer type and district since last reset.
+        If `officer_type` and/or `district` is not provided (left to default to `None`) then a pd.Series with a multi-index
+        is returned giving the result for all officer_types/levels."""
+
+        if (officer_type is not None) and (district is not None):
+            return (
+                self._sum_of_daily_frac_time_used_by_officer_district[officer_type, district]
+                / len(self._frac_time_used_overall)
+                # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
+            )
+        else:
+            # Return multiple in the form of a pd.Series with multiindex
+            mean_frac_time_used = {
+                (_officer_type, _district): v / len(self._frac_time_used_overall)
+                for (_officer_type, _district), v in self._sum_of_daily_frac_time_used_by_officer_district.items()
+                if (_officer_type == officer_type or officer_type is None) and (
+                    _district == district or district is None)
+            }
+            return pd.Series(
+                index=pd.MultiIndex.from_tuples(
+                    mean_frac_time_used.keys(),
+                    names=['OfficerType', 'District']
+                ),
+                data=mean_frac_time_used.values()
+            ).sort_index()
+
+    def frac_time_used_by_officer_level_district(
+        self,
+        officer_type: Optional[str]=None,
+        level: Optional[str]=None,
+        district: Optional[str]=None,
+    ) -> Union[float, pd.Series]:
+        """Average fraction of time used by officer, level and district since last reset.
+        If `officer_type` and/or `level` and/or 'district' is not provided (left to default to `None`),
+        then a pd.Series with a multi-index is returned giving the result for all officer_types/levels/districts."""
+
+        if (officer_type is not None) and (level is not None) and (district is not None):
+            return (
+                self._sum_of_daily_frac_time_used_by_officer_level_district[officer_type, level, district]
+                / len(self._frac_time_used_overall)
+                # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
+            )
+        else:
+            # Return multiple in the form of a pd.Series with multiindex
+            mean_frac_time_used = {
+                (_officer_type, _level, _district): v / len(self._frac_time_used_overall)
+                for (_officer_type, _level, _district), v in self._sum_of_daily_frac_time_used_by_officer_level_district.items()
+                if (_officer_type == officer_type or officer_type is None) and (_level == level or level is None) and (
+                    _district == district or district is None)
+            }
+            return pd.Series(
+                index=pd.MultiIndex.from_tuples(
+                    mean_frac_time_used.keys(),
+                    names=['OfficerType', 'FacilityLevel', 'District']
+                ),
+                data=mean_frac_time_used.values()
+            ).sort_index()
+
 
 class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
     """Event that causes certain internal parameters of the HealthSystem to be changed; specifically:
@@ -2950,6 +3134,8 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
         HR_scaling_factor_by_district = self.module.parameters['HR_scaling_by_district_table'][
             self.module.parameters['HR_scaling_by_district_mode']
         ].set_index('District').to_dict()
+        # todo: add entries for facilities at and beyond level 3,
+        #  so that the district list would match the facility IDs fully.
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
 
@@ -2958,8 +3144,77 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
             # Extract ID and officer type from
             facility_id = int(matches.group(1))
             district = self.module._facility_by_facility_id[facility_id].district
+            # todo: check if district callable; a fix might be
+            #  district = self.module._facility_by_facility_id[facility_id].name.split('_')[-1]
             if district in HR_scaling_factor_by_district:
                 self.module._daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
+
+
+class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
+    """ This event exists to expand the HR by officer type (Clinical, DCSA, Nursing_and_Midwifery, Pharmacy)
+    given an extra budget. This is done for daily capabilities, as a year consists of 365.25 equal days."""
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+
+        # get minute salary
+        minute_salary_by_officer_facility_id = self.module.parameters['minute_salary']
+
+        # get current daily minutes and format it to be consistent with minute salary
+        daily_minutes = pd.DataFrame(self.module._daily_capabilities).reset_index().rename(
+            columns={'index': 'facilityid_officer'})
+        daily_minutes[['Facility_ID', 'Officer_Type_Code']] = daily_minutes.facilityid_officer.str.split(
+            pat='_', n=3, expand=True)[[1, 3]]
+        daily_minutes['Facility_ID'] = daily_minutes['Facility_ID'].astype(int)
+
+        # get daily cost per officer type per facility id
+        daily_cost = minute_salary_by_officer_facility_id.merge(
+            daily_minutes, on=['Facility_ID', 'Officer_Type_Code'], how='outer')
+        daily_cost['Total_Cost_Per_Day'] = daily_cost['Minute_Salary_USD'] * daily_cost['Total_Minutes_Per_Day']
+
+        # get daily cost per officer type
+        daily_cost = daily_cost.groupby('Officer_Type_Code').agg({'Total_Cost_Per_Day': 'sum'})
+
+        # get daily extra budget for this year
+        daily_extra_budget = (self.module.parameters['HR_budget_growth_rate']
+                              * daily_cost.Total_Cost_Per_Day.sum())
+
+        # get proportional daily extra budget for each officer type
+        extra_budget_fraction = pd.Series(self.module.parameters['HR_expansion_by_officer_type'])
+        assert set(extra_budget_fraction.index) == set(daily_cost.index), \
+            "Input officer types do not match the defined officer types"
+        daily_cost = daily_cost.reindex(index=extra_budget_fraction.index)
+        daily_cost['extra_budget_per_day'] = daily_extra_budget * extra_budget_fraction
+
+        # get the scale up factor for each officer type, assumed to be the same for each facility id of that
+        # officer type (note "cost = available minutes * minute salary", thus we could directly calculate
+        # scale up factor using cost)
+        daily_cost['scale_up_factor'] = (
+            (daily_cost.extra_budget_per_day + daily_cost.Total_Cost_Per_Day) / daily_cost.Total_Cost_Per_Day
+        )
+
+        # scale up the daily minutes per cadre per facility id
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+        for officer in self.module._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
+            # Extract officer type
+            officer_type = matches.group(2)
+            self.module._daily_capabilities[officer] *= daily_cost.loc[officer_type, 'scale_up_factor']
+
+        # save the scale up factor, updated cost and updated capabilities into logger
+        # note that cost and capabilities are on the actual scale,
+        # not normalised by the self.capabilities_coefficient parameter
+        total_cost_this_year = 365.25 * (daily_cost.Total_Cost_Per_Day + daily_cost.extra_budget_per_day)
+        total_capabilities_this_year = (365.25 * self.module._daily_capabilities)
+        logger_summary.info(key='HRScaling',
+                            description='The HR scale up factor by office type given fractions of an extra budget',
+                            data={
+                                'scale_up_factor': daily_cost.scale_up_factor.to_dict(),
+                                'total_hr_salary': total_cost_this_year.to_dict(),
+                                'total_hr_capabilities': total_capabilities_this_year.to_dict()
+                            }
+                            )
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
