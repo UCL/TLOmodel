@@ -1450,8 +1450,8 @@ class CareOfWomenDuringPregnancy(Module):
         # Women with abruption, praevia or chorioamnionitis prior to 28 weeks will not be delivered until they have
         # reached that gestation
         if ((mother.ps_placental_abruption or
-            ((mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'severe')) or
-             mother.ps_chorioamnionitis)) and
+             (mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'severe')) or
+             mother.ps_chorioamnionitis) and
             (mother.ps_gestational_age_in_weeks < 28)):
             beddays = int((28 * 7) - (mother.ps_gestational_age_in_weeks * 7))
 
