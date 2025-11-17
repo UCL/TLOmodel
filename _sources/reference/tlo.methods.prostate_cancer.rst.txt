@@ -90,6 +90,51 @@ tlo.methods.prostate_cancer module
         * - sensitivity_of_biopsy_for_prostate_ca
           - REAL
           - sensitivity of biopsy for prostate cancer
+        * - odds_ratio_health_seeking_urinary
+          - REAL
+          - odds ratio for health seeking in adults with urinary symptoms
+        * - odds_ratio_health_seeking_pelvic_pain
+          - REAL
+          - odds ratio for health seeking in adults with pelvic pain symptoms
+        * - no_health_seeking_urinary_children
+          - BOOL
+          - whether children seek healthcare for urinary symptoms
+        * - no_health_seeking_pelvic_pain_children
+          - BOOL
+          - whether children seek healthcare for pelvic pain symptoms
+        * - min_age_prostate_cancer
+          - INT
+          - minimum age for prostate cancer risk
+        * - mid_age_threshold_prostate_cancer
+          - INT
+          - middle age threshold for prostate cancer (lower bound of middle age group)
+        * - high_age_threshold_prostate_cancer
+          - INT
+          - high age threshold for prostate cancer (lower bound of high age group)
+        * - max_age_prostate_cancer
+          - INT
+          - maximum age for prostate cancer modeling
+        * - months_between_polling_events
+          - INT
+          - months between main polling events
+        * - months_to_post_treatment_check
+          - INT
+          - months from treatment to first post-treatment check
+        * - months_between_followup_appointments
+          - INT
+          - months between follow-up appointments after treatment
+        * - months_between_palliative_care
+          - INT
+          - months between palliative care appointments
+        * - weeks_palliative_care_schedule_window
+          - INT
+          - weeks for palliative care appointment window
+        * - treatment_beddays
+          - INT
+          - number of general bed days required for treatment
+        * - palliative_care_beddays
+          - INT
+          - number of general bed days required for palliative care
 
 
      **PROPERTIES:**
@@ -130,13 +175,13 @@ tlo.methods.prostate_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x16e887ad0>}
+     CAUSES_OF_DEATH : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x30ec4f010>}
 
-     CAUSES_OF_DISABILITY : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x16e884c10>}
+     CAUSES_OF_DISABILITY : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x30ec4e410>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

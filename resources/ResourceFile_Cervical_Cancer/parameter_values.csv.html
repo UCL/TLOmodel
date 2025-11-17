@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>parameter values (.csv) &mdash; TLOmodel 0.1.dev2558+g9b3fa2fb4 documentation</title>
+  <title>parameter values (.csv) &mdash; TLOmodel 0.1.dev2576+g39c577c39 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=942bd948"></script>
+      <script src="../../_static/documentation_options.js?v=1aba2fa3"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -57,6 +57,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_COPD/index.html">ResourceFile_COPD</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">ResourceFile_Cervical_Cancer</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">parameter values (.csv)</a></li>
 </ul>
@@ -79,6 +80,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting/index.html">ResourceFile_Stunting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Wasting/index.html">ResourceFile_Wasting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
@@ -88,7 +90,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
@@ -143,280 +144,315 @@
 <th class="head"><p>prior_min</p></th>
 <th class="head"><p>prior_max</p></th>
 <th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>0</p></td>
 <td><p>init_prev_cin_hpv_cc_stage_hiv</p></td>
 <td><p>[0.90, 0.06, 0.005, 0.005, 0.005, 0.005  ,0.005  ,0.005, 0.005 , 0.005]</p></td>
-<td><p>undetermined</p></td>
+<td><p>local</p></td>
 <td><p>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]</p></td>
 <td><p>[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]</p></td>
 <td><p>vague prior</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
 <td><p>init_prev_cin_hpv_cc_stage_nhiv</p></td>
 <td><p>[0.97,0.026,0.0005,0.0005,0.0005,0.0005,0.0005,0.0005, 0.0005, 0.0005]</p></td>
-<td><p>undetermined</p></td>
+<td><p>local</p></td>
 <td><p>[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]</p></td>
 <td><p>[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]</p></td>
 <td><p>vague prior</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-even"><td><p>2</p></td>
 <td><p>r_hpv</p></td>
 <td><p>0.0002</p></td>
 <td><p>undetermined</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
-<td><p>vague prior</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-odd"><td><p>3</p></td>
 <td><p>r_cin1_hpv</p></td>
 <td><p>0.001</p></td>
-<td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
-<td><p>vague prior</p></td>
+<td><p>undetermined</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-even"><td><p>4</p></td>
 <td><p>prob_revert_from_cin1</p></td>
 <td><p>0.01</p></td>
 <td><p>undetermined</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
-<td><p>vague prior</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-odd"><td><p>5</p></td>
 <td><p>r_cin2_cin1</p></td>
 <td><p>0.05</p></td>
 <td><p>undetermined</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
-<td><p>vague prior</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-even"><td><p>6</p></td>
 <td><p>r_cin3_cin2</p></td>
 <td><p>0.05</p></td>
 <td><p>undetermined</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
-<td><p>vague prior</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-odd"><td><p>7</p></td>
 <td><p>r_stage1_cin3</p></td>
 <td><p>0.05</p></td>
 <td><p>undetermined</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
-<td><p>vague prior</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-even"><td><p>8</p></td>
 <td><p>r_stage2a_stage1</p></td>
 <td><p>0.05</p></td>
 <td><p>undetermined</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
-<td><p>vague prior</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-odd"><td><p>9</p></td>
 <td><p>r_stage2b_stage2a</p></td>
 <td><p>0.05</p></td>
 <td><p>undetermined</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
-<td><p>vague prior</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-even"><td><p>10</p></td>
 <td><p>r_stage3_stage2b</p></td>
 <td><p>0.05</p></td>
 <td><p>undetermined</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
-<td><p>vague prior</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-odd"><td><p>11</p></td>
 <td><p>r_stage4_stage3</p></td>
 <td><p>0.1</p></td>
 <td><p>undetermined</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
-<td><p>vague prior</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-even"><td><p>12</p></td>
 <td><p>rr_hpv_age50plus</p></td>
 <td><p>0.1</p></td>
 <td><p>universal</p></td>
 <td><p>0.01</p></td>
-<td><p>100.0</p></td>
+<td><p>100</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>13</p></td>
 <td><p>rr_progress_cc_hiv</p></td>
 <td><p>30</p></td>
 <td><p>universal</p></td>
 <td><p>0.01</p></td>
-<td><p>100.0</p></td>
+<td><p>100</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>14</p></td>
 <td><p>rr_hpv_vaccinated</p></td>
 <td><p>0.5</p></td>
 <td><p>universal</p></td>
 <td><p>0.01</p></td>
-<td><p>100.0</p></td>
+<td><p>100</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>15</p></td>
 <td><p>prob_cure_stage1</p></td>
 <td><p>0.8</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>16</p></td>
 <td><p>prob_cure_stage2a</p></td>
 <td><p>0.7</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>prob_cure_stage2b</p></td>
 <td><p>0.2</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
 <td><p>prob_cure_stage3</p></td>
 <td><p>0.05</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>19</p></td>
 <td><p>r_death_cervical_cancer</p></td>
 <td><p>0.1</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>20</p></td>
 <td><p>p_vaginal_bleeding_if_no_cc</p></td>
 <td><p>0.00001</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
 <td><p>r_vaginal_bleeding_cc_stage1</p></td>
 <td><p>0.1</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>22</p></td>
 <td><p>rr_vaginal_bleeding_cc_stage2a</p></td>
 <td><p>2</p></td>
 <td><p>universal</p></td>
 <td><p>0.01</p></td>
-<td><p>100.0</p></td>
+<td><p>100</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>23</p></td>
 <td><p>rr_vaginal_bleeding_cc_stage2b</p></td>
 <td><p>3</p></td>
 <td><p>universal</p></td>
 <td><p>0.01</p></td>
-<td><p>100.0</p></td>
+<td><p>100</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>24</p></td>
 <td><p>rr_vaginal_bleeding_cc_stage3</p></td>
 <td><p>5</p></td>
 <td><p>universal</p></td>
 <td><p>0.01</p></td>
-<td><p>100.0</p></td>
+<td><p>100</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>25</p></td>
 <td><p>rr_vaginal_bleeding_cc_stage4</p></td>
 <td><p>10</p></td>
 <td><p>universal</p></td>
 <td><p>0.01</p></td>
-<td><p>100.0</p></td>
+<td><p>100</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>26</p></td>
 <td><p>prob_referral_biopsy_given_vaginal_bleeding</p></td>
 <td><p>0.8</p></td>
 <td><p>local</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>27</p></td>
 <td><p>prob_via_screen</p></td>
 <td><p>0.03</p></td>
 <td><p>local</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>28</p></td>
 <td><p>prob_xpert_screen</p></td>
 <td><p>0.03</p></td>
 <td><p>local</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>29</p></td>
 <td><p>sensitivity_of_biopsy_for_cervical_cancer</p></td>
 <td><p>0.85</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>30</p></td>
 <td><p>sensitivity_of_via_for_cin_cc</p></td>
 <td><p>0.75</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Mustafa et al 2016</p></td>
 </tr>
 <tr class="row-odd"><td><p>31</p></td>
 <td><p>sensitivity_of_xpert_for_hpv_cin_cc</p></td>
 <td><p>0.75</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p>Mustafa et al 2016</p></td>
 </tr>
 <tr class="row-even"><td><p>32</p></td>
 <td><p>prob_thermoabl_successful</p></td>
 <td><p>0.85</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p><a class="reference external" href="https://www.imrpress.com/journal/CEOG/51/3/10.31083/j.ceog5103072/htm">https://www.imrpress.com/journal/CEOG/51/3/10.31083/j.ceog5103072/htm</a></p></td>
 </tr>
 <tr class="row-odd"><td><p>33</p></td>
 <td><p>prob_cryotherapy_successful</p></td>
 <td><p>0.85</p></td>
 <td><p>universal</p></td>
-<td><p>0.0</p></td>
-<td><p>1.0</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
 <td><p>vague prior</p></td>
+<td><p><a class="reference external" href="https://www.imrpress.com/journal/CEOG/51/3/10.31083/j.ceog5103072/htm">https://www.imrpress.com/journal/CEOG/51/3/10.31083/j.ceog5103072/htm</a></p></td>
 </tr>
 <tr class="row-even"><td><p>34</p></td>
 <td><p>transition_screening_method_year</p></td>
@@ -425,6 +461,7 @@
 <td><p>2000</p></td>
 <td><p>2100</p></td>
 <td><p>vague prior</p></td>
+<td><p>personal communication: Dr Lameck Chinula</p></td>
 </tr>
 <tr class="row-odd"><td><p>35</p></td>
 <td><p>transition_to_thermo_year</p></td>
@@ -433,6 +470,7 @@
 <td><p>2000</p></td>
 <td><p>2100</p></td>
 <td><p>vague prior</p></td>
+<td><p>personal communication: Dr Lameck Chinula</p></td>
 </tr>
 <tr class="row-even"><td><p>36</p></td>
 <td><p>screening_min_age_hv_neg</p></td>
@@ -441,6 +479,7 @@
 <td><p>10</p></td>
 <td><p>100</p></td>
 <td><p>vague prior</p></td>
+<td><p>Malawi National Cervical Cancer Strategic Plan 2022-2026</p></td>
 </tr>
 <tr class="row-odd"><td><p>37</p></td>
 <td><p>screening_max_age_hv_neg</p></td>
@@ -449,6 +488,7 @@
 <td><p>10</p></td>
 <td><p>100</p></td>
 <td><p>vague prior</p></td>
+<td><p>Malawi National Cervical Cancer Strategic Plan 2022-2027</p></td>
 </tr>
 <tr class="row-even"><td><p>38</p></td>
 <td><p>screening_min_age_hv_pos</p></td>
@@ -457,6 +497,7 @@
 <td><p>10</p></td>
 <td><p>100</p></td>
 <td><p>vague prior</p></td>
+<td><p>Malawi National Cervical Cancer Strategic Plan 2022-2028</p></td>
 </tr>
 <tr class="row-odd"><td><p>39</p></td>
 <td><p>screening_max_age_hv_pos</p></td>
@@ -465,6 +506,7 @@
 <td><p>10</p></td>
 <td><p>100</p></td>
 <td><p>vague prior</p></td>
+<td><p>Malawi National Cervical Cancer Strategic Plan 2022-2029</p></td>
 </tr>
 <tr class="row-even"><td><p>40</p></td>
 <td><p>yrs_between_screen_hv_pos</p></td>
@@ -473,6 +515,7 @@
 <td><p>1</p></td>
 <td><p>10</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>41</p></td>
 <td><p>yrs_between_screen_hv_neg</p></td>
@@ -481,6 +524,7 @@
 <td><p>1</p></td>
 <td><p>10</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>42</p></td>
 <td><p>palliative_care_bed_days</p></td>
@@ -489,30 +533,34 @@
 <td><p>1</p></td>
 <td><p>50</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-odd"><td><p>43</p></td>
 <td><p>stage_1_3_daly_wt</p></td>
 <td><p>607</p></td>
 <td><p>universal</p></td>
-<td></td>
-<td></td>
-<td><p>structural assumption</p></td>
+<td><p>N/A</p></td>
+<td><p>N/A</p></td>
+<td><p>definition</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-even"><td><p>44</p></td>
 <td><p>stage_1_3_treated_daly_wt</p></td>
 <td><p>608</p></td>
 <td><p>universal</p></td>
-<td></td>
-<td></td>
-<td><p>structural assumption</p></td>
+<td><p>N/A</p></td>
+<td><p>N/A</p></td>
+<td><p>definition</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-odd"><td><p>45</p></td>
 <td><p>stage4_daly_wt</p></td>
 <td><p>609</p></td>
 <td><p>universal</p></td>
-<td></td>
-<td></td>
-<td><p>structural assumption</p></td>
+<td><p>N/A</p></td>
+<td><p>N/A</p></td>
+<td><p>definition</p></td>
+<td><p>N/A</p></td>
 </tr>
 <tr class="row-even"><td><p>46</p></td>
 <td><p>min_yrs_between_screening_if_cin_treated</p></td>
@@ -521,6 +569,70 @@
 <td><p>1</p></td>
 <td><p>10</p></td>
 <td><p>vague prior</p></td>
+<td><p>Missing</p></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>death_timing_spread_days</p></td>
+<td><p>90</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>365</p></td>
+<td><p>design feature</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>initial_post_treatment_check_months</p></td>
+<td><p>3</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>36</p></td>
+<td><p>vague prior</p></td>
+<td><p>Missing</p></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td><p>months_to_next_appt_treated_less_than_12_mo_ago</p></td>
+<td><p>3</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>36</p></td>
+<td><p>vague prior</p></td>
+<td><p>Missing</p></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>months_to_next_appt_treated_12_to_36_mo_ago</p></td>
+<td><p>6</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>36</p></td>
+<td><p>vague prior</p></td>
+<td><p>Missing</p></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>months_to_next_appt_treated_36_to_60_mo_ago</p></td>
+<td><p>12</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>36</p></td>
+<td><p>vague prior</p></td>
+<td><p>Missing</p></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>palliative_care_interval_months</p></td>
+<td><p>1</p></td>
+<td><p>local</p></td>
+<td><p>0.5</p></td>
+<td><p>12</p></td>
+<td><p>vague prior</p></td>
+<td><p>Missing</p></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td><p>main_polling_frequency_months</p></td>
+<td><p>1</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>12</p></td>
+<td><p>design decision</p></td>
+<td><p>N/A</p></td>
 </tr>
 </tbody>
 </table>

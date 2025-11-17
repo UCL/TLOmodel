@@ -1,0 +1,38 @@
+parameter values (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_COPD/parameter_values.csv>`
+
+====  ========================================  ================================================================  ==============  ===============  ===============  ===============  ===========
+  ..  parameter\_name                           value                                                             param\_label    prior\_min       prior\_max       prior\_note      reference
+====  ========================================  ================================================================  ==============  ===============  ===============  ===============  ===========
+   0  prob\_mod\_exacerb                        [0,0,0,0.01,0.05,0.20,0.30]                                       local           [0,0,0,0,0,0,0]  [1,1,1,1,1,1,1]  vague prior
+   1  prob\_sev\_exacerb                        [0,0,0,0.0,0.0,0.05,0.10]                                         local           [0,0,0,0,0,0,0]  [1,1,1,1,1,1,1]  vague prior
+   2  prob\_progress\_to\_next\_cat             0.015                                                             local           0                1                vague prior
+   3  prob\_will\_die\_sev\_exacerbation\_ge80  0.95                                                              local           0                1                vague prior
+   4  prob\_will\_die\_sev\_exacerbation\_7079  0.7                                                               local           0                1                vague prior
+   5  prob\_will\_die\_sev\_exacerbation\_6069  0.5                                                               local           0                1                vague prior
+   6  prob\_will\_die\_sev\_exacerbation\_5059  0.05                                                              local           0                1                vague prior
+   7  prob\_will\_die\_sev\_exacerbation\_4049  0.02                                                              local           0                1                vague prior
+   8  prob\_will\_die\_sev\_exacerbation\_3039  0.01                                                              local           0                1                vague prior
+   9  prob\_will\_die\_sev\_exacerbation\_lt30  0                                                                 local           0                1                vague prior
+  10  eff\_oxygen                               0.6                                                               universal       0                1                vague prior
+  11  rel\_risk\_progress\_per\_higher\_cat     0.5                                                               local           0.01             100              vague prior
+  12  rel\_risk\_tob                            7                                                                 local           0.01             100              vague prior
+  13  rel\_risk\_wood\_burn\_stove              2                                                                 local           0.01             100              vague prior
+  14  prob\_not\_tob\_lung\_func\_15\_39        [0.496396,0.337947,0.114555,0.040078,0.010086,0.000938,0.000000]  local           [0,0,0,0,0,0,0]  [1,1,1,1,1,1,1]  vague prior
+  15  prob\_not\_tob\_lung\_func\_40\_59        [0.114194,0.306129,0.292286,0.212143,0.067501,0.007387,0.000360]  local           [0,0,0,0,0,0,0]  [1,1,1,1,1,1,1]  vague prior
+  16  prob\_not\_tob\_lung\_func\_gr59          [0.009201,0.087070,0.263341,0.445230,0.183632,0.010073,0.001453]  local           [0,0,0,0,0,0,0]  [1,1,1,1,1,1,1]  vague prior
+  17  prob\_tob\_lung\_func\_15\_39             [0.06712,0.199903,0.259728,0.241245,0.148346,0.071498,0.012160]   local           [0,0,0,0,0,0,0]  [1,1,1,1,1,1,1]  vague prior
+  18  prob\_tob\_lung\_func\_40\_59             [0.001499,0.033733,0.112819,0.231259,0.337331,0.225637,0.057722]  local           [0,0,0,0,0,0,0]  [1,1,1,1,1,1,1]  vague prior
+  19  prob\_tob\_lung\_func\_gr59               [0.000000,0.000000,0.035366,0.201220,0.453659,0.246341,0.063414]  local           [0,0,0,0,0,0,0]  [1,1,1,1,1,1,1]  vague prior
+  20  min\_age\_first\_appt                     5                                                                 local           0                20               vague prior
+  21  min\_age\_lung\_function\_assessment      15                                                                local           0                20               vague prior
+  22  age\_group\_1\_max                        39                                                                undetermined    0                100              structural
+  23  age\_group\_2\_max                        59                                                                undetermined    0                100              structural
+  24  age\_group\_3\_min                        60                                                                undetermined    0                100              structural
+  25  main\_polling\_frequency\_months          3                                                                 undetermined    1                12               design decision
+  26  exacerbation\_symptom\_duration\_days     2                                                                 local           1                30               vague prior
+  27  death\_delay\_days                        1                                                                 undetermined    1                30               design decision
+  28  beddays\_severe\_exacerbation             2                                                                 local           1                30               vague prior
+====  ========================================  ================================================================  ==============  ===============  ===============  ===============  ===========

@@ -159,6 +159,27 @@ tlo.methods.cervical_cancer module
         * - min_yrs_between_screening_if_cin_treated
           - REAL
           - minimum years between screening if individual has been treated for CIN previously
+        * - death_timing_spread_days
+          - REAL
+          - Spread of death timing for stage 4 cancer
+        * - initial_post_treatment_check_months
+          - REAL
+          - Months to first post-treatment check
+        * - months_to_next_appt_treated_less_than_12_mo_ago
+          - REAL
+          - Follow-up interval for <12 months post-treatment
+        * - months_to_next_appt_treated_12_to_36_mo_ago
+          - REAL
+          - Follow-up interval for 12-36 months post-treatment
+        * - months_to_next_appt_treated_36_to_60_mo_ago
+          - REAL
+          - Follow-up interval for 36-60 months post-treatment
+        * - palliative_care_interval_months
+          - REAL
+          - Interval between palliative care appointments
+        * - main_polling_frequency_months
+          - REAL
+          - Main polling event frequency in months
 
 
      **PROPERTIES:**
@@ -238,15 +259,15 @@ tlo.methods.cervical_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'CervicalCancer': <tlo.methods.causes.Cause object at 0x176695b50>}
+     CAUSES_OF_DEATH : {'CervicalCancer': <tlo.methods.causes.Cause object at 0x30fbbdc90>}
 
-     CAUSES_OF_DISABILITY : {'CervicalCancer': <tlo.methods.causes.Cause object at 0x176697010>}
+     CAUSES_OF_DISABILITY : {'CervicalCancer': <tlo.methods.causes.Cause object at 0x30fbbd550>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography', 'Lifestyle', 'Hiv'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'Lifestyle', 'SymptomManager', 'Hiv'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthSeekingBehaviour', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'HealthSeekingBehaviour'}
 
      __annotations__ : {}
 

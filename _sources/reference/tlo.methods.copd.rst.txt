@@ -78,6 +78,33 @@ tlo.methods.copd module
         * - prob_tob_lung_func_gr59
           - LIST
           - probability of lung function categories in individuals aged 60+ who smoke tobacco
+        * - min_age_first_appt
+          - INT
+          - Minimum age for non-emergency COPD appointments
+        * - min_age_lung_function_assessment
+          - INT
+          - Minimum age for lung function assessment and progression
+        * - age_group_1_max
+          - INT
+          - Maximum age for age group 1 (young adults)
+        * - age_group_2_max
+          - INT
+          - Maximum age for age group 2 (middle-aged adults)
+        * - age_group_3_min
+          - INT
+          - Minimum age for age group 3 (older adults)
+        * - main_polling_frequency_months
+          - INT
+          - Frequency of COPD polling events in months
+        * - exacerbation_symptom_duration_days
+          - INT
+          - Duration of breathlessness symptoms during exacerbation in days
+        * - death_delay_days
+          - INT
+          - Days between severe exacerbation and potential death
+        * - beddays_severe_exacerbation
+          - INT
+          - Number of general bed days required for severe exacerbation
 
 
      **PROPERTIES:**
@@ -105,13 +132,13 @@ tlo.methods.copd module
 
      ADDITIONAL_DEPENDENCIES : set()
 
-     CAUSES_OF_DEATH : {'COPD_cat0': <tlo.methods.causes.Cause object at 0x16ea1fc10>, 'COPD_cat1': <tlo.methods.causes.Cause object at 0x16ea1dc50>, 'COPD_cat2': <tlo.methods.causes.Cause object at 0x16ea1c950>, 'COPD_cat3': <tlo.methods.causes.Cause object at 0x16ea1ff50>, 'COPD_cat4': <tlo.methods.causes.Cause object at 0x16ea1d090>, 'COPD_cat5': <tlo.methods.causes.Cause object at 0x16ea1d210>, 'COPD_cat6': <tlo.methods.causes.Cause object at 0x16ea1ca10>}
+     CAUSES_OF_DEATH : {'COPD_cat0': <tlo.methods.causes.Cause object at 0x30f9b4190>, 'COPD_cat1': <tlo.methods.causes.Cause object at 0x30f9b4350>, 'COPD_cat2': <tlo.methods.causes.Cause object at 0x30f9b4fd0>, 'COPD_cat3': <tlo.methods.causes.Cause object at 0x30f9b5f90>, 'COPD_cat4': <tlo.methods.causes.Cause object at 0x30f9b5350>, 'COPD_cat5': <tlo.methods.causes.Cause object at 0x30f9b7710>, 'COPD_cat6': <tlo.methods.causes.Cause object at 0x30f9b71d0>}
 
-     CAUSES_OF_DISABILITY : {'COPD': <tlo.methods.causes.Cause object at 0x16ea1f490>}
+     CAUSES_OF_DISABILITY : {'COPD': <tlo.methods.causes.Cause object at 0x30f9b7fd0>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      __annotations__ : {}
 
@@ -203,6 +230,29 @@ tlo.methods.copd module
 
 
      **Functions (defined or overridden in class CopdDeath):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Copd_TreatmentOnModerateExacerbation
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_Copd_TreatmentOnModerateExacerbation):**
 
      .. automethod:: __init__
 

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.prostate_cancer module &mdash; TLOmodel 0.1.dev2558+g9b3fa2fb4 documentation</title>
+  <title>tlo.methods.prostate_cancer module &mdash; TLOmodel 0.1.dev2576+g39c577c39 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=942bd948"></script>
+      <script src="../_static/documentation_options.js?v=1aba2fa3"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -217,6 +217,66 @@ generator.</p>
 <td><p>REAL</p></td>
 <td><p>sensitivity of biopsy for prostate cancer</p></td>
 </tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_urinary</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health seeking in adults with urinary symptoms</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_pelvic_pain</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health seeking in adults with pelvic pain symptoms</p></td>
+</tr>
+<tr class="row-even"><td><p>no_health_seeking_urinary_children</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether children seek healthcare for urinary symptoms</p></td>
+</tr>
+<tr class="row-odd"><td><p>no_health_seeking_pelvic_pain_children</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether children seek healthcare for pelvic pain symptoms</p></td>
+</tr>
+<tr class="row-even"><td><p>min_age_prostate_cancer</p></td>
+<td><p>INT</p></td>
+<td><p>minimum age for prostate cancer risk</p></td>
+</tr>
+<tr class="row-odd"><td><p>mid_age_threshold_prostate_cancer</p></td>
+<td><p>INT</p></td>
+<td><p>middle age threshold for prostate cancer (lower bound of middle age group)</p></td>
+</tr>
+<tr class="row-even"><td><p>high_age_threshold_prostate_cancer</p></td>
+<td><p>INT</p></td>
+<td><p>high age threshold for prostate cancer (lower bound of high age group)</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_age_prostate_cancer</p></td>
+<td><p>INT</p></td>
+<td><p>maximum age for prostate cancer modeling</p></td>
+</tr>
+<tr class="row-even"><td><p>months_between_polling_events</p></td>
+<td><p>INT</p></td>
+<td><p>months between main polling events</p></td>
+</tr>
+<tr class="row-odd"><td><p>months_to_post_treatment_check</p></td>
+<td><p>INT</p></td>
+<td><p>months from treatment to first post-treatment check</p></td>
+</tr>
+<tr class="row-even"><td><p>months_between_followup_appointments</p></td>
+<td><p>INT</p></td>
+<td><p>months between follow-up appointments after treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>months_between_palliative_care</p></td>
+<td><p>INT</p></td>
+<td><p>months between palliative care appointments</p></td>
+</tr>
+<tr class="row-even"><td><p>weeks_palliative_care_schedule_window</p></td>
+<td><p>INT</p></td>
+<td><p>weeks for palliative care appointment window</p></td>
+</tr>
+<tr class="row-odd"><td><p>treatment_beddays</p></td>
+<td><p>INT</p></td>
+<td><p>number of general bed days required for treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>palliative_care_beddays</p></td>
+<td><p>INT</p></td>
+<td><p>number of general bed days required for palliative care</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -268,10 +328,10 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘ProstateCancer’: &lt;tlo.methods.causes.Cause object at 0x16e887ad0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘ProstateCancer’: &lt;tlo.methods.causes.Cause object at 0x16e884c10&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthSystem’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘ProstateCancer’: &lt;tlo.methods.causes.Cause object at 0x30ec4f010&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘ProstateCancer’: &lt;tlo.methods.causes.Cause object at 0x30ec4e410&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’, ‘SymptomManager’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class ProstateCancer):</strong></p>

@@ -117,6 +117,33 @@ tlo.methods.oesophagealcancer module
         * - sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia
           - REAL
           - sensitivity of endoscopy_for diagnosis of oesophageal cancer for those with dysphagia
+        * - odds_ratio_health_seeking_in_adults_dysphagia
+          - REAL
+          - odds ratio for health seeking in adults with dysphagia symptom
+        * - main_polling_event_frequency_months
+          - INT
+          - frequency in months for main polling event
+        * - post_treatment_check_months_initial
+          - INT
+          - months between post-treatment check appointments scheduled after first treatment
+        * - post_treatment_check_months_recurring
+          - INT
+          - months between follow-up appointments recurring
+        * - palliative_care_interval_months
+          - INT
+          - months between palliative care appointments
+        * - treatment_bed_days
+          - INT
+          - number of bed days required for treatment
+        * - palliative_care_bed_days
+          - INT
+          - number of bed days required for palliative care
+        * - min_age_investigation
+          - INT
+          - minimum age for dysphagia investigation
+        * - reference_age_onset
+          - INT
+          - reference age for cancer onset calculations
 
 
      **PROPERTIES:**
@@ -148,13 +175,13 @@ tlo.methods.oesophagealcancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'OesophagealCancer': <tlo.methods.causes.Cause object at 0x1764eb250>}
+     CAUSES_OF_DEATH : {'OesophagealCancer': <tlo.methods.causes.Cause object at 0x30f95a790>}
 
-     CAUSES_OF_DISABILITY : {'OesophagealCancer': <tlo.methods.causes.Cause object at 0x1764ebed0>}
+     CAUSES_OF_DISABILITY : {'OesophagealCancer': <tlo.methods.causes.Cause object at 0x30f95b090>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

@@ -1,0 +1,37 @@
+wasting prevalence and sample size (.csv)
+=========================================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Wasting/wasting_prevalence_and_sample_size.csv>`
+
+====  ======  =====================  ==============  ===================  ======================  =====================
+  ..    year  age\_group (months)      sample\_size    prev any wast (%)    prev severe wast (%)  source
+====  ======  =====================  ==============  ===================  ======================  =====================
+   0    2010  0\_5mo                            352                  7                       2.1  Malawi DHS 2010
+   1    2010  6\_11mo                           517                 13                       7.1  Malawi DHS 2010
+   2    2010  12\_23mo                         1059                 12.7                     4.7  Malawi DHS 2010
+   3    2010  24\_35mo                          985                  2.4                     0.9  Malawi DHS 2010
+   4    2010  36\_47mo                          986                  2.7                     0.7  Malawi DHS 2010
+   5    2010  48\_59mo                          951                  1.9                     0.6  Malawi DHS 2010
+   6    2010  5y+                                 0                  0                       0    Malawi DHS 2010
+   7    2013  0\_5mo                           1592                  5.8                     2.6  Malawi MICS 2013-2014
+   8    2013  6\_11mo                          1676                  5.8                     2.5  Malawi MICS 2013-2014
+   9    2013  12\_23mo                         3650                  5.4                     1.1  Malawi MICS 2013-2014
+  10    2013  24\_35mo                         3812                  3.9                     0.8  Malawi MICS 2013-2014
+  11    2013  36\_47mo                         3905                  2.2                     0.7  Malawi MICS 2013-2014
+  12    2013  48\_59mo                         3576                  2                       0.3  Malawi MICS 2013-2014
+  13    2013  5y+                                 0                  0                       0    Malawi MICS 2013-2014
+  14    2015  0\_5mo                            526                  3.7                     1.1  Malawi DHS 2015-16
+  15    2015  6\_11mo                           582                  7.7                     1    Malawi DHS 2015-16
+  16    2015  12\_23mo                         1117                  6.5                     0.7  Malawi DHS 2015-16
+  17    2015  24\_35mo                         1168                  2.2                     1    Malawi DHS 2015-16
+  18    2015  36\_47mo                         1238                  1.9                     0.1  Malawi DHS 2015-16
+  19    2015  48\_59mo                         1159                  2.6                     0.5  Malawi DHS 2015-16
+  20    2015  5y+                                 0                  0                       0    Malawi DHS 2015-16
+  21    2019  0\_5mo                           1414                  2.5                     1    Malawi MICS 2019-2020
+  22    2019  6\_11mo                          1467                  2.6                     1    Malawi MICS 2019-2020
+  23    2019  12\_23mo                         3152                  9.1                     2.7  Malawi MICS 2019-2020
+  24    2019  24\_35mo                         3173                  2                       0.8  Malawi MICS 2019-2020
+  25    2019  36\_47mo                         2976                  1.8                     0.2  Malawi MICS 2019-2020
+  26    2019  48\_59mo                         2809                  1.8                     0.3  Malawi MICS 2019-2020
+  27    2019  5y+                                 0                  0                       0    Malawi MICS 2019-2020
+====  ======  =====================  ==============  ===================  ======================  =====================

@@ -114,6 +114,42 @@ tlo.methods.bladder_cancer module
         * - sensitivity_of_cystoscopy_for_bladder_cancer_pelvic_pain
           - REAL
           - sensitivity of cystoscopy_for diagnosis of bladder cancer given pelvic pain
+        * - odds_ratio_health_seeking_blood_urine
+          - REAL
+          - odds ratio for health seeking behavior in adults with blood urine symptom
+        * - odds_ratio_health_seeking_pelvic_pain
+          - REAL
+          - odds ratio for health seeking behavior in adults with pelvic pain symptom
+        * - initial_polling_start_months_palliative_care
+          - INT
+          - time in months for scheduling initial palliative care appointments
+        * - initial_polling_start_delay_weeks_palliative_care
+          - INT
+          - time after initial_polling_start_months_palliative_care in which pal. care  can begin
+        * - post_treatment_check_interval_months
+          - INT
+          - interval in months for first post-treatment check
+        * - post_treatment_followup_interval_months
+          - INT
+          - interval in months for subsequent post-treatment follow-up appointments
+        * - palliative_care_repeat_interval_months
+          - INT
+          - interval in months for repeating palliative care appointments
+        * - main_polling_frequency_months
+          - INT
+          - frequency in months for main polling event
+        * - delay_initial_main_polling_event_days
+          - INT
+          - delay in months for initial main polling event
+        * - beddays_treatment
+          - INT
+          - number of bed days required for bladder cancer treatment
+        * - beddays_palliative_care
+          - INT
+          - number of bed days required for palliative care
+        * - min_age_investigation
+          - INT
+          - minimum age in years for bladder cancer investigation
 
 
      **PROPERTIES:**
@@ -148,15 +184,15 @@ tlo.methods.bladder_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'BladderCancer': <tlo.methods.causes.Cause object at 0x16ebfa7d0>}
+     CAUSES_OF_DEATH : {'BladderCancer': <tlo.methods.causes.Cause object at 0x30eccf850>}
 
-     CAUSES_OF_DISABILITY : {'BladderCancer': <tlo.methods.causes.Cause object at 0x16ebf9b10>}
+     CAUSES_OF_DISABILITY : {'BladderCancer': <tlo.methods.causes.Cause object at 0x30ecd9850>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Schisto', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Schisto'}
 
      __annotations__ : {}
 

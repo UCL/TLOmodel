@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>parameter values (.csv) &mdash; TLOmodel 0.1.dev2558+g9b3fa2fb4 documentation</title>
+  <title>parameter values (.csv) &mdash; TLOmodel 0.1.dev2576+g39c577c39 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=942bd948"></script>
+      <script src="../../../_static/documentation_options.js?v=1aba2fa3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -57,6 +57,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_COPD/index.html">ResourceFile_COPD</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Cervical_Cancer/index.html">ResourceFile_Cervical_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Diarrhoea/index.html">ResourceFile_Diarrhoea</a></li>
@@ -76,6 +77,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Stunting/index.html">ResourceFile_Stunting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Wasting/index.html">ResourceFile_Wasting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../cmd/index.html">cmd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../contraception/index.html">contraception</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../costing/index.html">costing</a></li>
@@ -92,7 +94,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../../healthsystem/index.html">healthsystem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../malaria/index.html">malaria</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../mapping/index.html">mapping</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
@@ -144,83 +145,282 @@
 <tr class="row-odd"><th class="head"></th>
 <th class="head"><p>parameter_name</p></th>
 <th class="head"><p>value</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>0</p></td>
 <td><p>init_epil_seiz_status</p></td>
 <td><p>[0.9740, 0.0175, 0.0070, 0.0015]</p></td>
+<td><p>local</p></td>
+<td><p>[0.5, 0.001, 0.001, 0.0001]</p></td>
+<td><p>[1, 0.05, 0.05, 0.01]</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
 <td><p>init_prop_antiepileptic_seiz_stat_1</p></td>
 <td><p>0.15</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>2</p></td>
 <td><p>init_prop_antiepileptic_seiz_stat_2</p></td>
 <td><p>0.15</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>3</p></td>
 <td><p>init_prop_antiepileptic_seiz_stat_3</p></td>
 <td><p>0.2</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>4</p></td>
 <td><p>base_3m_prob_epilepsy</p></td>
 <td><p>0.000178</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>0.01</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>5</p></td>
-<td><p>rr_epilepsy_age_ge20</p></td>
+<td><p>rr_epilepsy_above_threshold_age</p></td>
 <td><p>0.3</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>relative risk</p></td>
+<td><p>Missing</p></td>
 </tr>
 <tr class="row-even"><td><p>6</p></td>
 <td><p>prop_inc_epilepsy_seiz_freq</p></td>
 <td><p>0.1</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>7</p></td>
 <td><p>rr_effectiveness_antiepileptics</p></td>
 <td><p>3</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>8</p></td>
 <td><p>base_prob_3m_seiz_stat_freq_infreq</p></td>
 <td><p>0.05</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>9</p></td>
 <td><p>base_prob_3m_seiz_stat_infreq_freq</p></td>
 <td><p>0.05</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>10</p></td>
 <td><p>base_prob_3m_seiz_stat_none_freq</p></td>
 <td><p>0.05</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>11</p></td>
 <td><p>base_prob_3m_seiz_stat_none_infreq</p></td>
 <td><p>0.05</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>12</p></td>
 <td><p>base_prob_3m_seiz_stat_infreq_none</p></td>
 <td><p>0.05</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>13</p></td>
 <td><p>base_prob_3m_stop_antiepileptic</p></td>
 <td><p>0.1</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>14</p></td>
 <td><p>rr_stop_antiepileptic_seiz_infreq_or_freq</p></td>
 <td><p>0.5</p></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>15</p></td>
 <td><p>base_prob_3m_epi_death</p></td>
 <td><p>0.000568</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>0.1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>16</p></td>
 <td><p>prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt</p></td>
 <td><p>0.4</p></td>
+<td><p>undetermined</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>max_num_of_failed_attempts_before_defaulting</p></td>
 <td><p>2</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>10</p></td>
+<td><p>design decision</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
+<td><p>main_polling_event_frequency_months</p></td>
+<td><p>3</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>12</p></td>
+<td><p>design decision</p></td>
 <td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>main_polling_event_initial_delay_months</p></td>
+<td><p>0</p></td>
+<td><p>undetermined</p></td>
+<td><p>0</p></td>
+<td><p>6</p></td>
+<td><p>design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>age_threshold_epilepsy_transition</p></td>
+<td><p>20</p></td>
+<td><p>local</p></td>
+<td><p>5</p></td>
+<td><p>30</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>incidence_calculation_annualization_factor</p></td>
+<td><p>4</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>12</p></td>
+<td><p>design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>incidence_calculation_per_population_factor</p></td>
+<td><p>100000</p></td>
+<td><p>undetermined</p></td>
+<td><p>1000</p></td>
+<td><p>1000000</p></td>
+<td><p>design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>death_calculation_per_population_factor</p></td>
+<td><p>1000</p></td>
+<td><p>undetermined</p></td>
+<td><p>100</p></td>
+<td><p>10000</p></td>
+<td><p>design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>pediatric_age_threshold</p></td>
+<td><p>18</p></td>
+<td><p>local</p></td>
+<td><p>5</p></td>
+<td><p>25</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>medicine_follow_up_frequency_months</p></td>
+<td><p>3</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>24</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>unavailable_medicine_retry_months</p></td>
+<td><p>1</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>12</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>unavailable_appt_retry_months</p></td>
+<td><p>1</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>12</p></td>
+<td><p>module design decision</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>severe_follow_up_frequency_months</p></td>
+<td><p>3</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>24</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>standard_follow_up_frequency_months</p></td>
+<td><p>12</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>24</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 </tbody>

@@ -129,6 +129,33 @@ tlo.methods.depression module
         * - pr_assessed_for_depression_for_perinatal_female
           - REAL
           - Probability that a perinatal female is assessed for depression during antenatal or postnatal services
+        * - recently_pregnant_threshold_years
+          - INT
+          - Time period to consider a woman as recently pregnant
+        * - max_talking_therapy_sessions
+          - INT
+          - Maximum number of talking therapy sessions per course
+        * - talking_therapy_interval_months
+          - INT
+          - Interval between talking therapy sessions in months
+        * - antidepr_refill_interval_months
+          - INT
+          - Interval for antidepressant refill appointments in months
+        * - antidepr_refill_window_days
+          - INT
+          - Window period for antidepressant refill appointments in days
+        * - selfharm_suicide_event_max_days
+          - INT
+          - Maximum days for scheduling self-harm/suicide events
+        * - depression_polling_frequency_months
+          - INT
+          - Frequency of depression polling events in months
+        * - age_threshold_adult_care
+          - INT
+          - Minimum age for care in non-peds in years
+        * - age_threshold_depression
+          - INT
+          - Minimum age for depression
 
 
      **PROPERTIES:**
@@ -178,15 +205,15 @@ tlo.methods.depression module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Suicide': <tlo.methods.causes.Cause object at 0x16ecb18d0>}
+     CAUSES_OF_DEATH : {'Suicide': <tlo.methods.causes.Cause object at 0x30f8e9690>}
 
-     CAUSES_OF_DISABILITY : {'SevereDepression': <tlo.methods.causes.Cause object at 0x16ecb1110>}
+     CAUSES_OF_DISABILITY : {'SevereDepression': <tlo.methods.causes.Cause object at 0x30f8e8b10>}
 
-     INIT_DEPENDENCIES : {'Contraception', 'SymptomManager', 'HealthSystem', 'Demography', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'Lifestyle', 'SymptomManager', 'Contraception'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
      __annotations__ : {}
 

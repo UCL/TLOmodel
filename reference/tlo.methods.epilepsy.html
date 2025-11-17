@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.epilepsy module &mdash; TLOmodel 0.1.dev2558+g9b3fa2fb4 documentation</title>
+  <title>tlo.methods.epilepsy module &mdash; TLOmodel 0.1.dev2576+g39c577c39 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=942bd948"></script>
+      <script src="../_static/documentation_options.js?v=1aba2fa3"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -135,11 +135,11 @@ generator.</p>
 </tr>
 <tr class="row-even"><td><p>base_3m_prob_epilepsy</p></td>
 <td><p>REAL</p></td>
-<td><p>base probability of epilepsy per 3 month period if age &lt; 20</p></td>
+<td><p>base probability of epilepsy per 3 month period if age below threshold</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_epilepsy_age_ge20</p></td>
+<tr class="row-odd"><td><p>rr_epilepsy_above_threshold_age</p></td>
 <td><p>REAL</p></td>
-<td><p>relative rate of epilepsy if age over 20</p></td>
+<td><p>relative rate of epilepsy if age above threshold age</p></td>
 </tr>
 <tr class="row-even"><td><p>prop_inc_epilepsy_seiz_freq</p></td>
 <td><p>REAL</p></td>
@@ -201,6 +201,54 @@ generator.</p>
 <td><p>INT</p></td>
 <td><p>maximum number of time an HSI can be repeated if the relevant essential consumables are not available.</p></td>
 </tr>
+<tr class="row-odd"><td><p>main_polling_event_frequency_months</p></td>
+<td><p>INT</p></td>
+<td><p>frequency in months for the main polling event that checks epilepsy status changes</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_event_initial_delay_months</p></td>
+<td><p>INT</p></td>
+<td><p>delay in months for the initial main polling event</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_threshold_epilepsy_transition</p></td>
+<td><p>REAL</p></td>
+<td><p>age threshold in years at which probability of developing epilepsy changes</p></td>
+</tr>
+<tr class="row-even"><td><p>incidence_calculation_annualization_factor</p></td>
+<td><p>REAL</p></td>
+<td><p>factor to annualize incidence calculations (quarters to year conversion)</p></td>
+</tr>
+<tr class="row-odd"><td><p>incidence_calculation_per_population_factor</p></td>
+<td><p>REAL</p></td>
+<td><p>factor for case incidence calculation per population</p></td>
+</tr>
+<tr class="row-even"><td><p>death_calculation_per_population_factor</p></td>
+<td><p>REAL</p></td>
+<td><p>factor for death incidence calculation per population</p></td>
+</tr>
+<tr class="row-odd"><td><p>pediatric_age_threshold</p></td>
+<td><p>REAL</p></td>
+<td><p>age threshold in years below which patients are considered pediatric</p></td>
+</tr>
+<tr class="row-even"><td><p>medicine_follow_up_frequency_months</p></td>
+<td><p>REAL</p></td>
+<td><p>frequency in months for follow-up appointments when on anti-epileptic medication</p></td>
+</tr>
+<tr class="row-odd"><td><p>unavailable_medicine_retry_months</p></td>
+<td><p>REAL</p></td>
+<td><p>frequency in months to retry when medicine is unavailable</p></td>
+</tr>
+<tr class="row-even"><td><p>unavailable_appt_retry_months</p></td>
+<td><p>REAL</p></td>
+<td><p>frequency in months to retry when appt is unavailable</p></td>
+</tr>
+<tr class="row-odd"><td><p>severe_follow_up_frequency_months</p></td>
+<td><p>REAL</p></td>
+<td><p>frequency in months for follow-up appointments for severe epilepsy cases</p></td>
+</tr>
+<tr class="row-even"><td><p>standard_follow_up_frequency_months</p></td>
+<td><p>REAL</p></td>
+<td><p>frequency in months for follow-up appointments for standard epilepsy cases</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -240,10 +288,10 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘Epilepsy’: &lt;tlo.methods.causes.Cause object at 0x16ed3fcd0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Epilepsy’: &lt;tlo.methods.causes.Cause object at 0x16ed3c210&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthSystem’, ‘Demography’, ‘HealthBurden’}</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘Epilepsy’: &lt;tlo.methods.causes.Cause object at 0x30eb11bd0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Epilepsy’: &lt;tlo.methods.causes.Cause object at 0x30eb124d0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘HealthBurden’, ‘Demography’, ‘SymptomManager’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
 <p>TREATMENT_ID : antiepileptic</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class Epilepsy):</strong></p>

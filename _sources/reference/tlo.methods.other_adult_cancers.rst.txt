@@ -90,6 +90,39 @@ tlo.methods.other_adult_cancers module
         * - sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_metastatic
           - REAL
           - sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with other_adult_ca metastatic
+        * - odds_ratio_health_seeking_in_adults_early_other_adult_ca_symptom
+          - REAL
+          - odds ratio for health seeking in adults with early other adult cancer symptom
+        * - post_treatment_check_months
+          - REAL
+          - months to first post-treatment check appointment
+        * - follow_up_appt_months
+          - REAL
+          - months between follow-up appointments after treatment
+        * - palliative_care_interval_months
+          - REAL
+          - months between palliative care appointments
+        * - treatment_bed_days
+          - REAL
+          - number of bed days required for cancer treatment
+        * - palliative_care_bed_days
+          - REAL
+          - number of bed days required for palliative care
+        * - min_age_adult_cancer
+          - REAL
+          - minimum age for adult cancer
+        * - initial_polling_start_months
+          - INT
+          - initial polling months delay
+        * - initial_polling_start_months_palliative_care
+          - REAL
+          - initial polling months delay for pal care
+        * - initial_polling_start_delay_weeks_palliative_care
+          - REAL
+          - week delay after initial_polling_start_months_palliative_care for initial pal care
+        * - main_polling_event_frequency_months
+          - REAL
+          - frequency of main polling event
 
 
      **PROPERTIES:**
@@ -124,15 +157,15 @@ tlo.methods.other_adult_cancers module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x176704b50>}
+     CAUSES_OF_DEATH : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x30fed6550>}
 
-     CAUSES_OF_DISABILITY : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x176704490>}
+     CAUSES_OF_DISABILITY : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x30fed4210>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
      __annotations__ : {}
 

@@ -10,6 +10,7 @@ Resource  files used in ``TLOmodel`` simulations
     ResourceFile_AntenatalCare/index.rst
     ResourceFile_Bladder_Cancer/index.rst
     ResourceFile_Breast_Cancer/index.rst
+    ResourceFile_COPD/index.rst
     ResourceFile_Cervical_Cancer/index.rst
     ResourceFile_Depression/index.rst
     ResourceFile_Diarrhoea/index.rst
@@ -29,6 +30,7 @@ Resource  files used in ``TLOmodel`` simulations
     ResourceFile_Schisto/index.rst
     ResourceFile_Stunting/index.rst
     ResourceFile_TB/index.rst
+    ResourceFile_Wasting/index.rst
     cmd/index.rst
     contraception/index.rst
     costing/index.rst
@@ -38,7 +40,6 @@ Resource  files used in ``TLOmodel`` simulations
     healthsystem/index.rst
     malaria/index.rst
     mapping/index.rst
-    ResourceFile_Copd.csv
     ResourceFile_DALY_Weights.csv
     ResourceFile_EPI_vaccine_coverage.csv
     ResourceFile_GenericSymptoms_and_HealthSeeking.csv

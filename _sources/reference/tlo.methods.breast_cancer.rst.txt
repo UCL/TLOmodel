@@ -93,6 +93,36 @@ tlo.methods.breast_cancer module
         * - sensitivity_of_biopsy_for_stage4_breast_cancer
           - REAL
           - sensitivity of biopsy_for diagnosis of stage 4 breast cancer
+        * - health_seeking_odds_ratio_adults
+          - REAL
+          - odds ratio for health seeking behavior in adults
+        * - age_threshold_symptom_investigation
+          - INT
+          - age threshold for investigating symptoms
+        * - post_intial_treatment_followup_months
+          - REAL
+          - months until first post-treatment follow-up
+        * - post_treatment_check_interval_months
+          - REAL
+          - interval in months between post-treatment checks
+        * - rp_breast_cancer_age0014
+          - REAL
+          - relative prevalence at baseline of breast cancer if 0-14 age group
+        * - initial_polling_start_months
+          - INT
+          - months before initial polling event at initialization
+        * - palliative_treatment_interval_months
+          - INT
+          - interval between palliative treatment
+        * - main_polling_event_frequency_months
+          - INT
+          - frequency between main polling events
+        * - initial_polling_start_months_palliative_care
+          - INT
+          - months before palliative care for at initialization
+        * - initial_polling_start_delay_weeks_palliative_care
+          - INT
+          - delay in weeks after initial_polling_start_months_palliative_care for palliative care at initialization
 
 
      **PROPERTIES:**
@@ -133,13 +163,13 @@ tlo.methods.breast_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'BreastCancer': <tlo.methods.causes.Cause object at 0x17656a550>}
+     CAUSES_OF_DEATH : {'BreastCancer': <tlo.methods.causes.Cause object at 0x30fcc1c90>}
 
-     CAUSES_OF_DISABILITY : {'BreastCancer': <tlo.methods.causes.Cause object at 0x1765684d0>}
+     CAUSES_OF_DISABILITY : {'BreastCancer': <tlo.methods.causes.Cause object at 0x30fcc12d0>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

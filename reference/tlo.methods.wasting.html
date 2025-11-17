@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.wasting module &mdash; TLOmodel 0.1.dev2558+g9b3fa2fb4 documentation</title>
+  <title>tlo.methods.wasting module &mdash; TLOmodel 0.1.dev2576+g39c577c39 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=942bd948"></script>
+      <script src="../_static/documentation_options.js?v=1aba2fa3"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -91,12 +91,11 @@
              
   <section id="module-tlo.methods.wasting">
 <span id="tlo-methods-wasting-module"></span><h1>tlo.methods.wasting module<a class="headerlink" href="#module-tlo.methods.wasting" title="Link to this heading"></a></h1>
-<p>Placeholder for childhood wasting module.</p>
+<p>Childhood wasting module</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.wasting.Wasting">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Wasting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting" title="Link to this definition"></a></dt>
-<dd><p>Placeholder for childhood wasting module.</p>
-<p>Provides dummy values for properties required by other modules.</p>
+<dd><p>This module simulates natural history, detection, and treatment of acute malnutrition in children under 5 years old.</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -105,7 +104,199 @@ generator.</p>
 <dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
 </dd>
 </dl>
-<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin</span></code></p>
+<p><strong>PARAMETERS:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>prev_init_any_by_agegp</p></td>
+<td><p>LIST</p></td>
+<td><p>initial any wasting (WHZ &lt; -2) prevalence in 2010 by age groups</p></td>
+</tr>
+<tr class="row-odd"><td><p>prev_init_sev_by_agegp</p></td>
+<td><p>LIST</p></td>
+<td><p>initial severe wasting (WHZ &lt; -3) prevalence in 2010 by age groups</p></td>
+</tr>
+<tr class="row-even"><td><p>max_age_child_wasting</p></td>
+<td><p>INT</p></td>
+<td><p>Max age child treated for wasting</p></td>
+</tr>
+<tr class="row-odd"><td><p>wasting_incidence_polling_freq_months</p></td>
+<td><p>INT</p></td>
+<td><p>Wasting incidence polling frequency in months</p></td>
+</tr>
+<tr class="row-even"><td><p>min_days_to_relapse</p></td>
+<td><p>REAL</p></td>
+<td><p>minimum days to relapse: the incidence of another wasting episode in the previous month cannot occur if recovery happened fewer than this number of days before the start of that month</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_overall_inc_rate_wasting</p></td>
+<td><p>REAL</p></td>
+<td><p>base overall monthly moderate wasting incidence rate (probability per child aged &lt;0.5 years per month)</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_inc_rate_wasting_by_agegp</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of monthly moderate wasting incidence rate by age group (reference age group: &lt;0.5 years)</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_wasting_AGA_and_preterm</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of moderate wasting incidence if born adequate for gestational age and preterm</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_wasting_SGA_and_term</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of moderate wasting incidence if born small for gestational age and term</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_wasting_SGA_and_preterm</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of moderate wasting incidence if born small for gestational age and preterm</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_wasting_wealth_level</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of moderate wasting incidence per 1 unit decrease in wealth level</p></td>
+</tr>
+<tr class="row-odd"><td><p>min_days_duration_of_wasting</p></td>
+<td><p>REAL</p></td>
+<td><p>minimum limit for moderate and severe wasting duration episode (days)</p></td>
+</tr>
+<tr class="row-even"><td><p>duration_of_untreated_mod_wasting</p></td>
+<td><p>REAL</p></td>
+<td><p>duration of untreated moderate wasting (days)</p></td>
+</tr>
+<tr class="row-odd"><td><p>duration_of_untreated_sev_wasting</p></td>
+<td><p>REAL</p></td>
+<td><p>duration of untreated severe wasting (days)</p></td>
+</tr>
+<tr class="row-even"><td><p>progression_severe_wasting_monthly_by_agegp</p></td>
+<td><p>LIST</p></td>
+<td><p>monthly progression rate to severe wasting by age group</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_complications_in_SAM</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of medical complications in a SAM episode</p></td>
+</tr>
+<tr class="row-even"><td><p>duration_sam_to_death</p></td>
+<td><p>REAL</p></td>
+<td><p>duration of SAM till death if supposed to die due to untreated SAM (days)</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_death_rate_untreated_SAM</p></td>
+<td><p>REAL</p></td>
+<td><p>base death rate due to untreated SAM (reference age group &lt;0.5 months old)</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_death_rate_by_agegp</p></td>
+<td><p>LIST</p></td>
+<td><p>list with relative risks of death due to untreated SAM by age group, reference group &lt;0.5 months old</p></td>
+</tr>
+<tr class="row-odd"><td><p>proportion_WHZ&lt;-3_with_MUAC&lt;115mm</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of individuals with severe wasting who have MUAC &lt; 115 mm</p></td>
+</tr>
+<tr class="row-even"><td><p><a href="#id1"><span class="problematic" id="id2">proportion_</span></a>-3&lt;=WHZ&lt;-2_with_MUAC&lt;115mm</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of individuals with moderate wasting who have MUAC &lt; 115 mm</p></td>
+</tr>
+<tr class="row-odd"><td><p><a href="#id3"><span class="problematic" id="id4">proportion_</span></a>-3&lt;=WHZ&lt;-2_with_MUAC_[115-125)mm</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of individuals with moderate wasting who have 115 mm ≤ MUAC &lt; 125 mm</p></td>
+</tr>
+<tr class="row-even"><td><p>proportion_mam_with_MUAC_[115-125)mm_and_normal_whz</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of individuals with MAM who have 115 mm ≤ MUAC &lt; 125 mm and normal/mild WHZ</p></td>
+</tr>
+<tr class="row-odd"><td><p>proportion_mam_with_MUAC_[115-125)mm_and_-3&lt;=WHZ&lt;-2</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of individuals with MAM who have both 115 mm ≤ MUAC &lt; 125 mm and moderate wasting</p></td>
+</tr>
+<tr class="row-even"><td><p><a href="#id5"><span class="problematic" id="id6">proportion_mam_with_</span></a>-3&lt;=WHZ&lt;-2_and_normal_MUAC</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of individuals with MAM who have moderate wasting and normal MUAC</p></td>
+</tr>
+<tr class="row-odd"><td><p>MUAC_distribution_WHZ&lt;-3</p></td>
+<td><p>LIST</p></td>
+<td><p>mean and standard deviation of a normal distribution of MUAC measurements for WHZ &lt; -3</p></td>
+</tr>
+<tr class="row-even"><td><p><a href="#id7"><span class="problematic" id="id8">MUAC_distribution_</span></a>-3&lt;=WHZ&lt;-2</p></td>
+<td><p>LIST</p></td>
+<td><p>mean and standard deviation of a normal distribution of MUAC measurements for -3 &lt;= WHZ &lt; -2</p></td>
+</tr>
+<tr class="row-odd"><td><p>MUAC_distribution_WHZ&gt;=-2</p></td>
+<td><p>LIST</p></td>
+<td><p>mean and standard deviation of a normal distribution of MUAC measurements for WHZ &gt;= -2</p></td>
+</tr>
+<tr class="row-even"><td><p>prevalence_nutritional_oedema</p></td>
+<td><p>REAL</p></td>
+<td><p>prevalence of nutritional oedema</p></td>
+</tr>
+<tr class="row-odd"><td><p>proportion_WHZ&lt;-2_with_oedema</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of individuals with wasting (moderate or severe) who have oedema</p></td>
+</tr>
+<tr class="row-even"><td><p>proportion_oedema_with_WHZ&lt;-2</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of individuals with oedema who are wasted (moderately or severely)</p></td>
+</tr>
+<tr class="row-odd"><td><p>proportion_normal_whz</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of children under 5 with no wasting (WHZ &gt;= -2)</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_wasting_children</p></td>
+<td><p>REAL</p></td>
+<td><p>Odds seeking care for wasting in children</p></td>
+</tr>
+<tr class="row-odd"><td><p>growth_monitoring_first</p></td>
+<td><p>INT</p></td>
+<td><p>recommended age (in days) for first growth monitoring visit</p></td>
+</tr>
+<tr class="row-even"><td><p>growth_monitoring_frequency_days_agecat</p></td>
+<td><p>LIST</p></td>
+<td><p>growth monitoring frequency (days) for age categories</p></td>
+</tr>
+<tr class="row-odd"><td><p>growth_monitoring_attendance_prob_agecat</p></td>
+<td><p>LIST</p></td>
+<td><p>probability to attend the growth monitoring for age categories</p></td>
+</tr>
+<tr class="row-even"><td><p>recovery_rate_with_soy_RUSF</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of recovery from MAM following treatment with soy RUSF</p></td>
+</tr>
+<tr class="row-odd"><td><p>recovery_rate_with_CSB++</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of recovery from MAM following treatment with CSB++</p></td>
+</tr>
+<tr class="row-even"><td><p>recovery_rate_with_standard_RUTF</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of recovery from uncomplicated SAM following treatment with standardRUTF</p></td>
+</tr>
+<tr class="row-odd"><td><p>recovery_rate_with_inpatient_care</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of recovery from complicated SAM following treatment via inpatient care</p></td>
+</tr>
+<tr class="row-even"><td><p>tx_length_weeks_SuppFeedingMAM</p></td>
+<td><p>REAL</p></td>
+<td><p>number of weeks the patient receives treatment in the Supplementary Feeding Programme (SFP) for MAM, including the final supply provided at discharge</p></td>
+</tr>
+<tr class="row-odd"><td><p>tx_length_weeks_OutpatientSAM</p></td>
+<td><p>REAL</p></td>
+<td><p>number of weeks the patient receives treatment in the Outpatient Therapeutic Programme (OTP) for uncomplicated SAM, including the final supply provided at discharge</p></td>
+</tr>
+<tr class="row-even"><td><p>tx_length_weeks_InpatientSAM</p></td>
+<td><p>REAL</p></td>
+<td><p>number of weeks the patient receives treatment in the Inpatient Therapeutic Care (ITC) for complicated SAM—modelled to include the Rehabilitation Phase, ie to cover OTP as well</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_death_after_SAMcare</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of dying from SAM after receiving care if not fully recovered</p></td>
+</tr>
+</tbody>
+</table>
 <p><strong>PROPERTIES:</strong></p>
 <table class="docutils align-default">
 <colgroup>
@@ -120,18 +311,81 @@ generator.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>un_clinical_acute_malnutrition</p></td>
-<td><p>CATEGORICAL</p></td>
-<td><p>temporary property.  Possible values are: [MAM, SAM, well, ]</p></td>
-</tr>
-<tr class="row-odd"><td><p>un_ever_wasted</p></td>
+<tr class="row-even"><td><p>un_ever_wasted</p></td>
 <td><p>BOOL</p></td>
-<td><p>temporary property</p></td>
+<td><p>ever had an episode of wasting (WHZ &lt; -2)</p></td>
+</tr>
+<tr class="row-odd"><td><p>un_WHZ_category</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>weight-for-height Z-score category.  Possible values are: [WHZ&lt;-3, -3&lt;=WHZ&lt;-2, WHZ&gt;=-2, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>un_last_wasting_date_of_onset</p></td>
+<td><p>DATE</p></td>
+<td><p>date of onset of last episode of wasting</p></td>
+</tr>
+<tr class="row-odd"><td><p>un_clinical_acute_malnutrition</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>clinical acute malnutrition state based on WHZ and/or MUAC and/or nutritional oedema.  Possible values are: [SAM, MAM, well, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>un_am_nutritional_oedema</p></td>
+<td><p>BOOL</p></td>
+<td><p>nutritional oedema present in acute malnutrition episode</p></td>
+</tr>
+<tr class="row-odd"><td><p>un_am_MUAC_category</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>MUAC measurement categories, based on WHO cut-offs.  Possible values are: [&lt;115mm, [115-125)mm, &gt;=125mm, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>un_sam_with_complications</p></td>
+<td><p>BOOL</p></td>
+<td><p>medical complications in SAM episode</p></td>
+</tr>
+<tr class="row-odd"><td><p>un_sam_death_date</p></td>
+<td><p>DATE</p></td>
+<td><p>if alive, scheduled death date from SAM if not recovers with treatment; if not alive, date of death due to SAM</p></td>
+</tr>
+<tr class="row-even"><td><p>un_am_recovery_date</p></td>
+<td><p>DATE</p></td>
+<td><p>recovery date from last acute malnutrition episode</p></td>
+</tr>
+<tr class="row-odd"><td><p>un_am_tx_start_date</p></td>
+<td><p>DATE</p></td>
+<td><p>treatment start date, if currently on treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>un_am_treatment_type</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>treatment type for acute malnutrition the person is currently on; set to not_applicable if well hence no treatment required.  Possible values are: [standard_RUTF, soy_RUSF, CSB++, inpatient_care, none, not_applicable, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>un_am_discharge_date</p></td>
+<td><p>DATE</p></td>
+<td><p>planned discharge date from current treatment when recovery will happen if not yet recovered</p></td>
+</tr>
+<tr class="row-even"><td><p>un_recov_to_mam_date</p></td>
+<td><p>DATE</p></td>
+<td><p>date on which recovery from severe to moderate acute malnutrition (SAM to MAM) should occur</p></td>
+</tr>
+<tr class="row-odd"><td><p>un_full_recov_date</p></td>
+<td><p>DATE</p></td>
+<td><p>date on which the full recovery for the person should occur</p></td>
+</tr>
+<tr class="row-even"><td><p>un_progression_date</p></td>
+<td><p>DATE</p></td>
+<td><p>date on which the progression from moderate to severe wasting for the person should occur</p></td>
+</tr>
+<tr class="row-odd"><td><p>un_last_nonemergency_appt_date</p></td>
+<td><p>DATE</p></td>
+<td><p>last date of generic non-emergency first appointment</p></td>
+</tr>
+<tr class="row-even"><td><p>un_last_growth_monitoring_appt_date</p></td>
+<td><p>DATE</p></td>
+<td><p>last date of growth-monitoring appointment</p></td>
 </tr>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>INIT_DEPENDENCIES : {‘Demography’}</p>
+<p>CAUSES_OF_DEATH : {‘Severe Acute Malnutrition’: &lt;tlo.methods.causes.Cause object at 0x30f9bb6d0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Severe Acute Malnutrition’: &lt;tlo.methods.causes.Cause object at 0x30f9b9990&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘HealthBurden’, ‘Demography’, ‘SymptomManager’, ‘NewbornOutcomes’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class Wasting):</strong></p>
 <dl class="py method">
@@ -150,39 +404,31 @@ generator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.read_parameters">
 <span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.read_parameters" title="Link to this definition"></a></dt>
-<dd><p>Read parameter values from file, if required.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
-Typically, modules would read a particular file within here.</p>
-</dd>
-</dl>
+<dd><ul class="simple">
+<li><ol class="arabic simple">
+<li><p>Reads the ResourceFile</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple" start="2">
+<li><p>Declares the DALY weights</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple" start="3">
+<li><p>Registers the Symptom</p></li>
+</ol>
+</li>
+</ul>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.initialise_population">
 <span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.initialise_population" title="Link to this definition"></a></dt>
-<dd><p>Set our property values for the initial population.</p>
-<p>This method is called by the simulation when creating the initial population, and is
-responsible for assigning initial values, for every individual, of those properties
-‘owned’ by this module, i.e. those declared in its PROPERTIES dictionary.</p>
-<p>By default, all <code class="docutils literal notranslate"><span class="pre">Property``s</span> <span class="pre">in</span> <span class="pre">``self.PROPERTIES</span></code> will have
-their columns in the population dataframe set to the default value.</p>
-<p>Modules that wish to implement this behaviour do not need to implement this method,
-it will be inherited automatically. Modules that wish to perform additional steps
-during the initialise_population stage should reimplement this method and call</p>
-<p><code class="docutils literal notranslate"><span class="pre">`python</span>
-<span class="pre">super().initialise_population(population=population)</span>
-<span class="pre">`</span></code></p>
-<p>at the beginning of the method, then proceed with their additional steps. Modules that
-do not wish to inherit this default behaviour should re-implement initialise_population
-without the call to <code class="docutils literal notranslate"><span class="pre">super()</span></code> above.</p>
-<p>TODO: We probably need to declare somehow which properties we ‘read’ here, so the
-simulation knows what order to initialise modules in!</p>
+<dd><p>Sets the property values for the initial population. This method is called by the simulation when creating
+the initial population, and is responsible for assigning initial values, for every individual,
+of those properties ‘owned’ by this module, i.e. those declared in the PROPERTIES dictionary above.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>population</strong> – The population of individuals in the simulation.</p>
+<dd class="field-odd"><p><strong>population</strong></p>
 </dd>
 </dl>
 </dd></dl>
@@ -190,25 +436,708 @@ simulation knows what order to initialise modules in!</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.initialise_simulation">
 <span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.initialise_simulation" title="Link to this definition"></a></dt>
-<dd><p>Get ready for simulation start.</p>
-<p>Must be implemented by subclasses.</p>
-<p>This method is called just before the main simulation loop begins, and after all
-modules have read their parameters and the initial population has been created.
-It is a good place to add initial events to the event queue.</p>
+<dd><p>Prepares for simulation. Schedules:
+* the first annual logging event,
+* the first monthly incidence polling event,
+* the first growth monitoring for all children under 5.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sim</strong></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.on_birth" title="Link to this definition"></a></dt>
-<dd><p>Initialise our properties for a newborn individual.</p>
-<p>Must be implemented by subclasses.</p>
-<p>This is called by the simulation whenever a new person is born.</p>
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.on_birth" title="Link to this definition"></a></dt>
+<dd><p>Initialises properties for a newborn individual.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mother_id</strong> – the person id for the mother of this child (can be -1 if the mother is not identified).</p></li>
-<li><p><strong>child_id</strong> – the person id of new child</p></li>
+<li><p><strong>mother_id</strong> – the mother’s id of this child</p></li>
+<li><p><strong>child_id</strong> – the id of the newborn child</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.schedule_growth_monitoring_on_initiation">
+<span class="sig-name descname"><span class="pre">schedule_growth_monitoring_on_initiation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.schedule_growth_monitoring_on_initiation" title="Link to this definition"></a></dt>
+<dd><p>Schedules HSI_Wasting_GrowthMonitoring for all under-5 children at simulation initiation for a random day within
+the age-dependent frequency.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.muac_cutoff_by_WHZ">
+<span class="sig-name descname"><span class="pre">muac_cutoff_by_WHZ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whz</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.wasting.Wasting.muac_cutoff_by_WHZ" title="Link to this definition"></a></dt>
+<dd><p>Determines the MUAC (Mid-Upper Arm Circumference) category for each individual specified in <cite>idx</cite>, based on a
+shared WHZ (Weight-for-Height Z-score) category <cite>whz</cite>.
+The MUAC categories are: ‘&lt;115mm’, ‘[115–125)mm’, and ‘&gt;=125mm’.</p>
+<p>Assigns the MUAC categories determined to the ‘un_am_MUAC_category’ property for each corresponding individual
+in the population DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idx</strong> – Indices of individuals in the population DataFrame to assess for MUAC category.</p></li>
+<li><p><strong>whz</strong> – WHZ category shared by the individuals (‘WHZ&lt;-3’, ‘-3&lt;=WHZ&lt;-2’, ‘WHZ&gt;=-2’).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.nutritional_oedema_present">
+<span class="sig-name descname"><span class="pre">nutritional_oedema_present</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.nutritional_oedema_present" title="Link to this definition"></a></dt>
+<dd><p>Determines the presence of nutritional oedema for each individual specified in <cite>idx</cite>, based on their respective
+WHZ (Weight-for-Height Z-score) category.</p>
+<p>Assigns the result (True/False) to the <cite>un_am_nutritional_oedema</cite> property for each corresponding individual in
+the population DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>idx</strong> – Indices of individuals in the population DataFrame to assess for nutritional oedema presence.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.clinical_acute_malnutrition_state">
+<span class="sig-name descname"><span class="pre">clinical_acute_malnutrition_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pop_dataframe</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.clinical_acute_malnutrition_state" title="Link to this definition"></a></dt>
+<dd><p>Determines
+* the clinical acute malnutrition status (‘well’, ‘MAM’, ‘SAM’) for the individual specified by
+<cite>person_id</cite>, based on their anthropometric indices (WHZ and MUAC category) and presence of nutritional oedema.
+* whether the individual has medical complications requiring inpatient care, applicable to SAM cases only.</p>
+<section id="assigns-for-the-corresponding-individual-in-the-population-dataframe">
+<h2>Assigns for the corresponding individual in the population DataFrame:<a class="headerlink" href="#assigns-for-the-corresponding-individual-in-the-population-dataframe" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>‘un_clinical_acute_malnutrition’: the determined clinical acute malnutrition status (‘well’, ‘MAM’, ‘SAM’)</p></li>
+<li><p>‘un_sam_with_complications’: the determined value of presence of medical complications (True/False)</p></li>
+</ul>
+<p>For well cases
+* ‘un_am_treatment_type’: remains ‘not_applicable’</p>
+<p>For non-well cases, i.e. those who developed ‘MAM’ or ‘SAM’
+* ‘un_am_treatment_type’: ‘none’, i.e. they start with no treatment
+* ‘un_am_recovery_date’ property is reset to NaT</p>
+<p>For the SAM cases
+* wasting symptom is applied
+* it is determined whether SAM leads to death, and if it does, the Death event is scheduled and the date of
+death is assigned to the ‘un_sam_death_date’ property</p>
+<p>For non-SAM cases
+* the wasting symptom is cleared</p>
+<dl class="field-list simple">
+<dt class="field-odd">param person_id<span class="colon">:</span></dt>
+<dd class="field-odd"><p>individual’s id</p>
+</dd>
+<dt class="field-even">param pop_dataframe<span class="colon">:</span></dt>
+<dd class="field-even"><p>population DataFrame</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.get_consumables_for_each_treatment">
+<span class="sig-name descname"><span class="pre">get_consumables_for_each_treatment</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.get_consumables_for_each_treatment" title="Link to this definition"></a></dt>
+<dd><p>Get the item_code and amount administrated for all consumables for each treatment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.length_of_untreated_wasting">
+<span class="sig-name descname"><span class="pre">length_of_untreated_wasting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">whz_category</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.length_of_untreated_wasting" title="Link to this definition"></a></dt>
+<dd><p>Helper function to determine the duration of the wasting episode in days.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>whz_category</strong> – ‘WHZ&lt;-3’, or ‘-3&lt;=WHZ&lt;-2’</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>duration (number of days) of wasting episode, until recovery to no wasting, progression to severe
+wasting, from moderate wasting; or recovery to moderate wasting or death due to SAM in cases of severe
+wasting</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.date_of_death_for_untreated_sam">
+<span class="sig-name descname"><span class="pre">date_of_death_for_untreated_sam</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.date_of_death_for_untreated_sam" title="Link to this definition"></a></dt>
+<dd><p>Helper function to determine date of death, assuming it occurs earlier than the progression/recovery from any
+wasting, moderate or severe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>date of death</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.clinical_signs_acute_malnutrition">
+<span class="sig-name descname"><span class="pre">clinical_signs_acute_malnutrition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.clinical_signs_acute_malnutrition" title="Link to this definition"></a></dt>
+<dd><p>When WHZ changed, update other anthropometric indices and clinical signs (MUAC, oedema) that determine the
+clinical state of acute malnutrition. If SAM, update medical complications. If not SAM, clear symptoms.
+This will include both wasted and non-wasted children with other signs of acute malnutrition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>idx</strong> – index of children or person_id less than 5 years old</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.report_daly_values">
+<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting.report_daly_values" title="Link to this definition"></a></dt>
+<dd><p>This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+experienced by persons in the previous month. Only rows for alive-persons must be returned. The names of the
+series of columns is taken to be the label of the cause of this disability. It will be recorded by the
+healthburden module as &lt;ModuleName&gt;_&lt;Cause&gt;.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>current daly values for everyone alive</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.wasting_clinical_symptoms">
+<span class="sig-name descname"><span class="pre">wasting_clinical_symptoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.wasting.Wasting.wasting_clinical_symptoms" title="Link to this definition"></a></dt>
+<dd><p>Assigns clinical symptoms to the new acute malnutrition case</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>person_id</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.do_at_generic_first_appt">
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.wasting.Wasting.do_at_generic_first_appt" title="Link to this definition"></a></dt>
+<dd><p>Handles a generic first appointment for a child under 5 years old.</p>
+<p>If the child is not currently being treated for wasting and has not already attended a generic first appointment
+or growth monitoring on the same day:
+* Performs an acute malnutrition assessment. If acute malnutrition is detected, schedules HSI for the
+appropriate treatment enrolment.
+* Updates the ‘un_last_nonemergency_appt_date’ property for the individual in the population DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>person_id</strong> – ID of the individual attending the appointment</p></li>
+<li><p><strong>symptoms</strong> – list of symptoms present for the individual</p></li>
+<li><p><strong>individual_properties</strong> – properties of the individual relevant to the appointment</p></li>
+<li><p><strong>schedule_hsi_event</strong> – scheduler for health system interaction events</p></li>
+<li><p><strong>kwargs</strong> – additional keyword arguments</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting.do_when_am_treatment">
+<span class="sig-name descname"><span class="pre">do_when_am_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.wasting.Wasting.do_when_am_treatment" title="Link to this definition"></a></dt>
+<dd><p>Cancels any scheduled natural outcome for the individual; outcome is now determined solely by the treatment.
+Processes the specified treatment, determines the outcome, and if appropriate, schedules an outcome event and/or
+an enrolment for a follow-up treatment.</p>
+<p>Updates individual’s properties in the population DataFrame:
+* <cite>un_am_tx_start_date</cite>
+* <cite>un_am_discharge_date</cite>
+* <cite>un_sam_death_date</cite> (if applicable)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>person_id</strong> – ID of the individual receiving treatment</p></li>
+<li><p><strong>treatment</strong> – type of treatment being applied (‘CSB++’, ‘standard_RUTF’, etc.)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_IncidencePoll">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Wasting_IncidencePoll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_IncidencePoll" title="Link to this definition"></a></dt>
+<dd><p>Regular event that determines new cases of wasting (WHZ &lt; -2) to the under-5 population, and schedules
+individual incident cases to represent onset. It determines those who will progress to severe wasting
+(WHZ &lt; -3) and schedules the event to update on properties. These are events occurring without the input
+of interventions, these events reflect the natural history only.</p>
+<p>schedule to run every month
+:param module: the module that created this event</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>AGE_GROUPS : {0: ‘0y’, 1: ‘1y’, 2: ‘2y’, 3: ‘3y’, 4: ‘4y’}</p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class Wasting_IncidencePoll):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_IncidencePoll.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_IncidencePoll.__init__" title="Link to this definition"></a></dt>
+<dd><p>schedule to run every month
+:param module: the module that created this event</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_IncidencePoll.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_IncidencePoll.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the population.
+:param population: the current population</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_ProgressionToSevere_Event">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Wasting_ProgressionToSevere_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_ProgressionToSevere_Event" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>This Event is for the onset of severe wasting (WHZ &lt; -3).</dt><dd><ul class="simple">
+<li><p>Refreshes all the properties so that they pertain to this current episode of wasting</p></li>
+<li><p>Imposes wasting symptom</p></li>
+</ul>
+</dd>
+</dl>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class Wasting_ProgressionToSevere_Event):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_ProgressionToSevere_Event.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_ProgressionToSevere_Event.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_ProgressionToSevere_Event.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_ProgressionToSevere_Event.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_SevereAcuteMalnutritionDeath_Event">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Wasting_SevereAcuteMalnutritionDeath_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_SevereAcuteMalnutritionDeath_Event" title="Link to this definition"></a></dt>
+<dd><p>This event applies the death function</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class Wasting_SevereAcuteMalnutritionDeath_Event):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_SevereAcuteMalnutritionDeath_Event.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_SevereAcuteMalnutritionDeath_Event.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_SevereAcuteMalnutritionDeath_Event.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_SevereAcuteMalnutritionDeath_Event.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_FullRecovery_Event">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Wasting_FullRecovery_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_FullRecovery_Event" title="Link to this definition"></a></dt>
+<dd><p>This event updates the clinical signs of acute malnutrition for those cases that fully recovered, i.e. person
+recovers to well with all properties being set and SAM symptoms removed.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class Wasting_FullRecovery_Event):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_FullRecovery_Event.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_FullRecovery_Event.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_FullRecovery_Event.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_FullRecovery_Event.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_RecoveryToMAM_Event">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Wasting_RecoveryToMAM_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_RecoveryToMAM_Event" title="Link to this definition"></a></dt>
+<dd><p>This event updates the clinical signs of acute malnutrition and removes SAM symptoms for those cases that improved
+from SAM to MAM.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class Wasting_RecoveryToMAM_Event):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_RecoveryToMAM_Event.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_RecoveryToMAM_Event.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_RecoveryToMAM_Event.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_RecoveryToMAM_Event.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_GrowthMonitoring">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Wasting_GrowthMonitoring</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_GrowthMonitoring" title="Link to this definition"></a></dt>
+<dd><p>Attendance is determined for the HSI. If the child attends, measurements with available equipment are performed
+for that child. Based on these measurements, the child can be diagnosed as well/MAM/(un)complicated SAM and
+eventually scheduled for the appropriate treatment. If the child (attending or not) is still under 5 at the time of
+the next growth monitoring, the next event is scheduled with age-dependent frequency.</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class HSI_Wasting_GrowthMonitoring):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_GrowthMonitoring.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_GrowthMonitoring.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_GrowthMonitoring.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_GrowthMonitoring.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_GrowthMonitoring.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_GrowthMonitoring.did_not_run" title="Link to this definition"></a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_SupplementaryFeedingProgramme_MAM">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Wasting_SupplementaryFeedingProgramme_MAM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_SupplementaryFeedingProgramme_MAM" title="Link to this definition"></a></dt>
+<dd><p>This is the supplementary feeding programme for MAM without complications</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class HSI_Wasting_SupplementaryFeedingProgramme_MAM):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_SupplementaryFeedingProgramme_MAM.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_SupplementaryFeedingProgramme_MAM.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_SupplementaryFeedingProgramme_MAM.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_SupplementaryFeedingProgramme_MAM.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_SupplementaryFeedingProgramme_MAM.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_SupplementaryFeedingProgramme_MAM.did_not_run" title="Link to this definition"></a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_OutpatientTherapeuticProgramme_SAM">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Wasting_OutpatientTherapeuticProgramme_SAM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_OutpatientTherapeuticProgramme_SAM" title="Link to this definition"></a></dt>
+<dd><p>This is the outpatient management of SAM without any medical complications</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class HSI_Wasting_OutpatientTherapeuticProgramme_SAM):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_OutpatientTherapeuticProgramme_SAM.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_OutpatientTherapeuticProgramme_SAM.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_OutpatientTherapeuticProgramme_SAM.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_OutpatientTherapeuticProgramme_SAM.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_OutpatientTherapeuticProgramme_SAM.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_OutpatientTherapeuticProgramme_SAM.did_not_run" title="Link to this definition"></a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM" title="Link to this definition"></a></dt>
+<dd><p>This is the inpatient management of SAM with medical complications</p>
+<p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM.did_not_run" title="Link to this definition"></a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_LoggingEvent">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Wasting_LoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_LoggingEvent" title="Link to this definition"></a></dt>
+<dd><p>This Event logs the number of incident cases that have occurred since the previous logging event, the average length
+of wasting cases at recovery point since the previous logging, the prevalence proportions at the time of logging,
+and population sizes at the time of logging. At initiation only prevalence proportions and population sizes are
+logged.</p>
+<p>Analysis scripts expect that the frequency of this logging event is once per year. Logs are expected to happen on
+the first day of each year.</p>
+<p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p><strong>Functions (defined or overridden in class Wasting_LoggingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_LoggingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_LoggingEvent.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.wasting.Wasting_LoggingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.wasting.Wasting_LoggingEvent.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>

@@ -6,7 +6,150 @@ tlo.methods.wasting module
 
 .. autoclass:: Wasting
 
-     Bases: :class:`tlo.core.Module`
+     Bases: :class:`tlo.core.Module`, :class:`tlo.methods.hsi_generic_first_appts.GenericFirstAppointmentsMixin`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - prev_init_any_by_agegp
+          - LIST
+          - initial any wasting (WHZ < -2) prevalence in 2010 by age groups
+        * - prev_init_sev_by_agegp
+          - LIST
+          - initial severe wasting (WHZ < -3) prevalence in 2010 by age groups
+        * - max_age_child_wasting
+          - INT
+          - Max age child treated for wasting
+        * - wasting_incidence_polling_freq_months
+          - INT
+          - Wasting incidence polling frequency in months
+        * - min_days_to_relapse
+          - REAL
+          - minimum days to relapse: the incidence of another wasting episode in the previous month cannot occur if recovery happened fewer than this number of days before the start of that month
+        * - base_overall_inc_rate_wasting
+          - REAL
+          - base overall monthly moderate wasting incidence rate (probability per child aged <0.5 years per month)
+        * - rr_inc_rate_wasting_by_agegp
+          - LIST
+          - relative risk of monthly moderate wasting incidence rate by age group (reference age group: <0.5 years)
+        * - rr_wasting_AGA_and_preterm
+          - REAL
+          - relative risk of moderate wasting incidence if born adequate for gestational age and preterm
+        * - rr_wasting_SGA_and_term
+          - REAL
+          - relative risk of moderate wasting incidence if born small for gestational age and term
+        * - rr_wasting_SGA_and_preterm
+          - REAL
+          - relative risk of moderate wasting incidence if born small for gestational age and preterm
+        * - rr_wasting_wealth_level
+          - REAL
+          - relative risk of moderate wasting incidence per 1 unit decrease in wealth level
+        * - min_days_duration_of_wasting
+          - REAL
+          - minimum limit for moderate and severe wasting duration episode (days)
+        * - duration_of_untreated_mod_wasting
+          - REAL
+          - duration of untreated moderate wasting (days)
+        * - duration_of_untreated_sev_wasting
+          - REAL
+          - duration of untreated severe wasting (days)
+        * - progression_severe_wasting_monthly_by_agegp
+          - LIST
+          - monthly progression rate to severe wasting by age group
+        * - prob_complications_in_SAM
+          - REAL
+          - probability of medical complications in a SAM episode
+        * - duration_sam_to_death
+          - REAL
+          - duration of SAM till death if supposed to die due to untreated SAM (days)
+        * - base_death_rate_untreated_SAM
+          - REAL
+          - base death rate due to untreated SAM (reference age group <0.5 months old)
+        * - rr_death_rate_by_agegp
+          - LIST
+          - list with relative risks of death due to untreated SAM by age group, reference group <0.5 months old
+        * - proportion_WHZ<-3_with_MUAC<115mm
+          - REAL
+          - proportion of individuals with severe wasting who have MUAC < 115 mm
+        * - proportion_-3<=WHZ<-2_with_MUAC<115mm
+          - REAL
+          - proportion of individuals with moderate wasting who have MUAC < 115 mm
+        * - proportion_-3<=WHZ<-2_with_MUAC_[115-125)mm
+          - REAL
+          - proportion of individuals with moderate wasting who have 115 mm ≤ MUAC < 125 mm
+        * - proportion_mam_with_MUAC_[115-125)mm_and_normal_whz
+          - REAL
+          - proportion of individuals with MAM who have 115 mm ≤ MUAC < 125 mm and normal/mild WHZ
+        * - proportion_mam_with_MUAC_[115-125)mm_and_-3<=WHZ<-2
+          - REAL
+          - proportion of individuals with MAM who have both 115 mm ≤ MUAC < 125 mm and moderate wasting
+        * - proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC
+          - REAL
+          - proportion of individuals with MAM who have moderate wasting and normal MUAC
+        * - MUAC_distribution_WHZ<-3
+          - LIST
+          - mean and standard deviation of a normal distribution of MUAC measurements for WHZ < -3
+        * - MUAC_distribution_-3<=WHZ<-2
+          - LIST
+          - mean and standard deviation of a normal distribution of MUAC measurements for -3 <= WHZ < -2
+        * - MUAC_distribution_WHZ>=-2
+          - LIST
+          - mean and standard deviation of a normal distribution of MUAC measurements for WHZ >= -2
+        * - prevalence_nutritional_oedema
+          - REAL
+          - prevalence of nutritional oedema
+        * - proportion_WHZ<-2_with_oedema
+          - REAL
+          - proportion of individuals with wasting (moderate or severe) who have oedema
+        * - proportion_oedema_with_WHZ<-2
+          - REAL
+          - proportion of individuals with oedema who are wasted (moderately or severely)
+        * - proportion_normal_whz
+          - REAL
+          - proportion of children under 5 with no wasting (WHZ >= -2)
+        * - odds_ratio_health_seeking_wasting_children
+          - REAL
+          - Odds seeking care for wasting in children
+        * - growth_monitoring_first
+          - INT
+          - recommended age (in days) for first growth monitoring visit
+        * - growth_monitoring_frequency_days_agecat
+          - LIST
+          - growth monitoring frequency (days) for age categories 
+        * - growth_monitoring_attendance_prob_agecat
+          - LIST
+          - probability to attend the growth monitoring for age categories
+        * - recovery_rate_with_soy_RUSF
+          - REAL
+          - probability of recovery from MAM following treatment with soy RUSF
+        * - recovery_rate_with_CSB++
+          - REAL
+          - probability of recovery from MAM following treatment with CSB++
+        * - recovery_rate_with_standard_RUTF
+          - REAL
+          - probability of recovery from uncomplicated SAM following treatment with standardRUTF
+        * - recovery_rate_with_inpatient_care
+          - REAL
+          - probability of recovery from complicated SAM following treatment via inpatient care
+        * - tx_length_weeks_SuppFeedingMAM
+          - REAL
+          - number of weeks the patient receives treatment in the Supplementary Feeding Programme (SFP) for MAM, including the final supply provided at discharge
+        * - tx_length_weeks_OutpatientSAM
+          - REAL
+          - number of weeks the patient receives treatment in the Outpatient Therapeutic Programme (OTP) for uncomplicated SAM, including the final supply provided at discharge
+        * - tx_length_weeks_InpatientSAM
+          - REAL
+          - number of weeks the patient receives treatment in the Inpatient Therapeutic Care (ITC) for complicated SAM---modelled to include the Rehabilitation Phase, ie to cover OTP as well
+        * - prob_death_after_SAMcare
+          - REAL
+          - probability of dying from SAM after receiving care if not fully recovered
 
 
      **PROPERTIES:**
@@ -18,18 +161,69 @@ tlo.methods.wasting module
         * - Item
           - Type
           - Description
-        * - un_clinical_acute_malnutrition
-          - CATEGORICAL
-          - temporary property.  Possible values are: [MAM, SAM, well, ]
         * - un_ever_wasted
           - BOOL
-          - temporary property
+          - ever had an episode of wasting (WHZ < -2)
+        * - un_WHZ_category
+          - CATEGORICAL
+          - weight-for-height Z-score category.  Possible values are: [WHZ<-3, -3<=WHZ<-2, WHZ>=-2, ]
+        * - un_last_wasting_date_of_onset
+          - DATE
+          - date of onset of last episode of wasting
+        * - un_clinical_acute_malnutrition
+          - CATEGORICAL
+          - clinical acute malnutrition state based on WHZ and/or MUAC and/or nutritional oedema.  Possible values are: [SAM, MAM, well, ]
+        * - un_am_nutritional_oedema
+          - BOOL
+          - nutritional oedema present in acute malnutrition episode
+        * - un_am_MUAC_category
+          - CATEGORICAL
+          - MUAC measurement categories, based on WHO cut-offs.  Possible values are: [<115mm, [115-125)mm, >=125mm, ]
+        * - un_sam_with_complications
+          - BOOL
+          - medical complications in SAM episode
+        * - un_sam_death_date
+          - DATE
+          - if alive, scheduled death date from SAM if not recovers with treatment; if not alive, date of death due to SAM
+        * - un_am_recovery_date
+          - DATE
+          - recovery date from last acute malnutrition episode
+        * - un_am_tx_start_date
+          - DATE
+          - treatment start date, if currently on treatment
+        * - un_am_treatment_type
+          - CATEGORICAL
+          - treatment type for acute malnutrition the person is currently on; set to not_applicable if well hence no treatment required.  Possible values are: [standard_RUTF, soy_RUSF, CSB++, inpatient_care, none, not_applicable, ]
+        * - un_am_discharge_date
+          - DATE
+          - planned discharge date from current treatment when recovery will happen if not yet recovered
+        * - un_recov_to_mam_date
+          - DATE
+          - date on which recovery from severe to moderate acute malnutrition (SAM to MAM) should occur
+        * - un_full_recov_date
+          - DATE
+          - date on which the full recovery for the person should occur
+        * - un_progression_date
+          - DATE
+          - date on which the progression from moderate to severe wasting for the person should occur
+        * - un_last_nonemergency_appt_date
+          - DATE
+          - last date of generic non-emergency first appointment
+        * - un_last_growth_monitoring_appt_date
+          - DATE
+          - last date of growth-monitoring appointment
 
 
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'Demography'}
+     CAUSES_OF_DEATH : {'Severe Acute Malnutrition': <tlo.methods.causes.Cause object at 0x30f9bb6d0>}
+
+     CAUSES_OF_DISABILITY : {'Severe Acute Malnutrition': <tlo.methods.causes.Cause object at 0x30f9b9990>}
+
+     INIT_DEPENDENCIES : {'HealthBurden', 'Demography', 'SymptomManager', 'NewbornOutcomes'}
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      __annotations__ : {}
 
@@ -44,6 +238,250 @@ tlo.methods.wasting module
      .. automethod:: initialise_simulation
 
      .. automethod:: on_birth
+
+     .. automethod:: schedule_growth_monitoring_on_initiation
+
+     .. automethod:: muac_cutoff_by_WHZ
+
+     .. automethod:: nutritional_oedema_present
+
+     .. automethod:: clinical_acute_malnutrition_state
+
+     .. automethod:: get_consumables_for_each_treatment
+
+     .. automethod:: length_of_untreated_wasting
+
+     .. automethod:: date_of_death_for_untreated_sam
+
+     .. automethod:: clinical_signs_acute_malnutrition
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: wasting_clinical_symptoms
+
+     .. automethod:: do_at_generic_first_appt
+
+     .. automethod:: do_when_am_treatment
+
+
+
+
+
+
+
+
+.. autoclass:: Wasting_IncidencePoll
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     AGE_GROUPS : {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class Wasting_IncidencePoll):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: Wasting_ProgressionToSevere_Event
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Wasting_ProgressionToSevere_Event):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: Wasting_SevereAcuteMalnutritionDeath_Event
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Wasting_SevereAcuteMalnutritionDeath_Event):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: Wasting_FullRecovery_Event
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Wasting_FullRecovery_Event):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: Wasting_RecoveryToMAM_Event
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Wasting_RecoveryToMAM_Event):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Wasting_GrowthMonitoring
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_Wasting_GrowthMonitoring):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Wasting_SupplementaryFeedingProgramme_MAM
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_Wasting_SupplementaryFeedingProgramme_MAM):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Wasting_OutpatientTherapeuticProgramme_SAM
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_Wasting_OutpatientTherapeuticProgramme_SAM):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM
+
+     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: did_not_run
+
+
+
+
+
+
+
+
+.. autoclass:: Wasting_LoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class Wasting_LoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
 
 
 

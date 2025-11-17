@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>parameter values (.csv) &mdash; TLOmodel 0.1.dev2558+g9b3fa2fb4 documentation</title>
+  <title>parameter values (.csv) &mdash; TLOmodel 0.1.dev2576+g39c577c39 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=942bd948"></script>
+      <script src="../../_static/documentation_options.js?v=1aba2fa3"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -57,6 +57,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_COPD/index.html">ResourceFile_COPD</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Cervical_Cancer/index.html">ResourceFile_Cervical_Cancer</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">ResourceFile_Depression</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">parameter values (.csv)</a></li>
@@ -79,6 +80,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting/index.html">ResourceFile_Stunting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Wasting/index.html">ResourceFile_Wasting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
@@ -88,7 +90,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
@@ -139,382 +140,472 @@
 <tr class="row-odd"><th class="head"></th>
 <th class="head"><p>parameter_name</p></th>
 <th class="head"><p>value</p></th>
-<th class="head"><p>Unnamed: 2</p></th>
-<th class="head"><p>Justification</p></th>
-<th class="head"><p>Unnamed: 4</p></th>
-<th class="head"><p>Unnamed: 5</p></th>
-<th class="head"><p>Unnamed: 6</p></th>
-<th class="head"><p>Unnamed: 7</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
+<th class="head"><p>notes</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>0</p></td>
 <td><p>init_pr_depr_m_age1519_no_cc_wealth123</p></td>
 <td><p>0.06</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
 <td><p>init_rp_depr_f_not_rec_preg</p></td>
 <td><p>1.5</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>2</p></td>
 <td><p>init_rp_depr_f_rec_preg</p></td>
 <td><p>3</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>3</p></td>
 <td><p>init_rp_depr_age2059</p></td>
 <td><p>1</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>4</p></td>
 <td><p>init_rp_depr_agege60</p></td>
 <td><p>3</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>5</p></td>
 <td><p>init_rp_depr_cc</p></td>
 <td><p>1</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>6</p></td>
 <td><p>init_rp_depr_wealth45</p></td>
 <td><p>1</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>7</p></td>
 <td><p>init_rp_ever_depr_per_year_older_m</p></td>
 <td><p>0.004</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>8</p></td>
 <td><p>init_rp_ever_depr_per_year_older_f</p></td>
 <td><p>0.006</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>9</p></td>
 <td><p>init_pr_antidepr_curr_depr</p></td>
 <td><p>0.11</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>10</p></td>
 <td><p>init_rp_antidepr_ever_depr_not_curr</p></td>
 <td><p>0.5</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>11</p></td>
 <td><p>init_pr_ever_diagnosed_depression</p></td>
 <td><p>0.2</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>12</p></td>
 <td><p>init_pr_ever_talking_therapy_if_diagnosed</p></td>
 <td><p>1</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td><p>We assume that talking therapy happens as part of diagnosis</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
 </tr>
 <tr class="row-odd"><td><p>13</p></td>
 <td><p>init_pr_ever_self_harmed_if_ever_depr</p></td>
 <td><p>0.004</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td><p>consistent with rate of incident self harm</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
 </tr>
 <tr class="row-even"><td><p>14</p></td>
 <td><p>base_3m_prob_depr</p></td>
 <td><p>0.0021</p></td>
+<td><p>undetermined</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>calibration</p></td>
 <td></td>
 <td><p>Rate is derived indirectly based on prevalence of depression that model produces as an output (Abas et al, 1997; Marwick et al, 2010; Udedi et al, 2014; This is much higher than incidence in Todd et al 1999 (approx 0.16 in 2 months) but that is inconsistent with prevalence unless extremely short duration. )</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
 </tr>
 <tr class="row-odd"><td><p>15</p></td>
 <td><p>rr_depr_wealth45</p></td>
 <td><p>3</p></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td><p>Abas et al, 1997; Todd et al 1999; Chibanda et al, 2012;</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>Abas et al, 1997; Todd et al 1999; Chibanda et al, 2012;</p></td>
 </tr>
 <tr class="row-even"><td><p>16</p></td>
 <td><p>rr_depr_cc</p></td>
 <td><p>1.25</p></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td><p>HIV:  Cohen et al Rwanda 2009; Brandt 2009; hypertension: no association in SA  Grimsrud et al 2009.  Likely the association is with chronic symptoms rather than diagnosis of a chronic condition.</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>rr_depr_pregnancy</p></td>
 <td><p>3</p></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td><p>could not identify any estimates for African countries; although clear that pregnancy prevalence is relatively high in pregnancy and post-partum (it is clear the relative rate is &gt; 1).  Suggest use value of 3 until we have more data.</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
 <td><p>rr_depr_female</p></td>
 <td><p>1.5</p></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td><p>Kohler et al 2017</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>Kohler et al 2017</p></td>
 </tr>
 <tr class="row-odd"><td><p>19</p></td>
 <td><p>rr_depr_prev_epis</p></td>
 <td><p>50</p></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td><p>No data identified from Malawi or other close countries, but likely to be a large person-specific effect.  Consider data on proportion of people with depression ever.</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
 </tr>
 <tr class="row-even"><td><p>20</p></td>
 <td><p>rr_depr_on_antidepr</p></td>
 <td><p>30</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
 <td><p>rr_depr_age1519</p></td>
 <td><p>1</p></td>
-<td></td>
-<td><p>Kim et al 2015;</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td><p>Kim et al 2015</p></td>
+<td><p>Kim et al 2015</p></td>
 </tr>
 <tr class="row-even"><td><p>22</p></td>
 <td><p>rr_depr_agege60</p></td>
 <td><p>3</p></td>
-<td></td>
-<td><p>Kohler et al 2017;</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td><p>Kohler et al 2017</p></td>
+<td><p>Kohler et al 2017</p></td>
 </tr>
 <tr class="row-odd"><td><p>23</p></td>
 <td><p>rr_depr_hiv</p></td>
 <td><p>1.99</p></td>
-<td></td>
-<td><p>Ciesla &amp; Roberts 2001;</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
+<td><p>Ciesla &amp; Roberts 2001</p></td>
+<td><p>Ciesla &amp; Roberts 2001</p></td>
 </tr>
 <tr class="row-even"><td><p>24</p></td>
 <td><p>depr_resolution_rates</p></td>
 <td><p>[0.2, 0.3, 0.5, 0.7, 0.95]</p></td>
-<td></td>
-<td><p>Abas et al, 1997; Dow et al 2014;</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>[0, 0, 0, 0, 0]</p></td>
+<td><p>[1, 1, 1, 1, 1]</p></td>
+<td><p>vague prior</p></td>
+<td><p>Abas et al, 1997; Dow et al 2014</p></td>
+<td><p>Abas et al, 1997; Dow et al 2014</p></td>
 </tr>
 <tr class="row-odd"><td><p>25</p></td>
 <td><p>rr_resol_depr_cc</p></td>
 <td><p>0.5</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>26</p></td>
 <td><p>rr_resol_depr_on_antidepr</p></td>
 <td><p>1.5</p></td>
-<td></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td><p>Hengartner 2017; Cipriani et al 2018; Furukawa et al 2016;Faria et 2017; Kirsch 2014;</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>Hengartner 2017; Cipriani et al 2018; Furukawa et al 2016;Faria et 2017; Kirsch 2014;</p></td>
 </tr>
 <tr class="row-odd"><td><p>27</p></td>
 <td><p>rr_resol_depr_current_talk_ther</p></td>
 <td><p>1.1</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>28</p></td>
 <td><p>prob_3m_stop_antidepr</p></td>
 <td><p>0.7</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>29</p></td>
 <td><p>prob_3m_default_antidepr</p></td>
 <td><p>0.2</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>30</p></td>
 <td><p>prob_3m_suicide_depr_m</p></td>
 <td><p>0.0005</p></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td><p>Chasimpha et al 2015   to be infered based on overall suicide rate and prevalence of depression (assume depression a pre-requisite for suicide) Suicide rate in adults in Karonga study 26.1 per 100,000 person years in adult men (age ge 15) and 8.0 per 100,000 person years in adult women.  Chasimpha et al BMC Public Health 2015</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>Chasimpha et al 2015   to be infered based on overall suicide rate and prevalence of depression (assume depression a pre-requisite for suicide) Suicide rate in adults in Karonga study 26.1 per 100,000 person years in adult men (age ge 15) and 8.0 per 100,000 person years in adult women.  Chasimpha et al BMC Public Health 2015</p></td>
 </tr>
 <tr class="row-odd"><td><p>31</p></td>
 <td><p>rr_suicide_depr_f</p></td>
 <td><p>0.333</p></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0.01</p></td>
+<td><p>100</p></td>
+<td><p>vague prior</p></td>
 <td><p>Chasimpha et al 2015</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>Chasimpha et al 2015</p></td>
 </tr>
 <tr class="row-even"><td><p>32</p></td>
 <td><p>prob_3m_selfharm_depr</p></td>
 <td><p>0.0005</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>33</p></td>
 <td><p>sensitivity_of_assessment_of_depression</p></td>
 <td><p>0.75</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p>universal</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>34</p></td>
 <td><p>pr_assessed_for_depression_in_generic_appt_level1</p></td>
 <td><p>0.01</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td><p>No available reference found, but co-calibrated with pr_assessed_for_depression_for_perinatal_female for a better Model/Data ratio on mental health service usage.</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
 </tr>
 <tr class="row-odd"><td><p>35</p></td>
 <td><p>anti_depressant_medication_item_code</p></td>
 <td><p>267</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>1000</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td><p>First line treatment (Amitriptyline 25mg_100_CMST)</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
 </tr>
 <tr class="row-even"><td><p>36</p></td>
 <td><p>pr_assessed_for_depression_for_perinatal_female</p></td>
 <td><p>0.01</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td><p>No available reference found, but co-calibrated with pr_assessed_for_depression_in_generic_appt_level1 for a better Model/Data ratio on mental health service usage.</p></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>recently_pregnant_threshold_years</p></td>
+<td><p>1</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>5</p></td>
+<td><p>design decision</p></td>
 <td></td>
 <td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>max_talking_therapy_sessions</p></td>
+<td><p>5</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>20</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>talking_therapy_interval_months</p></td>
+<td><p>6</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>24</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>antidepr_refill_interval_months</p></td>
+<td><p>1</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>24</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>antidepr_refill_window_days</p></td>
+<td><p>7</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>30</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>selfharm_suicide_event_max_days</p></td>
+<td><p>90</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>365</p></td>
+<td><p>design decision</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>depression_polling_frequency_months</p></td>
+<td><p>3</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>12</p></td>
+<td><p>design decision</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>age_threshold_adult_care</p></td>
+<td><p>5</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>20</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>age_threshold_depression</p></td>
+<td><p>15</p></td>
+<td><p>local</p></td>
+<td><p>5</p></td>
+<td><p>20</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 <td></td>
 </tr>

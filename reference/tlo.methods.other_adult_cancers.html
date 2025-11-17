@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.other_adult_cancers module &mdash; TLOmodel 0.1.dev2558+g9b3fa2fb4 documentation</title>
+  <title>tlo.methods.other_adult_cancers module &mdash; TLOmodel 0.1.dev2576+g39c577c39 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=942bd948"></script>
+      <script src="../_static/documentation_options.js?v=1aba2fa3"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -217,6 +217,50 @@ generator.</p>
 <td><p>REAL</p></td>
 <td><p>sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with other_adult_ca metastatic</p></td>
 </tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_in_adults_early_other_adult_ca_symptom</p></td>
+<td><p>REAL</p></td>
+<td><p>odds ratio for health seeking in adults with early other adult cancer symptom</p></td>
+</tr>
+<tr class="row-odd"><td><p>post_treatment_check_months</p></td>
+<td><p>REAL</p></td>
+<td><p>months to first post-treatment check appointment</p></td>
+</tr>
+<tr class="row-even"><td><p>follow_up_appt_months</p></td>
+<td><p>REAL</p></td>
+<td><p>months between follow-up appointments after treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>palliative_care_interval_months</p></td>
+<td><p>REAL</p></td>
+<td><p>months between palliative care appointments</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_bed_days</p></td>
+<td><p>REAL</p></td>
+<td><p>number of bed days required for cancer treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>palliative_care_bed_days</p></td>
+<td><p>REAL</p></td>
+<td><p>number of bed days required for palliative care</p></td>
+</tr>
+<tr class="row-even"><td><p>min_age_adult_cancer</p></td>
+<td><p>REAL</p></td>
+<td><p>minimum age for adult cancer</p></td>
+</tr>
+<tr class="row-odd"><td><p>initial_polling_start_months</p></td>
+<td><p>INT</p></td>
+<td><p>initial polling months delay</p></td>
+</tr>
+<tr class="row-even"><td><p>initial_polling_start_months_palliative_care</p></td>
+<td><p>REAL</p></td>
+<td><p>initial polling months delay for pal care</p></td>
+</tr>
+<tr class="row-odd"><td><p>initial_polling_start_delay_weeks_palliative_care</p></td>
+<td><p>REAL</p></td>
+<td><p>week delay after initial_polling_start_months_palliative_care for initial pal care</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_event_frequency_months</p></td>
+<td><p>REAL</p></td>
+<td><p>frequency of main polling event</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -260,11 +304,11 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘OtherAdultCancer’: &lt;tlo.methods.causes.Cause object at 0x176704b50&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘OtherAdultCancer’: &lt;tlo.methods.causes.Cause object at 0x176704490&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthSystem’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
-<p>OPTIONAL_INIT_DEPENDENCIES : {‘Hiv’, ‘HealthBurden’}</p>
+<p>CAUSES_OF_DEATH : {‘OtherAdultCancer’: &lt;tlo.methods.causes.Cause object at 0x30fed6550&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘OtherAdultCancer’: &lt;tlo.methods.causes.Cause object at 0x30fed4210&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’, ‘SymptomManager’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘Hiv’}</p>
 <p>__annotations__ : {}</p>
 <p>gbd_causes_of_cancer_represented_in_this_module : [‘Other malignant neoplasms’, ‘Nasopharynx cancer’, ‘Other pharynx cancer’, ‘Gallbladder and biliary tract cancer’, ‘Pancreatic cancer’, ‘Malignant skin melanoma’, ‘Non-melanoma skin cancer’, ‘Ovarian cancer’, ‘Testicular cancer’, ‘Kidney cancer’, ‘Thyroid cancer’, ‘Mesothelioma’, ‘Hodgkin lymphoma’, ‘Non-Hodgkin lymphoma’, ‘Multiple myeloma’, ‘Leukemia’, ‘Other neoplasms’, ‘Uterine cancer’, ‘Colon and rectum cancer’, ‘Lip and oral cavity cancer’, ‘Stomach cancer’, ‘Liver cancer’]</p>
 <p><strong>Functions (defined or overridden in class OtherAdultCancer):</strong></p>

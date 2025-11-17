@@ -3,40 +3,49 @@ parameter values (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Oesophageal_Cancer/parameter_values.csv>`
 
-====  ==============================================================  =====================================================
-  ..  parameter\_name                                                 value
-====  ==============================================================  =====================================================
-   0  r\_low\_grade\_dysplasia\_none                                  5e-07
-   1  rr\_low\_grade\_dysplasia\_none\_female                         1.3
-   2  rr\_low\_grade\_dysplasia\_none\_per\_year\_older               1.1
-   3  rr\_low\_grade\_dysplasia\_none\_tobacco                        2
-   4  rr\_low\_grade\_dysplasia\_none\_ex\_alc                        1
-   5  r\_high\_grade\_dysplasia\_low\_grade\_dysp                     0.03
-   6  rr\_high\_grade\_dysp\_undergone\_curative\_treatment           0.1
-   7  r\_stage1\_high\_grade\_dysp                                    0.01
-   8  rr\_stage1\_undergone\_curative\_treatment                      0.1
-   9  r\_stage2\_stage1                                               0.05
-  10  rr\_stage2\_undergone\_curative\_treatment                      0.1
-  11  r\_stage3\_stage2                                               0.05
-  12  rr\_stage3\_undergone\_curative\_treatment                      0.1
-  13  r\_stage4\_stage3                                               0.05
-  14  rr\_stage4\_undergone\_curative\_treatment                      0.3
-  15  r\_death\_oesoph\_cancer                                        0.4
-  16  r\_dysphagia\_stage1                                            0.01
-  17  rr\_dysphagia\_low\_grade\_dysp                                 1
-  18  rr\_dysphagia\_high\_grade\_dysp                                1
-  19  rr\_dysphagia\_stage2                                           2
-  20  rr\_dysphagia\_stage3                                           50
-  21  rate\_palliative\_care\_stage4                                  0.5
-  22  rr\_dysphagia\_stage4                                           100
-  23  init\_prop\_oes\_cancer\_stage                                  [0.0003, 0.0001, 0.000005, 0.00003, 0.00005, 0.00001]
-  24  rp\_oes\_cancer\_female                                         1.3
-  25  rp\_oes\_cancer\_per\_year\_older                               1.1
-  26  rp\_oes\_cancer\_tobacco                                        2
-  27  rp\_oes\_cancer\_ex\_alc                                        1
-  28  init\_prop\_dysphagia\_oes\_cancer\_by\_stage                   [0.01, 0.03, 0.1, 0.2, 0.3, 0.8]
-  29  init\_prop\_with\_dysphagia\_diagnosed\_oes\_cancer\_by\_stage  [0.8,0.85,0.9,0.95,0.98,0.9]
-  30  init\_prob\_palliative\_care                                    0.5
-  31  init\_prop\_treatment\_status\_oes\_cancer                      [0.01, 0.01, 0.05, 0.05, 0.05, 0.05]
-  32  sensitivity\_of\_endoscopy\_for\_oes\_cancer\_with\_dysphagia   1
-====  ==============================================================  =====================================================
+====  ==============================================================  =====================================================  ==============  =============  =============  ===============  ===========
+  ..  parameter\_name                                                 value                                                  param\_label    prior\_min     prior\_max     prior\_note      reference
+====  ==============================================================  =====================================================  ==============  =============  =============  ===============  ===========
+   0  r\_low\_grade\_dysplasia\_none                                  5.00E-07                                               local           0              1              vague prior
+   1  rr\_low\_grade\_dysplasia\_none\_female                         1.3                                                    local           0.01           100            vague prior
+   2  rr\_low\_grade\_dysplasia\_none\_per\_year\_older               1.1                                                    local           0.01           100            vague prior
+   3  rr\_low\_grade\_dysplasia\_none\_tobacco                        2                                                      local           0.01           100            vague prior
+   4  rr\_low\_grade\_dysplasia\_none\_ex\_alc                        1                                                      local           0.01           100            vague prior
+   5  r\_high\_grade\_dysplasia\_low\_grade\_dysp                     0.03                                                   universal       0              1              vague prior
+   6  rr\_high\_grade\_dysp\_undergone\_curative\_treatment           0.1                                                    universal       0.01           100            vague prior
+   7  r\_stage1\_high\_grade\_dysp                                    0.01                                                   universal       0              1              vague prior
+   8  rr\_stage1\_undergone\_curative\_treatment                      0.1                                                    universal       0.01           100            vague prior
+   9  r\_stage2\_stage1                                               0.05                                                   universal       0              1              vague prior
+  10  rr\_stage2\_undergone\_curative\_treatment                      0.1                                                    universal       0.01           100            vague prior
+  11  r\_stage3\_stage2                                               0.05                                                   universal       0              1              vague prior
+  12  rr\_stage3\_undergone\_curative\_treatment                      0.1                                                    universal       0.01           100            vague prior
+  13  r\_stage4\_stage3                                               0.05                                                   universal       0              1              vague prior
+  14  rr\_stage4\_undergone\_curative\_treatment                      0.3                                                    universal       0.01           100            vague prior
+  15  r\_death\_oesoph\_cancer                                        0.4                                                    universal       0              1              vague prior
+  16  r\_dysphagia\_stage1                                            0.01                                                   universal       0              1              vague prior
+  17  rr\_dysphagia\_low\_grade\_dysp                                 1                                                      universal       0.01           100            vague prior
+  18  rr\_dysphagia\_high\_grade\_dysp                                1                                                      universal       0.01           100            vague prior
+  19  rr\_dysphagia\_stage2                                           2                                                      universal       0.01           100            vague prior
+  20  rr\_dysphagia\_stage3                                           50                                                     universal       0.01           100            vague prior
+  21  rate\_palliative\_care\_stage4                                  0.5                                                    local           0              1              vague prior
+  22  rr\_dysphagia\_stage4                                           100                                                    universal       0.01           1000           vague prior
+  23  init\_prop\_oes\_cancer\_stage                                  [0.0003, 0.0001, 0.000005, 0.00003, 0.00005, 0.00001]  local           [0,0,0,0,0,0]  [1,1,1,1,1,1]  vague prior
+  24  rp\_oes\_cancer\_female                                         1.3                                                    local           0.01           100            vague prior
+  25  rp\_oes\_cancer\_per\_year\_older                               1.1                                                    local           0.01           100            vague prior
+  26  rp\_oes\_cancer\_tobacco                                        2                                                      local           0.01           100            vague prior
+  27  rp\_oes\_cancer\_ex\_alc                                        1                                                      local           0.01           100            vague prior
+  28  init\_prop\_dysphagia\_oes\_cancer\_by\_stage                   [0.01, 0.03, 0.1, 0.2, 0.3, 0.8]                       local           [0,0,0,0,0,0]  [1,1,1,1,1,1]  vague prior
+  29  init\_prop\_with\_dysphagia\_diagnosed\_oes\_cancer\_by\_stage  [0.8,0.85,0.9,0.95,0.98,0.9]                           local           [0,0,0,0,0,0]  [1,1,1,1,1,1]  vague prior
+  30  init\_prob\_palliative\_care                                    0.5                                                    local           0              1              vague prior
+  31  init\_prop\_treatment\_status\_oes\_cancer                      [0.01, 0.01, 0.05, 0.05, 0.05, 0.05]                   local           [0,0,0,0,0,0]  [1,1,1,1,1,1]  vague prior
+  32  sensitivity\_of\_endoscopy\_for\_oes\_cancer\_with\_dysphagia   1                                                      universal       0              1              vague prior
+  33  odds\_ratio\_health\_seeking\_in\_adults\_dysphagia             4                                                      local           0.01           100            vague prior
+  34  main\_polling\_event\_frequency\_months                         3                                                      undetermined    1              12             design decision
+  35  post\_treatment\_check\_months\_initial                         12                                                     local           1              24             vague prior
+  36  post\_treatment\_check\_months\_recurring                       12                                                     local           1              24             vague prior
+  37  palliative\_care\_interval\_months                              1                                                      local           1              24             vague prior
+  38  treatment\_bed\_days                                            5                                                      local           1              30             vague prior
+  39  palliative\_care\_bed\_days                                     15                                                     local           1              30             vague prior
+  40  min\_age\_investigation                                         5                                                      local           0              20             vague prior
+  41  reference\_age\_onset                                           20                                                     local           10             40             vague prior
+====  ==============================================================  =====================================================  ==============  =============  =============  ===============  ===========

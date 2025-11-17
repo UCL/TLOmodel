@@ -32,10 +32,10 @@ tlo.methods.epilepsy module
           - initial proportions on antiepileptic by if seizure status = 3
         * - base_3m_prob_epilepsy
           - REAL
-          - base probability of epilepsy per 3 month period if age < 20
-        * - rr_epilepsy_age_ge20
+          - base probability of epilepsy per 3 month period if age below threshold
+        * - rr_epilepsy_above_threshold_age
           - REAL
-          - relative rate of epilepsy if age over 20
+          - relative rate of epilepsy if age above threshold age
         * - prop_inc_epilepsy_seiz_freq
           - REAL
           - proportion of incident epilepsy cases with frequent seizures
@@ -81,6 +81,42 @@ tlo.methods.epilepsy module
         * - max_num_of_failed_attempts_before_defaulting
           - INT
           - maximum number of time an HSI can be repeated if the relevant essential consumables are not available.
+        * - main_polling_event_frequency_months
+          - INT
+          - frequency in months for the main polling event that checks epilepsy status changes
+        * - main_polling_event_initial_delay_months
+          - INT
+          - delay in months for the initial main polling event
+        * - age_threshold_epilepsy_transition
+          - REAL
+          - age threshold in years at which probability of developing epilepsy changes
+        * - incidence_calculation_annualization_factor
+          - REAL
+          - factor to annualize incidence calculations (quarters to year conversion)
+        * - incidence_calculation_per_population_factor
+          - REAL
+          - factor for case incidence calculation per population
+        * - death_calculation_per_population_factor
+          - REAL
+          - factor for death incidence calculation per population
+        * - pediatric_age_threshold
+          - REAL
+          - age threshold in years below which patients are considered pediatric
+        * - medicine_follow_up_frequency_months
+          - REAL
+          - frequency in months for follow-up appointments when on anti-epileptic medication
+        * - unavailable_medicine_retry_months
+          - REAL
+          - frequency in months to retry when medicine is unavailable
+        * - unavailable_appt_retry_months
+          - REAL
+          - frequency in months to retry when appt is unavailable
+        * - severe_follow_up_frequency_months
+          - REAL
+          - frequency in months for follow-up appointments for severe epilepsy cases
+        * - standard_follow_up_frequency_months
+          - REAL
+          - frequency in months for follow-up appointments for standard epilepsy cases
 
 
      **PROPERTIES:**
@@ -112,13 +148,13 @@ tlo.methods.epilepsy module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x16ed3fcd0>}
+     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x30eb11bd0>}
 
-     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x16ed3c210>}
+     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x30eb124d0>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography', 'HealthBurden'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'HealthBurden', 'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      TREATMENT_ID : antiepileptic
 

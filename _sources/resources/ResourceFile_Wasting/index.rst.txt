@@ -1,0 +1,9 @@
+ResourceFile_Wasting
+====================
+
+.. toctree::
+    :maxdepth: 1
+
+    parameter_values.csv
+    wasting_prevalence_and_sample_size.csv
+

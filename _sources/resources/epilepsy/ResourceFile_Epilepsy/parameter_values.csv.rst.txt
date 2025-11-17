@@ -3,26 +3,37 @@ parameter values (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/epilepsy/ResourceFile_Epilepsy/parameter_values.csv>`
 
-====  =============================================================================  ================================
-  ..  parameter\_name                                                                value
-====  =============================================================================  ================================
-   0  init\_epil\_seiz\_status                                                       [0.9740, 0.0175, 0.0070, 0.0015]
-   1  init\_prop\_antiepileptic\_seiz\_stat\_1                                       0.15
-   2  init\_prop\_antiepileptic\_seiz\_stat\_2                                       0.15
-   3  init\_prop\_antiepileptic\_seiz\_stat\_3                                       0.2
-   4  base\_3m\_prob\_epilepsy                                                       0.000178
-   5  rr\_epilepsy\_age\_ge20                                                        0.3
-   6  prop\_inc\_epilepsy\_seiz\_freq                                                0.1
-   7  rr\_effectiveness\_antiepileptics                                              3
-   8  base\_prob\_3m\_seiz\_stat\_freq\_infreq                                       0.05
-   9  base\_prob\_3m\_seiz\_stat\_infreq\_freq                                       0.05
-  10  base\_prob\_3m\_seiz\_stat\_none\_freq                                         0.05
-  11  base\_prob\_3m\_seiz\_stat\_none\_infreq                                       0.05
-  12  base\_prob\_3m\_seiz\_stat\_infreq\_none                                       0.05
-  13  base\_prob\_3m\_stop\_antiepileptic                                            0.1
-  14  rr\_stop\_antiepileptic\_seiz\_infreq\_or\_freq                                0.5
-  15  base\_prob\_3m\_epi\_death                                                     0.000568
-  16  prob\_start\_anti\_epilep\_when\_seizures\_detected\_in\_generic\_first\_appt  0.4
-  17  max\_num\_of\_failed\_attempts\_before\_defaulting                             2
-  18
-====  =============================================================================  ================================
+====  =============================================================================  ================================  ==============  ===========================  =====================  ======================  ===========
+  ..  parameter\_name                                                                value                             param\_label    prior\_min                   prior\_max             prior\_note             reference
+====  =============================================================================  ================================  ==============  ===========================  =====================  ======================  ===========
+   0  init\_epil\_seiz\_status                                                       [0.9740, 0.0175, 0.0070, 0.0015]  local           [0.5, 0.001, 0.001, 0.0001]  [1, 0.05, 0.05, 0.01]  vague prior
+   1  init\_prop\_antiepileptic\_seiz\_stat\_1                                       0.15                              local           0                            1                      vague prior
+   2  init\_prop\_antiepileptic\_seiz\_stat\_2                                       0.15                              local           0                            1                      vague prior
+   3  init\_prop\_antiepileptic\_seiz\_stat\_3                                       0.2                               local           0                            1                      vague prior
+   4  base\_3m\_prob\_epilepsy                                                       0.000178                          local           0                            0.01                   vague prior
+   5  rr\_epilepsy\_above\_threshold\_age                                            0.3                               universal       0.01                         100                    relative risk           Missing
+   6  prop\_inc\_epilepsy\_seiz\_freq                                                0.1                               local           0                            1                      vague prior
+   7  rr\_effectiveness\_antiepileptics                                              3                                 universal       0.01                         100                    vague prior
+   8  base\_prob\_3m\_seiz\_stat\_freq\_infreq                                       0.05                              local           0                            1                      vague prior
+   9  base\_prob\_3m\_seiz\_stat\_infreq\_freq                                       0.05                              local           0                            1                      vague prior
+  10  base\_prob\_3m\_seiz\_stat\_none\_freq                                         0.05                              local           0                            1                      vague prior
+  11  base\_prob\_3m\_seiz\_stat\_none\_infreq                                       0.05                              local           0                            1                      vague prior
+  12  base\_prob\_3m\_seiz\_stat\_infreq\_none                                       0.05                              local           0                            1                      vague prior
+  13  base\_prob\_3m\_stop\_antiepileptic                                            0.1                               local           0                            1                      vague prior
+  14  rr\_stop\_antiepileptic\_seiz\_infreq\_or\_freq                                0.5                               local           0.01                         100                    vague prior
+  15  base\_prob\_3m\_epi\_death                                                     0.000568                          local           0                            0.1                    vague prior
+  16  prob\_start\_anti\_epilep\_when\_seizures\_detected\_in\_generic\_first\_appt  0.4                               undetermined    0                            1                      calibration
+  17  max\_num\_of\_failed\_attempts\_before\_defaulting                             2                                 undetermined    1                            10                     design decision
+  18  main\_polling\_event\_frequency\_months                                        3                                 undetermined    1                            12                     design decision
+  19  main\_polling\_event\_initial\_delay\_months                                   0                                 undetermined    0                            6                      design decision
+  20  age\_threshold\_epilepsy\_transition                                           20                                local           5                            30                     vague prior
+  21  incidence\_calculation\_annualization\_factor                                  4                                 undetermined    1                            12                     design decision
+  22  incidence\_calculation\_per\_population\_factor                                100000                            undetermined    1000                         1000000                design decision
+  23  death\_calculation\_per\_population\_factor                                    1000                              undetermined    100                          10000                  design decision
+  24  pediatric\_age\_threshold                                                      18                                local           5                            25                     vague prior
+  25  medicine\_follow\_up\_frequency\_months                                        3                                 local           1                            24                     vague prior
+  26  unavailable\_medicine\_retry\_months                                           1                                 local           1                            12                     vague prior
+  27  unavailable\_appt\_retry\_months                                               1                                 local           1                            12                     module design decision
+  28  severe\_follow\_up\_frequency\_months                                          3                                 local           1                            24                     vague prior
+  29  standard\_follow\_up\_frequency\_months                                        12                                local           1                            24                     vague prior
+====  =============================================================================  ================================  ==============  ===========================  =====================  ======================  ===========

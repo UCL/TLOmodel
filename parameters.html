@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parameters &mdash; TLOmodel 0.1.dev2558+g9b3fa2fb4 documentation</title>
+  <title>Parameters &mdash; TLOmodel 0.1.dev2576+g39c577c39 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="_static/favicon.png"/>
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=942bd948"></script>
+      <script src="_static/documentation_options.js?v=1aba2fa3"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -904,6 +904,66 @@
 <td><p>Real</p></td>
 <td><p>1.0</p></td>
 </tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_blood_urine</p></td>
+<td><p>odds ratio for health seeking behavior in adults with blood urine symptom</p></td>
+<td><p>Real</p></td>
+<td><p>4.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_pelvic_pain</p></td>
+<td><p>odds ratio for health seeking behavior in adults with pelvic pain symptom</p></td>
+<td><p>Real</p></td>
+<td><p>4.0</p></td>
+</tr>
+<tr class="row-even"><td><p>initial_polling_start_months_palliative_care</p></td>
+<td><p>time in months for scheduling initial palliative care appointments</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>initial_polling_start_delay_weeks_palliative_care</p></td>
+<td><p>time after initial_polling_start_months_palliative_care in which pal. care  can begin</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>post_treatment_check_interval_months</p></td>
+<td><p>interval in months for first post-treatment check</p></td>
+<td><p>Integer</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-odd"><td><p>post_treatment_followup_interval_months</p></td>
+<td><p>interval in months for subsequent post-treatment follow-up appointments</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>palliative_care_repeat_interval_months</p></td>
+<td><p>interval in months for repeating palliative care appointments</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>main_polling_frequency_months</p></td>
+<td><p>frequency in months for main polling event</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>delay_initial_main_polling_event_days</p></td>
+<td><p>delay in months for initial main polling event</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>beddays_treatment</p></td>
+<td><p>number of bed days required for bladder cancer treatment</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>beddays_palliative_care</p></td>
+<td><p>number of bed days required for palliative care</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-odd"><td><p>min_age_investigation</p></td>
+<td><p>minimum age in years for bladder cancer investigation</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -1042,6 +1102,56 @@
 <td><p>sensitivity of biopsy_for diagnosis of stage 4 breast cancer</p></td>
 <td><p>Real</p></td>
 <td><p>0.95</p></td>
+</tr>
+<tr class="row-odd"><td><p>health_seeking_odds_ratio_adults</p></td>
+<td><p>odds ratio for health seeking behavior in adults</p></td>
+<td><p>Real</p></td>
+<td><p>4.0</p></td>
+</tr>
+<tr class="row-even"><td><p>age_threshold_symptom_investigation</p></td>
+<td><p>age threshold for investigating symptoms</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>post_intial_treatment_followup_months</p></td>
+<td><p>months until first post-treatment follow-up</p></td>
+<td><p>Real</p></td>
+<td><p>12.0</p></td>
+</tr>
+<tr class="row-even"><td><p>post_treatment_check_interval_months</p></td>
+<td><p>interval in months between post-treatment checks</p></td>
+<td><p>Real</p></td>
+<td><p>3.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>rp_breast_cancer_age0014</p></td>
+<td><p>relative prevalence at baseline of breast cancer if 0-14 age group</p></td>
+<td><p>Real</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>initial_polling_start_months</p></td>
+<td><p>months before initial polling event at initialization</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>palliative_treatment_interval_months</p></td>
+<td><p>interval between palliative treatment</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_event_frequency_months</p></td>
+<td><p>frequency between main polling events</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>initial_polling_start_months_palliative_care</p></td>
+<td><p>months before palliative care for at initialization</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>initial_polling_start_delay_weeks_palliative_care</p></td>
+<td><p>delay in weeks after initial_polling_start_months_palliative_care for palliative care at initialization</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
 </tr>
 </tbody>
 </table>
@@ -2506,6 +2616,41 @@
 <td><p>Real</p></td>
 <td><p>1.0</p></td>
 </tr>
+<tr class="row-odd"><td><p>death_timing_spread_days</p></td>
+<td><p>Spread of death timing for stage 4 cancer</p></td>
+<td><p>Real</p></td>
+<td><p>90.0</p></td>
+</tr>
+<tr class="row-even"><td><p>initial_post_treatment_check_months</p></td>
+<td><p>Months to first post-treatment check</p></td>
+<td><p>Real</p></td>
+<td><p>3.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>months_to_next_appt_treated_less_than_12_mo_ago</p></td>
+<td><p>Follow-up interval for &lt;12 months post-treatment</p></td>
+<td><p>Real</p></td>
+<td><p>3.0</p></td>
+</tr>
+<tr class="row-even"><td><p>months_to_next_appt_treated_12_to_36_mo_ago</p></td>
+<td><p>Follow-up interval for 12-36 months post-treatment</p></td>
+<td><p>Real</p></td>
+<td><p>6.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>months_to_next_appt_treated_36_to_60_mo_ago</p></td>
+<td><p>Follow-up interval for 36-60 months post-treatment</p></td>
+<td><p>Real</p></td>
+<td><p>12.0</p></td>
+</tr>
+<tr class="row-even"><td><p>palliative_care_interval_months</p></td>
+<td><p>Interval between palliative care appointments</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>main_polling_frequency_months</p></td>
+<td><p>Main polling event frequency in months</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
 </tbody>
 </table>
 <section id="init-prev-cin-hpv-cc-stage-hiv">
@@ -3511,6 +3656,51 @@
 <td><p>List</p></td>
 <td><p>[0.0, 0.0, 0.035366, 0.20122, 0.453659, 0.246341, 0.063414]</p></td>
 </tr>
+<tr class="row-even"><td><p>min_age_first_appt</p></td>
+<td><p>Minimum age for non-emergency COPD appointments</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>min_age_lung_function_assessment</p></td>
+<td><p>Minimum age for lung function assessment and progression</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>age_group_1_max</p></td>
+<td><p>Maximum age for age group 1 (young adults)</p></td>
+<td><p>Integer</p></td>
+<td><p>39</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_group_2_max</p></td>
+<td><p>Maximum age for age group 2 (middle-aged adults)</p></td>
+<td><p>Integer</p></td>
+<td><p>59</p></td>
+</tr>
+<tr class="row-even"><td><p>age_group_3_min</p></td>
+<td><p>Minimum age for age group 3 (older adults)</p></td>
+<td><p>Integer</p></td>
+<td><p>60</p></td>
+</tr>
+<tr class="row-odd"><td><p>main_polling_frequency_months</p></td>
+<td><p>Frequency of COPD polling events in months</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>exacerbation_symptom_duration_days</p></td>
+<td><p>Duration of breathlessness symptoms during exacerbation in days</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>death_delay_days</p></td>
+<td><p>Days between severe exacerbation and potential death</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>beddays_severe_exacerbation</p></td>
+<td><p>Number of general bed days required for severe exacerbation</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -3808,13 +3998,13 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Rumphi</p></td>
-<td><p>Mzimba</p></td>
-<td><p>Mzuzu City</p></td>
+<tr class="row-even"><td><p>Likoma</p></td>
 <td><p>Karonga</p></td>
-<td><p>Likoma</p></td>
+<td><p>Mzimba</p></td>
 <td><p>Nkhata Bay</p></td>
 <td><p>Chitipa</p></td>
+<td><p>Mzuzu City</p></td>
+<td><p>Rumphi</p></td>
 </tr>
 </tbody>
 </table>
@@ -3836,16 +4026,16 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Kasungu</p></td>
+<tr class="row-even"><td><p>Ntcheu</p></td>
 <td><p>Lilongwe City</p></td>
-<td><p>Dedza</p></td>
-<td><p>Dowa</p></td>
 <td><p>Nkhotakota</p></td>
+<td><p>Dedza</p></td>
+<td><p>Kasungu</p></td>
+<td><p>Mchinji</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>Dowa</p></td>
 <td><p>Lilongwe</p></td>
 <td><p>Salima</p></td>
-<td><p>Ntchisi</p></td>
-<td><p>Ntcheu</p></td>
-<td><p>Mchinji</p></td>
 </tr>
 </tbody>
 </table>
@@ -3873,20 +4063,20 @@
 </thead>
 <tbody>
 <tr class="row-even"><td><p>Machinga</p></td>
-<td><p>Chiradzulu</p></td>
-<td><p>Thyolo</p></td>
-<td><p>Zomba City</p></td>
+<td><p>Nsanje</p></td>
 <td><p>Blantyre</p></td>
 <td><p>Chikwawa</p></td>
-<td><p>Balaka</p></td>
-<td><p>Neno</p></td>
 <td><p>Mwanza</p></td>
-<td><p>Phalombe</p></td>
+<td><p>Zomba City</p></td>
 <td><p>Blantyre City</p></td>
-<td><p>Zomba</p></td>
 <td><p>Mangochi</p></td>
+<td><p>Thyolo</p></td>
+<td><p>Balaka</p></td>
+<td><p>Phalombe</p></td>
+<td><p>Zomba</p></td>
 <td><p>Mulanje</p></td>
-<td><p>Nsanje</p></td>
+<td><p>Neno</p></td>
+<td><p>Chiradzulu</p></td>
 </tr>
 </tbody>
 </table>
@@ -4178,6 +4368,51 @@
 <td><p>Probability that a perinatal female is assessed for depression during antenatal or postnatal services</p></td>
 <td><p>Real</p></td>
 <td><p>0.01</p></td>
+</tr>
+<tr class="row-odd"><td><p>recently_pregnant_threshold_years</p></td>
+<td><p>Time period to consider a woman as recently pregnant</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>max_talking_therapy_sessions</p></td>
+<td><p>Maximum number of talking therapy sessions per course</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>talking_therapy_interval_months</p></td>
+<td><p>Interval between talking therapy sessions in months</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-even"><td><p>antidepr_refill_interval_months</p></td>
+<td><p>Interval for antidepressant refill appointments in months</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>antidepr_refill_window_days</p></td>
+<td><p>Window period for antidepressant refill appointments in days</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>selfharm_suicide_event_max_days</p></td>
+<td><p>Maximum days for scheduling self-harm/suicide events</p></td>
+<td><p>Integer</p></td>
+<td><p>90</p></td>
+</tr>
+<tr class="row-odd"><td><p>depression_polling_frequency_months</p></td>
+<td><p>Frequency of depression polling events in months</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>age_threshold_adult_care</p></td>
+<td><p>Minimum age for care in non-peds in years</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_threshold_depression</p></td>
+<td><p>Minimum age for depression</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
 </tr>
 </tbody>
 </table>
@@ -4947,12 +5182,12 @@
 <td><p>0.2</p></td>
 </tr>
 <tr class="row-even"><td><p>base_3m_prob_epilepsy</p></td>
-<td><p>base probability of epilepsy per 3 month period if age &lt; 20</p></td>
+<td><p>base probability of epilepsy per 3 month period if age below threshold</p></td>
 <td><p>Real</p></td>
 <td><p>0.000178</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_epilepsy_age_ge20</p></td>
-<td><p>relative rate of epilepsy if age over 20</p></td>
+<tr class="row-odd"><td><p>rr_epilepsy_above_threshold_age</p></td>
+<td><p>relative rate of epilepsy if age above threshold age</p></td>
 <td><p>Real</p></td>
 <td><p>0.3</p></td>
 </tr>
@@ -5030,6 +5265,66 @@
 <td><p>maximum number of time an HSI can be repeated if the relevant essential consumables are not available.</p></td>
 <td><p>Integer</p></td>
 <td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>main_polling_event_frequency_months</p></td>
+<td><p>frequency in months for the main polling event that checks epilepsy status changes</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_event_initial_delay_months</p></td>
+<td><p>delay in months for the initial main polling event</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>age_threshold_epilepsy_transition</p></td>
+<td><p>age threshold in years at which probability of developing epilepsy changes</p></td>
+<td><p>Real</p></td>
+<td><p>20.0</p></td>
+</tr>
+<tr class="row-even"><td><p>incidence_calculation_annualization_factor</p></td>
+<td><p>factor to annualize incidence calculations (quarters to year conversion)</p></td>
+<td><p>Real</p></td>
+<td><p>4.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>incidence_calculation_per_population_factor</p></td>
+<td><p>factor for case incidence calculation per population</p></td>
+<td><p>Real</p></td>
+<td><p>100000.0</p></td>
+</tr>
+<tr class="row-even"><td><p>death_calculation_per_population_factor</p></td>
+<td><p>factor for death incidence calculation per population</p></td>
+<td><p>Real</p></td>
+<td><p>1000.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>pediatric_age_threshold</p></td>
+<td><p>age threshold in years below which patients are considered pediatric</p></td>
+<td><p>Real</p></td>
+<td><p>18.0</p></td>
+</tr>
+<tr class="row-even"><td><p>medicine_follow_up_frequency_months</p></td>
+<td><p>frequency in months for follow-up appointments when on anti-epileptic medication</p></td>
+<td><p>Real</p></td>
+<td><p>3.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>unavailable_medicine_retry_months</p></td>
+<td><p>frequency in months to retry when medicine is unavailable</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-even"><td><p>unavailable_appt_retry_months</p></td>
+<td><p>frequency in months to retry when appt is unavailable</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>severe_follow_up_frequency_months</p></td>
+<td><p>frequency in months for follow-up appointments for severe epilepsy cases</p></td>
+<td><p>Real</p></td>
+<td><p>3.0</p></td>
+</tr>
+<tr class="row-even"><td><p>standard_follow_up_frequency_months</p></td>
+<td><p>frequency in months for follow-up appointments for standard epilepsy cases</p></td>
+<td><p>Real</p></td>
+<td><p>12.0</p></td>
 </tr>
 </tbody>
 </table>
@@ -6520,13 +6815,13 @@
 </tr>
 <tr class="row-odd"><td><p>Blood pressure machine</p></td>
 <td><p>6</p></td>
-<td><p>Minor Surgery, Major Surgery, ICU</p></td>
+<td><p>Minor Surgery, Major Surgery, ICU, Blood Transfusion</p></td>
 <td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
 <td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>Thermometer</p></td>
 <td><p>7</p></td>
-<td><p>nan</p></td>
+<td><p>Blood Transfusion</p></td>
 <td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
 <td><p>‘Thermometers, digital’</p></td>
 </tr>
@@ -6538,7 +6833,7 @@
 </tr>
 <tr class="row-even"><td><p>Desk</p></td>
 <td><p>9</p></td>
-<td><p>nan</p></td>
+<td><p>General_FacilityLevel_2, General_FacilityLevel_1a_and_1b</p></td>
 <td><p>Malawi HSSPIII Equipment Costing 2023</p></td>
 <td><p>‘Office desk’</p></td>
 </tr>
@@ -6676,7 +6971,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 98 are shown.</em></p>
+<p><em>Only first 10 rows of 102 are shown.</em></p>
 </section>
 <section id="default">
 <h4>Default<a class="headerlink" href="#default" title="Link to this heading"></a></h4>
@@ -6756,7 +7051,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 98 are shown.</em></p>
+<p><em>Only first 10 rows of 102 are shown.</em></p>
 </section>
 <section id="test">
 <h4>Test<a class="headerlink" href="#test" title="Link to this heading"></a></h4>
@@ -6836,7 +7131,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 98 are shown.</em></p>
+<p><em>Only first 10 rows of 102 are shown.</em></p>
 </section>
 <section id="clinicallyvulnerable">
 <h4>ClinicallyVulnerable<a class="headerlink" href="#clinicallyvulnerable" title="Link to this heading"></a></h4>
@@ -6916,7 +7211,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 98 are shown.</em></p>
+<p><em>Only first 10 rows of 102 are shown.</em></p>
 </section>
 <section id="rmnch">
 <h4>RMNCH<a class="headerlink" href="#rmnch" title="Link to this heading"></a></h4>
@@ -6996,7 +7291,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 98 are shown.</em></p>
+<p><em>Only first 10 rows of 102 are shown.</em></p>
 </section>
 <section id="ehp-iii">
 <h4>EHP_III<a class="headerlink" href="#ehp-iii" title="Link to this heading"></a></h4>
@@ -7076,7 +7371,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 98 are shown.</em></p>
+<p><em>Only first 10 rows of 102 are shown.</em></p>
 </section>
 <section id="cvd">
 <h4>CVD<a class="headerlink" href="#cvd" title="Link to this heading"></a></h4>
@@ -7156,7 +7451,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 98 are shown.</em></p>
+<p><em>Only first 10 rows of 102 are shown.</em></p>
 </section>
 <section id="lcoa-ehp">
 <h4>LCOA_EHP<a class="headerlink" href="#lcoa-ehp" title="Link to this heading"></a></h4>
@@ -7236,7 +7531,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 98 are shown.</em></p>
+<p><em>Only first 10 rows of 102 are shown.</em></p>
 </section>
 <section id="verticalprogrammes">
 <h4>VerticalProgrammes<a class="headerlink" href="#verticalprogrammes" title="Link to this heading"></a></h4>
@@ -7316,7 +7611,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 98 are shown.</em></p>
+<p><em>Only first 10 rows of 102 are shown.</em></p>
 </section>
 <section id="naive">
 <h4>Naive<a class="headerlink" href="#naive" title="Link to this heading"></a></h4>
@@ -7396,7 +7691,7 @@
 </tr>
 </tbody>
 </table>
-<p><em>Only first 10 rows of 98 are shown.</em></p>
+<p><em>Only first 10 rows of 102 are shown.</em></p>
 </section>
 </section>
 <section id="hr-scaling-by-level-and-officer-type-table">
@@ -11897,6 +12192,51 @@
 <td><p>Real</p></td>
 <td><p>1.0</p></td>
 </tr>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_in_adults_dysphagia</p></td>
+<td><p>odds ratio for health seeking in adults with dysphagia symptom</p></td>
+<td><p>Real</p></td>
+<td><p>4.0</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_event_frequency_months</p></td>
+<td><p>frequency in months for main polling event</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>post_treatment_check_months_initial</p></td>
+<td><p>months between post-treatment check appointments scheduled after first treatment</p></td>
+<td><p>Integer</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-even"><td><p>post_treatment_check_months_recurring</p></td>
+<td><p>months between follow-up appointments recurring</p></td>
+<td><p>Integer</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-odd"><td><p>palliative_care_interval_months</p></td>
+<td><p>months between palliative care appointments</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_bed_days</p></td>
+<td><p>number of bed days required for treatment</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>palliative_care_bed_days</p></td>
+<td><p>number of bed days required for palliative care</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>min_age_investigation</p></td>
+<td><p>minimum age for dysphagia investigation</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>reference_age_onset</p></td>
+<td><p>reference age for cancer onset calculations</p></td>
+<td><p>Integer</p></td>
+<td><p>20</p></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -12030,6 +12370,61 @@
 <td><p>sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with other_adult_ca metastatic</p></td>
 <td><p>Real</p></td>
 <td><p>0.95</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_in_adults_early_other_adult_ca_symptom</p></td>
+<td><p>odds ratio for health seeking in adults with early other adult cancer symptom</p></td>
+<td><p>Real</p></td>
+<td><p>4.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>post_treatment_check_months</p></td>
+<td><p>months to first post-treatment check appointment</p></td>
+<td><p>Real</p></td>
+<td><p>12.0</p></td>
+</tr>
+<tr class="row-even"><td><p>follow_up_appt_months</p></td>
+<td><p>months between follow-up appointments after treatment</p></td>
+<td><p>Real</p></td>
+<td><p>3.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>palliative_care_interval_months</p></td>
+<td><p>months between palliative care appointments</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_bed_days</p></td>
+<td><p>number of bed days required for cancer treatment</p></td>
+<td><p>Real</p></td>
+<td><p>5.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>palliative_care_bed_days</p></td>
+<td><p>number of bed days required for palliative care</p></td>
+<td><p>Real</p></td>
+<td><p>15.0</p></td>
+</tr>
+<tr class="row-even"><td><p>min_age_adult_cancer</p></td>
+<td><p>minimum age for adult cancer</p></td>
+<td><p>Real</p></td>
+<td><p>5.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>initial_polling_start_months</p></td>
+<td><p>initial polling months delay</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>initial_polling_start_months_palliative_care</p></td>
+<td><p>initial polling months delay for pal care</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>initial_polling_start_delay_weeks_palliative_care</p></td>
+<td><p>week delay after initial_polling_start_months_palliative_care for initial pal care</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_event_frequency_months</p></td>
+<td><p>frequency of main polling event</p></td>
+<td><p>Real</p></td>
+<td><p>1.0</p></td>
 </tr>
 </tbody>
 </table>
@@ -13108,6 +13503,81 @@
 <td><p>sensitivity of biopsy for prostate cancer</p></td>
 <td><p>Real</p></td>
 <td><p>0.95</p></td>
+</tr>
+<tr class="row-odd"><td><p>odds_ratio_health_seeking_urinary</p></td>
+<td><p>odds ratio for health seeking in adults with urinary symptoms</p></td>
+<td><p>Real</p></td>
+<td><p>4.0</p></td>
+</tr>
+<tr class="row-even"><td><p>odds_ratio_health_seeking_pelvic_pain</p></td>
+<td><p>odds ratio for health seeking in adults with pelvic pain symptoms</p></td>
+<td><p>Real</p></td>
+<td><p>4.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>no_health_seeking_urinary_children</p></td>
+<td><p>whether children seek healthcare for urinary symptoms</p></td>
+<td><p>Boolean</p></td>
+<td><p>True</p></td>
+</tr>
+<tr class="row-even"><td><p>no_health_seeking_pelvic_pain_children</p></td>
+<td><p>whether children seek healthcare for pelvic pain symptoms</p></td>
+<td><p>Boolean</p></td>
+<td><p>True</p></td>
+</tr>
+<tr class="row-odd"><td><p>min_age_prostate_cancer</p></td>
+<td><p>minimum age for prostate cancer risk</p></td>
+<td><p>Integer</p></td>
+<td><p>35</p></td>
+</tr>
+<tr class="row-even"><td><p>mid_age_threshold_prostate_cancer</p></td>
+<td><p>middle age threshold for prostate cancer (lower bound of middle age group)</p></td>
+<td><p>Integer</p></td>
+<td><p>50</p></td>
+</tr>
+<tr class="row-odd"><td><p>high_age_threshold_prostate_cancer</p></td>
+<td><p>high age threshold for prostate cancer (lower bound of high age group)</p></td>
+<td><p>Integer</p></td>
+<td><p>70</p></td>
+</tr>
+<tr class="row-even"><td><p>max_age_prostate_cancer</p></td>
+<td><p>maximum age for prostate cancer modeling</p></td>
+<td><p>Integer</p></td>
+<td><p>120</p></td>
+</tr>
+<tr class="row-odd"><td><p>months_between_polling_events</p></td>
+<td><p>months between main polling events</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>months_to_post_treatment_check</p></td>
+<td><p>months from treatment to first post-treatment check</p></td>
+<td><p>Integer</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-odd"><td><p>months_between_followup_appointments</p></td>
+<td><p>months between follow-up appointments after treatment</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>months_between_palliative_care</p></td>
+<td><p>months between palliative care appointments</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>weeks_palliative_care_schedule_window</p></td>
+<td><p>weeks for palliative care appointment window</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_beddays</p></td>
+<td><p>number of general bed days required for treatment</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>palliative_care_beddays</p></td>
+<td><p>number of general bed days required for palliative care</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
 </tr>
 </tbody>
 </table>

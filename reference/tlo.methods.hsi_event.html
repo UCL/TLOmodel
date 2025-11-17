@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hsi_event module &mdash; TLOmodel 0.1.dev2558+g9b3fa2fb4 documentation</title>
+  <title>tlo.methods.hsi_event module &mdash; TLOmodel 0.1.dev2576+g39c577c39 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=942bd948"></script>
+      <script src="../_static/documentation_options.js?v=1aba2fa3"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -111,12 +111,12 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {‘module’: ‘Module’, ‘target’: ‘int’, ‘TREATMENT_ID’: ‘str’, ‘ACCEPTED_FACILITY_LEVEL’: ‘str’, ‘BEDDAYS_FOOTPRINT’: ‘Dict[str, Union[float, int]]’, ‘_received_info_about_bed_days’: ‘Dict[str, Union[float, int]]’, ‘expected_time_requests’: ‘Counter’, ‘facility_info’: ‘FacilityInfo’}</p>
 <p>_received_info_about_bed_days : None</p>
-<p>bed_days_allocated_to_this_event : &lt;property object at 0x16e520a40&gt;</p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x30e96d030&gt;</p>
 <p>expected_time_requests : {}</p>
 <p>facility_info : None</p>
-<p>healthcare_system : &lt;property object at 0x16e520ae0&gt;</p>
-<p>is_all_declared_equipment_available : &lt;property object at 0x16e520b30&gt;</p>
-<p>sim : &lt;property object at 0x16e520a90&gt;</p>
+<p>healthcare_system : &lt;property object at 0x30e96d0d0&gt;</p>
+<p>is_all_declared_equipment_available : &lt;property object at 0x30e96d120&gt;</p>
+<p>sim : &lt;property object at 0x30e96d080&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.__init__">
@@ -173,6 +173,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 <dt>Do things following the event’s <cite>apply</cite> and <cite>post_apply_hook</cite> functions running.</dt><dd><ul class="simple">
 <li><p>Impose the bed-days footprint</p></li>
 <li><p>Record the equipment that has been added before and during the course of the HSI Event.</p></li>
+<li><p>Include in the equipment used those items associated with in-patient admissions if bed-days are used.</p></li>
 </ul>
 </dd>
 </dl>
@@ -260,13 +261,6 @@ accepts the item codes/descriptions in a variety of formats, so the argument nee
 <dd><p>Initialise the HSI:
 * Set the facility_info
 * Compute appt-footprint time requirements</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event._check_if_appt_footprint_can_run">
-<span class="sig-name descname"><span class="pre">_check_if_appt_footprint_can_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event._check_if_appt_footprint_can_run" title="Link to this definition"></a></dt>
-<dd><p>Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
-this does not demand officers that are _never_ available), and issue warning if not.</p>
 </dd></dl>
 
 <dl class="py method">

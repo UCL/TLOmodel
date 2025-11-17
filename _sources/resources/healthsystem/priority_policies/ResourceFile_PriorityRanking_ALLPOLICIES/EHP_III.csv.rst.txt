@@ -103,5 +103,9 @@ EHP III (.csv)
   94  CervicalCancer\_Treatment\_Start                                                4                  -1                  -1                     -1                      -1
   95  CervicalCancer\_Treatment\_PostTreatmentCheck                                   4                  -1                  -1                     -1                      -1
   96  CervicalCancer\_PalliativeCare                                                  4                  -1                  -1                     -1                      -1
-  97  lowest\_priority\_considered                                                    3                  -1                  -1                     -1                      -1
+  97  Undernutrition\_Feeding\_Supplementary                                          2                  -1                  -1                     -1                      -1
+  98  Undernutrition\_Feeding\_Inpatient                                              2                  -1                  -1                     -1                      -1
+  99  Undernutrition\_Feeding\_Outpatient                                             2                  -1                  -1                     -1                      -1
+ 100  Undernutrition\_GrowthMonitoring                                                2                  -1                  -1                     -1                      -1
+ 101  lowest\_priority\_considered                                                    3                  -1                  -1                     -1                      -1
 ====  =====================================================================  ==========  ==================  ==================  =====================  ======================

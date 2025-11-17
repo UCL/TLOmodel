@@ -4,6 +4,5 @@ ResourceFile_Stunting
 .. toctree::
     :maxdepth: 1
 
-    Cover Sheet.csv
     Parameter_values.csv
 

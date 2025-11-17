@@ -103,5 +103,9 @@ RMNCH (.csv)
   94  CervicalCancer\_Treatment\_Start                                                5                  -1                  -1                     -1                      -1
   95  CervicalCancer\_Treatment\_PostTreatmentCheck                                   5                  -1                  -1                     -1                      -1
   96  CervicalCancer\_PalliativeCare                                                  5                  -1                  -1                     -1                      -1
-  97  lowest\_priority\_considered                                                    5                  -1                  -1                     -1                      -1
+  97  Undernutrition\_Feeding\_Supplementary                                          5                   3                  -1                     -1                      -1
+  98  Undernutrition\_Feeding\_Inpatient                                              5                   3                  -1                     -1                      -1
+  99  Undernutrition\_Feeding\_Outpatient                                             5                   3                  -1                     -1                      -1
+ 100  Undernutrition\_GrowthMonitoring                                                5                   3                  -1                     -1                      -1
+ 101  lowest\_priority\_considered                                                    5                  -1                  -1                     -1                      -1
 ====  =====================================================================  ==========  ==================  ==================  =====================  ======================

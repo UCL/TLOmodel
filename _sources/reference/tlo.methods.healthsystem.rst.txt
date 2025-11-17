@@ -170,13 +170,13 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     capabilities_today : <property object at 0x16e520e00>
+     capabilities_today : <property object at 0x30e96d3f0>
 
-     hsi_event_counts : <property object at 0x16e520fe0>
+     hsi_event_counts : <property object at 0x30e96d5d0>
 
-     never_ran_hsi_event_counts : <property object at 0x16e521030>
+     never_ran_hsi_event_counts : <property object at 0x30e96d620>
 
-     use_funded_or_actual_staffing : <property object at 0x16e520ef0>
+     use_funded_or_actual_staffing : <property object at 0x30e96d4e0>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -280,6 +280,8 @@ tlo.methods.healthsystem module
 
      .. automethod:: run_individual_level_events_in_mode_1
 
+     .. automethod:: _record_general_equipment_usage_for_year
+
 
 
 
@@ -353,7 +355,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x16e521300>
+     current_pop_size : <property object at 0x30e96d8f0>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 
