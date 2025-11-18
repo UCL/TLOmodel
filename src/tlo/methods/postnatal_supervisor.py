@@ -210,8 +210,6 @@ class PostnatalSupervisor(Module):
                         'hypertension'),
 
         # TIMING AND SCHEDULING PARAMETERS
-        'initial_event_delay_days': Parameter(
-            Types.INT, 'Initial PostnatalSupervisorEvent delay days'),
         'main_polling_event_frequency_weeks': Parameter(
             Types.INT, ' PostnatalSupervisorEvent polling frequency in weeks'),
         'fistula_repair_min_days': Parameter(
@@ -230,9 +228,8 @@ class PostnatalSupervisor(Module):
             Types.LIST, 'Number of days for postnatal check if sepsis - scheduling window'),
         'pnc_one_neonatal_sepsis_appt_window_days': Parameter(
             Types.LIST, 'Number of days for pnc_one_neonatal if sepsis - scheduling window'),
-        'emergency_care_postnatal_reset_week': Parameter(
-            Types.INT, 'Week at which pregnancy variables are reset for women who are experiencing '
-                        'severe complications'),
+        'final_week_postnatal_period': Parameter(
+            Types.INT, 'Final week of the postnatal period - week 6'),
         'postnatal_reset_week': Parameter(
             Types.INT, 'Week at which postnatal variables are reset overall: Changes made 2 weeks after'
                         'the end of the postnatal and neonatal period in case either the '
@@ -291,8 +288,7 @@ class PostnatalSupervisor(Module):
         pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # Schedule the first instance of the PostnatalSupervisorEvent
-        sim.schedule_event(PostnatalSupervisorEvent(self),
-                           sim.date + DateOffset(days=p['initial_event_delay_days']))
+        sim.schedule_event(PostnatalSupervisorEvent(self), sim.date)
 
         # Register dx_tests used as assessment for postnatal conditions during PNC visits
         params = self.current_parameters
@@ -724,17 +720,17 @@ class PostnatalSupervisor(Module):
         for person in care_seekers.loc[~care_seekers].index:
             self.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='mother', individual_id=person)
 
-        if week == params['emergency_care_postnatal_reset_week']:
+        if week == params['final_week_postnatal_period']:
             # Here we reset any remaining pregnancy variables (as some are used as predictors in models in the postnatal
             # period)
-            emergency_care_postnatal_reset_week_women = (df.is_alive &
+            final_week_postnatal_period_women = (df.is_alive &
                                 df.la_is_postpartum &
-                                (df.pn_postnatal_period_in_weeks == params['emergency_care_postnatal_reset_week']))
+                                (df.pn_postnatal_period_in_weeks == params['final_week_postnatal_period']))
 
             self.sim.modules['PregnancySupervisor'].pregnancy_supervisor_property_reset(
-                id_or_index=emergency_care_postnatal_reset_week_women.loc[emergency_care_postnatal_reset_week_women].index)
+                id_or_index=final_week_postnatal_period_women.loc[final_week_postnatal_period_women].index)
             self.sim.modules['CareOfWomenDuringPregnancy'].care_of_women_in_pregnancy_property_reset(
-                id_or_index=emergency_care_postnatal_reset_week_women.loc[emergency_care_postnatal_reset_week_women].index)
+                id_or_index=final_week_postnatal_period_women.loc[final_week_postnatal_period_women].index)
 
     def apply_risk_of_neonatal_complications_in_week_one(self, child_id, mother_id):
         """
