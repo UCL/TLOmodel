@@ -244,33 +244,6 @@ class CMDChronicKidneyDisease(Module):
             get_item_codes('Reagents'): 3,
             get_item_codes('Radiopharmaceuticals'): 4
         }
-        self.cons_item_codes['Kidney_Transplant_Surgery'] = {
-            # Prepare surgical instruments
-            # administer an IV
-            get_item_codes('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
-            get_item_codes("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
-            get_item_codes("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
-            # request a general anaesthetic
-            get_item_codes("Halothane (fluothane)_250ml_CMST"): 100,
-            # Position patient in lateral position with kidney break
-            # clean the site of the surgery
-            get_item_codes("Chlorhexidine 1.5% solution_5_CMST"): 600,
-            # tools to begin surgery
-            get_item_codes("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
-            # repair incision made
-            get_item_codes("Suture pack"): 1,
-            get_item_codes("Gauze, absorbent 90cm x 40m_each_CMST"): 100,
-            # administer pain killer
-            get_item_codes('Pethidine, 50 mg/ml, 2 ml ampoule'): 6,
-            # administer antibiotic
-            get_item_codes("Ampicillin injection 500mg, PFR_each_CMST"): 2,
-            #change this to immunosuppressive drugs
-            # equipment used by surgeon, gloves and facemask
-            get_item_codes('Disposables gloves, powder free, 100 pieces per box'): 1,
-            get_item_codes('surgical face mask, disp., with metal nose piece_50_IDA'): 1,
-            # request syringe
-            get_item_codes("Syringe, Autodisable SoloShot IX "): 1
-        }
 
 
 
@@ -362,9 +335,9 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, CMDChronicKidneyDisease)
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_CKD_Renal_Medication'
+        self.TREATMENT_ID = 'Dr_CMD_Renal_Medication'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.ACCEPTED_FACILITY_LEVEL = '3' #todo Facility Level?
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -394,8 +367,6 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
         )
 
         if dx_result and is_cons_available:
-            self.add_equipment({'weighing scale','blood pressure machine', 'purple blood bottle', 'red blood bottle'
-                                'ultrasound machine', 'electrocardiogram', 'oxygen concentrator'})
             # record date of diagnosis
             df.at[person_id, 'ckd_date_diagnosis'] = self.sim.date
             df.at[person_id, 'ckd_date_treatment'] = self.sim.date
@@ -413,8 +384,7 @@ class HSI_Kidney_Transplant_Evaluation(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, CMDChronicKidneyDisease)
 
         # Define the necessary information for an HSI
-        #todo need to update priority number in resource files
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_CKD_Kidney_Transplant_'
+        self.TREATMENT_ID = 'Dr_CMD_Kidney_Transplant_Evaluation'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.ALERT_OTHER_DISEASES = []
@@ -450,88 +420,6 @@ class HSI_Kidney_Transplant_Evaluation(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'ckd_date_treatment'] = self.sim.date
             df.at[person_id, 'ckd_stage_at_which_treatment_given'] = df.at[person_id, 'ckd_status']
 
-class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is the event a person undergoes in order to determine whether an individual is eligible for a kidney transplant
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, CMDChronicKidneyDisease)
-
-        # Define the necessary information for an HSI
-        #todo need to update priority number in resource files
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_CKD_Kidney_Transplant_'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug(key='debug',
-                     data=f'This is HSI_Kidney_Transplant_Evaluation for person {person_id}')
-        df = self.sim.population.props
-        person = df.loc[person_id]
-        hs = self.sim.modules["HealthSystem"]
-        if not df.at[person_id, 'is_alive']:
-            # The person is not alive, the event did not happen: so return a blank footprint
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-
-        # if person already on treatment or not yet diagnosed, do nothing
-        if person["ckd_on_treatment"] or not person["ckd_diagnosed"]:
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        assert pd.isnull(df.at[person_id, 'ckd_date_treatment'])
-
-        is_cons_available = self.get_consumables(
-            self.module.cons_item_codes['kidney_transplant_eval_cons']
-        )
-
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='kidney_transplant_eval_tests',
-            hsi_event=self
-        )
-
-        if dx_result and is_cons_available:
-            self.add_equipment({'Patient monitors', 'Infusion pump','Dialysis machine', 'Bloodlines','Water tank',
-                                'Reverse osmosis machine', 'Water softener', 'Carbon filter', '5 micro filter',
-                                'ventilator', 'Electrocautery unit', 'Suction machine', 'theatre bed',
-                                'cold static storage' 'perfusion machine', 'Ultrasound machine', 'drip stand', 'trolley',})
-            # record date of diagnosis
-            df.at[person_id, 'ckd_date_diagnosis'] = self.sim.date
-            df.at[person_id, 'ckd_date_treatment'] = self.sim.date
-            df.at[person_id, 'ckd_stage_at_which_treatment_given'] = df.at[person_id, 'ckd_status']
-
- class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEventMixin):
-    """This is a Health System Interaction Event in which a person receives a dialysis session 2 times a week
-    adding up to 8 times a month."""
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment_Haemodialysis'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'
-
-    def apply(self, person_id, squeeze_factor):
-
-        df = self.sim.population.props
-
-        if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'nc_chronic_kidney_disease']:
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-
-        # Increment total number of dialysis sessions the person has ever had in their lifetime
-        df.at[person_id, 'nc_ckd_total_dialysis_sessions'] += 1
-
-
-        self.add_equipment({'Chair', 'Dialysis Machine', 'Dialyser (Artificial Kidney)',
-                            'Bloodlines', 'Dialysate solution', 'Dialysis water treatment system'})
-
-        next_session_date = self.sim.date + pd.DateOffset(days=3)
-        self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-            topen=next_session_date,
-            tclose=next_session_date + pd.DateOffset(days=1),
-            priority=1
-        )
 
 class CMDChronicKidneyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
