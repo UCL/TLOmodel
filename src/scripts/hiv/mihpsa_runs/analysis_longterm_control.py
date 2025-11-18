@@ -240,6 +240,28 @@ with pd.ExcelWriter(results_folder / "longterm_outputs_unscaled.xlsx", engine='o
         df.to_excel(writer, sheet_name=f'Draw_{draw}', index=True)
 
 
+
+# add the unscaled outputs to the scaled outputs sheet for easier transference to template
+cols_to_replace = [
+    "Percent_circumcised",
+    "Percent_condom use_GP",
+    "Percent_FSW reached",
+]
+
+merged_output = {}
+
+for key in scaled_stocks_output:
+    # make a copy so the original is untouched
+    df_new = scaled_stocks_output[key].copy()
+
+    # replace the selected variables using dict2
+    df_new[cols_to_replace] = unscaled_stocks_output[key][cols_to_replace]
+
+    merged_output[key] = df_new
+
+
+
+
 # -----------------------------------------------------------------------------------
 
 # EXTRACT DEATHS
@@ -495,6 +517,28 @@ with pd.ExcelWriter(results_folder / "full_summarised_deaths.xlsx") as writer:
     if not wrote_at_least_one_sheet:
         raise ValueError("No sheets were written: verify (draw, 'mean') columns exist in your dataframes.")
 
+
+
+# merge the deaths data into merged_ouput
+for var_name, df_var in dataframes.items():
+    # get the unique draw IDs from the first level of the column MultiIndex
+    draw_ids = df_var.columns.get_level_values('draw').unique()
+
+    for draw_id in draw_ids:
+        # select the (draw_id, 'mean') column as a Series
+        series = df_var[(draw_id, 'mean')]   # index = dates
+
+        # if merged_output keys are strings, uncomment the next line:
+        # draw_key = str(draw_id)
+        # otherwise, use draw_id directly:
+        target_df = merged_output[draw_id]
+
+        # write this variable into the target dataframe
+        target_df[var_name] = series
+
+
+
+
 # -----------------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------------
@@ -520,39 +564,89 @@ def get_num_dalys_by_year(_df):
     )
 
 
-num_dalys_by_year = summarize(extract_results(
-    results_folder,
-    module='tlo.methods.healthburden',
-    key='dalys_stacked',
-    custom_generate_series=get_num_dalys_by_year,
-    do_scaling=True
-),
-    only_mean=True)
+def find_difference_relative_to_comparison_series(
+    _ser: pd.Series,
+    comparison: str,
+    scaled: bool = False,
+    drop_comparison: bool = True,
+):
+    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+    within the runs (level 1), relative to where draw = `comparison`.
+    The comparison is `X - COMPARISON`."""
+    return _ser \
+        .unstack(level=0) \
+        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+        .drop(columns=([comparison] if drop_comparison else [])) \
+        .stack()
 
-aids_dalys = num_dalys_by_year[num_dalys_by_year.index.get_level_values(1) == 'AIDS']
-with pd.ExcelWriter(results_folder / 'full_dalys.xlsx', engine='openpyxl') as writer:
-    aids_dalys.to_excel(writer, sheet_name='DALYs')
 
-num_dalys_by_year_FULL = extract_results(
-    results_folder,
-    module='tlo.methods.healthburden',
-    key='dalys_stacked',
-    custom_generate_series=get_num_dalys_by_year,
-    do_scaling=True
+def find_difference_relative_to_comparison_series_dataframe(_df: pd.DataFrame, **kwargs):
+    """Apply `find_difference_relative_to_comparison_series` to each row in a dataframe"""
+    return pd.concat({
+        _idx: find_difference_relative_to_comparison_series(row, **kwargs)
+        for _idx, row in _df.iterrows()
+    }, axis=1).T
+
+
+
+daly_by_cause = compute_summary_statistics(extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=get_num_dalys_by_year,
+        do_scaling=True,
+    ),
+    central_measure='mean'
 )
-aids_dalys_FULL = num_dalys_by_year_FULL[num_dalys_by_year_FULL.index.get_level_values(1) == 'AIDS']
-with pd.ExcelWriter(results_folder / 'full_aids_dalys_FULL.xlsx', engine='openpyxl') as writer:
-    aids_dalys_FULL.to_excel(writer, sheet_name='DALYs')
 
-# need to get number DALYs averted compared to minimal scenario
-dalys_averted = pd.DataFrame()
 
-# Calculate differences and add to new DataFrame
-for col in aids_dalys.columns[1:]:  # Start from the second column
-    dalys_averted[col] = aids_dalys[1] - aids_dalys[col]
+# dalys_labelled_diff_from_statusquo = compute_summary_statistics(
+#     find_difference_relative_to_comparison_series_dataframe(
+#         daly_by_cause,
+#         comparison=1
+#     ),
+#     central_measure='mean'
+# )
 
-with pd.ExcelWriter(results_folder / 'full_aids_dalys_averted.xlsx', engine='openpyxl') as writer:
-    dalys_averted.to_excel(writer, sheet_name='DALYs Averted')
+# 1. Keep only stat = 'mean' columns, dropping the second level
+df_mean = daly_by_cause.xs('central', axis=1, level='stat', drop_level=True)
+
+# 2. Keep only rows where level 1 (cause) == 'AIDS'
+df_filtered = df_mean.xs('AIDS', axis=0, level=1, drop_level=False)
+df_filtered = df_filtered.droplevel(1)
+
+
+with pd.ExcelWriter(results_folder / 'aids_dalys.xlsx', engine='openpyxl') as writer:
+    df_filtered.to_excel(writer, sheet_name='DALYs')
+
+
+
+# add this to merged_outputs dict
+for draw_id in df_filtered.columns:
+    # adjust if merged_output keys are strings:
+    key = draw_id          # or: key = str(draw_id)
+
+    target_df = merged_output[key]
+
+    dalys_values = df_filtered[draw_id].to_numpy()
+
+    # optional safety check
+    if len(target_df) != len(dalys_values):
+        raise ValueError(
+            f"Length mismatch for draw {draw_id}: "
+            f"merged_output has {len(target_df)} rows, df_filtered has {len(dalys_values)}"
+        )
+
+    # assign by position, ignoring index labels
+    target_df["DALYs_Undiscounted"] = dalys_values
+
+    merged_output[key] = target_df
+
+
+
+
+
+
 
 
 # ---------------------------------------------------------------------------------------------
