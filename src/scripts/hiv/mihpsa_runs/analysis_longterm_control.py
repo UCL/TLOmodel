@@ -645,10 +645,6 @@ for draw_id in df_filtered.columns:
 
 
 
-
-
-
-
 # ---------------------------------------------------------------------------------------------
 
 
@@ -730,3 +726,39 @@ with pd.ExcelWriter(results_folder / "full_summarised_births.xlsx") as writer:
 
     if not wrote_at_least_one_sheet:
         raise ValueError("No sheets were written: verify (draw, 'mean') columns exist in your dataframes.")
+
+
+# merge the births data into merged_ouput
+for var_name, df_var in dataframes.items():
+    # collapse to draw-only columns if you like
+    mean_df = df_var.xs('mean', axis=1, level=1, drop_level=True)
+    # mean_df: index 0..40, columns = draw IDs 0..11
+
+    for draw_id in mean_df.columns:
+        s = mean_df[draw_id].to_numpy()          # length 41, no index
+        target_df = merged_output[draw_id]       # index = dates, length 41
+
+        # optional safety check
+        if len(target_df) != len(s):
+            raise ValueError(
+                f"Length mismatch for draw {draw_id}, variable {var_name}: "
+                f"{len(target_df)} vs {len(s)}"
+            )
+
+        # assign by position
+        target_df[var_name] = s
+
+        merged_output[draw_id] = target_df
+
+
+
+
+with pd.ExcelWriter(results_folder / "longterm_outputs_FULL.xlsx", engine='openpyxl') as writer:
+    # Iterate over the dictionary and write each DataFrame to a new sheet
+    for draw, df in merged_output.items():
+        df = df.T  # Switch rows and columns
+        # Writing each draw's DataFrame to a new sheet named after the draw
+        df.to_excel(writer, sheet_name=f'Draw_{draw}', index=True)
+
+
+
