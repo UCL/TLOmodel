@@ -10,7 +10,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, cardio_metabolic_disorders
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
-from tlo.methods.symptommanager import Symptom
+# from tlo.methods.symptommanager import Symptom
 from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
@@ -363,26 +363,28 @@ class DiabeticRetinopathy(Module):
         self.cons_item_codes['laser_pan_retinal_photocoagulation'] = {
             get_item_codes("Anesthetic Eye drops, 15ml"): 1,
             get_item_codes("Mydriatic/Dilation Drops, 15ml"): 1,
-            get_item_codes("Ophthalmic gel, 15ml"): 1,
-            get_item_codes('Gloves, exam, latex, disposable, pair'): 4
+            get_item_codes("Methylcellulose"): 1,
+            get_item_codes('Alcohol wipes for lens'): 4
         }
         self.cons_item_codes['anti_vegf_injection'] = {
             get_item_codes("Anesthetic Eye drops, 15ml"): 1,
             get_item_codes('Aflibercept, 2mg'): 3,
             get_item_codes("Antiseptic solution, 15ml"): 1,
-            get_item_codes("Sterile syringe"): 1
+            get_item_codes("Syringe"): 1,
+            get_item_codes("30G needle"): 1,
+            get_item_codes("Speculum"): 1,
+            get_item_codes("Sterile gloves and drapes"): 1
         }
 
         self.cons_item_codes['focal_laser'] = {
             get_item_codes("Anesthetic Eye drops, 15ml"): 1,
-            get_item_codes('Aflibercept, 2mg'): 3,
-            get_item_codes('Sterile drapes and supplies'): 3,
-            get_item_codes('Diagnostic dye'): 1
+            get_item_codes("Mydriatic/Dilation Drops, 15ml"): 1,
+            get_item_codes("Methylcellulose"): 1,
+            get_item_codes('Alcohol wipes for lens'): 4
         }
 
         self.cons_item_codes['eye_examination'] = {
-            get_item_codes("Mydriatic/Dilation Drops, 15ml"): 1,
-            get_item_codes('Fluorescin dye'): 1
+            get_item_codes("Mydriatic/Dilation Drops, 15ml"): 1
         }
 
     def do_recovery(self, idx: Union[list, pd.Index]):
@@ -578,8 +580,8 @@ class HSI_Dr_Eye_Examination(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'dr_date_treatment'] = self.sim.date
             df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
             # If consumables are available, add equipment used
-            self.add_equipment({'Silt lamp', 'Optical coherence tomography device',
-                                'Ophthalmoscope/Fundus camera', 'Amsler grid'})
+            self.add_equipment({'Visual acuity chart', 'Direct ophthalmoscope',
+                                'Fundus camera'})
 
             if person.dr_status == 'mild_or_moderate' or person.dmo_status == 'non_clinically_significant':
                 # schedule HSI_CardioMetabolicDisorders_StartWeightLossAndMedication
@@ -678,7 +680,8 @@ class HSI_Dr_Focal_Laser(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'dmo_on_treatment'] = True
             # df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
             # If consumables are available, add equipment used and run dx_test
-            self.add_equipment({'Ophthalmic Laser System', 'Laser Delivery System', 'Contact lenses'})
+            self.add_equipment({'Visual acuity chart', 'Opthalmic laser system',
+                                'Silt lamp laser delivery system', 'Laser macular contact lens'})
 
             # Schedule follow-up checkup after 3 months #todo add chance that person needs after 3 months
             follow_up_date = self.sim.date + pd.DateOffset(months=3)
@@ -707,7 +710,6 @@ class HSI_Dr_AntiVEGF(HSI_Event, IndividualScopeEventMixin):
                      data=f'This is HSI_Dr_AntiVEGF for person {person_id}')
         df = self.sim.population.props
         person = df.loc[person_id]
-        hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
@@ -722,8 +724,8 @@ class HSI_Dr_AntiVEGF(HSI_Event, IndividualScopeEventMixin):
         )
 
         if is_cons_available:
-            self.add_equipment({'Silt lamp', 'Optical coherence tomography device',
-                                'Ophthalmoscope/Fundus camera', 'Goniometre'})
+            self.add_equipment({'Visual acuity chart', 'Silt lamp', 'Optical coherence tomography device',
+                                'Fundus camera', 'Tonometre'})
 
             df.at[person_id, 'dmo_date_treatment'] = self.sim.date
             df.at[person_id, 'dmo_on_treatment'] = True
@@ -780,7 +782,9 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
         )
 
         if is_cons_available:
-            self.add_equipment({'Laser generator', 'Delivery system', 'Contact lenses', 'Patient head support'})
+            self.add_equipment({'Visual acuity chart', 'Opthalmic laser system',
+                                'Silt lamp laser delivery system',
+                                'Indirect laser delivery system', 'Laser wide-field contact lens'})
             if self.session == 1:
                 # schedule the second session in 1 week
                 hs.schedule_hsi_event(
