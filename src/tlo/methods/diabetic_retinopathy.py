@@ -10,7 +10,6 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, cardio_metabolic_disorders
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
-# from tlo.methods.symptommanager import Symptom
 from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
