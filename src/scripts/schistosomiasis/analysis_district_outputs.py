@@ -1223,6 +1223,119 @@ prev_mansoni_national_heavy_summary.to_excel(results_folder / (f'prev_mansoni_na
 
 
 
+####################################################################################
+# %%  PREVALENCE BY AGE AND DISTRICT
+####################################################################################
+
+
+def get_prevalence_infection_by_age_and_district(_df):
+    """
+    Return yearly prevalence of infection by district and age (in years)
+    as a pd.Series indexed by (year, district, age_years).
+    """
+
+    global inf
+
+    _df = _df.copy()
+    _df.set_index('date', inplace=True)
+
+    def parse_columns(cols):
+        tuples = []
+        for col in cols:
+            parts = col.split('|')
+            values = [p.split('=')[1] for p in parts]
+            tuples.append(tuple(values))
+        return tuples
+
+    _df.columns = pd.MultiIndex.from_tuples(
+        parse_columns(_df.columns),
+        names=['infection_status', 'district_of_residence', 'age_years']
+    )
+
+    # Do NOT sum over age; keep age_years in the column MultiIndex
+    df = _df
+
+    # Total population by district and age
+    total_by_district_age = df.groupby(
+        level=['district_of_residence', 'age_years'], axis=1
+    ).sum()
+
+    inf_categories_dict = {
+        'HML': ['Heavy-infection', 'Moderate-infection', 'Low-infection'],
+        'HM': ['Heavy-infection', 'Moderate-infection'],
+        'ML': ['Moderate-infection', 'Low-infection'],
+        'H': ['Heavy-infection'],
+        'M': ['Moderate-infection'],
+        'L': ['Low-infection'],
+    }
+
+    if inf not in inf_categories_dict:
+        raise ValueError(f"Unknown inf='{inf}' — must be one of {list(inf_categories_dict)}")
+
+    inf_categories = inf_categories_dict[inf]
+
+    # Infected by district and age
+    infected = df.loc[:, df.columns.get_level_values('infection_status').isin(inf_categories)]
+    infected_by_district_age = infected.groupby(
+        level=['district_of_residence', 'age_years'], axis=1
+    ).sum()
+
+    # Prevalence = infected / total
+    prevalence_df = infected_by_district_age.divide(total_by_district_age)
+
+    # Use year as index (as in your original function)
+    prevalence_df.index = prevalence_df.index.year
+
+    # Convert to Series indexed by (year, district, age_years)
+    prevalence_series = prevalence_df.stack(['district_of_residence', 'age_years'], dropna=False)
+    prevalence_series.index.names = ['year', 'district', 'age_years']
+
+    return prevalence_series
+
+
+
+inf = 'HML'  # set as before
+
+prev_haem_HML_by_age_district = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="infection_status_haematobium",
+    custom_generate_series=get_prevalence_infection_by_age_and_district,
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+
+
+prev_haem_HML_by_age_district.to_excel(
+    results_folder / f'prev_haem_HML_by_age_district {target_period()}.xlsx'
+)
+
+
+
+prev_mansoni_HML_by_age_district = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="infection_status_mansoni",
+    custom_generate_series=get_prevalence_infection_by_age_and_district,
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+
+
+prev_mansoni_HML_by_age_district.to_excel(
+    results_folder / f'prev_mansoni_HML_by_age_district {target_period()}.xlsx'
+)
+
+
+prev_haem_HML_by_age_district_summary = calc_mean_and_range_ci(prev_haem_HML_by_age_district)
+prev_haem_HML_by_age_district_summary.to_excel(results_folder / (f'prev_haem_HML_by_age_district_summary {target_period()}.xlsx'))
+
+
+prev_mansoni_HML_by_age_district_summary = calc_mean_and_range_ci(prev_mansoni_HML_by_age_district)
+prev_mansoni_HML_by_age_district_summary.to_excel(results_folder / (f'prev_mansoni_HML_by_age_district_summary {target_period()}.xlsx'))
+
+
+
+
+
 
 
 ####################################################################################
