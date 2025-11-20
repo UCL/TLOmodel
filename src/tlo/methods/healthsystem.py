@@ -1868,9 +1868,9 @@ class HealthSystem(Module):
             summary_by_fac_id['Minutes_Used'] / summary_by_fac_id['Total_Minutes_Per_Day']
         ).replace([np.inf, -np.inf, np.nan], 0.0)
 
-        summary_by_facID_and_officer = comparison.copy()
-        summary_by_facID_and_officer['Fraction_Time_Used'] = (
-            summary_by_facID_and_officer['Minutes_Used'] / summary_by_facID_and_officer['Total_Minutes_Per_Day']
+        #summary_by_facID_and_officer = comparison.copy()
+        fraction_time_used_by_facID_and_officer = (
+            comparison['Minutes_Used'] / comparison['Total_Minutes_Per_Day']
         ).replace([np.inf, -np.inf, np.nan], 0.0)
 
         # Compute Fraction of Time For Each Officer and level
@@ -1895,7 +1895,7 @@ class HealthSystem(Module):
 
         self._summary_counter.record_hs_status(
             fraction_time_used_across_all_facilities=fraction_time_used_overall,
-            fraction_time_used_by_facID_and_officer=summary_by_facID_and_officer["Fraction_Time_Used"].to_dict()
+            fraction_time_used_by_facID_and_officer=fraction_time_used_by_facID_and_officer.to_dict()
         )
 
     def remove_beddays_footprint(self, person_id):
@@ -2788,7 +2788,7 @@ class HealthSystemSummaryCounter:
         logger_summary.info(
             key="Capacity_By_FacID_and_Officer",
             description="The fraction of healthcare worker time that is used each day, averaged over this "
-                        "calendar year, for each officer type at each facility level.",
+                        "calendar year, for each officer type at each facility.",
             data=flatten_multi_index_series_into_dict_for_logging(
                 self.frac_time_used_by_facID_and_officer()),
         )
