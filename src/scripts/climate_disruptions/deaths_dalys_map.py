@@ -156,7 +156,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 collapse_columns=True,
             )[(draw,)]
 
-            summarize(
+            result_data_population = summarize(
                 extract_results(
                     results_folder,
                     module="tlo.methods.demography",
@@ -167,26 +167,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 only_mean=True,
                 collapse_columns=True,
             )[draw]
-            all_years_data_dalys_mean_per_1000[target_year] = result_data_dalys[
-                "mean"
-            ]  # /result_data_population['mean'] * 1000
-            all_years_data_deaths_mean_per_1000[target_year] = result_data_deaths[
-                "mean"
-            ]  # /result_data_population['mean'] * 1000
 
-            all_years_data_dalys_lower_per_1000[target_year] = result_data_dalys[
-                "lower"
-            ]  # /result_data_population['lower'] * 1000
-            all_years_data_deaths_lower_per_1000[target_year] = result_data_deaths[
-                "lower"
-            ]  # /result_data_population['lower'] * 1000
 
-            all_years_data_dalys_upper[target_year] = result_data_dalys[
-                "upper"
-            ]  # /result_data_population['upper'] * 1000
-            all_years_data_deaths_upper[target_year] = result_data_deaths[
-                "upper"
-            ]  # /result_data_population['upper'] * 1000
+            all_years_data_dalys_mean_per_1000[target_year] = result_data_dalys["mean"]/result_data_population['mean'] * 1000
+
+            all_years_data_deaths_mean_per_1000[target_year] = result_data_deaths["mean"]/result_data_population['mean'] * 1000
+
+            all_years_data_dalys_lower_per_1000[target_year] = result_data_dalys["lower"]/result_data_population['lower'] * 1000
+
+            all_years_data_deaths_lower_per_1000[target_year] = result_data_deaths["lower"]/result_data_population['lower'] * 1000
+
+            all_years_data_dalys_upper_per_1000[target_year] = result_data_dalys["upper"]/result_data_population['upper'] * 1000
+            all_years_data_deaths_upper_per_1000[target_year] = result_data_deaths["upper"]/result_data_population['upper'] * 1000
 
             all_years_data_dalys_mean[target_year] = result_data_dalys["mean"]
             all_years_data_deaths_mean[target_year] = result_data_deaths["mean"]
