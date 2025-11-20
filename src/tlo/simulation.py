@@ -9,7 +9,6 @@ import time
 from collections import OrderedDict
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
-from tlo.methods.rti import rti_scenario
 
 import numpy as np
 
@@ -350,7 +349,6 @@ class Simulation:
         :param to_date: Date to simulate up to but not including - must be before or
             equal to simulation end date specified in call to :py:meth:`initialise`.
         """
-        start_time =  time.process_time()
 
         if not self._initialised:
             msg = "Simulation must be initialised before calling run_simulation_to"
@@ -370,21 +368,6 @@ class Simulation:
         self.date = to_date
         if self.show_progress_bar:
             progress_bar.stop()
-        end_time = time.process_time()- start_time
-        if rti_scenario == "standard":
-            filename = 'duration_time_standardRTI_x250.txt'
-        elif rti_scenario == "emulator":
-            filename = 'duration_time_emulatedRTI_x250.txt'
-        elif rti_scenario == "noRTIpoll":
-            filename = 'duration_time_noRTIPoll_x250.txt'
-        else:
-            print("ERROR: I don't know pathname")
-            exit(-1)
-
-        with open(filename, 'a') as file:
-            # Append text to the file
-            file.write(f"Time taken, {end_time}\n")
-        print("Time taken", end_time)
 
     def simulate(self, *, end_date: Date) -> None:
         """Simulate until the given end date
