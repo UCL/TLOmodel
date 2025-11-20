@@ -77,14 +77,14 @@ class GenerateDataChains(BaseScenario):
     def modules(self):
         # MODIFY
         # Here instead of running full module
-        return [demography.Demography(resourcefilepath=self.resources),
-                enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-                healthburden.HealthBurden(resourcefilepath=self.resources),
-                symptommanager.SymptomManager(resourcefilepath=self.resources, spurious_symptoms=False),
-                rti.RTI(resourcefilepath=self.resources),
-                healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-                simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
-                healthsystem.HealthSystem(resourcefilepath=self.resources,
+        return [demography.Demography(), #resourcefilepath=self.resources),
+                enhanced_lifestyle.Lifestyle(),#resourcefilepath=self.resources),
+                healthburden.HealthBurden(),#resourcefilepath=self.resources),
+                symptommanager.SymptomManager(), #(resourcefilepath=self.resources, spurious_symptoms=False),
+                rti.RTI(), #resourcefilepath=self.resources),
+                healthseekingbehaviour.HealthSeekingBehaviour(), #(resourcefilepath=self.resources),
+                simplified_births.SimplifiedBirths(), #(resourcefilepath=self.resources),
+                healthsystem.HealthSystem(#resourcefilepath=self.resources,
                                           mode_appt_constraints=1,
                                           cons_availability='all')]
                                           
