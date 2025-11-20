@@ -773,6 +773,7 @@ for rates in alternative_discount_rates:
         os.makedirs(figurespath)
 
     print(f"NOW RUNNING SCENARIO {rates['discounting_scenario']}...")
+    plt.style.use('default') # reset plot format
 
     # Estimate standard input costs of scenario
     # -----------------------------------------------------------------------------------------------------------------------
@@ -1052,13 +1053,40 @@ for rates in alternative_discount_rates:
 
     # 3. Estimate and plot ICERs
     # ----------------------------------------------------
-    icers = incremental_scenario_cost.div(num_dalys_averted)  # Element-wise division
+    invalid = (num_dalys_averted < 0) & (incremental_scenario_cost > 0)
+    # TODO this is a quick and dirty workaround to  calculate the ICER for HIV without HSS which has a negative health impact for only 1 out of 5 runs
+    # Might need to fix the above
+    icers = (incremental_scenario_cost[~invalid] /
+             num_dalys_averted[~invalid]) # Element-wise division
 
     icers_summarized = summarize_cost_data(icers, _metric=chosen_metric)
-    dominated_scenarios = icers_summarized['median'] < 0
-    icers_summarized[dominated_scenarios] = np.nan  # The dominated scenarios are assigned as ICER of NaN
+    dominant_scenarios = (summarize_cost_data(incremental_scenario_cost,_metric=chosen_metric)['median'] < 0) & (summarize_cost_data(num_dalys_averted,_metric=chosen_metric)['median'] > 0)
+    dominated_scenarios =  (summarize_cost_data(incremental_scenario_cost,_metric=chosen_metric)['median'] > 0) & (summarize_cost_data(num_dalys_averted,_metric=chosen_metric)['median'] < 0)
+    icers_summarized[(dominated_scenarios|dominant_scenarios)] = np.nan  # The dominated and dominant scenarios are assigned as ICER of NaN
     icers_summarized_subset_for_figure = icers_summarized[
         icers_summarized.index.get_level_values('draw').isin(list(main_manuscript_scenarios.keys()))]
+
+    # Extract ICERs into a table for manuscript
+    icers_summarized_subset_for_table = icers_summarized_subset_for_figure.reset_index()
+    icers_summarized_subset_for_table['scenario'] = icers_summarized_subset_for_table['draw'].map(
+        all_manuscript_scenarios)
+    icers_summarized_subset_for_table['ICER (2023 USD)'] = icers_summarized_subset_for_table.apply(
+        lambda
+            row: "Dominated"  # if incremental health is negative, the scenario is dominated - reporting a negative ICER can be confusing
+        if row['median'] < 0 else (
+            f"${row['median']:.2f} [${row['lower']:.2f} - ${row['upper']:.2f}]"
+            if not any(pd.isna(row[['median', 'lower', 'upper']])) else "Dominant" # TODO add the Dominated case
+        ),
+        axis=1
+    )
+    reorder_rows_for_csv(icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']], desired_order).to_csv(figurespath / 'tabulated_icers.csv',
+                                                                              index=False)
+
+    # Create a lookup from draw to formatted ICER string
+    icer_lookup = dict(zip(
+        icers_summarized_subset_for_table['draw'],
+        icers_summarized_subset_for_table['ICER (2023 USD)']
+    ))
 
     # Plot ICERs
     annotations_icers = []
@@ -1086,28 +1114,6 @@ for rates in alternative_discount_rates:
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
     plt.close(fig)
-
-    # Extract ICERs into a table for manuscript
-    icers_summarized_subset_for_table = icers_summarized_subset_for_figure.reset_index()
-    icers_summarized_subset_for_table['scenario'] = icers_summarized_subset_for_table['draw'].map(
-        all_manuscript_scenarios)
-    icers_summarized_subset_for_table['ICER (2023 USD)'] = icers_summarized_subset_for_table.apply(
-        lambda
-            row: "Dominated"  # if incremental health is negative, the scenario is dominated - reporting a negative ICER can be confusing
-        if row['median'] < 0 else (
-            f"${row['median']:.2f} [${row['lower']:.2f} - ${row['upper']:.2f}]"
-            if not any(pd.isna(row[['median', 'lower', 'upper']])) else "Dominated"
-        ),
-        axis=1
-    )
-    reorder_rows_for_csv(icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']], desired_order).to_csv(figurespath / 'tabulated_icers.csv',
-                                                                              index=False)
-
-    # Create a lookup from draw to formatted ICER string
-    icer_lookup = dict(zip(
-        icers_summarized_subset_for_table['draw'],
-        icers_summarized_subset_for_table['ICER (2023 USD)']
-    ))
 
 
     # Plot incremental health and cost in a scatterplot
@@ -1175,7 +1181,7 @@ for rates in alternative_discount_rates:
         roi_at_0_implementation_cost_dict = convert_results_to_dict(roi_at_0_implementation_cost_summarized, _metric = chosen_metric)
 
         # ROI at implementation costs = 138% of input costs
-        implementation_cost_upper_limit = incremental_scenario_cost * above_service_level_cost_proportion
+        implementation_cost_upper_limit = np.maximum(incremental_scenario_cost * above_service_level_cost_proportion,0)
         implementation_cost_upper_limit_dict = convert_results_to_dict(
             summarize_cost_data(implementation_cost_upper_limit,
                                 _metric=chosen_metric))
