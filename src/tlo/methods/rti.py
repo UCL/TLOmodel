@@ -31,8 +31,6 @@ if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
-emulator_path = '/Users/mm2908/Desktop/EmuIBM/Save_With_WellPerforming/emulators/latest_CTGANSynthesizer_epochs500_dsF_batch_size500_num_k_folds10_Nsubsample10000_InAndOutC_test_k_folding_UniformEncoder_CTGANtest3_repeat_seed42_k_fold0.pkl'
-
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -1056,15 +1054,17 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    # Define the module's parameters
-    if self.parameters['use_RTI_emulator']:
-        PROPERTIES = {
-            'rt_disability': Property(Types.REAL, 'disability weight for current month'),
-            'rt_disability_permanent': Property(Types.REAL, 'disability weight incurred permanently'),
-            'rt_date_inj': Property(Types.DATE, 'date of latest injury'),
-            'rt_road_traffic_inc': Property(Types.BOOL, 'involved in a road traffic injury'),
-        }
-    else:
+    # Define the module's properties
+    # ISSUE: When using an emulator, want to limit properties to these four. However parameters have not yet been initialised at this point, so we don't know whether user intends to use emulator or not.
+    if True:
+    # This should be: if parameters['use_RTI_emulator']:
+    #    PROPERTIES = {
+    #        'rt_disability': Property(Types.REAL, 'disability weight for current month'),
+    #        'rt_disability_permanent': Property(Types.REAL, 'disability weight incurred permanently'),
+    #        'rt_date_inj': Property(Types.DATE, 'date of latest injury'),
+    #        'rt_road_traffic_inc': Property(Types.BOOL, 'involved in a road traffic injury'),
+    #    }
+    #else:
         PROPERTIES = {
             'rt_disability': Property(Types.REAL, 'disability weight for current month'),
             'rt_disability_permanent': Property(Types.REAL, 'disability weight incurred permanently'),
@@ -1481,6 +1481,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         # ensure that these injuries are the permanent injuries
         assert non_zero_total_daly_change.to_list() == permanent_injuries
         
+        # If using emulator for RTI module, load it here
         if self.parameters['use_RTI_emulator']:
             self.RTI_emulator = CTGANSynthesizer.load(filepath= resourcefilepath / 'ResourceFile_RTI/RTI_emulator.pkl')
 
@@ -1521,13 +1522,14 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         healthy."""
         df = population.props
         
-        if self.parameters['use_RTI_emulator']:
-            df.loc[df.is_alive, 'rt_disability'] = 0  # default: no DALY
-            df.loc[df.is_alive, 'rt_disability_permanent'] = 0  # default: no DALY
-            df.loc[df.is_alive, 'rt_road_traffic_inc'] = False
-            df.loc[df.is_alive, 'rt_date_inj'] = pd.NaT
+        if True:
+        #if self.parameters['use_RTI_emulator']:
+        #    df.loc[df.is_alive, 'rt_disability'] = 0  # default: no DALY
+        #    df.loc[df.is_alive, 'rt_disability_permanent'] = 0  # default: no DALY
+        #    df.loc[df.is_alive, 'rt_road_traffic_inc'] = False
+        #    df.loc[df.is_alive, 'rt_date_inj'] = pd.NaT
 
-        else:
+        # else:
             df.loc[df.is_alive, 'rt_disability'] = 0  # default: no DALY
             df.loc[df.is_alive, 'rt_disability_permanent'] = 0  # default: no DALY
             df.loc[df.is_alive, 'rt_road_traffic_inc'] = False
@@ -1587,6 +1589,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
         
         else:
+            print("======")
             # If all services are included, set everything to True
             if sim.modules['HealthSystem'].service_availability == ['*']:
                 for i in sim.modules['RTI'].Rti_Services:
@@ -2338,12 +2341,13 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         """
         df = self.sim.population.props
         
-        if self.parameters['use_RTI_emulator']:
-            df.at[child_id, 'rt_disability'] = 0  # default: no DALY
-            df.at[child_id, 'rt_disability_permanent'] = 0  # default: no DALY
-            df.at[child_id, 'rt_road_traffic_inc'] = False
-            df.at[child_id, 'rt_date_inj'] = pd.NaT
-        else:
+        if True:
+        #if self.parameters['use_RTI_emulator']:
+        #    df.at[child_id, 'rt_disability'] = 0  # default: no DALY
+        #    df.at[child_id, 'rt_disability_permanent'] = 0  # default: no DALY
+        #    df.at[child_id, 'rt_road_traffic_inc'] = False
+        #    df.at[child_id, 'rt_date_inj'] = pd.NaT
+        #else:
             df.at[child_id, 'rt_road_traffic_inc'] = False
             df.at[child_id, 'rt_inj_severity'] = "none"  # default: no one has been injured in a RTI
             for injury_index in RTI.INJURY_INDICES:
@@ -2905,7 +2909,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
         
-        if self.parameters['use_RTI_emulator']:
+        if self.sim.modules['RTI'].parameters['use_RTI_emulator']:
             rt_current_non_ind = df.index[df.is_alive & ~df.rt_road_traffic_inc]
         else:
             # Reset injury properties after death, get an index of people who have died due to RTI, all causes
@@ -2977,58 +2981,60 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Set the date that people were injured to now
         df.loc[selected_for_rti, 'rt_date_inj'] = now
         
-        if self.parameters['use_RTI_emulator']:
-            # This is where we want to replace normal course of events for RTI with emulator.
-
-            # First, sample outcomes for individuals which were selected_for_rti.
-            # For now, don't consider properties of individual when sampling outcome. All we care about is the number of samples.
-            condition_for_Rti = Condition(
-                num_rows=len(selected_for_rti),
-                column_values=self.sim.modules['RTI'].HS_conditions
-            )
-            NN_model = self.sim.modules['RTI'].RTI_emulator.sample_from_conditions(
-                conditions=[condition_for_Rti],
-            )
-
-            # HS USAGE
-            # Get the total number of different types of appts that will be accessed as a result of this polling event and add to rolling count.
-            for column in self.sim.modules['RTI'].HS_Use_Type:
-                self.sim.modules['RTI'].HS_Use_by_RTI[column] += NN_model[column].sum()  # Sum all values in the column
-     
-            # Change current properties of the individual and schedule resolution of event.
-            count = 0
-            for person_id in selected_for_rti:
-
-                # These properties are determined by the NN sampling
-                is_alive_after_RTI = NN_model.loc[count,'is_alive_after_RTI']
+        if self.sim.modules['RTI'].parameters['use_RTI_emulator']:
         
-                # Why does this require an int wrapper to work with DateOffset?
-                duration_days = int(NN_model.loc[count,'duration_days'])
-                
-                # Individual experiences an immediate death
-                if is_alive_after_RTI is False and duration_days == 0:
+            if len(selected_for_rti)>0:
+                # This is where we want to replace normal course of events for RTI with emulator.
 
-                    # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
-                    self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
-                                                            originating_module=self.module)
-                                                            
-                # Else individual doesn't immediately die, therefore schedule resolution
-                else:
-                    # Set disability to what will be the average over duration of the episodef
-                    df.loc[person_id,'rt_disability'] = NN_model.loc[count,'rt_disability_average']
+                # First, sample outcomes for individuals which were selected_for_rti.
+                # For now, don't consider properties of individual when sampling outcome. All we care about is the number of samples.
+                condition_for_Rti = Condition(
+                    num_rows=len(selected_for_rti),
+                    column_values=self.sim.modules['RTI'].HS_conditions
+                )
+                NN_model = self.sim.modules['RTI'].RTI_emulator.sample_from_conditions(
+                    conditions=[condition_for_Rti],
+                )
 
-                    # Make sure this person is not 'discoverable' by polling event next month.
-                    #df.loc[person_id,'rt_inj_severity'] = 'mild' # instead of "none", but actually we don't know how severe it is
+                # HS USAGE
+                # Get the total number of different types of appts that will be accessed as a result of this polling event and add to rolling count.
+                for column in self.sim.modules['RTI'].HS_Use_Type:
+                    self.sim.modules['RTI'].HS_Use_by_RTI[column] += NN_model[column].sum()  # Sum all values in the column
+         
+                # Change current properties of the individual and schedule resolution of event.
+                count = 0
+                for person_id in selected_for_rti:
+
+                    # These properties are determined by the NN sampling
+                    is_alive_after_RTI = NN_model.loc[count,'is_alive_after_RTI']
+            
+                    # Why does this require an int wrapper to work with DateOffset?
+                    duration_days = int(NN_model.loc[count,'duration_days'])
                     
-                    # Schedule resolution
-                    if is_alive_after_RTI:
-                        # Store permanent disability incurred now to be accessed when Recovery Event is invoked.
-                        df.loc[person_id,'rt_disability_permanent'] = NN_model.loc[count,'rt_disability_permanent']
-                        self.sim.schedule_event(RTI_NNResolution_Recovery_Event(self.module, person_id), df.loc[person_id, 'rt_date_inj']  + DateOffset(days=duration_days))
+                    # Individual experiences an immediate death
+                    if is_alive_after_RTI is False and duration_days == 0:
+
+                        # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
+                        self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
+                                                                originating_module=self.module)
+                                                                
+                    # Else individual doesn't immediately die, therefore schedule resolution
                     else:
-                        self.sim.schedule_event(RTI_NNResolution_Death_Event(self.module, person_id), df.loc[person_id, 'rt_date_inj']  + DateOffset(days=duration_days))
-                    
-                count += 1
+                        # Set disability to what will be the average over duration of the episodef
+                        df.loc[person_id,'rt_disability'] = NN_model.loc[count,'rt_disability_average']
+
+                        # Make sure this person is not 'discoverable' by polling event next month.
+                        #df.loc[person_id,'rt_inj_severity'] = 'mild' # instead of "none", but actually we don't know how severe it is
+                        
+                        # Schedule resolution
+                        if is_alive_after_RTI:
+                            # Store permanent disability incurred now to be accessed when Recovery Event is invoked.
+                            df.loc[person_id,'rt_disability_permanent'] = NN_model.loc[count,'rt_disability_permanent']
+                            self.sim.schedule_event(RTI_NNResolution_Recovery_Event(self.module, person_id), df.loc[person_id, 'rt_date_inj']  + DateOffset(days=duration_days))
+                        else:
+                            self.sim.schedule_event(RTI_NNResolution_Death_Event(self.module, person_id), df.loc[person_id, 'rt_date_inj']  + DateOffset(days=duration_days))
+                        
+                    count += 1
         
         else:
     

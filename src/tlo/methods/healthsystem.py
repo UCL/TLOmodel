@@ -2019,12 +2019,14 @@ class HealthSystem(Module):
             
         # Add emulated appts to real ones in HS summary counters before logging the latter.
         # Notes:
-        # The emulated count is defined in the disease module itself, rather than in the HS, but
+        # 1) The emulated count is defined in the disease module itself, rather than in the HS, but
         # is reset at the HS level after the emulated appts have been added to the total count.
         # I *think* this is correct, but we may wish to discuss further.
+        # 2) Currently this is RTI-specific: in the future, this would have to be generalised to
+        # any emulated module
         
         # To total appt count
-        if 'RTI' in self.sim.modules:
+        if 'RTI' in self.sim.modules and self.sim.modules['RTI'].parameters['use_RTI_emulator']:
             for key, value in self.sim.modules['RTI'].HS_Use_by_RTI.items():
                 # Extract the category part (ignoring the level)
                 _, category = key.split('_', 1)
@@ -2042,12 +2044,12 @@ class HealthSystem(Module):
             # Reset emulator counter.
             self.sim.modules['RTI'].HS_Use_by_RTI = Counter({col: 0 for col in self.sim.modules['RTI'].HS_Use_Type})
                 
-            self._summary_counter.write_to_log_and_reset_counters()
-            self.consumables.on_end_of_year()
-            self.bed_days.on_end_of_year()
-            if self._hsi_event_count_log_period == "year":
-                self._write_hsi_event_counts_to_log_and_reset()
-                self._write_never_ran_hsi_event_counts_to_log_and_reset()
+        self._summary_counter.write_to_log_and_reset_counters()
+        self.consumables.on_end_of_year()
+        self.bed_days.on_end_of_year()
+        if self._hsi_event_count_log_period == "year":
+            self._write_hsi_event_counts_to_log_and_reset()
+            self._write_never_ran_hsi_event_counts_to_log_and_reset()
 
 
         # Record equipment usage for the year, for each facility
