@@ -220,6 +220,27 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "min_yrs_between_screening_if_cin_treated": Parameter(
             Types.REAL, "minimum years between screening if individual has been treated for CIN previously"
+        ),
+        "death_timing_spread_days": Parameter(
+            Types.REAL, "Spread of death timing for stage 4 cancer"
+        ),
+        "initial_post_treatment_check_months": Parameter(
+            Types.REAL, "Months to first post-treatment check"
+        ),
+        "months_to_next_appt_treated_less_than_12_mo_ago": Parameter(
+            Types.REAL, "Follow-up interval for <12 months post-treatment"
+        ),
+        "months_to_next_appt_treated_12_to_36_mo_ago": Parameter(
+            Types.REAL, "Follow-up interval for 12-36 months post-treatment"
+        ),
+        "months_to_next_appt_treated_36_to_60_mo_ago": Parameter(
+            Types.REAL, "Follow-up interval for 36-60 months post-treatment"
+        ),
+        "palliative_care_interval_months": Parameter(
+            Types.REAL, "Interval between palliative care appointments"
+        ),
+        "main_polling_frequency_months": Parameter(
+            Types.REAL, "Main polling event frequency in months"
         )
     }
 
@@ -779,7 +800,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        p = module.parameters
+        super().__init__(module, frequency=DateOffset(months=p['main_polling_frequency_months']))
         # scheduled to run every 1 month: do not change as this is hard-wired into the values of all the parameters.
         self.selected_for_screening_last_month = {}  # Will store number screened for logging purposes.
 
@@ -914,7 +936,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         selected_to_die = stage4_idx[
             rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_cervical_cancer']]
 
-        days_spread = 90
+        days_spread = self.module.parameters['death_timing_spread_days']
         date_min = self.sim.date
         date_max = self.sim.date + pd.DateOffset(days=days_spread)
         for person_id in selected_to_die:
@@ -1379,13 +1401,13 @@ class HSI_CervicalCancer_Treatment_Start(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, 'ce_current_cc_diagnosed'] = False
                 df.at[person_id, 'ce_cured_date_cc'] = self.sim.date
 
-            # Schedule a post-treatment check for 12 months:
+            # Schedule a post-treatment check:
             hs.schedule_hsi_event(
                 hsi_event=HSI_CervicalCancer_Treatment_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(months=12),
+                topen=self.sim.date + DateOffset(months=p['initial_post_treatment_check_months']),
                 tclose=None,
                 priority=0
             )
@@ -1408,6 +1430,7 @@ class HSI_CervicalCancer_Treatment_PostTreatmentCheck(HSI_Event, IndividualScope
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if df.at[person_id, 'ce_hpv_cc_status'] == 'stage4':
             # If person has progressed to stage4, then start Palliative Care immediately:
@@ -1426,11 +1449,11 @@ class HSI_CervicalCancer_Treatment_PostTreatmentCheck(HSI_Event, IndividualScope
                 (self.sim.date - df.at[person_id, 'ce_date_treatment']) // pd.Timedelta(days=30))
 
             if months_since_treatment < 12:
-                months_to_next_appt = 3
+                months_to_next_appt = p['months_to_next_appt_treated_less_than_12_mo_ago']
             elif 12 <= months_since_treatment < 36:
-                months_to_next_appt = 6
+                months_to_next_appt = p['months_to_next_appt_treated_12_to_36_mo_ago']
             elif 36 <= months_since_treatment < 60:
-                months_to_next_appt = 12
+                months_to_next_appt = p['months_to_next_appt_treated_36_to_60_mo_ago']
             else:
                 return  # no more follow-up appointments
 
@@ -1464,6 +1487,7 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
         cons_item_codes = self.module.item_codes_cervical_can['palliation']
 
         # Check that the person is in stage4
@@ -1481,10 +1505,10 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             if pd.isnull(df.at[person_id, "ce_date_palliative_care"]):
                 df.at[person_id, "ce_date_palliative_care"] = self.sim.date
 
-            # Schedule another instance of the event for one month
+            # Schedule another instance of the event
             hs.schedule_hsi_event(
                 self,
-                topen=self.sim.date + DateOffset(months=1),
+                topen=self.sim.date + DateOffset(months=p['palliative_care_interval_months']),
                 tclose=None,
                 priority=0
             )
