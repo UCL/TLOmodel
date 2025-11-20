@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Optional
 import pandas as pd
 import tlo.population
 import numpy as np
-from tlo.util import FACTOR_POP_DICT
+from tlo.util import FACTOR_POP_DICT, df_to_eav
 
 try:
     import dill
@@ -290,6 +290,11 @@ class Simulation:
         # At the start of the simulation + when a new individual is born, we therefore want to store all of their properties at the start.
         if self.generate_event_chains:
 
+            print(len(self.population.props), n)
+            # EAV structure to capture status of individuals at the start of the simulation
+            eav = df_to_eav(self.population.props, self.date, 'StartOfSimulation')
+            
+            """
             pop_dict = self.population.props.to_dict(orient='index')
 
             for key in pop_dict.keys():
@@ -301,6 +306,10 @@ class Simulation:
             
             logger.info(key='event_chains',
                                data = pop_dict_full,
+                               description='Links forming chains of events for simulated individuals')
+            """
+            logger.info(key='event_chains',
+                               data = eav.to_dict(),
                                description='Links forming chains of events for simulated individuals')
                                
         end = time.time()

@@ -94,6 +94,29 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
     return final_states
 
 
+def df_to_eav(df, date, event_name):
+    """Function to convert dataframe into EAV"""
+    eav = df.stack().reset_index()
+    eav.columns = ['E', 'A', 'V']
+    eav['Date'] = date
+    eav['NameEvent'] = event_name
+    eav = eav[["E", "Date", "NameEvent", "A", "V"]]
+
+    return eav
+    
+    
+def convert_dict_into_eav(link_info, target, date, event_name):
+    "Function to convert link info in the form of dictionary into an EAV"
+    eav = pd.DataFrame(list(link_info.items()), columns=['A', 'V'])
+    eav.columns = ['A', 'V']
+    eav['E'] = target
+    eav['Date'] = date
+    eav['NameEvent'] = event_name
+    eav = eav[['E', 'Date', 'NameEvent', 'A', 'V']]
+
+    return eav
+    
+
 def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
     """ Helper function to randomly sample an outcome for each individual in a population from a set of probabilities
     that are specific to each individual.

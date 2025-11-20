@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 import pandas as pd
 
-from tlo.util import FACTOR_POP_DICT
+from tlo.util import FACTOR_POP_DICT, convert_dict_into_eav
 
 import copy
 
@@ -233,12 +233,12 @@ class Event:
                 mni_instances_after = True
             
             # Create and store event for this individual, regardless of whether any property change occurred
-            link_info = {
-                #'person_ID' : self.target,
-                'person_ID' : self.target,
-                'event' : type(self).__name__,
-                'event_date' : self.sim.date,
-            }
+            link_info = {}
+            # #'person_ID' : self.target,
+            #    'person_ID' : self.target,
+            #    'event' : type(self).__name__,
+            #    'event_date' : self.sim.date,
+            #}
             
             # Store (if any) property changes as a result of the event for this individual
             for key in row_before.index:
@@ -265,6 +265,9 @@ class Event:
                         link_info[key] = mni[self.target][key]
             # Else, no need to do anything
                     
+            eav = convert_dict_into_eav(link_info, self.target, self.sim.date, type(self).__name__)
+            print(eav)
+            exit(-1)
             # Add individual to the chain links
             chain_links[self.target] = str(link_info)
             
