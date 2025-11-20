@@ -31,21 +31,7 @@ if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
-include_conditionality = True
 emulator_path = '/Users/mm2908/Desktop/EmuIBM/Save_With_WellPerforming/emulators/latest_CTGANSynthesizer_epochs500_dsF_batch_size500_num_k_folds10_Nsubsample10000_InAndOutC_test_k_folding_UniformEncoder_CTGANtest3_repeat_seed42_k_fold0.pkl'
-
-rti_scenario = "standard" #standard # "emulator", "noRTIpoll"
-if rti_scenario == "emulator":
-    use_emulator = True
-elif rti_scenario == "standard" or rti_scenario == "noRTIpoll":
-    use_emulator = False
-else:
-    print("ERROR, I don't have scenario")
-    exit(-1)
-    
-#emulator_path = '/Users/mm2908/Desktop/EmuIBM/emulators/latest_synthesizer.pkl'
-#emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator_VAE.pkl'
-#emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/new_synthesizer.pkl'
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -86,24 +72,13 @@ class RTI(Module, GenericFirstAppointmentsMixin):
 
     # Initialize the counter with all items set to 0
     HS_Use_by_RTI = Counter({col: 0 for col in HS_Use_Type})
-    
-    #RTI_emulator = TVAESynthesizer.load(
-    #    filepath=emulator_path
-    #)
-    
-    #RTI_emulator = GaussianCopulaSynthesizer.load(
-    #    filepath=emulator_path
-    #)
-    
-    RTI_emulator = CTGANSynthesizer.load(filepath=emulator_path)
-    
-    if include_conditionality:
-        Rti_Services = ['Rti_AcutePainManagement','Rti_BurnManagement','Rti_FractureCast','Rti_Imaging','Rti_MajorSurgeries','Rti_MedicalIntervention','Rti_MinorSurgeries','Rti_OpenFractureTreatment','Rti_ShockTreatment','Rti_Suture','Rti_TetanusVaccine']
+ 
+    Rti_Services = ['Rti_AcutePainManagement','Rti_BurnManagement','Rti_FractureCast','Rti_Imaging','Rti_MajorSurgeries','Rti_MedicalIntervention','Rti_MinorSurgeries','Rti_OpenFractureTreatment','Rti_ShockTreatment','Rti_Suture','Rti_TetanusVaccine']
 
-        HS_conditions = {}
+    HS_conditions = {}
 
+    RTI_emulator = None
     # ================================================================================
-
 
 
     INJURY_INDICES = range(1, 9)
@@ -1074,12 +1049,15 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         'maximum_number_of_times_HSI_events_should_run': Parameter(
             Types.INT,
             "limit on the number of times an HSI event can run"
+        ),
+        'use_RTI_emulator': Parameter(
+            Types.BOOL,
+            "Replace module with RTI emulator, valid if running in mode 1 with actual consumable availability"
         )
-
     }
 
     # Define the module's parameters
-    if use_emulator:
+    if self.parameters['use_RTI_emulator']:
         PROPERTIES = {
             'rt_disability': Property(Types.REAL, 'disability weight for current month'),
             'rt_disability_permanent': Property(Types.REAL, 'disability weight incurred permanently'),
@@ -1502,6 +1480,9 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         non_zero_total_daly_change = sum_check_daly_change_df.where(sum_check_daly_change_df > 0).dropna().index
         # ensure that these injuries are the permanent injuries
         assert non_zero_total_daly_change.to_list() == permanent_injuries
+        
+        if self.parameters['use_RTI_emulator']:
+            self.RTI_emulator = CTGANSynthesizer.load(filepath= resourcefilepath / 'ResourceFile_RTI/RTI_emulator.pkl')
 
     def rti_injury_diagnosis(self, person_id, the_appt_footprint):
         """
@@ -1540,7 +1521,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         healthy."""
         df = population.props
         
-        if use_emulator:
+        if self.parameters['use_RTI_emulator']:
             df.loc[df.is_alive, 'rt_disability'] = 0  # default: no DALY
             df.loc[df.is_alive, 'rt_disability_permanent'] = 0  # default: no DALY
             df.loc[df.is_alive, 'rt_road_traffic_inc'] = False
@@ -1595,29 +1576,27 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         haven't then it asks whether they should die away from their injuries
         """
         # Begin modelling road traffic injuries
-        if rti_scenario == "standard" or rti_scenario == "emulator":
-            sim.schedule_event(RTIPollingEvent(self), sim.date + DateOffset(months=0))
-        
-            if use_emulator is False:
-                # Begin checking whether the persons injuries are healed
-                sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
-                # Begin checking whether those with untreated injuries die
-                sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date + DateOffset(months=0))
-            
+        sim.schedule_event(RTIPollingEvent(self), sim.date + DateOffset(months=0))
+    
+        if self.parameters['use_RTI_emulator'] is False:
+            # Begin checking whether the persons injuries are healed
+            sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
+            # Begin checking whether those with untreated injuries die
+            sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date + DateOffset(months=0))
             # Begin logging the RTI events
-           # sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
-            
-            if use_emulator and include_conditionality:
-                # If all services are included, set everything to True
-                if sim.modules['HealthSystem'].service_availability == ['*']:
-                    for i in sim.modules['RTI'].Rti_Services:
+            sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
+        
+        else:
+            # If all services are included, set everything to True
+            if sim.modules['HealthSystem'].service_availability == ['*']:
+                for i in sim.modules['RTI'].Rti_Services:
+                    sim.modules['RTI'].HS_conditions[i] = True
+            else:
+                for i in sim.modules['RTI'].Rti_Services:
+                    if (i + '_*') in sim.modules['HealthSystem'].service_availability:
                         sim.modules['RTI'].HS_conditions[i] = True
-                else:
-                    for i in sim.modules['RTI'].Rti_Services:
-                        if (i + '_*') in sim.modules['HealthSystem'].service_availability:
-                            sim.modules['RTI'].HS_conditions[i] = True
-                        else:
-                            sim.modules['RTI'].HS_conditions[i] = False
+                    else:
+                        sim.modules['RTI'].HS_conditions[i] = False
 
         # Look-up consumable item codes
         self.look_up_consumable_item_codes()
@@ -2359,7 +2338,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         """
         df = self.sim.population.props
         
-        if use_emulator:
+        if self.parameters['use_RTI_emulator']:
             df.at[child_id, 'rt_disability'] = 0  # default: no DALY
             df.at[child_id, 'rt_disability_permanent'] = 0  # default: no DALY
             df.at[child_id, 'rt_road_traffic_inc'] = False
@@ -2926,7 +2905,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
         
-        if use_emulator:
+        if self.parameters['use_RTI_emulator']:
             rt_current_non_ind = df.index[df.is_alive & ~df.rt_road_traffic_inc]
         else:
             # Reset injury properties after death, get an index of people who have died due to RTI, all causes
@@ -2997,24 +2976,20 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[selected_for_rti, 'rt_road_traffic_inc'] = True
         # Set the date that people were injured to now
         df.loc[selected_for_rti, 'rt_date_inj'] = now
-
-
         
-        if use_emulator:
+        if self.parameters['use_RTI_emulator']:
             # This is where we want to replace normal course of events for RTI with emulator.
 
             # First, sample outcomes for individuals which were selected_for_rti.
             # For now, don't consider properties of individual when sampling outcome. All we care about is the number of samples.
-            if include_conditionality:
-                condition_for_Rti = Condition(
-                    num_rows=len(selected_for_rti),
-                    column_values=self.sim.modules['RTI'].HS_conditions
-                )
-                NN_model = self.sim.modules['RTI'].RTI_emulator.sample_from_conditions(
-                    conditions=[condition_for_Rti],
-                )
-            else:
-                NN_model = self.sim.modules['RTI'].RTI_emulator.sample(len(selected_for_rti))
+            condition_for_Rti = Condition(
+                num_rows=len(selected_for_rti),
+                column_values=self.sim.modules['RTI'].HS_conditions
+            )
+            NN_model = self.sim.modules['RTI'].RTI_emulator.sample_from_conditions(
+                conditions=[condition_for_Rti],
+            )
+
             # HS USAGE
             # Get the total number of different types of appts that will be accessed as a result of this polling event and add to rolling count.
             for column in self.sim.modules['RTI'].HS_Use_Type:
