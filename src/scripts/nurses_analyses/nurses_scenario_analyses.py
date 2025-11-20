@@ -61,7 +61,7 @@ class StaffingScenario(BaseScenario):
                         {
                             "HealthSystem": {
                                 "ResourceFile_HR_scaling_by_level_and_officer_type": "default",
-                                "year_mode_switch": 2025,
+                                "year_mode_switch": 2020,
                                 "mode_appt_constraints_postSwitch": 2,
                                 "scale_to_effective_capabilities": True,
                                 "policy_name": "Naive",
@@ -80,7 +80,7 @@ class StaffingScenario(BaseScenario):
                         {
                             "HealthSystem": {
                                 "ResourceFile_HR_scaling_by_level_and_officer_type": "default",
-                                "year_mode_switch": 2025,
+                                "year_mode_switch": 2020,
                                 "mode_appt_constraints_postSwitch": 2,
                                 "scale_to_effective_capabilities": True,
                                 "policy_name": "Naive",
@@ -98,8 +98,8 @@ class StaffingScenario(BaseScenario):
                         get_parameters_for_status_quo(),
                         {
                             "HealthSystem": {
-                                "yearly_HR_scaling_mode": "GDP_growth_fHE_case1",
-                                "year_mode_switch": 2019,
+                                "yearly_HR_scaling_mode": "historical_scaling",
+                                "year_mode_switch": 2020,
                                 "mode_appt_constraints_postSwitch": 2,
                                 "scale_to_effective_capabilities": True,
                                 "policy_name": "Naive",
@@ -117,8 +117,8 @@ class StaffingScenario(BaseScenario):
                         get_parameters_for_status_quo(),
                         {
                             "HealthSystem": {
-                                "yearly_HR_scaling_mode": "GDP_growth_fHE_case3",
-                                "year_mode_switch": 2019,
+                                "yearly_HR_scaling_mode": "historical_scaling",
+                                "year_mode_switch": 2020,
                                 "mode_appt_constraints_postSwitch": 2,
                                 "scale_to_effective_capabilities": True,
                                 "policy_name": "Naive",
@@ -137,8 +137,8 @@ class StaffingScenario(BaseScenario):
                 get_parameters_for_status_quo(),
                 {
                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "GDP_growth_FL_case2_const_tot_i",
-                        "year_mode_switch": 2019,
+                        "yearly_HR_scaling_mode": "historical_scaling",
+                        "year_mode_switch": 2020,
                         "mode_appt_constraints_postSwitch": 2,
                         "scale_to_effective_capabilities": True,
                         "policy_name": "Naive",
