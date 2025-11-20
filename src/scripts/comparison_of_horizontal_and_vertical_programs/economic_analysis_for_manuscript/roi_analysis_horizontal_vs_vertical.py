@@ -1643,55 +1643,63 @@ path_for_cons_resourcefiles = resourcefilepath / "healthsystem/consumables"
 full_df_with_scenario = pd.read_csv(path_for_cons_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
 
 # Import item_category
-program_item_mapping = pd.read_csv(path_for_cons_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv')[['Item_Code', 'item_category']]
-program_item_mapping = program_item_mapping.rename(columns ={'Item_Code': 'item_code'})[program_item_mapping.item_category.notna()]
+program_item_mapping = pd.read_csv(path_for_cons_resourcefiles / 'ResourceFile_Consumables_Item_Designations.csv')[
+    ['Item_Code', 'item_category']]
+program_item_mapping = program_item_mapping.rename(columns={'Item_Code': 'item_code'})[
+    program_item_mapping.item_category.notna()]
 
 # Get TLO Facility_ID for each district and facility level
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
 districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
 fac_levels = {'0', '1a', '1b', '2', '3', '4'}
 
-df_for_plots = full_df_with_scenario.merge(mfl[['Facility_ID', 'Facility_Level']], on = 'Facility_ID', how = 'left', validate = "m:1")
-df_for_plots = df_for_plots.merge(program_item_mapping, on = 'item_code', how = 'left', validate = "m:1")
+df_for_plots = full_df_with_scenario.merge(mfl[['Facility_ID', 'Facility_Level']], on='Facility_ID', how='left',
+                                           validate="m:1")
+df_for_plots = df_for_plots.merge(program_item_mapping, on='item_code', how='left', validate="m:1")
 
 # Choose scenarios to plot
-scenario_list = [6,10,11]
+scenario_list = [6, 10, 11]
 chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
-                                             scenario_list]
+                                                    scenario_list]
 scenario_names_dict = {'available_prop': 'Actual',
-                'available_prop_scenario6': '75th percentile\n  facility',
-                'available_prop_scenario10': 'HIV supply \n chain', 'available_prop_scenario11': 'EPI supply \n chain'}
+                       'available_prop_scenario6': 'Consumables increased\n to 75th percentile',
+                       'available_prop_scenario10': 'Consumables increased\n to HIV level',
+                       'available_prop_scenario11': 'Consumables increased\n to EPI level'}
 # recreate the chosen columns list based on the mapping above
 chosen_availability_columns = [scenario_names_dict[col] for col in chosen_availability_columns]
-df_for_plots = df_for_plots.rename(columns = scenario_names_dict)
+df_for_plots = df_for_plots.rename(columns=scenario_names_dict)
 
 for level in ['1a', '1b']:
     # Generate a heatmap
     # Pivot the DataFrame
-    aggregated_df = df_for_plots.groupby(['item_category', 'Facility_Level'])[chosen_availability_columns].mean().reset_index()
+    aggregated_df = df_for_plots.groupby(['item_category', 'Facility_Level'])[
+        chosen_availability_columns].mean().reset_index()
     aggregated_df = aggregated_df[aggregated_df.Facility_Level.isin([level])]
-    heatmap_data = aggregated_df.set_index('item_category').drop(columns = 'Facility_Level')
+    heatmap_data = aggregated_df.set_index('item_category').drop(columns='Facility_Level')
 
     # Calculate the aggregate row and column
-    aggregate_col= df_for_plots.loc[df_for_plots.Facility_Level.isin([level]), chosen_availability_columns].mean()
-    #overall_aggregate = aggregate_col.mean()
+    aggregate_col = df_for_plots.loc[df_for_plots.Facility_Level.isin([level]), chosen_availability_columns].mean()
+    # overall_aggregate = aggregate_col.mean()
 
     # Add aggregate row and column
-    #heatmap_data['Average'] = aggregate_row
-    #aggregate_col['Average'] = overall_aggregate
+    # heatmap_data['Average'] = aggregate_row
+    # aggregate_col['Average'] = overall_aggregate
     heatmap_data.loc['Average'] = aggregate_col
 
     # Generate the heatmap
     sns.set(font_scale=0.8)
     plt.figure(figsize=(10, 8))
-    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn',
+                cbar_kws={'label': 'Proportion of days on which consumable is available'}, vmin=0, vmax=1,
+                annot_kws={"size": 12})
 
     # Customize the plot
     plt.title(f'Facility Level {level}')
     plt.xlabel('Scenarios')
     plt.ylabel('Disease/Public health \n program')
-    plt.xticks(rotation=90, fontsize=8)
-    plt.yticks(rotation=0, fontsize=8)
+    plt.xticks(rotation=0, fontsize=10)
+    plt.yticks(rotation=0, fontsize=10)
 
-    plt.savefig(figurespath /f'consumable_availability_heatmap_{level}.png', dpi=300, bbox_inches='tight')
+    plt.savefig(figurespath / f'consumable_availability_heatmap_{level}.png', dpi=500, bbox_inches='tight')
     plt.close()
+
