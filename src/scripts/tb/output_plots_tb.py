@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from tlo.analysis.utils import compare_number_of_deaths
+from tlo.util import read_csv_files
 
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -48,9 +49,9 @@ end_date = 2020
 # load all the data for calibration
 
 # TB WHO data
-xls_tb = pd.ExcelFile(resourcefilepath / "ResourceFile_TB.xlsx")
+xls_tb = read_csv_files(resourcefilepath / "ResourceFile_TB", files=None)
 
-data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2020")
+data_tb_who = xls_tb["WHO_activeTB2020"]
 data_tb_who = data_tb_who.loc[
     (data_tb_who.year >= 2010)
 ]  # include only years post-2010
@@ -58,7 +59,7 @@ data_tb_who.index = pd.to_datetime(data_tb_who["year"], format="%Y")
 data_tb_who = data_tb_who.drop(columns=["year"])
 
 # TB latent data (Houben & Dodd 2016)
-data_tb_latent = pd.read_excel(xls_tb, sheet_name="latent_TB2014_summary")
+data_tb_latent = xls_tb["latent_TB2014_summary"]
 data_tb_latent_all_ages = data_tb_latent.loc[data_tb_latent.Age_group == "0_80"]
 data_tb_latent_estimate = data_tb_latent_all_ages.proportion_latent_TB.values[0]
 data_tb_latent_lower = abs(
@@ -72,37 +73,37 @@ data_tb_latent_upper = abs(
 data_tb_latent_yerr = [data_tb_latent_lower, data_tb_latent_upper]
 
 # TB treatment coverage
-data_tb_ntp = pd.read_excel(xls_tb, sheet_name="NTP2019")
+data_tb_ntp = xls_tb["NTP2019"]
 data_tb_ntp.index = pd.to_datetime(data_tb_ntp["year"], format="%Y")
 data_tb_ntp = data_tb_ntp.drop(columns=["year"])
 
 # HIV resourcefile
-xls = pd.ExcelFile(resourcefilepath / "ResourceFile_HIV.xlsx")
+xls = read_csv_files(resourcefilepath / "ResourceFile_HIV", files=None)
 
 # HIV UNAIDS data
-data_hiv_unaids = pd.read_excel(xls, sheet_name="unaids_infections_art2021")
+data_hiv_unaids = xls["unaids_infections_art2021"]
 data_hiv_unaids.index = pd.to_datetime(data_hiv_unaids["year"], format="%Y")
 data_hiv_unaids = data_hiv_unaids.drop(columns=["year"])
 
 # HIV UNAIDS data
-data_hiv_unaids_deaths = pd.read_excel(xls, sheet_name="unaids_mortality_dalys2021")
+data_hiv_unaids_deaths = xls["unaids_mortality_dalys2021"]
 data_hiv_unaids_deaths.index = pd.to_datetime(
     data_hiv_unaids_deaths["year"], format="%Y"
 )
 data_hiv_unaids_deaths = data_hiv_unaids_deaths.drop(columns=["year"])
 
 # AIDSinfo (UNAIDS)
-data_hiv_aidsinfo = pd.read_excel(xls, sheet_name="children0_14_prev_AIDSinfo")
+data_hiv_aidsinfo = xls["children0_14_prev_AIDSinfo"]
 data_hiv_aidsinfo.index = pd.to_datetime(data_hiv_aidsinfo["year"], format="%Y")
 data_hiv_aidsinfo = data_hiv_aidsinfo.drop(columns=["year"])
 
 # unaids program performance
-data_hiv_program = pd.read_excel(xls, sheet_name="unaids_program_perf")
+data_hiv_program = xls["unaids_program_perf"]
 data_hiv_program.index = pd.to_datetime(data_hiv_program["year"], format="%Y")
 data_hiv_program = data_hiv_program.drop(columns=["year"])
 
 # MPHIA HIV data - age-structured
-data_hiv_mphia_inc = pd.read_excel(xls, sheet_name="MPHIA_incidence2015")
+data_hiv_mphia_inc = xls["MPHIA_incidence2015"]
 data_hiv_mphia_inc_estimate = data_hiv_mphia_inc.loc[
     (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence"
 ].values[0]
@@ -117,19 +118,19 @@ data_hiv_mphia_inc_yerr = [
     abs(data_hiv_mphia_inc_upper - data_hiv_mphia_inc_estimate),
 ]
 
-data_hiv_mphia_prev = pd.read_excel(xls, sheet_name="MPHIA_prevalence_art2015")
+data_hiv_mphia_prev = xls["MPHIA_prevalence_art2015"]
 
 # DHS HIV data
-data_hiv_dhs_prev = pd.read_excel(xls, sheet_name="DHS_prevalence")
+data_hiv_dhs_prev = xls["DHS_prevalence"]
 
 # MoH HIV testing data
-data_hiv_moh_tests = pd.read_excel(xls, sheet_name="MoH_numbers_tests")
+data_hiv_moh_tests = xls["MoH_numbers_tests"]
 data_hiv_moh_tests.index = pd.to_datetime(data_hiv_moh_tests["year"], format="%Y")
 data_hiv_moh_tests = data_hiv_moh_tests.drop(columns=["year"])
 
 # MoH HIV ART data
 # todo this is quarterly
-data_hiv_moh_art = pd.read_excel(xls, sheet_name="MoH_number_art")
+data_hiv_moh_art = xls["MoH_number_art"]
 
 
 # ---------------------------------------------------------------------- #

@@ -1,5 +1,6 @@
 import warnings
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -8,7 +9,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.hsi_event import HSI_Event
-from tlo.util import random_date, sample_outcome, transition_states
+from tlo.util import random_date, read_csv_files, sample_outcome, transition_states
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -135,9 +136,8 @@ class Contraception(Module):
                                             )
     }
 
-    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, run_update_contraceptive=True):
+    def __init__(self, name=None, use_healthsystem=True, run_update_contraceptive=True):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
         # if False: initiation and switching do not occur through an HSI
@@ -160,11 +160,12 @@ class Contraception(Module):
         self._women_ids_sterilized_below30 = set()  # The ids of women who had female sterilization initiated when they
         #                                             were less than 30 years old.
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
         (CSV ResourceFile).
         """
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception.xlsx', sheet_name=None)
+        workbook = read_csv_files(resourcefilepath / 'contraception' / 'ResourceFile_Contraception',
+                                  files=None)
 
         # Import selected sheets from the workbook as the parameters
         sheet_names = [
@@ -188,12 +189,12 @@ class Contraception(Module):
 
         # Declare values for other parameters
         self.load_parameters_from_dataframe(pd.read_csv(
-            Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_ContraceptionParams.csv'
+            resourcefilepath / 'contraception' / 'ResourceFile_ContraceptionParams.csv'
         ))
 
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
-            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+            pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
         # Import 2010 pop and count numbs of women 15-49 & 30-49
         pop_2010 = self.sim.modules["Demography"].parameters["pop_2010"]
@@ -1170,18 +1171,20 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                 stacklevel=3,
             )
             return self.make_appt_footprint({})
+            warnings.warn(UserWarning("Assumed empty footprint for Contraception Routine appt because couldn't find"
+                                      "actual case."))
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
 
-        person = self.sim.population.props.loc[person_id]
-        current_method = person.co_contraception
-
-        if not (person.is_alive and not person.is_pregnant):
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive'] or df.at[person_id, 'is_pregnant']:
             return
 
+        current_method = df.at[person_id, 'co_contraception']
+
         # Record the date that Family Planning Appointment happened for this person
-        self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
+        df.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
         # Measure weight, height and BP even if contraception not administrated
         self.add_equipment({
@@ -1349,11 +1352,11 @@ class SimplifiedPregnancyAndLabour(Module):
     def __init__(self, *args):
         super().__init__(name='Labour')
 
-    def read_parameters(self, *args):
-        parameter_dataframe = pd.read_excel(self.sim.modules['Contraception'].resourcefilepath /
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+        parameter_dataframe = read_csv_files(resourcefilepath /
                                             'contraception' /
-                                            'ResourceFile_Contraception.xlsx',
-                                            sheet_name='simplified_labour_parameters')
+                                            'ResourceFile_Contraception',
+                                            files='simplified_labour_parameters')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):

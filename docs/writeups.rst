@@ -46,7 +46,7 @@ Conditions of Early Childhood
 
 * **Diarrhoea**: Childhood diarrhoea caused by virus or bacteria resulting in dehydration, and the treatments associated. :download:`.docx <./write-ups/Diarrhoea.docx>`
 
-* **Childhood Undernutrition**: Acute and chronic undernutrition and its effects of Wasting and Stunting. :download:`.docx <./write-ups/ChildhoodUndernutrition.docx>`
+* **Childhood Undernutrition**: Acute and chronic undernutrition and its effects of Wasting :download:`.docx <./write-ups/Wasting.doc>` and Stunting :download:`.docx <./write-ups/Stunting.docx>`.
 
 
 Communicable Diseases
@@ -68,6 +68,8 @@ Non-Communicable Conditions
     * **Bladder Cancer**: Cancer of the bladder and its treatment. :download:`.docx <./write-ups/BladderCancer.docx>`
 
     * **Breast Cancer**: Cancer of the breast and its treatment. :download:`.docx <./write-ups/BreastCancer.docx>`
+
+    * **Cervical Cancer**: Cancer of the breast and its treatment. :download:`.docx <./write-ups/CervicalCancer.docx>`
 
     * **Oesophageal Cancer**: Cancer of the oesophagus and its treatment. :download:`.docx <./write-ups/OesophagealCancer.docx>`
 
