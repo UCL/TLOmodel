@@ -61,9 +61,7 @@ colorama==0.4.6
 contourpy==1.1.1
     # via matplotlib
 coverage[toml]==7.3.1
-    # via
-    #   coverage
-    #   pytest-cov
+    # via pytest-cov
 cryptography==41.0.3
     # via
     #   adal
@@ -147,7 +145,7 @@ pandas==2.0.3
     # via tlo (pyproject.toml)
 pillow==10.0.1
     # via matplotlib
-pip-tools==7.3.0
+pip-tools==7.5.2
     # via tlo (pyproject.toml)
 platformdirs==3.10.0
     # via
@@ -170,7 +168,6 @@ pyjwt[crypto]==2.8.0
     # via
     #   adal
     #   msal
-    #   pyjwt
 pylint==3.0.1
     # via tlo (pyproject.toml)
 pyparsing==3.1.1
@@ -178,7 +175,9 @@ pyparsing==3.1.1
 pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
-    # via build
+    # via
+    #   build
+    #   pip-tools
 pyshp==2.3.1
     # via tlo (pyproject.toml)
 pytest==7.4.2
