@@ -157,13 +157,13 @@ tlo.methods.other_adult_cancers module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x30fed6550>}
+     CAUSES_OF_DEATH : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x1470a8850>}
 
-     CAUSES_OF_DISABILITY : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x30fed4210>}
+     CAUSES_OF_DISABILITY : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x1470a9510>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 

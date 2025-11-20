@@ -640,11 +640,11 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'HealthSystem', 'CareOfWomenDuringPregnancy', 'PregnancySupervisor', 'PostnatalSupervisor', 'Lifestyle', 'NewbornOutcomes', 'Contraception'}
+     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'NewbornOutcomes', 'CareOfWomenDuringPregnancy', 'PregnancySupervisor', 'PostnatalSupervisor', 'HealthSystem', 'Contraception'}
 
-     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x30ecbeb90>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x30ecbf4d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x30ecbf490>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x30ecbda10>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x30ecbf890>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x30ecbd750>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x30ecbcad0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x30ecbd810>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x147109f50>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x147109110>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1471091d0>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x147108750>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x14710ac50>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x14710b010>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x14710ac90>, 'eclampsia': <tlo.methods.causes.Cause object at 0x1471094d0>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x30ecbcd10>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x14710a210>}
 
      INIT_DEPENDENCIES : {'Demography'}
 

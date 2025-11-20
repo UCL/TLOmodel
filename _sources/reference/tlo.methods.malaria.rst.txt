@@ -178,13 +178,13 @@ tlo.methods.malaria module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x30ec6c310>}
+     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x143d3e750>}
 
-     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x30ec6e310>}
+     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x143d3e910>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'SymptomManager', 'Contraception'}
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager', 'HealthSystem', 'Contraception'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
