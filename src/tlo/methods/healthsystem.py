@@ -2013,12 +2013,41 @@ class HealthSystem(Module):
             and self.parameters['scale_to_effective_capabilities']
         ):
             self._rescale_capabilities_to_capture_effective_capability()
+            
+        # Add emulated appts to real ones in HS summary counters before logging the latter.
+        # Notes:
+        # 1) The emulated count is defined in the disease module itself, rather than in the HS, but
+        # is reset at the HS level after the emulated appts have been added to the total count.
+        # I *think* this is correct, but we may wish to discuss further.
+        # 2) Currently this is RTI-specific: in the future, this would have to be generalised to
+        # any emulated module
+        
+        # To total appt count
+        if 'RTI' in self.sim.modules and self.sim.modules['RTI'].parameters['use_RTI_emulator']:
+            for key, value in self.sim.modules['RTI'].HS_Use_by_RTI.items():
+                # Extract the category part (ignoring the level)
+                _, category = key.split('_', 1)
+                self._summary_counter._appts[category] += value
+                
+            # To appt countbroken down by level
+            for key, value in self.sim.modules['RTI'].HS_Use_by_RTI.items():
+                # Split key into level and category
+                level, category = key.split('_', 1)
+                level_number = level.replace("Level", "")
+                
+                if level_number in self._summary_counter._appts_by_level:  # Ensure the level exists in the second dictionary
+                    self._summary_counter._appts_by_level[level_number][category] += value
+                    
+            # Reset emulator counter.
+            self.sim.modules['RTI'].HS_Use_by_RTI = Counter({col: 0 for col in self.sim.modules['RTI'].HS_Use_Type})
+                
         self._summary_counter.write_to_log_and_reset_counters()
         self.consumables.on_end_of_year()
         self.bed_days.on_end_of_year()
         if self._hsi_event_count_log_period == "year":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+
 
         # Record equipment usage for the year, for each facility
         self._record_general_equipment_usage_for_year()
@@ -2736,6 +2765,7 @@ class HealthSystemSummaryCounter:
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
+
 
         logger_summary.info(
             key="HSI_Event",
