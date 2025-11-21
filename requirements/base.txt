@@ -34,6 +34,13 @@ azure-keyvault-secrets==4.7.0
     # via azure-keyvault
 azure-storage-file-share==12.14.1
     # via tlo (pyproject.toml)
+boto3==1.41.0
+    # via sdv
+botocore==1.41.0
+    # via
+    #   boto3
+    #   s3transfer
+    #   sdv
 certifi==2023.7.22
     # via
     #   msrest
@@ -44,8 +51,14 @@ charset-normalizer==3.2.0
     # via requests
 click==8.1.7
     # via tlo (pyproject.toml)
+cloudpickle==3.1.2
+    # via sdv
 contourpy==1.1.1
     # via matplotlib
+copulas==0.12.3
+    # via
+    #   sdmetrics
+    #   sdv
 cryptography==41.0.3
     # via
     #   adal
@@ -54,18 +67,30 @@ cryptography==41.0.3
     #   azure-storage-file-share
     #   msal
     #   pyjwt
+ctgan==0.11.1
+    # via sdv
 cycler==0.11.0
     # via matplotlib
+deepecho==0.7.0
+    # via sdv
 dill==0.3.8
     # via tlo (pyproject.toml)
 et-xmlfile==1.1.0
     # via openpyxl
+faker==38.2.0
+    # via rdt
+filelock==3.20.0
+    # via torch
 fonttools==4.42.1
     # via matplotlib
+fsspec==2025.10.0
+    # via torch
 gitdb==4.0.10
     # via gitpython
 gitpython==3.1.36
     # via tlo (pyproject.toml)
+graphviz==0.21
+    # via sdv
 idna==3.4
     # via requests
 isodate==0.6.1
@@ -75,10 +100,22 @@ isodate==0.6.1
     #   azure-keyvault-secrets
     #   azure-storage-file-share
     #   msrest
+jinja2==3.1.6
+    # via torch
+jmespath==1.0.1
+    # via
+    #   boto3
+    #   botocore
+joblib==1.5.2
+    # via scikit-learn
 kiwisolver==1.4.5
     # via matplotlib
+markupsafe==3.0.3
+    # via jinja2
 matplotlib==3.7.3
     # via tlo (pyproject.toml)
+mpmath==1.3.0
+    # via sympy
 msal==1.24.0
     # via
     #   azure-identity
@@ -89,23 +126,49 @@ msrest==0.7.1
     # via msrestazure
 msrestazure==0.6.4
     # via azure-batch
+narwhals==2.12.0
+    # via plotly
+networkx==3.5
+    # via torch
 numpy==1.24.4
     # via
     #   contourpy
+    #   copulas
+    #   ctgan
+    #   deepecho
     #   matplotlib
     #   pandas
+    #   rdt
+    #   scikit-learn
     #   scipy
+    #   sdmetrics
+    #   sdv
     #   tlo (pyproject.toml)
 oauthlib==3.2.2
     # via requests-oauthlib
 openpyxl==3.1.0
     # via tlo (pyproject.toml)
 packaging==23.1
-    # via matplotlib
+    # via
+    #   matplotlib
+    #   plotly
 pandas==2.0.3
-    # via tlo (pyproject.toml)
+    # via
+    #   copulas
+    #   ctgan
+    #   deepecho
+    #   rdt
+    #   sdmetrics
+    #   sdv
+    #   tlo (pyproject.toml)
 pillow==10.0.1
     # via matplotlib
+platformdirs==4.5.0
+    # via sdv
+plotly==6.5.0
+    # via
+    #   copulas
+    #   sdmetrics
 portalocker==2.8.2
     # via msal-extensions
 pycparser==2.21
@@ -114,18 +177,25 @@ pyjwt[crypto]==2.8.0
     # via
     #   adal
     #   msal
-    #   pyjwt
 pyparsing==3.1.1
     # via matplotlib
 pyshp==2.3.1
     # via tlo (pyproject.toml)
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   adal
+    #   botocore
     #   matplotlib
     #   pandas
+    #   rdt
 pytz==2023.3.post1
     # via pandas
+pyyaml==6.0.3
+    # via sdv
+rdt==1.18.2
+    # via
+    #   ctgan
+    #   sdv
 requests==2.31.0
     # via
     #   adal
@@ -135,7 +205,22 @@ requests==2.31.0
     #   requests-oauthlib
 requests-oauthlib==1.3.1
     # via msrest
+s3transfer==0.14.0
+    # via boto3
+scikit-learn==1.7.2
+    # via
+    #   rdt
+    #   sdmetrics
 scipy==1.10.1
+    # via
+    #   copulas
+    #   rdt
+    #   scikit-learn
+    #   sdmetrics
+    #   tlo (pyproject.toml)
+sdmetrics==0.24.0
+    # via sdv
+sdv==1.24.1
     # via tlo (pyproject.toml)
 six==1.16.0
     # via
@@ -147,6 +232,20 @@ smmap==5.0.1
     # via gitdb
 squarify==0.4.3
     # via tlo (pyproject.toml)
+sympy==1.13.1
+    # via torch
+threadpoolctl==3.6.0
+    # via scikit-learn
+torch==2.5.1
+    # via
+    #   ctgan
+    #   deepecho
+tqdm==4.67.1
+    # via
+    #   ctgan
+    #   deepecho
+    #   sdmetrics
+    #   sdv
 typing-extensions==4.8.0
     # via
     #   azure-core
@@ -154,7 +253,12 @@ typing-extensions==4.8.0
     #   azure-keyvault-keys
     #   azure-keyvault-secrets
     #   azure-storage-file-share
+    #   torch
 tzdata==2023.3
-    # via pandas
+    # via
+    #   faker
+    #   pandas
 urllib3==2.0.4
-    # via requests
+    # via
+    #   botocore
+    #   requests
