@@ -239,10 +239,11 @@ class HSI_Event:
                 row_before = self.sim.population.props.loc[abs(self.target)].copy().fillna(-99999)
                 
                 # Check if individual is in mni dictionary before the event, if so store its original status
-                mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-                if self.target in mni:
-                    mni_instances_before = True
-                    mni_row_before = mni[self.target].copy()
+                if 'PregnancySupervisor' in self.sim.modules:
+                    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+                    if self.target in mni:
+                        mni_instances_before = True
+                        mni_row_before = mni[self.target].copy()
                 
             else:
                 print("ERROR: there shouldn't be pop-wide HSI event")
@@ -259,9 +260,10 @@ class HSI_Event:
         row_after = self.sim.population.props.loc[abs(self.target)].fillna(-99999)
         
         mni_instances_after = False
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        if self.target in mni:
-            mni_instances_after = True
+        if 'PregnancySupervisor' in self.sim.modules:
+            mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+            if self.target in mni:
+                mni_instances_after = True
             
         # Create and store dictionary of changes. Note that person_ID, event, event_date, appt_foot, and level
         # will be stored regardless of whether individual experienced property changes or not.
@@ -285,24 +287,25 @@ class HSI_Event:
             if row_before[key] != row_after[key]: # Note: used fillna previously
                 link_info[key] = row_after[key]
                 
-        # Now store changes in the mni dictionary, accounting for following cases:
-        # Individual is in mni dictionary before and after
-        if mni_instances_before and mni_instances_after:
-            for key in mni_row_before:
-                if self.values_differ(mni_row_before[key], mni[self.target][key]):
-                    link_info[key] = mni[self.target][key]
-        # Individual is only in mni dictionary before event
-        elif mni_instances_before and not mni_instances_after:
-            default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
-            for key in mni_row_before:
-                if self.values_differ(mni_row_before[key], default[key]):
-                    link_info[key] = default[key]
-        # Individual is only in mni dictionary after event
-        elif mni_instances_after and not mni_instances_before:
-            default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
-            for key in default:
-                if self.values_differ(default[key], mni[self.target][key]):
-                    link_info[key] = mni[self.target][key]
+        if 'PregnancySupervisor' in self.sim.modules:
+            # Now store changes in the mni dictionary, accounting for following cases:
+            # Individual is in mni dictionary before and after
+            if mni_instances_before and mni_instances_after:
+                for key in mni_row_before:
+                    if self.values_differ(mni_row_before[key], mni[self.target][key]):
+                        link_info[key] = mni[self.target][key]
+            # Individual is only in mni dictionary before event
+            elif mni_instances_before and not mni_instances_after:
+                default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
+                for key in mni_row_before:
+                    if self.values_differ(mni_row_before[key], default[key]):
+                        link_info[key] = default[key]
+            # Individual is only in mni dictionary after event
+            elif mni_instances_after and not mni_instances_before:
+                default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
+                for key in default:
+                    if self.values_differ(default[key], mni[self.target][key]):
+                        link_info[key] = mni[self.target][key]
 
         chain_links[self.target] = link_info
             
