@@ -1220,11 +1220,7 @@ class CareOfWomenDuringPregnancy(Module):
             q_param=[l_params['prob_hcw_avail_blood_tran'], l_params['mean_hcw_competence_hp']],
             cons=self.item_codes_preg_consumables['blood_transfusion'],
             opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
-<<<<<<< HEAD
-            equipment={'Drip stand', 'Infusion pump'})
-=======
             equipment=hsi_event.healthcare_system.equipment.from_pkg_names('Blood Transfusion'))
->>>>>>> master
 
         if blood_transfusion_delivered:
 
@@ -2565,11 +2561,8 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             q_param=[l_params['prob_hcw_avail_retained_prod'], l_params['mean_hcw_competence_hp']],
             cons=pac_cons,
             opt_cons=pac_opt_cons,
-<<<<<<< HEAD
-            equipment={'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump'})
-=======
+
             equipment={'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump', 'Evacuation set'})
->>>>>>> master
 
         if pac_delivered:
             df.at[person_id, 'ac_received_post_abortion_care'] = True

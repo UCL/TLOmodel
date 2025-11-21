@@ -28,7 +28,7 @@ from tlo.methods.care_of_women_during_pregnancy import (
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 
-from tlo.util import BitsetHandler
+from tlo.util import BitsetHandler,read_csv_files
 from tlo.methods.demography import InstantaneousPartialDeath
 
 if TYPE_CHECKING:
@@ -548,6 +548,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_PregnancySupervisor',
                                             files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
+
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules

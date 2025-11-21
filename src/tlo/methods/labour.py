@@ -1409,10 +1409,6 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-<<<<<<< HEAD
-
-=======
->>>>>>> master
         # n.b. on birth women whose hypertension will continue into the postnatal period have their disease state stored
         # in a new property therefore antenatal/intrapartum hypertension is 'ps_htn_disorders' and postnatal is
         # 'pn_htn_disorders' hence the use of property prefix variable (as this function is called before and after
@@ -1514,17 +1510,6 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
                 self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                         originating_module=self.sim.modules['Labour'])
-
-<<<<<<< HEAD
-=======
-        # If a cause is returned death is scheduled
-        if potential_cause_of_death:
-            pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
-
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
-                                                    originating_module=self.sim.modules['Labour'])
->>>>>>> master
 
 
         # If she hasn't died from any complications, we reset some key properties that resolve after risk of death
@@ -2096,11 +2081,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             q_param=[params['prob_hcw_avail_blood_tran'], params[f'mean_hcw_competence_{deliv_location}']],
             cons=self.item_codes_lab_consumables['blood_transfusion'],
             opt_cons=self.item_codes_lab_consumables['blood_test_equipment'],
-<<<<<<< HEAD
-            equipment={'Drip stand', 'Infusion pump'})
-=======
             equipment=hsi_event.healthcare_system.equipment.from_pkg_names('Blood Transfusion'))
->>>>>>> master
 
         if blood_transfusion_delivered:
             mni[person_id]['received_blood_transfusion'] = True
@@ -2590,19 +2571,10 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         
         else:
 
-<<<<<<< HEAD
             # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
             # (either from one or multiple causes) and if death occurs returns the cause
             potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
                 self.module, individual_id=individual_id, timing='intrapartum')
-=======
-        # If a cause is returned death is scheduled
-        if potential_cause_of_death:
-            pregnancy_helper_functions.log_mni_for_maternal_death(self.module, individual_id)
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
-                                                    originating_module=self.sim.modules['Labour'])
->>>>>>> master
 
             # If a cause is returned death is scheduled
             if potential_cause_of_death:
@@ -2864,9 +2836,6 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # Add used equipment
         self.add_equipment({'Delivery set', 'Weighing scale', 'Stethoscope, foetal, monaural, Pinard, plastic',
                             'Resuscitaire', 'Sphygmomanometer', 'Tray, emergency', 'Suction machine',
-<<<<<<< HEAD
-                            'Thermometer', 'Drip stand', 'Infusion pump'})
-=======
                             'Thermometer', 'Drip stand', 'Infusion pump', 'Board for Cord Knotting',
                             'Cot, baby (bassinet), hospital-type', 'Delivery Beds with Stirrups', 'Fetoscope',
                             'Mucous Extractor for neonates', 'Amnio hook', 'Incubator, infant'})
@@ -2874,7 +2843,6 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         if self.ACCEPTED_FACILITY_LEVEL == '2':
             self.add_equipment({'Cardiotocography'})
 
->>>>>>> master
         # ===================================== PROPHYLACTIC CARE ===================================================
         # The following function manages the consumables and administration of prophylactic interventions in labour
         # (clean delivery practice, antibiotics for PROM, steroids for preterm labour)
@@ -2946,12 +2914,8 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             neo_resus_delivered = pregnancy_helper_functions.check_int_deliverable(
                 self.module, int_name='neo_resus', hsi_event=self,
                 q_param=[params['prob_hcw_avail_neo_resus'], params[f'mean_hcw_competence_{deliv_location}']],
-<<<<<<< HEAD
-                cons=self.module.item_codes_lab_consumables['resuscitation'])
-=======
                 cons=self.module.item_codes_lab_consumables['resuscitation'],
                 equipment={'Ambu bag, infant with mask', 'Resuscitator, manual, infant'})
->>>>>>> master
 
             if neo_resus_delivered:
                 mni[person_id]['neo_will_receive_resus_if_needed'] = True
