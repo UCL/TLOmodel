@@ -46,21 +46,19 @@ def test_basic_run(tmpdir, seed):
             'filename': 'bed_days',
             'directory': tmpdir,
         },
+        resourcefilepath=resourcefilepath
     )
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=False,
-                                           cons_availability='all'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
-                                                               # force symptoms to lead to health care seeking:
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(# force symptoms to lead to health care seeking:
                                                                force_any_symptom_to_lead_to_healthcareseeking=True
                                                                ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 copd.Copd(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(),
+                 copd.Copd(),
                  )
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=Date(2030, 1, 1))  # Long run
@@ -79,24 +77,18 @@ def get_simulation(pop_size):
     """ Return a simulation object
 
     :param pop_size: total number of individuals at the start of simulation """
-    sim = Simulation(
-        start_date=start_date
-    )
+    sim = Simulation(start_date=start_date, resourcefilepath=resourcefilepath)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=False,
-                                           cons_availability='all'
-                                           ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
-                                                               # force symptoms to lead to health care seeking:
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(# force symptoms to lead to health care seeking:
                                                                force_any_symptom_to_lead_to_healthcareseeking=True
                                                                ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 copd.Copd(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(),
+                 copd.Copd(),
                  )
     sim.make_initial_population(n=pop_size)
     sim.simulate(end_date=end_date)
@@ -117,8 +109,8 @@ def test_ch_lungfunction():
     df.loc[df.index, 'age_years'] = np.random.choice(range(20, 50), len(df))
 
     # check they're all eligible to progress to the next lung function
-    assert all(copd.eligible_to_progress_to_next_lung_function(df)), 'some are still not eligible to progress to ' \
-                                                                     'next lung function'
+    assert all(copd_module.models.eligible_to_progress_to_next_lung_function(df)), \
+        'some are still not eligible to progress to next lung function'
 
     # set probability of progressing to next lung function to 1. This will ensure everyone progresses
     # to the next lung function

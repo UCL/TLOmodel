@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.methods.malaria import HSI_MalariaIPTp
 from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -43,9 +45,8 @@ class CareOfWomenDuringPregnancy(Module):
     Individual interventions are stored as functions within the module to prevent repetition.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # First we define dictionaries which will store the current parameters of interest (to allow parameters to
         # change between 2010 and 2020)
@@ -175,9 +176,9 @@ class CareOfWomenDuringPregnancy(Module):
                                                                    'caesarean_now', 'caesarean_future', 'avd_now']),
     }
 
-    def read_parameters(self, data_folder):
-        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
-                                            sheet_name='parameter_values')
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+        parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_AntenatalCare',
+                                            files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
@@ -732,6 +733,9 @@ class CareOfWomenDuringPregnancy(Module):
             self, int_name='urine_dipstick',
             hsi_event=hsi_event,
             q_param=[params['prob_intervention_delivered_urine_ds']],
+
+            equipment={'Urine dip Stick'},
+
             cons=self.item_codes_preg_consumables['urine_dipstick'],
             dx_test='urine_dipstick_protein')
 
@@ -1216,7 +1220,11 @@ class CareOfWomenDuringPregnancy(Module):
             q_param=[l_params['prob_hcw_avail_blood_tran'], l_params['mean_hcw_competence_hp']],
             cons=self.item_codes_preg_consumables['blood_transfusion'],
             opt_cons=self.item_codes_preg_consumables['blood_test_equipment'],
+<<<<<<< HEAD
             equipment={'Drip stand', 'Infusion pump'})
+=======
+            equipment=hsi_event.healthcare_system.equipment.from_pkg_names('Blood Transfusion'))
+>>>>>>> master
 
         if blood_transfusion_delivered:
 
@@ -1412,7 +1420,8 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
             self.add_equipment(
                 {'Height Pole (Stadiometer)', 'MUAC tape',
-                 'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
+                 'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ',
+                 'Ultrasound quality control'})
 
             # First all women, regardless of ANC contact or gestation, undergo urine and blood pressure measurement
             # and depression screening
@@ -1500,7 +1509,8 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             # Add equipment used during  ANC visit not directly related to interventions
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
             self.add_equipment(
-                {'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
+                {'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ',
+                 'Ultrasound quality control'})
 
             # First we administer the interventions all women will receive at this contact regardless of
             # gestational age
@@ -1732,7 +1742,8 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
             #  =================================== INTERVENTIONS ===================================================
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ANC'))
             self.add_equipment(
-                {'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
+                {'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ',
+                 'Ultrasound quality control'})
 
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
@@ -2554,7 +2565,11 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             q_param=[l_params['prob_hcw_avail_retained_prod'], l_params['mean_hcw_competence_hp']],
             cons=pac_cons,
             opt_cons=pac_opt_cons,
+<<<<<<< HEAD
             equipment={'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump'})
+=======
+            equipment={'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump', 'Evacuation set'})
+>>>>>>> master
 
         if pac_delivered:
             df.at[person_id, 'ac_received_post_abortion_care'] = True

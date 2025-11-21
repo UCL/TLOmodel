@@ -11,8 +11,6 @@ from tlo.population import Population
 from tlo.util import FACTOR_POP_DICT
 import pandas as pd
 
-
-
 if TYPE_CHECKING:
     from tlo import Module, Simulation
     from tlo.methods.healthsystem import HealthSystem
@@ -83,7 +81,7 @@ class HSIEventQueueItem(NamedTuple):
 class HSI_Event:
     """Base HSI event class, from which all others inherit.
 
-    Concrete subclasses should also inherit from one of the EventMixin classes
+    Concrete subclasses should also inherit from `IndividualScopeEventMixin`
     defined in `src/tlo/events.py`, and implement at least an `apply` and
     `did_not_run` method.
     """
@@ -181,13 +179,23 @@ class HSI_Event:
     def _run_after_hsi_event(self) -> None:
         """
         Do things following the event's `apply` and `post_apply_hook` functions running.
-         * Impose the bed-days footprint (if target of the HSI is a person_id)
+         * Impose the bed-days footprint
          * Record the equipment that has been added before and during the course of the HSI Event.
+         * Include in the equipment used those items associated with in-patient admissions if bed-days are used.
         """
-        if isinstance(self.target, int):
-            self.healthcare_system.bed_days.impose_beddays_footprint(
-                person_id=self.target, footprint=self.bed_days_allocated_to_this_event
-            )
+
+        self.healthcare_system.bed_days.impose_beddays_footprint(
+            person_id=self.target, footprint=self.bed_days_allocated_to_this_event
+        )
+
+        if sum(self.BEDDAYS_FOOTPRINT.values()) > 0:
+            # Add to the internal record of equipment used anything to do with in-patients.
+            # Note that adding this here means that these items are not used, but the bed-days can still be available
+            # even if these items are not all available.
+            # (Note that the list of equipment is the same as retrieved from
+            # `self.healthcare_system.equipment.from_pkg_names('In-patient')` but the result has been cached on the
+            # healthsystem module to save time as it is used a lot (every HSI that has any bed-days).
+            self._EQUIPMENT |= self.healthcare_system.in_patient_equipment_package
 
         if self.facility_info is not None:
             # If there is a facility_info (e.g., healthsystem not running in disabled mode), then record equipment used
@@ -434,10 +442,10 @@ class HSI_Event:
         """Returns ``True`` if all the (currently) declared items of equipment are available. This is called by the
         ``HealthSystem`` module before the HSI is run and so is looking only at those items that are declared when this
         instance was created. The evaluation of whether equipment is available is only done *once* for this instance of
-        the event: i.e., if the equipment is not available for the instance of this ``HSI_Event``, then it will remain not
-        available if the same event is re-scheduled/re-entered into the HealthSystem queue. This is representing that
-        if the facility that a particular person attends for the ``HSI_Event`` does not have the equipment available, then
-        it will also not be available on another day."""
+        the event: i.e., if the equipment is not available for the instance of this ``HSI_Event``, then it will remain
+        not available if the same event is re-scheduled/re-entered into the HealthSystem queue. This is representing
+        that if the facility that a particular person attends for the ``HSI_Event`` does not have the equipment
+        available, then it will also not be available on another day."""
 
         if self._is_all_declared_equipment_available is None:
             # Availability has not already been evaluated: determine availability
@@ -467,50 +475,27 @@ class HSI_Event:
         # Over-write ACCEPTED_FACILITY_LEVEL to to redirect all '1b' appointments to '2'
         self._adjust_facility_level_to_merge_1b_and_2()
 
-        if not isinstance(self.target, Population):
-            self.facility_info = health_system.get_facility_info(self)
+        self.facility_info = health_system.get_facility_info(self)
 
-            # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
-            # Types.
-            # (HSI that require a bed for one or more days always need such appointments, but this may have been
-            # missed in the declaration of the `EXPECTED_APPT_FOOTPRINT` in the HSI.)
-            # NB. The in-patient day Appointment time is automatically applied on subsequent days.
-            if sum(self.BEDDAYS_FOOTPRINT.values()):
-                self.EXPECTED_APPT_FOOTPRINT = (
-                    health_system.bed_days.add_first_day_inpatient_appts_to_footprint(
-                        self.EXPECTED_APPT_FOOTPRINT
-                    )
-                )
-
-            # Write the time requirements for staff of the appointments to the HSI:
-            self.expected_time_requests = (
-                health_system.get_appt_footprint_as_time_request(
-                    facility_info=self.facility_info,
-                    appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
+        # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
+        # Types
+        # (HSI that require a bed for one or more days always need such appointments, but this may have been
+        # missed in the declaration of the `EXPECTED_APPT_FOOTPRINT` in the HSI.)
+        # NB. The in-patient day Appointment time is automatically applied on subsequent days.
+        if sum(self.BEDDAYS_FOOTPRINT.values()):
+            self.EXPECTED_APPT_FOOTPRINT = (
+                health_system.bed_days.add_first_day_inpatient_appts_to_footprint(
+                    self.EXPECTED_APPT_FOOTPRINT
                 )
             )
 
-        # Do checks
-        self._check_if_appt_footprint_can_run()
-
-    def _check_if_appt_footprint_can_run(self) -> bool:
-        """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
-        this does not demand officers that are _never_ available), and issue warning if not.
-        """
-        if not isinstance(self.target, Population):
-            if self.healthcare_system._officers_with_availability.issuperset(
-                self.expected_time_requests.keys()
-            ):
-                return True
-            else:
-                logger.debug(
-                    key="message",
-                    data=(
-                        f"The expected footprint of {self.TREATMENT_ID} is not possible with the configuration of "
-                        f"officers."
-                    ),
-                )
-                return False
+        # Write the time requirements for staff of the appointments to the HSI:
+        self.expected_time_requests = (
+            health_system.get_appt_footprint_as_time_request(
+                facility_info=self.facility_info,
+                appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
+            )
+        )
 
     @staticmethod
     def _return_item_codes_in_dict(
@@ -593,11 +578,9 @@ class HSIEventWrapper(Event):
         # Check that the person is still alive (this check normally happens in the HealthSystemScheduler and silently
         # do not run the HSI event)
 
-        if isinstance(self.hsi_event.target, Population) or (
-            self.hsi_event.module.sim.population.props.at[
+        if self.hsi_event.module.sim.population.props.at[
                 self.hsi_event.target, "is_alive"
-            ]
-        ):
+            ]:
 
             if self.run_hsi:
                 # Run the event (with 0 squeeze_factor) and ignore the output

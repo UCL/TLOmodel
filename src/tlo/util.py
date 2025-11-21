@@ -1,4 +1,5 @@
 """This file contains helpful utility functions."""
+import ast
 import hashlib
 from collections import defaultdict
 from pathlib import Path
@@ -444,8 +445,10 @@ def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng
         return mother_id
 
 
-def convert_excel_files_to_csv(folder: Path, files: Optional[list[str]] = None, *, delete_excel_files: bool = False) -> None:
-    """ convert Excel files to csv files.
+def convert_excel_files_to_csv(
+    folder: Path, files: Optional[list[str]] = None, *, delete_excel_files: bool = False
+) -> None:
+    """convert Excel files to csv files.
 
     :param folder: Folder containing Excel files.
     :param files: List of Excel file names to convert to csv files. When `None`, all Excel files in the folder and
@@ -535,3 +538,40 @@ def read_csv_files(folder: Path,
     # return a dictionary if return_dict flag is set to True else return a dataframe
     return all_data if return_dict else next(iter(all_data.values()))
 
+
+def parse_csv_values_for_columns_with_mixed_datatypes(value: Any):
+    """ Pandas :py:func:`pandas.read_csv` function handles columns with mixed data types by defaulting to the object
+    data type, which often results in values being interpreted as strings. The most common place for this in TLO is
+    when we are reading parameters. This is not a problem when the parameters are read in read parameters method
+    using load_parameters_from_dataframe method as parameter values are mapped to their defined datatypes.
+
+    Problems arise when you're trying to directly use the output from the csv files like it is within some few files
+    in TLO. This method tries to provide a fix by parsing the parameter values in those few places to their best
+    possible data types
+
+    :param value: mixed datatype column value
+    """
+    # if value is not a string then return value
+    if not isinstance(value, str):
+        return value
+
+    value = value.strip()  # Remove leading/trailing whitespace
+    # It is important to catch booleans early to avoid int(value) which will convert them into an interger value
+    # 0(False) or 1(True)
+    if value.lower() in ['true', 'false']:
+        return value.lower() == 'true'
+
+    try:
+        return int(value) # try converting the value to an interger, throw excepetion otherwise
+    except ValueError:
+        try:
+            return float(value) # try converting the value to a float, throw excepetion otherwise
+        except ValueError:
+            # Check if it's a list using `ast.literal_eval`
+            try:
+                parsed = ast.literal_eval(value)
+                if isinstance(parsed, list):
+                    return parsed
+            except (ValueError, SyntaxError):
+                pass
+            return value  # Return as a string if no other type fits

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 import pandas as pd
@@ -17,7 +17,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
-from tlo.util import BitsetHandler
+from tlo.util import BitsetHandler, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -52,9 +52,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
       PostnatalWeekOneMaternalEvent which represents the start of a womans postnatal period.
       """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # First we define dictionaries which will store the current parameters of interest (to allow parameters to
         # change between 2010 and 2020) and the linear models
@@ -617,10 +616,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                                                              'the postnatal period'),
     }
 
-    def read_parameters(self, data_folder):
-        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirth'
-                                                                          'Attendance.xlsx',
-                                            sheet_name='parameter_values')
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+        parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_LabourSkilledBirth'
+                                                                          'Attendance',
+                                            files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
@@ -865,8 +864,6 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             {ic('Infant resuscitator, clear plastic + mask + bag_each_CMST'): 1}
 
     def initialise_simulation(self, sim):
-        # Update self.current_parameters
-        # pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
@@ -1412,7 +1409,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
         # n.b. on birth women whose hypertension will continue into the postnatal period have their disease state stored
         # in a new property therefore antenatal/intrapartum hypertension is 'ps_htn_disorders' and postnatal is
         # 'pn_htn_disorders' hence the use of property prefix variable (as this function is called before and after
@@ -1514,6 +1514,17 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
                 self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
                                                         originating_module=self.sim.modules['Labour'])
+
+<<<<<<< HEAD
+=======
+        # If a cause is returned death is scheduled
+        if potential_cause_of_death:
+            pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
+
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
+                                                    originating_module=self.sim.modules['Labour'])
+>>>>>>> master
 
 
         # If she hasn't died from any complications, we reset some key properties that resolve after risk of death
@@ -2085,7 +2096,11 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             q_param=[params['prob_hcw_avail_blood_tran'], params[f'mean_hcw_competence_{deliv_location}']],
             cons=self.item_codes_lab_consumables['blood_transfusion'],
             opt_cons=self.item_codes_lab_consumables['blood_test_equipment'],
+<<<<<<< HEAD
             equipment={'Drip stand', 'Infusion pump'})
+=======
+            equipment=hsi_event.healthcare_system.equipment.from_pkg_names('Blood Transfusion'))
+>>>>>>> master
 
         if blood_transfusion_delivered:
             mni[person_id]['received_blood_transfusion'] = True
@@ -2575,10 +2590,19 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         
         else:
 
+<<<<<<< HEAD
             # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
             # (either from one or multiple causes) and if death occurs returns the cause
             potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
                 self.module, individual_id=individual_id, timing='intrapartum')
+=======
+        # If a cause is returned death is scheduled
+        if potential_cause_of_death:
+            pregnancy_helper_functions.log_mni_for_maternal_death(self.module, individual_id)
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
+            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
+                                                    originating_module=self.sim.modules['Labour'])
+>>>>>>> master
 
             # If a cause is returned death is scheduled
             if potential_cause_of_death:
@@ -2840,7 +2864,17 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # Add used equipment
         self.add_equipment({'Delivery set', 'Weighing scale', 'Stethoscope, foetal, monaural, Pinard, plastic',
                             'Resuscitaire', 'Sphygmomanometer', 'Tray, emergency', 'Suction machine',
+<<<<<<< HEAD
                             'Thermometer', 'Drip stand', 'Infusion pump'})
+=======
+                            'Thermometer', 'Drip stand', 'Infusion pump', 'Board for Cord Knotting',
+                            'Cot, baby (bassinet), hospital-type', 'Delivery Beds with Stirrups', 'Fetoscope',
+                            'Mucous Extractor for neonates', 'Amnio hook', 'Incubator, infant'})
+
+        if self.ACCEPTED_FACILITY_LEVEL == '2':
+            self.add_equipment({'Cardiotocography'})
+
+>>>>>>> master
         # ===================================== PROPHYLACTIC CARE ===================================================
         # The following function manages the consumables and administration of prophylactic interventions in labour
         # (clean delivery practice, antibiotics for PROM, steroids for preterm labour)
@@ -2912,7 +2946,12 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             neo_resus_delivered = pregnancy_helper_functions.check_int_deliverable(
                 self.module, int_name='neo_resus', hsi_event=self,
                 q_param=[params['prob_hcw_avail_neo_resus'], params[f'mean_hcw_competence_{deliv_location}']],
+<<<<<<< HEAD
                 cons=self.module.item_codes_lab_consumables['resuscitation'])
+=======
+                cons=self.module.item_codes_lab_consumables['resuscitation'],
+                equipment={'Ambu bag, infant with mask', 'Resuscitator, manual, infant'})
+>>>>>>> master
 
             if neo_resus_delivered:
                 mni[person_id]['neo_will_receive_resus_if_needed'] = True

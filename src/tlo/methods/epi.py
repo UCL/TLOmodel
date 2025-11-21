@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -7,6 +8,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import HSI_Event
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -62,18 +64,16 @@ class Epi(Module):
                                     "whether all doses have been received of the tetanus/diphtheria vaccine"),
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
+
         self.all_doses = dict()
         self.cons_item_codes = dict()  # (will store dict giving item_codes for each vaccine)
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         p = self.parameters
-        workbook = pd.read_excel(
-            Path(self.resourcefilepath) / 'ResourceFile_EPI_WHO_estimates.xlsx', sheet_name=None
-        )
+        workbook = read_csv_files(resourcefilepath / 'ResourceFile_EPI_WHO_estimates', files=None)
 
         self.load_parameters_from_dataframe(workbook["parameters"])
 

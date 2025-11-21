@@ -50,8 +50,9 @@ def get_dummy_hsi(sim, mother_id, id, fl):
     return hsi_event
 
 def test_interventions_are_delivered_as_expected_not_during_analysis(seed):
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
     sim.make_initial_population(n=100)
 
     cw_params = sim.modules['CareOfWomenDuringPregnancy'].parameters
@@ -79,7 +80,9 @@ def test_interventions_are_delivered_as_expected_not_during_analysis(seed):
     hsi_event = get_dummy_hsi(sim, mother_id, id=0, fl=0)
 
     def override_dummy_cons(value):
-        updated_cons = {k: value for (k, v) in sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
+
+        updated_cons = {k: value for (k, v) in
+                        sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
         sim.modules['HealthSystem'].override_availability_of_consumables(updated_cons)
         sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
         return sim.modules['Labour'].item_codes_lab_consumables['delivery_core']
@@ -120,8 +123,9 @@ def test_interventions_are_delivered_as_expected_not_during_analysis(seed):
 
 
 def test_interventions_are_delivered_as_expected_during_analysis(seed):
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
     sim.make_initial_population(n=100)
 
     pparams = sim.modules['PregnancySupervisor'].parameters
@@ -141,7 +145,9 @@ def test_interventions_are_delivered_as_expected_during_analysis(seed):
     hsi_event = get_dummy_hsi(sim, mother_id, id=0, fl=0)
 
     def override_dummy_cons(value):
-        updated_cons = {k: value for (k, v) in sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
+
+        updated_cons = {k: value for (k, v) in
+                        sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
         sim.modules['HealthSystem'].override_availability_of_consumables(updated_cons)
         sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
         return sim.modules['Labour'].item_codes_lab_consumables['delivery_core']
@@ -168,8 +174,9 @@ def test_interventions_are_delivered_as_expected_during_analysis(seed):
 def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     """Test that the analysis events run when scheduled and that they update the correct parameters as expected
     when they run"""
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
 
     lparams = sim.modules['Labour'].parameters
     pparams = sim.modules['PregnancySupervisor'].parameters
@@ -202,6 +209,7 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
 
     sim.make_initial_population(n=100)
     # run the model for 1 day
+    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
 
     p_current_params = sim.modules['PregnancySupervisor'].current_parameters
@@ -228,9 +236,9 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
 
 
 def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_max_parameters(seed):
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
 
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
     lparams = sim.modules['Labour'].parameters
     pparams = sim.modules['PregnancySupervisor'].parameters
 
@@ -280,8 +288,9 @@ def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_max_par
 
 
 def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_min_parameters(seed):
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
     lparams = sim.modules['Labour'].parameters
     pparams = sim.modules['PregnancySupervisor'].parameters
 
@@ -323,8 +332,10 @@ def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_min_par
 def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the ANC HSIs"""
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
+    sim.make_initial_population(n=100)
 
     # Set the analysis event to run on the first day of the simulation
     pparams = sim.modules['PregnancySupervisor'].parameters
@@ -406,8 +417,9 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
 def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the SBA HSIs"""
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
 
     # Set the analysis event to run at simulation start
     lparams = sim.modules['Labour'].parameters
@@ -542,8 +554,9 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
 def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the PNC HSIs"""
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
 
     # Set the analysis event to run at simulation start
     lparams = sim.modules['Labour'].parameters
@@ -610,8 +623,10 @@ def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed
 def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the newborn HSIs"""
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
+    sim.make_initial_population(n=100)
 
     # Set the analysis event to run at simulation start
     lparams = sim.modules['Labour'].parameters
@@ -680,8 +695,9 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
 def test_analysis_events_circumnavigates_sf_and_competency_parameters(seed):
     """Test that the analysis event correctly overrides the parameters which controle whether the B/CEmONC signal
     functions can run"""
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
 
     # Set the analysis event to run at simulation start
     lparams = sim.modules['Labour'].parameters

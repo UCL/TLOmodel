@@ -7,7 +7,7 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
@@ -22,6 +22,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -34,9 +35,8 @@ logger.setLevel(logging.INFO)
 class ProstateCancer(Module, GenericFirstAppointmentsMixin):
     """Prostate Cancer Disease Module"""
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.linear_models_for_progression_of_pc_status = dict()
         self.lm_prostate_ca_onset_urinary_symptoms = None
         self.lm_onset_pelvic_pain = None
@@ -153,6 +153,51 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         "sensitivity_of_biopsy_for_prostate_ca": Parameter(
             Types.REAL, "sensitivity of biopsy for prostate cancer"
         ),
+        "odds_ratio_health_seeking_urinary": Parameter(
+            Types.REAL, "odds ratio for health seeking in adults with urinary symptoms"
+        ),
+        "odds_ratio_health_seeking_pelvic_pain": Parameter(
+            Types.REAL, "odds ratio for health seeking in adults with pelvic pain symptoms"
+        ),
+        "no_health_seeking_urinary_children": Parameter(
+            Types.BOOL, "whether children seek healthcare for urinary symptoms"
+        ),
+        "no_health_seeking_pelvic_pain_children": Parameter(
+            Types.BOOL, "whether children seek healthcare for pelvic pain symptoms"
+        ),
+        "min_age_prostate_cancer": Parameter(
+            Types.INT, "minimum age for prostate cancer risk"
+        ),
+        "mid_age_threshold_prostate_cancer": Parameter(
+            Types.INT, "middle age threshold for prostate cancer (lower bound of middle age group)"
+        ),
+        "high_age_threshold_prostate_cancer": Parameter(
+            Types.INT, "high age threshold for prostate cancer (lower bound of high age group)"
+        ),
+        "max_age_prostate_cancer": Parameter(
+            Types.INT, "maximum age for prostate cancer modeling"
+        ),
+        "months_between_polling_events": Parameter(
+            Types.INT, "months between main polling events"
+        ),
+        "months_to_post_treatment_check": Parameter(
+            Types.INT, "months from treatment to first post-treatment check"
+        ),
+        "months_between_followup_appointments": Parameter(
+            Types.INT, "months between follow-up appointments after treatment"
+        ),
+        "months_between_palliative_care": Parameter(
+            Types.INT, "months between palliative care appointments"
+        ),
+        "weeks_palliative_care_schedule_window": Parameter(
+            Types.INT, "weeks for palliative care appointment window"
+        ),
+        "treatment_beddays": Parameter(
+            Types.INT, "number of general bed days required for treatment"
+        ),
+        "palliative_care_beddays": Parameter(
+            Types.INT, "number of general bed days required for palliative care"
+        ),
     }
 
     PROPERTIES = {
@@ -196,27 +241,27 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Setup parameters used by the module, now including disability weights"""
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Prostate_Cancer.xlsx",
-                          sheet_name="parameter_values")
+            read_csv_files(resourcefilepath / "ResourceFile_Prostate_Cancer",
+                           files="parameter_values")
         )
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='urinary',
-                    odds_ratio_health_seeking_in_adults=4.00,
-                    no_healthcareseeking_in_children=True)
+                    odds_ratio_health_seeking_in_adults=self.parameters['odds_ratio_health_seeking_urinary'],
+                    no_healthcareseeking_in_children=self.parameters['no_health_seeking_urinary_children'])
         )
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='pelvic_pain',
-                    odds_ratio_health_seeking_in_adults=4.00,
-                    no_healthcareseeking_in_children=True)
+                    odds_ratio_health_seeking_in_adults=self.parameters['odds_ratio_health_seeking_pelvic_pain'],
+                    no_healthcareseeking_in_children=self.parameters['no_health_seeking_pelvic_pain_children'])
         )
 
     def initialise_population(self, population):
@@ -244,9 +289,11 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             sum(p['init_prop_prostate_ca_stage']),
             Predictor('sex').when('M', 1.0).otherwise(0.0),
             Predictor('age_years', conditions_are_mutually_exclusive=True)
-            .when('.between(50,69)', p['rp_prostate_cancer_age5069'])
-            .when('.between(70,120)', p['rp_prostate_cancer_agege70'])
-            .when('.between(0,34)', 0.0)
+            .when(f'.between({p["mid_age_threshold_prostate_cancer"]},{p["high_age_threshold_prostate_cancer"]-1})',
+                  p['rp_prostate_cancer_age5069'])
+            .when(f'.between({p["high_age_threshold_prostate_cancer"]},{p["max_age_prostate_cancer"]})',
+                  p['rp_prostate_cancer_agege70'])
+            .when(f'.between(0,{p["min_age_prostate_cancer"]-1})', 0.0)
         )
 
         pc_status_ = \
@@ -256,7 +303,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         if pc_status_.sum():
             sum_probs = sum(p['init_prop_prostate_ca_stage'])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_prostate_ca_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i / sum_probs for i in p['init_prop_prostate_ca_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[pc_status_, "pc_status"] = self.rng.choice(
                     [val for val in df.pc_status.cat.categories if val != 'none'],
@@ -305,7 +352,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             .when("none", 0.0)
             .when("prostate_confined", p['init_prop_urinary_symptoms_by_stage'][0])
             .when("local_ln", p['init_prop_urinary_symptoms_by_stage'][1])
-            .when("metastatic",  p['init_prop_urinary_symptoms_by_stage'][2])
+            .when("metastatic", p['init_prop_urinary_symptoms_by_stage'][2])
         )
         has_urinary_symptoms_at_init = lm_init_urinary.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
@@ -387,7 +434,8 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(ProstateCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(ProstateCancerMainPollingEvent(self), sim.date +
+                           DateOffset(months=self.parameters['months_between_polling_events']))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -406,9 +454,11 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('pc_status').when('local_ln', 0),
             Predictor('pc_status').when('metastatic', 0),
             Predictor('age_years', conditions_are_mutually_exclusive=True)
-            .when('.between(50,69)', p['rr_prostate_confined_prostate_ca_age5069'])
-            .when('.between(70,120)', p['rr_prostate_confined_prostate_ca_agege70'])
-            .when('.between(0,34)', 0.0)
+            .when(f'.between({p["mid_age_threshold_prostate_cancer"]},{p["high_age_threshold_prostate_cancer"]-1})',
+                  p['rr_prostate_confined_prostate_ca_age5069'])
+            .when(f'.between({p["high_age_threshold_prostate_cancer"]},{p["max_age_prostate_cancer"]})',
+                  p['rr_prostate_confined_prostate_ca_agege70'])
+            .when(f'.between(0,{p["min_age_prostate_cancer"]-1})', 0.0)
         )
 
         lm['local_ln'] = LinearModel(
@@ -417,7 +467,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_local_ln_prostate_ca_undergone_curative_treatment']),
             Predictor('pc_status').when('prostate_confined', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['metastatic'] = LinearModel(
@@ -426,7 +476,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_metastatic_prostate_ca_undergone_curative_treatment']),
             Predictor('pc_status').when('local_ln', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         # Check that the dict labels are correct as these are used to set the value of pc_status
@@ -522,8 +572,9 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
+                topen=self.sim.date + DateOffset(months=self.parameters['months_between_palliative_care']),
+                tclose=self.sim.date + DateOffset(months=self.parameters['months_between_palliative_care']) +
+                       DateOffset(weeks=self.parameters['weeks_palliative_care_schedule_window'])
             )
 
     def on_birth(self, mother_id, child_id):
@@ -730,14 +781,22 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
         # todo: stratify by pc_status
         # Use a psa test to assess whether the person has prostate cancer:
         dx_result = hs.dx_manager.run_dx_test(
-                dx_tests_to_run='psa_for_prostate_cancer',
-                hsi_event=self
-            )
+            dx_tests_to_run='psa_for_prostate_cancer',
+            hsi_event=self
+        )
 
         # Check consumable availability
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
+            # Equipment for PSA testing and initial prostate cancer assessment
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyser, Hormones',
+                'Sample Rack',
+                'Safety Goggles'
+            })
+
             # send for biopsy
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
@@ -785,15 +844,23 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
+            # Equipment for PSA testing and initial prostate cancer assessment
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyser, Hormones',
+                'Sample Rack',
+                'Safety Goggles'
+            })
+
             # send for biopsy
             hs.schedule_hsi_event(
-                    hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
+                hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
             )
 
 
@@ -823,11 +890,25 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
 
         cons_available = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_biopsy_core'],
                                               optional_item_codes=self.module.item_codes_prostate_can[
-                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
+                                                  'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_available:
-            # If consumables are available update the use of equipment and run the dx_test representing the biopsy
-            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
+            # Equipment for prostate cancer biopsy and investigation
+            self.add_equipment({
+                'Ultrasound scanning machine',
+                'Ordinary Microscope',
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
+                'Analyser, Hormones',
+                'Intravenous Pyelography set',
+                'Intravenous Pyrography set',
+                'Apron protective x-ray lead',
+                'Safety Goggles',
+                'Manual Rotary Microtome',
+                'Sample Rack',
+                'Shaker',
+                'Magnetic resonance imaging (MRI)'
+            })
 
             # Use a biopsy  to assess whether the person has prostate cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -881,7 +962,8 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "ProstateCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({"general_bed": self.module.parameters['treatment_beddays']}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -919,17 +1001,37 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
+            # Additional prostate cancer treatment-specific equipment - facility level dependent
+            # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
+
+            # Equipment for prostate cancer treatment
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
+                'Analyser, Hormones',
+                'Automatic Cell washer',
+                'Backsplit cotton gown',
+                'Coagulation machine',
+                'Sterilizing unit, steam, medium, 240 litre',
+                'Magnetic Stirrer',
+                'Micropipettes 10 - 100ul',
+                'Flow Cytometer',
+                'Urethrogram set',
+                'Intravenous Pyelography set',
+                'Automatic staining machine'
+            })
+
             # Record date and stage of starting treatment
             df.at[person_id, "pc_date_treatment"] = self.sim.date
             df.at[person_id, "pc_stage_at_which_treatment_given"] = df.at[person_id, "pc_status"]
 
-            # Schedule a post-treatment check for 12 months:
+            # Schedule a post-treatment check:
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(months=12),
+                topen=self.sim.date + DateOffset(months=self.module.parameters['months_to_post_treatment_check']),
                 tclose=None,
                 priority=0
             )
@@ -962,6 +1064,21 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         assert not pd.isnull(df.at[person_id, "pc_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "pc_date_treatment"])
 
+        # Equipment for prostate cancer follow-up monitoring - facility level dependent
+        # Since this HSI runs at level 3 (tertiary hospitals), equipment availability is high
+
+        # Equipment for prostate cancer post-treatment monitoring
+        self.add_equipment({
+            'Analyser, Haematology',
+            'Analyzer, Clinical immunoassay',
+            'Analyser, Hormones',
+            'Coagulation machine',
+            'Backsplit cotton gown',
+            'Safety Goggles',
+            'Sample Rack',
+            'Ultrasound scanning machine'
+        })
+
         if df.at[person_id, 'pc_status'] == 'metastatic':
             # If has progressed to metastatic, then start Palliative Care immediately:
             hs.schedule_hsi_event(
@@ -975,13 +1092,13 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
             )
 
         else:
-            # Schedule another HSI_ProstateCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_ProstateCancer_PostTreatmentCheck event in 12 months
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=1),
+                topen=self.sim.date + DateOffset(years=self.module.parameters['months_between_followup_appointments']),
                 tclose=None,
                 priority=0
             )
@@ -1004,7 +1121,8 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "ProstateCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'general_bed': self.module.parameters['palliative_care_beddays']}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1022,19 +1140,31 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.add_equipment({'Infusion pump', 'Drip stand'})
+            self.add_equipment({
+                'Infusion pump',
+                'Drip stand',
+                'Analyser, Haematology',
+                'Analyzer, Clinical immunoassay',
+                'Analyser, Hormones',
+                'Backsplit cotton gown',
+                'Coagulation machine',
+                'Automatic Cell washer',
+                'Sterilizing unit, steam, 39 ltr',
+                'Safety Goggles',
+                'Sample Rack'
+            })
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "pc_date_palliative_care"]):
                 df.at[person_id, "pc_date_palliative_care"] = self.sim.date
 
-            # Schedule another instance of the event for one month
+            # Schedule another instance of the event
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=1),
+                topen=self.sim.date + DateOffset(months=self.module.parameters['months_between_palliative_care']),
                 tclose=None,
                 priority=0
             )
@@ -1093,11 +1223,11 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: the .between function I think includes the two dates so events on these dates counted twice
         # todo:_ I think we need to replace with date_lastlog <= x < date_now
         n_newly_diagnosed_prostate_confined = (
-                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'prostate_confined')).sum()
+            df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'prostate_confined')).sum()
         n_newly_diagnosed_local_ln = (
-                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'local_ln')).sum()
+            df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'local_ln')).sum()
         n_newly_diagnosed_metastatic = (
-                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'metastatic')).sum()
+            df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'metastatic')).sum()
 
         n_diagnosed = (df.is_alive & ~pd.isnull(df.pc_date_diagnosis)).sum()
 

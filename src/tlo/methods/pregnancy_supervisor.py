@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 import pandas as pd
@@ -27,8 +27,10 @@ from tlo.methods.care_of_women_during_pregnancy import (
 )
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
+
 from tlo.util import BitsetHandler
 from tlo.methods.demography import InstantaneousPartialDeath
+
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
@@ -46,9 +48,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
      pre-eclampsia, eclampsia), gestational diabetes, maternal death). This module calculates likelihood of care seeking
      for routine antenatal care and emergency obstetric care in the event of severe complications."""
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # First we define dictionaries which will store the current parameters of interest (to allow parameters to
         # change between 2010 and 2020) and the linear models
@@ -151,6 +152,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                             
         self.default_all_mni_values = self.default_mni_values
         self.default_all_mni_values.update(self.default_labour_values)
+
+        # Finally we create a dictionary to capture the frequency of key outcomes for logging
+        mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
+        self.mnh_outcome_counter = mnh_oc['counter']
 
         # Finally we create a dictionary to capture the frequency of key outcomes for logging
         mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
@@ -481,13 +486,16 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                         'which the maximum coverage of ANC is enforced'),
 
         'interventions_analysis': Parameter(
-            Types.BOOL, ''),
+            Types.BOOL, 'Signals within the analysis event and code that intervention-based analysis is being '
+                        'undertaken in which the maximum coverage of ANC is enforced'),
         'interventions_under_analysis': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'Intervention for which their availability is being changed during analysis'),
         'all_interventions': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'Names of all maternal and newborn health interventions'),
         'intervention_analysis_availability': Parameter(
-            Types.REAL, ''),
+            Types.REAL, 'Probability an intervention which is included in "interventions_under_analysis" will be'
+                        'available'),
+
     }
 
     PROPERTIES = {
@@ -535,13 +543,11 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                                                    'multiple complications')
     }
 
-    def read_parameters(self, data_folder):
-        p = self.parameters
-
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         # load parameters from the resource file
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
-                                 sheet_name=None)
-        self.load_parameters_from_dataframe(workbook["parameter_values"])
+        parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_PregnancySupervisor',
+                                            files='parameter_values')
+        self.load_parameters_from_dataframe(parameter_dataframe)
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules
@@ -1346,7 +1352,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                 df.loc[person, 'cause_of_partial_death'].append('severe_gestational_hypertension')
                 
                 # Not deleting woman from mni because she always survives
-
         else:
         
             at_risk_of_death_htn = pd.Series(self.rng.random_sample(len(at_risk.loc[at_risk])) <
@@ -2134,6 +2139,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
                 df.loc[individual_id, 'date_of_partial_death'].append(str(self.sim.date))
                 df.loc[individual_id, 'death_weight'].append(death_weight)
                 df.loc[individual_id, 'cause_of_partial_death'].append('severe_gestational_hypertension')
+
         else:
 
             # If the death occurs we record it here
