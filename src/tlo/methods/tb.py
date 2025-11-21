@@ -864,29 +864,31 @@ class Tb(Module):
         df["tb_on_ipt"] = False
         df["tb_date_ipt"] = pd.NaT
 
+
         # # ------------------ infection status ------------------ #
-        # WHO estimates of active TB for 2010 to get infected initial population
-        # don't need to scale or include treated proportion as no-one on treatment yet
-        inc_estimates = p["who_incidence_estimates"]
-        incidence_year = (inc_estimates.loc[
-            (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
-        ].values[0]) / 100_000
+        if self.sim.generate_event_chains is False or self.sim.generate_event_chains is None:
+            # WHO estimates of active TB for 2010 to get infected initial population
+            # don't need to scale or include treated proportion as no-one on treatment yet
+            inc_estimates = p["who_incidence_estimates"]
+            incidence_year = (inc_estimates.loc[
+                (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
+            ].values[0]) / 100_000
 
-        incidence_year = incidence_year * p["scaling_factor_WHO"]
+            incidence_year = incidence_year * p["scaling_factor_WHO"]
 
-        self.assign_active_tb(
-            population,
-            strain="ds",
-            incidence=incidence_year)
+            self.assign_active_tb(
+                population,
+                strain="ds",
+                incidence=incidence_year)
 
-        self.assign_active_tb(
-            population,
-            strain="mdr",
-            incidence=incidence_year * p['prop_mdr2010'])
+            self.assign_active_tb(
+                population,
+                strain="mdr",
+                incidence=incidence_year * p['prop_mdr2010'])
 
-        self.send_for_screening_general(
-            population
-        )  # send some baseline population for screening
+            self.send_for_screening_general(
+                population
+            )  # send some baseline population for screening
 
     def initialise_simulation(self, sim):
         """
@@ -899,7 +901,9 @@ class Tb(Module):
         sim.schedule_event(TbActiveEvent(self), sim.date)
         sim.schedule_event(TbRegularEvents(self), sim.date)
         sim.schedule_event(TbSelfCureEvent(self), sim.date)
+
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
+
 
         # 2) log at the end of the year
         # Optional: Schedule the scale-up of programs
@@ -1402,6 +1406,53 @@ class Tb(Module):
 # #   TB infection event
 # # ---------------------------------------------------------------------------
 
+class TbActiveCasePollGenerateData(RegularEvent, PopulationScopeEventMixin):
+    """The Tb Regular Poll Event for Data Generation for assigning active infections
+    * selects everyone to develop an active infection and schedules onset of active tb
+    sometime during the simulation
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=120))
+
+    def apply(self, population):
+
+        df = population.props
+        now = self.sim.date
+        rng = self.module.rng
+        # Make everyone who is alive and not infected (no-one should be) susceptible
+        susc_idx = df.loc[
+            df.is_alive
+            & (df.tb_inf != "active")
+            ].index
+            
+        len(susc_idx)
+        
+        middle_index = len(susc_idx) // 2
+
+        # Will equally split two strains among the population
+        list_ds = susc_idx[:middle_index]
+        list_mdr = susc_idx[middle_index:]
+    
+        # schedule onset of active tb. This will be equivalent to the "Onset", so it
+        # doesn't matter how long after we have decided which infection this is.
+        for person_id in list_ds:
+            date_progression = now + pd.DateOffset(
+                # At some point during their lifetime, this person will develop TB
+                days=self.module.rng.randint(0, 365*(int(self.sim.end_date.year - self.sim.date.year)+1))
+            )
+            # set date of active tb - properties will be updated at TbActiveEvent poll daily
+            df.at[person_id, "tb_scheduled_date_active"] = date_progression
+            df.at[person_id, "tb_strain"] = "ds"
+            
+        for person_id in list_mdr:
+            date_progression = now + pd.DateOffset(
+                days=rng.randint(0, 365*int(self.sim.end_date.year - self.sim.start_date.year + 1))
+            )
+            # set date of active tb - properties will be updated at TbActiveEvent poll daily
+            df.at[person_id, "tb_scheduled_date_active"] = date_progression
+            df.at[person_id, "tb_strain"] = "mdr"
+            
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
@@ -1475,7 +1526,6 @@ class TbScaleUpEvent(Event, PopulationScopeEventMixin):
 
         self.module.update_parameters_for_program_scaleup()
         # note also culture test used in target/max scale-up in place of clinical dx
-
 
 class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
     """

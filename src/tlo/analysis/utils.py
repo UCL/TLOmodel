@@ -364,6 +364,167 @@ def extract_results(results_folder: Path,
     _concat = pd.concat(res, axis=1)
     _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
     return _concat
+    
+    
+import pandas as pd
+
+def old_unpack_dict_rows(df):
+    """
+    Reconstruct a full dataframe from rows whose columns contain dictionaries
+    mapping local-row-index → value. Preserves original column order.
+    """
+    original_cols = ['E', 'EventDate', 'EventName', 'A', 'V']
+    reconstructed_rows = []
+
+    for _, row in df.iterrows():
+        # Determine how many rows this block has (using the first dict column)
+        first_dict_col = next(col for col in original_cols if isinstance(row[col], dict))
+        block_length = len(row[first_dict_col])
+
+        # Build each reconstructed row
+        for i in range(block_length):
+            new_row = {}
+            for col in original_cols:
+                cell = row[col]
+                if not isinstance(cell, dict):
+                    raise ValueError(f"Column {col} does not contain a dictionary")
+                new_row[col] = cell.get(str(i))
+            reconstructed_rows.append(new_row)
+
+    # Build DataFrame and enforce the original column order
+    out = pd.DataFrame(reconstructed_rows)[original_cols]
+    return out.reset_index(drop=True)
+
+
+def unpack_dict_rows(df, non_dict_cols=None):
+    """
+    Reconstruct a full DataFrame from rows where most columns are dictionaries.
+    Non-dict columns (e.g., 'date') are propagated to all reconstructed rows.
+    
+    Parameters:
+        df: pd.DataFrame
+        non_dict_cols: list of columns that are NOT dictionaries
+    """
+    if non_dict_cols is None:
+        non_dict_cols = []
+
+    original_cols =  ['E', 'date', 'EventName', 'A', 'V']
+
+    reconstructed_rows = []
+
+    for _, row in df.iterrows():
+        # Determine dict columns for this row
+        dict_cols = [col for col in original_cols if col not in non_dict_cols]
+
+        if not dict_cols:
+            # No dict columns, just append row
+            reconstructed_rows.append(row.to_dict())
+            continue
+
+        # Use the first dict column to get the block length
+        first_dict_col = dict_cols[0]
+        block_length = len(row[first_dict_col])
+
+        # Build each expanded row
+        for i in range(block_length):
+            new_row = {}
+            for col in original_cols:
+                cell = row[col]
+                if col in dict_cols:
+                    # Access the dict using string or integer keys
+                    new_row[col] = cell.get(str(i), cell.get(i))
+                else:
+                    # Propagate non-dict value
+                    new_row[col] = cell
+            reconstructed_rows.append(new_row)
+
+    # Build DataFrame in original column order
+    out = pd.DataFrame(reconstructed_rows)[original_cols]
+
+    return out.reset_index(drop=True)
+
+    
+def print_filtered_df(df):
+    """
+    Prints rows of the DataFrame excluding EventName 'Initialise' and 'Birth'.
+    """
+    pd.set_option('display.max_colwidth', None)
+    filtered = df#[~df['EventName'].isin(['StartOfSimulation', 'Birth'])]
+    
+    dict_cols = ["Info"]
+    max_items = 2
+    # Step 2: Truncate dictionary columns for display
+    if dict_cols is not None:
+        for col in dict_cols:
+            def truncate_dict(d):
+                if isinstance(d, dict):
+                    items = list(d.items())[:max_items]  # keep only first `max_items`
+                    return dict(items)
+                return d
+            filtered[col] = filtered[col].apply(truncate_dict)
+    print(filtered)
+    
+    
+def extract_event_chains(results_folder: Path,
+                        ) -> dict:
+    """Utility function to collect chains of events. Individuals across runs of the same draw will be combined into unique df.
+    Returns dictionary where keys are draws, and each draw is associated with a dataframe of format 'E', 'EventDate', 'EventName', 'Info' where 'Info' is a dictionary that combines A&Vs for a particular individual + date + event name combination.
+    """
+    module = 'tlo.simulation'
+    key = 'event_chains'
+
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    # Collect results from each draw/run. Individuals across runs of the same draw will be combined into unique df.
+    res = dict()
+    
+    for draw in range(info['number_of_draws']):
+    
+        # All individuals in same draw will be combined across runs, so their ID will be offset.
+        dfs_from_runs = []
+        ID_offset = 0
+        
+        for run in range(info['runs_per_draw']):
+
+            try:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+
+                recon = unpack_dict_rows(df, ['date'])
+                print(recon)
+                #del recon['EventDate']
+                # For now convert value to string in all cases to facilitate manipulation. This can be reversed later.
+                recon['V'] = recon['V'].apply(str)
+                # Collapse into 'E', 'EventDate', 'EventName', 'Info' format where 'Info' is dict listing attributes (e.g. {a1:v1, a2:v2, a3:v3, ...} )
+                df_collapsed = (
+                        recon.groupby(['E', 'date', 'EventName'])
+                          .apply(lambda g: dict(zip(g['A'], g['V'])))
+                          .reset_index(name='Info')
+                    )
+                df_final = df_collapsed.sort_values(by=['E','date'], ascending=True).reset_index(drop=True)
+                birth_count = (df_final['EventName'] == 'Birth').sum()
+
+                print("Birth count for run ", run, "is ", birth_count)
+                df_final['E'] = df_final['E'] + ID_offset
+                
+                # Calculate ID offset for next run
+                ID_offset = (max(df_final['E']) + 1)
+        
+                # Append these chains to list
+                dfs_from_runs.append(df_final)
+                
+            except KeyError:
+                # Some logs could not be found - probably because this run failed.
+                # Simply to not append anything to the df collecting chains.
+                print("Run failed")
+            
+        # Combine all dfs into a single DataFrame
+        res[draw] = pd.concat(dfs_from_runs, ignore_index=True)
+
+        # Optionally, sort by 'E' and 'EventDate' after combining
+        res[draw] = res[draw].sort_values(by=['E', 'date']).reset_index(drop=True)
+
+    return res
 
 
 def compute_summary_statistics(

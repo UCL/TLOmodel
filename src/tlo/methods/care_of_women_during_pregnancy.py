@@ -733,7 +733,9 @@ class CareOfWomenDuringPregnancy(Module):
             self, int_name='urine_dipstick',
             hsi_event=hsi_event,
             q_param=[params['prob_intervention_delivered_urine_ds']],
+
             equipment={'Urine dip Stick'},
+
             cons=self.item_codes_preg_consumables['urine_dipstick'],
             dx_test='urine_dipstick_protein')
 
@@ -2559,6 +2561,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             q_param=[l_params['prob_hcw_avail_retained_prod'], l_params['mean_hcw_competence_hp']],
             cons=pac_cons,
             opt_cons=pac_opt_cons,
+
             equipment={'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump', 'Evacuation set'})
 
         if pac_delivered:

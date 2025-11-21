@@ -27,7 +27,9 @@ from tlo.methods.care_of_women_during_pregnancy import (
 )
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
-from tlo.util import BitsetHandler, read_csv_files
+
+from tlo.util import BitsetHandler,read_csv_files
+from tlo.methods.demography import InstantaneousPartialDeath
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -60,6 +62,100 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complications = None
+        
+        self.default_mni_values = {'delete_mni': False,  # if True, mni deleted in report_daly_values function
+                              'didnt_seek_care': False,
+                              'cons_not_avail': False,
+                              'comp_not_avail': False,
+                              'hcw_not_avail': False,
+                              'ga_anc_one': 0,
+                              'anc_ints': [],
+                              'abortion_onset': pd.NaT,
+                              'abortion_haem_onset': pd.NaT,
+                              'abortion_sep_onset': pd.NaT,
+                              'eclampsia_onset': pd.NaT,
+                              'mild_mod_aph_onset': pd.NaT,
+                              'severe_aph_onset': pd.NaT,
+                              'chorio_onset': pd.NaT,
+                              'chorio_in_preg': False,  # use in predictor in newborn linear models
+                              'ectopic_onset': pd.NaT,
+                              'ectopic_rupture_onset': pd.NaT,
+                              'gest_diab_onset': pd.NaT,
+                              'gest_diab_diagnosed_onset': pd.NaT,
+                              'gest_diab_resolution': pd.NaT,
+                              'none_anaemia_onset': pd.NaT,
+                              'none_anaemia_resolution': pd.NaT,
+                              'mild_anaemia_onset': pd.NaT,
+                              'mild_anaemia_resolution': pd.NaT,
+                              'moderate_anaemia_onset': pd.NaT,
+                              'moderate_anaemia_resolution': pd.NaT,
+                              'severe_anaemia_onset': pd.NaT,
+                              'severe_anaemia_resolution': pd.NaT,
+                              'mild_anaemia_pp_onset': pd.NaT,
+                              'mild_anaemia_pp_resolution': pd.NaT,
+                              'moderate_anaemia_pp_onset': pd.NaT,
+                              'moderate_anaemia_pp_resolution': pd.NaT,
+                              'severe_anaemia_pp_onset': pd.NaT,
+                              'severe_anaemia_pp_resolution': pd.NaT,
+                              'hypertension_onset': pd.NaT,
+                              'hypertension_resolution': pd.NaT,
+                              'obstructed_labour_onset': pd.NaT,
+                              'sepsis_onset': pd.NaT,
+                              'uterine_rupture_onset': pd.NaT,
+                              'mild_mod_pph_onset': pd.NaT,
+                              'severe_pph_onset': pd.NaT,
+                              'secondary_pph_onset': pd.NaT,
+                              'vesicovaginal_fistula_onset': pd.NaT,
+                              'vesicovaginal_fistula_resolution': pd.NaT,
+                              'rectovaginal_fistula_onset': pd.NaT,
+                              'rectovaginal_fistula_resolution': pd.NaT,
+                              'test_run': False,  # used by labour module when running some model tests
+                              'pred_syph_infect': pd.NaT,  # date syphilis is predicted to onset
+                              'new_onset_spe': False,
+                              'cs_indication': 'none'
+                              }
+        self.default_labour_values = {'labour_state': None,
+                            # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
+                            'birth_weight': 'normal_birth_weight',
+                            'birth_size': 'average_for_gestational_age',
+                            'delivery_setting': None,  # home_birth, health_centre, hospital
+                            'twins': None,
+                            'twin_count': 0,
+                            'twin_one_comps': False,
+                            'pnc_twin_one': 'none',
+                            'bf_status_twin_one': 'none',
+                            'eibf_status_twin_one': False,
+                            'an_placental_abruption': None,
+                            'corticosteroids_given': False,
+                            'clean_birth_practices': False,
+                            'abx_for_prom_given': False,
+                            'abx_for_pprom_given': False,
+                            'endo_pp': False,
+                            'retained_placenta': False,
+                            'uterine_atony': False,
+                            'amtsl_given': False,
+                            'cpd': False,
+                            'mode_of_delivery': 'vaginal_delivery',
+                            'neo_will_receive_resus_if_needed': False,
+                            # vaginal_delivery, instrumental, caesarean_section
+                            'hsi_cant_run': False,  # True (T) or False (F)
+                            'sought_care_for_complication': False,  # True (T) or False (F)
+                            'sought_care_labour_phase': 'none',
+                            'referred_for_cs': False,  # True (T) or False (F)
+                            'referred_for_blood': False,  # True (T) or False (F)
+                            'received_blood_transfusion': False,  # True (T) or False (F)
+                            'referred_for_surgery': False,  # True (T) or False (F)'
+                            'death_in_labour': False,  # True (T) or False (F)
+                            'single_twin_still_birth': False,  # True (T) or False (F)
+                            'will_receive_pnc': 'none',
+                            'passed_through_week_one': False}
+                            
+        self.default_all_mni_values = self.default_mni_values
+        self.default_all_mni_values.update(self.default_labour_values)
+
+        # Finally we create a dictionary to capture the frequency of key outcomes for logging
+        mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
+        self.mnh_outcome_counter = mnh_oc['counter']
 
         # Finally we create a dictionary to capture the frequency of key outcomes for logging
         mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
@@ -399,6 +495,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         'intervention_analysis_availability': Parameter(
             Types.REAL, 'Probability an intervention which is included in "interventions_under_analysis" will be'
                         'available'),
+
     }
 
     PROPERTIES = {
@@ -451,6 +548,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_PregnancySupervisor',
                                             files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
+
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules
@@ -1240,19 +1338,37 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             (df.ps_ectopic_pregnancy == 'none') & ~df.la_currently_in_labour & \
             (df.ps_htn_disorders == 'severe_gest_htn')
 
-        at_risk_of_death_htn = pd.Series(self.rng.random_sample(len(at_risk.loc[at_risk])) <
-                                         params['prob_monthly_death_severe_htn'], index=at_risk.loc[at_risk].index)
+        if self.sim.generate_event_chains:
+        
+            # Every woman at risk will partially die
+            for person in df.index[at_risk]:
+            
+                original_aliveness_weight = df.loc[person,'aliveness_weight']
+                # Individual is partially less alive
+                df.loc[person,'aliveness_weight'] *= (1. - params['prob_monthly_death_severe_htn'])
+                # Individual is partially dead
+                death_weight = original_aliveness_weight * params['prob_monthly_death_severe_htn']
+                df.loc[person, 'date_of_partial_death'].append(str(self.sim.date))
+                df.loc[person, 'death_weight'].append(death_weight)
+                df.loc[person, 'cause_of_partial_death'].append('severe_gestational_hypertension')
+                
+                # Not deleting woman from mni because she always survives
+        else:
+        
+            at_risk_of_death_htn = pd.Series(self.rng.random_sample(len(at_risk.loc[at_risk])) <
+                                             params['prob_monthly_death_severe_htn'], index=at_risk.loc[at_risk].index)
 
-        if not at_risk_of_death_htn.loc[at_risk_of_death_htn].empty:
-            # Those women who die have InstantaneousDeath scheduled
-            for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
-                self.mnh_outcome_counter['severe_gestational_hypertension_m_death'] += 1
-                self.mnh_outcome_counter['direct_mat_death'] += 1
+            if not at_risk_of_death_htn.loc[at_risk_of_death_htn].empty:
+                # Those women who die have InstantaneousDeath scheduled
+                for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
+                    self.mnh_outcome_counter['severe_gestational_hypertension_m_death'] += 1
+                    self.mnh_outcome_counter['direct_mat_death'] += 1
 
-                self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
-                                                        originating_module=self.sim.modules['PregnancySupervisor'])
+                    self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
+                                                            originating_module=self.sim.modules['PregnancySupervisor'])
 
-                del mni[person]
+                    del mni[person]
+                    
 
     def apply_risk_of_placental_abruption(self, gestation_of_interest):
         """
@@ -1559,21 +1675,36 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         mother = df.loc[individual_id]
 
-        # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
-        # (either from one or multiple causes) and if death occurs returns the cause
-        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
+        survived = True
+        
+        if self.sim.generate_event_chains:
+        
+            # Get all potential causes of death and associated risks
+            risks = pregnancy_helper_functions.get_risk_of_death_from_cause_maternal(
                 self, individual_id=individual_id, timing='antenatal')
+        
+            pregnancy_helper_functions.apply_multiple_partial_deaths(self, risks, individual_id=individual_id)
+            
+        else:
+        
+            # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
+            # (either from one or multiple causes) and if death occurs returns the cause
+            potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
+                    self, individual_id=individual_id, timing='antenatal')
 
-        # If a cause is returned death is scheduled
-        if potential_cause_of_death:
-            pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
-                                                    originating_module=self.sim.modules['PregnancySupervisor'])
-            self.mnh_outcome_counter['direct_mat_death'] += 1
-            del mni[individual_id]
+            # If a cause is returned death is scheduled
+            if potential_cause_of_death:
+            
+                # If woman has been selected to die, set survived to false
+                survived = False
+                pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
+                                                        originating_module=self.sim.modules['PregnancySupervisor'])
+                self.mnh_outcome_counter['direct_mat_death'] += 1
+                del mni[individual_id]
 
         # If not we reset variables and the woman survives
-        else:
+        if survived:
             mni[individual_id]['didnt_seek_care'] = False
 
             if (mother.ps_htn_disorders == 'severe_pre_eclamp') and mni[individual_id]['new_onset_spe']:
@@ -1991,24 +2122,45 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[individual_id, 'is_alive']:
             return
 
+        # Woman assumed to survive, will overwrite if selected for death
+        survived = True
+
         # Individual risk of death is calculated through the linear model
         risk_of_death = self.module.ps_linear_models[f'{self.cause}_death'].predict(
             df.loc[[individual_id]])[individual_id]
 
-        # If the death occurs we record it here
-        if self.module.rng.random_sample() < risk_of_death:
-
-            if individual_id in mni:
-                pregnancy_helper_functions.log_mni_for_maternal_death(self.module, individual_id)
-                mni[individual_id]['delete_mni'] = True
-
-            self.module.mnh_outcome_counter[f'{self.cause}_m_death'] += 1
-            self.module.mnh_outcome_counter['direct_mat_death'] += 1
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{self.cause}',
-                                                    originating_module=self.sim.modules['PregnancySupervisor'])
+        if self.sim.generate_event_chains:
+                original_aliveness_weight = df.loc[individual_id,'aliveness_weight']
+                
+                # Individual partially survives
+                df.loc[individual_id,'aliveness_weight'] *= (1. - risk_of_death)
+                
+                # Individual partially dies
+                death_weight = original_aliveness_weight * risk_of_death
+                df.loc[individual_id, 'date_of_partial_death'].append(str(self.sim.date))
+                df.loc[individual_id, 'death_weight'].append(death_weight)
+                df.loc[individual_id, 'cause_of_partial_death'].append('severe_gestational_hypertension')
 
         else:
-            # Otherwise we reset any variables
+
+            # If the death occurs we record it here
+            if self.module.rng.random_sample() < risk_of_death:
+                
+                survived = False
+
+                if individual_id in mni:
+                    pregnancy_helper_functions.log_mni_for_maternal_death(self.module, individual_id)
+                    mni[individual_id]['delete_mni'] = True
+
+                self.module.mnh_outcome_counter[f'{self.cause}_m_death'] += 1
+                self.module.mnh_outcome_counter['direct_mat_death'] += 1
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{self.cause}',
+                                                        originating_module=self.sim.modules['PregnancySupervisor'])
+
+        # If individual survived, updated variables
+        if survived:
+        
+            # If woman survived we reset any variables
             if self.cause == 'ectopic_pregnancy':
                 df.at[individual_id, 'ps_ectopic_pregnancy'] = 'none'
 

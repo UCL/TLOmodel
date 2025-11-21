@@ -50,6 +50,7 @@ def get_dummy_hsi(sim, mother_id, id, fl):
     return hsi_event
 
 def test_interventions_are_delivered_as_expected_not_during_analysis(seed):
+
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
     sim.make_initial_population(n=100)
@@ -79,6 +80,7 @@ def test_interventions_are_delivered_as_expected_not_during_analysis(seed):
     hsi_event = get_dummy_hsi(sim, mother_id, id=0, fl=0)
 
     def override_dummy_cons(value):
+
         updated_cons = {k: value for (k, v) in
                         sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
         sim.modules['HealthSystem'].override_availability_of_consumables(updated_cons)
@@ -121,6 +123,7 @@ def test_interventions_are_delivered_as_expected_not_during_analysis(seed):
 
 
 def test_interventions_are_delivered_as_expected_during_analysis(seed):
+
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
     sim.make_initial_population(n=100)
@@ -142,6 +145,7 @@ def test_interventions_are_delivered_as_expected_during_analysis(seed):
     hsi_event = get_dummy_hsi(sim, mother_id, id=0, fl=0)
 
     def override_dummy_cons(value):
+
         updated_cons = {k: value for (k, v) in
                         sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
         sim.modules['HealthSystem'].override_availability_of_consumables(updated_cons)
@@ -170,6 +174,7 @@ def test_interventions_are_delivered_as_expected_during_analysis(seed):
 def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     """Test that the analysis events run when scheduled and that they update the correct parameters as expected
     when they run"""
+
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
 
@@ -202,6 +207,7 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     unchanged_odds_anc = pparams['odds_early_init_anc4'][0]
     unchanged_odds_pnc = lparams['odds_will_attend_pnc'][0]
 
+    sim.make_initial_population(n=100)
     # run the model for 1 day
     sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
@@ -230,6 +236,7 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
 
 
 def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_max_parameters(seed):
+
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
     lparams = sim.modules['Labour'].parameters
@@ -281,6 +288,7 @@ def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_max_par
 
 
 def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_min_parameters(seed):
+
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
     lparams = sim.modules['Labour'].parameters
@@ -324,6 +332,7 @@ def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_min_par
 def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the ANC HSIs"""
+
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
     sim.make_initial_population(n=100)
@@ -338,6 +347,7 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     cparams['sensitivity_blood_test_syphilis'] = [1.0, 1.0]
     cparams['specificity_blood_test_syphilis'] = [1.0, 1.0]
 
+    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
 
     # check the event ran
@@ -407,6 +417,7 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
 def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the SBA HSIs"""
+
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
 
@@ -543,6 +554,7 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
 def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the PNC HSIs"""
+
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
 
@@ -611,6 +623,7 @@ def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed
 def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed):
     """Test that when analysis is being conducted during a simulation that consumable availability is determined
     via some pre-defined analysis parameter and not via the health system within the newborn HSIs"""
+
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
     sim.make_initial_population(n=100)
@@ -626,6 +639,7 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     lparams['pnc_availability_probability'] = 1.0
     lparams['bemonc_availability'] = 1.0
 
+    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
 
     df = sim.population.props
@@ -681,6 +695,7 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
 def test_analysis_events_circumnavigates_sf_and_competency_parameters(seed):
     """Test that the analysis event correctly overrides the parameters which controle whether the B/CEmONC signal
     functions can run"""
+
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
 

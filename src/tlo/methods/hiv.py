@@ -1523,15 +1523,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         df = self.sim.population.props
 
-        if not self.stored_test_numbers:
-            # If it's the first year, set previous_test_numbers to 0
+        # get number of tests performed in last time period
+        if self.sim.date.year == (self.sim.start_date.year + 1):
+            number_tests_new = df.hv_number_tests.sum()
             previous_test_numbers = 0
         else:
             # For subsequent years, retrieve the last stored number
             previous_test_numbers = self.stored_test_numbers[-1]
 
-        # Calculate number of tests now performed - cumulative, include those who have died
-        number_tests_new = df.hv_number_tests.sum()
+            # Calculate number of tests now performed - cumulative, include those who have died
+            number_tests_new = df.hv_number_tests.sum()
 
         # Store the number of tests performed in this year for future reference
         self.stored_test_numbers.append(number_tests_new)
@@ -1682,6 +1683,37 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 #   Main Polling Event
 # ---------------------------------------------------------------------------
 
+class HivPollingEventForDataGeneration(RegularEvent, PopulationScopeEventMixin):
+    """ The HIV Polling Events for Data Generation
+    * Ensures that 
+    """
+
+    def __init__(self, module):
+        super().__init__(
+            module, frequency=DateOffset(years=120)
+        )  # repeats every 12 months, but this can be changed
+
+    def apply(self, population):
+    
+        df = population.props
+        
+        # Make everyone who is alive and not infected (no-one should be) susceptible
+        susc_idx = df.loc[
+            df.is_alive
+            & ~df.hv_inf
+            ].index
+            
+        n_susceptible = len(susc_idx)
+        print("Number of individuals susceptible", n_susceptible)
+        # Schedule the date of infection for each new infection:
+        for i in susc_idx:
+            date_of_infection = self.sim.date + pd.DateOffset(
+                # Ensure that individual will be infected before end of sim
+                days=self.module.rng.randint(0, 365*(int(self.sim.end_date.year - self.sim.date.year)+1))
+            )
+            self.sim.schedule_event(
+                HivInfectionEvent(self.module, i), date_of_infection
+            )
 
 class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ The HIV Regular Polling Events
@@ -1703,6 +1735,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         fraction_of_year_between_polls = self.frequency.months / 12
         beta = p["beta"] * fraction_of_year_between_polls
 
+        
         # ----------------------------------- HORIZONTAL TRANSMISSION -----------------------------------
         def horizontal_transmission(to_sex, from_sex):
             # Count current number of alive 15-80 year-olds at risk of transmission
@@ -1777,6 +1810,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.schedule_event(
                         HivInfectionEvent(self.module, idx), date_of_infection
                     )
+
 
         # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
         def spontaneous_testing(current_year):
@@ -1900,6 +1934,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # VMMC for <15 yrs in the population
         vmmc_for_child()
+
+
 
 
 # ---------------------------------------------------------------------------

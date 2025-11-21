@@ -864,6 +864,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             {ic('Infant resuscitator, clear plastic + mask + bag_each_CMST'): 1}
 
     def initialise_simulation(self, sim):
+
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
         self.get_and_store_labour_item_codes()
@@ -1483,25 +1484,37 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # Check the right women are at risk of death
         self.postpartum_characteristics_checker(individual_id)
 
-        # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
-        # (either from one or multiple causes) and if death occurs returns the cause
-        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-            self, individual_id=individual_id, timing='postnatal')
+        survived = True
+        
+        if self.sim.generate_event_chains:
+ 
+            risks = pregnancy_helper_functions.get_risk_of_death_from_cause_maternal(
+                self, individual_id=individual_id, timing='postnatal')
+                
+            pregnancy_helper_functions.apply_multiple_partial_deaths(self, risks, individual_id=individual_id)
+        
+        else:
 
-        # Log df row containing complications and treatments to calculate met need
+            # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
+            # (either from one or multiple causes) and if death occurs returns the cause
+            potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
+                self, individual_id=individual_id, timing='postnatal')
 
-        # If a cause is returned death is scheduled
-        if potential_cause_of_death:
-            pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
+            # Log df row containing complications and treatments to calculate met need
 
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
-                                                    originating_module=self.sim.modules['Labour'])
+            # If a cause is returned death is scheduled
+            if potential_cause_of_death:
+                survived = False
+                pregnancy_helper_functions.log_mni_for_maternal_death(self, individual_id)
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
+
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
+                                                        originating_module=self.sim.modules['Labour'])
 
 
         # If she hasn't died from any complications, we reset some key properties that resolve after risk of death
         # has been applied
-        else:
+        if survived:
             if df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia':
                 df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
 
@@ -2547,19 +2560,31 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
 
         self.module.labour_characteristics_checker(individual_id)
 
-        # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
-        # (either from one or multiple causes) and if death occurs returns the cause
-        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
-            self.module, individual_id=individual_id, timing='intrapartum')
+        survived = True
+        
+        if self.sim.generate_event_chains:
+        
+            risks = pregnancy_helper_functions.get_risk_of_death_from_cause_maternal(
+                self.module, individual_id=individual_id, timing='intrapartum')
+                
+            pregnancy_helper_functions.apply_multiple_partial_deaths(self, risks, individual_id=individual_id)
+        
+        else:
 
-        # If a cause is returned death is scheduled
-        if potential_cause_of_death:
-            pregnancy_helper_functions.log_mni_for_maternal_death(self.module, individual_id)
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
-                                                    originating_module=self.sim.modules['Labour'])
+            # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
+            # (either from one or multiple causes) and if death occurs returns the cause
+            potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
+                self.module, individual_id=individual_id, timing='intrapartum')
 
-            mni[individual_id]['death_in_labour'] = True
+            # If a cause is returned death is scheduled
+            if potential_cause_of_death:
+                survived = False
+                pregnancy_helper_functions.log_mni_for_maternal_death(self.module, individual_id)
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=potential_cause_of_death,
+                                                        originating_module=self.sim.modules['Labour'])
+
+                mni[individual_id]['death_in_labour'] = True
 
         # Next we determine if she will experience a stillbirth during her delivery
         outcome_of_still_birth_equation = self.module.predict(self.module.la_linear_models['intrapartum_still_birth'],
@@ -2606,7 +2631,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             mni[individual_id]['didnt_seek_care'] = False
 
         # Finally, reset some treatment variables
-        if not potential_cause_of_death:
+        if survived:
             df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
             df.at[individual_id, 'ac_iv_anti_htn_treatment'] = False
             df.at[individual_id, 'ac_mag_sulph_treatment'] = False

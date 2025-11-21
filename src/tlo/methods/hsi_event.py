@@ -7,16 +7,26 @@ import numpy as np
 
 from tlo import Date, logging
 from tlo.events import Event
+from tlo.population import Population
+from tlo.util import convert_chain_links_into_EAV
+import pandas as pd
 
 if TYPE_CHECKING:
     from tlo import Module, Simulation
     from tlo.methods.healthsystem import HealthSystem
+
+# Pointing to the logger in events
+logger_chains = logging.getLogger("tlo.simulation")
+logger_chains.setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 logger_summary = logging.getLogger(f"{__name__}.summary")
 logger_summary.setLevel(logging.INFO)
+
+debug_chains = True
+
 
 # Declare the level which will be used to represent the merging of levels '1b' and '2'
 LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2 = "2"
@@ -194,12 +204,146 @@ class HSI_Event:
                 facility_id=self.facility_info.id
             )
 
+    def values_differ(self, v1, v2):
+    
+        if isinstance(v1, list) and isinstance(v2, list):
+            return v1 != v2  # simple element-wise comparison
+
+        if pd.isna(v1) and pd.isna(v2):
+            return False  # treat both NaT/NaN as equal
+        return v1 != v2
+
+
+    def store_chains_to_do_before_event(self) -> tuple[bool, pd.Series, dict, bool]:
+        """ This function checks whether this event should be logged as part of the event chains, and if so stored required information before the event has occurred. """
+        
+        # Initialise these variables
+        print_chains = False
+        row_before = pd.Series()
+        mni_instances_before = False
+        mni_row_before = {}
+        
+        # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
+        if (self.module in self.sim.generate_event_chains_modules_of_interest) and all(sub not in str(self) for sub in self.sim.generate_event_chains_ignore_events):
+        
+        # Will eventually use this once I can actually GET THE NAME OF THE SELF
+        #if not set(self.sim.generate_event_chains_ignore_events).intersection(str(self)):
+
+            print_chains = True
+            
+            # Target is single individual
+            if self.target != self.sim.population:
+            
+                # Save row for comparison after event has occurred
+                row_before = self.sim.population.props.loc[abs(self.target)].copy().fillna(-99999)
+                
+                # Check if individual is in mni dictionary before the event, if so store its original status
+                if 'PregnancySupervisor' in self.sim.modules:
+                    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+                    if self.target in mni:
+                        mni_instances_before = True
+                        mni_row_before = mni[self.target].copy()
+                
+            else:
+                print("ERROR: there shouldn't be pop-wide HSI event")
+                exit(-1)
+                
+        return print_chains, row_before, mni_row_before, mni_instances_before
+        
+    def store_chains_to_do_after_event(self, row_before, footprint, mni_row_before, mni_instances_before) -> dict:
+        """ If print_chains=True, this function logs the event and identifies and logs the any property changes that have occured to one or multiple individuals as a result of the event taking place. """
+
+        # For HSI event, this will only ever occur for individual events
+        chain_links = {}
+
+        row_after = self.sim.population.props.loc[abs(self.target)].fillna(-99999)
+        
+        mni_instances_after = False
+        if 'PregnancySupervisor' in self.sim.modules:
+            mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+            if self.target in mni:
+                mni_instances_after = True
+            
+        # Create and store dictionary of changes. Note that person_ID, event, event_date, appt_foot, and level
+        # will be stored regardless of whether individual experienced property changes or not.
+
+        # Add event details
+        try:
+            record_footprint = str(footprint)
+            record_level = self.facility_info.level
+        except:
+            record_footprint = 'N/A'
+            record_level = 'N/A'
+            
+        link_info = {
+            'EventName' : type(self).__name__,
+            'appt_footprint' : record_footprint,
+            'level' : record_level,
+        }
+        
+        # Add changes to properties
+        for key in row_before.index:
+            if row_before[key] != row_after[key]: # Note: used fillna previously
+                link_info[key] = row_after[key]
+                
+        if 'PregnancySupervisor' in self.sim.modules:
+            # Now store changes in the mni dictionary, accounting for following cases:
+            # Individual is in mni dictionary before and after
+            if mni_instances_before and mni_instances_after:
+                for key in mni_row_before:
+                    if self.values_differ(mni_row_before[key], mni[self.target][key]):
+                        link_info[key] = mni[self.target][key]
+            # Individual is only in mni dictionary before event
+            elif mni_instances_before and not mni_instances_after:
+                default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
+                for key in mni_row_before:
+                    if self.values_differ(mni_row_before[key], default[key]):
+                        link_info[key] = default[key]
+            # Individual is only in mni dictionary after event
+            elif mni_instances_after and not mni_instances_before:
+                default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
+                for key in default:
+                    if self.values_differ(default[key], mni[self.target][key]):
+                        link_info[key] = mni[self.target][key]
+
+        chain_links[self.target] = link_info
+            
+        return chain_links
+        
+
     def run(self, squeeze_factor):
         """Make the event happen."""
+
+        
+        if self.sim.generate_event_chains and self.target != self.sim.population:
+            print_chains, row_before, mni_row_before, mni_instances_before = self.store_chains_to_do_before_event()
+              
+            footprint = self.EXPECTED_APPT_FOOTPRINT
+
         updated_appt_footprint = self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
         self._run_after_hsi_event()
+        
+        
+        if self.sim.generate_event_chains and self.target != self.sim.population:
+
+            # If the footprint has been updated when the event ran, change it here
+            if updated_appt_footprint is not None:
+                footprint = updated_appt_footprint
+            
+            if print_chains:
+                chain_links = self.store_chains_to_do_after_event(row_before, str(footprint), mni_row_before, mni_instances_before)
+            
+                if chain_links:
+                    
+                    # Convert chain_links into EAV
+                    ednav = convert_chain_links_into_EAV(chain_links)
+                    logger_chain.info(key='event_chains',
+                            data = ednav,
+                            description='Links forming chains of events for simulated individuals')
+                
         return updated_appt_footprint
+        
 
     def get_consumables(
         self,

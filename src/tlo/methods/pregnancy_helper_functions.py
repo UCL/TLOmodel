@@ -309,6 +309,27 @@ def log_mni_for_maternal_death(self, person_id):
     logger.info(key='death_mni', data=mni_to_log)
 
 
+def apply_multiple_partial_deaths(self, risks, individual_id):
+    """
+    This function applies multiple causes of partial death on individual
+    """
+    df = self.sim.population.props
+
+    total_risk_of_death = 0
+    for key, value in risks.items():
+        total_risk_of_death += value
+
+    # Individual is partially less alive
+    original_aliveness_weight = df.loc[individual_id,'aliveness_weight']
+    df.loc[individual_id,'aliveness_weight'] *= (1. - total_risk_of_death)
+    for key, value in risks.items():
+        # Individual is partially dead
+        death_weight = original_aliveness_weight * value
+        df.loc[individual_id, 'date_of_partial_death'].append(str(self.sim.date))
+        df.loc[individual_id, 'death_weight'].append(death_weight)
+        df.loc[individual_id, 'cause_of_partial_death'].append(key)
+
+
 def calculate_risk_of_death_from_causes(self, risks, target):
     """
     This function calculates risk of death in the context of one or more 'death causing' complications in a mother of a
@@ -345,12 +366,10 @@ def calculate_risk_of_death_from_causes(self, risks, target):
         return False
 
 
-def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
+def get_risk_of_death_from_cause_maternal(self, individual_id, timing):
     """
-    This function calculates the risk of death associated with one or more causes being experience by an individual and
-    determines if they will die and which of a number of competing cause is the primary cause of death
-    :param individual_id: individual_id of woman at risk of death
-    return: cause of death or False
+    This function calculates the risk of death associated with one or more causes being experience by an individual 
+    return: causes and associated risks
     """
     params = self.current_parameters
     df = self.sim.population.props
@@ -393,10 +412,11 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
     if mother.pn_postpartum_haem_secondary and (timing == 'postnatal'):
         causes.append('secondary_postpartum_haemorrhage')
 
+    risks = dict()
+    
     # If this list is not empty, use either CFR parameters or linear models to calculate risk of death from each
     # complication she is experiencing and store in a dictionary, using each cause as the key
     if causes:
-        risks = dict()
 
         def apply_effect_of_anaemia(cause):
             lab_params = self.sim.modules['Labour'].current_parameters
@@ -447,7 +467,21 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                     apply_effect_of_anaemia(cause)
 
                 risks.update(risk)
+    
+    return risks
 
+
+def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
+    """
+    This function calculates the risk of death associated with one or more causes being experience by an individual and
+    determines if they will die and which of a number of competing cause is the primary cause of death
+    :param individual_id: individual_id of woman at risk of death
+    return: cause of death or False
+    """
+
+    risks = get_risk_of_death_from_cause_maternal(self, individual_id, timing)
+    
+    if len(risks)>0:
         # Call return the result from calculate_risk_of_death_from_causes function
         return calculate_risk_of_death_from_causes(self, risks, target='m')
 
@@ -455,12 +489,10 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
     return False
 
 
-def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
+def get_risk_of_death_from_cause_neonatal(self, individual_id):
     """
-    This function calculates the risk of death associated with one or more causes being experience by an individual and
-    determines if they will die and which of a number of competing cause is the primary cause of death
-    :param individual_id: individual_id of woman at risk of death
-    return: cause of death or False
+    This function calculates the risk of death associated with one or more causes being experience by an individual 
+    return: causes and associated risks
     """
     params = self.current_parameters
     df = self.sim.population.props
@@ -505,10 +537,11 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
         if self.congeintal_anomalies.has_all(individual_id, 'other'):
             causes.append('other_anomaly')
 
+    risks = dict()
+
     # If this list is not empty, use either CFR parameters or linear models to calculate risk of death from each
     # complication they experiencing and store in a dictionary, using each cause as the key
     if causes:
-        risks = dict()
         for cause in causes:
             if f'{cause}_death' in self.nb_linear_models.keys():
                 risk = {cause: self.nb_linear_models[f'{cause}_death'].predict(
@@ -517,7 +550,21 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
                 risk = {cause: params[f'cfr_{cause}']}
 
             risks.update(risk)
+            
+    return risks
 
+
+def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
+    """
+    This function calculates the risk of death associated with one or more causes being experience by an individual and
+    determines if they will die and which of a number of competing cause is the primary cause of death
+    :param individual_id: individual_id of woman at risk of death
+    return: cause of death or False
+    """
+
+    risks = get_risk_of_death_from_cause_neonatal(self, individual_id)
+
+    if len(risks)>0:
         # Return the result from calculate_risk_of_death_from_causes function (returns primary cause of death or False)
         return calculate_risk_of_death_from_causes(self, risks, target='n')
 
@@ -531,91 +578,15 @@ def update_mni_dictionary(self, individual_id):
 
     if self == self.sim.modules['PregnancySupervisor']:
 
-        mni[individual_id] = {'delete_mni': False,  # if True, mni deleted in report_daly_values function
-                              'didnt_seek_care': False,
-                              'cons_not_avail': False,
-                              'comp_not_avail': False,
-                              'hcw_not_avail': False,
-                              'ga_anc_one': 0,
-                              'anc_ints': [],
-                              'abortion_onset': pd.NaT,
-                              'abortion_haem_onset': pd.NaT,
-                              'abortion_sep_onset': pd.NaT,
-                              'eclampsia_onset': pd.NaT,
-                              'mild_mod_aph_onset': pd.NaT,
-                              'severe_aph_onset': pd.NaT,
-                              'chorio_onset': pd.NaT,
-                              'chorio_in_preg': False,  # use in predictor in newborn linear models
-                              'ectopic_onset': pd.NaT,
-                              'ectopic_rupture_onset': pd.NaT,
-                              'gest_diab_onset': pd.NaT,
-                              'gest_diab_diagnosed_onset': pd.NaT,
-                              'gest_diab_resolution': pd.NaT,
-                              'mild_anaemia_onset': pd.NaT,
-                              'mild_anaemia_resolution': pd.NaT,
-                              'moderate_anaemia_onset': pd.NaT,
-                              'moderate_anaemia_resolution': pd.NaT,
-                              'severe_anaemia_onset': pd.NaT,
-                              'severe_anaemia_resolution': pd.NaT,
-                              'mild_anaemia_pp_onset': pd.NaT,
-                              'mild_anaemia_pp_resolution': pd.NaT,
-                              'moderate_anaemia_pp_onset': pd.NaT,
-                              'moderate_anaemia_pp_resolution': pd.NaT,
-                              'severe_anaemia_pp_onset': pd.NaT,
-                              'severe_anaemia_pp_resolution': pd.NaT,
-                              'hypertension_onset': pd.NaT,
-                              'hypertension_resolution': pd.NaT,
-                              'obstructed_labour_onset': pd.NaT,
-                              'sepsis_onset': pd.NaT,
-                              'uterine_rupture_onset': pd.NaT,
-                              'mild_mod_pph_onset': pd.NaT,
-                              'severe_pph_onset': pd.NaT,
-                              'secondary_pph_onset': pd.NaT,
-                              'vesicovaginal_fistula_onset': pd.NaT,
-                              'vesicovaginal_fistula_resolution': pd.NaT,
-                              'rectovaginal_fistula_onset': pd.NaT,
-                              'rectovaginal_fistula_resolution': pd.NaT,
-                              'test_run': False,  # used by labour module when running some model tests
-                              'pred_syph_infect': pd.NaT,  # date syphilis is predicted to onset
-                              'new_onset_spe': False,
-                              'cs_indication': 'none'
-                              }
+        mni[individual_id] = self.sim.modules['PregnancySupervisor'].default_mni_values.copy()
 
     elif self == self.sim.modules['Labour']:
-        labour_variables = {'labour_state': None,
-                            # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
-                            'birth_weight': 'normal_birth_weight',
-                            'birth_size': 'average_for_gestational_age',
-                            'delivery_setting': None,  # home_birth, health_centre, hospital
-                            'twins': df.at[individual_id, 'ps_multiple_pregnancy'],
-                            'twin_count': 0,
-                            'twin_one_comps': False,
-                            'pnc_twin_one': 'none',
-                            'bf_status_twin_one': 'none',
-                            'eibf_status_twin_one': False,
-                            'an_placental_abruption': df.at[individual_id, 'ps_placental_abruption'],
-                            'corticosteroids_given': False,
-                            'clean_birth_practices': False,
-                            'abx_for_prom_given': False,
-                            'abx_for_pprom_given': False,
-                            'endo_pp': False,
-                            'retained_placenta': False,
-                            'uterine_atony': False,
-                            'amtsl_given': False,
-                            'cpd': False,
-                            'mode_of_delivery': 'vaginal_delivery',
-                            'neo_will_receive_resus_if_needed': False,
-                            # vaginal_delivery, instrumental, caesarean_section
-                            'hsi_cant_run': False,  # True (T) or False (F)
-                            'sought_care_for_complication': False,  # True (T) or False (F)
-                            'sought_care_labour_phase': 'none',
-                            'referred_for_cs': False,  # True (T) or False (F)
-                            'referred_for_blood': False,  # True (T) or False (F)
-                            'received_blood_transfusion': False,  # True (T) or False (F)
-                            'referred_for_surgery': False,  # True (T) or False (F)'
-                            'death_in_labour': False,  # True (T) or False (F)
-                            'single_twin_still_birth': False,  # True (T) or False (F)
-                            'will_receive_pnc': 'none',
-                            'passed_through_week_one': False}
+    
+        labour_default = self.sim.modules['PregnancySupervisor'].default_labour_values.copy()
+        mni[individual_id].update(labour_default)
 
-        mni[individual_id].update(labour_variables)
+        # Update from default based on individual case
+        mni[individual_id]['twins'] = df.at[individual_id, 'ps_multiple_pregnancy']
+        mni[individual_id]['an_placental_abruption'] = df.at[individual_id, 'ps_placental_abruption']
+
+
