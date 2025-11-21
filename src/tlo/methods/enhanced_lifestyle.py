@@ -692,7 +692,9 @@ class LifestyleModels:
             # check all districts have been corectly mapped to their rural urban proportions
             assert not rural_urban_props.isnull().any(), 'some districts are not mapped to their rural urban values'
             # check urban rural proportion is greater or equal to 0 but less or equal to 1
-            assert rural_urban_props.apply(lambda x: 0.0 <= x <= 1.0).any(), 'proportion less than 0 or greater than 1'
+            rural_urban_props = df['district_of_residence'].map(p['init_p_urban']['prop_urban']).astype(float)
+            assert rural_urban_props.between(0.0, 1.0).all(), 'proportion less than 0 or greater than 1'
+            # assert rural_urban_props.apply(lambda x: 0.0 <= x <= 1.0).any(), 'proportion less than 0 or greater than 1'
 
             # get individual's rural urban status
             rural_urban = rural_urban_props > rnd_draw
