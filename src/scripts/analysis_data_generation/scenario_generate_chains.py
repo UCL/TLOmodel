@@ -53,11 +53,11 @@ class GenerateDataChains(BaseScenario):
         super().__init__()
         self.seed = 42
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(months=18)
-        self.pop_size = 10000
+        self.end_date = self.start_date + pd.DateOffset(months=1)
+        self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 3
         self.generate_event_chains = True
 
     def log_configuration(self):

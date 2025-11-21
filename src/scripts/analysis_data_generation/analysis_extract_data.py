@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import extract_results
+from tlo.analysis.utils import extract_results, extract_event_chains
 from datetime import datetime
 from collections import Counter
 import ast
@@ -35,6 +35,27 @@ def check_if_beyond_time_range_considered(progression_properties):
             if progression_properties[key] > end_date:
                 print("Beyond time range considered, need at least ",progression_properties[key])
 
+def print_filtered_df(df):
+    """
+    Prints rows of the DataFrame excluding EventName 'Initialise' and 'Birth'.
+    """
+    pd.set_option('display.max_colwidth', None)
+    filtered = df#[~df['EventName'].isin(['StartOfSimulation', 'Birth'])]
+    
+    dict_cols = ["Info"]
+    max_items = 2
+    # Step 2: Truncate dictionary columns for display
+    if dict_cols is not None:
+        for col in dict_cols:
+            def truncate_dict(d):
+                if isinstance(d, dict):
+                    items = list(d.items())[:max_items]  # keep only first `max_items`
+                    return dict(items)
+                return d
+            filtered[col] = filtered[col].apply(truncate_dict)
+    print(filtered)
+
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
@@ -42,6 +63,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     """
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_colwidth', None)
+    
+    individual_event_chains = extract_event_chains(results_folder)
+    print_filtered_df(individual_event_chains[0])
+    exit(-1)
     
     eval_env = {
         'datetime': datetime,  # Add the datetime class to the eval environment
