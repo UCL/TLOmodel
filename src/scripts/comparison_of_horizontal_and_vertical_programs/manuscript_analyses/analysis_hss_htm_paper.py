@@ -29,7 +29,6 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize,
     make_age_grp_lookup,
     make_age_grp_types,
 )
@@ -117,13 +116,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         substitute_labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-        # Rename 'central' to 'mean' if it exists
+        # Rename 'central' to 'median' if it exists
         if 'central' in _df.columns:
-            _df = _df.rename(columns={'central': 'mean'})
+            _df = _df.rename(columns={'central': 'median'})
 
         yerr = np.array([
-            (_df['mean'] - _df['lower']).values,
-            (_df['upper'] - _df['mean']).values,
+            (_df['median'] - _df['lower']).values,
+            (_df['upper'] - _df['median']).values,
         ])
 
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
@@ -154,7 +153,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
             xticks.keys(),
-            _df['mean'].values,
+            _df['median'].values,
             yerr=yerr,
             ecolor='black',
             color=colors,
@@ -495,45 +494,45 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
     # %% Deaths and DALYS averted relative to Status Quo
-    num_deaths_averted = summarize(
+    num_deaths_averted = compute_summary_statistics(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_deaths.loc[0],
                 comparison='Baseline')
-        ).T
+        ).T, central_measure='median'
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
     num_deaths_averted.to_csv(results_folder / f'num_deaths_averted_{target_period()}.csv')
 
-    pc_deaths_averted = 100.0 * summarize(
+    pc_deaths_averted = 100.0 * compute_summary_statistics(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_deaths.loc[0],
                 comparison='Baseline',
                 scaled=True)
-        ).T
+        ).T, central_measure='median'
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
     pc_deaths_averted.to_csv(results_folder / f'pc_deaths_averted_{target_period()}.csv')
 
-    num_dalys_averted = summarize(
+    num_dalys_averted = compute_summary_statistics(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_dalys.loc[0],
                 comparison='Baseline')
-        ).T
+        ).T, central_measure='median'
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
     num_dalys_averted.to_csv(results_folder / f'num_dalys_averted_{target_period()}.csv')
 
-    pc_dalys_averted = 100.0 * summarize(
+    pc_dalys_averted = 100.0 * compute_summary_statistics(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison_series(
                 num_dalys.loc[0],
                 comparison='Baseline',
                 scaled=True)
-        ).T
+        ).T, central_measure='median'
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
     pc_dalys_averted.to_csv(results_folder / f'pc_dalys_averted_{target_period()}.csv')
 
@@ -553,7 +552,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = do_bar_plot_with_ci(
             group_data.clip(lower=0.0),
             annotations=[
-                f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+                f"{round(row['central'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
                 for _, row in group_data_percent.clip(lower=0.0).iterrows()
             ], set_colors=None, offset=500
         )
@@ -582,7 +581,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = do_bar_plot_with_ci(
             (group_data / 1e6).clip(lower=0.0),
             annotations=[
-                f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+                f"{round(row['central'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
                 for _, row in group_data_percent.clip(lower=0.0).iterrows()
             ], set_colors=None, offset=3,
         )
@@ -617,7 +616,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         (group_data / 1e6).clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+            f"{round(row['central'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in group_data_percent.clip(lower=0.0).iterrows()
         ], set_colors=True, offset=1.5
     )
@@ -984,7 +983,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # get numbers of deaths by cause
     def summarise_deaths_by_cause(results_folder):
-        """ returns mean deaths for each year of the simulation
+        """ returns median deaths for each year of the simulation
         values are aggregated across the runs of each draw
         for the specified cause
         """
