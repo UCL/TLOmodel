@@ -6,7 +6,7 @@ import datetime
 import heapq
 import itertools
 import time
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from pathlib import Path
 from typing import Optional
 from typing import TYPE_CHECKING, Optional
@@ -63,8 +63,8 @@ class Simulation:
     :ivar modules: A dictionary of the disease modules used in this simulation, keyed
        by the module name.
     :ivar population: The population being simulated.
-    :ivar rng: The simulation-level random number generator. 
-    
+    :ivar rng: The simulation-level random number generator.
+
     .. note::
        Individual modules also have their own random number generator with independent
        state.
@@ -77,7 +77,7 @@ class Simulation:
         seed: Optional[int] = None,
         log_config: Optional[dict] = None,
         show_progress_bar: bool = False,
-        resourcefilepath: Optional[Path] = None,
+        resourcefilepath: Optional[str | Path] = None,
     ):
         """Create a new simulation.
 
@@ -86,7 +86,7 @@ class Simulation:
         :param seed: The seed for random number generator. class will create one if not
             supplied
         :param log_config: Dictionary specifying logging configuration for this
-            simulation. Can have entries: `filename` - prefix for log file name, final 
+            simulation. Can have entries: `filename` - prefix for log file name, final
             file name will have a date time appended, if not present default is to not
             output log to a file; `directory` - path to output directory to write log
             file to, default if not specified is to output to the `outputs` folder;
@@ -95,14 +95,15 @@ class Simulation:
             logging to standard output stream (default is `False`).
         :param show_progress_bar: Whether to show a progress bar instead of the logger
             output during the simulation.
-        :param resourcefilepath: Path to resource files folder. Assign ``None` if no 
+        :param resourcefilepath: Path to resource files folder. Assign ``None` if no
             path is provided.
-            
+
         .. note::
            The `custom_levels` entry in `log_config` argument can be used to disable
            logging on all disease modules by setting a high level to `*`, and then
            enabling logging on one module of interest by setting a low level, for
            example ``{'*': logging.CRITICAL 'tlo.methods.hiv': logging.INFO}``.
+
         """
         # simulation
         self.date = self.start_date = start_date
@@ -119,14 +120,14 @@ class Simulation:
         
         
         self.show_progress_bar = show_progress_bar
-        self.resourcefilepath = resourcefilepath
+        self.resourcefilepath = Path(resourcefilepath)
 
         # logging
         if log_config is None:
             log_config = {}
         self._custom_log_levels = None
         self._log_filepath = self._configure_logging(**log_config)
-        
+
 
         # random number generator
         seed_from = "auto" if seed is None else "user"
@@ -138,18 +139,25 @@ class Simulation:
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
 
+        if resourcefilepath is not None:
+            self.resourcefilepath = Path(resourcefilepath)
+            assert self.resourcefilepath.exists(), \
+                f"The provided resourcefilepath does not exist: {self.resourcefilepath}"
+        else:
+            self.resourcefilepath = None
+
         # Whether simulation has been initialised
         self._initialised = False
 
     def _configure_logging(
         self,
-        filename: Optional[str] = None, 
+        filename: Optional[str] = None,
         directory: Path | str = "./outputs",
         custom_levels: Optional[dict[str, LogLevel]] = None,
         suppress_stdout: bool = False
     ):
         """Configure logging of simulation outputs.
-         
+
         Can write log output to a file in addition the default of `stdout`. Mnimum
         custom levels for each logger can be specified for filtering out messages.
 
@@ -222,13 +230,13 @@ class Simulation:
             modules to be registered. A :py:exc:`.ModuleDependencyError` exception will
             be raised if there are missing dependencies.
         :param auto_register_dependencies: Whether to register missing module dependencies
-            or not. If this argument is set to True, all module dependencies will be 
+            or not. If this argument is set to True, all module dependencies will be
             automatically registered.
         """
         if auto_register_dependencies:
             modules = [
                 *modules,
-                *initialise_missing_dependencies(modules, resourcefilepath=self.resourcefilepath)
+                *initialise_missing_dependencies(modules)
             ]
 
         if sort_modules:
@@ -254,7 +262,8 @@ class Simulation:
 
             self.modules[module.name] = module
             module.sim = self
-            module.read_parameters("")
+
+            module.read_parameters(self.resourcefilepath)
 
         if self._custom_log_levels:
             logging.set_logging_levels(self._custom_log_levels)
@@ -331,8 +340,15 @@ class Simulation:
         :param wall_clock_time: Optional argument specifying total time taken to
             simulate, to be written out to log before closing.
         """
-        for module in self.modules.values():
+        for module_name, module in self.modules.items():
             module.on_simulation_end()
+            if hasattr(module, "PARAMETERS"):
+                # collect the module's parameter labels
+                labels = [p.metadata.get("param_label", "not_init_via_load_param") for p in module.PARAMETERS.values()]
+                labels = Counter(labels)
+                for label, count in labels.items():
+                    logger.info(key="parameter_stats", data={"module": module_name, "label": label, "count": count})
+
         if wall_clock_time is not None:
             logger.info(key="info", data=f"simulate() {wall_clock_time} s")
         self.close_output_file()
@@ -475,7 +491,7 @@ class Simulation:
 
     def find_events_for_person(self, person_id: int) -> list[tuple[Date, Event]]:
         """Find the events in the queue for a particular person.
-    
+
         :param person_id: The row index of the person of interest.
         :return: List of tuples `(date_of_event, event)` for that `person_id` in the
             queue.
@@ -515,7 +531,7 @@ class Simulation:
 
         :param pickle_path: File path to load simulation state from.
         :param log_config: New log configuration to override previous configuration. If
-            `None` previous configuration (including output file) will be retained. 
+            `None` previous configuration (including output file) will be retained.
 
         :returns: Loaded :py:class:`Simulation` object.
         """

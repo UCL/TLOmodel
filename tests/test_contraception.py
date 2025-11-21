@@ -12,6 +12,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
 from tlo.methods.contraception import HSI_Contraception_FamilyPlanningAppt
 from tlo.methods.hiv import DummyHivModule
+from tlo.util import read_csv_files
 
 
 def run_sim(tmpdir,
@@ -69,25 +70,19 @@ def run_sim(tmpdir,
         }
     }
 
-    sim = Simulation(start_date=start_date, log_config=log_config, seed=seed)
+    sim = Simulation(start_date=start_date, log_config=log_config, seed=seed, resourcefilepath=resourcefilepath)
 
     sim.register(
         # - core modules:
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  disable=disable,
-                                  disable_and_reject_all=healthsystem_disable_and_reject_all,
-                                  cons_availability=_cons_available,
-                                  ),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        symptommanager.SymptomManager(),
+        healthsystem.HealthSystem(disable=disable, disable_and_reject_all=healthsystem_disable_and_reject_all,
+                                  cons_availability=_cons_available),
 
         # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
-        contraception.Contraception(
-            resourcefilepath=resourcefilepath,
-            use_healthsystem=use_healthsystem,
-            run_update_contraceptive=run_update_contraceptive
-        ),
+        contraception.Contraception(use_healthsystem=use_healthsystem,
+                                    run_update_contraceptive=run_update_contraceptive),
         contraception.SimplifiedPregnancyAndLabour(),
 
         # - Dummy HIV module (as contraception requires the property hv_inf): but set prevalence to be 0%
@@ -208,14 +203,14 @@ def test_starting_and_stopping_contraceptive_use(seed):
         """Create dummy simulation"""
         resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
         start_date = Date(2010, 1, 1)
-        _sim = Simulation(start_date=start_date, seed=seed)
+        _sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
         _sim.register(
             # - core modules:
-            demography.Demography(resourcefilepath=resourcefilepath),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-            symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-            contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=False),
+            demography.Demography(),
+            enhanced_lifestyle.Lifestyle(),
+            symptommanager.SymptomManager(),
+            healthsystem.HealthSystem(disable=True),
+            contraception.Contraception(use_healthsystem=False),
             contraception.SimplifiedPregnancyAndLabour(),
 
             # - Dummy HIV module (as contraception requires the property hv_inf)
@@ -918,8 +913,8 @@ def test_input_probs_sum():
 
     # Import relevant sheets from the workbook
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    workbook = pd.read_excel(Path(resourcefilepath) / 'contraception' / 'ResourceFile_Contraception.xlsx',
-                             sheet_name=None)
+    workbook = read_csv_files(Path(resourcefilepath) / 'contraception' / 'ResourceFile_Contraception',
+                             files=None)
     sheet_names = [
         'Initiation_ByMethod',
         'Interventions_Pop',

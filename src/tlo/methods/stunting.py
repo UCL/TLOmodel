@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -24,6 +24,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -46,6 +47,10 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
     }
+
+    # No CAUSES_OF_DEATH or CAUSES_OF_DISABILITY assigned as per GBD 2019
+    # (impact captured indirectly, through increased risk of diarrhoea and obstructed labour
+    # — see diarrhoea and labour modules)
 
     PARAMETERS = {
         # Prevalence of stunting by age group at initiation
@@ -141,16 +146,14 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
                                     categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.models = None  # (Will store the models used in the module)
         self.cons_item_codes = None  # (Will store consumable item codes)
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         self.load_parameters_from_dataframe(
-            pd.read_excel(
-                Path(self.resourcefilepath) / 'ResourceFile_Stunting.xlsx', sheet_name='Parameter_values')
+            read_csv_files(resourcefilepath / 'ResourceFile_Stunting', files='Parameter_values')
         )
 
     def initialise_population(self, population):

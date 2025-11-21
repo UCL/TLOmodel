@@ -9,7 +9,7 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
@@ -24,6 +24,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -36,9 +37,8 @@ logger.setLevel(logging.INFO)
 class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
     """Oesophageal Cancer Disease Module"""
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.linear_models_for_progession_of_oc_status = dict()
         self.lm_onset_dysphagia = None
         self.daly_wts = dict()
@@ -181,6 +181,33 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
             Types.REAL, "sensitivity of endoscopy_for diagnosis of oesophageal cancer for those with dysphagia"
         ),
+        "odds_ratio_health_seeking_in_adults_dysphagia": Parameter(
+            Types.REAL, "odds ratio for health seeking in adults with dysphagia symptom"
+        ),
+        "main_polling_event_frequency_months": Parameter(
+            Types.INT, "frequency in months for main polling event"
+        ),
+        "post_treatment_check_months_initial": Parameter(
+            Types.INT, "months between post-treatment check appointments scheduled after first treatment"
+        ),
+        "post_treatment_check_months_recurring": Parameter(
+            Types.INT, "months between follow-up appointments recurring"
+        ),
+        "palliative_care_interval_months": Parameter(
+            Types.INT, "months between palliative care appointments"
+        ),
+        "treatment_bed_days": Parameter(
+            Types.INT, "number of bed days required for treatment"
+        ),
+        "palliative_care_bed_days": Parameter(
+            Types.INT, "number of bed days required for palliative care"
+        ),
+        "min_age_investigation": Parameter(
+            Types.INT, "minimum age for dysphagia investigation"
+        ),
+        "reference_age_onset": Parameter(
+            Types.INT, "reference age for cancer onset calculations"
+        ),
     }
 
     PROPERTIES = {
@@ -213,18 +240,18 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         ),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Setup parameters used by the module, register it with healthsystem and register symptoms"""
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx",
-                          sheet_name="parameter_values")
+            read_csv_files(resourcefilepath / "ResourceFile_Oesophageal_Cancer",
+                           files="parameter_values")
         )
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='dysphagia',
-                    odds_ratio_health_seeking_in_adults=4.00)
+                    odds_ratio_health_seeking_in_adults=self.parameters['odds_ratio_health_seeking_in_adults_dysphagia'])
         )
 
     def initialise_population(self, population):
@@ -249,7 +276,8 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             sum(p['init_prop_oes_cancer_stage']),
             Predictor('li_ex_alc').when(True, p['rp_oes_cancer_ex_alc']),
             Predictor('li_tob').when(True, p['rp_oes_cancer_tobacco']),
-            Predictor('age_years').apply(lambda x: ((x - 20) ** p['rp_oes_cancer_per_year_older']) if x > 20 else 0.0)
+            Predictor('age_years').apply(lambda x: ((x - p['reference_age_onset']) ** p['rp_oes_cancer_per_year_older'])
+            if x > p['reference_age_onset'] else 0.0)
         )
 
         oc_status_any_dysplasia_or_cancer = \
@@ -389,13 +417,14 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_low_grade_dysplasia_none'],
             Predictor('age_years').apply(
-                lambda x: 0 if x < 20 else (x - 20) ** p['rr_low_grade_dysplasia_none_per_year_older']
+                lambda x: 0 if x < p['reference_age_onset']
+                else (x - p['reference_age_onset']) ** p['rr_low_grade_dysplasia_none_per_year_older']
             ),
             Predictor('sex').when('F', p['rr_low_grade_dysplasia_none_female']),
             Predictor('li_tob').when(True, p['rr_low_grade_dysplasia_none_tobacco']),
             Predictor('li_ex_alc').when(True, p['rr_low_grade_dysplasia_none_ex_alc']),
             Predictor('oc_status').when('none', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['high_grade_dysplasia'] = LinearModel(
@@ -404,7 +433,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_high_grade_dysp_undergone_curative_treatment']),
             Predictor('oc_status').when('low_grade_dysplasia', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['stage1'] = LinearModel(
@@ -413,7 +442,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage1_undergone_curative_treatment']),
             Predictor('oc_status').when('high_grade_dysplasia', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['stage2'] = LinearModel(
@@ -422,7 +451,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage2_undergone_curative_treatment']),
             Predictor('oc_status').when('stage1', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['stage3'] = LinearModel(
@@ -431,7 +460,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage3_undergone_curative_treatment']),
             Predictor('oc_status').when('stage2', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['stage4'] = LinearModel(
@@ -440,7 +469,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage4_undergone_curative_treatment']),
             Predictor('oc_status').when('stage3', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         # Check that the dict labels are correct as these are used to set the value of oc_status
@@ -560,7 +589,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
                 (df.oc_status == "stage2") |
                 (df.oc_status == "stage3")
             ) & (df.oc_status == df.oc_stage_at_which_treatment_applied)
-            )
+             )
         ] = self.daly_wts['stage_1_3_treated']
 
         # Assign daly_wt to those in stage4 cancer (who have not had palliative care)
@@ -587,7 +616,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
     ) -> None:
         # If the symptoms include dysphagia, and the patient is not a child,
         # begin investigation for Oesophageal Cancer:
-        if individual_properties["age_years"] > 5 and "dysphagia" in symptoms:
+        if individual_properties["age_years"] > self.parameters["min_age_investigation"] and "dysphagia" in symptoms:
             event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
                 person_id=person_id, module=self
             )
@@ -607,14 +636,14 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['main_polling_event_frequency_months']))
         # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
+        p = self.module.parameters
         m = self.module
         rng = m.rng
-
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (oc_status) -----------------------------------
 
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
@@ -644,7 +673,7 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
         stage4_idx = df.index[df.is_alive & (df.oc_status == "stage4")]
         selected_to_die = stage4_idx[
-            rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_oesoph_cancer']]
+            rng.random_sample(size=len(stage4_idx)) < p['r_death_oesoph_cancer']]
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
@@ -695,8 +724,17 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
 
         if cons_avail:
             # If consumables are available add used equipment and run the dx_test representing the biopsy
-            # n.b. endoscope not in equipment list
-            self.add_equipment({'Endoscope', 'Ordinary Microscope'})
+            # Equipment for oesophageal cancer investigation
+            self.add_equipment({
+                'Endoscope',
+                'Ordinary Microscope',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -746,15 +784,18 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        p = module.parameters
 
         self.TREATMENT_ID = "OesophagealCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({"general_bed": p["treatment_bed_days"]}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -788,6 +829,19 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
+            # Additional cancer treatment equipment for oesophageal surgery
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'Analyser, Hormones',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Endoscope',
+                'Sample Rack',
+                'Ordinary Microscope',
+                'Safety Goggles'
+            })
+
             # Log chemotherapy consumables
             self.get_consumables(
                 item_codes=self.module.item_codes_oesophageal_can['treatment_chemotherapy'],
@@ -803,7 +857,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(years=12),
+                topen=self.sim.date + DateOffset(years=p["post_treatment_check_months_initial"]),
                 tclose=None,
                 priority=0
             )
@@ -827,6 +881,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -835,6 +890,17 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         assert not df.at[person_id, "oc_status"] == 'none'
         assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "oc_date_treatment"])
+
+        # Equipment for post-treatment monitoring and follow-up
+        self.add_equipment({
+            'Analyser, Haematology',
+            'Analyser, Chemistry',
+            'X-ray machine',
+            'Ultrasound scanning machine',
+            'Endoscope',
+            'Sample Rack',
+            'Safety Goggles'
+        })
 
         if df.at[person_id, 'oc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
@@ -855,7 +921,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=1),
+                topen=self.sim.date + DateOffset(years=p["post_treatment_check_months_recurring"]),
                 tclose=None,
                 priority=0
             )
@@ -874,15 +940,18 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        p = module.parameters
 
         self.TREATMENT_ID = "OesophagealCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'general_bed': p['palliative_care_bed_days']}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -895,20 +964,29 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
             item_codes=self.module.item_codes_oesophageal_can['palliation'])
 
         if cons_available:
-            # If consumables are available and the treatment will go ahead - update the equipment
-            self.add_equipment({'Infusion pump', 'Drip stand'})
+            # Equipment for oesophageal cancer palliative care
+            self.add_equipment({
+                'Infusion pump',
+                'Drip stand',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):
                 df.at[person_id, "oc_date_palliative_care"] = self.sim.date
 
-            # Schedule another instance of the event for one month
+            # Schedule another instance of the event
             hs.schedule_hsi_event(
                 hsi_event=HSI_OesophagealCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=1),
+                topen=self.sim.date + DateOffset(months=p['palliative_care_interval_months']),
                 tclose=None,
                 priority=0
             )
