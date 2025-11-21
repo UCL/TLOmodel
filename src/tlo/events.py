@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 import pandas as pd
 
-from tlo.util import FACTOR_POP_DICT, convert_dict_into_eav
+from tlo.util import convert_chain_links_into_EAV
 
 import copy
 
@@ -139,9 +139,8 @@ class Event:
                 # Create a dictionary for this person
                 # First add event info
                 link_info = {
-                    'person_ID': idx,
-                    'event': type(self).__name__,
-                    'event_date': self.sim.date,
+                    'EventDate': self.sim.date,
+                    'EventName': type(self).__name__,
                 }
                 
                 # Store the new values from df_after for the changed columns
@@ -154,7 +153,7 @@ class Event:
                         link_info[col] = diff_mni[idx][key]
  
                 # Append the event and changes to the individual key
-                chain_links[idx] = str(link_info)
+                chain_links[idx] = link_info
      
         # For individuals which only underwent changes in mni dictionary, save changes here
         if len(diff_mni)>0:
@@ -162,15 +161,14 @@ class Event:
                 if key not in persons_changed:
                     # If individual hadn't been previously added due to changes in pop df, add it here
                     link_info = {
-                        'person_ID': key,
-                        'event': type(self).__name__,
-                        'event_date': self.sim.date,
+                        'EventDate': self.sim.date,
+                        'EventName': type(self).__name__,
                     }
                     
                     for key_prop in diff_mni[key]:
                         link_info[key_prop] = diff_mni[key][key_prop]
                         
-                    chain_links[key] = str(link_info)
+                    chain_links[key] = link_info
 
         return chain_links
         
@@ -233,12 +231,10 @@ class Event:
                 mni_instances_after = True
             
             # Create and store event for this individual, regardless of whether any property change occurred
-            link_info = {}
-            # #'person_ID' : self.target,
-            #    'person_ID' : self.target,
-            #    'event' : type(self).__name__,
-            #    'event_date' : self.sim.date,
-            #}
+            link_info = {
+                'EventDate' : self.sim.date,
+                'EventName' : type(self).__name__,
+            }
             
             # Store (if any) property changes as a result of the event for this individual
             for key in row_before.index:
@@ -265,11 +261,8 @@ class Event:
                         link_info[key] = mni[self.target][key]
             # Else, no need to do anything
                     
-            eav = convert_dict_into_eav(link_info, self.target, self.sim.date, type(self).__name__)
-            print(eav)
-            exit(-1)
             # Add individual to the chain links
-            chain_links[self.target] = str(link_info)
+            chain_links[self.target] = link_info
             
         else:
             # Target is entire population. Identify individuals for which properties have changed
@@ -300,6 +293,14 @@ class Event:
         if self.sim.generate_event_chains and print_chains:
             chain_links = self.store_chains_to_do_after_event(row_before, df_before, mni_row_before, entire_mni_before, mni_instances_before)
             
+            if chain_links:
+                # Convert chain_links into EAV
+                ednav = convert_chain_links_into_EAV(chain_links)
+
+                logger_chain.info(key='event_chains',
+                      data= ednav.to_dict(),
+                      description='Links forming chains of events for simulated individuals')
+            """
             # Create empty logger for entire pop
             pop_dict = {i: '' for i in range(FACTOR_POP_DICT)} # Always include all possible individuals
             pop_dict.update(chain_links)
@@ -310,7 +311,7 @@ class Event:
                 logger_chain.info(key='event_chains',
                                   data= pop_dict,
                                   description='Links forming chains of events for simulated individuals')
-
+            """
 
 class RegularEvent(Event):
     """An event that automatically reschedules itself at a fixed frequency."""

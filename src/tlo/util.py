@@ -13,7 +13,6 @@ from tlo import Population, Property, Types
 
 # Default mother_id value, assigned to individuals initialised as adults at the start of the simulation.
 DEFAULT_MOTHER_ID = -1e7
-FACTOR_POP_DICT = 50000
 
 
 def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> (list, Dict[int, str]):
@@ -94,25 +93,30 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
     return final_states
 
 
-def df_to_eav(df, date, event_name):
+def df_to_EAV(df, date, event_name):
     """Function to convert dataframe into EAV"""
     eav = df.stack().reset_index()
     eav.columns = ['E', 'A', 'V']
-    eav['Date'] = date
-    eav['NameEvent'] = event_name
-    eav = eav[["E", "Date", "NameEvent", "A", "V"]]
+    eav['EventDate'] = date
+    eav['EventName'] = event_name
+    eav = eav[["E", "EventDate", "EventName", "A", "V"]]
 
     return eav
     
     
-def convert_dict_into_eav(link_info, target, date, event_name):
-    "Function to convert link info in the form of dictionary into an EAV"
-    eav = pd.DataFrame(list(link_info.items()), columns=['A', 'V'])
-    eav.columns = ['A', 'V']
-    eav['E'] = target
-    eav['Date'] = date
-    eav['NameEvent'] = event_name
-    eav = eav[['E', 'Date', 'NameEvent', 'A', 'V']]
+def convert_chain_links_into_EAV(chain_links):
+    df = pd.DataFrame.from_dict(chain_links, orient="index")
+    id_cols = ["EventDate", "EventName"]
+
+    eav = df.reset_index().melt(
+        id_vars=["index"] + id_cols,  # index = person ID
+        var_name="A",
+        value_name="V"
+    )
+
+    eav.rename(columns={"index": "E"}, inplace=True)
+
+    eav = eav[["E", "EventDate", "EventName", "A", "V"]]
 
     return eav
     

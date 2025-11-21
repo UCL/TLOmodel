@@ -8,7 +8,7 @@ import numpy as np
 from tlo import Date, logging
 from tlo.events import Event
 from tlo.population import Population
-from tlo.util import FACTOR_POP_DICT
+from tlo.util import convert_chain_links_into_EAV
 import pandas as pd
 
 
@@ -266,9 +266,8 @@ class HSI_Event:
             record_level = 'N/A'
             
         link_info = {
-            'person_ID': self.target,
-            'event' : type(self).__name__,
-            'event_date' : self.sim.date,
+            'EventName' : type(self).__name__,
+            'EventDate' : self.sim.date,
             'appt_footprint' : record_footprint,
             'level' : record_level,
         }
@@ -297,7 +296,7 @@ class HSI_Event:
                 if self.values_differ(default[key], mni[self.target][key]):
                     link_info[key] = mni[self.target][key]
 
-        chain_links[self.target] = str(link_info)
+        chain_links[self.target] = link_info
             
         return chain_links
         
@@ -325,13 +324,13 @@ class HSI_Event:
             if print_chains:
                 chain_links = self.store_chains_to_do_after_event(row_before, str(footprint), mni_row_before, mni_instances_before)
             
-                if len(chain_links)>0:
-                    pop_dict = {i: '' for i in range(FACTOR_POP_DICT)}
-                    pop_dict.update(chain_links)
+                if chain_links:
                     
-                    logger_chains.info(key='event_chains',
-                                data = pop_dict,
-                                description='Links forming chains of events for simulated individuals')
+                    # Convert chain_links into EAV
+                    ednav = convert_chain_links_into_EAV(chain_links)
+                    logger_chain.info(key='event_chains',
+                            data = ednav,
+                            description='Links forming chains of events for simulated individuals')
                 
         return updated_appt_footprint
         

@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Optional
 import pandas as pd
 import tlo.population
 import numpy as np
-from tlo.util import FACTOR_POP_DICT, df_to_eav
+from tlo.util import df_to_EAV, convert_chain_links_into_EAV
 
 try:
     import dill
@@ -290,26 +290,11 @@ class Simulation:
         # At the start of the simulation + when a new individual is born, we therefore want to store all of their properties at the start.
         if self.generate_event_chains:
 
-            print(len(self.population.props), n)
-            # EAV structure to capture status of individuals at the start of the simulation
-            eav = df_to_eav(self.population.props, self.date, 'StartOfSimulation')
-            
-            """
-            pop_dict = self.population.props.to_dict(orient='index')
+            # EDNAV structure to capture status of individuals at the start of the simulation
+            ednav = df_to_EAV(self.population.props, self.date, 'StartOfSimulation')
 
-            for key in pop_dict.keys():
-                pop_dict[key]['person_ID'] = key
-                pop_dict[key] = str(pop_dict[key]) # Log as string to avoid issues around length of properties stored later
-                
-            pop_dict_full = {i: '' for i in range(FACTOR_POP_DICT)}
-            pop_dict_full.update(pop_dict)
-            
             logger.info(key='event_chains',
-                               data = pop_dict_full,
-                               description='Links forming chains of events for simulated individuals')
-            """
-            logger.info(key='event_chains',
-                               data = eav.to_dict(),
+                               data = ednav.to_dict(),
                                description='Links forming chains of events for simulated individuals')
                                
         end = time.time()
@@ -475,15 +460,16 @@ class Simulation:
         if self.generate_event_chains:
             # When individual is born, store their initial properties to provide a starting point to the chain of property
             # changes that this individual will undergo as a result of events taking place.
-            prop_dict = self.population.props.loc[child_id].to_dict()
-            prop_dict['event'] = 'Birth'
-            prop_dict['event_date'] = self.date
-            
-            pop_dict = {i: '' for i in range(FACTOR_POP_DICT)} # Always include all possible individuals
-            pop_dict[child_id] = str(prop_dict) # Convert to string to avoid issue of length
+            link_info = self.population.props.loc[child_id].to_dict()
+            link_info['EventName'] = 'Birth'
+            link_info['EventDate'] = self.date
+            chain_links = {}
+            chain_links[child_id] = link_info # Convert to string to avoid issue of length
 
+            ednav = convert_chain_links_into_EAV(chain_links)
+            
             logger.info(key='event_chains',
-                               data = pop_dict,
+                               data = ednav.to_dict(),
                                description='Links forming chains of events for simulated individuals')
 
         return child_id
