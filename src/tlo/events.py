@@ -139,7 +139,6 @@ class Event:
                 # Create a dictionary for this person
                 # First add event info
                 link_info = {
-                    'EventDate': self.sim.date,
                     'EventName': type(self).__name__,
                 }
                 
@@ -161,7 +160,6 @@ class Event:
                 if key not in persons_changed:
                     # If individual hadn't been previously added due to changes in pop df, add it here
                     link_info = {
-                        'EventDate': self.sim.date,
                         'EventName': type(self).__name__,
                     }
                     
@@ -232,7 +230,6 @@ class Event:
             
             # Create and store event for this individual, regardless of whether any property change occurred
             link_info = {
-                'EventDate' : self.sim.date,
                 'EventName' : type(self).__name__,
             }
             

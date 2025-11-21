@@ -345,7 +345,7 @@ def extract_results(results_folder: Path,
     
 import pandas as pd
 
-def unpack_dict_rows(df):
+def old_unpack_dict_rows(df):
     """
     Reconstruct a full dataframe from rows whose columns contain dictionaries
     mapping local-row-index → value. Preserves original column order.
@@ -370,6 +370,54 @@ def unpack_dict_rows(df):
 
     # Build DataFrame and enforce the original column order
     out = pd.DataFrame(reconstructed_rows)[original_cols]
+    return out.reset_index(drop=True)
+
+
+def unpack_dict_rows(df, non_dict_cols=None):
+    """
+    Reconstruct a full DataFrame from rows where most columns are dictionaries.
+    Non-dict columns (e.g., 'date') are propagated to all reconstructed rows.
+    
+    Parameters:
+        df: pd.DataFrame
+        non_dict_cols: list of columns that are NOT dictionaries
+    """
+    if non_dict_cols is None:
+        non_dict_cols = []
+
+    original_cols =  ['E', 'date', 'EventName', 'A', 'V']
+
+    reconstructed_rows = []
+
+    for _, row in df.iterrows():
+        # Determine dict columns for this row
+        dict_cols = [col for col in original_cols if col not in non_dict_cols]
+
+        if not dict_cols:
+            # No dict columns, just append row
+            reconstructed_rows.append(row.to_dict())
+            continue
+
+        # Use the first dict column to get the block length
+        first_dict_col = dict_cols[0]
+        block_length = len(row[first_dict_col])
+
+        # Build each expanded row
+        for i in range(block_length):
+            new_row = {}
+            for col in original_cols:
+                cell = row[col]
+                if col in dict_cols:
+                    # Access the dict using string or integer keys
+                    new_row[col] = cell.get(str(i), cell.get(i))
+                else:
+                    # Propagate non-dict value
+                    new_row[col] = cell
+            reconstructed_rows.append(new_row)
+
+    # Build DataFrame in original column order
+    out = pd.DataFrame(reconstructed_rows)[original_cols]
+
     return out.reset_index(drop=True)
 
     
@@ -418,17 +466,19 @@ def extract_event_chains(results_folder: Path,
 
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                del df['date']
-                recon = unpack_dict_rows(df)
+
+                recon = unpack_dict_rows(df, ['date'])
+                print(recon)
+                #del recon['EventDate']
                 # For now convert value to string in all cases to facilitate manipulation. This can be reversed later.
                 recon['V'] = recon['V'].apply(str)
                 # Collapse into 'E', 'EventDate', 'EventName', 'Info' format where 'Info' is dict listing attributes (e.g. {a1:v1, a2:v2, a3:v3, ...} )
                 df_collapsed = (
-                        recon.groupby(['E', 'EventDate', 'EventName'])
+                        recon.groupby(['E', 'date', 'EventName'])
                           .apply(lambda g: dict(zip(g['A'], g['V'])))
                           .reset_index(name='Info')
                     )
-                df_final = df_collapsed.sort_values(by=['E','EventDate'], ascending=True).reset_index(drop=True)
+                df_final = df_collapsed.sort_values(by=['E','date'], ascending=True).reset_index(drop=True)
                 birth_count = (df_final['EventName'] == 'Birth').sum()
 
                 print("Birth count for run ", run, "is ", birth_count)
@@ -449,7 +499,7 @@ def extract_event_chains(results_folder: Path,
         res[draw] = pd.concat(dfs_from_runs, ignore_index=True)
 
         # Optionally, sort by 'E' and 'EventDate' after combining
-        res[draw] = res[draw].sort_values(by=['E', 'EventDate']).reset_index(drop=True)
+        res[draw] = res[draw].sort_values(by=['E', 'date']).reset_index(drop=True)
 
     return res
 

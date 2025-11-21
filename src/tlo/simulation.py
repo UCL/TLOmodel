@@ -462,7 +462,6 @@ class Simulation:
             # changes that this individual will undergo as a result of events taking place.
             link_info = self.population.props.loc[child_id].to_dict()
             link_info['EventName'] = 'Birth'
-            link_info['EventDate'] = self.date
             chain_links = {}
             chain_links[child_id] = link_info # Convert to string to avoid issue of length
 

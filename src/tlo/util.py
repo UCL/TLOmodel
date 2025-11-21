@@ -97,16 +97,15 @@ def df_to_EAV(df, date, event_name):
     """Function to convert dataframe into EAV"""
     eav = df.stack().reset_index()
     eav.columns = ['E', 'A', 'V']
-    eav['EventDate'] = date
     eav['EventName'] = event_name
-    eav = eav[["E", "EventDate", "EventName", "A", "V"]]
+    eav = eav[["E", "EventName", "A", "V"]]
 
     return eav
     
     
 def convert_chain_links_into_EAV(chain_links):
     df = pd.DataFrame.from_dict(chain_links, orient="index")
-    id_cols = ["EventDate", "EventName"]
+    id_cols = ["EventName"]
 
     eav = df.reset_index().melt(
         id_vars=["index"] + id_cols,  # index = person ID
@@ -116,7 +115,7 @@ def convert_chain_links_into_EAV(chain_links):
 
     eav.rename(columns={"index": "E"}, inplace=True)
 
-    eav = eav[["E", "EventDate", "EventName", "A", "V"]]
+    eav = eav[["E", "EventName", "A", "V"]]
 
     return eav
     

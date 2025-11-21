@@ -267,7 +267,6 @@ class HSI_Event:
             
         link_info = {
             'EventName' : type(self).__name__,
-            'EventDate' : self.sim.date,
             'appt_footprint' : record_footprint,
             'level' : record_level,
         }
