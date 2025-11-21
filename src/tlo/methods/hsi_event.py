@@ -354,28 +354,6 @@ class HSI_Event:
             )
         )
 
-
-        # Do checks
-        self._check_if_appt_footprint_can_run()
-
-    def _check_if_appt_footprint_can_run(self) -> bool:
-        """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
-        this does not demand officers that are _never_ available), and issue warning if not.
-        """
-        if self.healthcare_system._officers_with_availability.issuperset(
-            self.expected_time_requests.keys()
-        ):
-            return True
-        else:
-            logger.debug(
-                key="message",
-                data=(
-                    f"The expected footprint of {self.TREATMENT_ID} is not possible with the configuration of "
-                    f"officers."
-                ),
-            )
-            return False
-
     @staticmethod
     def _return_item_codes_in_dict(
         item_codes: Union[None, np.integer, int, list, set, dict]
