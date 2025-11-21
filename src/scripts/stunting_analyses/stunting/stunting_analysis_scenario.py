@@ -3,10 +3,10 @@ Produce a run of the Stunting Module to assess the levels of Stunting induced wi
 HealthSystem availability - including the effects of Diarrhoea and Alri and all the Labour modules.
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/undernutrition_analyses/stunting/stunting_analysis_scenario.py```
+```tlo batch-submit src/scripts/stunting_analyses/stunting/stunting_analysis_scenario.py```
 
 Or locally using:
-```tlo scenario-run src/scripts/undernutrition_analyses/stunting/stunting_analysis_scenario.py```
+```tlo scenario-run src/scripts/stunting_analyses/stunting/stunting_analysis_scenario.py```
 """
 
 from pathlib import Path
