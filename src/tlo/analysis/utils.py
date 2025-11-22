@@ -364,36 +364,6 @@ def extract_results(results_folder: Path,
     _concat = pd.concat(res, axis=1)
     _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
     return _concat
-    
-    
-import pandas as pd
-
-def old_unpack_dict_rows(df):
-    """
-    Reconstruct a full dataframe from rows whose columns contain dictionaries
-    mapping local-row-index → value. Preserves original column order.
-    """
-    original_cols = ['E', 'EventDate', 'EventName', 'A', 'V']
-    reconstructed_rows = []
-
-    for _, row in df.iterrows():
-        # Determine how many rows this block has (using the first dict column)
-        first_dict_col = next(col for col in original_cols if isinstance(row[col], dict))
-        block_length = len(row[first_dict_col])
-
-        # Build each reconstructed row
-        for i in range(block_length):
-            new_row = {}
-            for col in original_cols:
-                cell = row[col]
-                if not isinstance(cell, dict):
-                    raise ValueError(f"Column {col} does not contain a dictionary")
-                new_row[col] = cell.get(str(i))
-            reconstructed_rows.append(new_row)
-
-    # Build DataFrame and enforce the original column order
-    out = pd.DataFrame(reconstructed_rows)[original_cols]
-    return out.reset_index(drop=True)
 
 
 def unpack_dict_rows(df, non_dict_cols=None):
