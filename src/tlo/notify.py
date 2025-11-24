@@ -59,6 +59,6 @@ class Notifier:
             for listener in list(self.listeners[notification_key]):
                 listener(data)
 
-# Create a global dispatcher instance
+# Create a global notifier instance
 notifier = Notifier()
 
