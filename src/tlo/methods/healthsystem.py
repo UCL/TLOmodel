@@ -1102,7 +1102,7 @@ class HealthSystem(Module):
             # never available.)
             self._officers_with_availability[clinic] = {k for k, v in self._daily_capabilities[clinic].items() if v > 0}
 
-    def get_clinic_eligibility(self, queue_item:HSIEventQueueItem):
+    def get_clinic_eligibility(self, queue_item: HSIEventQueueItem):
         """
         Determine the clinic mapped to the HSI Event treatment ID. If no clinic is mapped, then a default value of
         'GenericClinic' is returned. Note that we assume that a treatment ID is mapped to at most one clinic, returning
@@ -1260,18 +1260,17 @@ class HealthSystem(Module):
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
         for clinic, clinic_cl in self._daily_capabilities.items():
-          for facID_and_officer in clinic_cl.keys():
-            rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
-                facID_and_officer=facID_and_officer
-            )
-            if rescaling_factor > 1 and rescaling_factor != float("inf"):
-                self._daily_capabilities[clinic][facID_and_officer] *= rescaling_factor
+            for facID_and_officer in clinic_cl.keys():
+                rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
+                    facID_and_officer=facID_and_officer
+                )
+                if rescaling_factor > 1 and rescaling_factor != float("inf"):
+                    self._daily_capabilities[clinic][facID_and_officer] *= rescaling_factor
 
-                # We assume that increased daily capabilities is a result of each staff performing more
-                # daily patient facing time per day than contracted (or equivalently performing appts more
-                # efficiently).
-                self._daily_capabilities_per_staff[clinic][facID_and_officer] *= rescaling_factor
-
+                    # We assume that increased daily capabilities is a result of each staff performing more
+                    # daily patient facing time per day than contracted (or equivalently performing appts more
+                    # efficiently).
+                    self._daily_capabilities_per_staff[clinic][facID_and_officer] *= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
@@ -1538,7 +1537,6 @@ class HealthSystem(Module):
         if do_hsi_event_checks:
             self.check_hsi_event_is_valid(hsi_event)
 
-
         # Check that this request is allowable under current policy (i.e. included in service_availability).
         if not self.is_treatment_id_allowed(hsi_event.TREATMENT_ID, self.service_availability):
             # HSI is not allowable under the services_available parameter: run the HSI's 'never_ran' method on the date
@@ -1551,14 +1549,22 @@ class HealthSystem(Module):
             hsi_event.initialise()
             ## Create a dummy item so that we can query the clinic eligibility
             clinic_eligibility = "GenericClinic"
-            dummy_item: HSIEventQueueItem = HSIEventQueueItem(clinic_eligibility, priority, topen, 1, 1, tclose, hsi_event)
+            dummy_item: HSIEventQueueItem = HSIEventQueueItem(
+                clinic_eligibility, priority, topen, 1, 1, tclose, hsi_event
+            )
             clinic_eligibility = self.get_clinic_eligibility(dummy_item)
 
             self._add_hsi_event_queue_item_to_hsi_event_queue(
-                clinic_eligibility=clinic_eligibility, priority=priority, topen=topen, tclose=tclose, hsi_event=hsi_event
+                clinic_eligibility=clinic_eligibility,
+                priority=priority,
+                topen=topen,
+                tclose=tclose,
+                hsi_event=hsi_event,
             )
 
-    def _add_hsi_event_queue_item_to_hsi_event_queue(self, clinic_eligibility, priority, topen, tclose, hsi_event) -> None:
+    def _add_hsi_event_queue_item_to_hsi_event_queue(
+        self, clinic_eligibility, priority, topen, tclose, hsi_event
+    ) -> None:
         """Add an event to the HSI_EVENT_QUEUE."""
         # Create HSIEventQueue Item, including a counter for the number of HSI_Events, to assist with sorting in the
         # queue (NB. the sorting is done ascending and by the order of the items in the tuple).
@@ -2100,9 +2106,9 @@ class HealthSystem(Module):
             summary_by_fac_id["Minutes_Used"] / summary_by_fac_id["Total_Minutes_Per_Day"]
         ).replace([np.inf, -np.inf, np.nan], 0.0)
 
-        #summary_by_facID_and_officer = comparison.copy()
+        # summary_by_facID_and_officer = comparison.copy()
         fraction_time_used_by_facID_and_officer = (
-            comparison['Minutes_Used'] / comparison['Total_Minutes_Per_Day']
+            comparison["Minutes_Used"] / comparison["Total_Minutes_Per_Day"]
         ).replace([np.inf, -np.inf, np.nan], 0.0)
 
         # Compute Fraction of Time For Each Officer and level
@@ -2130,7 +2136,7 @@ class HealthSystem(Module):
 
         self._summary_counter.record_hs_status(
             fraction_time_used_across_all_facilities=fraction_time_used_overall,
-            fraction_time_used_by_facID_and_officer=fraction_time_used_by_facID_and_officer.to_dict()
+            fraction_time_used_by_facID_and_officer=fraction_time_used_by_facID_and_officer.to_dict(),
         )
 
     def remove_beddays_footprint(self, person_id):
@@ -3002,22 +3008,21 @@ class HealthSystemSummaryCounter:
         logger_summary.info(
             key="Capacity_By_FacID_and_Officer",
             description="The fraction of healthcare worker time that is used each day, averaged over this "
-                        "calendar year, for each officer type at each facility.",
-            data=flatten_multi_index_series_into_dict_for_logging(
-                self.frac_time_used_by_facID_and_officer()),
+            "calendar year, for each officer type at each facility.",
+            data=flatten_multi_index_series_into_dict_for_logging(self.frac_time_used_by_facID_and_officer()),
         )
 
         self._reset_internal_stores()
 
     def frac_time_used_by_facID_and_officer(
         self,
-        facID_and_officer: Optional[str]=None,
+        facID_and_officer: Optional[str] = None,
     ) -> Union[float, pd.Series]:
         """Average fraction of time used by officer type and level since last reset.
         If `officer_type` and/or `level` is not provided (left to default to `None`) then a pd.Series with a multi-index
         is returned giving the result for all officer_types/levels."""
 
-        if (facID_and_officer is not None):
+        if facID_and_officer is not None:
             return (
                 self._sum_of_daily_frac_time_used_by_facID_and_officer[facID_and_officer]
                 / len(self._frac_time_used_overall)
@@ -3031,11 +3036,8 @@ class HealthSystemSummaryCounter:
                 if (_facID_and_officer == facID_and_officer or _facID_and_officer is None)
             }
             return pd.Series(
-                index=pd.MultiIndex.from_tuples(
-                    mean_frac_time_used.keys(),
-                    names=['facID_and_officer']
-                ),
-                data=mean_frac_time_used.values()
+                index=pd.MultiIndex.from_tuples(mean_frac_time_used.keys(), names=["facID_and_officer"]),
+                data=mean_frac_time_used.values(),
             ).sort_index()
 
 
