@@ -15,6 +15,8 @@ PREFIX_ON_FILENAME = "1"
 climate_sensitivity_analysis = True
 parameter_sensitivity_analysis = False
 main_text = False
+mode_2 = True
+
 scenario_names_all = [
     "Baseline",
     "SSP 1.26 High",
@@ -29,18 +31,7 @@ scenario_names_all = [
 ]
 
 if climate_sensitivity_analysis:
-    scenario_names = [
-        "Baseline",
-        "SSP 1.26 High",
-        "SSP 1.26 Low",
-        "SSP 1.26 Mean",
-        "SSP 2.45 High",
-        "SSP 2.45 Low",
-        "SSP 2.45 Mean",
-        "SSP 5.85 High",
-        "SSP 5.85 Low",
-        "SSP 5.85 Mean",
-    ]
+    scenario_names = scenario_names_all
     suffix = "climate_SA"
     scenarios_of_interest = range(len(scenario_names))
 if parameter_sensitivity_analysis:
@@ -56,6 +47,14 @@ if main_text:
     ]
     suffix = "main_text"
     scenarios_of_interest = [0, 6, 7]
+if mode_2:
+    scenario_names = [
+        "Baseline",
+        "SSP 5.85 Mean",
+    ]
+    suffix = "mode_2"
+    scenarios_of_interest = [0, 1]
+
 
 
 precipitation_files = {
@@ -71,8 +70,24 @@ precipitation_files = {
     "SSP 5.85 Mean": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp585/mean_monthly_prediction_weather_by_facility.csv",
 }
 
+scenario_colours = [
+    "#823038",  # Baseline
 
-scenario_colours = ["#0081a7", "#00afb9", "#FEB95F", "#fed9b7", "#f07167"] * 4
+    # SSP 1.26 (Teal)
+    "#00566f",  # High
+    "#0081a7",  # Low
+    "#5ab4c6",  # Mean
+
+    # SSP 2.45 (Purple/Lavender - more distinct)
+    "#5b3f8c",  # High
+    "#8e7cc3",  # Low
+    "#c7b7ec",  # Mean
+
+    # SSP 5.85 (Coral)
+    "#c65a52",  # High
+    "#f07167",  # Low
+    "#f59e96",  # Mean
+]
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -486,13 +501,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # total treatments
     # --------------------------
     x = np.arange(len(treatments_totals_mean.index))
-    axes[0].bar(x, treatments_totals_mean.values, width, color=scenario_colours, yerr=treatments_totals_err, capsize=10)
+    axes[0].bar(x, treatments_totals_mean.values, width, color=scenario_colours, yerr=treatments_totals_err, capsize=6)
     axes[0].text(-0.0, 1.05, "(A)", transform=axes[0].transAxes, fontsize=14, va="top", ha="right")
     axes[0].set_title("Total Health System Interactions (2020–2040)")
     axes[0].set_xlabel("Scenario")
     axes[0].set_ylabel("Total HSIs")
     axes[0].set_xticks(x)
-    axes[0].set_xticklabels(scenario_names)
+    if climate_sensitivity_analysis:
+        axes[0].set_xticks(axes[0].get_xticks(), labels=scenario_names, rotation=45, ha='right')  # Use scenario names, not ["Delayed", "Cancelled"]
+    else:
+        axes[0].set_xticklabels(scenario_names)
     axes[0].grid(False)
 
     # --------------------------
@@ -506,14 +524,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Delayed
     yerr_delayed = np.vstack([
-        weather_delayed_totals_err[1:, 1],  # lower error
-        weather_delayed_totals_err[1:, 2],  # upper error
+        weather_delayed_totals_err[1:, 1:],  # lower error
+        weather_delayed_totals_err[1:, 1:],  # upper error
     ])
 
     # Cancelled
     yerr_cancelled = np.vstack([
-        weather_cancelled_totals_err[1:, 1],  # lower error
-        weather_cancelled_totals_err[1:, 2],  # upper error
+        weather_cancelled_totals_err[1:, 1:],  # lower error
+        weather_cancelled_totals_err[1:, 1:],  # upper error
     ])
 
     axes[1].bar(
@@ -523,7 +541,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         label="Weather Delayed",
         color="#FEB95F",
         yerr=yerr_delayed,
-        capsize=10,
+        capsize=6,
     )
     axes[1].bar(
         x + bar_width / 2,  # shift right
@@ -532,14 +550,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         label="Weather Cancelled",
         color="#f07167",
         yerr=yerr_cancelled,
-        capsize=10,
+        capsize=6,
     )
     axes[1].text(-0.0, 1.05, "(B)", transform=axes[1].transAxes, fontsize=14, va="top", ha="right")
     axes[1].set_title("Weather-Disrupted Health System Interactions (2020–2040)")
     axes[1].set_xlabel("Scenario")
     axes[1].set_ylabel("Total Weather-Disrupted HSIs")
     axes[1].set_xticks(x)
-    axes[1].set_xticklabels(scenario_names[1:])  # Use scenario names, not ["Delayed", "Cancelled"]
+    if climate_sensitivity_analysis:
+        axes[1].set_xticks(axes[1].get_xticks(), labels=scenario_names[1:], rotation=45, ha='right')  # Use scenario names, not ["Delayed", "Cancelled"]
+    else:
+        axes[1].set_xticklabels(scenario_names[1:])  # Use scenario names, not ["Delayed", "Cancelled"]
     axes[1].grid(False)
     axes[1].legend(loc='upper left', frameon=False)
     fig.tight_layout()

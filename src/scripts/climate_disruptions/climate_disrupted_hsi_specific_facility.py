@@ -8,16 +8,88 @@ from matplotlib import pyplot as plt
 from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
 
-min_year = 2026
-max_year = 2041
+min_year = 2025
+max_year = 2027
 spacing_of_years = 1
 PREFIX_ON_FILENAME = "1"
 
-scenario_names = ["Baseline", "SSP 2.45 Mean", "SSP 5.85 High"]
-scenario_colours = ["#0081a7", "#00afb9", "#FEB95F", "#fed9b7", "#f07167"] * 4
+climate_sensitivity_analysis = False
+parameter_sensitivity_analysis = True
+main_text = True
+mode_2 = True
+scenario_names_all = [
+    "Baseline",
+    "SSP 1.26 High",
+    "SSP 1.26 Low",
+    "SSP 1.26 Mean",
+    "SSP 2.45 High",
+    "SSP 2.45 Low",
+    "SSP 2.45 Mean",
+    "SSP 5.85 High",
+    "SSP 5.85 Low",
+    "SSP 5.85 Mean",
+]
 
-# CHANGE THIS: Set to a single facility ID instead of a list
-facility_of_interest = 4  # Single facility
+if climate_sensitivity_analysis:
+    scenario_names = [
+        "Baseline",
+        "SSP 1.26 High",
+        "SSP 1.26 Low",
+        "SSP 1.26 Mean",
+        "SSP 2.45 High",
+        "SSP 2.45 Low",
+        "SSP 2.45 Mean",
+        "SSP 5.85 High",
+        "SSP 5.85 Low",
+        "SSP 5.85 Mean",
+    ]
+    suffix = "climate_SA"
+    scenarios_of_interest = range(len(scenario_names))
+if parameter_sensitivity_analysis:
+    scenario_names_all = range(0, 9, 1)
+    scenario_names = range(0, 9, 1)
+    scenarios_of_interest = scenario_names_all
+    suffix = "parameter_SA"
+
+if main_text:
+    scenario_names = [
+        "Baseline",
+        "SSP 2.45 Mean",
+        "SSP 5.85 Mean",
+    ]
+    suffix = "main_text"
+    scenarios_of_interest = [0, 6, 7]
+
+if mode_2:
+    scenario_names = [
+        "Baseline",
+        "SSP 5.85 Mean",
+    ]
+    suffix = "mode_2"
+    scenarios_of_interest = [0, 1]
+
+
+scenario_colours = [
+    "#823038",  # Baseline
+
+    # SSP 1.26 (Teal)
+    "#00566f",  # High
+    "#0081a7",  # Low
+    "#5ab4c6",  # Mean
+
+    # SSP 2.45 (Purple/Lavender - more distinct)
+    "#5b3f8c",  # High
+    "#8e7cc3",  # Low
+    "#c7b7ec",  # Mean
+
+    # SSP 5.85 (Coral)
+    "#c65a52",  # High
+    "#f07167",  # Low
+    "#f59e96",  # Mean
+]
+
+facility_of_interest = [4, 5, 6, 7, 8, 9, 10, 11]
+
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -35,7 +107,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         """Get count of non-blank HSIs for the specific facility"""
         if _df is None or _df.empty:
             return pd.Series(0, name="total_treatments")
-
         _df["date"] = pd.to_datetime(_df["date"], errors="coerce")
 
         # Filter to target period
@@ -43,7 +114,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Filter to specific facility
         if "Facility_ID" in _df.columns:
-            _df = _df.loc[_df["Facility_ID"] == facility_of_interest]
+            _df = _df.loc[_df["Facility_ID"].isin(facility_of_interest)]
 
         # Handle empty result
         if _df.empty:
@@ -61,7 +132,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Filter to specific facility
         if "Facility_ID" in _df.columns:
-            _df = _df.loc[_df["Facility_ID"] == facility_of_interest]
+            _df = _df.loc[_df["Facility_ID"].isin(facility_of_interest)]
         else:
             # If no Facility_ID column, return 0
             return pd.Series(0, name="total_treatments")
@@ -71,6 +142,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             return pd.Series(0, name="total_treatments")
 
         return pd.Series(len(_df), name="total_treatments")
+
+    def get_num_treatments_total(_df):
+        _df["date"] = pd.to_datetime(_df["date"])
+
+        # filter to target period
+        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
+        if "Facility_ID" in _df.columns:
+            _df = _df.loc[_df["Facility_ID"].isin(facility_of_interest)]
+
+        if _df.empty:
+            return pd.Series(0, name="total_treatments")
+        else:
+            return pd.Series(len(_df), name="total_treatments")
 
     target_year_sequence = range(min_year, max_year, spacing_of_years)
 
@@ -86,7 +170,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_weather_cancelled_lower = []
     all_draws_weather_cancelled_upper = []
 
-    for draw in range(len(scenario_names)):
+    for draw in range(len(scenario_names_all)):
+        if draw not in scenarios_of_interest:
+            continue
+        print(draw)
         all_years_data_treatments_mean = {}
         all_years_data_treatments_upper = {}
         all_years_data_treatments_lower = {}
@@ -107,7 +194,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 extract_results(
                     results_folder,
                     module="tlo.methods.healthsystem.summary",
-                    key="HSI_Event_non_blank_full_details",
+                    key="HSI_Event",
                     custom_generate_series=get_num_treatments_total,
                     do_scaling=True,
                 ),
@@ -125,6 +212,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 all_years_data_weather_delayed_lower[target_year] = pd.Series([0], name="lower")
                 all_years_data_weather_delayed_upper[target_year] = pd.Series([0], name="upper")
             else:
+                print(extract_results(
+                        results_folder,
+                        module="tlo.methods.healthsystem.summary",
+                        key="Weather_delayed_HSI_Event_full_info",
+                        custom_generate_series=get_num_treatments_total_disrupted,
+                        do_scaling=True,
+                    ))
                 num_weather_delayed_appointments = summarize(
                     extract_results(
                         results_folder,
@@ -140,338 +234,338 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 all_years_data_weather_delayed_mean[target_year] = num_weather_delayed_appointments["mean"]
                 all_years_data_weather_delayed_lower[target_year] = num_weather_delayed_appointments["lower"]
                 all_years_data_weather_delayed_upper[target_year] = num_weather_delayed_appointments["upper"]
-
-            # Weather cancelled appointments - only for non-baseline scenarios
-            if draw == 0:
-                # Baseline has no weather disruptions
-                all_years_data_weather_cancelled_mean[target_year] = pd.Series([0], name="mean")
-                all_years_data_weather_cancelled_lower[target_year] = pd.Series([0], name="lower")
-                all_years_data_weather_cancelled_upper[target_year] = pd.Series([0], name="upper")
-            else:
-                num_weather_cancelled_appointments = summarize(
-                    extract_results(
-                        results_folder,
-                        module="tlo.methods.healthsystem.summary",
-                        key="Weather_cancelled_HSI_Event_full_info",
-                        custom_generate_series=get_num_treatments_total_disrupted,
-                        do_scaling=True,
-                    ),
-                    only_mean=False,
-                    collapse_columns=True,
-                )[draw]
-
-                all_years_data_weather_cancelled_mean[target_year] = num_weather_cancelled_appointments["mean"]
-                all_years_data_weather_cancelled_lower[target_year] = num_weather_cancelled_appointments["lower"]
-                all_years_data_weather_cancelled_upper[target_year] = num_weather_cancelled_appointments["upper"]
-
-        # Convert the accumulated data into DataFrames for plotting
-        df_all_years_treatments_mean = pd.DataFrame(all_years_data_treatments_mean)
-        df_all_years_treatments_lower = pd.DataFrame(all_years_data_treatments_lower)
-        df_all_years_treatments_upper = pd.DataFrame(all_years_data_treatments_upper)
-
-        df_all_years_weather_delayed_mean = pd.DataFrame(all_years_data_weather_delayed_mean)
-        df_all_years_weather_delayed_lower = pd.DataFrame(all_years_data_weather_delayed_lower)
-        df_all_years_weather_delayed_upper = pd.DataFrame(all_years_data_weather_delayed_upper)
-
-        df_all_years_weather_cancelled_mean = pd.DataFrame(all_years_data_weather_cancelled_mean)
-        df_all_years_weather_cancelled_lower = pd.DataFrame(all_years_data_weather_cancelled_lower)
-        df_all_years_weather_cancelled_upper = pd.DataFrame(all_years_data_weather_cancelled_upper)
-
-        # Calculate disruption rates
-        total_hsis = df_all_years_treatments_mean.sum(axis=0)
-        delayed_hsis = df_all_years_weather_delayed_mean.sum(axis=0)
-        cancelled_hsis = df_all_years_weather_cancelled_mean.sum(axis=0)
-
-        # Calculate percentages (avoiding division by zero)
-        pct_delayed = (delayed_hsis / total_hsis * 100).fillna(0).replace([np.inf, -np.inf], 0)
-        pct_cancelled = (cancelled_hsis / total_hsis * 100).fillna(0).replace([np.inf, -np.inf], 0)
-        pct_total_disrupted = ((delayed_hsis + cancelled_hsis) / total_hsis * 100).fillna(0).replace([np.inf, -np.inf],
-                                                                                                     0)
-
-        # New plot showing HSI counts and disruption rates for specific facility
-        fig, axes = plt.subplots(2, 1, figsize=(15, 12))
-
-        # Panel A: Absolute counts
-        years = df_all_years_treatments_mean.columns
-        axes[0].plot(years, total_hsis, marker='o', label='Total Non-Blank HSIs', linewidth=2)
-        axes[0].plot(years, delayed_hsis, marker='s', label='Weather Delayed', linewidth=2)
-        axes[0].plot(years, cancelled_hsis, marker='^', label='Weather Cancelled', linewidth=2)
-        axes[0].set_title(f'Panel A: HSI Counts at Facility {facility_of_interest} - {scenario_names[draw]}')
-        axes[0].set_xlabel('Year')
-        axes[0].set_ylabel('Number of HSIs')
-        axes[0].legend()
-        axes[0].grid(True, alpha=0.3)
-
-        # Panel B: Disruption rates
-        axes[1].plot(years, pct_delayed, marker='s', label='% Delayed', linewidth=2)
-        axes[1].plot(years, pct_cancelled, marker='^', label='% Cancelled', linewidth=2)
-        axes[1].plot(years, pct_total_disrupted, marker='o', label='% Total Disrupted', linewidth=2, linestyle='--')
-        axes[1].set_title(
-            f'Panel B: Climate Disruption Rates at Facility {facility_of_interest} - {scenario_names[draw]}')
-        axes[1].set_xlabel('Year')
-        axes[1].set_ylabel('Percentage of Total HSIs (%)')
-        axes[1].legend()
-        axes[1].grid(True, alpha=0.3)
-
-        fig.tight_layout()
-        fig.savefig(make_graph_file_name(f'Facility_{facility_of_interest}_HSI_and_Disruption'))
-        plt.close(fig)
-
-        # Save facility-specific summary data
-        facility_summary = pd.DataFrame({
-            'Year': years,
-            'Total_NonBlank_HSIs': total_hsis.values,
-            'Weather_Delayed': delayed_hsis.values,
-            'Weather_Cancelled': cancelled_hsis.values,
-            'Pct_Delayed': pct_delayed.values,
-            'Pct_Cancelled': pct_cancelled.values,
-            'Pct_Total_Disrupted': pct_total_disrupted.values
-        })
-        facility_summary.to_csv(output_folder / f'facility_{facility_of_interest}_summary_{draw}.csv', index=False)
-
-        # Plotting - Healthcare System Utilization by Type
-        fig, axes = plt.subplots(1, 3, figsize=(30, 8))
-
-        # Panel A: Total Treatments
-        for i, treatment_type in enumerate(df_all_years_treatments_mean.index):
-            axes[0].plot(
-                df_all_years_treatments_mean.columns,
-                df_all_years_treatments_mean.loc[treatment_type],
-                marker="o",
-                label=treatment_type,
-            )
-        axes[0].set_title(f"Panel A: Healthcare Treatments by Type - {scenario_names[draw]}")
-        axes[0].set_xlabel("Year")
-        axes[0].set_ylabel("Number of Treatments")
-        axes[0].grid(True)
-        axes[0].legend(title="Treatment Type", bbox_to_anchor=(1.0, 1), loc="upper left")
-
-        # Panel B: Weather Delayed Appointments
-        for i, appt_type in enumerate(df_all_years_weather_delayed_mean.index):
-            axes[1].plot(
-                df_all_years_weather_delayed_mean.columns,
-                df_all_years_weather_delayed_mean.loc[appt_type],
-                marker="o",
-                label=appt_type,
-            )
-        axes[1].set_title(f"Panel B: Weather Delayed Appointments by Type - {scenario_names[draw]}")
-        axes[1].set_xlabel("Year")
-        axes[1].set_ylabel("Number of Weather Delayed Appointments")
-        axes[1].legend(title="Appointment Type", bbox_to_anchor=(1.0, 1), loc="upper left")
-        axes[1].grid(True)
-
-        # Panel C: Weather Cancelled Appointments
-        for i, appt_type in enumerate(df_all_years_weather_cancelled_mean.index):
-            axes[2].plot(
-                df_all_years_weather_cancelled_mean.columns,
-                df_all_years_weather_cancelled_mean.loc[appt_type],
-                marker="o",
-                label=appt_type,
-            )
-        axes[2].set_title(f"Panel C: Weather Cancelled Appointments by Type - {scenario_names[draw]}")
-        axes[2].set_xlabel("Year")
-        axes[2].set_ylabel("Number of Weather Cancelled Appointments")
-        axes[2].legend(title="Appointment Type", bbox_to_anchor=(1.0, 1), loc="upper left")
-        axes[2].grid(True)
-
-        fig.tight_layout()
-        fig.savefig(make_graph_file_name("Healthcare_System_Utilization_All_Years_With_Weather"))
-        plt.close(fig)
-
-        # STACKED BAR PLOTS
-        fig, axes = plt.subplots(1, 3, figsize=(30, 8))
-
-        df_all_years_treatments_mean.T.plot.bar(stacked=True, ax=axes[0])
-        axes[0].set_title(f"Panel A: Healthcare Treatments by Type - {scenario_names[draw]}")
-        axes[0].set_xlabel("Year")
-        axes[0].set_ylabel("Number of Treatments")
-        axes[0].legend(title="Treatment Type", bbox_to_anchor=(1.05, 1), loc="upper left")
-        axes[0].grid(True)
-
-        df_all_years_weather_delayed_mean.T.plot.bar(stacked=True, ax=axes[1])
-        axes[1].set_title(f"Panel B: Weather Delayed Appointments by Type - {scenario_names[draw]}")
-        axes[1].set_ylabel("Number of Weather Delayed Appointments")
-        axes[1].set_xlabel("Year")
-        axes[1].legend(title="Appointment Type", bbox_to_anchor=(1.05, 1), loc="upper left")
-        axes[1].grid(True)
-
-        df_all_years_weather_cancelled_mean.T.plot.bar(stacked=True, ax=axes[2])
-        axes[2].set_title(f"Panel C: Weather Cancelled Appointments by Type - {scenario_names[draw]}")
-        axes[2].set_ylabel("Number of Weather Cancelled Appointments")
-        axes[2].set_xlabel("Year")
-        axes[2].legend(title="Appointment Type", bbox_to_anchor=(1.05, 1), loc="upper left")
-        axes[2].grid(True)
-
-        fig.tight_layout()
-        fig.savefig(make_graph_file_name("Healthcare_System_Utilization_Stacked_With_Weather"))
-        plt.close(fig)
-
-        # STACKED AREA PLOTS
-        fig, axes = plt.subplots(1, 3, figsize=(30, 8))
-
-        # Panel A: Treatments (Stacked area plot)
-        years_treatments = df_all_years_treatments_mean.columns
-        treatment_types = df_all_years_treatments_mean.index
-        axes[0].stackplot(years_treatments, df_all_years_treatments_mean.values, labels=treatment_types)
-        axes[0].set_title(f"Panel A: Healthcare Treatments by Type - {scenario_names[draw]}")
-        axes[0].set_xlabel("Year")
-        axes[0].set_ylabel("Number of Treatments")
-        axes[0].grid(True)
-
-        # Panel B: Weather delayed appointments (Stacked area plot)
-        years_weather_delayed = df_all_years_weather_delayed_mean.columns
-        weather_delayed_types = df_all_years_weather_delayed_mean.index
-        axes[1].stackplot(
-            years_weather_delayed, df_all_years_weather_delayed_mean.values, labels=weather_delayed_types
-        )
-        axes[1].set_title(f"Panel B: Weather Delayed Appointments by Type - {scenario_names[draw]}")
-        axes[1].set_xlabel("Year")
-        axes[1].set_ylabel("Number of Weather Delayed Appointments")
-        axes[1].legend(title="Appointment Type", bbox_to_anchor=(1.05, 1), loc="upper left")
-        axes[1].grid(True)
-
-        # Panel C: Weather cancelled appointments (Stacked area plot)
-        years_weather_cancelled = df_all_years_weather_cancelled_mean.columns
-        weather_cancelled_types = df_all_years_weather_cancelled_mean.index
-        axes[2].stackplot(
-            years_weather_cancelled, df_all_years_weather_cancelled_mean.values, labels=weather_cancelled_types
-        )
-        axes[2].set_title(f"Panel C: Weather Cancelled Appointments by Type - {scenario_names[draw]}")
-        axes[2].set_xlabel("Year")
-        axes[2].set_ylabel("Number of Weather Cancelled Appointments")
-        axes[2].legend(title="Appointment Type", bbox_to_anchor=(1.05, 1), loc="upper left")
-        axes[2].grid(True)
-
-        fig.tight_layout()
-        fig.savefig(make_graph_file_name("Healthcare_System_Utilization_Area_With_Weather"))
-        plt.close(fig)
-
-        # Save data to CSV
-        df_all_years_treatments_mean.to_csv(output_folder / f"treatments_by_type_{draw}.csv")
-        df_all_years_weather_delayed_mean.to_csv(output_folder / f"weather_delayed_by_type_{draw}.csv")
-        df_all_years_weather_cancelled_mean.to_csv(output_folder / f"weather_cancelled_by_type_{draw}.csv")
-
-        # Accumulate data across all draws
-        all_draws_treatments_mean.append(pd.Series(df_all_years_treatments_mean.sum(), name=f"Draw {draw}"))
-        all_draws_weather_delayed_mean.append(pd.Series(df_all_years_weather_delayed_mean.sum(), name=f"Draw {draw}"))
-        all_draws_weather_cancelled_mean.append(
-            pd.Series(df_all_years_weather_cancelled_mean.sum(), name=f"Draw {draw}")
-        )
-
-        all_draws_treatments_lower.append(pd.Series(df_all_years_treatments_lower.sum(), name=f"Draw {draw}"))
-        all_draws_weather_delayed_lower.append(pd.Series(df_all_years_weather_delayed_lower.sum(), name=f"Draw {draw}"))
-        all_draws_weather_cancelled_lower.append(
-            pd.Series(df_all_years_weather_cancelled_lower.sum(), name=f"Draw {draw}")
-        )
-
-        all_draws_treatments_upper.append(pd.Series(df_all_years_treatments_upper.sum(), name=f"Draw {draw}"))
-        all_draws_weather_delayed_upper.append(pd.Series(df_all_years_weather_delayed_upper.sum(), name=f"Draw {draw}"))
-        all_draws_weather_cancelled_upper.append(
-            pd.Series(df_all_years_weather_cancelled_upper.sum(), name=f"Draw {draw}")
-        )
-
-    # Combine all draws
-    df_treatments_all_draws_mean = pd.concat(all_draws_treatments_mean, axis=1)
-    df_weather_delayed_all_draws_mean = pd.concat(all_draws_weather_delayed_mean, axis=1)
-    df_weather_cancelled_all_draws_mean = pd.concat(all_draws_weather_cancelled_mean, axis=1)
-
-    df_treatments_all_draws_lower = pd.concat(all_draws_treatments_lower, axis=1)
-    df_weather_delayed_all_draws_lower = pd.concat(all_draws_weather_delayed_lower, axis=1)
-    df_weather_cancelled_all_draws_lower = pd.concat(all_draws_weather_cancelled_lower, axis=1)
-
-    df_treatments_all_draws_upper = pd.concat(all_draws_treatments_upper, axis=1)
-    df_weather_delayed_all_draws_upper = pd.concat(all_draws_weather_delayed_upper, axis=1)
-    df_weather_cancelled_all_draws_upper = pd.concat(all_draws_weather_cancelled_upper, axis=1)
-
-    # Final summary plots across all scenarios
-    treatments_totals_mean = df_treatments_all_draws_mean.sum()
-    weather_delayed_totals_mean = df_weather_delayed_all_draws_mean.sum()
-    weather_cancelled_totals_mean = df_weather_cancelled_all_draws_mean.sum()
-
-    treatments_totals_lower = df_treatments_all_draws_lower.sum()
-    treatments_totals_upper = df_treatments_all_draws_upper.sum()
-    weather_delayed_totals_lower = df_weather_delayed_all_draws_lower.sum()
-    weather_delayed_totals_upper = df_weather_delayed_all_draws_upper.sum()
-    weather_cancelled_totals_lower = df_weather_cancelled_all_draws_lower.sum()
-    weather_cancelled_totals_upper = df_weather_cancelled_all_draws_upper.sum()
-
-    treatments_totals_err = np.array(
-        [treatments_totals_mean - treatments_totals_lower, treatments_totals_upper - treatments_totals_mean]
-    )
-
-    weather_delayed_totals_err = np.array(
-        [
-            weather_delayed_totals_mean - weather_delayed_totals_lower,
-            weather_delayed_totals_upper - weather_delayed_totals_mean,
-        ]
-    )
-
-    weather_cancelled_totals_err = np.array(
-        [
-            weather_cancelled_totals_mean - weather_cancelled_totals_lower,
-            weather_cancelled_totals_upper - weather_cancelled_totals_mean,
-        ]
-    )
-
-    fig, axes = plt.subplots(1, 3, figsize=(30, 10))
-
-    # Panel A: Total Treatments
-    axes[0].bar(
-        treatments_totals_mean.index,
-        treatments_totals_mean.values,
-        color=scenario_colours,
-        yerr=treatments_totals_err,
-        capsize=20,
-    )
-    axes[0].set_title(f"Total Healthcare Treatments ({min_year}-{max_year})")
-    axes[0].set_xlabel("Scenario")
-    axes[0].set_ylabel("Total Treatments")
-    axes[0].set_xticklabels(scenario_names, rotation=45)
-    axes[0].grid(True)
-
-    # Panel B: Total Weather Delayed Appointments
-    axes[1].bar(
-        weather_delayed_totals_mean.index,
-        weather_delayed_totals_mean.values,
-        color=scenario_colours,
-        yerr=weather_delayed_totals_err,
-        capsize=20,
-    )
-    axes[1].set_title(f"Total Weather Delayed Appointments ({min_year}-{max_year})")
-    axes[1].set_xlabel("Scenario")
-    axes[1].set_ylabel("Total Weather Delayed Appointments")
-    axes[1].set_xticklabels(scenario_names, rotation=45)
-    axes[1].grid(True)
-
-    # Panel C: Total Weather Cancelled Appointments
-    axes[2].bar(
-        weather_cancelled_totals_mean.index,
-        weather_cancelled_totals_mean.values,
-        color=scenario_colours,
-        yerr=weather_cancelled_totals_err,
-        capsize=20,
-    )
-    axes[2].set_title(f"Total Weather Cancelled Appointments ({min_year}-{max_year})")
-    axes[2].set_xlabel("Scenario")
-    axes[2].set_ylabel("Total Weather Cancelled Appointments")
-    axes[2].set_xticklabels(scenario_names, rotation=45)
-    axes[2].grid(True)
-
-    fig.tight_layout()
-    fig.savefig(output_folder / "total_treatments_and_appointments_all_draws_with_weather.png")
-    plt.close(fig)
-
-    # Save summary data
-    df_treatments_all_draws_mean.to_csv(output_folder / "treatments_summary_all_draws.csv")
-    df_weather_delayed_all_draws_mean.to_csv(output_folder / "weather_delayed_summary_all_draws.csv")
-    df_weather_cancelled_all_draws_mean.to_csv(output_folder / "weather_cancelled_summary_all_draws.csv")
-
-    (df_weather_delayed_all_draws_mean / df_treatments_all_draws_mean).to_csv(
-        output_folder / "percentage_weather_delayed_by_all_draws.csv"
-    )
-    (df_weather_cancelled_all_draws_mean / df_treatments_all_draws_mean).to_csv(
-        output_folder / "percentage_weather_cancelled_by_all_draws.csv"
-    )
+    #
+    #         # Weather cancelled appointments - only for non-baseline scenarios
+    #         if draw == 0:
+    #             # Baseline has no weather disruptions
+    #             all_years_data_weather_cancelled_mean[target_year] = pd.Series([0], name="mean")
+    #             all_years_data_weather_cancelled_lower[target_year] = pd.Series([0], name="lower")
+    #             all_years_data_weather_cancelled_upper[target_year] = pd.Series([0], name="upper")
+    #         else:
+    #             num_weather_cancelled_appointments = summarize(
+    #                 extract_results(
+    #                     results_folder,
+    #                     module="tlo.methods.healthsystem.summary",
+    #                     key="Weather_cancelled_HSI_Event_full_info",
+    #                     custom_generate_series=get_num_treatments_total_disrupted,
+    #                     do_scaling=True,
+    #                 ),
+    #                 only_mean=False,
+    #                 collapse_columns=True,
+    #             )[draw]
+    #
+    #             all_years_data_weather_cancelled_mean[target_year] = num_weather_cancelled_appointments["mean"]
+    #             all_years_data_weather_cancelled_lower[target_year] = num_weather_cancelled_appointments["lower"]
+    #             all_years_data_weather_cancelled_upper[target_year] = num_weather_cancelled_appointments["upper"]
+    #
+    #     # Convert the accumulated data into DataFrames for plotting
+    #     df_all_years_treatments_mean = pd.DataFrame(all_years_data_treatments_mean)
+    #     df_all_years_treatments_lower = pd.DataFrame(all_years_data_treatments_lower)
+    #     df_all_years_treatments_upper = pd.DataFrame(all_years_data_treatments_upper)
+    #
+    #     df_all_years_weather_delayed_mean = pd.DataFrame(all_years_data_weather_delayed_mean)
+    #     df_all_years_weather_delayed_lower = pd.DataFrame(all_years_data_weather_delayed_lower)
+    #     df_all_years_weather_delayed_upper = pd.DataFrame(all_years_data_weather_delayed_upper)
+    #
+    #     df_all_years_weather_cancelled_mean = pd.DataFrame(all_years_data_weather_cancelled_mean)
+    #     df_all_years_weather_cancelled_lower = pd.DataFrame(all_years_data_weather_cancelled_lower)
+    #     df_all_years_weather_cancelled_upper = pd.DataFrame(all_years_data_weather_cancelled_upper)
+    #
+    #     # Calculate disruption rates
+    #     total_hsis = df_all_years_treatments_mean.sum(axis=0)
+    #     delayed_hsis = df_all_years_weather_delayed_mean.sum(axis=0)
+    #     cancelled_hsis = df_all_years_weather_cancelled_mean.sum(axis=0)
+    #
+    #     # Calculate percentages (avoiding division by zero)
+    #     pct_delayed = (delayed_hsis / total_hsis * 100).fillna(0).replace([np.inf, -np.inf], 0)
+    #     pct_cancelled = (cancelled_hsis / total_hsis * 100).fillna(0).replace([np.inf, -np.inf], 0)
+    #     pct_total_disrupted = ((delayed_hsis + cancelled_hsis) / total_hsis * 100).fillna(0).replace([np.inf, -np.inf],
+    #                                                                                                  0)
+    #
+    #     # New plot showing HSI counts and disruption rates for specific facility
+    #     fig, axes = plt.subplots(2, 1, figsize=(15, 12))
+    #
+    #     # Panel A: Absolute counts
+    #     years = df_all_years_treatments_mean.columns
+    #     axes[0].plot(years, total_hsis, marker='o', label='Total Non-Blank HSIs', linewidth=2)
+    #     axes[0].plot(years, delayed_hsis, marker='s', label='Weather Delayed', linewidth=2)
+    #     axes[0].plot(years, cancelled_hsis, marker='^', label='Weather Cancelled', linewidth=2)
+    #     axes[0].set_title(f'Panel A: HSI Counts at Facility {facility_of_interest} - {scenario_names_all[draw]}')
+    #     axes[0].set_xlabel('Year')
+    #     axes[0].set_ylabel('Number of HSIs')
+    #     axes[0].legend()
+    #     axes[0].grid(True, alpha=0.3)
+    #
+    #     # Panel B: Disruption rates
+    #     axes[1].plot(years, pct_delayed, marker='s', label='% Delayed', linewidth=2)
+    #     axes[1].plot(years, pct_cancelled, marker='^', label='% Cancelled', linewidth=2)
+    #     axes[1].plot(years, pct_total_disrupted, marker='o', label='% Total Disrupted', linewidth=2, linestyle='--')
+    #     axes[1].set_title(
+    #         f'Panel B: Climate Disruption Rates at Facility {facility_of_interest} - {scenario_names_all[draw]}')
+    #     axes[1].set_xlabel('Year')
+    #     axes[1].set_ylabel('Percentage of Total HSIs (%)')
+    #     axes[1].legend()
+    #     axes[1].grid(True, alpha=0.3)
+    #
+    #     fig.tight_layout()
+    #     fig.savefig(make_graph_file_name(f'Facility_{facility_of_interest}_HSI_and_Disruption_{draw}_{suffix}'))
+    #     plt.close(fig)
+    #
+    #     # Save facility-specific summary data
+    #     facility_summary = pd.DataFrame({
+    #         'Year': years,
+    #         'Total_NonBlank_HSIs': total_hsis.values,
+    #         'Weather_Delayed': delayed_hsis.values,
+    #         'Weather_Cancelled': cancelled_hsis.values,
+    #         'Pct_Delayed': pct_delayed.values,
+    #         'Pct_Cancelled': pct_cancelled.values,
+    #         'Pct_Total_Disrupted': pct_total_disrupted.values
+    #     })
+    #     facility_summary.to_csv(output_folder / f'facility_{facility_of_interest}_summary_{draw}_{suffix}.csv', index=False)
+    #
+    #     # Plotting - Healthcare System Utilization by Type
+    #     fig, axes = plt.subplots(1, 3, figsize=(30, 8))
+    #
+    #     # Panel A: Total Treatments
+    #     for i, treatment_type in enumerate(df_all_years_treatments_mean.index):
+    #         axes[0].plot(
+    #             df_all_years_treatments_mean.columns,
+    #             df_all_years_treatments_mean.loc[treatment_type],
+    #             marker="o",
+    #             label=treatment_type,
+    #         )
+    #     axes[0].set_title(f"Panel A: Healthcare Treatments by Type - {scenario_names_all[draw]}")
+    #     axes[0].set_xlabel("Year")
+    #     axes[0].set_ylabel("Number of Treatments")
+    #     axes[0].grid(True)
+    #     axes[0].legend(title="Treatment Type", bbox_to_anchor=(1.0, 1), loc="upper left")
+    #
+    #     # Panel B: Weather Delayed Appointments
+    #     for i, appt_type in enumerate(df_all_years_weather_delayed_mean.index):
+    #         axes[1].plot(
+    #             df_all_years_weather_delayed_mean.columns,
+    #             df_all_years_weather_delayed_mean.loc[appt_type],
+    #             marker="o",
+    #             label=appt_type,
+    #         )
+    #     axes[1].set_title(f"Panel B: Weather Delayed Appointments by Type - {scenario_names_all[draw]}")
+    #     axes[1].set_xlabel("Year")
+    #     axes[1].set_ylabel("Number of Weather Delayed Appointments")
+    #     axes[1].legend(title="Appointment Type", bbox_to_anchor=(1.0, 1), loc="upper left")
+    #     axes[1].grid(True)
+    #
+    #     # Panel C: Weather Cancelled Appointments
+    #     for i, appt_type in enumerate(df_all_years_weather_cancelled_mean.index):
+    #         axes[2].plot(
+    #             df_all_years_weather_cancelled_mean.columns,
+    #             df_all_years_weather_cancelled_mean.loc[appt_type],
+    #             marker="o",
+    #             label=appt_type,
+    #         )
+    #     axes[2].set_title(f"Panel C: Weather Cancelled Appointments by Type - {scenario_names_all[draw]}")
+    #     axes[2].set_xlabel("Year")
+    #     axes[2].set_ylabel("Number of Weather Cancelled Appointments")
+    #     axes[2].legend(title="Appointment Type", bbox_to_anchor=(1.0, 1), loc="upper left")
+    #     axes[2].grid(True)
+    #
+    #     fig.tight_layout()
+    #     fig.savefig(make_graph_file_name(f"Healthcare_System_Utilization_All_Years_With_Weather_facilities_{facility_of_interest}_{suffix}"))
+    #     plt.close(fig)
+    #
+    #     # STACKED BAR PLOTS
+    #     fig, axes = plt.subplots(1, 3, figsize=(30, 8))
+    #
+    #     df_all_years_treatments_mean.T.plot.bar(stacked=True, ax=axes[0])
+    #     axes[0].set_title(f"Panel A: Healthcare Treatments by Type - {scenario_names_all[draw]}")
+    #     axes[0].set_xlabel("Year")
+    #     axes[0].set_ylabel("Number of Treatments")
+    #     axes[0].legend(title="Treatment Type", bbox_to_anchor=(1.05, 1), loc="upper left")
+    #     axes[0].grid(True)
+    #
+    #     df_all_years_weather_delayed_mean.T.plot.bar(stacked=True, ax=axes[1])
+    #     axes[1].set_title(f"Panel B: Weather Delayed Appointments by Type - {scenario_names_all[draw]}")
+    #     axes[1].set_ylabel("Number of Weather Delayed Appointments")
+    #     axes[1].set_xlabel("Year")
+    #     axes[1].legend(title="Appointment Type", bbox_to_anchor=(1.05, 1), loc="upper left")
+    #     axes[1].grid(True)
+    #
+    #     df_all_years_weather_cancelled_mean.T.plot.bar(stacked=True, ax=axes[2])
+    #     axes[2].set_title(f"Panel C: Weather Cancelled Appointments by Type - {scenario_names_all[draw]}")
+    #     axes[2].set_ylabel("Number of Weather Cancelled Appointments")
+    #     axes[2].set_xlabel("Year")
+    #     axes[2].legend(title="Appointment Type", bbox_to_anchor=(1.05, 1), loc="upper left")
+    #     axes[2].grid(True)
+    #
+    #     fig.tight_layout()
+    #     fig.savefig(make_graph_file_name("Healthcare_System_Utilization_Stacked_With_Weather"))
+    #     plt.close(fig)
+    #
+    #     # STACKED AREA PLOTS
+    #     fig, axes = plt.subplots(1, 3, figsize=(30, 8))
+    #
+    #     # Panel A: Treatments (Stacked area plot)
+    #     years_treatments = df_all_years_treatments_mean.columns
+    #     treatment_types = df_all_years_treatments_mean.index
+    #     axes[0].stackplot(years_treatments, df_all_years_treatments_mean.values, labels=treatment_types)
+    #     axes[0].set_title(f"Panel A: Healthcare Treatments by Type - {scenario_names_all[draw]}")
+    #     axes[0].set_xlabel("Year")
+    #     axes[0].set_ylabel("Number of Treatments")
+    #     axes[0].grid(True)
+    #
+    #     # Panel B: Weather delayed appointments (Stacked area plot)
+    #     years_weather_delayed = df_all_years_weather_delayed_mean.columns
+    #     weather_delayed_types = df_all_years_weather_delayed_mean.index
+    #     axes[1].stackplot(
+    #         years_weather_delayed, df_all_years_weather_delayed_mean.values, labels=weather_delayed_types
+    #     )
+    #     axes[1].set_title(f"Panel B: Weather Delayed Appointments by Type - {scenario_names_all[draw]}")
+    #     axes[1].set_xlabel("Year")
+    #     axes[1].set_ylabel("Number of Weather Delayed Appointments")
+    #     axes[1].legend(title="Appointment Type", bbox_to_anchor=(1.05, 1), loc="upper left")
+    #     axes[1].grid(True)
+    #
+    #     # Panel C: Weather cancelled appointments (Stacked area plot)
+    #     years_weather_cancelled = df_all_years_weather_cancelled_mean.columns
+    #     weather_cancelled_types = df_all_years_weather_cancelled_mean.index
+    #     axes[2].stackplot(
+    #         years_weather_cancelled, df_all_years_weather_cancelled_mean.values, labels=weather_cancelled_types
+    #     )
+    #     axes[2].set_title(f"Panel C: Weather Cancelled Appointments by Type - {scenario_names_all[draw]}")
+    #     axes[2].set_xlabel("Year")
+    #     axes[2].set_ylabel("Number of Weather Cancelled Appointments")
+    #     axes[2].legend(title="Appointment Type", bbox_to_anchor=(1.05, 1), loc="upper left")
+    #     axes[2].grid(True)
+    #
+    #     fig.tight_layout()
+    #     fig.savefig(make_graph_file_name(f"Healthcare_System_Utilization_Area_With_Weather_facilities_{facility_of_interest}_{suffix}"))
+    #     plt.close(fig)
+    #
+    #     # Save data to CSV
+    #     df_all_years_treatments_mean.to_csv(output_folder / f"treatments_by_type_{draw}_{suffix}.csv")
+    #     df_all_years_weather_delayed_mean.to_csv(output_folder / f"weather_delayed_by_type_{draw}_{suffix}.csv")
+    #     df_all_years_weather_cancelled_mean.to_csv(output_folder / f"weather_cancelled_by_type_{draw}_{suffix}.csv")
+    #
+    #     # Accumulate data across all draws
+    #     all_draws_treatments_mean.append(pd.Series(df_all_years_treatments_mean.sum(), name=f"Draw {draw}"))
+    #     all_draws_weather_delayed_mean.append(pd.Series(df_all_years_weather_delayed_mean.sum(), name=f"Draw {draw}"))
+    #     all_draws_weather_cancelled_mean.append(
+    #         pd.Series(df_all_years_weather_cancelled_mean.sum(), name=f"Draw {draw}")
+    #     )
+    #
+    #     all_draws_treatments_lower.append(pd.Series(df_all_years_treatments_lower.sum(), name=f"Draw {draw}"))
+    #     all_draws_weather_delayed_lower.append(pd.Series(df_all_years_weather_delayed_lower.sum(), name=f"Draw {draw}"))
+    #     all_draws_weather_cancelled_lower.append(
+    #         pd.Series(df_all_years_weather_cancelled_lower.sum(), name=f"Draw {draw}")
+    #     )
+    #
+    #     all_draws_treatments_upper.append(pd.Series(df_all_years_treatments_upper.sum(), name=f"Draw {draw}"))
+    #     all_draws_weather_delayed_upper.append(pd.Series(df_all_years_weather_delayed_upper.sum(), name=f"Draw {draw}"))
+    #     all_draws_weather_cancelled_upper.append(
+    #         pd.Series(df_all_years_weather_cancelled_upper.sum(), name=f"Draw {draw}")
+    #     )
+    #
+    # # Combine all draws
+    # df_treatments_all_draws_mean = pd.concat(all_draws_treatments_mean, axis=1)
+    # df_weather_delayed_all_draws_mean = pd.concat(all_draws_weather_delayed_mean, axis=1)
+    # df_weather_cancelled_all_draws_mean = pd.concat(all_draws_weather_cancelled_mean, axis=1)
+    #
+    # df_treatments_all_draws_lower = pd.concat(all_draws_treatments_lower, axis=1)
+    # df_weather_delayed_all_draws_lower = pd.concat(all_draws_weather_delayed_lower, axis=1)
+    # df_weather_cancelled_all_draws_lower = pd.concat(all_draws_weather_cancelled_lower, axis=1)
+    #
+    # df_treatments_all_draws_upper = pd.concat(all_draws_treatments_upper, axis=1)
+    # df_weather_delayed_all_draws_upper = pd.concat(all_draws_weather_delayed_upper, axis=1)
+    # df_weather_cancelled_all_draws_upper = pd.concat(all_draws_weather_cancelled_upper, axis=1)
+    #
+    # # Final summary plots across all scenarios
+    # treatments_totals_mean = df_treatments_all_draws_mean.sum()
+    # weather_delayed_totals_mean = df_weather_delayed_all_draws_mean.sum()
+    # weather_cancelled_totals_mean = df_weather_cancelled_all_draws_mean.sum()
+    #
+    # treatments_totals_lower = df_treatments_all_draws_lower.sum()
+    # treatments_totals_upper = df_treatments_all_draws_upper.sum()
+    # weather_delayed_totals_lower = df_weather_delayed_all_draws_lower.sum()
+    # weather_delayed_totals_upper = df_weather_delayed_all_draws_upper.sum()
+    # weather_cancelled_totals_lower = df_weather_cancelled_all_draws_lower.sum()
+    # weather_cancelled_totals_upper = df_weather_cancelled_all_draws_upper.sum()
+    #
+    # treatments_totals_err = np.array(
+    #     [treatments_totals_mean - treatments_totals_lower, treatments_totals_upper - treatments_totals_mean]
+    # )
+    #
+    # weather_delayed_totals_err = np.array(
+    #     [
+    #         weather_delayed_totals_mean - weather_delayed_totals_lower,
+    #         weather_delayed_totals_upper - weather_delayed_totals_mean,
+    #     ]
+    # )
+    #
+    # weather_cancelled_totals_err = np.array(
+    #     [
+    #         weather_cancelled_totals_mean - weather_cancelled_totals_lower,
+    #         weather_cancelled_totals_upper - weather_cancelled_totals_mean,
+    #     ]
+    # )
+    #
+    # fig, axes = plt.subplots(1, 3, figsize=(30, 10))
+    #
+    # # Panel A: Total Treatments
+    # axes[0].bar(
+    #     treatments_totals_mean.index,
+    #     treatments_totals_mean.values,
+    #     color=scenario_colours,
+    #     yerr=treatments_totals_err,
+    #     capsize=20,
+    # )
+    # axes[0].set_title(f"Total Healthcare Treatments ({min_year}-{max_year})")
+    # axes[0].set_xlabel("Scenario")
+    # axes[0].set_ylabel("Total Treatments")
+    # axes[0].set_xticklabels([scenario_names_all[i] for i in scenarios_of_interest], rotation=45)
+    # axes[0].grid(True)
+    #
+    # # Panel B: Total Weather Delayed Appointments
+    # axes[1].bar(
+    #     weather_delayed_totals_mean.index,
+    #     weather_delayed_totals_mean.values,
+    #     color=scenario_colours,
+    #     yerr=weather_delayed_totals_err,
+    #     capsize=20,
+    # )
+    # axes[1].set_title(f"Total Weather Delayed Appointments ({min_year}-{max_year})")
+    # axes[1].set_xlabel("Scenario")
+    # axes[1].set_ylabel("Total Weather Delayed Appointments")
+    # axes[1].set_xticklabels([scenario_names_all[i] for i in scenarios_of_interest], rotation=45)
+    # axes[1].grid(True)
+    #
+    # # Panel C: Total Weather Cancelled Appointments
+    # axes[2].bar(
+    #     weather_cancelled_totals_mean.index,
+    #     weather_cancelled_totals_mean.values,
+    #     color=scenario_colours,
+    #     yerr=weather_cancelled_totals_err,
+    #     capsize=20,
+    # )
+    # axes[2].set_title(f"Total Weather Cancelled Appointments ({min_year}-{max_year})")
+    # axes[2].set_xlabel("Scenario")
+    # axes[2].set_ylabel("Total Weather Cancelled Appointments")
+    # axes[2].set_xticklabels([scenario_names_all[i] for i in scenarios_of_interest], rotation=45)
+    # axes[2].grid(True)
+    #
+    # fig.tight_layout()
+    # fig.savefig(output_folder / f"total_treatments_and_appointments_all_draws_with_weather_facilities_{facility_of_interest}_{suffix}.png")
+    # plt.close(fig)
+    #
+    # # Save summary data
+    # df_treatments_all_draws_mean.to_csv(output_folder / f"treatments_summary_all_draws_facilities_{facility_of_interest}_{suffix}.csv")
+    # df_weather_delayed_all_draws_mean.to_csv(output_folder / f"weather_delayed_summary_all_draws_facilities_{facility_of_interest}_{suffix}.csv")
+    # df_weather_cancelled_all_draws_mean.to_csv(output_folder / f"weather_cancelled_summary_all_draws_facilities_{facility_of_interest}_{suffix}.csv")
+    #
+    # (df_weather_delayed_all_draws_mean / df_treatments_all_draws_mean).to_csv(
+    #     output_folder / f"percentage_weather_delayed_by_all_draws_facilities_{facility_of_interest}_{suffix}.csv"
+    # )
+    # (df_weather_cancelled_all_draws_mean / df_treatments_all_draws_mean).to_csv(
+    #     output_folder / f"percentage_weather_cancelled_by_all_draws_facilities_{facility_of_interest}_{suffix}.csv"
+    # )
 
 
 if __name__ == "__main__":
