@@ -441,6 +441,17 @@ class HealthBurden(Module):
                 .assign(year=year_month.year, month=year_month.month)
             )
 
+        def summarise_total_for_this_month(df) -> pd.DataFrame:
+            """Return total sum for the month across all demographic categories."""
+            total = (
+                df.loc[(slice(None), slice(None), slice(None), slice(None), year_month_key)]
+                .sum()
+                .to_frame().T
+            )
+            total['year'] = year_month.year
+            total['month'] = year_month.month
+            return total
+
         def log_df_line_by_line(key, description, df, force_cols=None) -> None:
             """Log each line of a dataframe to logger.info. Each row of the dataframe is one logged entry.
             force_cols is the names of the colums that must be included in each logging line (As the parsing of the log requires the name of the format of each row to be uniform.)"""
@@ -461,7 +472,7 @@ class HealthBurden(Module):
         log_df_line_by_line(
             key="yld_by_causes_of_disability",
             description="Years lived with disability by the declared cause_of_disability, "
-            "broken down by year, month, sex, age-group",
+                        "broken down by year, month, sex, age-group",
             df=(yld := summarise_results_for_this_month(self.years_lived_with_disability)),
             force_cols=sorted(set(self.causes_of_disability.keys())),
         )
@@ -470,9 +481,9 @@ class HealthBurden(Module):
         log_df_line_by_line(
             key="yll_by_causes_of_death",
             description="Years of life lost by the declared cause_of_death, "
-            "broken down by year, month, sex, age-group. "
-            "No stacking: i.e., each year of life lost is ascribed to the"
-            " age and year that the person would have lived.",
+                        "broken down by year, month, sex, age-group. "
+                        "No stacking: i.e., each year of life lost is ascribed to the"
+                        " age and year that the person would have lived.",
             df=(yll := summarise_results_for_this_month(self.years_life_lost)),
             force_cols=self._causes_of_yll,
         )
@@ -480,10 +491,10 @@ class HealthBurden(Module):
         log_df_line_by_line(
             key="yll_by_causes_of_death_stacked",
             description="Years of life lost by the declared cause_of_death, "
-            "broken down by year, month, sex, age-group. "
-            "Stacking by time: i.e., every year of life lost is ascribed to"
-            " the month of the death, but each is ascribed to the age that "
-            "the person would have lived, .",
+                        "broken down by year, month, sex, age-group. "
+                        "Stacking by time: i.e., every year of life lost is ascribed to"
+                        " the month of the death, but each is ascribed to the age that "
+                        "the person would have lived, .",
             df=(yll_stacked_by_time := summarise_results_for_this_month(self.years_life_lost_stacked_time)),
             force_cols=self._causes_of_yll,
         )
@@ -491,9 +502,9 @@ class HealthBurden(Module):
         log_df_line_by_line(
             key="yll_by_causes_of_death_stacked_by_age_and_time",
             description="Years of life lost by the declared cause_of_death, "
-            "broken down by year, month, sex, age-group. "
-            "Stacking by age and time: i.e., all the year of life lost "
-            "are ascribed to the age of the death and the month of the death.",
+                        "broken down by year, month, sex, age-group. "
+                        "Stacking by age and time: i.e., all the year of life lost "
+                        "are ascribed to the age of the death and the month of the death.",
             df=(
                 yll_stacked_by_age_and_time := summarise_results_for_this_month(
                     self.years_life_lost_stacked_age_and_time
@@ -506,9 +517,9 @@ class HealthBurden(Module):
         log_df_line_by_line(
             key="dalys",
             description="DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability"
-            ", broken down by year, month, sex, age-group. "
-            "No stacking: i.e., each year of life lost is ascribed to the"
-            " age and year that the person would have lived.",
+                        ", broken down by year, month, sex, age-group. "
+                        "No stacking: i.e., each year of life lost is ascribed to the"
+                        " age and year that the person would have lived.",
             df=self.get_dalys(yld=yld, yll=yll),
             force_cols=self._causes_of_dalys,
         )
@@ -516,10 +527,10 @@ class HealthBurden(Module):
         log_df_line_by_line(
             key="dalys_stacked",
             description="DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability"
-            ", broken down by year, month, sex, age-group. "
-            "Stacking by time: i.e., every year of life lost is ascribed to"
-            " the month of the death, but each is ascribed to the age that "
-            "the person would have lived, .",
+                        ", broken down by year, month, sex, age-group. "
+                        "Stacking by time: i.e., every year of life lost is ascribed to"
+                        " the month of the death, but each is ascribed to the age that "
+                        "the person would have lived, .",
             df=self.get_dalys(yld=yld, yll=yll_stacked_by_time),
             force_cols=self._causes_of_dalys,
         )
@@ -527,9 +538,9 @@ class HealthBurden(Module):
         log_df_line_by_line(
             key="dalys_stacked_by_age_and_time",
             description="DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability"
-            ", broken down by year, month, sex, age-group. "
-            "Stacking by age and time: i.e., all the year of life lost "
-            "are ascribed to the age of the death and the month of the death.",
+                        ", broken down by year, month, sex, age-group. "
+                        "Stacking by age and time: i.e., all the year of life lost "
+                        "are ascribed to the age of the death and the month of the death.",
             df=self.get_dalys(yld=yld, yll=yll_stacked_by_age_and_time),
             force_cols=self._causes_of_dalys,
         )
@@ -542,9 +553,9 @@ class HealthBurden(Module):
         log_df_line_by_line(
             key="dalys_by_wealth_stacked_by_age_and_time",
             description="DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability"
-            ", broken down by year, month and wealth category."
-            "Stacking by age and time: i.e., all the year of life lost "
-            "are ascribed to the age of the death and the month of the death.",
+                        ", broken down by year, month and wealth category."
+                        "Stacking by age and time: i.e., all the year of life lost "
+                        "are ascribed to the age of the death and the month of the death.",
             df=self.get_dalys(yld=yld_by_wealth, yll=yll_by_wealth),
             force_cols=self._causes_of_dalys,
         )
@@ -557,10 +568,23 @@ class HealthBurden(Module):
         log_df_line_by_line(
             key="dalys_by_district_stacked_by_age_and_time",
             description="DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability"
-            ", broken down by year, month and district."
-            "Stacking by age and time: i.e., all the year of life lost "
-            "are ascribed to the age of the death and the month of the death.",
+                        ", broken down by year, month and district."
+                        "Stacking by age and time: i.e., all the year of life lost "
+                        "are ascribed to the age of the death and the month of the death.",
             df=self.get_dalys(yld=yld_by_district, yll=yll_by_district),
+            force_cols=self._causes_of_dalys,
+        )
+
+        # 6) Log TOTAL DALYS by month (summed across all demographic categories)
+        yld_total = summarise_total_for_this_month(self.years_lived_with_disability)
+        yll_total = summarise_total_for_this_month(self.years_life_lost_stacked_age_and_time)
+
+        log_df_line_by_line(
+            key="dalys_total_by_month",
+            description="Total DALYs by month, summed across all demographic categories (sex, age, wealth, district). "
+                        "Stacking by age and time: i.e., all the year of life lost "
+                        "are ascribed to the age of the death and the month of the death.",
+            df=self.get_dalys(yld=yld_total, yll=yll_total),
             force_cols=self._causes_of_dalys,
         )
 
