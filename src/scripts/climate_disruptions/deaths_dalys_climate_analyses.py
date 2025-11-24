@@ -17,7 +17,7 @@ from tlo.analysis.utils import (
 
 
 min_year = 2026
-max_year = 2041
+max_year = 2035
 spacing_of_years = 1
 scenario_names_all = [
     "Baseline",
@@ -51,9 +51,10 @@ scenario_colours = [
     "#f07167",  # Low
     "#f59e96",  # Mean
 ]
-climate_sensitivity_analysis = True
+climate_sensitivity_analysis = False
 parameter_sensitivity_analysis = False
 main_text = False
+mode_2 = True
 if climate_sensitivity_analysis:
 
     suffix = "climate_SA"
@@ -72,76 +73,15 @@ if main_text:
     suffix = "main_text"
     scenarios_of_interest = [0, 6]
 
+if mode_2:
+    scenario_names = [
+        "Baseline",
+        "SSP 5.85 Mean",
+    ]
+    suffix = "mode_2"
+    scenarios_of_interest = [0, 1]
 
 PREFIX_ON_FILENAME = "1"
-
-
-def extract_results(
-    results_folder: Path,
-    module: str,
-    key: str,
-    column: str = None,
-    index: str = None,
-    custom_generate_series=None,
-    do_scaling: bool = False,
-) -> pd.DataFrame:
-    """Utility function to unpack results.
-
-    Produces a dataframe from extracting information from a log with the column multi-index for the draw/run.
-
-    If the column to be extracted exists in the log, the name of the `column` is provided as `column`. If the resulting
-     dataframe should be based on another column that exists in the log, this can be provided as 'index'.
-
-    If instead, some work must be done to generate a new column from log, then a function can be provided to do this as
-     `custom_generate_series`.
-
-    Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
-
-    Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
-    """
-
-    def get_multiplier(_draw, _run):
-        """Helper function to get the multiplier from the simulation.
-        Note that if the scaling factor cannot be found a `KeyError` is thrown."""
-        return load_pickled_dataframes(results_folder, _draw, _run, "tlo.methods.population")["tlo.methods.population"][
-            "scaling_factor"
-        ]["scaling_factor"].values[0]
-
-    def generate_series(dataframe: pd.DataFrame) -> pd.Series:
-        if custom_generate_series is None:
-            if index is not None:
-                return dataframe.set_index(index)[column]
-            else:
-                return dataframe.reset_index(drop=True)[column]
-        else:
-            return custom_generate_series(dataframe)
-
-    # get number of draws and numbers of runs
-    info = get_scenario_info(results_folder)
-
-    # Collect results from each draw/run
-    res = dict()
-    for draw in range(info["number_of_draws"]):
-        for run in range(10):
-            draw_run = (draw, run)
-
-            try:
-                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                output_from_eval: pd.Series = generate_series(df)
-
-                if do_scaling:
-                    res[draw_run] = output_from_eval * get_multiplier(draw, run)
-                else:
-                    res[draw_run] = output_from_eval
-
-            except KeyError:
-                # Some logs could not be found - probably because this run failed.
-                res[draw_run] = None
-
-    # Use pd.concat to compile results (skips dict items where the values is None)
-    _concat = pd.concat(res, axis=1)
-    _concat.columns.names = ["draw", "run"]  # name the levels of the columns multi-index
-    return _concat
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -280,8 +220,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
         df_all_years_data_population_lower = pd.DataFrame(all_years_data_population_lower)
         df_all_years_data_population_upper = pd.DataFrame(all_years_data_population_upper)
-
-        # Extract total population
+        df_all_years_DALYS_mean = df_all_years_DALYS_mean.drop("month")
+        df_all_years_DALYS_lower = df_all_years_DALYS_lower.drop(index="month")
+        df_all_years_DALYS_upper = df_all_years_DALYS_upper.drop(index="month")
 
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
@@ -299,7 +240,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].set_xlabel("Year")
         axes[0].set_ylabel("Number of deaths")
         axes[0].grid(False)
-
         # Panel B: DALYs
         for i, condition in enumerate(df_all_years_DALYS_mean.index):
             axes[1].plot(
@@ -325,7 +265,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_DALY_normalized_mean = df_all_years_DALYS_mean.div(df_all_years_DALYS_mean.iloc[:, 0], axis=0)
         df_death_normalized_mean.to_csv(output_folder / f"cause_of_death_normalized_2020_{draw}.csv")
         df_DALY_normalized_mean.to_csv(output_folder / f"cause_of_dalys_normalized_2020_{draw}.csv")
-
         for i, condition in enumerate(df_death_normalized_mean.index):
             axes[0].plot(
                 df_death_normalized_mean.columns,
