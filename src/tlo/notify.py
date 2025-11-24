@@ -57,7 +57,7 @@ class Notifier:
         :param data: Optional data to pass to each listener.
         """
         if notification_key in self.listeners:
-            for listener in list(self.listeners[notification_key]):
+            for listener in self.listeners[notification_key]:
                 listener(data)
 
 
