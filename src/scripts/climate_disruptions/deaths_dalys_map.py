@@ -10,7 +10,18 @@ min_year = 2026
 max_year = 2041
 spacing_of_years = 1
 PREFIX_ON_FILENAME = "1"
-
+scenario_names_all = [
+    "Baseline",
+    "SSP 1.26 High",
+    "SSP 1.26 Low",
+    "SSP 1.26 Mean",
+    "SSP 2.45 High",
+    "SSP 2.45 Low",
+    "SSP 2.45 Mean",
+    "SSP 5.85 High",
+    "SSP 5.85 Low",
+    "SSP 5.85 Mean",
+]
 scenario_names = ["Baseline", "SSP 2.45 Mean"]
 
 scenario_colours = ["#0081a7", "#00afb9", "#FEB95F", "#fed9b7", "#f07167"] * 4
@@ -53,7 +64,36 @@ district_colours = [
 vmin = -1000000000
 vmax = 100000
 
+climate_sensitivity_analysis = False
+parameter_sensitivity_analysis = True
+main_text = False
+if climate_sensitivity_analysis:
+    scenario_names = [
+        "Baseline",
+        "SSP 1.26 High",
+        "SSP 1.26 Low",
+        "SSP 1.26 Mean",
+        "SSP 2.45 High",
+        "SSP 2.45 Low",
+        "SSP 2.45 Mean",
+        "SSP 5.85 High",
+        "SSP 5.85 Low",
+        "SSP 5.85 Mean",
+    ]
+    suffix = "climate_SA"
+    scenarios_of_interest = range(len(scenario_names))
+if parameter_sensitivity_analysis:
+    scenario_names = range(0, 9, 1)
+    scenarios_of_interest = scenario_names
 
+    suffix = "parameter_SA"
+if main_text:
+    scenario_names = [
+        "Baseline",
+        "SSP 2.45 Mean",
+    ]
+    suffix = "main_text"
+    scenarios_of_interest = [0, 6]
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce a standard set of plots describing the effect of each climate scenario.
     - Generate time trend plots of deaths and DALYs by cause and district.
@@ -109,7 +149,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_scenarios_dalys_by_district_lower_per_1000 = {}
     all_scenarios_deaths_by_district_lower_per_1000 = {}
 
-    for draw in range(len(scenario_names)):
+    for draw in range(len(scenario_names_all)):
+        if draw not in scenarios_of_interest:
+            continue
         scenario_name = scenario_names[draw]
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 

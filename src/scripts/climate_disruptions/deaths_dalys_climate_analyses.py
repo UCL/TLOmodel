@@ -31,24 +31,34 @@ scenario_names_all = [
     "SSP 5.85 Low",
     "SSP 5.85 Mean",
 ]
-climate_sensitivity_analysis = False
-parameter_sensitivity_analysis = True
+
+
+scenario_colours = [
+    "#823038",  # Baseline
+
+    # SSP 1.26 (Teal)
+    "#00566f",  # High
+    "#0081a7",  # Low
+    "#5ab4c6",  # Mean
+
+    # SSP 2.45 (Purple/Lavender - more distinct)
+    "#5b3f8c",  # High
+    "#8e7cc3",  # Low
+    "#c7b7ec",  # Mean
+
+    # SSP 5.85 (Coral)
+    "#c65a52",  # High
+    "#f07167",  # Low
+    "#f59e96",  # Mean
+]
+climate_sensitivity_analysis = True
+parameter_sensitivity_analysis = False
 main_text = False
 if climate_sensitivity_analysis:
-    scenario_names = [
-        "Baseline",
-        "SSP 1.26 High",
-        "SSP 1.26 Low",
-        "SSP 1.26 Mean",
-        "SSP 2.45 High",
-        "SSP 2.45 Low",
-        "SSP 2.45 Mean",
-        "SSP 5.85 High",
-        "SSP 5.85 Low",
-        "SSP 5.85 Mean",
-    ]
+
     suffix = "climate_SA"
-    scenarios_of_interest = range(len(scenario_names))
+    scenarios_of_interest = range(len(scenario_names_all))
+    scenario_names = scenario_names_all
 if parameter_sensitivity_analysis:
     scenario_names = range(0, 9, 1)
     scenarios_of_interest = scenario_names
@@ -132,9 +142,6 @@ def extract_results(
     _concat = pd.concat(res, axis=1)
     _concat.columns.names = ["draw", "run"]  # name the levels of the columns multi-index
     return _concat
-
-
-scenario_colours = ["#0081a7", "#00afb9", "#FEB95F", "#fed9b7", "#f07167"] * 4
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -493,7 +500,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(output_folder / f"relative_change_in_total_DALYs_across_draws_with_CI_{suffix}.png")
     plt.close(fig)
-
     # Plotting as bar charts
     deaths_totals_mean = df_deaths_all_draws_mean.sum()
     dalys_totals_mean = df_dalys_all_draws_mean.sum()
@@ -502,38 +508,50 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     dalys_totals_lower = df_dalys_all_draws_lower.sum()
     dalys_totals_upper = df_dalys_all_draws_upper.sum()
     deaths_totals_err = np.array([deaths_totals_mean - deaths_totals_lower, deaths_totals_upper - deaths_totals_mean])
-
     dalys_totals_err = np.array([dalys_totals_mean - dalys_totals_lower, dalys_totals_upper - dalys_totals_mean])
-    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+    width = 0.35
+
+    # --------------------------
     # Panel A: Total Deaths
-    axes[0].bar(
-        deaths_totals_mean.index, deaths_totals_mean.values, color=scenario_colours, yerr=deaths_totals_err, capsize=20
-    )
-    print(deaths_totals_mean)
-    print(scenario_names)
+    # --------------------------
+    x = np.arange(len(deaths_totals_mean.index))
+    axes[0].bar(x, deaths_totals_mean.values, width, color=scenario_colours, yerr=deaths_totals_err, capsize=6)
+    axes[0].text(-0.0, 1.05, "(A)", transform=axes[0].transAxes, fontsize=14, va="top", ha="right")
     axes[0].set_title(f"Total Deaths (2025-{max_year})")
     axes[0].set_xlabel("Scenario")
     axes[0].set_ylabel("Total Deaths")
-    axes[0].set_xticklabels(scenario_names, rotation=45)
+    axes[0].set_xticks(x)
+    if climate_sensitivity_analysis:
+        axes[0].set_xticks(axes[0].get_xticks(), labels=scenario_names, rotation=45, ha='right')
+    else:
+        axes[0].set_xticklabels(scenario_names)
     axes[0].grid(False)
 
+    # --------------------------
     # Panel B: Total DALYs
-    axes[1].bar(
-        dalys_totals_mean.index, dalys_totals_mean.values, color=scenario_colours, yerr=dalys_totals_err, capsize=20
-    )
+    # --------------------------
+    x = np.arange(len(dalys_totals_mean.index))
+    axes[1].bar(x, dalys_totals_mean.values, width, color=scenario_colours, yerr=dalys_totals_err, capsize=6)
+    axes[1].text(-0.0, 1.05, "(B)", transform=axes[1].transAxes, fontsize=14, va="top", ha="right")
     axes[1].set_title(f"Total DALYs (2025-{max_year})")
     axes[1].set_xlabel("Scenario")
     axes[1].set_ylabel("Total DALYs")
-    axes[1].set_xticklabels(scenario_names, rotation=45)
+    axes[1].set_xticks(x)
+    if climate_sensitivity_analysis:
+        axes[1].set_xticks(axes[1].get_xticks(), labels=scenario_names, rotation=45, ha='right')
+    else:
+        axes[1].set_xticklabels(scenario_names)
     axes[1].grid(False)
+
     fig.tight_layout()
     fig.savefig(output_folder / f"total_deaths_and_dalys_all_draws_{suffix}.png")
     plt.close(fig)
-
     # Scatter plot across all causes
 
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
-    x_positions = np.array([0, 1])
+    x_positions = np.arange(len(df_deaths_all_draws_mean_1000.columns))
     jitter_strength = 0.05
 
     # --- Deaths ---
@@ -559,11 +577,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].plot(x_jittered, y_means, color=colour, linestyle="-", alpha=0.5)
 
         # --- t-test for significance ---
-        t_stat, p_val = ttest_rel([y_means[0]], [y_means[1]])
-        if p_val < 0.05:
-            print(condition)
-            max_y = max(y_means)
-            axes[0].text(0.5, max_y * 1.02, "*", ha="center", color="red", fontsize=14)
 
     axes[0].set_title(f"Deaths per 1,000 ({max_year})")
     axes[0].set_xticks(x_positions)
@@ -591,12 +604,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             alpha=0.7,
         )
         axes[1].plot(x_jittered, y_means, color=colour, linestyle="-", alpha=0.5)
-
-        t_stat, p_val = ttest_rel([y_means[0]], [y_means[1]])
-        if p_val < 0.05:
-            print(condition)
-            max_y = max(y_means)
-            axes[1].text(0.5, max_y * 1.02, "*", ha="center", color="red", fontsize=14)
 
     axes[1].set_title(f"DALYS per 1,000 ({max_year})")
     axes[1].set_xticks(x_positions)
