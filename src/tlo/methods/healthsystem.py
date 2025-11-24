@@ -1259,25 +1259,18 @@ class HealthSystem(Module):
         # Note: Currently relying on module variable rather than parameter for
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
-        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
-        for clinic, clinic_cl in self._daily_capabilities.items():
-            for officer in clinic_cl.keys():
-                matches = re.match(pattern, officer)
-                # Extract ID and officer type from
-                facility_id = int(matches.group(1))
-                officer_type = matches.group(2)
-                level = self._facility_by_facility_id[facility_id].level
-                # Only rescale if rescaling factor is greater than 1 (i.e. don't reduce
-                # available capabilities if these were under-used the previous year).
-                rescaling_factor = self._summary_counter.frac_time_used_by_officer_type_and_level(
-                    officer_type=officer_type, level=level
-                )
-                if rescaling_factor > 1 and rescaling_factor != float("inf"):
-                    # We assume that increased daily capabilities is a result of each staff performing more
-                    # daily patient facing time per day than contracted (or equivalently performing appts more
-                    # efficiently).
-                    self._daily_capabilities[clinic][officer] *= rescaling_factor
-                    self._daily_capabilities_per_staff[clinic][officer] *= rescaling_factor
+        for facID_and_officer in self._daily_capabilities.keys():
+            rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
+                facID_and_officer=facID_and_officer
+            )
+            if rescaling_factor > 1 and rescaling_factor != float("inf"):
+                self._daily_capabilities[facID_and_officer] *= rescaling_factor
+
+                # We assume that increased daily capabilities is a result of each staff performing more
+                # daily patient facing time per day than contracted (or equivalently performing appts more
+                # efficiently).
+                self._daily_capabilities_per_staff[facID_and_officer] *= rescaling_factor
+
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
@@ -2106,6 +2099,11 @@ class HealthSystem(Module):
             summary_by_fac_id["Minutes_Used"] / summary_by_fac_id["Total_Minutes_Per_Day"]
         ).replace([np.inf, -np.inf, np.nan], 0.0)
 
+        #summary_by_facID_and_officer = comparison.copy()
+        fraction_time_used_by_facID_and_officer = (
+            comparison['Minutes_Used'] / comparison['Total_Minutes_Per_Day']
+        ).replace([np.inf, -np.inf, np.nan], 0.0)
+
         # Compute Fraction of Time For Each Officer and level
         officer = [_f.rsplit("Officer_")[1] for _f in comparison.index]
         level = [self._facility_by_facility_id[int(_fac_id)].level for _fac_id in facility_id]
@@ -2131,7 +2129,7 @@ class HealthSystem(Module):
 
         self._summary_counter.record_hs_status(
             fraction_time_used_across_all_facilities=fraction_time_used_overall,
-            fraction_time_used_by_officer_type_and_level=summary_by_officer["Fraction_Time_Used"].to_dict(),
+            fraction_time_used_by_facID_and_officer=fraction_time_used_by_facID_and_officer.to_dict()
         )
 
     def remove_beddays_footprint(self, person_id):
@@ -2898,7 +2896,7 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ("0", "1a", "1b", "2", "3", "4")}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
-        self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
+        self._sum_of_daily_frac_time_used_by_facID_and_officer = Counter()
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
         #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
@@ -2942,13 +2940,14 @@ class HealthSystemSummaryCounter:
     def record_hs_status(
         self,
         fraction_time_used_across_all_facilities: float,
-        fraction_time_used_by_officer_type_and_level: Dict[Tuple[str, int], float],
+        fraction_time_used_by_facID_and_officer: Dict[str, float],
     ) -> None:
         """Record a current status metric of the HealthSystem."""
         # The fraction of all healthcare worker time that is used:
         self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
-        for officer_type_facility_level, fraction_time in fraction_time_used_by_officer_type_and_level.items():
-            self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type_facility_level] += fraction_time
+
+        for facID_and_officer, fraction_time in fraction_time_used_by_facID_and_officer.items():
+            self._sum_of_daily_frac_time_used_by_facID_and_officer[facID_and_officer] += fraction_time
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
@@ -2997,42 +2996,45 @@ class HealthSystemSummaryCounter:
             },
         )
 
-        # Log mean of 'fraction time used by officer type and facility level' from daily entries from the previous
+        # Log mean of 'fraction time used by facID and officer' from daily entries from the previous
         # year.
         logger_summary.info(
-            key="Capacity_By_OfficerType_And_FacilityLevel",
+            key="Capacity_By_FacID_and_Officer",
             description="The fraction of healthcare worker time that is used each day, averaged over this "
-            "calendar year, for each officer type at each facility level.",
-            data=flatten_multi_index_series_into_dict_for_logging(self.frac_time_used_by_officer_type_and_level()),
+                        "calendar year, for each officer type at each facility.",
+            data=flatten_multi_index_series_into_dict_for_logging(
+                self.frac_time_used_by_facID_and_officer()),
         )
 
         self._reset_internal_stores()
 
-    def frac_time_used_by_officer_type_and_level(
+    def frac_time_used_by_facID_and_officer(
         self,
-        officer_type: Optional[str] = None,
-        level: Optional[str] = None,
+        facID_and_officer: Optional[str]=None,
     ) -> Union[float, pd.Series]:
         """Average fraction of time used by officer type and level since last reset.
         If `officer_type` and/or `level` is not provided (left to default to `None`) then a pd.Series with a multi-index
         is returned giving the result for all officer_types/levels."""
 
-        if (officer_type is not None) and (level is not None):
+        if (facID_and_officer is not None):
             return (
-                self._sum_of_daily_frac_time_used_by_officer_type_and_level[officer_type, level]
+                self._sum_of_daily_frac_time_used_by_facID_and_officer[facID_and_officer]
                 / len(self._frac_time_used_overall)
                 # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
             )
         else:
             # Return multiple in the form of a pd.Series with multiindex
             mean_frac_time_used = {
-                (_officer_type, _level): v / len(self._frac_time_used_overall)
-                for (_officer_type, _level), v in self._sum_of_daily_frac_time_used_by_officer_type_and_level.items()
-                if (_officer_type == officer_type or officer_type is None) and (_level == level or level is None)
+                (_facID_and_officer): v / len(self._frac_time_used_overall)
+                for (_facID_and_officer), v in self._sum_of_daily_frac_time_used_by_facID_and_officer.items()
+                if (_facID_and_officer == facID_and_officer or _facID_and_officer is None)
             }
             return pd.Series(
-                index=pd.MultiIndex.from_tuples(mean_frac_time_used.keys(), names=["OfficerType", "FacilityLevel"]),
-                data=mean_frac_time_used.values(),
+                index=pd.MultiIndex.from_tuples(
+                    mean_frac_time_used.keys(),
+                    names=['facID_and_officer']
+                ),
+                data=mean_frac_time_used.values()
             ).sort_index()
 
 
