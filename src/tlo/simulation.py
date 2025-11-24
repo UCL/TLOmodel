@@ -13,6 +13,10 @@ from typing import TYPE_CHECKING, Optional
 import pandas as pd
 import tlo.population
 import numpy as np
+import tlo.methods.collect_event_chains
+
+from tlo.notify import notifier
+from tlo.methods.collect_event_chains import CollectEventChains
 from tlo.util import df_to_EAV, convert_chain_links_into_EAV
 
 try:
@@ -148,6 +152,7 @@ class Simulation:
 
         # Whether simulation has been initialised
         self._initialised = False
+        
 
     def _configure_logging(
         self,

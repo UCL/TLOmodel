@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 import pandas as pd
 
+from tlo.notify import notifier
 from tlo.util import convert_chain_links_into_EAV
 
 import copy
@@ -296,7 +297,12 @@ class Event:
         """Make the event happen."""
         
         # Collect relevant information before event takes place
+        # If statement outside or inside dispatch notification?
         if self.sim.generate_event_chains:
+        
+            # Dispatch notification that event is about to run
+            notifier.dispatch("event_about_to_run", data={"target": self.target, "EventName": type(self).__name__})
+            
             print_chains, row_before, df_before, mni_row_before, entire_mni_before, mni_instances_before = self.store_chains_to_do_before_event()
                 
         self.apply(self.target)
@@ -305,6 +311,11 @@ class Event:
         # Collect event info + meaningful property changes of individuals. Combined, these will constitute a 'link'
         # in the individual's event chain.
         if self.sim.generate_event_chains and print_chains:
+       
+            print("About to pass")
+            # Dispatch notification that event is about to run
+            notifier.dispatch("event_has_just_ran", data={"target": self.target, "EventName": type(self).__name__})
+            
             chain_links = self.store_chains_to_do_after_event(row_before, df_before, mni_row_before, entire_mni_before, mni_instances_before)
             
             if chain_links:

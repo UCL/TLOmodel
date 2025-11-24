@@ -8,6 +8,7 @@ from tlo.methods import (
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     cervical_cancer,
+    collect_event_chains,
     contraception,
     copd,
     demography,
@@ -116,6 +117,7 @@ def fullmodel(
         copd.Copd,
         depression.Depression,
         epilepsy.Epilepsy,
+        collect_event_chains.CollectEventChains,
     ]
     return [
         module_class(
