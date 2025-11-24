@@ -1209,8 +1209,8 @@ class HealthSystem(Module):
         """
         The breakdown of capabilities across clinics and a catch-all GenericClinic is read in from the
         resource file in ResourceFile_ClinicConfigurations. This function will fill out the capabilities dataframe
-        so that for facility, officer type combinations that are not present in the file, the proportion of GenericClinic
-        is set to 1, and capabilities for all other clinics are set to 0.
+        so that for facility, officer type combinations that are not present in the file,
+        the proportion of GenericClinic is set to 1, and capabilities for all other clinics are set to 0.
         """
 
         capabilities_cl = self.parameters["clinic_configuration"]
