@@ -1,5 +1,6 @@
 from tlo.notify import notifier
 
+
 def test_notifier():
     # in listening code
     received_data = []
@@ -20,4 +21,3 @@ def test_notifier():
     notifier.dispatch("test.signal", data={"value": 100})
 
     assert len(received_data) == 1  # No new data
-

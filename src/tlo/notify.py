@@ -17,6 +17,7 @@ def on_notification(data):
 notifier.add_listener("simulation.on_start", on_notification)
 """
 
+
 class Notifier:
     """
     A simple synchronous notification dispatcher supporting listeners.
@@ -59,6 +60,6 @@ class Notifier:
             for listener in list(self.listeners[notification_key]):
                 listener(data)
 
+
 # Create a global notifier instance
 notifier = Notifier()
-
