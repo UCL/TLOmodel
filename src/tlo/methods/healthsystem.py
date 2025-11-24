@@ -832,6 +832,12 @@ class HealthSystem(Module):
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
 
+        ## Initialise the stores for squeeze factors
+        self._get_squeeze_factors_store = {
+            clinic: np.zeros(self._get_squeeze_factors_store_grow) for clinic in self._clinic_names
+        }
+
+
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
 
@@ -1822,10 +1828,6 @@ class HealthSystem(Module):
         current_capabilities,
         compute_squeeze_factor_to_district_level: bool,
     ):
-        ## TODO: check if there is a better place to intitalise this store
-        self._get_squeeze_factors_store = {
-            clinic: np.zeros(self._get_squeeze_factors_store_grow) for clinic in self._clinic_names
-        }
         for clinic, clinic_cl in current_capabilities.items():
             self.get_clinic_squeeze_factors(
                 clinic, footprints_per_event, total_footprint, clinic_cl, compute_squeeze_factor_to_district_level
