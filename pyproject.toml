@@ -35,7 +35,7 @@ dependencies = [
     "azure-storage-file-share",
     # For saving and loading simulation state
     "dill",
-    "sdv==1.24.1",
+    "sdv",
 ]
 description = "Thanzi la Onse Epidemiology Model"
 dynamic = ["version"]
