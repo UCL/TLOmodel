@@ -2127,7 +2127,6 @@ def test_mode_2_clinics(seed, tmpdir):
             [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
         )
         sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "GenericClinic"]
-        breakpoint()
         sim.modules["HealthSystem"].setup_daily_capabilities("funded_plus")
 
         # Assign the entire population to the first district, so that all events are run in the same district

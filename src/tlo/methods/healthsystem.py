@@ -1259,17 +1259,18 @@ class HealthSystem(Module):
         # Note: Currently relying on module variable rather than parameter for
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
-        for facID_and_officer in self._daily_capabilities.keys():
+        for clinic, clinic_cl in self._daily_capabilities.items():
+          for facID_and_officer in clinic.keys():
             rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
                 facID_and_officer=facID_and_officer
             )
             if rescaling_factor > 1 and rescaling_factor != float("inf"):
-                self._daily_capabilities[facID_and_officer] *= rescaling_factor
+                self._daily_capabilities[clinic][facID_and_officer] *= rescaling_factor
 
                 # We assume that increased daily capabilities is a result of each staff performing more
                 # daily patient facing time per day than contracted (or equivalently performing appts more
                 # efficiently).
-                self._daily_capabilities_per_staff[facID_and_officer] *= rescaling_factor
+                self._daily_capabilities_per_staff[clinic][facID_and_officer] *= rescaling_factor
 
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
