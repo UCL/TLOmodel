@@ -1260,7 +1260,7 @@ class HealthSystem(Module):
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
         for clinic, clinic_cl in self._daily_capabilities.items():
-          for facID_and_officer in clinic.keys():
+          for facID_and_officer in clinic_cl.keys():
             rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
                 facID_and_officer=facID_and_officer
             )
