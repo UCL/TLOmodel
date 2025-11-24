@@ -7,7 +7,7 @@ from tlo.analysis.utils import extract_results, summarize
 import geopandas as gpd
 
 min_year = 2026
-max_year = 2041
+max_year = 2035
 spacing_of_years = 1
 PREFIX_ON_FILENAME = "1"
 scenario_names_all = [
@@ -61,12 +61,13 @@ district_colours = [
     "azure",
 ]
 
-vmin = -1000000000
-vmax = 100000
+vmin = -100
+vmax = 100
 
 climate_sensitivity_analysis = False
 parameter_sensitivity_analysis = True
 main_text = False
+mode_2 = True
 if climate_sensitivity_analysis:
     scenario_names = [
         "Baseline",
@@ -94,6 +95,15 @@ if main_text:
     ]
     suffix = "main_text"
     scenarios_of_interest = [0, 6]
+
+if mode_2:
+    scenario_names = [
+        "Baseline",
+        "SSP 5.85 Mean",
+    ]
+    suffix = "mode_2"
+    scenarios_of_interest = [0, 1]
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce a standard set of plots describing the effect of each climate scenario.
     - Generate time trend plots of deaths and DALYs by cause and district.
@@ -490,8 +500,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         malawi_admin2["DALY_Rate"] = malawi_admin2["ADM2_EN"].map(difference_from_baseline_per_1000)
         print(malawi_admin2["DALY_Rate"])
         malawi_admin2.plot(
-            column="DALY_Rate", ax=axes[i], legend=True, cmap="PiYG", edgecolor="black"
-        )  # , vmin=vmin, vmax=vmax)
+            column="DALY_Rate", ax=axes[i], legend=True, cmap="PiYG", edgecolor="black", vmin=vmin, vmax=vmax)
         axes[i].set_title(f"DALYs per 1000 - {scenario}")
         axes[i].axis("off")
         water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", alpha=0.6, edgecolor="#999999", linewidth=0.5, hatch="xxx")
