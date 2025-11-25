@@ -3,12 +3,12 @@ cost under each scenario for the HSSP-III duration
 
 Run on the batch system using:
 ```
-tlo batch-submit src/scripts/costing/platform_based_costing/scenario_consumables_costing.py
+tlo batch-submit src/scripts/costing/platform_based_costing/scenario_consumable_costing.py
 ```
 
 or locally using:
 ```
-tlo scenario-run src/scripts/costing/platform_based_costing/scenario_consumables_costing.py
+tlo scenario-run src/scripts/costing/platform_based_costing/scenario_consumable_costing.py
  ```
 
 """
@@ -16,14 +16,13 @@ tlo scenario-run src/scripts/costing/platform_based_costing/scenario_consumables
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
-from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios, get_root_path
+from tlo.analysis.utils import get_root_path
 
 root = get_root_path()
 resourcefilepath = root / "resources"
 
 
-class ImpactOfConsumablesAvailability(BaseScenario):
+class ConsumablesCosting(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
@@ -48,7 +47,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(module_kwargs={"HealthSystem": {"disable": True}})
+        return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
         return {
