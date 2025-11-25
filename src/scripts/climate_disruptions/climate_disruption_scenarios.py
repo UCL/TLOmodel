@@ -49,7 +49,7 @@ class ClimateDisruptionScenario(BaseScenario):
         self._scenarios = self._get_scenarios()
         self._parameter_grid = random.sample(full_grid, 10)
         print(self._parameter_grid)
-        self.number_of_draws = len(self._scenarios)
+        self.number_of_draws = len(self._parameter_grid)
 
         with open("selected_parameter_combinations.json", "w") as f:
             json.dump(self._parameter_grid, f, indent=2)
@@ -80,7 +80,7 @@ class ClimateDisruptionScenario(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {
-            "Baseline": self._baseline(),
+            #"Baseline": self._baseline(),
             "SSP 585 Mean": self._ssp585_mean(),
         }
 
