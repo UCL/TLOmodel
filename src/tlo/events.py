@@ -60,11 +60,10 @@ class Event:
         :param target: the target of the event
         """
         raise NotImplementedError
-        
 
     def run(self):
         """Make the event happen."""
-        
+
         # Dispatch notification that event is about to run
         notifier.dispatch("event.about_to_run", data={"target": self.target, "module" : self.module.name, "link_info" : {"EventName": type(self).__name__}})
                 

@@ -58,17 +58,9 @@ class CollectEventChains(Module):
         notifier.add_listener("event.has_just_ran", self.on_notification_event_has_just_ran)
         
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
-        print("resource file path", resourcefilepath)
         self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath/"ResourceFile_GenerateEventChains/parameter_values.csv"))
-
-        # If modules of interest is '*', set by default to all modules included in the simulation
-        if self.parameters["modules_of_interest"] == ['*']:
-            self.parameters["modules_of_interest"] = list(self.sim.modules.keys())
         
     def initialise_population(self, population):
-        pass
-
-    def initialise_simulation(self, sim):
         # Use parameter file values by default, if not overwritten
         self.generate_event_chains = self.parameters['generate_event_chains'] \
             if self.generate_event_chains is None \
@@ -81,6 +73,10 @@ class CollectEventChains(Module):
         self.events_to_ignore = self.parameters['events_to_ignore'] \
             if self.events_to_ignore is None \
             else self.events_to_ignore
+            
+        # If modules of interest is '*', set by default to all modules included in the simulation
+        if self.modules_of_interest == ['*']:
+            self.modules_of_interest = list(self.sim.modules.keys())
 
     def get_generate_event_chains(self) -> bool:
         """Returns `generate_event_chains`. (Should be equal to what is specified by the parameter, but
@@ -134,7 +130,6 @@ class CollectEventChains(Module):
         if not self.generate_event_chains or (data['module'] not in self.modules_of_interest) or (data['link_info']['EventName'] in self.events_to_ignore):
             return
         else:
-                      
             # Initialise these variables
             self.print_chains = False
             self.df_before = []
