@@ -127,13 +127,11 @@ class CollectEventChains(Module):
     def on_notification_event_about_to_run(self, data):
         """Do this when notified that an event is about to run. This function checks whether this event should be logged as part of the event chains, and if so stored required information before the event has occurred. """
 
-        p = self.parameters
-
         # Only log event if
         # 1) generate_event_chains is set to True
         # 2) the event belongs to modules of interest and
         # 3) the event is not in the list of events to ignore
-        if p['generate_event_chains'] and (data['module'] in p['modules_of_interest']) and (data['link_info']['EventName'] not in p['events_to_ignore']):
+        if self.generate_event_chains and (data['module'] in self.modules_of_interest) and (data['link_info']['EventName'] not in self.events_to_ignore):
                       
             # Initialise these variables
             self.print_chains = False
@@ -175,10 +173,8 @@ class CollectEventChains(Module):
     
     def on_notification_event_has_just_ran(self, data):
         """ If print_chains=True, this function logs the event and identifies and logs the any property changes that have occured to one or multiple individuals as a result of the event taking place. """
-
-        p = self.parameters
         
-        if p['generate_event_chains'] and self.print_chains:
+        if self.print_chains:
 
             chain_links = {}
         
