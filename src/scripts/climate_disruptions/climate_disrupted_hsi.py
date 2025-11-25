@@ -15,7 +15,7 @@ PREFIX_ON_FILENAME = "1"
 climate_sensitivity_analysis = False
 parameter_sensitivity_analysis = True
 main_text = False
-mode_2 = True
+mode_2 = False
 
 scenario_names_all = [
     "Baseline",
