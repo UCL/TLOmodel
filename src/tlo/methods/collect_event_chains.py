@@ -50,7 +50,7 @@ class CollectEventChains(Module):
         #print("resource file path", resourcefilepath)
         #self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath/"ResourceFile_GenerateEventChains/parameter_values.csv"))
         self.parameters["generate_event_chains"] = True
-        self.parameters["modules_of_interest"] = self.sim.modules
+        self.parameters["modules_of_interest"] = self.sim.modules.values()
             
         self.parameters["events_to_ignore"] =["AgeUpdateEvent","HealthSystemScheduler","SimplifiedBirthsPoll","DirectBirth","LifestyleEvent","TbActiveCasePollGenerateData","HivPollingEventForDataGeneration","RTIPollingEvent"]
 
@@ -96,9 +96,13 @@ class CollectEventChains(Module):
         """Do this when notified that an event is about to run. This function checks whether this event should be logged as part of the event chains, and if so stored required information before the event has occurred. """
 
         p = self.parameters
-        
-        if p['generate_event_chains']:
 
+        # Only log event if
+        # 1) generate_event_chains is set to True
+        # 2) the event belongs to modules of interest and
+        # 3) the event is not in the list of events to ignore
+        if p['generate_event_chains'] and (data['module'] in p['modules_of_interest']) and (data['link_info']['EventName'] not in p['events_to_ignore']):
+                      
             # Initialise these variables
             self.print_chains = False
             self.df_before = []
@@ -107,38 +111,32 @@ class CollectEventChains(Module):
             self.mni_row_before = {}
             self.entire_mni_before = {}
             
-            # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
-            if all(sub not in str(data['link_info']['EventName']) for sub in p['events_to_ignore']):
+            self.print_chains = True
             
-            # Will eventually use this once I can actually GET THE NAME OF THE SELF
-            #if not set(self.sim.generate_event_chains_ignore_events).intersection(str(self)):
+            # Target is single individual
+            if not isinstance(data['target'], Population):
 
-                self.print_chains = True
+                # Save row for comparison after event has occurred
+                self.row_before = self.sim.population.props.loc[abs(data['target'])].copy().fillna(-99999)
                 
-                # Target is single individual
-                if not isinstance(data['target'], Population):
-
-                    # Save row for comparison after event has occurred
-                    self.row_before = self.sim.population.props.loc[abs(data['target'])].copy().fillna(-99999)
-                    
-                    # Check if individual is already in mni dictionary, if so copy her original status
-                    if 'PregnancySupervisor' in self.sim.modules:
-                        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-                        if data['target'] in mni:
-                            self.mni_instances_before = True
-                            self.mni_row_before = mni[data['target']].copy()
-                    else:
-                        self.mni_row_before = None
-                    
+                # Check if individual is already in mni dictionary, if so copy her original status
+                if 'PregnancySupervisor' in self.sim.modules:
+                    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+                    if data['target'] in mni:
+                        self.mni_instances_before = True
+                        self.mni_row_before = mni[data['target']].copy()
                 else:
+                    self.mni_row_before = None
+                
+            else:
 
-                    # This will be a population-wide event. In order to find individuals for which this led to
-                    # a meaningful change, make a copy of the while pop dataframe/mni before the event has occurred.
-                    self.df_before = self.sim.population.props.copy()
-                    if 'PregnancySupervisor' in self.sim.modules:
-                        self.entire_mni_before = copy.deepcopy(self.sim.modules['PregnancySupervisor'].mother_and_newborn_info)
-                    else:
-                        self.entire_mni_before = None
+                # This will be a population-wide event. In order to find individuals for which this led to
+                # a meaningful change, make a copy of the while pop dataframe/mni before the event has occurred.
+                self.df_before = self.sim.population.props.copy()
+                if 'PregnancySupervisor' in self.sim.modules:
+                    self.entire_mni_before = copy.deepcopy(self.sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+                else:
+                    self.entire_mni_before = None
 
         return
         

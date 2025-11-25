@@ -65,9 +65,8 @@ class Event:
     def run(self):
         """Make the event happen."""
         
-
         # Dispatch notification that event is about to run
-        notifier.dispatch("event.about_to_run", data={"target": self.target, "link_info" : {"EventName": type(self).__name__}})
+        notifier.dispatch("event.about_to_run", data={"target": self.target, "module" : self.module, "link_info" : {"EventName": type(self).__name__}})
                 
         self.apply(self.target)
         self.post_apply_hook()
