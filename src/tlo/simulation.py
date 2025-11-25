@@ -8,16 +8,10 @@ import itertools
 import time
 from collections import Counter, OrderedDict
 from pathlib import Path
-from typing import Optional
 from typing import TYPE_CHECKING, Optional
-import pandas as pd
-import tlo.population
 import numpy as np
-import tlo.methods.collect_event_chains
 
 from tlo.notify import notifier
-from tlo.methods.collect_event_chains import CollectEventChains
-from tlo.util import df_to_EAV, convert_chain_links_into_EAV
 
 try:
     import dill
@@ -41,9 +35,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-logger_chains = logging.getLogger("tlo.methods.event")
-logger_chains.setLevel(logging.INFO)
 
 
 class SimulationPreviouslyInitialisedError(Exception):
@@ -113,16 +104,9 @@ class Simulation:
         self.date = self.start_date = start_date
         self.modules = OrderedDict()
         self.event_queue = EventQueue()
-        
-        self.generate_event_chains = True
-        self.generate_event_chains_modules_of_interest = []
-        self.generate_event_chains_ignore_events = []
-        
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
-        
-        
         self.show_progress_bar = show_progress_bar
         self.resourcefilepath = Path(resourcefilepath)
 
@@ -152,7 +136,6 @@ class Simulation:
 
         # Whether simulation has been initialised
         self._initialised = False
-        
 
     def _configure_logging(
         self,
@@ -299,21 +282,13 @@ class Simulation:
                 key="debug",
                 data=f"{module.name}.initialise_population() {time.time() - start1} s",
             )
-        
-        # When logging events for each individual to reconstruct chains, only the changes in individual properties will be logged.
-        # At the start of the simulation + when a new individual is born, we therefore want to store all of their properties at the start.
-        if self.generate_event_chains:
-
-            # EDNAV structure to capture status of individuals at the start of the simulation
-            ednav = df_to_EAV(self.population.props, self.date, 'StartOfSimulation')
-
-            logger.info(key='event_chains',
-                               data = ednav.to_dict(),
-                               description='Links forming chains of events for simulated individuals')
+            
+        # Dispatch notification that pop has been initialised
+        notifier.dispatch("simulation.pop_has_been_initialised", data={})
                                
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
-
+        
     def initialise(self, *, end_date: Date) -> None:
         """Initialise all modules in simulation.
         :param end_date: Date to end simulation on - accessible to modules to allow
@@ -325,15 +300,6 @@ class Simulation:
             raise SimulationPreviouslyInitialisedError(msg)
         self.date = self.start_date
         self.end_date = end_date  # store the end_date so that others can reference it
-
-        #self.generate_event_chains = generate_event_chains
-        if self.generate_event_chains:
-            # For now keep these fixed, eventually they will be input from user
-            self.generate_event_chains_modules_of_interest = [self.modules]
-            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth', 'LifestyleEvent', 'TbActiveCasePollGenerateData','HivPollingEventForDataGeneration', 'RTIPollingEvent']
-
-        # Reorder columns to place the new columns at the front
-        pd.set_option('display.max_columns', None)
 
         for module in self.modules.values():
             module.initialise_simulation(self)
@@ -403,8 +369,6 @@ class Simulation:
         :param to_date: Date to simulate up to but not including - must be before or
             equal to simulation end date specified in call to :py:meth:`initialise`.
         """
-        open('output.txt', mode='a')
-
         if not self._initialised:
             msg = "Simulation must be initialised before calling run_simulation_to"
             raise SimulationNotInitialisedError(msg)
@@ -463,7 +427,6 @@ class Simulation:
         """
         self.date = date
         event.run()
-        
 
     def do_birth(self, mother_id: int) -> int:
         """Create a new child person.
@@ -478,21 +441,11 @@ class Simulation:
         for module in self.modules.values():
             module.on_birth(mother_id, child_id)
             
-        if self.generate_event_chains:
-            # When individual is born, store their initial properties to provide a starting point to the chain of property
-            # changes that this individual will undergo as a result of events taking place.
-            link_info = self.population.props.loc[child_id].to_dict()
-            link_info['EventName'] = 'Birth'
-            chain_links = {}
-            chain_links[child_id] = link_info # Convert to string to avoid issue of length
-
-            ednav = convert_chain_links_into_EAV(chain_links)
-            
-            logger.info(key='event_chains',
-                               data = ednav.to_dict(),
-                               description='Links forming chains of events for simulated individuals')
+        # Dispatch notification that birth is about to occur
+        notifier.dispatch("simulation.on_birth", data={'target': child_id, 'link_info' : {'EventName': 'Birth'}})
 
         return child_id
+
 
     def find_events_for_person(self, person_id: int) -> list[tuple[Date, Event]]:
         """Find the events in the queue for a particular person.
