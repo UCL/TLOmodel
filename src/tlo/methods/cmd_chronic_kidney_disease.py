@@ -461,6 +461,39 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'ckd_date_treatment'] = self.sim.date
             df.at[person_id, 'ckd_stage_at_which_treatment_given'] = df.at[person_id, 'ckd_status']
 
+class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEventMixin):
+    """This is a Health System Interaction Event in which a person receives a dialysis session 2 times a week
+    adding up to 8 times a month."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment_Haemodialysis'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '3'
+
+    def apply(self, person_id, squeeze_factor):
+
+        df = self.sim.population.props
+
+        if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'nc_chronic_kidney_disease']:
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
+        # Increment total number of dialysis sessions the person has ever had in their lifetime
+        df.at[person_id, 'nc_ckd_total_dialysis_sessions'] += 1
+
+
+        self.add_equipment({'Chair', 'Dialysis Machine', 'Dialyser (Artificial Kidney)',
+                            'Bloodlines', 'Dialysate solution', 'Dialysis water treatment system'})
+
+        next_session_date = self.sim.date + pd.DateOffset(days=3)
+        self.sim.modules['HealthSystem'].schedule_hsi_event(self,
+            topen=next_session_date,
+            tclose=next_session_date + pd.DateOffset(days=1),
+            priority=1
+        )
+
+
 class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
     """
     This is the event a person undergoes in order to determine whether an individual is eligible for a kidney transplant
