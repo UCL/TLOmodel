@@ -1,7 +1,7 @@
 from tlo.notify import notifier
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from tlo import Module, Parameter, Types, logging, population
 from tlo.population import Population
 import pandas as pd
@@ -15,8 +15,19 @@ logger.setLevel(logging.INFO)
 
 class CollectEventChains(Module):
 
-    def __init__(self, name=None):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        generate_event_chains: Optional[bool] = None,
+        modules_of_interest: Optional[List[str]] = None,
+        events_to_ignore: Optional[List[str]] = None
+        
+    ):
         super().__init__(name)
+        
+        self.generate_event_chains = generate_event_chains
+        self.modules_of_interest = modules_of_interest
+        self.events_to_ignore = events_to_ignore
     
         # This is how I am passing data from fnc taking place before event to the one after
         # It doesn't seem very elegant but not sure how else to go about it
@@ -56,6 +67,28 @@ class CollectEventChains(Module):
         
     def initialise_population(self, population):
         pass
+
+    def initialise_simulation(self, sim):
+        # Use parameter file values by default, if not overwritten
+        self.generate_event_chains = self.parameters['generate_event_chains'] \
+            if self.generate_event_chains is None \
+            else self.generate_event_chains
+            
+        self.modules_of_interest = self.parameters['modules_of_interest'] \
+            if self.modules_of_interest is None \
+            else self.modules_of_interest
+            
+        self.events_to_ignore = self.parameters['events_to_ignore'] \
+            if self.events_to_ignore is None \
+            else self.events_to_ignore
+
+    def get_generate_event_chains(self) -> bool:
+        """Returns `generate_event_chains`. (Should be equal to what is specified by the parameter, but
+        overwrite with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
+        return self.parameters['generate_event_chains'] \
+            if self.arg_generate_event_chains is None \
+            else self.arg_generate_event_chains
 
     def on_birth(self, mother, child):
         # Could the notification of birth simply take place here?
