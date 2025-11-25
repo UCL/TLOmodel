@@ -47,13 +47,12 @@ class CollectEventChains(Module):
         notifier.add_listener("event.has_just_ran", self.on_notification_event_has_just_ran)
         
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
-        #print("resource file path", resourcefilepath)
-        #self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath/"ResourceFile_GenerateEventChains/parameter_values.csv"))
-        self.parameters["generate_event_chains"] = True
-        self.parameters["modules_of_interest"] = self.sim.modules.keys()
-            
-        self.parameters["events_to_ignore"] =["AgeUpdateEvent","HealthSystemScheduler","SimplifiedBirthsPoll","DirectBirth","LifestyleEvent","TbActiveCasePollGenerateData","HivPollingEventForDataGeneration","RTIPollingEvent"]
+        print("resource file path", resourcefilepath)
+        self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath/"ResourceFile_GenerateEventChains/parameter_values.csv"))
 
+        # If modules of interest is '*', set by default to all modules included in the simulation
+        if self.parameters["modules_of_interest"] == ['*']:
+            self.parameters["modules_of_interest"] = self.sim.modules.keys()
         
     def initialise_population(self, population):
         pass
