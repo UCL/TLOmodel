@@ -1413,6 +1413,11 @@ for rates in alternative_discount_rates:
     roi_at_upper_limit_implementation_cost_for_figure = roi_at_upper_limit_implementation_cost_summarized[roi_at_upper_limit_implementation_cost_summarized.index.isin(chosen_draws)]
     draw_colors = {horizontal_hss: '#9e0142', vertical_htm: '#fdae61', diagonal_htm: '#66c2a5'}
 
+    full_xticklabels = [
+    textwrap.fill(all_manuscript_scenarios[key], width=15)
+    for key in roi_at_0_implementation_cost_for_figure.index
+    ]
+
     name_of_plot = f'ROI assuming zero above service-level costs'
     fig, ax = do_standard_bar_plot_with_ci(
         (roi_at_0_implementation_cost_for_figure),
@@ -1420,13 +1425,21 @@ for rates in alternative_discount_rates:
             f"{row['median']:.2f} ({row['lower'] :.2f}- {row['upper']:.2f})"
             for _, row in roi_at_0_implementation_cost_for_figure.iterrows()
         ],
-        xticklabels_horizontal_and_wrapped=False,
+        xticklabels_horizontal_and_wrapped=True,
         put_labels_in_legend=True,
         offset=0.2,
         set_colors = draw_colors
     )
-    ax.set_title(name_of_plot)
+    ax.set_title(name_of_plot, fontsize = 12)
+    for text in ax.texts:  # annotation font size
+        text.set_fontsize(14)
     ax.set_ylabel('Return on Investment')
+    ax.tick_params(axis='both', labelsize=14)  # tick label font size
+    n = len(full_xticklabels)
+    # --- Extract bar positions (this fixes your misalignment) ---
+    bar_centers = [patch.get_x() + patch.get_width() / 2 + 0.25 for patch in ax.patches]
+    ax.set_xticks(bar_centers)
+    ax.set_xticklabels(full_xticklabels, rotation=0, ha='right', fontsize=12)
     ax.set_ylim(bottom=0)
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
@@ -1444,9 +1457,16 @@ for rates in alternative_discount_rates:
         offset=0.2,
         set_colors = draw_colors
     )
-    ax.set_title(name_of_plot)
+    ax.set_title(name_of_plot, fontsize = 12)
+    for text in ax.texts:  # annotation font size
+        text.set_fontsize(14)
     ax.set_ylabel('Return on Investment')
     ax.set_ylim(bottom=0)
+    ax.tick_params(axis='both', labelsize=14)  # tick label font size
+    n = len(full_xticklabels)
+    bar_centers = [patch.get_x() + patch.get_width() / 2 + 0.25 for patch in ax.patches]
+    ax.set_xticks(bar_centers)
+    ax.set_xticklabels(full_xticklabels, rotation=0, ha='right', fontsize=12)
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
     plt.close(fig)
