@@ -245,6 +245,33 @@ class CMDChronicKidneyDisease(Module):
             get_item_codes('Radiopharmaceuticals'): 4
         }
 
+        self.cons_item_codes['Kidney_Transplant_Surgery'] = {
+            # Prepare surgical instruments
+            # administer an IV
+            get_item_codes('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
+            get_item_codes("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
+            get_item_codes("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
+            # request a general anaesthetic
+            get_item_codes("Halothane (fluothane)_250ml_CMST"): 100,
+            # Position patient in lateral position with kidney break
+            # clean the site of the surgery
+            get_item_codes("Chlorhexidine 1.5% solution_5_CMST"): 600,
+            # tools to begin surgery
+            get_item_codes("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
+            # repair incision made
+            get_item_codes("Suture pack"): 1,
+            get_item_codes("Gauze, absorbent 90cm x 40m_each_CMST"): 100,
+            # administer pain killer
+            get_item_codes('Pethidine, 50 mg/ml, 2 ml ampoule'): 6,
+            # administer antibiotic
+            get_item_codes("Ampicillin injection 500mg, PFR_each_CMST"): 2,
+            #change this to immunosuppressive drugs
+            # equipment used by surgeon, gloves and facemask
+            get_item_codes('Disposables gloves, powder free, 100 pieces per box'): 1,
+            get_item_codes('surgical face mask, disp., with metal nose piece_50_IDA'): 1,
+            # request syringe
+            get_item_codes("Syringe, Autodisable SoloShot IX "): 1
+        }
 
 
 class CMDChronicKidneyDiseasePollEvent(RegularEvent, PopulationScopeEventMixin):
