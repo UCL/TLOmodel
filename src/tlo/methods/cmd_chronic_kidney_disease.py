@@ -95,6 +95,8 @@ class CMDChronicKidneyDisease(Module):
         "uses_herbal_medicine": Property(
             Types.BOOL, "Whether this person uses herbal medicine"
         ),
+        "nc_ckd_total_dialysis_sessions": Property(Types.INT,
+                                                   "total number of dialysis sessions the person has ever had"),
     }
 
     def __init__(self):
@@ -152,11 +154,11 @@ class CMDChronicKidneyDisease(Module):
         df.loc[list(alive_ckd_idx), "ckd_date_treatment"] = pd.NaT
         df.loc[list(alive_ckd_idx), "ckd_stage_at_which_treatment_given"] = "pre_diagnosis"
         df.loc[list(alive_ckd_idx), "ckd_date_diagnosis"] = pd.NaT
+        df.loc[list(alive_ckd_idx), "nc_ckd_total_dialysis_sessions"] = 0
 
         df.loc[list(alive_ckd_idx), "uses_herbal_medicine"] = \
             self.rng.random(len(alive_ckd_idx)) < self.parameters['prop_herbal_use_ckd']
-        df.loc[list(df.loc[df.is_alive & ~df.nc_chronic_kidney_disease].index),
-        "uses_herbal_medicine"] = False
+        df.loc[list(df.loc[df.is_alive & ~df.nc_chronic_kidney_disease].index), "uses_herbal_medicine"] = False
 
         # -------------------- ckd_status -----------
         # Determine who has CKD at all stages:
@@ -223,6 +225,7 @@ class CMDChronicKidneyDisease(Module):
         self.sim.population.props.at[child_id, 'ckd_stage_at_which_treatment_given'] = 'pre_diagnosis'
         self.sim.population.props.at[child_id, 'ckd_diagnosed'] = False
         self.sim.population.props.at[child_id, 'ckd_date_diagnosis'] = pd.NaT
+        self.sim.population.props.at[child_id, 'nc_ckd_total_dialysis_sessions'] = 0
 
     def on_simulation_end(self) -> None:
         pass
@@ -380,7 +383,7 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, CMDChronicKidneyDisease)
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Dr_CMD_Renal_Medication'
+        self.TREATMENT_ID = 'CKD_Renal_Medication'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'  #todo Facility Level?
         self.ALERT_OTHER_DISEASES = []
@@ -431,7 +434,7 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment_Haemodialysis'
+        self.TREATMENT_ID = 'CKD_Treatment_Haemodialysis'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
 
@@ -454,6 +457,16 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
                                                             priority=1
                                                             )
 
+    def never_ran(self) -> None:
+        """What to do if the event is never run by the HealthSystem"""
+        # Reschedule this HSI to happen again 3 days time.
+        next_session_date = self.sim.date + pd.DateOffset(days=3)
+        self.sim.modules['HealthSystem'].schedule_hsi_event(self,
+                                                            topen=next_session_date,
+                                                            tclose=next_session_date + pd.DateOffset(days=1),
+                                                            priority=1
+                                                            )
+
 
 class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
     """
@@ -466,7 +479,7 @@ class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         #todo need to update priority number in resource files
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_CKD_Kidney_Transplant_'
+        self.TREATMENT_ID = 'CKD_Kidney_Transplant'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.ALERT_OTHER_DISEASES = []
@@ -520,7 +533,7 @@ class HSI_Kidney_Transplant_Evaluation(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, CMDChronicKidneyDisease)
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Dr_CMD_Kidney_Transplant_Evaluation'
+        self.TREATMENT_ID = 'CKD_Kidney_Transplant_Evaluation'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.ALERT_OTHER_DISEASES = []
