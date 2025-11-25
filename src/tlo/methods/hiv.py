@@ -755,7 +755,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         )
 
         # Linear model for starting PrEP (if AGYW), given through regular poll:
-        self.lm["lm_prep_agyw"] = LinearModel.multiplicative(
+        self.lm["lm_prep_agyw"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p["prob_prep_for_agyw"],
             Predictor("sex").when("F", 1.0).otherwise(0.0),
             Predictor("hv_inf").when(False, 1.0).otherwise(0.0),
             Predictor("age_years")
@@ -767,7 +769,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                       conditions_are_mutually_exclusive=True,
                       conditions_are_exhaustive=True)
             .when("<2021", 0)
-            .otherwise(p["prob_prep_for_agyw"])
+            .otherwise(1.0),
         )
 
         # Linear model for circumcision (if M) following when the person has been tested:
@@ -1505,6 +1507,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
             p["prob_prep_for_fsw_after_hiv_test"] = 0
             p["prob_prep_for_agyw"] = 0
+            p["probability_of_being_retained_on_prep_every_3_months"] = 0
 
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
@@ -1526,6 +1529,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_for_child_from_2020"] = 0
 
             p["prob_prep_for_agyw"] = 0
+            p["prob_prep_for_fsw_after_hiv_test"] = 0.2  # todo increase coverage to 25%
 
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
@@ -1552,7 +1556,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["increase_in_prob_circ_2019"] = 0
             p["prob_circ_for_child_from_2020"] = 0
 
-            p["prob_prep_for_fsw_after_hiv_test"] = 0.34
+            p["prob_prep_for_fsw_after_hiv_test"] = 0.34  # todo to increase coverage to 50%
             p["injectable_prep_allowed"] = True
 
             p["prob_prep_for_agyw"] = 0
@@ -2384,11 +2388,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Calculate number of tests now performed - cumulative, include those who have died
         number_tests_new = df.hv_number_tests.sum()
 
-        # Store the number of tests performed in this year for future reference
-        self.stored_test_numbers.append(number_tests_new)
-
         # Number of tests performed in the last time period
         number_tests_in_last_period = number_tests_new - previous_test_numbers
+
+        # Store the number of tests performed in this year for future reference
+        self.stored_test_numbers.append(number_tests_in_last_period)
 
         # per-capita testing rate
         per_capita_testing = number_tests_in_last_period / len(df[df.is_alive])
@@ -3207,6 +3211,27 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
         m = self.module
         property = 'hv_is_on_prep_oral' if self.type_of_prep == 'oral' else 'hv_is_on_prep_inj'
+        prob_retention = m.parameters["probability_of_being_retained_on_prep_every_3_months"]
+
+        # add in controls for mihpsa scenarios
+        if self.sim.date.year >= m.parameters['scaleup_start_year']:
+            if m.parameters['select_mihpsa_scenario'] == 1:  # Baseline, no more prep
+                prob_retention = 0
+            if m.parameters['select_mihpsa_scenario'] == 2:  # prep oral fsw, no agyw
+                if not person["li_is_sexworker"]:
+                    prob_retention = 0
+            if m.parameters['select_mihpsa_scenario'] == 3:  # prep mixed fsw, no agyw
+                if not person["li_is_sexworker"]:
+                    prob_retention = 0
+            if m.parameters['select_mihpsa_scenario'] == 4:  # prep oral agyw
+                if not person["age_years"] < 25:
+                    prob_retention = 0
+            if m.parameters['select_mihpsa_scenario'] == 5:  # prep mixed agyw
+                if not person["age_years"] < 25:
+                    prob_retention = 0
+            if m.parameters['select_mihpsa_scenario'] > 5:  # All other scenarios, no more prep
+                prob_retention = 0
+
 
         # If the person is no longer alive or has been diagnosed with hiv, they will not continue on PrEP
         if (
@@ -3227,7 +3252,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
             # Determine if this appointment is actually attended by the person who has already started on PrEP
             if (
                 m.rng.random_sample()
-                < m.parameters["probability_of_being_retained_on_prep_every_3_months"]
+                < prob_retention
             ):
                 # Continue on PrEP - and schedule an HSI for a refill appointment today
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -4355,8 +4380,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #     n_pop = len(df.loc[(df.sex == sex) & (df.age_years >= 15)])
         #     testing_by_sex[sex] = n_tested / n_pop if n_pop else 0
         #
-        # # per_capita_testing_rate: number of tests administered divided by population
-        # current_testing_rate = self.module.per_capita_testing_rate()
+        # per_capita_testing_rate: number of tests administered divided by population
+        current_testing_rate = self.module.per_capita_testing_rate()
         #
         # # testing yield: number positive results divided by number tests performed
         # # if person has multiple tests in one year, will only count 1
@@ -5354,7 +5379,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         DeathsHIV_25_49_F = 0
         DeathsHIV_50_UP_F = 0
         DALYs_Undiscounted = 0
-        TotalCost_Undiscounted = 0
 
         PY_PREP_ORAL_AGYW = df["hv_days_on_oral_prep_AGYW"].sum() / 365
         PY_PREP_ORAL_FSW = df["hv_days_on_oral_prep_FSW"].sum() / 365
@@ -5388,6 +5412,38 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         TOTAL_PG = len(
             df[df.is_alive & (df.sex == "F") & df.is_pregnant & ~df.age_years.between(15,24)])
         Total_AGYW_PG = TOTAL_AGYW + TOTAL_PG
+
+        # get numbers of tests performed
+        current_testing_rate = self.module.per_capita_testing_rate()  # this stores annual test numbers
+        number_tests = self.module.stored_test_numbers[-1]
+        number_selftests = self.module.stored_selftest_numbers
+        print('number_tests', number_tests)
+        print('number_selftests', number_selftests)
+
+        num_on_art = len(
+            df.loc[df.is_alive
+                & df.hv_inf
+                & (df.hv_art != "not")
+                ]
+        )  # todo this includes children
+        print('num_on_art', num_on_art)
+
+        N_NewVMMC = len(df[df.hv_VMMC_in_last_year & (df.age_years >= 15)])
+        print('N_NewVMMC', N_NewVMMC)
+
+        person_years_oral_prep = PY_PREP_ORAL_FSW + PY_PREP_ORAL_AGYW
+        print('person_years_oral_prep', person_years_oral_prep)
+        person_years_inj_prep = PY_PREP_INJECT_AGYW + PY_PREP_INJECT_FSW
+        print('person_years_inj_prep', person_years_inj_prep)
+
+        TotalCost_Undiscounted = (
+            number_tests * 13.03
+            + number_selftests * 12.75
+            + num_on_art * 100.1
+            + N_NewVMMC * 32.08
+            + person_years_oral_prep * 76.15
+            + person_years_inj_prep * 88.36
+        )
 
 
         logger.info(
@@ -5495,6 +5551,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df["hv_days_on_oral_prep_FSW"] = 0
         df["hv_days_on_inj_prep_AGYW"] = 0
         df["hv_days_on_inj_prep_FSW"] = 0
+        self.module.stored_tdf_numbers = 0
+        self.module.stored_selftest_numbers = 0
 
 
 # ---------------------------------------------------------------------------

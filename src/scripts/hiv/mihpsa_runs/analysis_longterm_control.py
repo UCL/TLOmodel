@@ -762,3 +762,58 @@ with pd.ExcelWriter(results_folder / "longterm_outputs_FULL.xlsx", engine='openp
 
 
 
+
+# ---------------------------------------------------------------------------------------------
+
+
+
+
+# extract numbers of tests
+def summarise_tests(results_folder, test=None):
+    """
+    Returns mean tests for each year of the simulation.
+    Values are aggregated across runs of each draw for the specified cause and subgroup.
+    """
+
+    # Load results with grouped series
+    df = extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="hiv_test",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "referred_from"]
+            )["person_id"].count()
+        ),
+        do_scaling=True,
+    ).reset_index()
+
+    modes = df[("referred_from", "")]
+
+    # All numeric draw/run columns (exclude first col)
+    value_cols = df.columns[df.columns.get_level_values("draw") != "referred_from"]
+
+    # ANC_routine rows (exactly one per year)
+    anc_df = df[modes == "ANC_routine"][value_cols]
+
+    # Other rows
+    other_df = df[modes != "ANC_routine"][value_cols]
+
+    # Sum other modes per year
+    other_sum = other_df.groupby(other_df.year).sum()
+
+    summary_anc = compute_summary_statistics(anc_df, central_measure='mean', only_central=True)
+    summary_other = compute_summary_statistics(other_sum, central_measure='mean', only_central=True)
+    summary_other = summary_other.drop(columns=['year'])
+
+    if test == 'anc':
+        return summary_anc
+    elif test == 'other':
+        return summary_other
+
+test_anc = summarise_tests(results_folder, test='anc')
+test_other = summarise_tests(results_folder, test='other')
+
+
+test_anc.to_csv(results_folder / 'anc_tests.csv')
+test_other.to_csv(results_folder / 'other_tests.csv')
