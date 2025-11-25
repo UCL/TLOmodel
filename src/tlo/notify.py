@@ -60,6 +60,13 @@ class Notifier:
             for listener in self.listeners[notification_key]:
                 listener(data)
 
+    def clear_listeners(self):
+        """
+        Clear all registered listeners. Essential because the notifier is a global singleton.
+        e.g. if you are running multiple tests or simulations in the same process.
+        """
+        self.listeners.clear()
+
 
 # Create a global notifier instance
 notifier = Notifier()

@@ -27,6 +27,7 @@ from tlo.dependencies import (
     topologically_sort_modules,
 )
 from tlo.events import Event, IndividualScopeEventMixin
+from tlo.notify import notifier
 from tlo.progressbar import ProgressBar
 
 if TYPE_CHECKING:
@@ -116,6 +117,8 @@ class Simulation:
         self._custom_log_levels = None
         self._log_filepath = self._configure_logging(**log_config)
 
+        # clear notifier listeners from any previous simulation in this process
+        notifier.clear_listeners()
 
         # random number generator
         seed_from = "auto" if seed is None else "user"
