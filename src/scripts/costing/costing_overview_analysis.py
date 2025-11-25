@@ -44,7 +44,7 @@ if not os.path.exists(figurespath):
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('htm_and_hss_runs-2025-01-16T135243Z.py', outputfilepath)[0] # January 2025 runs
+results_folder = get_scenario_outputs('htm_and_hss_runs-2025-10-14T084418Z.py.py', outputfilepath)[0] # January 2025 runs
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
@@ -61,8 +61,8 @@ list_of_years_for_plot = list(range(2023, 2031))
 number_of_years_costed = relevant_period_for_costing[1] - 2023 + 1
 
 # Scenarios
-cost_scenarios = {0: "Actual", 3: "Expanded HRH", 5: "Improved consumable availability",
-                  8: "Expanded HRH + Improved consumable availability"}
+cost_scenarios = {0: "Actual", 2: "Expanded HRH", 4: "Improved consumable availability",
+                  7: "Expanded HRH + Improved consumable availability"}
 
 # Costing parameters
 discount_rate = 0.03
@@ -72,17 +72,17 @@ discount_rate_lomas = {2023: 0.0036, 2024: 0.0040, 2025: 0.0039, 2026: 0.0042, 2
 # Estimate standard input costs of scenario
 # -----------------------------------------------------------------------------------------------------------------------
 # Standard 3% discount rate
-input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
+input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = list(cost_scenarios.keys()),
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = discount_rate, summarize = True)
 
 # Undiscounted costs
-input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
+input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = list(cost_scenarios.keys()),
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = 0, summarize = True)
 
 # Cost with variable discount rate based on Lomas et al (2021)
-input_costs_variable_discounting = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
+input_costs_variable_discounting = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = list(cost_scenarios.keys()),
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = discount_rate_lomas, summarize = True)
 
@@ -97,38 +97,39 @@ print(f"Under current system capacity, total healthcare delivery costs for 2023â
       f"{cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], averaging \$"
       f"{undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}m] annually."
       f" Scenario analysis revealed the importance of health system interdependencies: improving consumable availability alone led to a modest "
-      f"{(consumable_cost_by_draw[5]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
+      f"{(consumable_cost_by_draw[4]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
       f" increase in consumables cost due to constraints in the health workforce. In contrast, expanding human resources for health (HRH) increased consumables costs by "
-      f"{(consumable_cost_by_draw[3]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
+      f"{(consumable_cost_by_draw[2]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
       f", while jointly expanding HRH and consumable availability raised consumables costs by "
-      f"{(consumable_cost_by_draw[8]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%, "
+      f"{(consumable_cost_by_draw[7]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%, "
       f"illustrating how bottlenecks in one component limit the effect of changes in another.")
 # Results 1
 print(f"The total cost of healthcare delivery in Malawi between 2023 and 2030 was estimated to be "
       f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], under the actual scenario, and increased to "
-      f"\${cost_by_draw[5,'mean']/1e9:,.2f} billion [\${cost_by_draw[5,'lower']/1e9:,.2f}b - \${cost_by_draw[5,'upper']/1e9:,.2f}b] under the improved consumable availability scenario, "
-      f"followed by \${cost_by_draw[3,'mean']/1e9:,.2f} billion [\${cost_by_draw[3,'lower']/1e9:,.2f}b - \${cost_by_draw[3,'upper']/1e9:,.2f}b] under the expanded HRH scenario and finally "
-      f"\${cost_by_draw[8,'mean']/1e9:,.2f} billion [\${cost_by_draw[8,'lower']/1e9:,.2f}b - \${cost_by_draw[8,'upper']/1e9:,.2f}b] under the expanded HRH + improved consumable availability scenario.")
+      f"\${cost_by_draw[4,'mean']/1e9:,.2f} billion [\${cost_by_draw[4,'lower']/1e9:,.2f}b - \${cost_by_draw[4,'upper']/1e9:,.2f}b] under the improved consumable availability scenario, "
+      f"followed by \${cost_by_draw[2,'mean']/1e9:,.2f} billion [\${cost_by_draw[2,'lower']/1e9:,.2f}b - \${cost_by_draw[2,'upper']/1e9:,.2f}b] under the expanded HRH scenario and finally "
+      f"\${cost_by_draw[7,'mean']/1e9:,.2f} billion [\${cost_by_draw[7,'lower']/1e9:,.2f}b - \${cost_by_draw[7,'upper']/1e9:,.2f}b] under the expanded HRH + improved consumable availability scenario.")
 # Results 2
 print(f"This translates to an average annual cost of "
       f"\${undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}m], under the actual scenario, "
-      f"\${undiscounted_cost_by_draw[5,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[5,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[5,'upper']/1e6/number_of_years_costed:,.2f}m] under the improved consumable availability scenario, followed by "
-      f"\${undiscounted_cost_by_draw[3,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[3,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[3,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH scenario and finally "
-      f"\${undiscounted_cost_by_draw[8,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[8,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[8,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH + improved consumable availability scenario.")
+      f"\${undiscounted_cost_by_draw[4,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[4,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[4,'upper']/1e6/number_of_years_costed:,.2f}m] under the improved consumable availability scenario, followed by "
+      f"\${undiscounted_cost_by_draw[2,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[2,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[2,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH scenario and finally "
+      f"\${undiscounted_cost_by_draw[7,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[7,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[7,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH + improved consumable availability scenario.")
 # Results 3
 print(f"Notably, improving consumable availability alone increases the cost of medical consumables by just "
-      f"{(consumable_cost_by_draw[5]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
+      f"{(consumable_cost_by_draw[4]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
       f"because the limited health workforce (HRH) restricts the number of feasible appointments and, consequently, the quantity of consumables dispensed. "
       f"In contrast, expanding HRH alone raises consumable costs by "
-      f"{(consumable_cost_by_draw[3]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
+      f"{(consumable_cost_by_draw[2]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
       f". When both HRH and consumable availability are expanded together, consumable costs increase by "
-      f"{(consumable_cost_by_draw[8]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
+      f"{(consumable_cost_by_draw[7]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
       f"compared to the actual scenario.")
 # Results 4
 cost_of_hiv_testing =  input_costs[(input_costs.cost_subgroup == 'Test, HIV EIA Elisa') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
-print(f"For instance, the cost of HIV testing consumables increases by {(cost_of_hiv_testing[3]/cost_of_hiv_testing[0] - 1)*100:.2f}\% under the expanded HRH scenario and by "
-      f"{(cost_of_hiv_testing[8]/cost_of_hiv_testing[0] - 1)*100:.2f}\% under the combined expanded HRH and improved consumable availability scenario, "
+print(f"For instance, the cost of HIV testing consumables increases by {(cost_of_hiv_testing[2]/cost_of_hiv_testing[0] - 1)*100:.2f}\% under the expanded HRH scenario and by "
+      f"{(cost_of_hiv_testing[7]/cost_of_hiv_testing[0] - 1)*100:.2f}\% under the combined expanded HRH and improved consumable availability scenario, "
       f"while showing almost no change under the scenario with improved consumable availability alone")
+# TODO Check above
 
 # Get figures for overview paper
 # -----------------------------------------------------------------------------------------------------------------------
@@ -164,19 +165,19 @@ do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
                          show_title = False,
                          _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
-                         _year=list_of_years_for_plot, _draws= [3],
+                         _year=list_of_years_for_plot, _draws= [2],
                          disaggregate_by= 'cost_category',
                          _y_lim = 400,
                          show_title = False,
                          _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
-                         _year=list_of_years_for_plot, _draws= [5],
+                         _year=list_of_years_for_plot, _draws= [4],
                          disaggregate_by= 'cost_category',
                          _y_lim = 400,
                          show_title = False,
                          _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
-                         _year=list_of_years_for_plot, _draws= [8],
+                         _year=list_of_years_for_plot, _draws= [7],
                          disaggregate_by= 'cost_category',
                          _y_lim = 400,
                          show_title = False,
@@ -250,7 +251,7 @@ def generate_detail_cost_table(_groupby_var, _groupby_var_name, _longtable = Fal
 
     # Create a pivot table to restructure the data for LaTeX output
     pivot_data = {}
-    for draw in [0, 3, 5, 8]:
+    for draw in list(cost_scenarios.keys()):
         draw_data = grouped_costs.xs(draw, level='draw').unstack(fill_value=0)  # Unstack to get 'stat' as columns
         # Concatenate 'mean' with 'lower-upper' in the required format
         pivot_data[draw] = draw_data['mean'].astype(str) + ' [' + \
@@ -258,7 +259,7 @@ def generate_detail_cost_table(_groupby_var, _groupby_var_name, _longtable = Fal
                            draw_data['upper'].astype(str) + ']'
 
     # Combine draw data into a single DataFrame
-    table_data = pd.concat([pivot_data[0], pivot_data[3], pivot_data[5], pivot_data[8]], axis=1, keys=['draw=0', 'draw=3', 'draw=5', 'draw=8']).reset_index()
+    table_data = pd.concat([pivot_data[0], pivot_data[2], pivot_data[4], pivot_data[7]], axis=1, keys=['draw=0', 'draw=2', 'draw=4', 'draw=7']).reset_index()
 
     # Rename columns for clarity
     table_data.columns = ['Cost Category', _groupby_var_name, 'Actual', 'Expanded HRH', 'Improved consumable availability', 'Expanded HRH +\n Improved consumable availability']
