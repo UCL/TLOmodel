@@ -50,7 +50,7 @@ class CollectEventChains(Module):
         #print("resource file path", resourcefilepath)
         #self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath/"ResourceFile_GenerateEventChains/parameter_values.csv"))
         self.parameters["generate_event_chains"] = True
-        self.parameters["modules_of_interest"] = self.sim.modules.values()
+        self.parameters["modules_of_interest"] = self.sim.modules.keys()
             
         self.parameters["events_to_ignore"] =["AgeUpdateEvent","HealthSystemScheduler","SimplifiedBirthsPoll","DirectBirth","LifestyleEvent","TbActiveCasePollGenerateData","HivPollingEventForDataGeneration","RTIPollingEvent"]
 
