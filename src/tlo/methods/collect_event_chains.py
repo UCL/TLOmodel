@@ -131,7 +131,9 @@ class CollectEventChains(Module):
         # 1) generate_event_chains is set to True
         # 2) the event belongs to modules of interest and
         # 3) the event is not in the list of events to ignore
-        if self.generate_event_chains and (data['module'] in self.modules_of_interest) and (data['link_info']['EventName'] not in self.events_to_ignore):
+        if not self.generate_event_chains or (data['module'] not in self.modules_of_interest) or (data['link_info']['EventName'] in self.events_to_ignore):
+            return
+        else:
                       
             # Initialise these variables
             self.print_chains = False
@@ -174,7 +176,9 @@ class CollectEventChains(Module):
     def on_notification_event_has_just_ran(self, data):
         """ If print_chains=True, this function logs the event and identifies and logs the any property changes that have occured to one or multiple individuals as a result of the event taking place. """
         
-        if self.print_chains:
+        if not self.print_chains:
+            return
+        else:
 
             chain_links = {}
         
