@@ -52,7 +52,7 @@ class CollectEventChains(Module):
 
         # If modules of interest is '*', set by default to all modules included in the simulation
         if self.parameters["modules_of_interest"] == ['*']:
-            self.parameters["modules_of_interest"] = self.sim.modules.keys()
+            self.parameters["modules_of_interest"] = list(self.sim.modules.keys())
         
     def initialise_population(self, population):
         pass
