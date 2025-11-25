@@ -1,0 +1,182 @@
+"""This script updates the existing ResourceFile_EquipmentCatalogue.csv file to include the following equipment items
+as having a general package label."""
+
+from pathlib import Path
+
+import pandas as pd
+
+things_which_are_general_at_level_2 = [
+    'Air conditioner/fan',
+    'Analytical software',
+    'Backsplit cotton gown',
+    'Basin',
+    'Bed sheets',
+    'Bedside locker',
+    'Bench',
+    'Bucket Stand',
+    'Bucket without tap 20 LITRES',
+    'Bulk stores',
+    'Cabinet, filing',
+    'Chair',
+    'Chair, office',
+    'Cleaning utensils, set',
+    'Clock, wall type',
+    'Computer set',
+    'Containers for Decontamination, Cleaning, Instruments and Linen',
+    'Cupboard',
+    'Cupboard, for medicine, lockable',
+    'Desk',
+    'Digitiser',
+    'Disinfector, boiling water type, electric, s/s',
+    'Drug box',
+    'Examination couch',
+    'Flip chart stand',
+    'Image view station, for conferences',
+    'Incinerator',
+    'Infrared stand',
+    'Kettle',
+    'Lamp, examination',
+    'Lamp, paraffin, hurricane type',
+    'Laptop',
+    'Laundry/linen bag',
+    'Light, examination, floor standing, articulated',
+    'Light, gas',
+    'Light, mobile, Lift-ultra 1500 hydraulic',
+    'Light, operating, mobile',
+    'Light, solar',
+    'Linen',
+    'Lockable Cabinet',
+    'Mattress for hospital bed, adult',
+    'Mattress for hospital bed, child',
+    'Measuring Cup',
+    'Measuring gauges',
+    'Medical software',
+    'Mirror',
+    'Mixing bowls',
+    'Motorcycle ambulance',
+    'Office software',
+    'Otto Bins',
+    'Oxygen ports',
+    'Patient Transfer Aid',
+    'Patient transfer roller board',
+    'Pedal bin',
+    'Penlight',
+    'Pillow cases',
+    'Posters',
+    'Printer',
+    'Racks, storage, set',
+    'Receiver',
+    'Rolls of various sizes and shapes',
+    'Room heater, electric, wall mounted',
+    'Router machine',
+    'Ruler, square',
+    'Screen Curtains',
+    'Shelves',
+    'Shovels',
+    'Sound measuring apparatus/decibel meter',
+    'Static digital',
+    'Static digital accessories',
+    'Stool basic metal',
+    'Table',
+    'Tablet computer',
+    'Timer',
+    'Tray, emergency',
+    'Tray, instrument, set of 12 sizes, covered, s/s, 305x254x51mm',
+    'Tray, instrument, set of 3 sizes, covered, s/s, 305x254x51mm',
+    'Trolley, drug',
+    'Trolley, emergency',
+    'Trolley, food',
+    'Trolley, laundry/instrument',
+    'Trolley, Mayo Instrument',
+    'Trolley, patient',
+    'Trolley, Trauma Patient CT',
+    'UPS (uninterruptible power supply)',
+    'Voltage Regulators',
+    'Waste Bin',
+    'Water container, 20 litres with tap, on stand with soap',
+    'Weighing balance, electronic',
+    'Wheelbarrows',
+    'Wiper holder',
+    'Room heater, electric, wall mounted',
+]
+
+things_which_are_general_at_level_1a_and_1b = [
+    'Basin',
+    'Cleaning utensils, set',
+    'Clock, wall type',
+    'Containers for Decontamination, Cleaning, Instruments and Linen',
+    'Cupboard',
+    'Cupboard, for medicine, lockable',
+    'Desk',
+    'Disinfector, boiling water type, electric, s/s',
+    'Drug box',
+    'Examination couch',
+    'Flip chart stand',
+    'Kettle',
+    'Lamp, examination',
+    'Lamp, paraffin, hurricane type',
+    'Laptop',
+    'Laundry/linen bag',
+    'Light, examination, floor standing, articulated',
+    'Light, gas',
+    'Light, mobile, Lift-ultra 1500 hydraulic',
+    'Light, operating, mobile',
+    'Light, solar',
+    'Linen',
+    'Lockable Cabinet',
+    'Measuring Cup',
+    'Measuring gauges',
+    'Medical software',
+    'Mirror',
+    'Mixing bowls',
+    'Motorcycle ambulance',
+    'Otto Bins',
+    'Pedal bin',
+    'Penlight',
+    'Printer',
+    'Racks, storage, set',
+    'Receiver',
+    'Rolls of various sizes and shapes',
+    'Room heater, electric, wall mounted',
+    'Router machine',
+    'Ruler, square',
+    'Screen Curtains',
+    'Shelves',
+    'Shovels',
+    'Sound measuring apparatus/decibel meter',
+    'Static digital',
+    'Static digital accessories',
+    'Stool basic metal',
+    'Table',
+    'Tablet computer',
+    'Timer',
+    'Waste Bin',
+    'Water container, 20 litres with tap, on stand with soap',
+    'Weighing balance, electronic',
+    'Wheelbarrows',
+    'Wiper holder',
+    'Room heater, electric, wall mounted',
+]
+
+
+
+the_equipment_resource_file = Path('resources/healthsystem/infrastructure_and_equipment/ResourceFile_EquipmentCatalogue.csv')
+
+# Load original
+x = pd.read_csv(the_equipment_resource_file)
+
+# Add in the additional package names
+x.loc[x.Item_Description.isin(things_which_are_general_at_level_2), 'Pkg_Name'] = (
+    x.loc[x.Item_Description.isin(things_which_are_general_at_level_2), 'Pkg_Name'].apply(
+        lambda x: 'General_FacilityLevel_2' if pd.isnull(x) else x + ', General_FacilityLevel_2')
+)
+
+x.loc[x.Item_Description.isin(things_which_are_general_at_level_1a_and_1b), 'Pkg_Name'] = (
+    x.loc[x.Item_Description.isin(things_which_are_general_at_level_1a_and_1b), 'Pkg_Name'].apply(
+        lambda x: 'General_FacilityLevel_1a_and_1b' if pd.isnull(x) else x + ', General_FacilityLevel_1a_and_1b')
+)
+
+# Write over the original with the update
+x.to_csv(the_equipment_resource_file, index=False)
+
+

@@ -57,6 +57,12 @@ class CMDChronicKidneyDisease(Module):
         "prob_ckd_transplant_eval": Parameter(
             Types.REAL, "Proportion of eligible population that goes for Kidney Transplant Evaluation"
         ),
+        "prop_herbal_use_ckd": Parameter(
+            Types.REAL, "Proportion of people with ckd who use herbal medicine"
+        ),
+        "rp_ckd_herbal_use_baseline": Parameter(
+            Types.REAL, "Relative risk of having CKD at baseline if a person uses herbal medicine"
+        ),
     }
 
     PROPERTIES = {
@@ -86,6 +92,9 @@ class CMDChronicKidneyDisease(Module):
         ),
         "ckd_total_dialysis_sessions": Property(Types.INT,
                                                 "total number of dialysis sessions the person has ever had"),
+        "uses_herbal_medicine": Property(
+            Types.BOOL, "Whether this person uses herbal medicine"
+        ),
     }
 
     def __init__(self):
@@ -110,10 +119,12 @@ class CMDChronicKidneyDisease(Module):
         self.parameters['rp_ckd_li_bmi'] = 1.3
         self.parameters['rp_ckd_nc_hypertension'] = 1.3
         self.parameters['rp_ckd_nc_chronic_ischemic_hd'] = 1.2
+        self.parameters['rp_ckd_herbal_use_baseline'] = 1.35
 
         #
         self.parameters['prob_ckd_renal_clinic'] = 0.7
         self.parameters['prob_ckd_transplant_eval'] = 0.3
+        self.parameters['prop_herbal_use_ckd'] = 0.35
 
         #todo use chronic_kidney_disease_symptoms from cardio_metabolic_disorders.py
 
@@ -142,6 +153,11 @@ class CMDChronicKidneyDisease(Module):
         df.loc[list(alive_ckd_idx), "ckd_stage_at_which_treatment_given"] = "pre_diagnosis"
         df.loc[list(alive_ckd_idx), "ckd_date_diagnosis"] = pd.NaT
 
+        df.loc[list(alive_ckd_idx), "uses_herbal_medicine"] = \
+            self.rng.random(len(alive_ckd_idx)) < self.parameters['prop_herbal_use_ckd']
+        df.loc[list(df.loc[df.is_alive & ~df.nc_chronic_kidney_disease].index),
+        "uses_herbal_medicine"] = False
+
         # -------------------- ckd_status -----------
         # Determine who has CKD at all stages:
         # check parameters are sensible: probability of having any CKD stage cannot exceed 1.0
@@ -155,6 +171,7 @@ class CMDChronicKidneyDisease(Module):
             Predictor('li_bmi').when(True, self.parameters['rp_ckd_li_bmi']),
             Predictor('nc_hypertension').when(True, self.parameters['rp_ckd_nc_hypertension']),
             Predictor('nc_chronic_ischemic_hd').when(True, self.parameters['rp_ckd_nc_chronic_ischemic_hd']),
+            Predictor('uses_herbal_medicine').when(True, self.parameters['rp_ckd_herbal_use_baseline']),
 
         )
 
@@ -216,7 +233,9 @@ class CMDChronicKidneyDisease(Module):
 
         self.lm['onset_stage1_4'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            intercept=self.parameters['rate_onset_to_stage1_4']
+            self.parameters['rate_onset_to_stage1_4'],
+            Predictor('uses_herbal_medicine')
+            .when(True, self.parameters['rp_ckd_herbal_use_baseline'])
         )
 
         self.lm['stage1_to_4_stage5'] = LinearModel(
@@ -225,7 +244,6 @@ class CMDChronicKidneyDisease(Module):
             Predictor('had_treatment_during_this_stage', external=True)
             .when(True, 0.0).otherwise(1.0)
         )
-
 
     def look_up_consumable_item_codes(self):
         """Look up the item codes used in the HSI of this module"""
@@ -272,7 +290,6 @@ class CMDChronicKidneyDisease(Module):
             # request syringe
             get_item_codes("Syringe, Autodisable SoloShot IX "): 1
         }
-
 
 class CMDChronicKidneyDiseasePollEvent(RegularEvent, PopulationScopeEventMixin):
     """An event that controls the development process of Chronic Kidney Disease (CKD) and logs current states."""
@@ -364,7 +381,7 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Dr_CMD_Renal_Medication'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3' #todo Facility Level?
+        self.ACCEPTED_FACILITY_LEVEL = '3'  #todo Facility Level?
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -399,6 +416,11 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'ckd_date_treatment'] = self.sim.date
             df.at[person_id, 'ckd_stage_at_which_treatment_given'] = df.at[person_id, 'ckd_status']
 
+            next_session = self.sim.date + pd.DateOffset(months=1)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(self,
+                                                                topen=next_session,
+                                                                tclose=None,
+                                                                priority=1)
 
 
 class HSI_Kidney_Transplant_Evaluation(HSI_Event, IndividualScopeEventMixin):
