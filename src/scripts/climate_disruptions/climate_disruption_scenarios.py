@@ -7,6 +7,7 @@ from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScen
 from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
 import json
 import numpy as np
+import random
 
 YEAR_OF_CHANGE = 2025
 full_grid = make_cartesian_parameter_grid(
@@ -46,7 +47,7 @@ class ClimateDisruptionScenario(BaseScenario):
         self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2025
         self._scenarios = self._get_scenarios()
-        self._parameter_grid = full_grid  # random.sample(full_grid, 1)
+        self._parameter_grid = random.sample(full_grid, 10)
         print(self._parameter_grid)
         self.number_of_draws = len(self._scenarios)
 
