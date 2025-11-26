@@ -427,9 +427,7 @@ class CMDChronicKidneyDiseasePollEvent(RegularEvent, PopulationScopeEventMixin):
 
 class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
     """
-    This is the event when a person undergoes the optical coherence topography before being given the anti-vegf
-    injection. Given to individuals with dr_status of severe and proliferative
-    """
+    This is an event where a CKD patient is managed conservatively; attending clinic monthly for symptom management"""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -481,7 +479,7 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
 
 
 class HSI_Haemodialysis_Refill(HSI_Event, IndividualScopeEventMixin):
-    """This is a Health System Interaction Event in which a person receives a dialysis session 2 times a week
+    """This is an event in which a person goes for dialysis sessions 2 times a week
     adding up to 8 times a month."""
 
     def __init__(self, module, person_id):
@@ -657,6 +655,8 @@ class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
 
 
 class HSI_AntiRejectionDrug_Refill(HSI_Event, IndividualScopeEventMixin):
+    """This is an event where a kidney transplant recipient gets drugs every month for the rest of their lives """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id)
         self.TREATMENT_ID = 'CKD_AntiRejectionDrug_Refill'
