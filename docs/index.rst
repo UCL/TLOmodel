@@ -22,6 +22,10 @@ It is developed in a collaboration between:
 
 It benefits from a close partnership between this team and the Ministry of Health, Malawi.
 
+News
+===========
+*TLO Model* featured in new `article <https://ecsahc.org/ecsa-hc-driving-policy-transformation-how-the-thanzi-model-is-empowering-smarter-health-decisions-in-malawi/>`_ by ECSA-HC.
+
 
 Latest Release
 ==============

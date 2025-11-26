@@ -2123,7 +2123,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             q_param=[params['prob_hcw_avail_blood_tran'], params[f'mean_hcw_competence_{deliv_location}']],
             cons=self.item_codes_lab_consumables['blood_transfusion'],
             opt_cons=self.item_codes_lab_consumables['blood_test_equipment'],
-            equipment={'Drip stand', 'Infusion pump'})
+            equipment=hsi_event.healthcare_system.equipment.from_pkg_names('Blood Transfusion'))
 
         if blood_transfusion_delivered:
             mni[person_id]['received_blood_transfusion'] = True
@@ -2871,7 +2871,13 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # Add used equipment
         self.add_equipment({'Delivery set', 'Weighing scale', 'Stethoscope, foetal, monaural, Pinard, plastic',
                             'Resuscitaire', 'Sphygmomanometer', 'Tray, emergency', 'Suction machine',
-                            'Thermometer', 'Drip stand', 'Infusion pump'})
+                            'Thermometer', 'Drip stand', 'Infusion pump', 'Board for Cord Knotting',
+                            'Cot, baby (bassinet), hospital-type', 'Delivery Beds with Stirrups', 'Fetoscope',
+                            'Mucous Extractor for neonates', 'Amnio hook', 'Incubator, infant'})
+
+        if self.ACCEPTED_FACILITY_LEVEL == '2':
+            self.add_equipment({'Cardiotocography'})
+
         # ===================================== PROPHYLACTIC CARE ===================================================
         # The following function manages the consumables and administration of prophylactic interventions in labour
         # (clean delivery practice, antibiotics for PROM, steroids for preterm labour)
@@ -2943,7 +2949,8 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             neo_resus_delivered = pregnancy_helper_functions.check_int_deliverable(
                 self.module, int_name='neo_resus', hsi_event=self,
                 q_param=[params['prob_hcw_avail_neo_resus'], params[f'mean_hcw_competence_{deliv_location}']],
-                cons=self.module.item_codes_lab_consumables['resuscitation'])
+                cons=self.module.item_codes_lab_consumables['resuscitation'],
+                equipment={'Ambu bag, infant with mask', 'Resuscitator, manual, infant'})
 
             if neo_resus_delivered:
                 mni[person_id]['neo_will_receive_resus_if_needed'] = True
