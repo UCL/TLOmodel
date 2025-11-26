@@ -14,7 +14,6 @@ from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 # from tlo.methods.symptommanager import Symptom
 from tlo.population import IndividualProperties
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -112,6 +111,7 @@ class CMDChronicKidneyDisease(Module):
         super().__init__()
         self.cons_item_codes = None  # (Will store consumable item codes)
         self.kidney_transplant_waiting_list = deque()
+        self.daly_wts = dict()
 
     def read_parameters(self, data_folder: str | Path) -> None:
         """ initialise module parameters. Here we are assigning values to all parameters defined at the beginning of
@@ -225,8 +225,26 @@ class CMDChronicKidneyDisease(Module):
         self.make_the_linear_models()
         self.look_up_consumable_item_codes()
 
-    def report_daly_values(self) -> pd.Series:
-        return pd.Series(index=self.sim.population.props.index, data=0.0)
+        # ----- DISABILITY-WEIGHTS -----
+        if "HealthBurden" in self.sim.modules:
+            # For those with End-stage renal disease, with kidney transplant (any stage after stage1_4)
+            self.daly_wts["stage5_ckd"] = self.sim.modules["HealthBurden"].get_daly_weight(
+                sequlae_code=977
+            )
+
+    def report_daly_values(self):
+        # return pd.Series(index=self.sim.population.props.index, data=0.0)
+        df = self.sim.population.props  # shortcut to population properties dataframe for alive persons
+
+        disability_series_for_alive_persons = pd.Series(index=df.index[df.is_alive], data=0.0)
+
+        # Assign daly_wt to those with CKD stage stage5 and have had a kidney transplant
+        disability_series_for_alive_persons.loc[
+            (df.ckd_status == "stage5") &
+            (~pd.isnull(df.ckd_date_transplant))
+            ] = self.daly_wts['stage5_ckd']
+
+        return disability_series_for_alive_persons
 
     def on_birth(self, mother_id: int, child_id: int) -> None:
         """ Set properties of a child when they are born.
@@ -397,7 +415,6 @@ class CMDChronicKidneyDiseasePollEvent(RegularEvent, PopulationScopeEventMixin):
             # increments until max_surgeries_per_month is reached
             surgeries_done += 1
 
-
     def do_at_generic_first_appt(
         self,
         person_id: int,
@@ -502,7 +519,6 @@ class HSI_Haemodialysis_Refill(HSI_Event, IndividualScopeEventMixin):
                                                             tclose=next_session_date + pd.DateOffset(days=1),
                                                             priority=1
                                                             )
-
 
 
 class HSI_Kidney_Transplant_Evaluation(HSI_Event, IndividualScopeEventMixin):
@@ -661,7 +677,6 @@ class HSI_AntiRejectionDrug_Refill(HSI_Event, IndividualScopeEventMixin):
             tclose=next_month + pd.DateOffset(days=5),
             priority=1
         )
-
 
 
 class CMDChronicKidneyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
