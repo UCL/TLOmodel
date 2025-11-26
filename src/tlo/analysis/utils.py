@@ -419,7 +419,8 @@ def reconstruct_event_chains(df):
 
     # For now convert value to string in all cases to facilitate manipulation. This can be reversed later.
     recon['V'] = recon['V'].apply(str)
-    # Collapse into 'E', 'EventDate', 'EventName', 'Info' format where 'Info' is dict listing attributes (e.g. {a1:v1, a2:v2, a3:v3, ...} )
+    # Collapse into 'E', 'EventDate', 'EventName', 'Info' format where 'Info' is dict listing attributes
+    # (e.g. {a1:v1, a2:v2, a3:v3, ...} )
     df_collapsed = (
             recon.groupby(['E', 'date', 'EventName'])
               .apply(lambda g: dict(zip(g['A'], g['V'])))
@@ -454,8 +455,11 @@ def print_filtered_df(df):
     
 def extract_event_chains(results_folder: Path,
                         ) -> dict:
-    """Utility function to collect chains of events. Individuals across runs of the same draw will be combined into unique df.
-    Returns dictionary where keys are draws, and each draw is associated with a dataframe of format 'E', 'EventDate', 'EventName', 'Info' where 'Info' is a dictionary that combines A&Vs for a particular individual + date + event name combination.
+    """Utility function to collect chains of events. Individuals across runs of the same draw
+    will be combined into unique df.
+    Returns dictionary where keys are draws, and each draw is associated with a dataframe of 
+    format 'E', 'EventDate', 'EventName', 'Info' where 'Info' is a dictionary that combines 
+    A&Vs for a particular individual + date + event name combination.
     """
     module = 'tlo.collect_event_chains'
     key = 'event_chains'

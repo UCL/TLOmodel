@@ -9,6 +9,7 @@ import time
 from collections import Counter, OrderedDict
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
+
 import numpy as np
 
 from tlo.notify import notifier
@@ -27,7 +28,6 @@ from tlo.dependencies import (
     topologically_sort_modules,
 )
 from tlo.events import Event, IndividualScopeEventMixin
-from tlo.notify import notifier
 from tlo.progressbar import ProgressBar
 
 if TYPE_CHECKING:
@@ -305,7 +305,8 @@ class Simulation:
             module.initialise_simulation(self)
         self._initialised = True
         
-        # Since CollectEventChains listeners are added to notified upon module initialisation, this can only be dispatched here.
+        # Since CollectEventChains listeners are added to notified upon module initialisation,
+        # this can only be dispatched here.
         # Otherwise, would have to add listener outside of CollectEventChains initialisation
         
         # Dispatch notification that pop has been initialised

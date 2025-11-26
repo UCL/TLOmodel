@@ -9,7 +9,6 @@ from tlo import Date, logging
 from tlo.events import Event
 from tlo.notify import notifier
 
-
 if TYPE_CHECKING:
     from tlo import Module, Simulation
     from tlo.methods.healthsystem import HealthSystem
@@ -201,7 +200,10 @@ class HSI_Event:
         """Make the event happen."""
         
         # Dispatch notification that HSI event is about to run
-        notifier.dispatch("event.about_to_run", data={"target": self.target, "module" : self.module.name, "link_info" : {"EventName": type(self).__name__}})
+        notifier.dispatch("event.about_to_run",
+                          data={"target": self.target,
+                                "module" : self.module.name,
+                                "link_info" : {"EventName": type(self).__name__}})
 
         updated_appt_footprint = self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
@@ -212,9 +214,10 @@ class HSI_Event:
             footprint = updated_appt_footprint
         else:
             footprint = self.EXPECTED_APPT_FOOTPRINT
-        try:
+            
+        if self.facility_info:
             level = self.facility_info.level
-        except:
+        else:
             level = "N/A"
             
         notifier.dispatch("event.has_just_ran",

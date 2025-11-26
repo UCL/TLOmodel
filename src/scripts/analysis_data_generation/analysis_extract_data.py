@@ -4,17 +4,15 @@ running under different MODES and POLICIES (scenario_impact_of_actual_vs_funded.
 # short tclose -> ideal case
 # long tclose -> status quo
 import argparse
+from collections import Counter
+from datetime import datetime
 from pathlib import Path
 from typing import Tuple
 
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, extract_event_chains
-from datetime import datetime
-from collections import Counter
-import ast
+from tlo.analysis.utils import extract_event_chains, extract_results
 
 # Time simulated to collect data
 start_date = Date(2010, 1, 1)

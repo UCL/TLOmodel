@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 from tlo.notify import notifier
 
+
 class Priority(Enum):
     """Enumeration for the Priority, which is used in sorting the events in the simulation queue."""
     START_OF_DAY = 0
@@ -65,13 +66,16 @@ class Event:
         """Make the event happen."""
 
         # Dispatch notification that event is about to run
-        notifier.dispatch("event.about_to_run", data={"target": self.target, "module" : self.module.name, "link_info" : {"EventName": type(self).__name__}})
+        notifier.dispatch("event.about_to_run", data={"target": self.target,
+                                                      "module" : self.module.name,
+                                                      "link_info" : {"EventName": type(self).__name__}})
                 
         self.apply(self.target)
         self.post_apply_hook()
         
         # Dispatch notification that event has just ran
-        notifier.dispatch("event.has_just_ran", data={"target": self.target, "link_info" : {"EventName": type(self).__name__}})
+        notifier.dispatch("event.has_just_ran", data={"target": self.target,
+                                                      "link_info" : {"EventName": type(self).__name__}})
 
 
 class RegularEvent(Event):

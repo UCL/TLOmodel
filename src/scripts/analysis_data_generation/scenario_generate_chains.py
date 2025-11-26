@@ -18,35 +18,10 @@ from typing import Dict
 import pandas as pd
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios, get_filtered_treatment_ids
+from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
-from tlo.methods import (
-    alri,
-    cardio_metabolic_disorders,
-    care_of_women_during_pregnancy,
-    contraception,
-    demography,
-    depression,
-    diarrhoea,
-    enhanced_lifestyle,
-    epi,
-    healthburden,
-    healthseekingbehaviour,
-    healthsystem,
-    hiv,
-    rti,
-    labour,
-    malaria,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    stunting,
-    symptommanager,
-    tb,
-    wasting,
-)
+
 
 class GenerateEventChains(BaseScenario):
     def __init__(self):

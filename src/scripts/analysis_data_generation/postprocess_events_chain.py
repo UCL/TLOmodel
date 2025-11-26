@@ -1,6 +1,7 @@
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 
+
 # Remove from every individual's event chain all events that were fired after death
 def cut_off_events_after_death(df):
 

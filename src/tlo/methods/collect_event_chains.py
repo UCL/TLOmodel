@@ -1,14 +1,13 @@
-from tlo.notify import notifier
-
+import copy
 from pathlib import Path
-from typing import Optional, List
-from tlo import Module, Parameter, Types, logging, population
-from tlo.population import Population
+from typing import List, Optional
+
 import pandas as pd
 
-from tlo.util import df_to_EAV, convert_chain_links_into_EAV, read_csv_files
-
-import copy
+from tlo import Module, Parameter, Types, logging
+from tlo.notify import notifier
+from tlo.population import Population
+from tlo.util import convert_chain_links_into_EAV, df_to_EAV
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -84,8 +83,11 @@ class CollectEventChains(Module):
         
     def on_notification_pop_has_been_initialised(self, data):
 
-        # When logging events for each individual to reconstruct chains, only the changes in individual properties will be logged.
-        # At the start of the simulation + when a new individual is born, we therefore want to store all of their properties at the start.
+        # When logging events for each individual to reconstruct chains,
+        # only the changes in individual properties will be logged.
+        # At the start of the simulation + when a new individual is born,
+        # we therefore want to store all of their properties
+        # at the start.
         if self.generate_event_chains:
 
             # EDNAV structure to capture status of individuals at the start of the simulation
@@ -99,8 +101,9 @@ class CollectEventChains(Module):
     def on_notification_of_birth(self, data):
                 
         if self.generate_event_chains:
-            # When individual is born, store their initial properties to provide a starting point to the chain of property
-            # changes that this individual will undergo as a result of events taking place.
+            # When individual is born, store their initial properties to provide a starting point to the
+            # chain of property changes that this individual will undergo
+            # as a result of events taking place.
             link_info = data['link_info']
             link_info.update(self.sim.population.props.loc[data['target']].to_dict())
             chain_links = {}
@@ -114,13 +117,19 @@ class CollectEventChains(Module):
                                
         
     def on_notification_event_about_to_run(self, data):
-        """Do this when notified that an event is about to run. This function checks whether this event should be logged as part of the event chains, and if so stored required information before the event has occurred. """
-
+        """Do this when notified that an event is about to run. 
+        This function checks whether this event should be logged as part of the event chains, a
+        nd if so stored required information before the event has occurred.
+        """
+        
         # Only log event if
         # 1) generate_event_chains is set to True
         # 2) the event belongs to modules of interest and
         # 3) the event is not in the list of events to ignore
-        if not self.generate_event_chains or (data['module'] not in self.modules_of_interest) or (data['link_info']['EventName'] in self.events_to_ignore):
+        if (not self.generate_event_chains
+            or (data['module'] not in self.modules_of_interest)
+            or (data['link_info']['EventName'] in self.events_to_ignore)
+            ):
             return
         
         # Initialise these variables
@@ -154,7 +163,8 @@ class CollectEventChains(Module):
             # a meaningful change, make a copy of the while pop dataframe/mni before the event has occurred.
             self.df_before = self.sim.population.props.copy()
             if 'PregnancySupervisor' in self.sim.modules:
-                self.entire_mni_before = copy.deepcopy(self.sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+                self.entire_mni_before = copy.deepcopy(
+                                            self.sim.modules['PregnancySupervisor'].mother_and_newborn_info)
             else:
                 self.entire_mni_before = None
 
@@ -162,7 +172,9 @@ class CollectEventChains(Module):
         
     
     def on_notification_event_has_just_ran(self, data):
-        """ If print_chains=True, this function logs the event and identifies and logs the any property changes that have occured to one or multiple individuals as a result of the event taking place. """
+        """ If print_chains=True, this function logs the event and identifies and logs the any property 
+        changes that have occured to one or multiple individuals as a result of the event taking place. 
+        """
         
         if not self.print_chains:
             return
@@ -228,7 +240,10 @@ class CollectEventChains(Module):
                 entire_mni_after = None
             
             #  Create and store the event and dictionary of changes for affected individuals
-            chain_links = self.compare_population_dataframe_and_mni(self.df_before, df_after, self.entire_mni_before, entire_mni_after)
+            chain_links = self.compare_population_dataframe_and_mni(self.df_before,
+                                                                    df_after,
+                                                                    self.entire_mni_before,
+                                                                    entire_mni_after)
 
         # Log chains
         if chain_links:
@@ -267,14 +282,16 @@ class CollectEventChains(Module):
         for person in all_individuals:
             if person not in entire_mni_before: # but is afterward
                 for key in entire_mni_after[person]:
-                    if self.mni_values_differ(entire_mni_after[person][key],self.sim.modules['PregnancySupervisor'].default_all_mni_values[key]):
+                    if self.mni_values_differ(entire_mni_after[person][key],
+                                              self.sim.modules['PregnancySupervisor'].default_all_mni_values[key]):
                         if person not in diffs:
                             diffs[person] = {}
                         diffs[person][key] = entire_mni_after[person][key]
                     
             elif person not in entire_mni_after: # but is beforehand
                 for key in entire_mni_before[person]:
-                    if self.mni_values_differ(entire_mni_before[person][key],self.sim.modules['PregnancySupervisor'].default_all_mni_values[key]):
+                    if self.mni_values_differ(entire_mni_before[person][key],
+                                              self.sim.modules['PregnancySupervisor'].default_all_mni_values[key]):
                         if person not in diffs:
                             diffs[person] = {}
                         diffs[person][key] = self.sim.modules['PregnancySupervisor'].default_all_mni_values[key]
@@ -290,8 +307,12 @@ class CollectEventChains(Module):
         return diffs
         
     def compare_population_dataframe_and_mni(self,df_before, df_after, entire_mni_before, entire_mni_after):
-        """ This function compares the population dataframe and mni dictionary before/after a population-wide event has occurred.
-        It allows us to identify the individuals for which this event led to a significant (i.e. property) change, and to store the properties which have changed as a result of it. """
+        """ 
+        This function compares the population dataframe and mni dictionary before/after a population-wide e
+        vent has occurred. 
+        It allows us to identify the individuals for which this event led to a significant (i.e. property) change, 
+        and to store the properties which have changed as a result of it. 
+        """
         
         # Create a mask of where values are different
         diff_mask = (df_before != df_after) & ~(df_before.isna() & df_after.isna())
@@ -300,9 +321,8 @@ class CollectEventChains(Module):
         else:
             diff_mni = []
         
-        # Create an empty list to store changes for each of the individuals
+        # Create an empty dict to store changes for each of the individuals
         chain_links = {}
-        len_of_diff = len(diff_mask)
 
         # Loop through each row of the mask
         persons_changed = []
@@ -344,7 +364,6 @@ class CollectEventChains(Module):
                             link_info[key_prop] = diff_mni[key][key_prop]
                             
                         chain_links[key] = link_info
-
         return chain_links
 
 
