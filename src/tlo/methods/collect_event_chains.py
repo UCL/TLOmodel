@@ -78,22 +78,15 @@ class CollectEventChains(Module):
         if self.modules_of_interest == ['*']:
             self.modules_of_interest = list(self.sim.modules.keys())
 
-    def get_generate_event_chains(self) -> bool:
-        """Returns `generate_event_chains`. (Should be equal to what is specified by the parameter, but
-        overwrite with what was provided in argument if an argument was specified -- provided for backward
-        compatibility/debugging.)"""
-        return self.parameters['generate_event_chains'] \
-            if self.arg_generate_event_chains is None \
-            else self.arg_generate_event_chains
-
     def on_birth(self, mother, child):
         # Could the notification of birth simply take place here?
         pass
         
     def on_notification_pop_has_been_initialised(self, data):
+
         # When logging events for each individual to reconstruct chains, only the changes in individual properties will be logged.
         # At the start of the simulation + when a new individual is born, we therefore want to store all of their properties at the start.
-        if self.parameters['generate_event_chains']:
+        if self.generate_event_chains:
 
             # EDNAV structure to capture status of individuals at the start of the simulation
             ednav = df_to_EAV(self.sim.population.props, self.sim.date, 'StartOfSimulation')
@@ -105,7 +98,7 @@ class CollectEventChains(Module):
                                
     def on_notification_of_birth(self, data):
                 
-        if self.parameters['generate_event_chains']:
+        if self.generate_event_chains:
             # When individual is born, store their initial properties to provide a starting point to the chain of property
             # changes that this individual will undergo as a result of events taking place.
             link_info = data['link_info']
@@ -237,13 +230,15 @@ class CollectEventChains(Module):
             #  Create and store the event and dictionary of changes for affected individuals
             chain_links = self.compare_population_dataframe_and_mni(self.df_before, df_after, self.entire_mni_before, entire_mni_after)
 
-            if chain_links:
-                # Convert chain_links into EAV
-                ednav = convert_chain_links_into_EAV(chain_links)
+        # Log chains
+        if chain_links:
+        
+            # Convert chain_links into EAV
+            ednav = convert_chain_links_into_EAV(chain_links)
 
-                logger.info(key='event_chains',
-                      data= ednav.to_dict(),
-                      description='Links forming chains of events for simulated individuals')
+            logger.info(key='event_chains',
+                  data= ednav.to_dict(),
+                  description='Links forming chains of events for simulated individuals')
                       
         # Reset variables
         self.print_chains = False

@@ -413,6 +413,23 @@ def unpack_dict_rows(df, non_dict_cols=None):
 
     return out.reset_index(drop=True)
 
+def reconstruct_event_chains(df):
+                
+    recon = unpack_dict_rows(df, ['date'])
+
+    # For now convert value to string in all cases to facilitate manipulation. This can be reversed later.
+    recon['V'] = recon['V'].apply(str)
+    # Collapse into 'E', 'EventDate', 'EventName', 'Info' format where 'Info' is dict listing attributes (e.g. {a1:v1, a2:v2, a3:v3, ...} )
+    df_collapsed = (
+            recon.groupby(['E', 'date', 'EventName'])
+              .apply(lambda g: dict(zip(g['A'], g['V'])))
+              .reset_index(name='Info')
+        )
+    df_final = df_collapsed.sort_values(by=['E','date'], ascending=True).reset_index(drop=True)
+    #birth_count = (df_final['EventName'] == 'Birth').sum()
+    
+    return df_final
+
     
 def print_filtered_df(df):
     """
@@ -460,21 +477,9 @@ def extract_event_chains(results_folder: Path,
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
 
-                recon = unpack_dict_rows(df, ['date'])
-                print(recon)
-                #del recon['EventDate']
-                # For now convert value to string in all cases to facilitate manipulation. This can be reversed later.
-                recon['V'] = recon['V'].apply(str)
-                # Collapse into 'E', 'EventDate', 'EventName', 'Info' format where 'Info' is dict listing attributes (e.g. {a1:v1, a2:v2, a3:v3, ...} )
-                df_collapsed = (
-                        recon.groupby(['E', 'date', 'EventName'])
-                          .apply(lambda g: dict(zip(g['A'], g['V'])))
-                          .reset_index(name='Info')
-                    )
-                df_final = df_collapsed.sort_values(by=['E','date'], ascending=True).reset_index(drop=True)
-                birth_count = (df_final['EventName'] == 'Birth').sum()
+                df_final = reconstruct_event_chains(df)
 
-                print("Birth count for run ", run, "is ", birth_count)
+                # Offset person ID to account for the fact that we are collecting chains across runs
                 df_final['E'] = df_final['E'] + ID_offset
                 
                 # Calculate ID offset for next run

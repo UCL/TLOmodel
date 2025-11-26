@@ -96,7 +96,7 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
 
 def df_to_EAV(df, date, event_name):
     """Function to convert dataframe into EAV"""
-    eav = df.stack().reset_index()
+    eav = df.stack(dropna=False).reset_index()
     eav.columns = ['E', 'A', 'V']
     eav['EventName'] = event_name
     eav = eav[["E", "EventName", "A", "V"]]

@@ -266,7 +266,7 @@ class Simulation:
             a keyword parameter for clarity.
         """
         start = time.time()
-
+        
         # Collect information from all modules, that is required the population dataframe
         for module in self.modules.values():
             module.pre_initialise_population()
@@ -285,9 +285,6 @@ class Simulation:
                 key="debug",
                 data=f"{module.name}.initialise_population() {time.time() - start1} s",
             )
-            
-        # Dispatch notification that pop has been initialised
-        notifier.dispatch("simulation.pop_has_been_initialised", data={})
                                
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
@@ -307,6 +304,12 @@ class Simulation:
         for module in self.modules.values():
             module.initialise_simulation(self)
         self._initialised = True
+        
+        # Since CollectEventChains listeners are added to notified upon module initialisation, this can only be dispatched here.
+        # Otherwise, would have to add listener outside of CollectEventChains initialisation
+        
+        # Dispatch notification that pop has been initialised
+        notifier.dispatch("simulation.pop_has_been_initialised", data={"EventName" : "StartOfSimulation"})
 
     def finalise(self, wall_clock_time: Optional[float] = None) -> None:
         """Finalise all modules in simulation and close logging file if open.
