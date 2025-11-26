@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Population, Property, Simulation, Types, logging
+from collections import deque
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -12,6 +13,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 # from tlo.methods.symptommanager import Symptom
 from tlo.population import IndividualProperties
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -63,6 +65,13 @@ class CMDChronicKidneyDisease(Module):
         "rp_ckd_herbal_use_baseline": Parameter(
             Types.REAL, "Relative risk of having CKD at baseline if a person uses herbal medicine"
         ),
+        "prob_transplant_success": Parameter(
+            Types.REAL, "Probability that kidney transplant surgery is successful"
+        ),
+        "max_surgeries_per_month": Parameter(
+            Types.INT,
+            "Maximum number of kidney transplant surgeries that can be performed in a month"
+        ),
     }
 
     PROPERTIES = {
@@ -102,6 +111,7 @@ class CMDChronicKidneyDisease(Module):
     def __init__(self):
         super().__init__()
         self.cons_item_codes = None  # (Will store consumable item codes)
+        self.kidney_transplant_waiting_list = deque()
 
     def read_parameters(self, data_folder: str | Path) -> None:
         """ initialise module parameters. Here we are assigning values to all parameters defined at the beginning of
@@ -127,6 +137,9 @@ class CMDChronicKidneyDisease(Module):
         self.parameters['prob_ckd_renal_clinic'] = 0.7
         self.parameters['prob_ckd_transplant_eval'] = 0.3
         self.parameters['prop_herbal_use_ckd'] = 0.35
+
+        self.parameters['prob_transplant_success'] = 0.8
+        self.parameters['max_surgeries_per_month'] = 3
 
         #todo use chronic_kidney_disease_symptoms from cardio_metabolic_disorders.py
 
@@ -266,7 +279,7 @@ class CMDChronicKidneyDisease(Module):
             get_item_codes('Radiopharmaceuticals'): 4
         }
 
-        self.cons_item_codes['Kidney_Transplant_Surgery'] = {
+        self.cons_item_codes['kidney_transplant_surgery_cons'] = {
             # Prepare surgical instruments
             # administer an IV
             get_item_codes('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
@@ -345,7 +358,7 @@ class CMDChronicKidneyDiseasePollEvent(RegularEvent, PopulationScopeEventMixin):
                 size=len(eligible_idx),
                 p=probs
             )
-
+            #todo stage1_4 should go to renal_clinic and stage5 should go to transplant_eval and/or haemodialysis
             for person_id, hsi_choice in zip(eligible_idx, hsi_choices):
                 if hsi_choice == 'renal_clinic':
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -361,6 +374,29 @@ class CMDChronicKidneyDiseasePollEvent(RegularEvent, PopulationScopeEventMixin):
                         topen=self.sim.date,
                         tclose=self.sim.date + DateOffset(months=1),
                     )
+
+        surgeries_done = 0
+
+        while (
+            surgeries_done < self.module.parameters['max_surgeries_per_month']
+            and len(self.module.kidney_transplant_waiting_list) > 0
+        ):
+            next_person = self.module.kidney_transplant_waiting_list.popleft()
+
+            # Skip if dead
+            if not population.props.at[next_person, 'is_alive']:
+                continue
+
+            # Schedule the transplant
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Kidney_Transplant_Surgery(self.module, next_person),
+                priority=1,
+                topen=self.sim.date,
+                tclose=self.sim.date + DateOffset(months=1)
+            )
+            # increments until max_surgeries_per_month is reached
+            surgeries_done += 1
+
 
     def do_at_generic_first_appt(
         self,
@@ -427,7 +463,7 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
                                                                 priority=1)
 
 
-class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEventMixin):
+class HSI_Haemodialysis_Refill(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event in which a person receives a dialysis session 2 times a week
     adding up to 8 times a month."""
 
@@ -467,60 +503,6 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
                                                             priority=1
                                                             )
 
-
-class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is the event a person undergoes in order to determine whether an individual is eligible for a kidney transplant
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, CMDChronicKidneyDisease)
-
-        # Define the necessary information for an HSI
-        #todo need to update priority number in resource files
-        self.TREATMENT_ID = 'CKD_Kidney_Transplant'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug(key='debug',
-                     data=f'This is HSI_Kidney_Transplant_surgery for person {person_id}')
-        df = self.sim.population.props
-        person = df.loc[person_id]
-        hs = self.sim.modules["HealthSystem"]
-        if not df.at[person_id, 'is_alive']:
-            # The person is not alive, the event did not happen: so return a blank footprint
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-
-        # if person already on treatment or not yet diagnosed, do nothing
-        if person["ckd_on_treatment"] or not person["ckd_diagnosed"]:
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        assert pd.isnull(df.at[person_id, 'ckd_date_treatment'])
-
-        is_cons_available = self.get_consumables(
-            self.module.cons_item_codes['kidney_transplant_surgery_cons']
-        )
-
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='kidney_transplant_surgery_tests',
-            hsi_event=self
-        )
-
-        if dx_result and is_cons_available:
-            self.add_equipment({'Patient monitors', 'Infusion pump', 'Dialysis machine', 'Bloodlines', 'Water tank',
-                                'Reverse osmosis machine', 'Water softener', 'Carbon filter', '5 micro filter',
-                                'ventilator', 'Electrocautery unit', 'Suction machine', 'theatre bed',
-                                'cold static storage' 'perfusion machine', 'Ultrasound machine', 'drip stand',
-                                'trolley', })
-
-        if dx_result and is_cons_available:
-            # record date of diagnosis
-            df.at[person_id, 'ckd_date_diagnosis'] = self.sim.date
-            df.at[person_id, 'ckd_date_treatment'] = self.sim.date
-            df.at[person_id, 'ckd_stage_at_which_treatment_given'] = df.at[person_id, 'ckd_status']
 
 
 class HSI_Kidney_Transplant_Evaluation(HSI_Event, IndividualScopeEventMixin):
@@ -568,6 +550,118 @@ class HSI_Kidney_Transplant_Evaluation(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'ckd_date_diagnosis'] = self.sim.date
             df.at[person_id, 'ckd_date_treatment'] = self.sim.date
             df.at[person_id, 'ckd_stage_at_which_treatment_given'] = df.at[person_id, 'ckd_status']
+
+            # Append to waiting list if treatment is successful
+            self.module.kidney_transplant_waiting_list.append(person_id)
+
+        else:
+            hs.schedule_hsi_event(
+                HSI_Haemodialysis_Refill(self.module, person_id),
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(days=1),
+                priority=1
+            )
+
+
+class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is the event a person undergoes in order to determine whether an individual is eligible for a kidney transplant
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, CMDChronicKidneyDisease)
+
+        # Define the necessary information for an HSI
+        # todo need to update priority number in resource files
+        self.TREATMENT_ID = 'CKD_Kidney_Transplant'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(key='debug',
+                     data=f'This is HSI_Kidney_Transplant_Surgery for person {person_id}')
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+        if not df.at[person_id, 'is_alive']:
+            # The person is not alive, the event did not happen: so return a blank footprint
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
+        # if person already on treatment or not yet diagnosed, do nothing
+        if person["ckd_on_treatment"] or not person["ckd_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        assert pd.isnull(df.at[person_id, 'ckd_date_treatment'])
+
+        is_cons_available = self.get_consumables(
+            self.module.cons_item_codes['kidney_transplant_surgery_cons']
+        )
+
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='kidney_transplant_surgery_tests',
+            hsi_event=self
+        )
+
+        # Check if transplant is successful
+        transplant_successful = self.module.rng.random() < self.module.parameters['prob_transplant_success']
+
+        if dx_result and is_cons_available:
+            self.add_equipment({'Patient monitors', 'Infusion pump', 'Dialysis machine', 'Bloodlines', 'Water tank',
+                                'Reverse osmosis machine', 'Water softener', 'Carbon filter', '5 micro filter',
+                                'ventilator', 'Electrocautery unit', 'Suction machine', 'theatre bed',
+                                'cold static storage' 'perfusion machine', 'Ultrasound machine', 'drip stand',
+                                'trolley', })
+
+        if transplant_successful:
+            # df.at[person_id, 'ckd_transplant_successful'] = True
+            df.at[person_id, 'ckd_date_transplant'] = self.sim.date
+            # df.at[person_id, 'ckd_on_anti_rejection_drugs'] = True
+            # df.at[person_id, 'ckd_on_transplant_waiting_list'] = False
+            # df.at[person_id, 'ckd_stage_at_which_treatment_given'] = df.at[person_id, 'ckd_status']
+
+            # Schedule monthly anti-rejection drug refill
+            next_month = self.sim.date + pd.DateOffset(months=1)
+            hs.schedule_hsi_event(
+                HSI_AntiRejectionDrug_Refill(self.module, person_id),
+                topen=next_month,
+                tclose=next_month + pd.DateOffset(days=5),
+                priority=1
+            )
+
+        else:
+            df.at[person_id, 'ckd_date_transplant'] = self.sim.date
+
+            self.sim.modules['Demography'].do_death(
+                individual_id=person_id,
+                cause='chronic_kidney_disease_death',
+                originating_module=self.module
+            )
+
+
+class HSI_AntiRejectionDrug_Refill(HSI_Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id)
+        self.TREATMENT_ID = 'CKD_AntiRejectionDrug_Refill'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+
+        if not df.at[person_id, 'is_alive']:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        # Person stays on anti-rejection drugs for life
+        next_month = self.sim.date + pd.DateOffset(months=1)
+        self.sim.modules["HealthSystem"].schedule_hsi_event(
+            self,
+            topen=next_month,
+            tclose=next_month + pd.DateOffset(days=5),
+            priority=1
+        )
+
 
 
 class CMDChronicKidneyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
