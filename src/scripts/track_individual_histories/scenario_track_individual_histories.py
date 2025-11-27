@@ -19,7 +19,7 @@ import pandas as pd
 
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
-#from tlo.methods import individual_history_tracker
+from tlo.methods import individual_history_tracker
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -53,7 +53,7 @@ class TrackIndividualHistories(BaseScenario):
 
     def modules(self):
         return (
-            fullmodel()# + [individual_history_tracker.IndividualHistoryTracker()]
+            fullmodel() + [individual_history_tracker.IndividualHistoryTracker()]
         )
 
     def draw_parameters(self, draw_number, rng):
