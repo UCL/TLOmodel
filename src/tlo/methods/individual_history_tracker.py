@@ -12,19 +12,17 @@ from tlo.util import convert_chain_links_into_EAV, df_to_EAV
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class CollectEventChains(Module):
+class IndividualHistoryTracker(Module):
 
     def __init__(
         self,
         name: Optional[str] = None,
-        generate_event_chains: Optional[bool] = None,
         modules_of_interest: Optional[List[str]] = None,
         events_to_ignore: Optional[List[str]] = None
         
     ):
         super().__init__(name)
         
-        self.generate_event_chains = generate_event_chains
         self.modules_of_interest = modules_of_interest
         self.events_to_ignore = events_to_ignore
     
@@ -39,9 +37,6 @@ class CollectEventChains(Module):
         
     PARAMETERS = {
         # Options within module
-        "generate_event_chains": Parameter(
-            Types.BOOL, "Whether or not we want to collect chains of events for individuals"
-        ),
         "modules_of_interest": Parameter(
             Types.LIST, "Restrict the events collected to specific modules. If *, print for all modules"
         ),
@@ -57,13 +52,10 @@ class CollectEventChains(Module):
         notifier.add_listener("event.has_just_ran", self.on_notification_event_has_just_ran)
         
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
-        self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath/"ResourceFile_GenerateEventChains/parameter_values.csv"))
+        self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath/"ResourceFile_IndividualHistoryTracker/parameter_values.csv"))
         
     def initialise_population(self, population):
         # Use parameter file values by default, if not overwritten
-        self.generate_event_chains = self.parameters['generate_event_chains'] \
-            if self.generate_event_chains is None \
-            else self.generate_event_chains
             
         self.modules_of_interest = self.parameters['modules_of_interest'] \
             if self.modules_of_interest is None \
@@ -88,32 +80,30 @@ class CollectEventChains(Module):
         # At the start of the simulation + when a new individual is born,
         # we therefore want to store all of their properties
         # at the start.
-        if self.generate_event_chains:
+        
+        # EDNAV structure to capture status of individuals at the start of the simulation
+        ednav = df_to_EAV(self.sim.population.props, self.sim.date, 'StartOfSimulation')
 
-            # EDNAV structure to capture status of individuals at the start of the simulation
-            ednav = df_to_EAV(self.sim.population.props, self.sim.date, 'StartOfSimulation')
-
-            logger.info(key='event_chains',
-                               data = ednav.to_dict(),
-                               description='Links forming chains of events for simulated individuals')
+        logger.info(key='individual_histories',
+                           data = ednav.to_dict(),
+                           description='Links forming chains of events for simulated individuals')
                                
                                
     def on_notification_of_birth(self, data):
                 
-        if self.generate_event_chains:
-            # When individual is born, store their initial properties to provide a starting point to the
-            # chain of property changes that this individual will undergo
-            # as a result of events taking place.
-            link_info = data['link_info']
-            link_info.update(self.sim.population.props.loc[data['target']].to_dict())
-            chain_links = {}
-            chain_links[data['target']] = link_info
+        # When individual is born, store their initial properties to provide a starting point to the
+        # chain of property changes that this individual will undergo
+        # as a result of events taking place.
+        link_info = data['link_info']
+        link_info.update(self.sim.population.props.loc[data['target']].to_dict())
+        chain_links = {}
+        chain_links[data['target']] = link_info
 
-            ednav = convert_chain_links_into_EAV(chain_links)
-            
-            logger.info(key='event_chains',
-                               data = ednav.to_dict(),
-                               description='Links forming chains of events for simulated individuals')
+        ednav = convert_chain_links_into_EAV(chain_links)
+        
+        logger.info(key='individual_histories',
+                           data = ednav.to_dict(),
+                           description='Links forming chains of events for simulated individuals')
                                
         
     def on_notification_event_about_to_run(self, data):
@@ -123,11 +113,10 @@ class CollectEventChains(Module):
         """
         
         # Only log event if
-        # 1) generate_event_chains is set to True
-        # 2) the event belongs to modules of interest and
-        # 3) the event is not in the list of events to ignore
-        if (not self.generate_event_chains
-            or (data['module'] not in self.modules_of_interest)
+        # 1) the event belongs to modules of interest and
+        # 2) the event is not in the list of events to ignore
+        if (
+            (data['module'] not in self.modules_of_interest)
             or (data['link_info']['EventName'] in self.events_to_ignore)
             ):
             return
@@ -251,7 +240,7 @@ class CollectEventChains(Module):
             # Convert chain_links into EAV
             ednav = convert_chain_links_into_EAV(chain_links)
 
-            logger.info(key='event_chains',
+            logger.info(key='individual_histories',
                   data= ednav.to_dict(),
                   description='Links forming chains of events for simulated individuals')
                       

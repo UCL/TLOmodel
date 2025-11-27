@@ -413,7 +413,7 @@ def unpack_dict_rows(df, non_dict_cols=None):
 
     return out.reset_index(drop=True)
 
-def reconstruct_event_chains(df):
+def reconstruct_individual_histories(df):
                 
     recon = unpack_dict_rows(df, ['date'])
 
@@ -453,7 +453,7 @@ def print_filtered_df(df):
     print(filtered)
     
     
-def extract_event_chains(results_folder: Path,
+def extract_individual_histories(results_folder: Path,
                         ) -> dict:
     """Utility function to collect chains of events. Individuals across runs of the same draw
     will be combined into unique df.
@@ -461,8 +461,8 @@ def extract_event_chains(results_folder: Path,
     format 'E', 'EventDate', 'EventName', 'Info' where 'Info' is a dictionary that combines 
     A&Vs for a particular individual + date + event name combination.
     """
-    module = 'tlo.collect_event_chains'
-    key = 'event_chains'
+    module = 'tlo.individual_history_tracker'
+    key = 'individual_histories'
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
@@ -481,7 +481,7 @@ def extract_event_chains(results_folder: Path,
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
 
-                df_final = reconstruct_event_chains(df)
+                df_final = reconstruct_individual_histories(df)
 
                 # Offset person ID to account for the fact that we are collecting chains across runs
                 df_final['E'] = df_final['E'] + ID_offset

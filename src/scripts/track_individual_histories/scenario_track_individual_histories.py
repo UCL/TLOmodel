@@ -1,14 +1,14 @@
-"""This Scenario file run the model to generate event chans
+"""This Scenario file run the model to track individual histories
 
 Run on the batch system using:
 ```
 tlo batch-submit 
-    src/scripts/analysis_data_generation/scenario_generate_chains.py
+    src/scripts/analysis_data_generation/scenario_track_individual_histories.py
 ```
 
 or locally using:
 ```
-    tlo scenario-run src/scripts/analysis_data_generation/scenario_generate_chains.py
+    tlo scenario-run src/scripts/analysis_data_generation/scenario_track_individual_histories.py
 ```
 
 """
@@ -37,7 +37,7 @@ class GenerateEventChains(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'generate_event_chains',
+            'filename': 'track_individual_histories',
             'directory': Path('./outputs'),  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
@@ -46,7 +46,7 @@ class GenerateEventChains(BaseScenario):
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.collect_event_chains': logging.INFO
+                'tlo.methods.individual_history_tracker': logging.INFO
             }
         }
 
@@ -68,9 +68,6 @@ class GenerateEventChains(BaseScenario):
                 mix_scenarios(
                     self._baseline(),
                     {
-                     "CollectEventChains": {
-                            "generate_event_chains": True,
-                      },
                     }
                 ),
 

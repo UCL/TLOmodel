@@ -65,7 +65,7 @@ if __name__ == "__main__":
         type=Path,
         help=(
             "Directory containing results from running "
-            "src/scripts/analysis_data_generation/scenario_collect_event_chains.py "
+            "src/scripts/analysis_data_generation/scenario_track_individual_histories.py "
         ),
         default=None,
         required=False
