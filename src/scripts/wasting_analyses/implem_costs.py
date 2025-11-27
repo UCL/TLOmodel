@@ -210,8 +210,7 @@ if __name__ == "__main__":
         budg_series = grouped[budg_col].dropna()
 
         def fmt(v):
-            return f"{v:,.2f}" if pd.notna(v) else "(no data)"
-
+            return f"{v:,.0f}" if pd.notna(v) else "(no data)"
         ex_min = expend_series.min() if not expend_series.empty else float("nan")
         ex_max = expend_series.max() if not expend_series.empty else float("nan")
         ex_median = expend_series.median() if not expend_series.empty else float("nan")
