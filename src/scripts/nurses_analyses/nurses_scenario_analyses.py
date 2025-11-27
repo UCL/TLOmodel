@@ -65,18 +65,15 @@ class StaffingScenario(BaseScenario):
                     'cons_availability': 'default',
                     'cons_availability_postSwitch': "all",
                     # 'year_cons_availability_switch': 2025,
-                    'HR_budget_growth_rate': self.hr_budget[0],
                     'yearly_HR_scaling_mode': 'historical_scaling',  # for 5 years of 2020-2024; source data year 2019
-                    'start_year_HR_expansion_by_officer_type': self.YEAR_OF_HRH_EXPANSION,
-                    'end_year_HR_expansion_by_officer_type': self.end_date.year,
                     "policy_name": 'Naive',
                     "tclose_overwrite": 1,
                     "tclose_days_offset_overwrite": 7,
                 },
                 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                     'max_healthcare_seeking': [False, False],
-                    'max_healthsystem_function': self.hs_function[0],
-                    'year_of_switch': self.YEAR_OF_HRH_EXPANSION,
+                    'max_healthsystem_function': [False, False],
+                    'year_of_switch': 2025,
                 }
             },
         )
@@ -126,7 +123,7 @@ class StaffingScenario(BaseScenario):
                     self._default_of_all_scenarios(),
                     {
                         "HealthSystem": {
-                            'ResourceFile_HR_scaling_by_level_and_officer_type': "historical_scaling",
+                            'ResourceFile_HR_scaling_by_level_and_officer_type': "default",
                             'mode_appt_constraints_postSwitch': 2,
                             "use_funded_or_actual_staffing": "actual",
                         },
@@ -138,19 +135,32 @@ class StaffingScenario(BaseScenario):
                     self._default_of_all_scenarios(),
                     {
                         "HealthSystem": {
-                            'ResourceFile_HR_scaling_by_level_and_officer_type': "historical_scaling",
+                            'ResourceFile_HR_scaling_by_level_and_officer_type': "default",
                             'mode_appt_constraints_postSwitch': 2,
                             "use_funded_or_actual_staffing": "funded_plus",
                         },
                     }
                 ),
 
+            "Improved Staffing Doubled Establishment":
+                mix_scenarios(
+                    self._default_of_all_scenarios(),
+                    {
+                        "HealthSystem": {
+                            'ResourceFile_HR_scaling_by_level_and_officer_type': "custom_doubling",
+                            'mode_appt_constraints_postSwitch': 2,
+                            "use_funded_or_actual_staffing": "funded_plus",
+                        },
+                    }
+                ),
+
+
             "Worse Case":
                 mix_scenarios(
                     self._default_of_all_scenarios(),
                     {
                         "HealthSystem": {
-                            'ResourceFile_HR_scaling_by_level_and_officer_type': "historical_scaling",
+                            'ResourceFile_HR_scaling_by_level_and_officer_type': "custom_worse",
                             'mode_appt_constraints_postSwitch': 2,
                             "use_funded_or_actual_staffing": "actual",
                         },
