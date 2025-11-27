@@ -81,7 +81,7 @@ class ClimateDisruptionScenario(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {
             #"Baseline": self._baseline(),
-            "SSP 245 Mean": self._ssp585_mean(),
+            "SSP 245 Mean": self._ssp245_mean(),
         }
 
     def _baseline(self) -> Dict:
@@ -111,7 +111,7 @@ class ClimateDisruptionScenario(BaseScenario):
         )
 
 
-    def _ssp345_mean(self) -> Dict:
+    def _ssp245_mean(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario."""
         return mix_scenarios(
             get_parameters_for_status_quo(),
