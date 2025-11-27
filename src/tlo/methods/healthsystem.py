@@ -339,6 +339,45 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
+        # Climate disruptions
+        "projected_precip_disruptions": Parameter(
+            Types.REAL, "Probabilities of precipitation-mediated " "disruptions to services by month, year, and clinic."
+        ),
+        "climate_ssp": Parameter(
+            Types.STRING,
+            "Which future shared socioeconomic pathway (determines degree of "
+            "warming) is under consideration."
+            "Options are ssp126, ssp245, and ssp585, in terms of increasing "
+            "severity.",
+        ),
+        "climate_model_ensemble_model": Parameter(
+            Types.STRING,
+            "Which model from the model ensemble for each climate ssp is under consideration."
+            "Options are lowest, mean, and highest, based on total precipitation between 2025 and 2070.",
+        ),
+        "scale_factor_delay_in_seeking_care_weather": Parameter(
+            Types.REAL,
+            "If faced with a climate disruption, and it is determined the individual will "
+            "reseek healthcare, the scale factor for number of days of delay in seeking healthcare."
+            "Scale factor makes it proportional to the urgency.",
+        ),  # gamma in write yp
+        "rescaling_prob_seeking_after_disruption": Parameter(
+            Types.REAL,
+            "If faced with a climate disruption, and it is determined the individual will "
+            "reseek healthcare, scaling of their original probability of seeking care.",
+        ),  # beta in write yp
+        "rescaling_prob_disruption": Parameter(
+            Types.REAL,
+            "Due to uknown behaviours (from patient and health practiciion), broken chains of events, etc, which cause discrepencies  "
+            "between the estimated disruptions and those modelled in TLO, rescale the original probability of disruption.",
+        ),  # alpha in write yp
+        "services_affected_precip": Parameter(
+            Types.STRING, "Which modelled services can be affected by weather. Options are all, none"
+        ),
+        "scale_factor_severity_disruption_and_delay": Parameter(
+            Types.REAL,
+            "Scale factor that changes the delay in reseeking healthcare to the severity of disruption (as measured by probability of disruption)",
+        ),
     }
 
     PROPERTIES = {
@@ -364,6 +403,13 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
+        projected_precip_disruptions: Optional[List[str]] = None,
+        climate_ssp: Optional[str] = "ssp245",
+        climate_model_ensemble_model: Optional[str] = "mean",
+        services_affected_precip: Optional[str] = "none",
+        response_to_disruption: Optional[str] = "delay",
+        scale_factor_delay_in_seeking_care_weather: Optional[float] = 4,
+        scale_factor_severity_disruption_and_delay: Optional[float] = None,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -404,6 +450,17 @@ class HealthSystem(Module):
             end of each day, end of each calendar month, end of each calendar year or
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
+                :param climate_ssp: Which future shared socioeconomic pathway (determines degree of warming) is under consideration.
+                Options are ssp126, ssp245, and ssp585, in terms of increasing severity.
+        :param climate_model_ensemble_model: Which model from the model ensemble for each climate ssp is under consideratin.
+                Options are 'lowest', 'mean', and 'highest', based on total precipitation between 2025 and 2070.
+        :param services_affected_precip: Which modelled services can be affected by weather. Options are 'all', 'none'.
+        :param response_to_disruption: How an appointment that is determined to be affected by weather will be handled. Options are 'delay', 'cancel'.
+        :param scale_delay_in_seeking_care_weather_urgent: The scale factor on number of days delay in reseeking healthcare after an urgent appointmnet has been delayed by weather. Unit is day.
+        :param scale_delay_in_seeking_care_weather_non_urgent: The scale factor number of days delay in reseeking healthcare after an non-urgent appointmnet has been delayed by weather. Unit is day.
+        :param rescaling_prob_seeking_after_disruption: Rescaling of probability of seeking care after a disruption has occurred.
+        :param rescaling_prob_disruption: To account for structural/behavioural assumptions in the TLO and limitations of DHIS2 dataset.
+        :param scale_factor_severity_disruption_and_delay: Scale on the delay in reseeking healthcare based on the "severity" of disruption.
         """
 
         super().__init__(name)
@@ -523,9 +580,15 @@ class HealthSystem(Module):
             # counts over previous log periods
             self._never_ran_hsi_event_counts_log_period = Counter()
             self._never_ran_hsi_event_counts_cumulative = Counter()
+            self._weather_cancelled_hsi_event_counts_log_period = Counter()
+            self._weather_cancelled_hsi_event_counts_cumulative = Counter()
+            self._weather_delayed_hsi_event_counts_log_period = Counter()
+            self._weather_delayed_hsi_event_counts_cumulative = Counter()
+
             # Dictionary mapping from HSI event details to unique integer keys
             self._never_ran_hsi_event_details = dict()
-
+            self._weather_cancelled_hsi_event_details = dict()
+            self._weather_delayed_hsi_event_details = dict()
         elif hsi_event_count_log_period is not None:
             raise ValueError(
                 "hsi_event_count_log_period argument should be one of 'day', 'month' "
@@ -637,6 +700,14 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
+        # Read in climate disruption files
+        # Parameters for climate-mediated disruptions
+        path_to_resourcefiles_for_climate = resourcefilepath / "climate_change_impacts"
+        self.parameters["projected_precip_disruptions"] = pd.read_csv(
+            path_to_resourcefiles_for_climate
+            / f'ResourceFile_Precipitation_Disruptions_{self.parameters["climate_ssp"]}_{self.parameters["climate_model_ensemble_model"]}.csv'
+        )
+
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
 
@@ -704,6 +775,8 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
+
+
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -1807,6 +1880,58 @@ class HealthSystem(Module):
                  priority=priority,
                  )
 
+    def call_and_record_weather_cancelled_hsi_event(self, hsi_event, priority=None):
+        """
+        Record the fact that an HSI event was cancelled because of weather impacts.
+        If this is an individual-level HSI_Event, it will also record the actual appointment footprint
+        :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
+        """
+        # Invoke never ran function here
+        hsi_event.never_ran()
+
+        if hsi_event.facility_info is not None:
+            # Fully-defined HSI Event
+            self.write_to_weather_cancelled_hsi_log(
+                event_details=hsi_event.as_namedtuple(),
+                person_id=hsi_event.target,
+                facility_id=hsi_event.facility_info.id,
+                priority=priority,
+            )
+        else:
+            self.write_to_weather_cancelled_hsi_log(
+                event_details=hsi_event.as_namedtuple(),
+                person_id=-1,
+                facility_id=-1,
+                priority=priority,
+            )
+
+    def call_and_record_weather_delayed_hsi_event(self, hsi_event, priority=None):
+        """
+        Record the fact that an HSI event was DELAYED because of weather impacts.
+        If this is an individual-level HSI_Event, it will also record the actual appointment footprint
+        :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
+        """
+        # Invoke did not run function here
+        # if "CardioMetabolicDisorders_Treatment" in hsi_event.as_namedtuple():
+        #     hsi_event.did_not_run_weather()
+        # else:
+        hsi_event.did_not_run()
+
+        if hsi_event.facility_info is not None:
+            # Fully-defined HSI Event
+            self.write_to_weather_delayed_hsi_log(
+                event_details=hsi_event.as_namedtuple(),
+                person_id=hsi_event.target,
+                facility_id=hsi_event.facility_info.id,
+                priority=priority,
+            )
+        else:
+            self.write_to_weather_delayed_hsi_log(
+                event_details=hsi_event.as_namedtuple(),
+                person_id=-1,
+                facility_id=-1,
+                priority=priority,
+            )
     def write_to_never_ran_hsi_log(
         self,
         event_details: HSIEventDetails,
@@ -1839,7 +1964,71 @@ class HealthSystem(Module):
             appt_footprint=event_details.appt_footprint,
             level=event_details.facility_level,
         )
+    def write_to_weather_cancelled_hsi_log(
+        self,
+        event_details: HSIEventDetails,
+        person_id: int,
+        facility_id: Optional[int],
+        priority: int,
+    ):
+        """Write the log `HSI_Event` and add to the summary counter."""
+        logger_summary.info(
+            key="Weather_cancelled_HSI_Event_full_info",
+            data={
+                "Event_Name": event_details.event_name,
+                "TREATMENT_ID": event_details.treatment_id,
+                "Number_By_Appt_Type_Code": dict(event_details.appt_footprint),
+                "Person_ID": person_id,
+                "priority": priority,
+                "Facility_Level": event_details.facility_level if event_details.facility_level is not None else "-99",
+                "Facility_ID": facility_id if facility_id is not None else -99,
+            },
+            description="record of each HSI event that was cancelled due to weather",
+        )
+        if self._hsi_event_count_log_period is not None:
+            event_details_key = self._weather_cancelled_hsi_event_details.setdefault(
+                event_details, len(self._weather_cancelled_hsi_event_details)
+            )
+            self._weather_cancelled_hsi_event_counts_log_period[event_details_key] += 1
+        self._summary_counter.record_weather_cancelled_hsi_event(
+            treatment_id=event_details.treatment_id,
+            hsi_event_name=event_details.event_name,
+            appt_footprint=event_details.appt_footprint,
+            level=event_details.facility_level,
+        )
 
+    def write_to_weather_delayed_hsi_log(
+        self,
+        event_details: HSIEventDetails,
+        person_id: int,
+        facility_id: Optional[int],
+        priority: int,
+    ):
+        """Write the log `HSI_Event` and add to the summary counter."""
+        logger_summary.info(
+            key="Weather_delayed_HSI_Event_full_info",
+            data={
+                "Event_Name": event_details.event_name,
+                "TREATMENT_ID": event_details.treatment_id,
+                "Number_By_Appt_Type_Code": dict(event_details.appt_footprint),
+                "Person_ID": person_id,
+                "priority": priority,
+                "Facility_Level": event_details.facility_level if event_details.facility_level is not None else "-99",
+                "Facility_ID": facility_id if facility_id is not None else -99,
+            },
+            description="record of each HSI event that was delayed due to weather",
+        )
+        if self._hsi_event_count_log_period is not None:
+            event_details_key = self._weather_delayed_hsi_event_details.setdefault(
+                event_details, len(self._weather_delayed_hsi_event_details)
+            )
+            self._weather_delayed_hsi_event_counts_log_period[event_details_key] += 1
+        self._summary_counter.record_weather_delayed_hsi_event(
+            treatment_id=event_details.treatment_id,
+            hsi_event_name=event_details.event_name,
+            appt_footprint=event_details.appt_footprint,
+            level=event_details.facility_level,
+        )
     def log_current_capabilities_and_usage(self):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
@@ -2213,7 +2402,50 @@ class HealthSystem(Module):
                     in self._never_ran_hsi_event_details.items()
                 }
             )
+    def weather_cancelled_hsi_event_counts(self) -> Counter:
+        """Counts of details of HSI events which were cancelled due to weather so far in simulation.
 
+        Returns a ``Counter`` instance with keys ``HSIEventDetail`` named tuples
+        corresponding to details of HSI events that have been cancelled over simulation so far.
+        """
+        if self._hsi_event_count_log_period is None:
+            return Counter()
+        else:
+            # If in middle of log period _hsi_event_counts_log_period will not be empty
+            # and so overall total counts is sums of counts in both
+            # _hsi_event_counts_cumulative and _hsi_event_counts_log_period
+            total_weather_cancelled_hsi_event_counts = (
+                self._weather_cancelled_hsi_event_counts_cumulative
+                + self._weather_cancelled_hsi_event_counts_log_period
+            )
+            return Counter(
+                {
+                    event_details: total_weather_cancelled_hsi_event_counts[event_details_key]
+                    for event_details, event_details_key in self._weather_cancelled_hsi_event_details.items()
+                }
+            )
+
+    def weather_delayed_hsi_event_counts(self) -> Counter:
+        """Counts of details of HSI events which were delayed due to weather so far in simulation.
+
+        Returns a ``Counter`` instance with keys ``HSIEventDetail`` named tuples
+        corresponding to details of HSI events that have been delayed over simulation so far.
+        """
+        if self._hsi_event_count_log_period is None:
+            return Counter()
+        else:
+            # If in middle of log period _hsi_event_counts_log_period will not be empty
+            # and so overall total counts is sums of counts in both
+            # _hsi_event_counts_cumulative and _hsi_event_counts_log_period
+            total_weather_delayed_hsi_event_counts = (
+                self._weather_delayed_hsi_event_counts_cumulative + self._weather_delayed_hsi_event_counts_log_period
+            )
+            return Counter(
+                {
+                    event_details: total_weather_delayed_hsi_event_counts[event_details_key]
+                    for event_details, event_details_key in self._weather_delayed_hsi_event_details.items()
+                }
+            )
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
@@ -2290,6 +2522,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def process_events_mode_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
+            year = self.sim.date.year
+            month = self.sim.date.month
             # Get the events that are due today:
             list_of_individual_hsi_event_tuples_due_today = self._get_events_due_today()
 
@@ -2299,16 +2533,158 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # For each individual level event, check whether the equipment it has already declared is available. If it
             # is not, then call the HSI's never_run function, and do not take it forward for running; if it is then
             # add it to the list of events to run.
-            list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment = list()
-            for item in list_of_individual_hsi_event_tuples_due_today:
-                if not item.hsi_event.is_all_declared_equipment_available:
-                    self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
-                else:
-                    list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
 
-            # Try to run the list of individual-level events that have their essential equipment
+            list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions = []
+
+            for item in list_of_individual_hsi_event_tuples_due_today:
+                climate_disrupted = False
+                year = 2025
+
+                # First, check for climate disruption
+                if (
+                    year >= 2025
+                    and self.module.parameters["services_affected_precip"] != "none"
+                    and self.module.parameters["services_affected_precip"] is not None
+                ):
+                    fac_level = item.hsi_event.facility_info.level
+                    facility_used = self.sim.population.props.at[item.hsi_event.target, f"level_{fac_level}"]
+                    if (
+                        facility_used
+                        in self.module.parameters["projected_precip_disruptions"]["RealFacility_ID"].values
+                    ):
+                        prob_disruption = self.module.parameters["projected_precip_disruptions"].loc[
+                            (self.module.parameters["projected_precip_disruptions"]["RealFacility_ID"] == facility_used)
+                            & (self.module.parameters["projected_precip_disruptions"]["year"] == year)
+                            & (self.module.parameters["projected_precip_disruptions"]["month"] == month)
+                            & (
+                                self.module.parameters["projected_precip_disruptions"]["service"]
+                                == self.module.parameters["services_affected_precip"]
+                            ),
+                            "disruption",
+                        ]
+                        base_scale = self.module.parameters["scale_factor_delay_in_seeking_care_weather"]
+                        scale_factor_delay = max(1, base_scale + np.random.uniform(-2, 2))
+                        prob_disruption = pd.DataFrame(prob_disruption)
+                        prob_disruption = min(
+                            float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
+                        )  # to account for some structural differences
+                        prob_disruption = 1
+                        if np.random.binomial(1, prob_disruption) == 1:
+                            climate_disrupted = True
+                            if self.sim.modules[
+                                "HealthSeekingBehaviour"
+                            ].force_any_symptom_to_lead_to_healthcareseeking:
+                                self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
+                                    priority=item.priority,
+                                    topen=self.sim.date
+                                          + DateOffset(
+                                        days=(
+                                            int(
+                                                max(scale_factor_delay * item.priority + 1, 1)
+                                                * prob_disruption
+                                                / self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                            )
+                                        )
+                                    ),
+                                    tclose=self.sim.date
+                                           + DateOffset(
+                                        days=(
+                                            int(
+                                                max(scale_factor_delay * item.priority + 1, 1)
+                                                * prob_disruption
+                                                / self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                            )
+                                        )
+                                    )
+                                           + DateOffset((item.topen - item.tclose).days),
+                                    hsi_event=item.hsi_event,
+                                )
+                                self.module.call_and_record_weather_delayed_hsi_event(
+                                    hsi_event=item.hsi_event, priority=item.priority
+                                )
+
+                            else:
+                                patient = self.sim.population.props.loc[[item.hsi_event.target]]
+                                if patient.age_years.iloc[0] < 15:
+                                    subgroup_name = "children"
+                                    care_seeking_odds_ratios = self.sim.modules[
+                                        "HealthSeekingBehaviour"
+                                    ].odds_ratio_health_seeking_in_children
+                                    hsb_model = self.sim.modules["HealthSeekingBehaviour"].hsb_linear_models["children"]
+                                else:
+                                    subgroup_name = "adults"
+                                    care_seeking_odds_ratios = self.sim.modules[
+                                        "HealthSeekingBehaviour"
+                                    ].odds_ratio_health_seeking_in_adults
+                                    hsb_model = self.sim.modules["HealthSeekingBehaviour"].hsb_linear_models["adults"]
+
+                                will_seek_care_prob = min(
+                                    self.module.parameters["rescaling_prob_seeking_after_disruption"]
+                                    * hsb_model.predict(  # don't supply rng, so get a probability
+                                        df=patient,
+                                        subgroup=subgroup_name,
+                                        care_seeking_odds_ratios=care_seeking_odds_ratios,
+                                    ).iloc[0],
+                                    1,
+                                )
+
+                                will_seek_care = 0
+                                if np.random.random() < will_seek_care_prob:
+                                    will_seek_care = 1
+                                if will_seek_care:
+                                    self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
+                                        priority=item.priority,
+                                        topen=self.sim.date
+                                              + DateOffset(
+                                            days=(
+                                                int(
+                                                    max(scale_factor_delay * item.priority + 1, 1)
+                                                    * prob_disruption
+                                                    / self.module.parameters[
+                                                        "scale_factor_severity_disruption_and_delay"
+                                                    ]
+                                                )
+                                            )
+                                        ),  # makes it proportional to urgency. Most urgent are 0 and 1 (ped/adult)
+                                        tclose=self.sim.date
+                                               + DateOffset(
+                                            days=(
+                                                int(
+                                                    max(scale_factor_delay * item.priority + 1, 1)
+                                                    * prob_disruption
+                                                    / self.module.parameters[
+                                                        "scale_factor_severity_disruption_and_delay"
+                                                    ]
+                                                )
+                                            )
+                                        )
+                                               + DateOffset((item.topen - item.tclose).days),
+                                        hsi_event=item.hsi_event,
+                                    )
+                                    self.module.call_and_record_weather_delayed_hsi_event(
+                                        hsi_event=item.hsi_event, priority=item.priority
+                                    )
+
+                                else:
+                                    self.module.call_and_record_weather_cancelled_hsi_event(
+                                        hsi_event=item.hsi_event, priority=item.priority
+                                    )
+
+                # If not climate disrupted, check equipment
+                if not climate_disrupted:
+                    equipment_available = True
+                    if not item.hsi_event.is_all_declared_equipment_available:
+                        self.module.call_and_record_never_ran_hsi_event(
+                            hsi_event=item.hsi_event, priority=item.priority
+                        )
+                        equipment_available = False
+
+                    if equipment_available:
+                        list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
+
+            # Run events that meet all conditions
             _to_be_held_over = self.module.run_individual_level_events_in_mode_1(
-                list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment,
+                list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions,
             )
             hold_over.extend(_to_be_held_over)
 
@@ -2864,7 +3240,9 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.equipment.availability = self._parameters['equip_availability']
 
         if 'use_funded_or_actual_staffing' in self._parameters:
-            self.module.use_funded_or_actual_staffing = self._parameters['use_funded_or_actual_staffing']
+            self.module.use_funded_or_actual_staffing = self._parameters['use_funded_or_actual_staffing'],
+
+
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
