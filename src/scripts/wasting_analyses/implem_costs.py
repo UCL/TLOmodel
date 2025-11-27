@@ -268,6 +268,40 @@ if __name__ == "__main__":
               f"| sum over all projects: {fmt(bd_sum_2023)}\n"
               f"                                   — | lowest 5: {bd_low_2023_str} | highest 5: {bd_high_2023_str} ")
 
+        # Additional statistics considering only projects with positive (> 0) expenditure/budget
+        pos_expend = expend_series[expend_series > 0]
+        pos_budg = budg_series[budg_series > 0]
+
+        def make_stats(series):
+            if series.empty:
+                return {
+                    "min": float("nan"), "max": float("nan"), "mean": float("nan"),
+                    "sum": float("nan"), "low5": [], "high5": []
+                }
+            return {
+                "min": series.min(),
+                "max": series.max(),
+                "mean": series.mean(),
+                "sum": series.sum(),
+                "low5": series.sort_values().head(5),
+                "high5": series.sort_values().tail(5)
+            }
+
+        pos_ex_stats = make_stats(pos_expend)
+        pos_bd_stats = make_stats(pos_budg)
+
+        pos_ex_low_str = ", ".join(fmt(val) for val in pos_ex_stats["low5"]) if pos_ex_stats["low5"] else "(no data)"
+        pos_ex_high_str = ", ".join(fmt(val) for val in pos_ex_stats["high5"]) if pos_ex_stats["high5"] else "(no data)"
+        pos_bd_low_str = ", ".join(fmt(val) for val in pos_bd_stats["low5"]) if pos_bd_stats["low5"] else "(no data)"
+        pos_bd_high_str = ", ".join(fmt(val) for val in pos_bd_stats["high5"]) if pos_bd_stats["high5"] else "(no data)"
+
+        print("\nStatistics for projects with positive (>0) values:")
+        print(f"FY 2018/19 Expenditure per project (positive only) — | min: {fmt(pos_ex_stats['min'])} | max: {fmt(pos_ex_stats['max'])} | mean: {fmt(pos_ex_stats['mean'])} "
+              f"| sum over those projects: {fmt(pos_ex_stats['sum'])}\n"
+              f"                                                   — | lowest 5: {pos_ex_low_str} | highest 5: {pos_ex_high_str}")
+        print(f"\nFY 2019/20 Budget per project (positive only)      — | min: {fmt(pos_bd_stats['min'])} | max: {fmt(pos_bd_stats['max'])} | mean: {fmt(pos_bd_stats['mean'])} "
+              f"| sum over those projects: {fmt(pos_bd_stats['sum'])}\n"
+              f"                                                   — | lowest 5: {pos_bd_low_str} | highest 5: {pos_bd_high_str}")
 
 
     print_cost_by_programme(df_nutr)
