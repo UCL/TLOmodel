@@ -56,7 +56,7 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "climate_scenario_runs_mode_2_base_parameter",
+            "filename": "climate_scenario_runs_mode_2_2_45_default",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
