@@ -203,7 +203,7 @@ class HSI_Event:
         notifier.dispatch("event.pre-run",
                           data={"target": self.target,
                                 "module" : self.module.name,
-                                "link_info" : {"EventName": type(self).__name__}})
+                                "EventName": type(self).__name__})
 
         updated_appt_footprint = self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
@@ -222,10 +222,10 @@ class HSI_Event:
             
         notifier.dispatch("event.post-run",
                           data={"target": self.target,
-                                "link_info" : {"EventName": type(self).__name__,
-                                         "footprint": footprint,
-                                         "level": level
-                                         }})
+                                "EventName": type(self).__name__,
+                                "footprint": footprint,
+                                "level": level
+                                })
                 
         return updated_appt_footprint
         

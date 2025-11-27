@@ -67,15 +67,15 @@ class Event:
 
         # Dispatch notification that event is about to run
         notifier.dispatch("event.pre-run", data={"target": self.target,
-                                                      "module" : self.module.name,
-                                                      "link_info" : {"EventName": type(self).__name__}})
+                                                 "module" : self.module.name,
+                                                 "EventName": type(self).__name__})
                 
         self.apply(self.target)
         self.post_apply_hook()
         
         # Dispatch notification that event has just ran
         notifier.dispatch("event.post-run", data={"target": self.target,
-                                                      "link_info" : {"EventName": type(self).__name__}})
+                                                  "EventName": type(self).__name__})
 
 
 class RegularEvent(Event):

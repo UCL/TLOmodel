@@ -94,10 +94,10 @@ class IndividualHistoryTracker(Module):
         # When individual is born, store their initial properties to provide a starting point to the
         # chain of property changes that this individual will undergo
         # as a result of events taking place.
-        link_info = data['link_info']
-        link_info.update(self.sim.population.props.loc[data['target']].to_dict())
+        link_info = {'EventName': 'Birth'}
+        link_info.update(self.sim.population.props.loc[data['child_id']].to_dict())
         chain_links = {}
-        chain_links[data['target']] = link_info
+        chain_links[data['child_id']] = link_info
 
         ednav = convert_chain_links_into_EAV(chain_links)
         
@@ -117,7 +117,7 @@ class IndividualHistoryTracker(Module):
         # 2) the event is not in the list of events to ignore
         if (
             (data['module'] not in self.modules_of_interest)
-            or (data['link_info']['EventName'] in self.events_to_ignore)
+            or (data['EventName'] in self.events_to_ignore)
             ):
             return
         
@@ -186,7 +186,10 @@ class IndividualHistoryTracker(Module):
                 mni_instances_after = None
             
             # Create and store event for this individual, regardless of whether any property change occurred
-            link_info = data['link_info']
+            link_info = {'EventName' : data['EventName']}
+            if 'footprint' in data.keys():
+                link_info['footprint'] = data['footprint']
+                link_info['level'] = data['level']
             
             # Store (if any) property changes as a result of the event for this individual
             for key in self.row_before.index:

@@ -310,7 +310,7 @@ class Simulation:
         # Otherwise, would have to add listener outside of CollectEventChains initialisation
         
         # Dispatch notification that pop has been initialised
-        notifier.dispatch("simulation.post-initialise", data={"EventName" : "StartOfSimulation"})
+        notifier.dispatch("simulation.post-initialise", data={})
 
     def finalise(self, wall_clock_time: Optional[float] = None) -> None:
         """Finalise all modules in simulation and close logging file if open.
@@ -449,7 +449,7 @@ class Simulation:
             module.on_birth(mother_id, child_id)
             
         # Dispatch notification that birth is about to occur
-        notifier.dispatch("simulation.post-do_birth", data={'target': child_id, 'link_info' : {'EventName': 'Birth'}})
+        notifier.dispatch("simulation.post-do_birth", data={'child_id': child_id})
 
         return child_id
 
