@@ -2776,7 +2776,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Schedule to take place every month
         """
-        super().__init__(module, frequency=DateOffset(months=1000)) # Single polling event
+        super().__init__(module, frequency=DateOffset(months=1))
         p = module.parameters
         # Parameters which transition the model between states
         self.base_1m_prob_rti = (p['base_rate_injrti'] / 12)
