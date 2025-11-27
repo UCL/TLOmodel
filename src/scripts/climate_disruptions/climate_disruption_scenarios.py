@@ -31,7 +31,7 @@ full_grid = make_cartesian_parameter_grid(
             "policy_name": ["Naive"],
             "climate_ssp": ["ssp245"],
             "climate_model_ensemble_model": ["mean"],
-            "services_affected_precip": ["all"], #["none", "all"], # so one is effectively baseline, one is climate disruptions
+            "services_affected_precip": ["none"], #["none", "all"], # so one is effectively baseline, one is climate disruptions
             "tclose_overwrite": [1000],
         }
     }
@@ -80,8 +80,8 @@ class ClimateDisruptionScenario(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {
-            "Baseline": self._baseline(),
-            #"SSP 245 Mean": self._ssp245_mean(),
+            #"Baseline": self._baseline(),
+            "SSP 245 Mean": self._ssp245_mean(),
         }
 
     def _baseline(self) -> Dict:
