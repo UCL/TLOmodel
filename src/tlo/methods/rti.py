@@ -2864,12 +2864,8 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
                          .when('.between(70,79)', self.rr_injrti_age7079),
                          Predictor('li_ex_alc').when(True, self.rr_injrti_excessalcohol)
                          )
-        #if self.sim.generate_event_chains is True and self.sim.generate_event_chains_overwrite_epi is True:
-        #pred = 1.0
-        #else:
+
         pred = eq.predict(df.loc[rt_current_non_ind])
-            
-            
         random_draw_in_rti = self.module.rng.random_sample(size=len(rt_current_non_ind))
         selected_for_rti = rt_current_non_ind[pred > random_draw_in_rti]
 
