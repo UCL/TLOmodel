@@ -299,10 +299,10 @@ if __name__ == "__main__":
 
         print("\nStatistics for projects with positive (>0) values:")
         print(f"FY 2018/19 Expenditure per project (positive only) — | min: {fmt(pos_ex_stats['min'])} | median: {fmt(pos_ex_stats['median'])} | max: {fmt(pos_ex_stats['max'])} | mean: {fmt(pos_ex_stats['mean'])} "
-              f"| sum over those projects: {fmt(pos_ex_stats['sum'])}\n"
+              f"| sum over all projects: {fmt(pos_ex_stats['sum'])}\n"
               f"                                                   — | lowest 5: {pos_ex_low_str} | highest 5: {pos_ex_high_str}")
         print(f"\nFY 2019/20 Budget per project (positive only)      — | min: {fmt(pos_bd_stats['min'])} | median: {fmt(pos_bd_stats['median'])} | max: {fmt(pos_bd_stats['max'])} | mean: {fmt(pos_bd_stats['mean'])} "
-              f"| sum over those projects: {fmt(pos_bd_stats['sum'])}\n"
+              f"| sum over all projects: {fmt(pos_bd_stats['sum'])}\n"
               f"                                                   — | lowest 5: {pos_bd_low_str} | highest 5: {pos_bd_high_str}")
 
         # 2023 USD equivalents for positive-only stats (apply multiplier)
@@ -331,10 +331,10 @@ if __name__ == "__main__":
 
         print(f"\nIn 2023 USD (multiplier = {multiplier:.6f}) for positive-only projects:")
         print(f"FY 2018/19 Expenditure per project (positive only) — | min: {fmt(pos_ex_min_2023)} | median: {fmt(pos_ex_median_2023)} | max {fmt(pos_ex_max_2023)} | mean: {fmt(pos_ex_mean_2023)} "
-              f"| sum over those projects: {fmt(pos_ex_sum_2023)}\n"
+              f"| sum over all projects: {fmt(pos_ex_sum_2023)}\n"
               f"                                                   — | lowest 5: {pos_ex_low_2023_str} | highest 5: {pos_ex_high_2023_str}")
         print(f"\nFY 2019/20 Budget per project (positive only)      — | min: {fmt(pos_bd_min_2023)} | median: {fmt(pos_bd_median_2023)} | max {fmt(pos_bd_max_2023)} | mean: {fmt(pos_bd_mean_2023)} "
-              f"| sum over those projects: {fmt(pos_bd_sum_2023)}\n"
+              f"| sum over all projects: {fmt(pos_bd_sum_2023)}\n"
               f"                                                   — | lowest 5: {pos_bd_low_2023_str} | highest 5: {pos_bd_high_2023_str}")
 
 
