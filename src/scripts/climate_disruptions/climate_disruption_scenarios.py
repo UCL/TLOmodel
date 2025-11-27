@@ -29,7 +29,7 @@ full_grid = make_cartesian_parameter_grid(
             "use_funded_or_actual_staffing": ["actual"],
             "scale_to_effective_capabilities": [True],
             "policy_name": ["Naive"],
-            "climate_ssp": ["ssp585"],
+            "climate_ssp": ["ssp245"],
             "climate_model_ensemble_model": ["mean"],
             "services_affected_precip": ["none", "all"], # so one is effectively baseline, one is climate disruptions
             "tclose_overwrite": [1000],
@@ -44,19 +44,19 @@ class ClimateDisruptionScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2028, 1, 12)
         self.pop_size = 100_000
-        self.runs_per_draw = 1
+        self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2025
         self._scenarios = self._get_scenarios()
         self._parameter_grid = random.sample(full_grid, 10)
         print(self._parameter_grid)
         self.number_of_draws = len(self._parameter_grid)
 
-        with open("selected_parameter_combinations.json", "w") as f:
+        with open("outputs/selected_parameter_combinations.json", "w") as f:
             json.dump(self._parameter_grid, f, indent=2)
 
     def log_configuration(self):
         return {
-            "filename": "climate_scenario_runs",
+            "filename": "climate_scenario_runs_mode_2_2.45_parameter_runs_mean",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
@@ -81,7 +81,7 @@ class ClimateDisruptionScenario(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {
             #"Baseline": self._baseline(),
-            "SSP 585 Mean": self._ssp585_mean(),
+            "SSP 245 Mean": self._ssp585_mean(),
         }
 
     def _baseline(self) -> Dict:
@@ -111,7 +111,7 @@ class ClimateDisruptionScenario(BaseScenario):
         )
 
 
-    def _ssp585_mean(self) -> Dict:
+    def _ssp345_mean(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario."""
         return mix_scenarios(
             get_parameters_for_status_quo(),
