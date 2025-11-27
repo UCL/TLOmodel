@@ -19,12 +19,12 @@ import pandas as pd
 
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
+#from tlo.methods import individual_history_tracker
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods import individual_history_tracker
 from tlo.scenario import BaseScenario
 
 
-class GenerateEventChains(BaseScenario):
+class TrackIndividualHistories(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 42
@@ -47,7 +47,7 @@ class GenerateEventChains(BaseScenario):
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.individual_history_tracker': logging.INFO
+                #'tlo.methods.individual_history_tracker': logging.INFO
             }
         }
 

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo.analysis.utils import extract_event_chains
+from tlo.analysis.utils import extract_individual_histories
 
 
 def print_filtered_df(df):
@@ -33,8 +33,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_colwidth', None)
     
-    individual_event_chains = extract_event_chains(results_folder)
-    print_filtered_df(individual_event_chains[0])
+    individual_individual_histories = extract_individual_histories(results_folder)
+    print_filtered_df(individual_individual_histories[0])
     
 if __name__ == "__main__":
     rfp = Path('resources')

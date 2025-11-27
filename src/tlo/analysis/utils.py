@@ -461,7 +461,7 @@ def extract_individual_histories(results_folder: Path,
     format 'E', 'EventDate', 'EventName', 'Info' where 'Info' is a dictionary that combines 
     A&Vs for a particular individual + date + event name combination.
     """
-    module = 'tlo.individual_history_tracker'
+    module = 'tlo.methods.individual_history_tracker'
     key = 'individual_histories'
 
     # get number of draws and numbers of runs
@@ -478,9 +478,12 @@ def extract_individual_histories(results_folder: Path,
         
         for run in range(info['runs_per_draw']):
 
+            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+            print(df)
+
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-
+                print(df)
                 df_final = reconstruct_individual_histories(df)
 
                 # Offset person ID to account for the fact that we are collecting chains across runs
