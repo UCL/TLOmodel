@@ -519,10 +519,9 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
         print(f"Opening {logfile}")
         outputs = parse_log_file(logfile)
         for key, output in outputs.items():
-            if key.startswith("tlo."):
-                print(f" - Writing {key}.pickle")
-                with open(logfile.parent / f"{key}.pickle", "wb") as f:
-                    pickle.dump(output, f)
+            print(f" - Writing {key}.pickle")
+            with open(logfile.parent / f"{key}.pickle", "wb") as f:
+                pickle.dump(output, f)
 
     def uncompress_and_save_logfile(compressed_file) -> Path:
         """Uncompress and save a log file and return its path."""
@@ -545,6 +544,7 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
                 ][0]
                 logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
 
+            logfile = Path(run_folder) / logfile
             turn_log_into_pickles(logfile)
 
 
