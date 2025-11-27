@@ -2,289 +2,39 @@
   "scenario_script_path": "src/scripts/climate_disruptions/climate_disruption_scenarios.py",
   "scenario_seed": 0,
   "arguments": [],
-  "runs_per_draw": 1,
+  "runs_per_draw": 10,
   "draws": [
     {
       "draw_number": 0,
-      "parameters": {
-        "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 20.0,
-          "rescaling_prob_seeking_after_disruption": 1.01,
-          "rescaling_prob_disruption": 0.0,
-          "scale_factor_severity_disruption_and_delay": 0.11,
-          "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
-          "cons_availability": "default",
-          "cons_availability_postSwitch": "default",
-          "year_cons_availability_switch": 2025,
-          "beds_availability": "default",
-          "equip_availability": "default",
-          "equip_availability_postSwitch": "default",
-          "year_equip_availability_switch": 2025,
-          "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
-          "policy_name": "Naive",
-          "climate_ssp": "ssp585",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "none",
-          "tclose_overwrite": 1000
+      "parameters": [
+        {
+          "HealthSystem": {
+            "scale_factor_delay_in_seeking_care_weather": 28,
+            "rescaling_prob_seeking_after_disruption": 1,
+            "rescaling_prob_disruption": 1,
+            "scale_factor_severity_disruption_and_delay": 1,
+            "mode_appt_constraints": 1,
+            "mode_appt_constraints_postSwitch": 2,
+            "cons_availability": "default",
+            "cons_availability_postSwitch": "default",
+            "year_cons_availability_switch": 2025,
+            "beds_availability": "default",
+            "equip_availability": "default",
+            "equip_availability_postSwitch": "default",
+            "year_equip_availability_switch": 2025,
+            "use_funded_or_actual_staffing": "actual",
+            "scale_to_effective_capabilities": true,
+            "policy_name": "Naive",
+            "climate_ssp": "ssp245",
+            "climate_model_ensemble_model": "mean",
+            "services_affected_precip": "all",
+            "tclose_overwrite": 1000
+          }
         }
-      },
+      ],
       "draw_name": "0"
-    },
-    {
-      "draw_number": 1,
-      "parameters": {
-        "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 0.0,
-          "rescaling_prob_seeking_after_disruption": 0.01,
-          "rescaling_prob_disruption": 1.0,
-          "scale_factor_severity_disruption_and_delay": 0.4066666666666667,
-          "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
-          "cons_availability": "default",
-          "cons_availability_postSwitch": "default",
-          "year_cons_availability_switch": 2025,
-          "beds_availability": "default",
-          "equip_availability": "default",
-          "equip_availability_postSwitch": "default",
-          "year_equip_availability_switch": 2025,
-          "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
-          "policy_name": "Naive",
-          "climate_ssp": "ssp585",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "all",
-          "tclose_overwrite": 1000
-        }
-      },
-      "draw_name": "1"
-    },
-    {
-      "draw_number": 2,
-      "parameters": {
-        "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 60.0,
-          "rescaling_prob_seeking_after_disruption": 0.01,
-          "rescaling_prob_disruption": 2.0,
-          "scale_factor_severity_disruption_and_delay": 0.4066666666666667,
-          "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
-          "cons_availability": "default",
-          "cons_availability_postSwitch": "default",
-          "year_cons_availability_switch": 2025,
-          "beds_availability": "default",
-          "equip_availability": "default",
-          "equip_availability_postSwitch": "default",
-          "year_equip_availability_switch": 2025,
-          "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
-          "policy_name": "Naive",
-          "climate_ssp": "ssp585",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "all",
-          "tclose_overwrite": 1000
-        }
-      },
-      "draw_name": "2"
-    },
-    {
-      "draw_number": 3,
-      "parameters": {
-        "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 60.0,
-          "rescaling_prob_seeking_after_disruption": 0.51,
-          "rescaling_prob_disruption": 1.5,
-          "scale_factor_severity_disruption_and_delay": 0.7033333333333334,
-          "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
-          "cons_availability": "default",
-          "cons_availability_postSwitch": "default",
-          "year_cons_availability_switch": 2025,
-          "beds_availability": "default",
-          "equip_availability": "default",
-          "equip_availability_postSwitch": "default",
-          "year_equip_availability_switch": 2025,
-          "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
-          "policy_name": "Naive",
-          "climate_ssp": "ssp585",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "none",
-          "tclose_overwrite": 1000
-        }
-      },
-      "draw_name": "3"
-    },
-    {
-      "draw_number": 4,
-      "parameters": {
-        "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 0.0,
-          "rescaling_prob_seeking_after_disruption": 0.01,
-          "rescaling_prob_disruption": 0.0,
-          "scale_factor_severity_disruption_and_delay": 0.11,
-          "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
-          "cons_availability": "default",
-          "cons_availability_postSwitch": "default",
-          "year_cons_availability_switch": 2025,
-          "beds_availability": "default",
-          "equip_availability": "default",
-          "equip_availability_postSwitch": "default",
-          "year_equip_availability_switch": 2025,
-          "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
-          "policy_name": "Naive",
-          "climate_ssp": "ssp585",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "all",
-          "tclose_overwrite": 1000
-        }
-      },
-      "draw_name": "4"
-    },
-    {
-      "draw_number": 5,
-      "parameters": {
-        "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 20.0,
-          "rescaling_prob_seeking_after_disruption": 1.01,
-          "rescaling_prob_disruption": 1.0,
-          "scale_factor_severity_disruption_and_delay": 0.4066666666666667,
-          "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
-          "cons_availability": "default",
-          "cons_availability_postSwitch": "default",
-          "year_cons_availability_switch": 2025,
-          "beds_availability": "default",
-          "equip_availability": "default",
-          "equip_availability_postSwitch": "default",
-          "year_equip_availability_switch": 2025,
-          "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
-          "policy_name": "Naive",
-          "climate_ssp": "ssp585",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "none",
-          "tclose_overwrite": 1000
-        }
-      },
-      "draw_name": "5"
-    },
-    {
-      "draw_number": 6,
-      "parameters": {
-        "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 2.0,
-          "rescaling_prob_seeking_after_disruption": 0.51,
-          "rescaling_prob_disruption": 1.5,
-          "scale_factor_severity_disruption_and_delay": 0.7033333333333334,
-          "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
-          "cons_availability": "default",
-          "cons_availability_postSwitch": "default",
-          "year_cons_availability_switch": 2025,
-          "beds_availability": "default",
-          "equip_availability": "default",
-          "equip_availability_postSwitch": "default",
-          "year_equip_availability_switch": 2025,
-          "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
-          "policy_name": "Naive",
-          "climate_ssp": "ssp585",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "all",
-          "tclose_overwrite": 1000
-        }
-      },
-      "draw_name": "6"
-    },
-    {
-      "draw_number": 7,
-      "parameters": {
-        "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 1.0,
-          "rescaling_prob_seeking_after_disruption": 1.01,
-          "rescaling_prob_disruption": 1.0,
-          "scale_factor_severity_disruption_and_delay": 0.7033333333333334,
-          "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
-          "cons_availability": "default",
-          "cons_availability_postSwitch": "default",
-          "year_cons_availability_switch": 2025,
-          "beds_availability": "default",
-          "equip_availability": "default",
-          "equip_availability_postSwitch": "default",
-          "year_equip_availability_switch": 2025,
-          "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
-          "policy_name": "Naive",
-          "climate_ssp": "ssp585",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "all",
-          "tclose_overwrite": 1000
-        }
-      },
-      "draw_name": "7"
-    },
-    {
-      "draw_number": 8,
-      "parameters": {
-        "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 1.0,
-          "rescaling_prob_seeking_after_disruption": 1.01,
-          "rescaling_prob_disruption": 0.5,
-          "scale_factor_severity_disruption_and_delay": 0.4066666666666667,
-          "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
-          "cons_availability": "default",
-          "cons_availability_postSwitch": "default",
-          "year_cons_availability_switch": 2025,
-          "beds_availability": "default",
-          "equip_availability": "default",
-          "equip_availability_postSwitch": "default",
-          "year_equip_availability_switch": 2025,
-          "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
-          "policy_name": "Naive",
-          "climate_ssp": "ssp585",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "none",
-          "tclose_overwrite": 1000
-        }
-      },
-      "draw_name": "8"
-    },
-    {
-      "draw_number": 9,
-      "parameters": {
-        "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 20.0,
-          "rescaling_prob_seeking_after_disruption": 0.51,
-          "rescaling_prob_disruption": 0.0,
-          "scale_factor_severity_disruption_and_delay": 0.11,
-          "mode_appt_constraints": 1,
-          "mode_appt_constraints_postSwitch": 2,
-          "cons_availability": "default",
-          "cons_availability_postSwitch": "default",
-          "year_cons_availability_switch": 2025,
-          "beds_availability": "default",
-          "equip_availability": "default",
-          "equip_availability_postSwitch": "default",
-          "year_equip_availability_switch": 2025,
-          "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
-          "policy_name": "Naive",
-          "climate_ssp": "ssp585",
-          "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "all",
-          "tclose_overwrite": 1000
-        }
-      },
-      "draw_name": "9"
     }
   ],
-  "commit": "4dbd269e961df94d88496b721ae05af3b0eb6b3b",
-  "github": "https://github.com/UCL/TLOmodel/tree/4dbd269e961df94d88496b721ae05af3b0eb6b3b"
+  "commit": "1c7064bd4cdf6fc6cb96232e4c7ee957fde556ee",
+  "github": "https://github.com/UCL/TLOmodel/tree/1c7064bd4cdf6fc6cb96232e4c7ee957fde556ee"
 }
