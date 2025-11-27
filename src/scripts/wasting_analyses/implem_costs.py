@@ -274,9 +274,10 @@ if __name__ == "__main__":
 
         def make_stats(series):
             if series.empty:
+                empty_series = pd.Series(dtype=float)
                 return {
                     "min": float("nan"), "max": float("nan"), "mean": float("nan"),
-                    "sum": float("nan"), "low5": [], "high5": []
+                    "sum": float("nan"), "low5": empty_series, "high5": empty_series
                 }
             return {
                 "min": series.min(),
@@ -290,10 +291,15 @@ if __name__ == "__main__":
         pos_ex_stats = make_stats(pos_expend)
         pos_bd_stats = make_stats(pos_budg)
 
-        pos_ex_low_str = ", ".join(fmt(val) for val in pos_ex_stats["low5"]) if pos_ex_stats["low5"] else "(no data)"
-        pos_ex_high_str = ", ".join(fmt(val) for val in pos_ex_stats["high5"]) if pos_ex_stats["high5"] else "(no data)"
-        pos_bd_low_str = ", ".join(fmt(val) for val in pos_bd_stats["low5"]) if pos_bd_stats["low5"] else "(no data)"
-        pos_bd_high_str = ", ".join(fmt(val) for val in pos_bd_stats["high5"]) if pos_bd_stats["high5"] else "(no data)"
+        pos_ex_low = pos_ex_stats["low5"]
+        pos_ex_high = pos_ex_stats["high5"]
+        pos_bd_low = pos_bd_stats["low5"]
+        pos_bd_high = pos_bd_stats["high5"]
+
+        pos_ex_low_str = ", ".join(fmt(val) for val in pos_ex_low) if not pos_ex_low.empty else "(no data)"
+        pos_ex_high_str = ", ".join(fmt(val) for val in pos_ex_high) if not pos_ex_high.empty else "(no data)"
+        pos_bd_low_str = ", ".join(fmt(val) for val in pos_bd_low) if not pos_bd_low.empty else "(no data)"
+        pos_bd_high_str = ", ".join(fmt(val) for val in pos_bd_high) if not pos_bd_high.empty else "(no data)"
 
         print("\nStatistics for projects with positive (>0) values:")
         print(f"FY 2018/19 Expenditure per project (positive only) — | min: {fmt(pos_ex_stats['min'])} | max: {fmt(pos_ex_stats['max'])} | mean: {fmt(pos_ex_stats['mean'])} "
@@ -302,6 +308,36 @@ if __name__ == "__main__":
         print(f"\nFY 2019/20 Budget per project (positive only)      — | min: {fmt(pos_bd_stats['min'])} | max: {fmt(pos_bd_stats['max'])} | mean: {fmt(pos_bd_stats['mean'])} "
               f"| sum over those projects: {fmt(pos_bd_stats['sum'])}\n"
               f"                                                   — | lowest 5: {pos_bd_low_str} | highest 5: {pos_bd_high_str}")
+
+        # 2023 USD equivalents for positive-only stats (apply multiplier)
+        # reuse `multiplier` defined earlier
+        pos_ex_low_2023 = pos_ex_low * multiplier if not getattr(pos_ex_low, "empty", False) else pos_ex_low
+        pos_ex_high_2023 = pos_ex_high * multiplier if not getattr(pos_ex_high, "empty", False) else pos_ex_high
+        pos_bd_low_2023 = pos_bd_low * multiplier if not getattr(pos_bd_low, "empty", False) else pos_bd_low
+        pos_bd_high_2023 = pos_bd_high * multiplier if not getattr(pos_bd_high, "empty", False) else pos_bd_high
+
+        pos_ex_min_2023 = pos_ex_stats["min"] * multiplier if pd.notna(pos_ex_stats["min"]) else float("nan")
+        pos_ex_max_2023 = pos_ex_stats["max"] * multiplier if pd.notna(pos_ex_stats["max"]) else float("nan")
+        pos_ex_mean_2023 = pos_ex_stats["mean"] * multiplier if pd.notna(pos_ex_stats["mean"]) else float("nan")
+        pos_ex_sum_2023 = pos_ex_stats["sum"] * multiplier if pd.notna(pos_ex_stats["sum"]) else float("nan")
+
+        pos_bd_min_2023 = pos_bd_stats["min"] * multiplier if pd.notna(pos_bd_stats["min"]) else float("nan")
+        pos_bd_max_2023 = pos_bd_stats["max"] * multiplier if pd.notna(pos_bd_stats["max"]) else float("nan")
+        pos_bd_mean_2023 = pos_bd_stats["mean"] * multiplier if pd.notna(pos_bd_stats["mean"]) else float("nan")
+        pos_bd_sum_2023 = pos_bd_stats["sum"] * multiplier if pd.notna(pos_bd_stats["sum"]) else float("nan")
+
+        pos_ex_low_2023_str = ", ".join(fmt(val) for val in pos_ex_low_2023) if not getattr(pos_ex_low_2023, "empty", True) else "(no data)"
+        pos_ex_high_2023_str = ", ".join(fmt(val) for val in pos_ex_high_2023) if not getattr(pos_ex_high_2023, "empty", True) else "(no data)"
+        pos_bd_low_2023_str = ", ".join(fmt(val) for val in pos_bd_low_2023) if not getattr(pos_bd_low_2023, "empty", True) else "(no data)"
+        pos_bd_high_2023_str = ", ".join(fmt(val) for val in pos_bd_high_2023) if not getattr(pos_bd_high_2023, "empty", True) else "(no data)"
+
+        print(f"\nIn 2023 USD (multiplier = {multiplier:.6f}) for positive-only projects:")
+        print(f"FY 2018/19 Expenditure per project (positive only) — | min: {fmt(pos_ex_min_2023)} | max {fmt(pos_ex_max_2023)} | mean: {fmt(pos_ex_mean_2023)} "
+              f"| sum over those projects: {fmt(pos_ex_sum_2023)}\n"
+              f"                                                   — | lowest 5: {pos_ex_low_2023_str} | highest 5: {pos_ex_high_2023_str}")
+        print(f"\nFY 2019/20 Budget per project (positive only)      — | min: {fmt(pos_bd_min_2023)} | max {fmt(pos_bd_max_2023)} | mean: {fmt(pos_bd_mean_2023)} "
+              f"| sum over those projects: {fmt(pos_bd_sum_2023)}\n"
+              f"                                                   — | lowest 5: {pos_bd_low_2023_str} | highest 5: {pos_bd_high_2023_str}")
 
 
     print_cost_by_programme(df_nutr)
