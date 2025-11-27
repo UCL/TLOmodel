@@ -46,10 +46,10 @@ class IndividualHistoryTracker(Module):
         }
         
     def initialise_simulation(self, sim):
-        notifier.add_listener("simulation.pop_has_been_initialised", self.on_notification_pop_has_been_initialised)
-        notifier.add_listener("simulation.on_birth", self.on_notification_of_birth)
-        notifier.add_listener("event.about_to_run", self.on_notification_event_about_to_run)
-        notifier.add_listener("event.has_just_ran", self.on_notification_event_has_just_ran)
+        notifier.add_listener("simulation.post-initialise", self.on_simulation_post_initialise)
+        notifier.add_listener("simulation.post-do_birth", self.on_simulation_post_do_birth)
+        notifier.add_listener("event.pre-run", self.on_event_pre_run)
+        notifier.add_listener("event.post-run", self.on_event_post_run)
         
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath/"ResourceFile_IndividualHistoryTracker/parameter_values.csv"))
@@ -73,7 +73,7 @@ class IndividualHistoryTracker(Module):
         # Could the notification of birth simply take place here?
         pass
         
-    def on_notification_pop_has_been_initialised(self, data):
+    def on_simulation_post_initialise(self, data):
 
         # When logging events for each individual to reconstruct chains,
         # only the changes in individual properties will be logged.
@@ -89,7 +89,7 @@ class IndividualHistoryTracker(Module):
                            description='Links forming chains of events for simulated individuals')
                                
                                
-    def on_notification_of_birth(self, data):
+    def on_simulation_post_do_birth(self, data):
                 
         # When individual is born, store their initial properties to provide a starting point to the
         # chain of property changes that this individual will undergo
@@ -106,7 +106,7 @@ class IndividualHistoryTracker(Module):
                            description='Links forming chains of events for simulated individuals')
                                
         
-    def on_notification_event_about_to_run(self, data):
+    def on_event_pre_run(self, data):
         """Do this when notified that an event is about to run. 
         This function checks whether this event should be logged as part of the event chains, a
         nd if so stored required information before the event has occurred.
@@ -160,7 +160,7 @@ class IndividualHistoryTracker(Module):
         return
         
     
-    def on_notification_event_has_just_ran(self, data):
+    def on_event_post_run(self, data):
         """ If print_chains=True, this function logs the event and identifies and logs the any property 
         changes that have occured to one or multiple individuals as a result of the event taking place. 
         """
