@@ -7,11 +7,11 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file, reconstruct_individual_histories
 from tlo.methods import (
     chronicsyndrome,
-    individual_history_tracker,
     demography,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
+    individual_history_tracker,
     mockitis,
     simplified_births,
     symptommanager,
@@ -67,12 +67,14 @@ def test_individual_history_tracker(tmpdir, seed):
     # read the results
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     output_chains = parse_log_file(sim.log_filepath, level=logging.INFO)
-    individual_histories = reconstruct_individual_histories(output_chains['tlo.methods.individual_history_tracker']['individual_histories'])
+    individual_histories = reconstruct_individual_histories(
+                            output_chains['tlo.methods.individual_history_tracker']['individual_histories'])
     
     # Check that we have a "StartOfSimulation" event for every individual in the initial population,
     # and that this was logged at the start date
     assert (individual_histories['EventName'] == 'StartOfSimulation').sum() == popsize
-    assert (individual_histories.loc[individual_histories['EventName'] == 'StartOfSimulation', 'date'] == start_date).all()
+    assert (individual_histories.loc[individual_histories['EventName'] == 'StartOfSimulation',
+                                                                          'date'] == start_date).all()
     
     # Check that in the case of birth or start of simulation, all properties were logged
     num_properties = len(sim.population.props.columns)
