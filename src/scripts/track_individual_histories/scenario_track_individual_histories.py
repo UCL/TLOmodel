@@ -20,6 +20,7 @@ import pandas as pd
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
+from tlo.methods import individual_history_tracker
 from tlo.scenario import BaseScenario
 
 
@@ -52,7 +53,7 @@ class GenerateEventChains(BaseScenario):
 
     def modules(self):
         return (
-            fullmodel()
+            fullmodel()# + [individual_history_tracker.IndividualHistoryTracker()]
         )
 
     def draw_parameters(self, draw_number, rng):

@@ -20,7 +20,6 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     hiv,
-    individual_history_tracker,
     labour,
     malaria,
     measles,
@@ -117,8 +116,6 @@ def fullmodel(
         copd.Copd,
         depression.Depression,
         epilepsy.Epilepsy,
-        #  - Track Individual histories
-        individual_history_tracker.IndividualHistoryTracker,
     ]
     return [
         module_class(
