@@ -2538,8 +2538,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             for item in list_of_individual_hsi_event_tuples_due_today:
                 climate_disrupted = False
-                year = 2025
-
                 # First, check for climate disruption
                 if (
                     year >= 2025
@@ -2568,7 +2566,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         prob_disruption = min(
                             float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
                         )  # to account for some structural differences
-                        prob_disruption = 1
                         if np.random.binomial(1, prob_disruption) == 1:
                             climate_disrupted = True
                             if self.sim.modules[
