@@ -10,13 +10,15 @@ import numpy as np
 import random
 
 YEAR_OF_CHANGE = 2025
+
+# Create grid with all combinations of SSP and ensemble model
 full_grid = make_cartesian_parameter_grid(
     {
         "HealthSystem": {
-            "scale_factor_delay_in_seeking_care_weather": [28], #[float(x) for x in [0, 1, 2, 10, 20, 60]],
-            "rescaling_prob_seeking_after_disruption": [1], #np.arange(0.01, 1.51, 0.5),
-            "rescaling_prob_disruption":  [1], #np.arange(0.0, 2.01, 0.5),
-            "scale_factor_severity_disruption_and_delay": [1], #[float(x) for x in np.linspace(0.11, 1.0, 4)],
+            "scale_factor_delay_in_seeking_care_weather": [28],
+            "rescaling_prob_seeking_after_disruption": [1],
+            "rescaling_prob_disruption": [1],
+            "scale_factor_severity_disruption_and_delay": [1],
             "mode_appt_constraints": [1],
             "mode_appt_constraints_postSwitch": [2],
             "cons_availability": ["default"],
@@ -29,13 +31,14 @@ full_grid = make_cartesian_parameter_grid(
             "use_funded_or_actual_staffing": ["actual"],
             "scale_to_effective_capabilities": [True],
             "policy_name": ["Naive"],
-            "climate_ssp": ["ssp245"],
-            "climate_model_ensemble_model": ["mean"],
-            "services_affected_precip": ["all"], #["none", "all"], # so one is effectively baseline, one is climate disruptions
+            "climate_ssp": ["ssp126", "ssp245", "ssp585"],
+            "climate_model_ensemble_model": ["lowest", "mean", "highest"],
+            "services_affected_precip": ["all"],
             "tclose_overwrite": [1000],
         }
     }
 )
+
 
 class ClimateDisruptionScenario(BaseScenario):
     def __init__(self):
@@ -47,8 +50,14 @@ class ClimateDisruptionScenario(BaseScenario):
         self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2025
         self._scenarios = self._get_scenarios()
-        self._parameter_grid = random.sample(full_grid, 1)
-        print(self._parameter_grid)
+        # Use all 9 combinations (3 SSPs × 3 ensemble models)
+        self._parameter_grid = full_grid
+        print(f"Running {len(self._parameter_grid)} parameter combinations:")
+        for i, params in enumerate(self._parameter_grid):
+            ssp = params["HealthSystem"]["climate_ssp"]
+            model = params["HealthSystem"]["climate_model_ensemble_model"]
+            print(f"  Draw {i}: {ssp} - {model}")
+
         self.number_of_draws = len(self._parameter_grid)
 
         with open("selected_parameter_combinations.json", "w") as f:
@@ -56,7 +65,7 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "climate_scenario_runs_mode_2_2_45_default",
+            "filename": "climate_scenario_runs_all_ssp_ensemble",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
@@ -75,17 +84,17 @@ class ClimateDisruptionScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        return self._parameter_grid#[draw_number]
+        return self._parameter_grid[draw_number]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
+        # Single scenario definition that will be used with all parameter combinations
         return {
-            #"Baseline": self._baseline(),
-            "SSP 245 Mean": self._ssp245_mean(),
+            "All SSP and Ensemble Combinations": self._scenario_all_climate(),
         }
 
-    def _baseline(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario."""
+    def _scenario_all_climate(self) -> Dict:
+        """Return the Dict with values for the parameter changes that define the scenario."""
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {
@@ -94,34 +103,6 @@ class ClimateDisruptionScenario(BaseScenario):
                     "max_healthcare_seeking": [False, False],
                     "year_of_switch": self.YEAR_OF_CHANGE,
                 },
-                # Health system params are in grid
-                "Malaria": {
-                    "type_of_scaleup": "max",
-                    "scaleup_start_year": self.YEAR_OF_CHANGE,
-                },
-                "Tb": {
-                    "type_of_scaleup": "max",
-                    "scaleup_start_year": self.YEAR_OF_CHANGE,
-                },
-                "Hiv": {
-                    "type_of_scaleup": "max",
-                    "scaleup_start_year": self.YEAR_OF_CHANGE,
-                },
-            },
-        )
-
-
-    def _ssp245_mean(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario."""
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {
-                "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-                    "max_healthsystem_function": [False, False],
-                    "max_healthcare_seeking": [False, False],
-                    "year_of_switch": self.YEAR_OF_CHANGE,
-                },
-                # Health system params are in grid
                 "Malaria": {
                     "type_of_scaleup": "max",
                     "scaleup_start_year": self.YEAR_OF_CHANGE,
