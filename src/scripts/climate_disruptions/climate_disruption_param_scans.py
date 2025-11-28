@@ -1,3 +1,5 @@
+
+
 from typing import Dict
 
 from tlo import Date, logging
@@ -15,10 +17,10 @@ YEAR_OF_CHANGE = 2025
 full_grid = make_cartesian_parameter_grid(
     {
         "HealthSystem": {
-            "scale_factor_delay_in_seeking_care_weather": [float(28)],
-            "rescaling_prob_seeking_after_disruption": [float(1)],
-            "rescaling_prob_disruption": [float(1)],
-            "scale_factor_severity_disruption_and_delay": [float(1)],
+            "scale_factor_delay_in_seeking_care_weather": [float(x) for x in [0, 1, 2, 7, 14, 28, 60]],
+            "rescaling_prob_seeking_after_disruption": np.arange(0.01, 1.51, 0.5),
+            "rescaling_prob_disruption": np.arange(0.0, 2.01, 0.5),
+            "scale_factor_severity_disruption_and_delay": [float(x) for x in np.linspace(0.11, 1.0, 4)],
             "mode_appt_constraints": [1],
             "mode_appt_constraints_postSwitch": [2],
             "cons_availability": ["default"],
@@ -33,7 +35,7 @@ full_grid = make_cartesian_parameter_grid(
             "policy_name": ["Naive"],
             "climate_ssp": ["ssp245"],
             "climate_model_ensemble_model": ["mean"],
-            "services_affected_precip": ["none", "all"], # none nullifies all other climate impacts
+            "services_affected_precip": ["all"], # none nullifies all other climate impacts
             "tclose_overwrite": [1000],
         }
     }
@@ -58,7 +60,7 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "climate_scenario_runs_baseline",
+            "filename": "climate_scenario_runs_2_45_param_scan",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
@@ -83,7 +85,7 @@ class ClimateDisruptionScenario(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         # Single scenario definition that will be used with all parameter combinations
         return {
-            "Baseline": self._scenario_all_climate(),
+            "All": self._scenario_all_climate(),
         }
 
     def _scenario_all_climate(self) -> Dict:
