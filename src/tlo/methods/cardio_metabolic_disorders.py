@@ -1406,7 +1406,9 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                     {'count': x['nc_n_conditions'].count()}))
                 n_comorbidities_all.loc[:, num] = col['count']
 
-            prop_comorbidities_all = n_comorbidities_all.div(n_comorbidities_all.sum(axis=1), axis=0)
+            # Safely calculate proportions by handling division by zero
+            prop_comorbidities_all = n_comorbidities_all.div(n_comorbidities_all.sum(axis=1).replace(0, np.nan),
+                                                             axis=0).fillna(0)
 
             logger.info(key='mm_prevalence_by_age_all',
                         description='annual summary of multi-morbidities by age for all',
