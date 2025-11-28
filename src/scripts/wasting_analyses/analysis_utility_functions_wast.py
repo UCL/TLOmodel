@@ -1087,8 +1087,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 cost_outcome_folder_path = outputs_path / "outcomes_data"
                 # SQ timestamp associated with scenarios for which we want the costs to be calculated
                 SQ_results_timestamp = interv_timestamps_dict['SQ']
-                ce_suffix = (f"{timestamps_suffix}__"
-                             f"{in_data_impl_cost_name}_GM-CS-sharing{in_sharing_GM_CS}_FSmultiplier{in_FS_multiplier}")
+                ce_suffix = f"{in_data_impl_cost_name}_GM-CS-sharing{in_sharing_GM_CS}_FSmultiplier{in_FS_multiplier}"
+                timestamps_and_ce_suffix = f"{timestamps_suffix}__{ce_suffix}"
                 # -----------
                 # Implementation costs estimates based on number of births and unit costs from REFs, discounted by 3%
                 def calculate_implementation_costs():
@@ -1227,11 +1227,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     )
                     return all_costs
 
-                output_all_costs_file_path = (
-                    cost_outcome_folder_path /
-                    f"all_costs_{SQ_results_timestamp}_"
-                    f"{in_data_impl_cost_name}_GM-CS-{in_sharing_GM_CS}_FS-{in_FS_multiplier}.pkl"
-                )
+                output_all_costs_file_path = \
+                    cost_outcome_folder_path / f"all_costs_{SQ_results_timestamp}_{ce_suffix}.pkl"
                 if output_all_costs_file_path.exists() and not force_calculation[4] and not force_calculation[5] :
                     print("\nloading all costs from file ...")
                     all_costs_df = pd.read_pickle(output_all_costs_file_path)
@@ -1299,16 +1296,40 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     }  # ['bottom', 'top', 'bottom']
 
                 elif in_data_impl_cost_name == 'Margolies_etal2021':
-                    domination = {
-                        "SQ": "",
-                        "GM": "dominated",
-                        "CS": "extendedly dominated",
-                        "FS": "extendedly dominated",
-                        "GM_FS": "dominated",
-                        "CS_FS": "",
-                        "GM_CS_FS": "",
-                        "GM_CS": "extendedly dominated",
-                    }
+                    if in_FS_multiplier > 0.3:
+                        if in_sharing_GM_CS < 0.2 and in_FS_multiplier < 0.7:
+                            domination = {
+                                "SQ": "",
+                                "GM": "dominated",
+                                "CS": "extendedly dominated",
+                                "FS": "extendedly dominated",
+                                "GM_FS": "dominated",
+                                "CS_FS": "",
+                                "GM_CS_FS": "",
+                                "GM_CS": "dominated",
+                            }
+                        else: # in_sharing_GM_CS >= 0.2 or in_FS_multiplier >= 0.7:
+                            domination = {
+                                "SQ": "",
+                                "GM": "dominated",
+                                "CS": "extendedly dominated",
+                                "FS": "extendedly dominated",
+                                "GM_FS": "dominated",
+                                "CS_FS": "",
+                                "GM_CS_FS": "",
+                                "GM_CS": "extendedly dominated",
+                            }
+                    else: # in_FS_multiplier <= 0.3:
+                        domination = {
+                            "SQ": "",
+                            "GM": "dominated",
+                            "CS": "extendedly dominated",
+                            "FS": "",
+                            "GM_FS": "dominated",
+                            "CS_FS": "",
+                            "GM_CS_FS": "",
+                            "GM_CS": "dominated",
+                        }
                     ha_scen = {
                         "SQ": "left",
                         "GM": "center",
@@ -1418,7 +1439,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     outputs_path
                     / (
                         f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
-                        f"{scenarios_tocompare_prefix}__{ce_suffix}.png"
+                        f"{scenarios_tocompare_prefix}__{timestamps_and_ce_suffix}.png"
                     ),
                     bbox_inches="tight",
                 )
@@ -1468,7 +1489,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     by="Total costs (2023 USD)", key=lambda x: x.str.replace(",", "").astype(float)
                 )
                 ce_table_df.to_csv(
-                    outputs_path / f"cost_effectiveness_summary_table__{ce_suffix}.csv",
+                    outputs_path / f"cost_effectiveness_summary_table__{timestamps_and_ce_suffix}.csv",
                     index=False,
                 )
 
@@ -1528,12 +1549,11 @@ def plot_sum_outcome_and_CIs_intervention_period(
                             row_idx = r_idx * len(sharing_GM_CS) + g_idx
                             for c_idx, fs_mult in enumerate(FS_multiplier):
                                 ax = axes[row_idx, c_idx]
-                                ce_suffix = (
-                                    f"{timestamps_suffix}__{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
-                                )
+                                ce_suffix = f"{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
+                                timestamps_and_ce_suffix = f"{timestamps_suffix}__{ce_suffix}"
                                 img_path = outputs_path / (
                                     f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
-                                    f"{scenarios_tocompare_prefix}__{ce_suffix}.png"
+                                    f"{scenarios_tocompare_prefix}__{timestamps_and_ce_suffix}.png"
                                 )
                                 if img_path.exists():
                                     # Open image and display with preserved aspect ratio; turn axes off
