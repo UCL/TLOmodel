@@ -2299,7 +2299,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = facility_level
         bed_days = self.module.parameters['inpatient_bed_days']
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': bed_days})
-        p = self.module.parameters
 
     def _refer_to_next_level_up(self):
         """Schedule this event to occur again today at the next level-up (if there is a next level-up)."""
@@ -2316,7 +2315,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         _next_level_up = _next_in_sequence(self._facility_levels, self.ACCEPTED_FACILITY_LEVEL)
 
         if _next_level_up is not None:
-
+            p = self.module.parameters
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Alri_Treatment(
