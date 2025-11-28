@@ -851,7 +851,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         * Define symptoms
         """
         self.load_parameters_from_dataframe(
-            read_csv_files(resourcefilepath / 'ResourceFile_Alri', files='Parameter_values')
+            read_csv_files(resourcefilepath / 'ResourceFile_Alri', files='parameter_values')
         )
 
         self.check_params_read_in_ok()
