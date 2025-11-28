@@ -1383,14 +1383,12 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                 ax_ce.set_xlabel("DALYs Averted")
                 ax_ce.set_ylabel("Total Incremental Costs (2023 USD)")
-                ax_ce.set_title(f"{in_data_impl_cost_name}; CS & GM sharing: {in_sharing_GM_CS} prop of implem. costs; "
-                                f"FS multiplier: {in_FS_multiplier}", pad=12)
-                ax_ce.set_title(
-                    f"$\\bf{{unit\\ cost:}}$ {in_data_impl_cost_name}; "
-                    f"$\\bf{{CS\\ &\\ GM\\ sharing:}}$ {in_sharing_GM_CS} prop of implem. costs; "
-                    f"$\\bf{{FS\\ multiplier:}}$ {in_FS_multiplier}",
-                    pad=12,
-                )
+                # ax_ce.set_title(
+                #     f"$\\bf{{unit\\ cost:}}$ {in_data_impl_cost_name}; "
+                #     f"$\\bf{{CS\\ &\\ GM\\ sharing:}}$ {in_sharing_GM_CS} prop of implem. costs; "
+                #     f"$\\bf{{FS\\ multiplier:}}$ {in_FS_multiplier}",
+                #     pad=12,
+                # )
 
                 # Add dashed black line for 1 DALY averted per CET
                 y_vals = np.array(ax_ce.get_ylim())
@@ -1496,15 +1494,15 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     sharing_GM_CS = [0.5, 0]
                     # sensitivity to FS intervention multiplier
                     FS_multiplier = [1, 0.5, 0.18, 0.09]
-                    # individual CE planes
+                    # Individual CE planes
                     for unit_cost in data_impl_cost_name:
                         for GM_CS__multiplier in sharing_GM_CS:
                             for FS__multiplier in FS_multiplier:
                                 plot_and_table_cost_effectiveness(
                                     averted_DALYs, unit_cost, GM_CS__multiplier, FS__multiplier
                                 )
-                    # sensitivity plot - create grid of CE figures for all unit_cost / GM_CS / FS combinations
 
+                    # Sensitivity plot - create grid of CE figures for all unit_cost / GM_CS / FS combinations
                     # build grid dims
                     n_rows = len(data_impl_cost_name) * len(sharing_GM_CS)
                     n_cols = len(FS_multiplier)
@@ -1522,7 +1520,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                             row_idx = r_idx * len(sharing_GM_CS) + g_idx
                             for c_idx, fs_mult in enumerate(FS_multiplier):
                                 ax = axes[row_idx, c_idx]
-                                ce_suffix = f"{timestamps_suffix}__{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
+                                ce_suffix = \
+                                    f"{timestamps_suffix}__{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
                                 img_path = outputs_path / (
                                     f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
                                     f"{scenarios_tocompare_prefix}__{ce_suffix}.png"
@@ -1537,7 +1536,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                 else:
                                     # Clear axes and show placeholder text
                                     ax.clear()
-                                    ax.text(0.5, 0.5, f"Missing:\\n{img_path.name}", ha="center", va="center", fontsize=8)
+                                    ax.text(0.5, 0.5, f"Missing:\\n{img_path.name}", ha="center", va="center",
+                                            fontsize=8)
                                     ax.set_xticks([])
                                     ax.set_yticks([])
                                     ax.axis("off")
@@ -1546,13 +1546,27 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     for r in range(n_rows):
                         unit_idx = r // len(sharing_GM_CS)
                         gm_idx = r % len(sharing_GM_CS)
-                        label = f"{data_impl_cost_name[unit_idx]}\\nGM-CS={sharing_GM_CS[gm_idx]}"
-                        # place label in left margin of the row; use transform to align with axes coordinates
-                        axes[r, 0].text(-0.02, 0.5, label, transform=axes[r, 0].transAxes,
-                                        rotation=0, ha="right", va="center", fontsize=9)
+
+                        # add labels
+                        # columns: place label only above first row
+                        if r == 0:
+                            for c in range(n_cols):
+                                axes[0, c].set_title(f"$\\bf{{FS\\ multiplier:}}$ {FS_multiplier[c]}",
+                                                     pad=2, fontsize=8)
+                        # rows: place label in left margin of the row; use transform to align with axes coordinates
+                        row_label = (
+                            f"$\\bf{{unit\\ cost:}}$ {data_impl_cost_name[unit_idx]};\n"
+                            f"$\\bf{{GM\\ &\\ CS\\ shared\\ implem. cost\\ prop.:}}$ {sharing_GM_CS[gm_idx]}"
+                        )
+                        axes[r, 0].text(-0.02, 0.5, row_label, transform=axes[r, 0].transAxes,
+                                        rotation=90, ha="right", va="center", fontsize=8)
 
                     plt.tight_layout()
-                    out_file = outputs_path / f"cost_effectiveness_sensitivity_grid__{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+                    cohort_prefix = \
+                        "Neo" if cohort == "Neonatal" else "Under5" if cohort == "Under-5" else "unknown_cohort"
+                    out_file = \
+                        outputs_path / (f"{cohort_prefix}_cost_effectiveness_sensitivity_grid__"
+                                        f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png")
                     # Save at higher DPI for better quality
                     fig.savefig(out_file, bbox_inches="tight", dpi=300)
                     plt.close(fig)
