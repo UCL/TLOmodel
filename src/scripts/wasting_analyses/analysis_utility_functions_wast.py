@@ -1080,39 +1080,66 @@ def plot_sum_outcome_and_CIs_intervention_period(
             )
             plt.close(fig2)
 
-            def plot_and_table_cost_effectiveness(averted_DALYs: dict) -> None:
+            def plot_and_table_cost_effectiveness(in_averted_DALYs: dict, in_data_impl_cost_name: str,
+                                                  in_sharing_GM_CS: float, in_FS_multiplier: float) -> None:
                 # path to outcome calculated data
                 cost_outcome_folder_path = outputs_path / "outcomes_data"
                 # SQ timestamp associated with scenarios for which we want the costs to be calculated
                 SQ_results_timestamp = interv_timestamps_dict['SQ']
+                ce_suffix = (f"{timestamps_suffix}__"
+                             f"{in_data_impl_cost_name}_GM-CS-sharing{in_sharing_GM_CS}_FSmultiplier{in_FS_multiplier}")
                 # -----------
                 # Implementation costs estimates based on number of births and unit costs from REFs, discounted by 3%
                 def calculate_implementation_costs():
                     # Implementation costs for education/promotion interventions (ie GM & CS)
+                    # note: start_up_unit_cost is assumed to be additional cost to unit cost for the first year of
+                    #       implementation
+
                     # Gelli et al., 2021 (incl food, not the best choice as we already have food supplements modelled
                     # separately)
                     # start_up_cost_Gelli_etal2021 = 58.41 * 0.3
                     # unit_cost_Gelli_etal2021 = 58.41 * 0.7
-                    # Pearson et al, 2018 (seems to include purely implementation costs, and assume coverage for the
+
+                    # Pearson et al., 2018 (seems to include purely implementation costs, and assume coverage for the
                     # interventions, however as we intend to reach 100% scale-up, we assume 100% coverage)
                     # coverage_educ_Pearson_etal2018 = 0.247
                     # coverage_prom_Pearson_etal2018 = 0.61
+                    coverage = 1.0  # [coverage_educ_Pearson_etal2018, coverage_prom_Pearson_etal2018, 1.0]
+                    # coverage with Margolies et al., 2021
+                    # 0.15 => 'CS_FS': 30,484,191.749434147 > 29,853,966
+                    # 0.14 => 'CS_FS': 28,451,912.299471878 < 29,853,966
+                    # 0.0017 => 'GM_CS': 259,464.976512309 > 246,824.02
+                    # 0.0016 => 'GM_CS': 244,202.33083511435 < 246,824.02
 
-                    # print("Implementation costs Pearson et al., 2018")
-                    unit_cost_Pearson_etal2018 = 1.57
-                    start_up_Pearson_etal2018 = 1.57 / 7 * 3
+                    unit_cost_Pearson_etal2018 = 0.37
+                    start_up_Pearson_etal2018 = 0.37 / 7 * 3 # no start-up costs included in the estimate
+                    discount_incl_bool_Pearson_etal2018 = False # no discounting (1 year long programme)
+
+                    unit_cost_Margolies_etal2021_min = 9.17
+                    start_up_Margolies_etal2021 = 0  # included in their estimate of unit cost
+                    discount_incl_bool_Margolies_etal2021 = True # already includes 3% annual discounting (5 years)
 
                     # Implementation costs GM, CS & FS:
                     # #####
                     scenarios_without_SQ = [scen for scen in scenarios_to_compare if scen != 'Status Quo']
-                    start_up_unit_cost = start_up_Pearson_etal2018 #, start_up_cost_Gelli_etal2021
-                    unit_cost = unit_cost_Pearson_etal2018 #, unit_cost_Gelli_etal2021
-                    coverage = 1.0  # [coverage_educ_Pearson_etal2018, coverage_prom_Pearson_etal2018, 1.0]
 
+                    if in_data_impl_cost_name == 'Pearson_etal2018':
+                        unit_cost = unit_cost_Pearson_etal2018
+                        start_up_unit_cost = start_up_Pearson_etal2018
+                        discount_incl_bool = discount_incl_bool_Pearson_etal2018
+
+                    elif in_data_impl_cost_name == 'Margolies_etal2021':
+                        unit_cost = unit_cost_Margolies_etal2021_min
+                        start_up_unit_cost = start_up_Margolies_etal2021
+                        discount_incl_bool = discount_incl_bool_Margolies_etal2021
+
+                    print(f"\nUNIT COST: {unit_cost}")
                     impl_costs = dict()
                     for scen in scenarios_without_SQ:
                         scen_coef = (
-                            1 if "_" not in scen else 2.5 if scen.count("_") == 2 else 1.5 if scen == "GM_CS" else 2
+                            (in_FS_multiplier if scen == "FS" else 1) if "_" not in scen else
+                            (2 - in_sharing_GM_CS + in_FS_multiplier) if scen.count("_") == 2 else
+                            (2 - in_sharing_GM_CS) if scen == "GM_CS" else (1 + in_FS_multiplier)
                         )
                         impl_cost_df = pd.DataFrame(
                             {
@@ -1126,11 +1153,19 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                 ],
                             }
                         )
-                        impl_cost_discounted_df = apply_discounting_to_cost_data(
-                            _df=impl_cost_df, _discount_rate=0.03, _column_for_discounting='impl_costs'
-                        )
-                        sum_impl_costs_discounted = sum(impl_cost_discounted_df['impl_costs'])
+                        # print(f"\n--------\nscen {scen}\n--------")
+                        # print("\nimpl_cost_df")
+                        # print(impl_cost_df)
+                        if not discount_incl_bool:
+                            impl_cost_df = apply_discounting_to_cost_data(
+                                _df=impl_cost_df, _discount_rate=0.03, _column_for_discounting='impl_costs'
+                            )
+                        sum_impl_costs_discounted = sum(impl_cost_df['impl_costs'])
                         impl_costs[scen] = sum_impl_costs_discounted
+                        # print("\nimpl_cost_discounted_df")
+                        # print(impl_cost_discounted_df)
+                        # print("\nimpl_costs")
+                        # print(impl_costs)
 
                     # Implementation costs FS:
                     # TODO:
@@ -1170,7 +1205,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     # 2. Implementation costs estimates based on number of births and unit costs from REFs,
                     # discounted by 3%
                     implementation_costs = calculate_implementation_costs()
-                    print("\nimplementation_costs")
+                    print(f"\nimplementation_costs: {in_data_impl_cost_name}; GM & CS shared costs: {in_sharing_GM_CS};"
+                          f" FS multiplier: {in_FS_multiplier}")
                     print(implementation_costs)
 
                     all_costs = pd.DataFrame(
@@ -1191,7 +1227,9 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     return all_costs
 
                 output_all_costs_file_path = (
-                    cost_outcome_folder_path / f"all_costs_{SQ_results_timestamp}.pkl"
+                    cost_outcome_folder_path /
+                    f"all_costs_{SQ_results_timestamp}_"
+                    f"{in_data_impl_cost_name}_GM-CS-{in_sharing_GM_CS}_FS-{in_FS_multiplier}.pkl"
                 )
                 if output_all_costs_file_path.exists() and not force_calculation[4] and not force_calculation[5] :
                     print("\nloading all costs from file ...")
@@ -1199,11 +1237,11 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 else:
                     print("\nall costs calculation ...")
                     all_costs_df = get_all_costs()
-                    print("saving all costs to file ...")
+                    print("\nsaving all costs to file ...")
                     all_costs_df.to_pickle(output_all_costs_file_path)
 
                 # Cost-effectiveness threshold (CET) = willingness to pay
-                CET = 83
+                CET = 75.9
 
                 # PLOT cost-effectiveness plane
                 # #####
@@ -1211,34 +1249,14 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 scenarios_without_SQ = [scen for scen in all_costs_df['scenario'] if scen != "SQ"]
 
                 fig_ce, ax_ce = plt.subplots(figsize=(10, 8))
-                ha_scen = {
-                    "SQ": "left",
-                    "GM": "right",
-                    "CS": "left",
-                    "FS": "left",
-                    "GM_FS": "center",
-                    "CS_FS": "left",
-                    "GM_CS_FS": "left",
-                    "GM_CS": "right",
-                }  # ['right', 'left', 'center']
-                va_scen = {
-                    "SQ": "top",
-                    "GM": "top",
-                    "CS": "top",
-                    "FS": "bottom",
-                    "GM_FS": "bottom",
-                    "CS_FS": "top",
-                    "GM_CS_FS": "top",
-                    "GM_CS": "bottom",
-                }  # ['bottom', 'top', 'bottom']
                 space = 0.012 * all_costs_df.loc[all_costs_df['scenario'] == "FS", "total_cost"].values[0]
                 for scen in scenarios_without_SQ:
                     ax_ce.errorbar(
-                        averted_DALYs[scen][0],
+                        in_averted_DALYs[scen][0],
                         all_costs_df.loc[all_costs_df['scenario'] == scen, 'total_cost'].values[0],
                         xerr=[
-                            [averted_DALYs[scen][0] - averted_DALYs[scen][1]],
-                            [averted_DALYs[scen][2] - averted_DALYs[scen][0]],
+                            [in_averted_DALYs[scen][0] - in_averted_DALYs[scen][1]],
+                            [in_averted_DALYs[scen][2] - in_averted_DALYs[scen][0]],
                         ],
                         fmt="o",
                         color=get_scen_colour(scen),
@@ -1246,32 +1264,85 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     )
                 # add SQ point
                 ax_ce.plot(0, 0, marker="o", color=get_scen_colour('SQ'))
-                # define domination for scenarios
-                domination = {
-                    "SQ": "",
-                    "GM": "dominated",
-                    "CS": "",
-                    "FS": "dominated",
-                    "GM_FS": "dominated",
-                    "CS_FS": "",
-                    "GM_CS_FS": "",
-                    "GM_CS": "extendedly dominated",
-                }
+                # define domination for scenarios and position of label in plot
+                if in_data_impl_cost_name == 'Pearson_etal2018':
+                    domination = {
+                        "SQ": "dominated",
+                        "GM": "dominated",
+                        "CS": "",
+                        "FS": "dominated",
+                        "GM_FS": "dominated",
+                        "CS_FS": "",
+                        "GM_CS_FS": "",
+                        "GM_CS": "extendedly dominated",
+                    }
+                    ha_scen = {
+                        "SQ": "left",
+                        "GM": "center",
+                        "CS": "center",
+                        "FS": "left",
+                        "GM_FS": "center",
+                        "CS_FS": "left",
+                        "GM_CS_FS": "center",
+                        "GM_CS": "left",
+                    }  # ['right', 'left', 'center']
+                    va_scen = {
+                        "SQ": "top",
+                        "GM": "bottom",
+                        "CS": "top",
+                        "FS": "bottom",
+                        "GM_FS": "bottom",
+                        "CS_FS": "top",
+                        "GM_CS_FS": "bottom",
+                        "GM_CS": "bottom",
+                    }  # ['bottom', 'top', 'bottom']
+
+                elif in_data_impl_cost_name == 'Margolies_etal2021':
+                    domination = {
+                        "SQ": "",
+                        "GM": "dominated",
+                        "CS": "extendedly dominated",
+                        "FS": "extendedly dominated",
+                        "GM_FS": "dominated",
+                        "CS_FS": "",
+                        "GM_CS_FS": "",
+                        "GM_CS": "extendedly dominated",
+                    }
+                    ha_scen = {
+                        "SQ": "left",
+                        "GM": "center",
+                        "CS": "right",
+                        "FS": "right",
+                        "GM_FS": "right",
+                        "CS_FS": "left",
+                        "GM_CS_FS": "center",
+                        "GM_CS": "right",
+                    }  # ['right', 'left', 'center']
+                    va_scen = {
+                        "SQ": "top",
+                        "GM": "bottom",
+                        "CS": "top",
+                        "FS": "bottom",
+                        "GM_FS": "bottom",
+                        "CS_FS": "top",
+                        "GM_CS_FS": "bottom",
+                        "GM_CS": "bottom",
+                    }  # ['bottom', 'top', 'bottom']
                 # print("\nICER:")
                 for _, row in all_costs_df.iterrows():
                     scen = row["scenario"]
                     if scen == 'SQ':
                         scen_cons_cost_per_DALY = 0
                     else:
-                        scen_cons_cost_per_DALY = row["total_cost"] / averted_DALYs[scen][0]
+                        scen_cons_cost_per_DALY = row["total_cost"] / in_averted_DALYs[scen][0]
                         # print(f'\nscenario: {scen}')
                         # print(f'total costs: {row["total_cost"]}')
-                        # print(f'averted DALYs: {averted_DALYs[scen][0]}')
+                        # print(f'averted DALYs: {in_averted_DALYs[scen][0]}')
                         #
                         # scen_cons_cost_per_DALY_lower = \
-                        #     min(row["total_cost"] / averted_DALYs[scen][1], row["total_cost"] / averted_DALYs[scen][2])
+                        #     min(row["total_cost"] / in_averted_DALYs[scen][1], row["total_cost"] / in_averted_DALYs[scen][2])
                         # scen_cons_cost_per_DALY_upper = \
-                        #     max(row["total_cost"] / averted_DALYs[scen][1], row["total_cost"] / averted_DALYs[scen][2])
+                        #     max(row["total_cost"] / in_averted_DALYs[scen][1], row["total_cost"] / in_averted_DALYs[scen][2])
                         # print(f"\nICER for {scen=}: "
                         #       f"${scen_cons_cost_per_DALY:,.2f} ({scen_cons_cost_per_DALY_lower:,.2f}–"
                         #       f"{scen_cons_cost_per_DALY_upper:,.2f})")
@@ -1282,7 +1353,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     )
                     ICER_domination = ICER if domination[scen] == "" else domination[scen]
                     ax_ce.text(
-                        averted_DALYs[scen][0] if scen != 'SQ' else 0,
+                        in_averted_DALYs[scen][0] if scen != 'SQ' else 0,
                         row["total_cost"] + (space * 0.9) if va_scen[scen] == "bottom"
                         else row["total_cost"] - space,
                         ICER_domination,
@@ -1295,7 +1366,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                 # Add cost-effectiveness frontier (dotted line connecting non-dominated scenarios)
                 scen_frontier = [scen for scen, dom in domination.items() if dom == ""]
-                frontier_x = [averted_DALYs[scen][0] if scen != 'SQ' else 0 for scen in scen_frontier]
+                frontier_x = [in_averted_DALYs[scen][0] if scen != 'SQ' else 0 for scen in scen_frontier]
                 frontier_y = [all_costs_df.loc[all_costs_df['scenario'] == scen, 'total_cost'].values[0]
                               for scen in scen_frontier]
                 ax_ce.plot(
@@ -1311,7 +1382,14 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                 ax_ce.set_xlabel("DALYs Averted")
                 ax_ce.set_ylabel("Total Incremental Costs (2023 USD)")
-                # ax_ce.set_title("Cost-Effectiveness: DALYs Averted vs Total Incremental Costs", pad=12)
+                ax_ce.set_title(f"{in_data_impl_cost_name}; CS & GM sharing: {in_sharing_GM_CS} prop of implem. costs; "
+                                f"FS multiplier: {in_FS_multiplier}", pad=12)
+                ax_ce.set_title(
+                    f"$\\bf{{unit\\ cost:}}$ {in_data_impl_cost_name}; "
+                    f"$\\bf{{CS\\ &\\ GM\\ sharing:}}$ {in_sharing_GM_CS} prop of implem. costs; "
+                    f"$\\bf{{FS\\ multiplier:}}$ {in_FS_multiplier}",
+                    pad=12,
+                )
 
                 # Add dashed black line for 1 DALY averted per CET
                 y_vals = np.array(ax_ce.get_ylim())
@@ -1341,7 +1419,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     outputs_path
                     / (
                         f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
-                        f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+                        f"{scenarios_tocompare_prefix}__{ce_suffix}.png"
                     ),
                     bbox_inches="tight",
                 )
@@ -1354,9 +1432,9 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 # Create a cost-effectiveness summary table for each scenario
                 ce_table_rows = []
                 for scen in all_costs_df["scenario"]:
-                    averted_dalys = averted_DALYs[scen][0] if scen != 'SQ' else 0
-                    averted_dalys_lower = averted_DALYs[scen][1] if scen != 'SQ' else 0
-                    averted_dalys_upper = averted_DALYs[scen][2] if scen != 'SQ' else 0
+                    averted_dalys = in_averted_DALYs[scen][0] if scen != 'SQ' else 0
+                    averted_dalys_lower = in_averted_DALYs[scen][1] if scen != 'SQ' else 0
+                    averted_dalys_upper = in_averted_DALYs[scen][2] if scen != 'SQ' else 0
                     incremental_costs = \
                         all_costs_df.loc[all_costs_df['scenario'] == scen, 'incremental_consumable_costs'].values[0]
                     impl_cost = all_costs_df.loc[all_costs_df['scenario'] == scen, 'implementation_costs'].values[0]
@@ -1391,8 +1469,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     by="Total costs (2023 USD)", key=lambda x: x.str.replace(",", "").astype(float)
                 )
                 ce_table_df.to_csv(
-                    outputs_path
-                    / (f"cost_effectiveness_summary_table__{timestamps_suffix}.csv"),
+                    outputs_path / f"cost_effectiveness_summary_table__{ce_suffix}.csv",
                     index=False,
                 )
 
@@ -1412,7 +1489,21 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
             if outcome_type == "DALYs":
                 if cause == "any cause":
-                    plot_and_table_cost_effectiveness(averted_DALYs)
+                    # sensitivity to unit cost
+                    data_impl_cost_name = ['Pearson_etal2018', 'Margolies_etal2021']
+                    # sensitivity to sharing implementation costs for GM and CS interventions
+                    sharing_GM_CS = [0.5, 0]
+                    # sensitivity to FS intervention multiplier
+                    FS_multiplier = [1, 0.5, 0.18, 0.09]
+                    # individual CE planes
+                    for unit_cost in data_impl_cost_name:
+                        for GM_CS__multiplier in sharing_GM_CS:
+                            for FS__multiplier in FS_multiplier:
+                                plot_and_table_cost_effectiveness(
+                                    averted_DALYs, unit_cost, GM_CS__multiplier, FS__multiplier
+                                )
+                    # sensitivity plot
+
                 else:
                     table_effectiveness(averted_DALYs, f"{outcome_type}_{cause}")
             # if outcome_type == "deaths":
