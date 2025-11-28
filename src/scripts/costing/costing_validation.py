@@ -59,7 +59,7 @@ calibration_data = calibration_data.set_index(['calibration_category', 'stat'])
 resourcefilepath = Path("./resources")
 outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
 #results_folder = get_scenario_outputs('hss_elements-2024-11-12T172311Z.py', outputfilepath)[0] # November 2024 runs
-results_folder = get_scenario_outputs('htm_and_hss_runs-2025-01-16T135243Z.py', outputfilepath)[0] # January 2025 runs
+results_folder = get_scenario_outputs('htm_and_hss_runs-2025-10-14T084418Z.py', outputfilepath)[0] # January 2025 runs
 
 # Estimate costs for 2018
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _years = [2018], _draws = [0], summarize = True, cost_only_used_staff=False)
