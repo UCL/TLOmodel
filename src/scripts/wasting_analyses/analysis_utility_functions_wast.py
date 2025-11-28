@@ -1508,10 +1508,15 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     n_cols = len(FS_multiplier)
 
                     # Create figure at higher resolution (DPI) to improve exported image quality
-                    # use constrained_layout to avoid extra stretching and help preserve image proportions
+                    # use gridspec spacing controls to reduce large gaps between columns/rows
                     fig, axes = plt.subplots(
-                        n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows), dpi=200, constrained_layout=True
+                        n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows), dpi=200,
+                        constrained_layout=False,
+                        gridspec_kw={'wspace': 0.12, 'hspace': 0.18}
                     )
+
+                    # Tighten left/right margins and avoid large automatic padding caused by negative text positions
+                    fig.subplots_adjust(left=0.14, right=0.98, top=0.96, bottom=0.06)
 
                     # Ensure axes is a 2D array for consistent indexing
                     axes = np.atleast_2d(axes)
@@ -1533,12 +1538,10 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                 if img_path.exists():
                                     # Open image and display with preserved aspect ratio; turn axes off
                                     img = Image.open(img_path).convert("RGB")
-                                    ax.imshow(img, aspect='equal', interpolation='bilinear')
-                                    # ensure the axes box is adjusted to preserve the image aspect ratio
-                                    ax.set_adjustable('box')
+                                    ax.imshow(img, aspect='auto', interpolation='bilinear')
                                     ax.set_xticks([])
                                     ax.set_yticks([])
-                                    ax.axis("off")
+                                    ax.set_axis_off()
                                 else:
                                     # Clear axes and show placeholder text
                                     ax.clear()
@@ -1546,20 +1549,19 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                             fontsize=8)
                                     ax.set_xticks([])
                                     ax.set_yticks([])
-                                    ax.axis("off")
+                                    ax.set_axis_off()
 
-                    # add row labels on the left (unit_cost + gm_cs)
+                    # add row labels on the left (unit_cost + gm_cs) using figure text to avoid expanding axes margins
                     for r in range(n_rows):
                         unit_idx = r // len(sharing_GM_CS)
                         gm_idx = r % len(sharing_GM_CS)
 
-                        # add labels
-                        # columns: place label only above first row
+                        # column titles: only for first row
                         if r == 0:
                             for c in range(n_cols):
                                 axes[0, c].set_title(f"$\\bf{{FS\\ multiplier:}}$ {FS_multiplier[c]}",
-                                                     pad=2, fontsize=8)
-                        # rows: place label in left margin of the row; use transform to align with axes coordinates
+                                                     loc="center", x=0.43, pad=2, fontsize=8)
+                        # row labels: place in left margin of the row; use transform to align with axes coordinates
                         row_label = (
                             f"$\\bf{{unit\\ cost:}}$ {data_impl_cost_name[unit_idx]};\n"
                             f"$\\bf{{GM\\ &\\ CS\\ shared\\ implem. cost\\ prop.:}}$ {sharing_GM_CS[gm_idx]}"
