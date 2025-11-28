@@ -881,7 +881,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             date_of_last_test = individual_properties[f"nc_{condition}_date_last_test"]
             next_test_due = (
                 pd.isnull(date_of_last_test)
-                or (self.sim.date - date_of_last_test).days > DAYS_IN_YEAR / p['tests_per_year']
+                or (self.sim.date - date_of_last_test).days > (DAYS_IN_YEAR / p['tests_per_year'])
             )
             p_assess_if_no_symptom = self.parameters[f"{condition}_hsi"].get(
                 "pr_assessed_other_symptoms"
