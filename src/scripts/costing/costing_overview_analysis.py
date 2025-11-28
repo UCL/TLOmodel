@@ -26,7 +26,7 @@ from tlo.analysis.utils import (
     extract_params,
     get_scenario_info,
     get_scenario_outputs,
-    load_pickled_dataframes,
+    load_pickled_dataframes, compute_summary_statistics,
 )
 
 # Define a timestamp for script outputs
@@ -41,10 +41,11 @@ outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
 figurespath = Path('./outputs/costing/overview/')
 if not os.path.exists(figurespath):
     os.makedirs(figurespath)
+path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('htm_and_hss_runs-2025-10-14T084418Z.py.py', outputfilepath)[0] # January 2025 runs
+results_folder = get_scenario_outputs('htm_and_hss_runs-2025-10-14T084418Z.py', outputfilepath)[0] # January 2025 runs
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
@@ -93,16 +94,15 @@ undiscounted_cost_by_draw = input_costs_undiscounted.groupby(['draw', 'stat'])['
 
 # Abstract
 consumable_cost_by_draw = input_costs[(input_costs.cost_category == 'medical consumables') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
-print(f"Under current system capacity, total healthcare delivery costs for 2023–2030 were estimated at \$"
-      f"{cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], averaging \$"
-      f"{undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}m] annually."
-      f" Scenario analysis revealed the importance of health system interdependencies: improving consumable availability alone led to a modest "
-      f"{(consumable_cost_by_draw[4]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
-      f" increase in consumables cost due to constraints in the health workforce. In contrast, expanding human resources for health (HRH) increased consumables costs by "
-      f"{(consumable_cost_by_draw[2]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
-      f", while jointly expanding HRH and consumable availability raised consumables costs by "
-      f"{(consumable_cost_by_draw[7]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%, "
-      f"illustrating how bottlenecks in one component limit the effect of changes in another.")
+print(f"Under current system capacity, total healthcare delivery costs for 2023–2030 were estimated at "
+      f"\{cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], averaging "
+      f"{undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}m] annually. Scenario analysis highlighted strong interdependencies "
+      f"within the health system. Improving consumable availability alone increased consumables costs by "
+      f"{(consumable_cost_by_draw[4]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%, while expanding human resources for health (HRH) alone increased them by "
+      f"{(consumable_cost_by_draw[2]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%. "
+      f"When both HRH and consumable availability were expanded together, consumable costs rose by "
+      f"{(consumable_cost_by_draw[7]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
+      f",a combined effect larger than either change alone, illustrating how bottlenecks in one component constrain the impact of improvements in another.")
 # Results 1
 print(f"The total cost of healthcare delivery in Malawi between 2023 and 2030 was estimated to be "
       f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], under the actual scenario, and increased to "
@@ -116,6 +116,9 @@ print(f"This translates to an average annual cost of "
       f"\${undiscounted_cost_by_draw[2,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[2,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[2,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH scenario and finally "
       f"\${undiscounted_cost_by_draw[7,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[7,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[7,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH + improved consumable availability scenario.")
 # Results 3
+# TODO add per capita estimates
+
+# Results 4
 print(f"Notably, improving consumable availability alone increases the cost of medical consumables by just "
       f"{(consumable_cost_by_draw[4]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
       f"because the limited health workforce (HRH) restricts the number of feasible appointments and, consequently, the quantity of consumables dispensed. "
@@ -124,12 +127,96 @@ print(f"Notably, improving consumable availability alone increases the cost of m
       f". When both HRH and consumable availability are expanded together, consumable costs increase by "
       f"{(consumable_cost_by_draw[7]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
       f"compared to the actual scenario.")
-# Results 4
+# Results 5
 cost_of_hiv_testing =  input_costs[(input_costs.cost_subgroup == 'Test, HIV EIA Elisa') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
-print(f"For instance, the cost of HIV testing consumables increases by {(cost_of_hiv_testing[2]/cost_of_hiv_testing[0] - 1)*100:.2f}\% under the expanded HRH scenario and by "
-      f"{(cost_of_hiv_testing[7]/cost_of_hiv_testing[0] - 1)*100:.2f}\% under the combined expanded HRH and improved consumable availability scenario, "
-      f"while showing almost no change under the scenario with improved consumable availability alone")
-# TODO Check above
+cost_of_hiv_treatment =  input_costs[(input_costs.cost_subgroup == 'First-line ART regimen: adult') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
+cost_of_jadelle =  input_costs[(input_costs.cost_subgroup == 'Jadelle (implant), box of 2_CMST') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
+# Get availability estimates
+tlo_availability_df = pd.read_csv(path_for_consumable_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
+tlo_availability_df = tlo_availability_df[['Facility_ID', 'month','item_code', 'available_prop', 'available_prop_scenario6']]
+program_item_mapping = pd.read_csv(path_for_consumable_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv')[['Item_Code', 'item_category']]
+program_item_mapping = program_item_mapping.rename(columns ={'Item_Code': 'item_code'})[program_item_mapping.item_category.notna()]
+mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
+fac_levels = {'0', '1a', '1b', '2', '3', '4'}
+tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
+                    on = ['Facility_ID'], how='left')
+tlo_availability_df = tlo_availability_df.merge(program_item_mapping,
+                    on = ['item_code'], how='left')
+# Jadelle
+jadelle_actual = tlo_availability_df[(tlo_availability_df.item_code == 12) &
+                    (tlo_availability_df.Facility_Level.isin(['1a','1b']))]['available_prop'].mean()
+jadelle_new = tlo_availability_df[(tlo_availability_df.item_code == 12) &
+                    (tlo_availability_df.Facility_Level.isin(['1a','1b']))]['available_prop_scenario6'].mean()
+# ART
+art_actual = tlo_availability_df[(tlo_availability_df.item_code == 2671) &
+                    (tlo_availability_df.Facility_Level.isin(['1a','1b']))]['available_prop'].mean()
+art_new = tlo_availability_df[(tlo_availability_df.item_code == 2671) &
+                    (tlo_availability_df.Facility_Level.isin(['1a','1b']))]['available_prop_scenario6'].mean()
+
+
+print(f"First, the changes are driven by which constraint is binding. For example, the pattern for the Jadelle"
+      f" contraceptive implant differs markedly from that of adult antiretroviral therapy (ART). "
+      f"Expanding HRH alone increases the cost of Jadelle by just "
+      f"{(cost_of_jadelle[2]/cost_of_jadelle[0] - 1)*100:.2f}\%, whereas improved consumable availability results in a "
+      f"{(cost_of_jadelle[4]/cost_of_jadelle[0] - 1)*100:.2f}\% increase, rising to "
+      f"{(cost_of_jadelle[7]/cost_of_jadelle[0] - 1)*100:.2f}\% when both HRH and consumables expand. "
+      f"In contrast, ART costs rise more modestly across the same scenarios "
+      f"({(cost_of_hiv_treatment[2]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
+      f"{(cost_of_hiv_treatment[4]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, and "
+      f"{(cost_of_hiv_treatment[7]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%). "
+      f"This reflects differences in baseline availability: ART already had very high availability in level 1a/1b facilities "
+      f"({art_actual*100:.2f}\%), "
+      f"and the improved supply chain scenario increased this by only around "
+      f"{(art_new - art_actual)*100:.0f} percentage points. "
+      f"For Jadelle, availability increased from "
+      f"{(jadelle_actual)*100:.2f}\% by "
+      f"{(jadelle_new - jadelle_actual)*100:.0f} percentage points, "
+      f"meaning consumable availability was a stronger binding constraint for this service.")
+
+print(f"Second, cost changes do not scale linearly with changes in service coverage or system capacity. "
+      f"The dynamic nature of the model aggregates multiple interacting processes — such as population growth, "
+      f"prevention coverage, HIV prevalence, testing rates, testing yields, etc. — into the resulting cost estimates. "
+      f"Consequently, while ART costs increase progressively across scenarios "
+      f"({(cost_of_hiv_treatment[2]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
+      f"{(cost_of_hiv_treatment[4]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
+      f"{(cost_of_hiv_treatment[7]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%), "
+      f"the cost of HIV testing shows a different pattern: a small increase under expanded HRH "
+      f"({(cost_of_hiv_testing[2]/cost_of_hiv_testing[0] - 1)*100:.2f}\%) "
+      f"but reductions of "
+      f"{(cost_of_hiv_testing[4]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% and "
+      f"{(cost_of_hiv_testing[7]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% under the improved consumables and combined scenarios.")
+
+# Browse HIV logs
+def get_hiv_summary(results_folder, key, var, summarise_func = 'sum', do_scaling = True):
+    def get_count(_df:pd.Series):
+        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
+        _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
+
+        _df = _df[var]
+        _df.index.name = 'year'
+        return _df
+
+    hiv_stat = compute_summary_statistics(extract_results(
+        Path(results_folder),
+        module='tlo.methods.hiv',
+        key=key,
+        custom_generate_series=get_count,
+        do_scaling=do_scaling,
+    ), central_measure = 'mean')
+
+    hiv_stat_summmary = hiv_stat.loc[hiv_stat.index.isin(list_of_years_for_plot),[(0,'central'),(2,'central'),(4,'central'),(7,'central')]].agg(summarise_func)
+
+    return hiv_stat_summmary
+
+art_coverage_adult = get_hiv_summary(results_folder, key = 'hiv_program_coverage', var = 'art_coverage_adult', summarise_func = 'mean', do_scaling = False)
+art_coverage_adult_VL_suppression = get_hiv_summary(results_folder, key = 'hiv_program_coverage', var = 'art_coverage_adult_VL_suppression', summarise_func = 'mean', do_scaling = False)
+prop_tested_adult = get_hiv_summary(results_folder, key = 'hiv_program_coverage', var = 'prop_tested_adult', summarise_func = 'mean', do_scaling = False)
+plhiv = get_hiv_summary(results_folder, key = 'summary_inc_and_prev_for_adults_and_children_and_fsw', var = 'total_plhiv', summarise_func = 'sum', do_scaling = True)
+testing_yield = get_hiv_summary(results_folder, key = 'hiv_program_coverage', var = 'testing_yield', summarise_func = 'mean', do_scaling = False)
+prop_adults_exposed_to_behav_intv = get_hiv_summary(results_folder, key = 'hiv_program_coverage', var = 'prop_adults_exposed_to_behav_intv', summarise_func = 'mean', do_scaling = False)
+per_capita_testing_rate = get_hiv_summary(results_folder, key = 'hiv_program_coverage', var = 'per_capita_testing_rate', summarise_func = 'mean', do_scaling = False)
+hiv_prev_adult_15plus = get_hiv_summary(results_folder, key = 'summary_inc_and_prev_for_adults_and_children_and_fsw', var = 'hiv_prev_adult_15plus', summarise_func = 'mean', do_scaling = False)
 
 # Get figures for overview paper
 # -----------------------------------------------------------------------------------------------------------------------
