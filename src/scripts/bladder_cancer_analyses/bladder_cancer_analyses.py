@@ -21,14 +21,17 @@ from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    tb,
 )
 
 # Where will outputs go
@@ -60,7 +63,10 @@ def run_sim(service_availability):
                  bladder_cancer.BladderCancer(),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
                  newborn_outcomes.NewbornOutcomes(),
-                 postnatal_supervisor.PostnatalSupervisor()
+                 postnatal_supervisor.PostnatalSupervisor(),
+                 epi.Epi(),
+                 tb.Tb(),
+                 hiv.Hiv(),
                  )
     # Run the simulation
     sim.make_initial_population(n=popsize)
