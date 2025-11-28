@@ -105,6 +105,7 @@ def df_to_EAV(df, date, event_name):
     
     
 def convert_chain_links_into_EAV(chain_links):
+
     df = pd.DataFrame.from_dict(chain_links, orient="index")
     id_cols = ["EventName"]
 

@@ -90,4 +90,3 @@ def test_individual_history_tracker(tmpdir, seed):
            (~individual_histories["EventName"].str.contains("HSI", na=False))
     count = mask.sum()
     assert count > 0
-

@@ -73,6 +73,14 @@ class IndividualHistoryTracker(Module):
         # Could the notification of birth simply take place here?
         pass
         
+    def log_EAV_dataframe_to_individual_histories(self, df):
+     
+        for idx, row in df.iterrows():
+            print({"E": row.E, "A": row.A, "V": row.V, "EventName": row.EventName})
+            logger.info(key='individual_histories',
+                               data = {"E": row.E, "A": row.A, "V": row.V, "EventName": row.EventName},
+                               description='Links forming chains of events for simulated individuals')
+        
     def on_simulation_post_initialise(self, data):
 
         # When logging events for each individual to reconstruct chains,
@@ -82,12 +90,10 @@ class IndividualHistoryTracker(Module):
         # at the start.
         
         # EDNAV structure to capture status of individuals at the start of the simulation
-        ednav = df_to_EAV(self.sim.population.props, self.sim.date, 'StartOfSimulation')
-
-        logger.info(key='individual_histories',
-                           data = ednav.to_dict(),
-                           description='Links forming chains of events for simulated individuals')
-                               
+        eav_plus_EventName = df_to_EAV(self.sim.population.props, self.sim.date, 'StartOfSimulation')
+        self.log_EAV_dataframe_to_individual_histories(eav_plus_EventName)
+        
+        return
                                
     def on_simulation_post_do_birth(self, data):
                 
@@ -99,12 +105,10 @@ class IndividualHistoryTracker(Module):
         chain_links = {}
         chain_links[data['child_id']] = link_info
 
-        ednav = convert_chain_links_into_EAV(chain_links)
-        
-        logger.info(key='individual_histories',
-                           data = ednav.to_dict(),
-                           description='Links forming chains of events for simulated individuals')
+        eav_plus_EventName = convert_chain_links_into_EAV(chain_links)
+        self.log_EAV_dataframe_to_individual_histories(eav_plus_EventName)
                                
+        return
         
     def on_event_pre_run(self, data):
         """Do this when notified that an event is about to run. 
@@ -235,17 +239,15 @@ class IndividualHistoryTracker(Module):
             chain_links = self.compare_population_dataframe_and_mni(self.df_before,
                                                                     df_after,
                                                                     self.entire_mni_before,
-                                                                    entire_mni_after)
+                                                                    entire_mni_after,
+                                                                    data['EventName'])
 
         # Log chains
         if chain_links:
-        
-            # Convert chain_links into EAV
-            ednav = convert_chain_links_into_EAV(chain_links)
-
-            logger.info(key='individual_histories',
-                  data= ednav.to_dict(),
-                  description='Links forming chains of events for simulated individuals')
+            # Convert chain_links into EAV-type dataframe
+            eav_plus_EventName = convert_chain_links_into_EAV(chain_links)
+            # log it
+            self.log_EAV_dataframe_to_individual_histories(eav_plus_EventName)
                       
         # Reset variables
         self.print_chains = False
@@ -298,7 +300,7 @@ class IndividualHistoryTracker(Module):
 
         return diffs
         
-    def compare_population_dataframe_and_mni(self,df_before, df_after, entire_mni_before, entire_mni_after):
+    def compare_population_dataframe_and_mni(self,df_before, df_after, entire_mni_before, entire_mni_after, EventName):
         """ 
         This function compares the population dataframe and mni dictionary before/after a population-wide e
         vent has occurred. 
@@ -327,7 +329,7 @@ class IndividualHistoryTracker(Module):
                 # Create a dictionary for this person
                 # First add event info
                 link_info = {
-                    'EventName': type(self).__name__,
+                    'EventName': EventName,
                 }
                 
                 # Store the new values from df_after for the changed columns
