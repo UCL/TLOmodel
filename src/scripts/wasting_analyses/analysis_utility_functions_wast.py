@@ -14,6 +14,7 @@ import scipy.stats as st
 import seaborn as sns
 from matplotlib import lines as mpl_lines
 from matplotlib import pyplot as plt
+from PIL import Image
 from run_costing_analysis_wast import run_costing_analysis_wast as run_costing
 
 from src.scripts.costing.cost_estimation import apply_discounting_to_cost_data
@@ -1502,8 +1503,59 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                 plot_and_table_cost_effectiveness(
                                     averted_DALYs, unit_cost, GM_CS__multiplier, FS__multiplier
                                 )
-                    # sensitivity plot
+                    # sensitivity plot - create grid of CE figures for all unit_cost / GM_CS / FS combinations
 
+                    # build grid dims
+                    n_rows = len(data_impl_cost_name) * len(sharing_GM_CS)
+                    n_cols = len(FS_multiplier)
+
+                    # Create figure at higher resolution (DPI) to improve exported image quality
+                    fig, axes = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows), dpi=200)
+
+                    # Ensure axes is a 2D array for consistent indexing
+                    axes = np.atleast_2d(axes)
+
+                    # iterate rows and columns in desired order:
+                    # rows: for each unit_cost in data_impl_cost_name -> for each GM_CS in sharing_GM_CS
+                    for r_idx, unit_cost in enumerate(data_impl_cost_name):
+                        for g_idx, gm_cs in enumerate(sharing_GM_CS):
+                            row_idx = r_idx * len(sharing_GM_CS) + g_idx
+                            for c_idx, fs_mult in enumerate(FS_multiplier):
+                                ax = axes[row_idx, c_idx]
+                                ce_suffix = f"{timestamps_suffix}__{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
+                                img_path = outputs_path / (
+                                    f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
+                                    f"{scenarios_tocompare_prefix}__{ce_suffix}.png"
+                                )
+                                if img_path.exists():
+                                    # Open image and display with higher-quality interpolation; turn axes off
+                                    img = Image.open(img_path).convert("RGB")
+                                    ax.imshow(img, aspect='auto', interpolation='bilinear')
+                                    ax.set_xticks([])
+                                    ax.set_yticks([])
+                                    ax.axis("off")
+                                else:
+                                    # Clear axes and show placeholder text
+                                    ax.clear()
+                                    ax.text(0.5, 0.5, f"Missing:\\n{img_path.name}", ha="center", va="center", fontsize=8)
+                                    ax.set_xticks([])
+                                    ax.set_yticks([])
+                                    ax.axis("off")
+
+                    # add row labels on the left (unit_cost + gm_cs)
+                    for r in range(n_rows):
+                        unit_idx = r // len(sharing_GM_CS)
+                        gm_idx = r % len(sharing_GM_CS)
+                        label = f"{data_impl_cost_name[unit_idx]}\\nGM-CS={sharing_GM_CS[gm_idx]}"
+                        # place label in left margin of the row; use transform to align with axes coordinates
+                        axes[r, 0].text(-0.02, 0.5, label, transform=axes[r, 0].transAxes,
+                                        rotation=0, ha="right", va="center", fontsize=9)
+
+                    plt.tight_layout()
+                    out_file = outputs_path / f"cost_effectiveness_sensitivity_grid__{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+                    # Save at higher DPI for better quality
+                    fig.savefig(out_file, bbox_inches="tight", dpi=300)
+                    plt.close(fig)
                 else:
                     table_effectiveness(averted_DALYs, f"{outcome_type}_{cause}")
             # if outcome_type == "deaths":
