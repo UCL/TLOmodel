@@ -77,7 +77,7 @@ class IndividualHistoryTracker(Module):
      
         for idx, row in df.iterrows():
             logger.info(key='individual_histories',
-                               data = {"E": row.E, "A": row.A, "V": row.V, "EventName": row.EventName},
+                               data = {"E": row.E, "A": row.A, "V": str(row.V), "EventName": row.EventName},
                                description='Links forming chains of events for simulated individuals')
         
     def on_simulation_post_initialise(self, data):

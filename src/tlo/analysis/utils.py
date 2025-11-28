@@ -433,8 +433,8 @@ def extract_individual_histories(results_folder: Path,
                 ID_offset = (max(df_single_run['E']) + 1)
         
                 # The E has now become an ID for the individual in the draw overall, so rename column as such
-                df_single_run = df_single_run.rename(columns={"E": "person ID in draw"})
-        
+                df_single_run = df_single_run.rename(columns={'E': 'person_ID_in_draw'})
+
                 # Append these chains to list
                 dfs_from_runs.append(df_single_run)
                 
