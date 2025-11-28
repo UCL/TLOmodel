@@ -29,11 +29,11 @@ class TrackIndividualHistories(BaseScenario):
         super().__init__()
         self.seed = 42
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(months=1)
-        self.pop_size = 1000
+        self.end_date = self.start_date + pd.DateOffset(years=5)
+        self.pop_size = 100
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 3
+        self.runs_per_draw = 1
         self.generate_event_chains = True
 
     def log_configuration(self):

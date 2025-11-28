@@ -366,8 +366,8 @@ def extract_results(results_folder: Path,
     return _concat
 
 def check_info_value_changes(df):
-    # Ensure rows are sorted within each person
-    problems = []  # store violations
+
+    problems = {}  # store issues
 
     # iterate group-by-group
     for E, g in df.groupby("E"):
@@ -379,25 +379,13 @@ def check_info_value_changes(df):
             for key, value in current_info.items():
                 if key in prev_info and key != 'footprint' and key != 'level':
                     # compare with previous value
-                    if prev_info[key] == value:
-                        problems.append({
-                            "key": key,
-                            "value": value,
-                            "message": "Value repeated but should differ"
-                        })
-
-
+                    if prev_info[key] == value and key not in problems.keys():
+                        problems[key] = value
+                    
             # update latest value
-            if len(problems)>0:
-                print(prev_info)
-                print(current_info)
-                print(problems)
-            problems = []
-            print()
             prev_info = row["Info"]
-        exit(-1)
                 
-    return pd.DataFrame(problems)
+    return problems
 
 
 def reconstruct_individual_histories(df):
@@ -405,32 +393,19 @@ def reconstruct_individual_histories(df):
     # Collapse into 'E', 'EventDate', 'EventName', 'Info' format where 'Info' is dict listing attributes
     # (e.g. {a1:v1, a2:v2, a3:v3, ...} )
     df_collapsed = (
-            df.groupby(['E', 'date', 'EventName'])
+            df.groupby(['E', 'date', 'EventName'], sort=False)
               .apply(lambda g: dict(zip(g['A'], g['V'])))
               .reset_index(name='Info')
         )
         
-    first_events = ["StartOfSimulation", "Birth"]
-    
-    # Ensure that if E and date are the same, StartOfSimulation or Birth come first
-    df_collapsed["EventName"] = pd.Categorical(
-        df_collapsed["EventName"],
-        categories=first_events + sorted(
-            x for x in df_collapsed["EventName"].unique()
-            if x not in first_events
-        ),
-        ordered=True,
-    )
-
     df_final = (
         df_collapsed
-            .sort_values(by=['E', 'date', 'EventName'])
+            .sort_values(by=['E', 'date'])
             .reset_index(drop=True)
     )
     
     problems = check_info_value_changes(df_final)
     print(problems)
-    exit(-1)
     
     return df_final
     
@@ -483,6 +458,8 @@ def extract_individual_histories(results_folder: Path,
             
         # Combine all dfs into a single DataFrame
         res[draw] = pd.concat(dfs_from_runs, ignore_index=True)
+        
+        res[0].to_csv('individual_histories.csv')
 
     return res
 
