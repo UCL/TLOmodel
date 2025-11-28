@@ -3044,6 +3044,18 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
+        # Log HSI_Events that were cancelled due to weather
+        self._weather_cancelled_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
+        self._weather_cancelled_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
+        self._weather_cancelled_appts_by_level = {
+            _level: defaultdict(int) for _level in ("0", "1a", "1b", "2", "3", "4")
+        }
+
+        # Log HSI_Events that were delayed due to weather
+        self._weather_delayed_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
+        self._weather_delayed_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
+        self._weather_delayed_appts_by_level = {_level: defaultdict(int) for _level in ("0", "1a", "1b", "2", "3", "4")}
+
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_facID_and_officer = Counter()
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
@@ -3094,6 +3106,32 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._never_ran_appts[appt_type] += number
             self._never_ran_appts_by_level[level][appt_type] += number
+
+    def record_weather_cancelled_hsi_event(
+        self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str
+    ) -> None:
+        """Add information about a weather-cancelled `HSI_Event` to the running summaries."""
+
+        # Count the treatment_id:
+        self._weather_cancelled_treatment_ids[treatment_id] += 1
+
+        # Count each type of appointment:
+        for appt_type, number in appt_footprint:
+            self._weather_cancelled_appts[appt_type] += number
+            self._weather_cancelled_appts_by_level[level][appt_type] += number
+
+    def record_weather_delayed_hsi_event(
+        self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str
+    ) -> None:
+        """Add information about a weather-delayed `HSI_Event` to the running summaries."""
+
+        # Count the treatment_id:
+        self._weather_delayed_treatment_ids[treatment_id] += 1
+
+        # Count each type of appointment:
+        for appt_type, number in appt_footprint:
+            self._weather_delayed_appts[appt_type] += number
+            self._weather_delayed_appts_by_level[level][appt_type] += number
 
     def record_hs_status(
         self,
