@@ -579,22 +579,23 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             fig7.savefig(fig7_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
         plt.close('all')
 
-        # Outcome 8: cost-effectiveness scatter plot
+        # Outcome 8: cost-effectiveness sensitivity plot
         cost_effectiveness_png_path = outputs_path / (
-            f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
+            f"{cohort_prefix}_cost_effectiveness_sensitivity_grid__"
             f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
         )
         if cost_effectiveness_png_path.exists():
-            fig_ce, ax_ce = plt.subplots(figsize=(8, 6))
+            # Read image and set figure size to match pixel dimensions so embedding keeps original quality
             img = plt.imread(cost_effectiveness_png_path)
-            ax_ce.imshow(img)
+            h, w = img.shape[0], img.shape[1]
+            target_dpi = 300
+            figsize = (w / target_dpi, h / target_dpi)
+            fig_ce = plt.figure(figsize=figsize, dpi=target_dpi)
+            ax_ce = fig_ce.add_axes([0, 0, 1, 1])
+            ax_ce.imshow(img, interpolation='nearest', aspect='auto')
             ax_ce.axis('off')
-            pdf.savefig(fig_ce)
-            fig_ce_png_file_path = outputs_path / (
-                f"{cohort_prefix}_cost_effectiveness_scatter_DALYsAverted_vs_IncrementalCosts__"
-                f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
-            )
-            fig_ce.savefig(fig_ce_png_file_path, dpi=300, bbox_inches='tight')
+            pdf.savefig(fig_ce, dpi=target_dpi, bbox_inches='tight', pad_inches=0)
+            plt.close(fig_ce)
         plt.close('all')
 
 # --------------------------------------- Behind the scene Analyses Plots  --------------------------------------- #
