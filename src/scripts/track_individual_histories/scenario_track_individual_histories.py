@@ -47,7 +47,7 @@ class TrackIndividualHistories(BaseScenario):
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                #'tlo.methods.individual_history_tracker': logging.INFO
+                'tlo.methods.individual_history_tracker': logging.INFO
             }
         }
 

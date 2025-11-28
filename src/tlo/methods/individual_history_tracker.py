@@ -76,7 +76,6 @@ class IndividualHistoryTracker(Module):
     def log_EAV_dataframe_to_individual_histories(self, df):
      
         for idx, row in df.iterrows():
-            print({"E": row.E, "A": row.A, "V": row.V, "EventName": row.EventName})
             logger.info(key='individual_histories',
                                data = {"E": row.E, "A": row.A, "V": row.V, "EventName": row.EventName},
                                description='Links forming chains of events for simulated individuals')

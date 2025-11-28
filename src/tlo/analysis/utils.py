@@ -366,91 +366,35 @@ def extract_results(results_folder: Path,
     return _concat
 
 
-def unpack_dict_rows(df, non_dict_cols=None):
-    """
-    Reconstruct a full DataFrame from rows where most columns are dictionaries.
-    Non-dict columns (e.g., 'date') are propagated to all reconstructed rows.
-    
-    Parameters:
-        df: pd.DataFrame
-        non_dict_cols: list of columns that are NOT dictionaries
-    """
-    if non_dict_cols is None:
-        non_dict_cols = []
-
-    original_cols =  ['E', 'date', 'EventName', 'A', 'V']
-
-    reconstructed_rows = []
-
-    for _, row in df.iterrows():
-        # Determine dict columns for this row
-        dict_cols = [col for col in original_cols if col not in non_dict_cols]
-
-        if not dict_cols:
-            # No dict columns, just append row
-            reconstructed_rows.append(row.to_dict())
-            continue
-
-        # Use the first dict column to get the block length
-        first_dict_col = dict_cols[0]
-        block_length = len(row[first_dict_col])
-
-        # Build each expanded row
-        for i in range(block_length):
-            new_row = {}
-            for col in original_cols:
-                cell = row[col]
-                if col in dict_cols:
-                    # Access the dict using string or integer keys
-                    new_row[col] = cell.get(str(i), cell.get(i))
-                else:
-                    # Propagate non-dict value
-                    new_row[col] = cell
-            reconstructed_rows.append(new_row)
-
-    # Build DataFrame in original column order
-    out = pd.DataFrame(reconstructed_rows)[original_cols]
-
-    return out.reset_index(drop=True)
-
 def reconstruct_individual_histories(df):
                 
-    recon = unpack_dict_rows(df, ['date'])
-
-    # For now convert value to string in all cases to facilitate manipulation. This can be reversed later.
-    recon['V'] = recon['V'].apply(str)
     # Collapse into 'E', 'EventDate', 'EventName', 'Info' format where 'Info' is dict listing attributes
     # (e.g. {a1:v1, a2:v2, a3:v3, ...} )
     df_collapsed = (
-            recon.groupby(['E', 'date', 'EventName'])
+            df.groupby(['E', 'date', 'EventName'])
               .apply(lambda g: dict(zip(g['A'], g['V'])))
               .reset_index(name='Info')
         )
-    df_final = df_collapsed.sort_values(by=['E','date'], ascending=True).reset_index(drop=True)
-    #birth_count = (df_final['EventName'] == 'Birth').sum()
+        
+    first_events = ["StartOfSimulation", "Birth"]
     
-    return df_final
+    # Ensure that if E and date are the same, StartOfSimulation or Birth come first
+    df_collapsed["EventName"] = pd.Categorical(
+        df_collapsed["EventName"],
+        categories=first_events + sorted(
+            x for x in df_collapsed["EventName"].unique()
+            if x not in first_events
+        ),
+        ordered=True,
+    )
 
-    
-def print_filtered_df(df):
-    """
-    Prints rows of the DataFrame excluding EventName 'Initialise' and 'Birth'.
-    """
-    pd.set_option('display.max_colwidth', None)
-    filtered = df#[~df['EventName'].isin(['StartOfSimulation', 'Birth'])]
-    
-    dict_cols = ["Info"]
-    max_items = 2
-    # Step 2: Truncate dictionary columns for display
-    if dict_cols is not None:
-        for col in dict_cols:
-            def truncate_dict(d):
-                if isinstance(d, dict):
-                    items = list(d.items())[:max_items]  # keep only first `max_items`
-                    return dict(items)
-                return d
-            filtered[col] = filtered[col].apply(truncate_dict)
-    print(filtered)
+    df_final = (
+        df_collapsed
+            .sort_values(by=['E', 'date', 'EventName'])
+            .reset_index(drop=True)
+    )
+
+    return df_final
     
     
 def extract_individual_histories(results_folder: Path,
@@ -478,22 +422,18 @@ def extract_individual_histories(results_folder: Path,
         
         for run in range(info['runs_per_draw']):
 
-            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-            print(df)
-
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                print(df)
-                df_final = reconstruct_individual_histories(df)
+                df_single_run= reconstruct_individual_histories(df)
 
                 # Offset person ID to account for the fact that we are collecting chains across runs
-                df_final['E'] = df_final['E'] + ID_offset
+                df_single_run['E'] = df_single_run['E'] + ID_offset
                 
                 # Calculate ID offset for next run
-                ID_offset = (max(df_final['E']) + 1)
+                ID_offset = (max(df_single_run['E']) + 1)
         
                 # Append these chains to list
-                dfs_from_runs.append(df_final)
+                dfs_from_runs.append(df_single_run)
                 
             except KeyError:
                 # Some logs could not be found - probably because this run failed.
@@ -502,9 +442,6 @@ def extract_individual_histories(results_folder: Path,
             
         # Combine all dfs into a single DataFrame
         res[draw] = pd.concat(dfs_from_runs, ignore_index=True)
-
-        # Optionally, sort by 'E' and 'EventDate' after combining
-        res[draw] = res[draw].sort_values(by=['E', 'date']).reset_index(drop=True)
 
     return res
 
