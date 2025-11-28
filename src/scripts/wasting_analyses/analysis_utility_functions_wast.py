@@ -1508,7 +1508,10 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     n_cols = len(FS_multiplier)
 
                     # Create figure at higher resolution (DPI) to improve exported image quality
-                    fig, axes = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows), dpi=200)
+                    # use constrained_layout to avoid extra stretching and help preserve image proportions
+                    fig, axes = plt.subplots(
+                        n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows), dpi=200, constrained_layout=True
+                    )
 
                     # Ensure axes is a 2D array for consistent indexing
                     axes = np.atleast_2d(axes)
@@ -1520,16 +1523,19 @@ def plot_sum_outcome_and_CIs_intervention_period(
                             row_idx = r_idx * len(sharing_GM_CS) + g_idx
                             for c_idx, fs_mult in enumerate(FS_multiplier):
                                 ax = axes[row_idx, c_idx]
-                                ce_suffix = \
+                                ce_suffix = (
                                     f"{timestamps_suffix}__{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
+                                )
                                 img_path = outputs_path / (
                                     f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
                                     f"{scenarios_tocompare_prefix}__{ce_suffix}.png"
                                 )
                                 if img_path.exists():
-                                    # Open image and display with higher-quality interpolation; turn axes off
+                                    # Open image and display with preserved aspect ratio; turn axes off
                                     img = Image.open(img_path).convert("RGB")
-                                    ax.imshow(img, aspect='auto', interpolation='bilinear')
+                                    ax.imshow(img, aspect='equal', interpolation='bilinear')
+                                    # ensure the axes box is adjusted to preserve the image aspect ratio
+                                    ax.set_adjustable('box')
                                     ax.set_xticks([])
                                     ax.set_yticks([])
                                     ax.axis("off")
