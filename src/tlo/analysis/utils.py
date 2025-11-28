@@ -365,6 +365,40 @@ def extract_results(results_folder: Path,
     _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
     return _concat
 
+def check_info_value_changes(df):
+    # Ensure rows are sorted within each person
+    problems = []  # store violations
+
+    # iterate group-by-group
+    for E, g in df.groupby("E"):
+        prev_info = {}
+        
+        for _, row in g.iterrows():
+            current_info = row["Info"]
+
+            for key, value in current_info.items():
+                if key in prev_info and key != 'footprint' and key != 'level':
+                    # compare with previous value
+                    if prev_info[key] == value:
+                        problems.append({
+                            "key": key,
+                            "value": value,
+                            "message": "Value repeated but should differ"
+                        })
+
+
+            # update latest value
+            if len(problems)>0:
+                print(prev_info)
+                print(current_info)
+                print(problems)
+            problems = []
+            print()
+            prev_info = row["Info"]
+        exit(-1)
+                
+    return pd.DataFrame(problems)
+
 
 def reconstruct_individual_histories(df):
                 
@@ -393,6 +427,10 @@ def reconstruct_individual_histories(df):
             .sort_values(by=['E', 'date', 'EventName'])
             .reset_index(drop=True)
     )
+    
+    problems = check_info_value_changes(df_final)
+    print(problems)
+    exit(-1)
     
     return df_final
     
