@@ -518,25 +518,26 @@ with pd.ExcelWriter(results_folder / "full_summarised_deaths.xlsx") as writer:
         raise ValueError("No sheets were written: verify (draw, 'mean') columns exist in your dataframes.")
 
 
-
-# merge the deaths data into merged_ouput
 for var_name, df_var in dataframes.items():
-    # get the unique draw IDs from the first level of the column MultiIndex
-    draw_ids = df_var.columns.get_level_values('draw').unique()
+    # collapse to draw-only columns if you like
+    mean_df = df_var.xs('mean', axis=1, level=1, drop_level=True)
+    # mean_df: index 0..40, columns = draw IDs 0..11
 
-    for draw_id in draw_ids:
-        # select the (draw_id, 'mean') column as a Series
-        series = df_var[(draw_id, 'mean')]   # index = dates
+    for draw_id in mean_df.columns:
+        s = mean_df[draw_id].to_numpy()          # length 41, no index
+        target_df = merged_output[draw_id]       # index = dates, length 41
 
-        # if merged_output keys are strings, uncomment the next line:
-        # draw_key = str(draw_id)
-        # otherwise, use draw_id directly:
-        target_df = merged_output[draw_id]
+        # optional safety check
+        if len(target_df) != len(s):
+            raise ValueError(
+                f"Length mismatch for draw {draw_id}, variable {var_name}: "
+                f"{len(target_df)} vs {len(s)}"
+            )
 
-        # write this variable into the target dataframe
-        target_df[var_name] = series
+        # assign by position
+        target_df[var_name] = s
 
-
+        merged_output[draw_id] = target_df
 
 
 # -----------------------------------------------------------------------------------
