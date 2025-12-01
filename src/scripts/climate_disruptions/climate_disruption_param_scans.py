@@ -52,7 +52,7 @@ class ClimateDisruptionScenario(BaseScenario):
         self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2025
         self._scenarios = self._get_scenarios()
-        self._parameter_grid = full_grid
+        self._parameter_grid = random.sample(full_grid, 10)
         self.number_of_draws = len(self._parameter_grid)
 
         with open("selected_parameter_combinations_param_scan.json", "w") as f:
