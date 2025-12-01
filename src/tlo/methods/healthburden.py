@@ -421,7 +421,7 @@ class HealthBurden(Module):
             """Return pd.DataFrame that gives the summary of the `df` for the `year` by certain levels in the df's
             multi-index. The `level` argument gives a list of levels to use in `groupby`: e.g., level=[0,1] gives a
             summary of sex/age-group; and level=[2] gives a summary only by wealth category. and level=[3] gives a summary only by district category."""
-            return df.loc[(slice(None), slice(None), slice(None), year)] \
+            return df.loc[(slice(None), slice(None), slice(None), slice(None), year, slice(None))]  \
                      .groupby(level=level) \
                      .sum() \
                      .reset_index() \
