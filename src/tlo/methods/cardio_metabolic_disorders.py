@@ -149,7 +149,12 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         **hsi_events_param_dicts, **initial_prev_param_dicts, **other_params_dict,
         'prob_care_provided_given_seek_emergency_care': Parameter(
             Types.REAL, "The probability that correct care is fully provided to persons that have sought emergency care"
-                        " for a Cardio-metabolic disorder.")
+                        " for a Cardio-metabolic disorder."),
+        "probability_of_seeking_further_med_appointment_if_unavailable": Parameter(
+            Types.REAL,
+            "Probability that a person who 'should' be on medication will seek another appointment (the following "
+            "day and try for each of the next 7 days) if refill appointment was not available.",
+        ),
     }
 
     # Convert conditions and events to dicts and merge together into PROPERTIES
@@ -1600,13 +1605,14 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
         # Don't advise those with CKD to lose weight, but do so for all other conditions if BMI is higher than normal
         if self.condition != 'chronic_kidney_disease' and (df.at[person_id, 'li_bmi'] > 2):
-            self.add_equipment({'Weighing scale'})
+            if not df.at[person_id, 'nc_ever_weight_loss_treatment']:
+                self.add_equipment({'Weighing scale'})
 
-            self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-            # Schedule a post-weight loss event for individual to potentially lose weight in next 6-12 months:
-            self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(m, person_id),
-                                    random_date(self.sim.date + pd.DateOffset(months=6),
-                                                self.sim.date + pd.DateOffset(months=12), m.rng))
+                self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
+                # Schedule a post-weight loss event for individual to potentially lose weight in next 6-12 months:
+                self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(m, person_id),
+                                        random_date(self.sim.date + pd.DateOffset(months=6),
+                                                    self.sim.date + pd.DateOffset(months=12), m.rng))
 
         # If person is already on medication, do not do anything
         if person[f'nc_{self.condition}_on_medication']:
@@ -1743,7 +1749,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         logger.debug(key="debug", data="HSI_CardioMetabolicDisorders_Refill_Medication: did not run")
         person_id = self.target
         self.sim.population.props.at[person_id, f"nc_{self.condition}_on_medication"] = False
-        if self.module.rng.random_sample() < self.module.parameters["probability_of_seeking_further_medication_appointment_if_appointment_not_available"]:
+        if self.module.rng.random_sample() < self.module.parameters["probability_of_seeking_further_med_appointment_if_unavailable"]:
             # schedule a "start medication" appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(

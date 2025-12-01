@@ -50,17 +50,9 @@ class ClimateDisruptionScenario(BaseScenario):
         self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2025
         self._scenarios = self._get_scenarios()
-        # Use all 9 combinations (3 SSPs × 3 ensemble models)
-        self._parameter_grid = full_grid
-        print(f"Running {len(self._parameter_grid)} parameter combinations:")
-        for i, params in enumerate(self._parameter_grid):
-            ssp = params["HealthSystem"]["climate_ssp"]
-            model = params["HealthSystem"]["climate_model_ensemble_model"]
-            print(f"  Draw {i}: {ssp} - {model}")
-
+        self._parameter_grid = full_grid  # Use all 9 combinations (3 SSPs × 3 ensemble models)
         self.number_of_draws = len(self._parameter_grid)
-
-        with open("selected_parameter_combinations.json", "w") as f:
+        with open("selected_parameter_combinations_ssp_scenarios.json", "w") as f:
             json.dump(self._parameter_grid, f, indent=2)
 
     def log_configuration(self):
