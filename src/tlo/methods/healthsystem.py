@@ -2023,14 +2023,14 @@ class HealthSystem(Module):
         # any emulated module
         
         # To total appt count
-        if 'RTI' in self.sim.modules and self.sim.modules['RTI'].parameters['use_RTI_emulator']:
-            for key, value in self.sim.modules['RTI'].HS_Use_by_RTI.items():
+        if 'EmulatedRTI' in self.sim.modules:
+            for key, value in self.sim.modules['EmulatedRTI'].HS_Use_by_RTI.items():
                 # Extract the category part (ignoring the level)
                 _, category = key.split('_', 1)
                 self._summary_counter._appts[category] += value
                 
             # To appt countbroken down by level
-            for key, value in self.sim.modules['RTI'].HS_Use_by_RTI.items():
+            for key, value in self.sim.modules['EmulatedRTI'].HS_Use_by_RTI.items():
                 # Split key into level and category
                 level, category = key.split('_', 1)
                 level_number = level.replace("Level", "")
@@ -2039,7 +2039,7 @@ class HealthSystem(Module):
                     self._summary_counter._appts_by_level[level_number][category] += value
                     
             # Reset emulator counter.
-            self.sim.modules['RTI'].HS_Use_by_RTI = Counter({col: 0 for col in self.sim.modules['RTI'].HS_Use_Type})
+            self.sim.modules['EmulatedRTI'].HS_Use_by_RTI = Counter({col: 0 for col in self.sim.modules['EmulatedRTI'].HS_Use_Type})
                 
         self._summary_counter.write_to_log_and_reset_counters()
         self.consumables.on_end_of_year()
