@@ -13,6 +13,7 @@ from tlo.methods import (
     demography,
     depression,
     diarrhoea,
+    emulated_rti,
     enhanced_lifestyle,
     epi,
     epilepsy,
@@ -41,6 +42,7 @@ from tlo.methods import (
 
 def fullmodel(
     use_simplified_births: bool = False,
+    use_emulated_RTI = False,
     module_kwargs: Optional[Dict[str, Dict]] = {},
 ) -> List[Module]:
     """Return a list of modules that should be registered in a run of the full model.
@@ -48,6 +50,7 @@ def fullmodel(
     :param resourcefilepath: Path to root of directory containing resource files.
     :param use_simplified_births: Whether to use ``SimplifiedBirths`` module in place
         of full pregnancy related modules.
+    :param use_emulated_RTI: Option to use emulated version of RTI module
     :param module_kwargs: Dictionary mapping from module class names to dictionaries of
         keyword argument names and values to set for the module. If ``None`` (the
         default), the default values for all module keyword arguments are used other
@@ -89,6 +92,12 @@ def fullmodel(
                 postnatal_supervisor.PostnatalSupervisor,
             ]
         ),
+        *(
+            [emulated_rti.EmulatedRTI] if use_emulated_RTI else
+            [
+                rti.RTI
+            ]
+        ),
         # Conditions of Early Childhood
         alri.Alri,
         diarrhoea.Diarrhoea,
@@ -110,8 +119,6 @@ def fullmodel(
         prostate_cancer.ProstateCancer,
         #  - Cardio-metabolic Disorders
         cardio_metabolic_disorders.CardioMetabolicDisorders,
-        #  - Injuries
-        rti.RTI,
         #  - Other Non-Communicable Conditions
         copd.Copd,
         depression.Depression,
