@@ -358,6 +358,7 @@ class Simulation:
 
     def run_simulation_to(self, *, to_date: Date) -> None:
         """Run simulation up to a specified date.
+
         Unlike :py:meth:`simulate` this method does not initialise or finalise
         simulation and the date simulated to can be any date before or equal to
         simulation end date.
@@ -365,7 +366,6 @@ class Simulation:
         :param to_date: Date to simulate up to but not including - must be before or
             equal to simulation end date specified in call to :py:meth:`initialise`.
         """
-
         if not self._initialised:
             msg = "Simulation must be initialised before calling run_simulation_to"
             raise SimulationNotInitialisedError(msg)
