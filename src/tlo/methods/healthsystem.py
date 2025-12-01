@@ -2048,7 +2048,6 @@ class HealthSystem(Module):
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
 
-
         # Record equipment usage for the year, for each facility
         self._record_general_equipment_usage_for_year()
 
@@ -2765,7 +2764,6 @@ class HealthSystemSummaryCounter:
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
-
 
         logger_summary.info(
             key="HSI_Event",
