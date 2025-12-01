@@ -8,10 +8,10 @@
       "draw_number": 0,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 2.0,
-          "rescaling_prob_seeking_after_disruption": 0.51,
-          "rescaling_prob_disruption": 0.5,
-          "scale_factor_severity_disruption_and_delay": 0.7033333333333334,
+          "scale_factor_delay_in_seeking_care_weather": 7.0,
+          "rescaling_prob_seeking_after_disruption": 0.01,
+          "rescaling_prob_disruption": 0.0,
+          "scale_factor_severity_disruption_and_delay": 0.11,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
           "cons_availability": "default",
@@ -36,10 +36,10 @@
       "draw_number": 1,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 1.0,
-          "rescaling_prob_seeking_after_disruption": 0.01,
-          "rescaling_prob_disruption": 1.5,
-          "scale_factor_severity_disruption_and_delay": 1.0,
+          "scale_factor_delay_in_seeking_care_weather": 60.0,
+          "rescaling_prob_seeking_after_disruption": 1.01,
+          "rescaling_prob_disruption": 0.5,
+          "scale_factor_severity_disruption_and_delay": 0.7033333333333334,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
           "cons_availability": "default",
@@ -64,9 +64,9 @@
       "draw_number": 2,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 28.0,
+          "scale_factor_delay_in_seeking_care_weather": 2.0,
           "rescaling_prob_seeking_after_disruption": 1.01,
-          "rescaling_prob_disruption": 2.0,
+          "rescaling_prob_disruption": 0.5,
           "scale_factor_severity_disruption_and_delay": 0.7033333333333334,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
@@ -92,10 +92,10 @@
       "draw_number": 3,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 1.0,
+          "scale_factor_delay_in_seeking_care_weather": 14.0,
           "rescaling_prob_seeking_after_disruption": 1.01,
-          "rescaling_prob_disruption": 0.0,
-          "scale_factor_severity_disruption_and_delay": 1.0,
+          "rescaling_prob_disruption": 1.0,
+          "scale_factor_severity_disruption_and_delay": 0.4066666666666667,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
           "cons_availability": "default",
@@ -120,10 +120,10 @@
       "draw_number": 4,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 2.0,
-          "rescaling_prob_seeking_after_disruption": 1.01,
-          "rescaling_prob_disruption": 0.0,
-          "scale_factor_severity_disruption_and_delay": 1.0,
+          "scale_factor_delay_in_seeking_care_weather": 0.0,
+          "rescaling_prob_seeking_after_disruption": 0.51,
+          "rescaling_prob_disruption": 1.0,
+          "scale_factor_severity_disruption_and_delay": 0.7033333333333334,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
           "cons_availability": "default",
@@ -149,9 +149,9 @@
       "parameters": {
         "HealthSystem": {
           "scale_factor_delay_in_seeking_care_weather": 1.0,
-          "rescaling_prob_seeking_after_disruption": 0.01,
-          "rescaling_prob_disruption": 2.0,
-          "scale_factor_severity_disruption_and_delay": 0.7033333333333334,
+          "rescaling_prob_seeking_after_disruption": 0.51,
+          "rescaling_prob_disruption": 1.5,
+          "scale_factor_severity_disruption_and_delay": 1.0,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
           "cons_availability": "default",
@@ -176,9 +176,9 @@
       "draw_number": 6,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 2.0,
-          "rescaling_prob_seeking_after_disruption": 0.51,
-          "rescaling_prob_disruption": 0.5,
+          "scale_factor_delay_in_seeking_care_weather": 14.0,
+          "rescaling_prob_seeking_after_disruption": 1.01,
+          "rescaling_prob_disruption": 1.0,
           "scale_factor_severity_disruption_and_delay": 0.11,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
@@ -204,10 +204,10 @@
       "draw_number": 7,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 28.0,
-          "rescaling_prob_seeking_after_disruption": 0.51,
-          "rescaling_prob_disruption": 2.0,
-          "scale_factor_severity_disruption_and_delay": 0.11,
+          "scale_factor_delay_in_seeking_care_weather": 14.0,
+          "rescaling_prob_seeking_after_disruption": 0.01,
+          "rescaling_prob_disruption": 0.5,
+          "scale_factor_severity_disruption_and_delay": 0.7033333333333334,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
           "cons_availability": "default",
@@ -232,10 +232,10 @@
       "draw_number": 8,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 2.0,
+          "scale_factor_delay_in_seeking_care_weather": 0.0,
           "rescaling_prob_seeking_after_disruption": 1.01,
-          "rescaling_prob_disruption": 1.0,
-          "scale_factor_severity_disruption_and_delay": 0.7033333333333334,
+          "rescaling_prob_disruption": 2.0,
+          "scale_factor_severity_disruption_and_delay": 1.0,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
           "cons_availability": "default",
@@ -260,10 +260,10 @@
       "draw_number": 9,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 14.0,
-          "rescaling_prob_seeking_after_disruption": 0.51,
+          "scale_factor_delay_in_seeking_care_weather": 28.0,
+          "rescaling_prob_seeking_after_disruption": 1.01,
           "rescaling_prob_disruption": 2.0,
-          "scale_factor_severity_disruption_and_delay": 0.11,
+          "scale_factor_severity_disruption_and_delay": 1.0,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
           "cons_availability": "default",
@@ -285,6 +285,6 @@
       "draw_name": "9"
     }
   ],
-  "commit": "65d8b2ebd103b389f2fd1a1689006969e0d4b5dc",
-  "github": "https://github.com/UCL/TLOmodel/tree/65d8b2ebd103b389f2fd1a1689006969e0d4b5dc"
+  "commit": "3fc8c74a9b26890f59377a5d89f1d7f3b42fe100",
+  "github": "https://github.com/UCL/TLOmodel/tree/3fc8c74a9b26890f59377a5d89f1d7f3b42fe100"
 }
