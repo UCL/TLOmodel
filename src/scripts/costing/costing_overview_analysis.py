@@ -20,13 +20,16 @@ from scripts.costing.cost_estimation import (
     do_line_plot_of_cost,
     do_stacked_bar_plot_of_cost_by_category,
     estimate_input_cost_of_scenarios,
+    summarize_cost_data,
 )
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
     get_scenario_info,
     get_scenario_outputs,
-    load_pickled_dataframes, compute_summary_statistics,
+    load_pickled_dataframes,
+    compute_summary_statistics,
+    extract_results
 )
 
 # Define a timestamp for script outputs
@@ -87,6 +90,47 @@ input_costs_variable_discounting = estimate_input_cost_of_scenarios(results_fold
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = discount_rate_lomas, summarize = True)
 
+# Get per capita estimates:
+
+# Get population size for per capita estimates
+def get_total_population_by_year(_df):
+    years_needed = [i.year for i in TARGET_PERIOD]  # Malaria scale-up period years
+    _df['year'] = pd.to_datetime(_df['date']).dt.year
+
+    # Validate that all necessary years are in the DataFrame
+    if not set(years_needed).issubset(_df['year'].unique()):
+        raise ValueError("Some years are not recorded in the dataset.")
+
+    # Filter for relevant years and return the total population as a Series
+    return \
+        _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
+            'total']
+
+
+# Get total population by year
+total_population_by_year = extract_results(
+    results_folder,
+    module='tlo.methods.demography',
+    key='population',
+    custom_generate_series=get_total_population_by_year,
+    do_scaling=True
+)
+total_population_by_year = compute_summary_statistics(total_population_by_year, central_measure = 'mean')
+total_population_by_year = (total_population_by_year
+        .stack(level=["draw", "stat"])   # move draw & stat into index
+        .reset_index()                   # turn all index levels into columns
+        .rename(columns={0: "population"})    # name the value column
+).set_index(["draw", "stat",'year'])
+total_population_by_year = total_population_by_year[total_population_by_year.index.get_level_values('draw').isin(cost_scenarios.keys())]['population']
+total_population_by_year = total_population_by_year.rename(
+    index={"central": "mean"},
+    level="stat"
+)
+cost_by_draw_and_year = input_costs_undiscounted.groupby(['draw', 'stat', 'year'])['cost'].sum()
+per_capita_cost_by_draw_and_year = cost_by_draw_and_year/total_population_by_year
+per_capita_cost_by_draw_and_year = per_capita_cost_by_draw_and_year.reset_index()
+per_capita_cost_by_draw = per_capita_cost_by_draw_and_year.groupby(['draw', 'stat'])[0].mean()
+
 # Get overall estimates for main text
 # -----------------------------------------------------------------------------------------------------------------------
 cost_by_draw = input_costs.groupby(['draw', 'stat'])['cost'].sum()
@@ -116,7 +160,11 @@ print(f"This translates to an average annual cost of "
       f"\${undiscounted_cost_by_draw[2,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[2,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[2,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH scenario and finally "
       f"\${undiscounted_cost_by_draw[7,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[7,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[7,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH + improved consumable availability scenario.")
 # Results 3
-# TODO add per capita estimates
+print(f"In per capita terms, this is "
+      f"\${per_capita_cost_by_draw[0,'mean']:,.2f} [\${per_capita_cost_by_draw[0,'lower']:,.2f} - \${per_capita_cost_by_draw[0,'upper']:,.2f}], "
+      f"\${per_capita_cost_by_draw[4,'mean']:,.2f} [\${per_capita_cost_by_draw[4,'lower']:,.2f} - \${per_capita_cost_by_draw[4,'upper']:,.2f}], "
+      f"\${per_capita_cost_by_draw[2,'mean']:,.2f} [\${per_capita_cost_by_draw[2,'lower']:,.2f} - \${per_capita_cost_by_draw[2,'upper']:,.2f}], and "
+      f"\${per_capita_cost_by_draw[7,'mean']:,.2f} [\${per_capita_cost_by_draw[7,'lower']:,.2f} - \${per_capita_cost_by_draw[7,'upper']:,.2f}] respectively under the four scenarios.")
 
 # Results 4
 print(f"Notably, improving consumable availability alone increases the cost of medical consumables by just "
