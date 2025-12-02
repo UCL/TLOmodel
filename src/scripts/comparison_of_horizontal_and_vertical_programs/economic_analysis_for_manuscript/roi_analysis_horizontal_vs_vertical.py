@@ -779,7 +779,7 @@ for rates in alternative_discount_rates:
     # -----------------------------------------------------------------------------------------------------------------------
     input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
                                                    _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
-                                                   _discount_rate=discount_rate_cost,
+                                                   _discount_rate=discount_rate_cost, _metric = chosen_metric,
                                                    _draws=list(all_manuscript_scenarios.keys()))
 
 
