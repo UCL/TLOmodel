@@ -1234,6 +1234,9 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 if output_all_costs_file_path.exists() and not force_calculation[4] and not force_calculation[5] :
                     print("\nloading all costs from file ...")
                     all_costs_df = pd.read_pickle(output_all_costs_file_path)
+                    print("-------------")
+                    print(f"\nCE_SUFFIX={ce_suffix}")
+                    # print(f"--all_costs_df:\n{all_costs_df}")
                 else:
                     print("\nall costs calculation ...")
                     all_costs_df = get_all_costs()
@@ -1353,34 +1356,35 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         "GM_CS": "bottom",
                     }  # ['bottom', 'top', 'bottom']
                 # print("\nICER:")
-                for _, row in all_costs_df.iterrows():
-                    scen = row["scenario"]
-                    if scen == 'SQ':
-                        scen_cons_cost_per_DALY = 0
-                    else:
-                        scen_cons_cost_per_DALY = row["total_cost"] / in_averted_DALYs[scen][0]
-                        # print(f'\nscenario: {scen}')
-                        # print(f'total costs: {row["total_cost"]}')
-                        # print(f'averted DALYs: {in_averted_DALYs[scen][0]}')
-                        #
-                        # scen_cons_cost_per_DALY_lower = \
-                        #     min(row["total_cost"] / in_averted_DALYs[scen][1], row["total_cost"] / in_averted_DALYs[scen][2])
-                        # scen_cons_cost_per_DALY_upper = \
-                        #     max(row["total_cost"] / in_averted_DALYs[scen][1], row["total_cost"] / in_averted_DALYs[scen][2])
-                        # print(f"\nICER for {scen=}: "
-                        #       f"${scen_cons_cost_per_DALY:,.2f} ({scen_cons_cost_per_DALY_lower:,.2f}–"
-                        #       f"{scen_cons_cost_per_DALY_upper:,.2f})")
-                    ICER = (
-                        f"${scen_cons_cost_per_DALY:,.2f}"
-                        if scen_cons_cost_per_DALY >= 0
-                        else f"−${-scen_cons_cost_per_DALY:,.2f}"
-                    )
-                    ICER_domination = ICER if domination[scen] == "" else domination[scen]
+
+                # Identify scenarios on Frontier
+                scen_frontier = [scen for scen, dom in domination.items() if dom == ""]
+                # Order them by total costs
+                cost_map = all_costs_df.set_index('scenario')['total_cost'].to_dict()
+                scen_frontier_ordered = sorted(scen_frontier, key=lambda s: cost_map.get(s, float('inf')))
+                print(f"\nscen_frontier_ordered: {scen_frontier_ordered}")
+                ICER = {}
+                for i, scen in enumerate(scen_frontier_ordered):
+                    if i == 0:
+                        ICER[scen] = ""
+                        continue
+                    prev = scen_frontier_ordered[i - 1]
+                    cost_curr = cost_map.get(scen, float("nan"))
+                    cost_prev = cost_map.get(prev, float("nan"))
+                    daly_curr = in_averted_DALYs[scen][0]
+                    daly_prev = in_averted_DALYs[prev][0] if prev != 'SQ' else 0
+                    ICER[scen] = f"${round((cost_curr - cost_prev) / (daly_curr - daly_prev), 1)}"
+                print(f"\nICER: {ICER}")
+                ICER_domination = {}
+                for scen in all_costs_df['scenario']:
+                    ICER_domination[scen] = ICER[scen] if domination[scen] == "" else domination[scen]
+                print(f"\nICER_domination: {ICER_domination}")
+                for scen in all_costs_df['scenario']:
                     ax_ce.text(
                         in_averted_DALYs[scen][0] if scen != 'SQ' else 0,
-                        row["total_cost"] + (space * 0.9) if va_scen[scen] == "bottom"
-                        else row["total_cost"] - space,
-                        ICER_domination,
+                        (cost_map.get(scen, float("nan")) + (space * 0.9)) if va_scen[scen] == "bottom"
+                        else (cost_map.get(scen, float("nan")) - space),
+                        ICER_domination[scen],
                         fontsize=12, ha=ha_scen[scen], va=va_scen[scen], color=get_scen_colour(scen),
                     )
 
@@ -1389,10 +1393,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                              loc="center left", bbox_to_anchor=(1, 0.5), fontsize=12)
 
                 # Add cost-effectiveness frontier (dotted line connecting non-dominated scenarios)
-                scen_frontier = [scen for scen, dom in domination.items() if dom == ""]
-                frontier_x = [in_averted_DALYs[scen][0] if scen != 'SQ' else 0 for scen in scen_frontier]
-                frontier_y = [all_costs_df.loc[all_costs_df['scenario'] == scen, 'total_cost'].values[0]
-                              for scen in scen_frontier]
+                frontier_x = [in_averted_DALYs[scen][0] if scen != 'SQ' else 0 for scen in scen_frontier_ordered]
+                frontier_y = [cost_map.get(scen, float("nan")) for scen in scen_frontier_ordered]
                 ax_ce.plot(
                     frontier_x,
                     frontier_y,
