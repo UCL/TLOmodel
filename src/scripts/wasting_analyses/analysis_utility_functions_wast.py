@@ -1388,10 +1388,6 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         fontsize=12, ha=ha_scen[scen], va=va_scen[scen], color=get_scen_colour(scen),
                     )
 
-                # Add a legend box with scenario labels
-                ax_ce.legend([scen for scen in all_costs_df['scenario']],
-                             loc="center left", bbox_to_anchor=(1, 0.5), fontsize=12)
-
                 # Add cost-effectiveness frontier (dotted line connecting non-dominated scenarios)
                 frontier_x = [in_averted_DALYs[scen][0] if scen != 'SQ' else 0 for scen in scen_frontier_ordered]
                 frontier_y = [cost_map.get(scen, float("nan")) for scen in scen_frontier_ordered]
@@ -1404,8 +1400,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     label="Cost-effectiveness frontier",
                 )
 
-                # ax_ce.set_ylim(bottom=-1 * 1e7, top=5 * 1e7)
-
+                # Add axis labels
                 ax_ce.set_xlabel("DALYs Averted")
                 ax_ce.set_ylabel("Total Incremental Costs (2023 USD)")
                 # ax_ce.set_title(
@@ -1426,17 +1421,36 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     color="black", fontsize=9, ha="left", va="top",
                 )
 
-                # Order legend labels by y (total_cost) so largest value appears at the top and smallest at the bottom
+                # Add a legend box with scenario and CEF labels
+                # order legend labels by y (total_cost)
+                # so the largest value appears at the top and smallest at the bottom
                 ordered_scenarios = list(
                     all_costs_df.sort_values("total_cost", ascending=False)["scenario"].tolist()
                 )
                 # Create proxy handles with matching colours for the ordered scenarios
                 proxy_handles = [
-                    mpl_lines.Line2D([], [], marker="o", color=get_scen_colour(scen), linestyle="-",
-                                     markersize=8)
+                    mpl_lines.Line2D([], [], marker="o", color=get_scen_colour(scen), linestyle="-", markersize=8)
                     for scen in ordered_scenarios
                 ]
-                ax_ce.legend(proxy_handles, ordered_scenarios, loc="center left", bbox_to_anchor=(1, 0.5), fontsize=12)
+                # add a proxy handle for the cost-effectiveness frontier (dotted black line)
+                frontier_handle = mpl_lines.Line2D([], [], linestyle=":", color="black", linewidth=1.5)
+                proxy_handles.append(frontier_handle)
+
+                # map scenario short codes to display full names in legend
+                scenario_label_map = {
+                    "SQ": "Status Quo",
+                    "GM": "Growth Monitoring",
+                    "CS": "Care-Seeking",
+                    "FS": "Food Supplements",
+                    "GM_CS": "Growth Monitoring and\nCare-Seeking",
+                    "GM_FS": "Growth Monitoring and\nFood Supplements",
+                    "CS_FS": "Care-Seeking and\nFood Supplements",
+                    "GM_CS_FS": "Growth Monitoring and\nCare-Seeking and\nFood Supplements",
+                }
+                mapped_labels = [scenario_label_map.get(s, s) for s in ordered_scenarios]
+
+                ax_ce.legend(proxy_handles, mapped_labels + ['cost-effectiveness\nfrontier'], loc="center left",
+                             bbox_to_anchor=(1, 0.5), fontsize=12, labelspacing=1.4)
 
                 plt.tight_layout()
                 fig_ce.savefig(
