@@ -108,10 +108,7 @@ class IndividualHistoryTracker(Module):
         link_info.update(self.sim.population.props.loc[data['child_id']].to_dict())
         chain_links = {}
         chain_links[data['child_id']] = link_info
-
-        eav_plus_EventName = convert_chain_links_into_EAV(chain_links)
-        self.log_EAV_dataframe_to_individual_histories(eav_plus_EventName)
-                               
+                       
         eav_plus_event = convert_chain_links_into_EAV(chain_links)
         self.log_EAV_dataframe_to_individual_histories(eav_plus_event)
 
@@ -247,17 +244,15 @@ class IndividualHistoryTracker(Module):
                                                                     df_after,
                                                                     self.entire_mni_before,
                                                                     entire_mni_after,
-                                                                    data['EventName'])
+                                                                    data['event_name'])
 
         # Log chains
         if chain_links:
             # Convert chain_links into EAV-type dataframe
             eav_plus_event = convert_chain_links_into_EAV(chain_links)
             # log it
-            self.log_EAV_dataframe_to_individual_histories(eav_plus_EventName)
-                      
             self.log_EAV_dataframe_to_individual_histories(eav_plus_event)
-
+                      
         # Reset variables
         self.print_chains = False
         self.df_before = []
@@ -309,9 +304,6 @@ class IndividualHistoryTracker(Module):
 
         return diffs
         
-    def compare_population_dataframe_and_mni(self,df_before, df_after, entire_mni_before, entire_mni_after, EventName):
-        """ 
-
     def compare_population_dataframe_and_mni(self,df_before, df_after, entire_mni_before, entire_mni_after, event_name):
         """
         This function compares the population dataframe and mni dictionary before/after a population-wide e
