@@ -11,7 +11,7 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    individual_history_tracker,
+    individual_history,
     mockitis,
     simplified_births,
     symptommanager,
@@ -42,7 +42,7 @@ def test_individual_history_tracker(tmpdir, seed):
             "directory": tmpdir,
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
-                "tlo.methods.individual_history_tracker": logging.INFO
+                "tlo.methods.individual_history": logging.INFO
             }
         }, resourcefilepath=resourcefilepath
     )
@@ -52,7 +52,7 @@ def test_individual_history_tracker(tmpdir, seed):
                  simplified_births.SimplifiedBirths(),
                  enhanced_lifestyle.Lifestyle(),
                  healthsystem.HealthSystem(),
-                 individual_history_tracker.IndividualHistoryTracker(),
+                 individual_history.IndividualHistoryTracker(),
                  symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  mockitis.Mockitis(),
@@ -68,19 +68,19 @@ def test_individual_history_tracker(tmpdir, seed):
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     output_chains = parse_log_file(sim.log_filepath, level=logging.INFO)
     individual_histories = reconstruct_individual_histories(
-                            output_chains['tlo.methods.individual_history_tracker']['individual_histories'])
-    
+                            output_chains['tlo.methods.individual_history']['individual_histories'])
+
     # Check that we have a "StartOfSimulation" event for every individual in the initial population,
     # and that this was logged at the start date
     assert (individual_histories['EventName'] == 'StartOfSimulation').sum() == popsize
     assert (individual_histories.loc[individual_histories['EventName'] == 'StartOfSimulation',
                                                                           'date'] == start_date).all()
-    
+
     # Check that in the case of birth or start of simulation, all properties were logged
     num_properties = len(sim.population.props.columns)
     mask = individual_histories["EventName"].isin(["Birth", "StartOfSimulation"])
     assert individual_histories.loc[mask, "Info"].apply(len).eq(num_properties).all()
-    
+
     # Assert that all HSI events that occurred were also collected in the event chains
     HSIs_in_individual_histories = individual_histories["EventName"].str.contains('HSI', na=False).sum()
     assert HSIs_in_individual_histories == len(output['tlo.methods.healthsystem']['HSI_Event'])

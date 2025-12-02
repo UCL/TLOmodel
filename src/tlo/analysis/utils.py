@@ -372,7 +372,7 @@ def check_info_value_changes(df):
     # iterate group-by-group
     for E, g in df.groupby("E"):
         prev_info = {}
-        
+
         for _, row in g.iterrows():
             current_info = row["Info"]
 
@@ -381,15 +381,15 @@ def check_info_value_changes(df):
                     # compare with previous value
                     if prev_info[key] == value and key not in problems.keys():
                         problems[key] = value
-                    
+
             # update latest value
             prev_info = row["Info"]
-                
+
     return problems
 
 
 def reconstruct_individual_histories(df):
-                
+
     # Collapse into 'E', 'EventDate', 'EventName', 'Info' format where 'Info' is dict listing attributes
     # (e.g. {a1:v1, a2:v2, a3:v3, ...} )
     df_collapsed = (
@@ -397,28 +397,28 @@ def reconstruct_individual_histories(df):
               .apply(lambda g: dict(zip(g['A'], g['V'])))
               .reset_index(name='Info')
         )
-        
+
     df_final = (
         df_collapsed
             .sort_values(by=['E', 'date'])
             .reset_index(drop=True)
     )
-    
+
     problems = check_info_value_changes(df_final)
     print(problems)
-    
+
     return df_final
-    
-    
+
+
 def extract_individual_histories(results_folder: Path,
                         ) -> dict:
     """Utility function to collect chains of events. Individuals across runs of the same draw
     will be combined into unique df.
-    Returns dictionary where keys are draws, and each draw is associated with a dataframe of 
-    format 'E', 'EventDate', 'EventName', 'Info' where 'Info' is a dictionary that combines 
+    Returns dictionary where keys are draws, and each draw is associated with a dataframe of
+    format 'E', 'EventDate', 'EventName', 'Info' where 'Info' is a dictionary that combines
     A&Vs for a particular individual + date + event name combination.
     """
-    module = 'tlo.methods.individual_history_tracker'
+    module = 'tlo.methods.individual_history'
     key = 'individual_histories'
 
     # get number of draws and numbers of runs
@@ -426,13 +426,13 @@ def extract_individual_histories(results_folder: Path,
 
     # Collect results from each draw/run. Individuals across runs of the same draw will be combined into unique df.
     res = dict()
-    
+
     for draw in range(info['number_of_draws']):
-    
+
         # All individuals in same draw will be combined across runs, so their ID will be offset.
         dfs_from_runs = []
         ID_offset = 0
-        
+
         for run in range(info['runs_per_draw']):
 
             try:
@@ -441,24 +441,24 @@ def extract_individual_histories(results_folder: Path,
 
                 # Offset person ID to account for the fact that we are collecting chains across runs
                 df_single_run['E'] = df_single_run['E'] + ID_offset
-                
+
                 # Calculate ID offset for next run
                 ID_offset = (max(df_single_run['E']) + 1)
-        
+
                 # The E has now become an ID for the individual in the draw overall, so rename column as such
                 df_single_run = df_single_run.rename(columns={'E': 'person_ID_in_draw'})
 
                 # Append these chains to list
                 dfs_from_runs.append(df_single_run)
-                
+
             except KeyError:
                 # Some logs could not be found - probably because this run failed.
                 # Simply to not append anything to the df collecting chains.
                 print("Run failed")
-            
+
         # Combine all dfs into a single DataFrame
         res[draw] = pd.concat(dfs_from_runs, ignore_index=True)
-        
+
         res[0].to_csv('individual_histories.csv')
 
     return res

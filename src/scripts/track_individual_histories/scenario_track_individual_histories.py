@@ -2,7 +2,7 @@
 
 Run on the batch system using:
 ```
-tlo batch-submit 
+tlo batch-submit
     src/scripts/analysis_data_generation/scenario_track_individual_histories.py
 ```
 
@@ -19,7 +19,7 @@ import pandas as pd
 
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
-from tlo.methods import individual_history_tracker
+from tlo.methods import individual_history
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -47,13 +47,13 @@ class TrackIndividualHistories(BaseScenario):
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.individual_history_tracker': logging.INFO
+                'tlo.methods.individual_history': logging.INFO
             }
         }
 
     def modules(self):
         return (
-            fullmodel() + [individual_history_tracker.IndividualHistoryTracker()]
+            fullmodel() + [individual_history.IndividualHistoryTracker()]
         )
 
     def draw_parameters(self, draw_number, rng):
@@ -73,7 +73,7 @@ class TrackIndividualHistories(BaseScenario):
                 ),
 
         }
-        
+
     def _baseline(self) -> Dict:
         #Return the Dict with values for the parameter changes that define the baseline scenario.
         return mix_scenarios(
