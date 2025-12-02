@@ -1081,12 +1081,14 @@ def plot_sum_outcome_and_CIs_intervention_period(
             )
             plt.close(fig2)
 
+            # path to outcome calculated data
+            cost_outcome_folder_path = outputs_path / "outcomes_data"
+            # SQ timestamp associated with scenarios for which we want the costs to be calculated
+            SQ_results_timestamp = interv_timestamps_dict["SQ"]
+
             def plot_and_table_cost_effectiveness(in_averted_DALYs: dict, in_data_impl_cost_name: str,
                                                   in_sharing_GM_CS: float, in_FS_multiplier: float) -> None:
-                # path to outcome calculated data
-                cost_outcome_folder_path = outputs_path / "outcomes_data"
-                # SQ timestamp associated with scenarios for which we want the costs to be calculated
-                SQ_results_timestamp = interv_timestamps_dict['SQ']
+
                 ce_suffix = f"{in_data_impl_cost_name}_GM-CS-sharing{in_sharing_GM_CS}_FSmultiplier{in_FS_multiplier}"
                 timestamps_and_ce_suffix = f"{timestamps_suffix}__{ce_suffix}"
                 # -----------
@@ -1523,7 +1525,10 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                     averted_DALYs, unit_cost, GM_CS__multiplier, FS__multiplier
                                 )
 
+                    ########################################
                     # Sensitivity plot - create grid of CE figures for all unit_cost / GM_CS / FS combinations
+                    ########################################
+                    print("\nplotting sensitivity CE plot ...")
                     # build grid dims
                     n_rows = len(data_impl_cost_name) * len(sharing_GM_CS)
                     n_cols = len(FS_multiplier)
@@ -1598,7 +1603,73 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     # Save at higher DPI for better quality
                     fig.savefig(out_file, bbox_inches="tight", dpi=300)
                     plt.close(fig)
-                else:
+
+                    ########################################
+                    # Total cost sensitivity table
+                    ########################################
+                    print("\ncreating sensitivity CE table ...")
+                    print("\n    per 5 years...")
+                    # includes total_cost ranges (min--max) for the same grid used in the CE sensitivity plot
+                    table_rows = []
+                    row_labels = []
+                    for unit_cost in data_impl_cost_name:
+                        for gm_cs in sharing_GM_CS:
+                            row_label = f"{unit_cost}; GM & CS: {gm_cs}"
+                            row_labels.append(row_label)
+                            row_cells = []
+                            for fs_mult in FS_multiplier:
+                                ce_suffix = f"{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
+                                all_costs_path = outputs_path / "outcomes_data" / f"all_costs_{SQ_results_timestamp}_{ce_suffix}.pkl"
+                                if all_costs_path.exists():
+                                    try:
+                                        all_costs_df_local = pd.read_pickle(all_costs_path)
+                                        if "total_cost" in all_costs_df_local.columns:
+                                            # Exclude SQ scenario here as well
+                                            if "scenario" in all_costs_df_local.columns:
+                                                df_nonSQ_local = all_costs_df_local[all_costs_df_local["scenario"] != "SQ"]
+                                            else:
+                                                df_nonSQ_local = all_costs_df_local.drop(index="SQ", errors="ignore")
+                                            if df_nonSQ_local.empty:
+                                                cell = ""
+                                            else:
+                                                lo = df_nonSQ_local["total_cost"].min()
+                                                hi = df_nonSQ_local["total_cost"].max()
+                                            cell = f"{lo:,.0f}—{hi:,.0f}"
+                                        else:
+                                            cell = ""
+                                    except Exception:
+                                        cell = ""
+                                else:
+                                    cell = ""
+                                row_cells.append(cell)
+                            table_rows.append(row_cells)
+
+                    # Columns labelled by FS multiplier values
+                    col_labels = [str(x) for x in FS_multiplier]
+                    total_cost_range_table = pd.DataFrame(table_rows, index=row_labels, columns=col_labels)
+
+                    # Save CSV summary (per 5 years)
+                    out_table_path_without_csv = outputs_path / f"total_cost_sensitivity_table__{scenarios_tocompare_prefix}__{timestamps_suffix}"
+                    total_cost_range_table.to_csv(Path(str(out_table_path_without_csv) + "_per5years.csv"), index=True)
+
+                    # Create and save per-1-year table by dividing min and max values by 5
+                    print("\n    per 1 year...")
+                    def _divide_range_cell(cell: str) -> str:
+                        if not cell:
+                            return ""
+                        try:
+                            lo_str, hi_str = cell.split("—")
+                            lo = float(lo_str.replace(",", ""))
+                            hi = float(hi_str.replace(",", ""))
+                            lo1 = lo / 5.0
+                            hi1 = hi / 5.0
+                            return f"{lo1:,.0f}—{hi1:,.0f}"
+                        except Exception:
+                            return ""
+
+                    total_cost_range_table_per1 = total_cost_range_table.applymap(_divide_range_cell)
+                    total_cost_range_table_per1.to_csv(Path(str(out_table_path_without_csv) + "_per1year.csv"), index=True)
+                else: # cause != "any cause":
                     table_effectiveness(averted_DALYs, f"{outcome_type}_{cause}")
             # if outcome_type == "deaths":
             #     table_effectiveness(averted_deaths, f"{outcome_type}_{cause}")
