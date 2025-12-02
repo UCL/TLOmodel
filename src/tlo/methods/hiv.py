@@ -109,7 +109,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # --- Core Properties
         "hv_inf": Property(
             Types.BOOL,
-            "Is person currently infected with HIV (NB. AIDS status is determined by prescence of the AIDS Symptom.",
+            "Is person currently infected with HIV (NB. AIDS status is determined by presence of the AIDS Symptom.",
         ),
         "hv_art": Property(
             Types.CATEGORICAL,
@@ -495,6 +495,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "probability of a urine TDF test returning positive if person not virally suppressed"
         ),
+        "switch_vl_test_to_tdf": Parameter(
+            Types.BOOL,
+            "whether TDF urine test is being used in place of VL testing"
+        ),
         "injectable_prep_allowed": Parameter(
             Types.BOOL,
             "whether injectable prep is allowed"
@@ -730,7 +734,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         )
 
         # Linear model for starting PrEP (if AGYW), given through regular poll:
-        self.lm["lm_prep_agyw"] = LinearModel.multiplicative(
+        self.lm["lm_prep_agyw"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p["prob_prep_for_agyw"],
             Predictor("sex").when("F", 1.0).otherwise(0.0),
             Predictor("hv_inf").when(False, 1.0).otherwise(0.0),
             Predictor("age_years")
@@ -742,7 +748,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                       conditions_are_mutually_exclusive=True,
                       conditions_are_exhaustive=True)
             .when("<2021", 0)
-            .otherwise(p["prob_prep_for_agyw"])
+            .otherwise(1.0),
         )
 
         # Linear model for circumcision (if M) following when the person has been tested:
@@ -891,9 +897,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         params = self.parameters
 
         # 1) Determine who is currently on ART
+        # todo this is updated for revised UNAIDS estimates
         worksheet = self.parameters["art_coverage"]
+        # art_data = worksheet.loc[
+        #     worksheet.year == 2010, ["year", "single_age", "sex", "prop_coverage"]
+        # ]
         art_data = worksheet.loc[
-            worksheet.year == 2010, ["year", "single_age", "sex", "prop_coverage"]
+            worksheet.year == 2009, ["year", "single_age", "sex", "prop_coverage_reduced"]  # todo changed
         ]
 
         # merge all susceptible individuals with their coverage probability based on sex and age
@@ -902,7 +912,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             left_on=["age_years", "sex"],
             right_on=["single_age", "sex"],
             how="left",
-        )["prop_coverage"]
+        )["prop_coverage_reduced"]  # todo changed here also
 
         # make a series with relative risks of art which depends on >10 years infected (5x higher)
         rr_art = pd.Series(1, index=df.index)
@@ -1287,6 +1297,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                                                                        "annual_testing_rate_adults"] * 0.75
             p["selftest_available"] = False
 
+            # ANC testing - value for mothers and infants testing
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75
+
         if p['type_of_scaleup'] == 'remove_VL':
             # update consumables availability (item 190 viral load test) to 0
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
@@ -1349,9 +1363,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.75
 
+            # ANC testing - value for mothers and infants testing
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75
+
             # remove VL
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0})
+
+            # replace VL with TDF urine test
+            p["switch_vl_test_to_tdf"] = True
 
             # remove IPT
             self.sim.modules['Tb'].parameters['ipt_coverage']['coverage_plhiv'] = 0
@@ -1742,10 +1763,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # use iloc to index by position as index will change by year
         return_prob = prob_art.loc[
-            (prob_art.year == current_year) &
-            (prob_art.age == "adults"),
-            "prob_art_if_dx"].values[0]
-
+                          (prob_art.year == current_year) &
+                          (prob_art.age == "adults"),
+                          "prob_art_if_dx_updated"].values[0]
+        # todo edited above
         return return_prob
 
     def prob_viral_suppression(self, df, year, age_of_person):
@@ -1893,11 +1914,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Calculate number of tests now performed - cumulative, include those who have died
         number_tests_new = df.hv_number_tests.sum()
 
-        # Store the number of tests performed in this year for future reference
-        self.stored_test_numbers.append(number_tests_new)
-
         # Number of tests performed in the last time period
         number_tests_in_last_period = number_tests_new - previous_test_numbers
+
+        # Store the number of tests performed in this year for future reference
+        self.stored_test_numbers.append(number_tests_in_last_period)
 
         # per-capita testing rate
         per_capita_testing = number_tests_in_last_period / len(df[df.is_alive])
@@ -2798,14 +2819,17 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             # Defaults to being off Treatment
             m.stops_treatment(person_id)
 
-            # refer for another treatment again in 1 month
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=m,
-                                                 facility_level_of_this_hsi="1a"),
-                topen=self.sim.date + pd.DateOffset(months=3),
-                tclose=None,
-                priority=0,
-            )
+            # todo decide whether long-term LTFU or return within 3 months
+            if m.rng.random_sample() < 0.95:
+
+                # refer for another treatment again in 3 months
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=m,
+                                                     facility_level_of_this_hsi="1a"),
+                    topen=self.sim.date + pd.DateOffset(months=3),
+                    tclose=None,
+                    priority=0,
+                )
 
 
 class Hiv_AdherenceCounselling(Event, IndividualScopeEventMixin):
@@ -2892,6 +2916,14 @@ class HSI_Hiv_SelfTest(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
+
+        # Log the appt footprint
+        details = {
+            'appt_type': self.TREATMENT_ID,
+            'footprint': self.EXPECTED_APPT_FOOTPRINT,
+            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        }
+        logger.info(key='hiv_appts', data=details)
 
 
 class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
@@ -3054,11 +3086,21 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     priority=0,
                 )
 
+        # Log the appt footprint
+        if not self.suppress_footprint:
+            details = {
+                'appt_type': self.TREATMENT_ID,
+                'footprint': ACTUAL_APPT_FOOTPRINT,
+                'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+            }
+            logger.info(key='hiv_appts', data=details)
+
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
+
 
 
 class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
@@ -3131,6 +3173,14 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                         priority=0,
                     )
 
+        # Log the appt footprint
+        details = {
+            'appt_type': self.TREATMENT_ID,
+            'footprint': self.EXPECTED_APPT_FOOTPRINT,
+            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        }
+        logger.info(key='hiv_appts', data=details)
+
 
 class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id, referred_from, repeat_visits):
@@ -3200,6 +3250,14 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
                     topen=self.sim.date + pd.DateOffset(days=7),
                     tclose=None,
                 )
+
+        # Log the appt footprint
+        details = {
+            'appt_type': self.TREATMENT_ID,
+            'footprint': self.EXPECTED_APPT_FOOTPRINT,
+            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        }
+        logger.info(key='hiv_appts', data=details)
 
     def never_ran(self, *args, **kwargs):
         """This is called if this HSI was never run.
@@ -3291,6 +3349,14 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                         topen=self.sim.date + pd.DateOffset(days=7),
                         tclose=None,
                     )
+
+        # Log the appt footprint
+        details = {
+            'appt_type': self.TREATMENT_ID,
+            'footprint': self.EXPECTED_APPT_FOOTPRINT,
+            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        }
+        logger.info(key='hiv_appts', data=details)
 
     def never_ran(self):
         """This is called if this HSI was never run.
@@ -3434,6 +3500,14 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
+        # Log the appt footprint
+        details = {
+            'appt_type': self.TREATMENT_ID,
+            'footprint': self.EXPECTED_APPT_FOOTPRINT,
+            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        }
+        logger.info(key='hiv_appts', data=details)
+
     def do_at_initiation(self, person_id):
         """Things to do when this the first appointment ART"""
         df = self.sim.population.props
@@ -3565,6 +3639,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 elif test_type == 'VL' and self.get_consumables(
                     self.module.item_codes_for_consumables_required['vl_measurement']):
 
+                    # logic around unsuppressed person receiving and acting on result
                     if person["hv_art"] == "on_not_VL_suppressed":
 
                         q = p["prob_receive_viral_load_test_result"] * p["sensitivity_viral_load_test"]
@@ -3766,6 +3841,17 @@ class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
             key="message",
             data=f"HSI_Hiv_EndOfLifeCare: inpatient admission for {person_id}",
         )
+
+        # Log the appt footprint
+        footprint = self.EXPECTED_APPT_FOOTPRINT
+        footprint["InpatientDays"] = self.beddays
+
+        details = {
+            'appt_type': self.TREATMENT_ID,
+            'footprint': footprint,
+            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        }
+        logger.info(key='hiv_appts', data=details)
 
 
 # ---------------------------------------------------------------------------
