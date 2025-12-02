@@ -478,3 +478,73 @@ plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'fac_type_tlo', _outputfil
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'district', _outputfilepath = figurespath)
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'item_code', _outputfilepath = figurespath)
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'category', _outputfilepath = figurespath)
+
+# Generate consumable availability plot
+#---------------------------------------
+# Load availability data
+path_for_cons_resourcefiles = resourcefilepath / "healthsystem/consumables"
+full_df_with_scenario = pd.read_csv(path_for_cons_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
+
+# Import item_category
+program_item_mapping = pd.read_csv(path_for_cons_resourcefiles / 'ResourceFile_Consumables_Item_Designations.csv')[
+    ['Item_Code', 'item_category']]
+program_item_mapping = program_item_mapping.rename(columns={'Item_Code': 'item_code'})[
+    program_item_mapping.item_category.notna()]
+
+# Get TLO Facility_ID for each district and facility level
+mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
+fac_levels = {'0', '1a', '1b', '2', '3', '4'}
+
+df_for_plots = full_df_with_scenario.merge(mfl[['Facility_ID', 'Facility_Level']], on='Facility_ID', how='left',
+                                           validate="m:1")
+df_for_plots = df_for_plots.merge(program_item_mapping, on='item_code', how='left', validate="m:1")
+
+# Choose scenarios to plot
+scenario_list = [6]
+chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
+                                                    scenario_list]
+scenario_names_dict = {'available_prop': 'Actual',
+                       'available_prop_scenario6': 'Improved consumable availability'}
+# recreate the chosen columns list based on the mapping above
+chosen_availability_columns = [scenario_names_dict[col] for col in chosen_availability_columns]
+df_for_plots = df_for_plots.rename(columns=scenario_names_dict)
+
+# Create heatmap of average availability by Facility_Level and Program for the chosen scenario
+for figure_column in ['Actual', 'Improved consumable availability']:
+    # Pivot the DataFrame
+    aggregated_df = df_for_plots.groupby(['item_category', 'Facility_Level'])[figure_column].mean().reset_index()
+    heatmap_df = aggregated_df.pivot(
+        index='item_category',
+        columns='Facility_Level',
+        values=figure_column
+    )
+    heatmap_df.columns = heatmap_df.columns
+
+    # Calculate the aggregate row and column
+    aggregate_col = aggregated_df.groupby('item_category')[figure_column].mean()
+    overall_aggregate = aggregated_df[figure_column].mean()
+    aggregate_row = aggregated_df.groupby('Facility_Level')[figure_column].mean()
+
+    # Add aggregate row and column
+    heatmap_df['Average'] = aggregate_col
+    heatmap_df.loc['Average'] = aggregate_row.tolist() + [overall_aggregate]
+
+    # Generate the heatmap
+    sns.set(font_scale=1.2)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(heatmap_df, annot=True, cmap='RdYlGn',
+                cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+    # Customize the plot
+    plt.title(f'')
+    plt.xlabel('Facility Level')
+    plt.ylabel(f'Disease/Public Health Programme')
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
+
+    plt.savefig(figurespath / f'heatmap_program_and_level_75perc_{figure_column}.png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+
+
