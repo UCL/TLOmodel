@@ -7,13 +7,14 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from tlo import Date
 
 from scripts.costing.cost_estimation import (
     do_stacked_bar_plot_of_cost_by_category,
     estimate_input_cost_of_scenarios,
     load_unit_cost_assumptions,
 )
-from tlo.analysis.utils import extract_results, get_scenario_outputs
+from tlo.analysis.utils import extract_results, get_scenario_outputs, compute_summary_statistics
 from tlo.methods.healthsystem import get_item_code_from_item_name
 
 # Define a timestamp for script outputs
@@ -508,11 +509,46 @@ calibration_data_extract[cols_to_convert] = (
 total_expenditure = calibration_data_extract[calibration_data_extract['Cost Category'] != 'Not represented in TLO model']['Recorded Expenditure (FY 2018/19)'].sum()
 total_cost_estimate = calibration_data_extract[calibration_data_extract['Cost Category'] != 'Not represented in TLO model']['Estimated cost (TLO Model, 2018)'].sum()
 
+# Get per capita estimates
+TARGET_PERIOD = (Date(2018, 12, 31), Date(2018, 1, 1))  # This is the period that is costed
+def get_total_population_by_year(_df):
+    years_needed = [i.year for i in TARGET_PERIOD ]  # Malaria scale-up period years
+    _df['year'] = pd.to_datetime(_df['date']).dt.year
+
+    # Validate that all necessary years are in the DataFrame
+    if not set(years_needed).issubset(_df['year'].unique()):
+        raise ValueError("Some years are not recorded in the dataset.")
+
+    # Filter for relevant years and return the total population as a Series
+    return \
+        _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
+            'total']
+
+
+# Get total population by year
+total_population_2018 = extract_results(
+    results_folder,
+    module='tlo.methods.demography',
+    key='population',
+    custom_generate_series=get_total_population_by_year,
+    do_scaling=True
+)
+
+total_population_2018 = compute_summary_statistics(total_population_2018, central_measure = 'mean')
+total_population_2018 = total_population_2018[( 0, 'central')]
+per_capita_model_cost = (total_cost_estimate/total_population_2018).iloc[0]
+per_capita_expenditure = 20.88
+
 # Extract
 print(f"Based on the TLO model, we estimate the total healthcare cost to be "
       f"\${total_cost_estimate/1e6:,.2f} million "
       f"({(1 - total_cost_estimate/total_expenditure)*100:,.2f}\% "
       f"lower than the RM expenditure estimate).")
+print(f"This translates to a per capita cost of  "
+      f"\${per_capita_model_cost:,.2f}"
+      f"({(1 - per_capita_model_cost/per_capita_expenditure)*100:,.2f}\% "
+      f"lower than the adjusted RM per capita expenditure estimate).") # Not added to the manuscript because it doesn't add
+# new information
 
 # Extracts on consumable calibration for Appendix C
 # first obtain consumables dispensed estimate
