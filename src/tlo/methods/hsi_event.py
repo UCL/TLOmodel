@@ -194,16 +194,16 @@ class HSI_Event:
                 item_codes=self._EQUIPMENT,
                 facility_id=self.facility_info.id
             )
-        
+
 
     def run(self, squeeze_factor):
         """Make the event happen."""
-        
+
         # Dispatch notification that HSI event is about to run
         notifier.dispatch("event.pre-run",
                           data={"target": self.target,
                                 "module" : self.module.name,
-                                "EventName": self.__class__.__name__})
+                                "event_name": self.__class__.__name__})
 
         updated_appt_footprint = self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
@@ -214,21 +214,21 @@ class HSI_Event:
             footprint = updated_appt_footprint
         else:
             footprint = self.EXPECTED_APPT_FOOTPRINT
-            
+
         if self.facility_info:
             level = self.facility_info.level
         else:
             level = "N/A"
-            
+
         notifier.dispatch("event.post-run",
                           data={"target": self.target,
-                                "EventName": self.__class__.__name__,
+                                "event_name": self.__class__.__name__,
                                 "footprint": footprint,
                                 "level": level
                                 })
-                
+
         return updated_appt_footprint
-        
+
 
     def get_consumables(
         self,

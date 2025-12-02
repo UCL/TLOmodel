@@ -370,7 +370,7 @@ def check_info_value_changes(df):
     problems = {}  # store issues
 
     # iterate group-by-group
-    for E, g in df.groupby("E"):
+    for E, g in df.groupby("entity"):
         prev_info = {}
 
         for _, row in g.iterrows():
@@ -390,17 +390,17 @@ def check_info_value_changes(df):
 
 def reconstruct_individual_histories(df):
 
-    # Collapse into 'E', 'EventDate', 'EventName', 'Info' format where 'Info' is dict listing attributes
+    # Collapse into 'entity', 'date', 'event_name', 'Info' format where 'Info' is dict listing attributes
     # (e.g. {a1:v1, a2:v2, a3:v3, ...} )
     df_collapsed = (
-            df.groupby(['E', 'date', 'EventName'], sort=False)
-              .apply(lambda g: dict(zip(g['A'], g['V'])))
+            df.groupby(['entity', 'date', 'event_name'], sort=False)
+              .apply(lambda g: dict(zip(g['attribute'], g['value'])))
               .reset_index(name='Info')
         )
 
     df_final = (
         df_collapsed
-            .sort_values(by=['E', 'date'])
+            .sort_values(by=['entity', 'date'])
             .reset_index(drop=True)
     )
 
@@ -415,7 +415,7 @@ def extract_individual_histories(results_folder: Path,
     """Utility function to collect chains of events. Individuals across runs of the same draw
     will be combined into unique df.
     Returns dictionary where keys are draws, and each draw is associated with a dataframe of
-    format 'E', 'EventDate', 'EventName', 'Info' where 'Info' is a dictionary that combines
+    format 'entity', 'date', 'event_name', 'Info' where 'Info' is a dictionary that combines
     A&Vs for a particular individual + date + event name combination.
     """
     module = 'tlo.methods.individual_history'
@@ -440,13 +440,13 @@ def extract_individual_histories(results_folder: Path,
                 df_single_run= reconstruct_individual_histories(df)
 
                 # Offset person ID to account for the fact that we are collecting chains across runs
-                df_single_run['E'] = df_single_run['E'] + ID_offset
+                df_single_run['entity'] = df_single_run['entity'] + ID_offset
 
                 # Calculate ID offset for next run
-                ID_offset = (max(df_single_run['E']) + 1)
+                ID_offset = (max(df_single_run['entity']) + 1)
 
                 # The E has now become an ID for the individual in the draw overall, so rename column as such
-                df_single_run = df_single_run.rename(columns={'E': 'person_ID_in_draw'})
+                df_single_run = df_single_run.rename(columns={'entity': 'person_ID_in_draw'})
 
                 # Append these chains to list
                 dfs_from_runs.append(df_single_run)

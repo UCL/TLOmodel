@@ -77,7 +77,12 @@ class IndividualHistoryTracker(Module):
      
         for idx, row in df.iterrows():
             logger.info(key='individual_histories',
-                               data = {"E": row.E, "A": row.A, "V": str(row.V), "EventName": row.EventName},
+                               data = {
+                                   "entity": row.entity,
+                                   "attribute": row.attribute,
+                                   "value": str(row.value),
+                                   "event_name": row.event_name
+                               },
                                description='Links forming chains of events for simulated individuals')
         
     def on_simulation_post_initialise(self, data):
@@ -89,9 +94,9 @@ class IndividualHistoryTracker(Module):
         # at the start.
         
         # EDNAV structure to capture status of individuals at the start of the simulation
-        eav_plus_EventName = df_to_EAV(self.sim.population.props, self.sim.date, 'StartOfSimulation')
-        self.log_EAV_dataframe_to_individual_histories(eav_plus_EventName)
-        
+        eav_plus_event = df_to_EAV(self.sim.population.props, self.sim.date, 'StartOfSimulation')
+        self.log_EAV_dataframe_to_individual_histories(eav_plus_event)
+
         return
                                
     def on_simulation_post_do_birth(self, data):
@@ -99,7 +104,7 @@ class IndividualHistoryTracker(Module):
         # When individual is born, store their initial properties to provide a starting point to the
         # chain of property changes that this individual will undergo
         # as a result of events taking place.
-        link_info = {'EventName': 'Birth'}
+        link_info = {'event_name': 'Birth'}
         link_info.update(self.sim.population.props.loc[data['child_id']].to_dict())
         chain_links = {}
         chain_links[data['child_id']] = link_info
@@ -107,6 +112,9 @@ class IndividualHistoryTracker(Module):
         eav_plus_EventName = convert_chain_links_into_EAV(chain_links)
         self.log_EAV_dataframe_to_individual_histories(eav_plus_EventName)
                                
+        eav_plus_event = convert_chain_links_into_EAV(chain_links)
+        self.log_EAV_dataframe_to_individual_histories(eav_plus_event)
+
         return
         
     def on_event_pre_run(self, data):
@@ -120,7 +128,7 @@ class IndividualHistoryTracker(Module):
         # 2) the event is not in the list of events to ignore
         if (
             (data['module'] not in self.modules_of_interest)
-            or (data['EventName'] in self.events_to_ignore)
+            or (data['event_name'] in self.events_to_ignore)
             ):
             return
         
@@ -189,7 +197,7 @@ class IndividualHistoryTracker(Module):
                 mni_instances_after = None
             
             # Create and store event for this individual, regardless of whether any property change occurred
-            link_info = {'EventName' : data['EventName']}
+            link_info = {'event_name' : data['event_name']}
             if 'footprint' in data.keys():
                 link_info['footprint'] = data['footprint']
                 link_info['level'] = data['level']
@@ -244,10 +252,12 @@ class IndividualHistoryTracker(Module):
         # Log chains
         if chain_links:
             # Convert chain_links into EAV-type dataframe
-            eav_plus_EventName = convert_chain_links_into_EAV(chain_links)
+            eav_plus_event = convert_chain_links_into_EAV(chain_links)
             # log it
             self.log_EAV_dataframe_to_individual_histories(eav_plus_EventName)
                       
+            self.log_EAV_dataframe_to_individual_histories(eav_plus_event)
+
         # Reset variables
         self.print_chains = False
         self.df_before = []
@@ -301,10 +311,13 @@ class IndividualHistoryTracker(Module):
         
     def compare_population_dataframe_and_mni(self,df_before, df_after, entire_mni_before, entire_mni_after, EventName):
         """ 
+
+    def compare_population_dataframe_and_mni(self,df_before, df_after, entire_mni_before, entire_mni_after, event_name):
+        """
         This function compares the population dataframe and mni dictionary before/after a population-wide e
-        vent has occurred. 
-        It allows us to identify the individuals for which this event led to a significant (i.e. property) change, 
-        and to store the properties which have changed as a result of it. 
+        vent has occurred.
+        It allows us to identify the individuals for which this event led to a significant (i.e. property) change,
+        and to store the properties which have changed as a result of it.
         """
         
         # Create a mask of where values are different
@@ -328,7 +341,7 @@ class IndividualHistoryTracker(Module):
                 # Create a dictionary for this person
                 # First add event info
                 link_info = {
-                    'EventName': EventName,
+                    'event_name': event_name,
                 }
                 
                 # Store the new values from df_after for the changed columns
@@ -350,7 +363,7 @@ class IndividualHistoryTracker(Module):
                     if key not in persons_changed:
                         # If individual hadn't been previously added due to changes in pop df, add it here
                         link_info = {
-                            'EventName': type(self).__name__,
+                            'event_name': self.__class__.__name__,
                         }
                         
                         for key_prop in diff_mni[key]:

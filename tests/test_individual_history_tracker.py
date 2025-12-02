@@ -71,22 +71,22 @@ def test_individual_history_tracker(tmpdir, seed):
                             output_chains['tlo.methods.individual_history']['individual_histories'])
 
     # Check that we have a "StartOfSimulation" event for every individual in the initial population,
-    # and that this was logged at the start date
-    assert (individual_histories['EventName'] == 'StartOfSimulation').sum() == popsize
-    assert (individual_histories.loc[individual_histories['EventName'] == 'StartOfSimulation',
+    #   and that this was logged at the start date
+    assert (individual_histories['event_name'] == 'StartOfSimulation').sum() == popsize
+    assert (individual_histories.loc[individual_histories['event_name'] == 'StartOfSimulation',
                                                                           'date'] == start_date).all()
 
     # Check that in the case of birth or start of simulation, all properties were logged
     num_properties = len(sim.population.props.columns)
-    mask = individual_histories["EventName"].isin(["Birth", "StartOfSimulation"])
+    mask = individual_histories["event_name"].isin(["Birth", "StartOfSimulation"])
     assert individual_histories.loc[mask, "Info"].apply(len).eq(num_properties).all()
 
     # Assert that all HSI events that occurred were also collected in the event chains
-    HSIs_in_individual_histories = individual_histories["EventName"].str.contains('HSI', na=False).sum()
+    HSIs_in_individual_histories = individual_histories["event_name"].str.contains('HSI', na=False).sum()
     assert HSIs_in_individual_histories == len(output['tlo.methods.healthsystem']['HSI_Event'])
 
     # Check that aside from HSIs, StartOfSimulation, and Birth, other events were collected too
-    mask = (~individual_histories["EventName"].isin(["StartOfSimulation", "Birth"])) & \
-           (~individual_histories["EventName"].str.contains("HSI", na=False))
+    mask = (~individual_histories["event_name"].isin(["StartOfSimulation", "Birth"])) & \
+           (~individual_histories["event_name"].str.contains("HSI", na=False))
     count = mask.sum()
     assert count > 0

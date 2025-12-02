@@ -8,11 +8,11 @@ from tlo.analysis.utils import extract_individual_histories
 
 def print_filtered_df(df):
     """
-    Prints rows of the DataFrame excluding EventName 'Initialise' and 'Birth'.
+    Prints rows of the DataFrame excluding event_name 'Initialise' and 'Birth'.
     """
     pd.set_option('display.max_colwidth', None)
-    filtered = df#[~df['EventName'].isin(['StartOfSimulation', 'Birth'])]
-    
+    filtered = df  # [~df['event_name'].isin(['StartOfSimulation', 'Birth'])]
+
     dict_cols = ["Info"]
     max_items = 2
     # Step 2: Truncate dictionary columns for display
@@ -32,9 +32,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     """
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_colwidth', None)
-    
+
     individual_individual_histories = extract_individual_histories(results_folder)
-    
+
 if __name__ == "__main__":
     rfp = Path('resources')
 
