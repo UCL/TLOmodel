@@ -489,6 +489,74 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         'intervention_analysis_availability': Parameter(
             Types.REAL, 'Probability an intervention which is included in "interventions_under_analysis" will be'
                         'available'),
+
+        # MODULE DESIGN, TIMING & SCHEDULING PARAMETERS ...
+        'parameter_update_year': Parameter(
+            Types.INT, 'Year when parameters are updated from 2010 to 2015 values'),
+        'main_polling_frequency_weeks': Parameter(
+            Types.INT, 'Frequency of PregnancySupervisorEvent in weeks'),
+        'hsi_event_window_days': Parameter(
+            Types.INT, 'HSI event tclose window in days'),
+        'pregnancy_max_days': Parameter(
+            Types.INT, 'Maximum days for pregnancy feasible'),
+        'death_delay_days_after_abortion': Parameter(
+            Types.INT, 'Days to delay death event after abortion'),
+        'death_delay_days_after_ectopic_rupture': Parameter(
+            Types.INT, 'Days to delay death event after ectopic rupture to allow'
+                       ' any treatment effects to mitigate risk of death '),
+        'ectopic_event_min_weeks': Parameter(
+            Types.INT, 'Minimum weeks before ectopic pregnancy event'),
+        'ectopic_event_max_weeks': Parameter(
+            Types.INT, 'Maximum weeks before ectopic pregnancy event'),
+        'ectopic_rupture_min_weeks': Parameter(
+            Types.INT, 'Minimum weeks before ectopic rupture event'),
+        'ectopic_rupture_max_weeks': Parameter(
+            Types.INT, 'Maximum weeks before ectopic rupture event'),
+        'week_anc_care_seeking_applied': Parameter(
+            Types.INT, 'Weeks of gestation at which initial care seeking is applied'),
+        'week_length_minus_one': Parameter(
+            Types.INT, 'Length of a week minus one day, allows for scheduling of early ANC cases'),
+
+        # AGE & GESTATIONAL THRESHOLDS...
+        'min_age_reproductive': Parameter(
+            Types.INT, 'Minimum age for reproductive period'),
+        'max_age_reproductive': Parameter(
+            Types.INT, 'Maximum age for reproductive period'),
+        'gestation_week_for_first_risk_application': Parameter(
+            Types.INT, 'Gestational age in weeks when initial pregnancy risks are applied'),
+        'gestation_week_ectopic_limit': Parameter(
+            Types.INT, 'Gestational age limit in weeks for ectopic pregnancy'),
+        'gestation_week_min_for_glycemic_diabetes': Parameter(
+            Types.INT, 'Minimum gestational age to apply gestational diabetes control event'),
+        'preterm_labour_min_weeks': Parameter(
+            Types.INT, 'Min weeks to be classified as preterm labour'),
+        'preterm_labour_gestation_22_max': Parameter(
+            Types.INT, 'Maximum gestation week for preterm labour calculation at 22 weeks'),
+        'preterm_labour_gestation_27_max': Parameter(
+            Types.INT, 'Maximum gestation week for preterm labour calculation at 27 weeks'),
+        'preterm_labour_gestation_31_max': Parameter(
+            Types.INT, 'Maximum gestation week for preterm labour calculation at 31 weeks'),
+        'preterm_labour_gestation_35_max': Parameter(
+            Types.INT, 'Maximum gestation week for preterm labour calculation at 35 weeks'),
+
+        # ANC VISIT SCHEDULING RANGES...
+        'anc_month_2_min_week': Parameter(Types.INT, 'Minimum week for ANC month 2'),
+        'anc_month_2_max_week': Parameter(Types.INT, 'Maximum week for ANC month 2'),
+        'anc_month_3_min_week': Parameter(Types.INT, 'Minimum week for ANC month 3'),
+        'anc_month_3_max_week': Parameter(Types.INT, 'Maximum week for ANC month 3'),
+        'anc_month_4_min_week': Parameter(Types.INT, 'Minimum week for ANC month 4'),
+        'anc_month_4_max_week': Parameter(Types.INT, 'Maximum week for ANC month 4'),
+        'anc_month_5_min_week': Parameter(Types.INT, 'Minimum week for ANC month 5'),
+        'anc_month_5_max_week': Parameter(Types.INT, 'Maximum week for ANC month 5'),
+        'anc_month_6_min_week': Parameter(Types.INT, 'Minimum week for ANC month 6'),
+        'anc_month_6_max_week': Parameter(Types.INT, 'Maximum week for ANC month 6'),
+        'anc_month_7_min_week': Parameter(Types.INT, 'Minimum week for ANC month 7'),
+        'anc_month_7_max_week': Parameter(Types.INT, 'Maximum week for ANC month 7'),
+        'anc_month_8_min_week': Parameter(Types.INT, 'Minimum week for ANC month 8'),
+        'anc_month_8_max_week': Parameter(Types.INT, 'Maximum week for ANC month 8'),
+        'anc_month_9_min_week': Parameter(Types.INT, 'Minimum week for ANC month 9'),
+        'anc_month_9_max_week': Parameter(Types.INT, 'Maximum week for ANC month 9'),
+        'earliest_anc_care_seeking_month': Parameter(Types.INT, 'Earliest month ANC can be scheduled'),
     }
 
     PROPERTIES = {
@@ -603,7 +671,12 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # Finally, for women of reproductive age at baseline, we determine if they have ever previous experience a
         # miscarriage. This impacts future likelihood of miscarriage.
-        reproductive_age_women = df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
+        params = self.parameters
+        reproductive_age_women = (
+            df.is_alive & (df.sex == 'F') &
+            (df.age_years > params['min_age_reproductive']) &
+            (df.age_years < params['max_age_reproductive'])
+        )
 
         previous_miscarriage = pd.Series(
             self.rng.random_sample(len(reproductive_age_women.loc[reproductive_age_women])) <
@@ -619,17 +692,20 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         params = self.current_parameters
 
         # Next we register and schedule the PregnancySupervisorEvent
-        sim.schedule_event(PregnancySupervisorEvent(self),
-                           sim.date + DateOffset(days=0))
+        sim.schedule_event(
+            PregnancySupervisorEvent(self),
+            sim.date
+        )
 
         # ..and register and schedule logging event
         sim.schedule_event(PregnancyLoggingEvent(self),
                            sim.date + DateOffset(years=1))
 
         # ...and register and schedule the parameter update event
-        if self.sim.date.year < 2015:
-            sim.schedule_event(ParameterUpdateEvent(self),
-                               Date(2015, 1, 1))
+        if self.sim.date.year < params['parameter_update_year']:
+            sim.schedule_event(
+                ParameterUpdateEvent(self),
+                Date(params['parameter_update_year'], 1, 1))
         else:
             sim.schedule_event(ParameterUpdateEvent(self),
                                Date(self.sim.date.year, 1, 1))
@@ -981,18 +1057,30 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         params = self.current_parameters
 
-        # Define the weeks of each month of pregnancy
-        months_min_max = {2: [5, 8], 3: [9, 13], 4: [14, 17], 5: [18, 22], 6: [23, 27], 7: [28, 31], 8: [32, 35],
-                          9: [36, 40]}
+        # Define the weeks of each month of pregnancy using parameters
+        months_min_max = {
+            month: (
+                params[f'anc_month_{month}_min_week'],
+                params[f'anc_month_{month}_max_week']
+            )
+            for month in range(2, 10)  # months 2–9 inclusive
+        }
+
+        week_length = 7
 
         # As care seeking is applied at week 8 gestational age, women who seek care within month two must attend within
         # the next week
-        if anc_month == 2:
-            days_until_anc = self.rng.randint(0, 6)
+        if anc_month == params['earliest_anc_care_seeking_month']:
+            days_until_anc = self.rng.randint(0, params['week_length_minus_one'])
+
         else:
             # Otherwise we draw a week between the min max weeks for predicted month of visit, and then a random day
-            weeks_of_visit = (self.rng.randint(months_min_max[anc_month][0], months_min_max[anc_month][1]) - 8)
-            days_until_anc = (weeks_of_visit * 7) + self.rng.randint(0, 6)
+            min_week, max_week = months_min_max[anc_month]
+
+            weeks_of_visit = self.rng.randint(min_week, max_week) - params['week_anc_care_seeking_applied']
+
+            days_until_anc = weeks_of_visit * week_length + self.rng.randint(0, params['week_length_minus_one'])
+
 
         first_anc_date = self.sim.date + DateOffset(days=days_until_anc)
 
@@ -1019,9 +1107,11 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             first_anc_appt = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id, visit_number=1)
 
-        self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=0,
-                                                            topen=first_anc_date,
-                                                            tclose=first_anc_date + DateOffset(days=1))
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            first_anc_appt, priority=0,
+            topen=first_anc_date,
+            tclose=first_anc_date + DateOffset(days=params['hsi_event_window_days'])
+        )
 
     def apply_risk_of_spontaneous_abortion(self, gestation_of_interest):
         """
@@ -1145,8 +1235,10 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         self.care_seeking_pregnancy_loss_complications(individual_id, cause='abortion')
 
         # Schedule possible death
-        self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self, individual_id, cause=f'{cause}'),
-                                self.sim.date + DateOffset(days=7))
+        self.sim.schedule_event(
+            EarlyPregnancyLossDeathEvent(self, individual_id, cause=f'{cause}'),
+            self.sim.date + DateOffset(days=params['death_delay_days_after_abortion'])
+        )
 
     def apply_risk_of_anaemia(self, gestation_of_interest):
         """
@@ -1461,20 +1553,31 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         # To prevent clustering of labour onset we scatter women to go into labour on a random day before their
         # next month gestation
+        params = self.current_parameters
+
+        def return_onset_day(max_week_param):
+            """return day in which labour will onset randomly distributed across possible days based on gestation"""
+            poss_day_onset = (max_week_param - current_gestation) * 7
+            return self.rng.randint(0, poss_day_onset)
+
         for person in preterm_labour.loc[preterm_labour].index:
-            if df.at[person, 'ps_gestational_age_in_weeks'] == 22:
-                poss_day_onset = (27 - 22) * 7
+            current_gestation = df.at[person, 'ps_gestational_age_in_weeks']
+
+            if current_gestation == 22:
+                poss_day_onset = (params['preterm_labour_gestation_22_max'] - current_gestation) * 7
                 # We only allow labour to onset from 24 weeks (to match with our definition of preterm labour)
-                onset_day = self.rng.randint(14, poss_day_onset)
-            elif df.at[person, 'ps_gestational_age_in_weeks'] == 27:
-                poss_day_onset = (31 - 27) * 7
-                onset_day = self.rng.randint(0, poss_day_onset)
-            elif df.at[person, 'ps_gestational_age_in_weeks'] == 31:
-                poss_day_onset = (35 - 31) * 7
-                onset_day = self.rng.randint(0, poss_day_onset)
-            elif df.at[person, 'ps_gestational_age_in_weeks'] == 35:
-                poss_day_onset = (37 - 35) * 7
-                onset_day = self.rng.randint(0, poss_day_onset)
+                onset_day = self.rng.randint((params['preterm_labour_min_weeks'] - current_gestation) * 7,
+                                             poss_day_onset)
+
+            elif current_gestation == 27:
+                onset_day = return_onset_day(params['preterm_labour_gestation_27_max'] )
+
+            elif current_gestation == 31:
+                onset_day = return_onset_day(params['preterm_labour_gestation_31_max'] )
+
+            elif current_gestation == 35:
+                onset_day = return_onset_day(params['preterm_labour_gestation_35_max'] )
+
             else:
                 # If any other gestational ages are pass, the function should end
                 return
@@ -1587,9 +1690,11 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             induction = HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(induction, priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                induction, priority=0,
+                topen=self.sim.date,
+                tclose=self.sim.date + DateOffset(days=params['hsi_event_window_days'])
+            )
 
         # For those who dont seek care we a apply a weekly risk of stillbirth (this function is called weekly for women
         # who are post term)
@@ -1626,10 +1731,13 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             event = HSI_GenericEmergencyFirstAppt(self.sim.modules['PregnancySupervisor'],
                                                   person_id=individual_id)
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                event,
+                priority=0,
+                topen=self.sim.date,
+                tclose=self.sim.date +
+                       DateOffset(days=params['hsi_event_window_days'])
+            )
             return True
 
         mni[individual_id]['didnt_seek_care'] = True
@@ -1755,10 +1863,12 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
+
+        params = self.current_parameters
         scheduling_options = {
                 "priority": 0,
                 "topen": self.sim.date,
-                "tclose": self.sim.date + pd.DateOffset(days=1),
+                "tclose": self.sim.date + pd.DateOffset(days=params['hsi_event_window_days']),
             }
 
         # -----  ECTOPIC PREGNANCY  -----
@@ -1789,7 +1899,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     3.) It determines if women who experience life seeking complications associated with pregnancy will seek care
     4.) It applies risk of death and stillbirth to women who do not seek care following complications"""
     def __init__(self, module, ):
-        super().__init__(module, frequency=DateOffset(weeks=1))
+        super().__init__(module, frequency=DateOffset(weeks=module.parameters['main_polling_frequency_weeks']))
 
     def apply(self, population):
         df = population.props
@@ -1828,10 +1938,15 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # a woman will develop ectopic pregnancy, multiple pregnancy, placenta praevia and if/when she will seek care
         # for her first antenatal visit
 
+        init_preg_risk_app = params['gestation_week_for_first_risk_application']
+
         #  ------------------------------APPLYING RISK OF ECTOPIC PREGNANCY -------------------------------------------
         # We use the apply_linear_model function to determine which women will develop ectopic pregnancy - this format
         # is similar to the functions which apply risk of complication
-        new_pregnancy = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 3)
+        new_pregnancy = (
+            df.is_alive & df.is_pregnant &
+            (df.ps_gestational_age_in_weeks == init_preg_risk_app)
+        )
         ectopic_risk = pd.Series(self.module.rng.random_sample(len(new_pregnancy.loc[new_pregnancy])) <
                                  params['prob_ectopic_pregnancy'], index=new_pregnancy.loc[new_pregnancy].index)
 
@@ -1843,14 +1958,26 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         for person in ectopic_risk.loc[ectopic_risk].index:
             self.module.mnh_outcome_counter['ectopic_unruptured'] += 1
 
-            self.sim.schedule_event(EctopicPregnancyEvent(self.module, person),
-                                    (self.sim.date + pd.Timedelta(days=7 * 3 + self.module.rng.randint(0, 7 * 2))))
+            week_length = 7
+
+            min_days = params['ectopic_event_min_weeks'] * week_length
+            max_days = params['ectopic_event_max_weeks'] * week_length
+
+            days_until_event = self.module.rng.randint(min_days, max_days)
+
+            self.sim.schedule_event(
+                EctopicPregnancyEvent(self.module, person),
+                self.sim.date + pd.Timedelta(days=days_until_event)
+            )
 
         #  ---------------------------- APPLYING RISK OF MULTIPLE PREGNANCY -------------------------------------------
         # For the women who aren't having an ectopic, we determine if they may be carrying multiple pregnancies and make
         # changes accordingly
-        multiple_risk = \
-            df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 3) & (df.ps_ectopic_pregnancy == 'none')
+        multiple_risk = (
+            df.is_alive & df.is_pregnant &
+            (df.ps_gestational_age_in_weeks == params['gestation_week_for_first_risk_application']) &
+            (df.ps_ectopic_pregnancy == 'none')
+        )
 
         multiples = pd.Series(self.module.rng.random_sample(len(multiple_risk.loc[multiple_risk]))
                               < params['prob_multiples'],  index=multiple_risk.loc[multiple_risk].index)
@@ -1870,8 +1997,11 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         #  ------------------------- APPLYING RISK OF SYPHILIS INFECTION DURING PREGNANCY  ---------------------------
         # Finally apply risk that syphilis will develop during pregnancy
-        at_risk_women = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 3) & (df.ps_ectopic_pregnancy
-                                                                                                == 'none')
+        at_risk_women = (
+            df.is_alive & df.is_pregnant &
+            (df.ps_gestational_age_in_weeks == params['gestation_week_for_first_risk_application']) &
+            (df.ps_ectopic_pregnancy == 'none')
+        )
 
         syphilis_risk = pd.Series(self.module.rng.random_sample(len(at_risk_women.loc[at_risk_women]))
                                   < params['prob_syphilis_during_pregnancy'],
@@ -1879,10 +2009,12 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Schedule point of onset randomly during possible length of pregnancy
         for person in syphilis_risk.loc[syphilis_risk].index:
-            onset_day = self.module.rng.randint(0, 280)
+            onset_day = self.module.rng.randint(0, params['pregnancy_max_days'])
             mni[person]['pred_syph_infect'] = self.sim.date + pd.Timedelta(days=onset_day)
-            self.sim.schedule_event(SyphilisInPregnancyEvent(self.module, person),
-                                    (self.sim.date + pd.Timedelta(days=onset_day)))
+            self.sim.schedule_event(
+                SyphilisInPregnancyEvent(self.module, person),
+                self.sim.date + pd.Timedelta(days=onset_day)
+            )
 
         # ------------------------ APPLY RISK OF ADDITIONAL PREGNANCY COMPLICATIONS -----------------------------------
         # The following functions apply risk of key complications/outcomes of pregnancy at specific time points of a
@@ -1966,9 +2098,11 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                 inpatient_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(inpatient_pregnancy_hsi, priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    inpatient_pregnancy_hsi, priority=0,
+                    topen=self.sim.date,
+                    tclose=self.sim.date + DateOffset(days=params['hsi_event_window_days'])
+                )
             else:
                 # Women who cant seek care as they are admitted for another reason have a risk of death applied
                 apply_death_risk(person)
@@ -2007,11 +2141,12 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
+        params = self.module.current_parameters
         if (
             not df.at[individual_id, 'is_alive'] or
             not df.at[individual_id, 'is_pregnant'] or
             (df.at[individual_id, 'ps_ectopic_pregnancy'] != 'not_ruptured') or
-            (df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 9)
+            (df.at[individual_id, 'ps_gestational_age_in_weeks'] >= params['gestation_week_ectopic_limit'])
         ):
             return
 
@@ -2032,8 +2167,18 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
             # For women who dont seek care (and get treatment) we schedule EctopicPregnancyRuptureEvent (simulating
             # fallopian tube rupture) in an additional 2-4 weeks from this event (if care seeking is unsuccessful
             # then this event is scheduled by the HSI (did_not_run)
-            self.sim.schedule_event(EctopicPregnancyRuptureEvent(self.module, individual_id),
-                                    (self.sim.date + pd.Timedelta(days=7 * 2 + self.module.rng.randint(0, 7 * 2))))
+
+            week_length = 7
+
+            min_days = params['ectopic_rupture_min_weeks'] * week_length
+            max_days = params['ectopic_rupture_max_weeks'] * week_length
+
+            days_until_rupture = self.module.rng.randint(min_days, max_days)
+
+            self.sim.schedule_event(
+                EctopicPregnancyRuptureEvent(self.module, individual_id),
+                self.sim.date + pd.Timedelta(days=days_until_rupture)
+            )
 
 
 class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
@@ -2061,8 +2206,11 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
         self.module.care_seeking_pregnancy_loss_complications(individual_id, cause='ectopic_ruptured')
 
         # We delayed the death event by three days to allow any treatment effects to mitigate risk of death
-        self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self.module, individual_id, cause='ectopic_pregnancy'),
-                                self.sim.date + DateOffset(days=3))
+        params = self.module.current_parameters
+        self.sim.schedule_event(
+            EarlyPregnancyLossDeathEvent(self.module, individual_id, cause='ectopic_pregnancy'),
+            self.sim.date + DateOffset(days=params['death_delay_days_after_ectopic_rupture'])
+        )
 
 
 class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
@@ -2127,7 +2275,7 @@ class GestationalDiabetesGlycaemicControlEvent(Event, IndividualScopeEventMixin)
 
         if (not mother.is_alive or
             not mother.is_pregnant or
-            (mother.ps_gestational_age_in_weeks < 20) or
+            (mother.ps_gestational_age_in_weeks < params['gestation_week_min_for_glycemic_diabetes']) or
            ((mother.ps_gest_diab == 'none') and (mother.ac_gest_diab_on_treatment == 'none'))):
             return
 
@@ -2242,8 +2390,13 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                 # Reset the intercept parameter of the equation determining care seeking for ANC4+ and scale the model
                 target = params['anc_availability_odds']
                 params['odds_early_init_anc4'] = 1
+                reproductive_age_women = (
+                    df.is_alive & (df.sex == 'F') &
+                    (df.age_years > params['min_age_reproductive']) &
+                    (df.age_years < params['max_age_reproductive'])
+                )
                 mean = self.module.ps_linear_models['early_initiation_anc4'].predict(
-                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
+                    df.loc[reproductive_age_women],
                     year=self.sim.date.year).mean()
 
                 mean = mean / (1.0 - mean)
