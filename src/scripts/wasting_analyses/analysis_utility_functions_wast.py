@@ -1086,8 +1086,30 @@ def plot_sum_outcome_and_CIs_intervention_period(
             # SQ timestamp associated with scenarios for which we want the costs to be calculated
             SQ_results_timestamp = interv_timestamps_dict["SQ"]
 
-            def plot_and_table_cost_effectiveness(in_averted_DALYs: dict, in_data_impl_cost_name: str,
-                                                  in_sharing_GM_CS: float, in_FS_multiplier: float) -> None:
+            def _apply_millions_formatter_to_ax(ax, x_decimals: int = 1, y_decimals: int = 0):
+                import matplotlib.ticker as mtick
+                x_fmt = mtick.FuncFormatter(lambda v, pos: f"{v/1e6:,.{x_decimals}f}")
+                y_fmt = mtick.FuncFormatter(lambda v, pos: f"{v/1e6:,.{y_decimals}f}")
+                ax.xaxis.set_major_formatter(x_fmt)
+                ax.yaxis.set_major_formatter(y_fmt)
+
+            def plot_and_table_cost_effectiveness(
+                in_averted_DALYs: dict, in_data_impl_cost_name: str, in_sharing_GM_CS: float, in_FS_multiplier: float
+            ) -> None:
+                # Ensure subplots created inside this function get the millions formatter applied automatically
+                # by temporarily monkeypatching `plt.subplots`.
+                try:
+                    _orig_subplots = plt.subplots
+                    def _patched_subplots(*args, **kwargs):
+                        fig, ax = _orig_subplots(*args, **kwargs)
+                        try:
+                            _apply_millions_formatter_to_ax(ax)
+                        except Exception:
+                            pass
+                        return fig, ax
+                    plt.subplots = _patched_subplots
+                except Exception:
+                    pass
 
                 ce_suffix = f"{in_data_impl_cost_name}_GM-CS-sharing{in_sharing_GM_CS}_FSmultiplier{in_FS_multiplier}"
                 timestamps_and_ce_suffix = f"{timestamps_suffix}__{ce_suffix}"
@@ -1401,8 +1423,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 )
 
                 # Add axis labels
-                ax_ce.set_xlabel("DALYs Averted")
-                ax_ce.set_ylabel("Total Incremental Costs (2023 USD)")
+                ax_ce.set_xlabel("DALYs Averted, millions")
+                ax_ce.set_ylabel("Total Incremental Costs (2023 USD), millions")
                 # ax_ce.set_title(
                 #     f"$\\bf{{unit\\ cost:}}$ {in_data_impl_cost_name}; "
                 #     f"$\\bf{{CS\\ &\\ GM\\ sharing:}}$ {in_sharing_GM_CS} prop of implem. costs; "
