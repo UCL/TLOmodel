@@ -1912,7 +1912,7 @@ class HealthSystem(Module):
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         """
         #Invoke did not run function here
-        if "CardioMetabolicDisorders_Treatment" in hsi_event.as_namedtuple():
+        if "HSI_CardioMetabolicDisorders_Refill_Medication" in hsi_event.as_namedtuple():
             hsi_event.did_not_run_weather()
         else:
             hsi_event.did_not_run()
