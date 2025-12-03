@@ -310,7 +310,7 @@ class Simulation:
         # Otherwise, would have to add listener outside of CollectEventChains initialisation
         
         # Dispatch notification that pop has been initialised
-        notifier.dispatch("simulation.post-initialise", data={})
+        notifier.dispatch("simulation.post-initialise")
 
     def finalise(self, wall_clock_time: Optional[float] = None) -> None:
         """Finalise all modules in simulation and close logging file if open.
