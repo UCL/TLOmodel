@@ -1913,7 +1913,7 @@ class HealthSystem(Module):
         """
         #Invoke did not run function here
         if "HSI_CardioMetabolicDisorders_Refill_Medication" in hsi_event.as_namedtuple():
-            hsi_event.did_not_run_weather()
+            hsi_event.did_not_run_weather_event()
         else:
             hsi_event.did_not_run()
 
