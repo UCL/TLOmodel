@@ -200,7 +200,7 @@ class HSI_Event:
         """Make the event happen."""
 
         # Dispatch notification that HSI event is about to run
-        notifier.dispatch("event.pre-run",
+        notifier.dispatch("hsi_event.pre-run",
                           data={"target": self.target,
                                 "module" : self.module.name,
                                 "event_name": self.__class__.__name__})
@@ -220,7 +220,7 @@ class HSI_Event:
         else:
             level = "N/A"
 
-        notifier.dispatch("event.post-run",
+        notifier.dispatch("hsi_event.post-run",
                           data={"target": self.target,
                                 "event_name": self.__class__.__name__,
                                 "footprint": footprint,

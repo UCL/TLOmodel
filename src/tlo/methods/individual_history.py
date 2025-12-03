@@ -48,6 +48,8 @@ class IndividualHistoryTracker(Module):
         notifier.add_listener("simulation.post-do_birth", self.on_simulation_post_do_birth)
         notifier.add_listener("event.pre-run", self.on_event_pre_run)
         notifier.add_listener("event.post-run", self.on_event_post_run)
+        notifier.add_listener("hsi_event.pre-run", self.on_event_pre_run)
+        notifier.add_listener("hsi_event.post-run", self.on_event_post_run)
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         self.load_parameters_from_dataframe(
