@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -11,6 +11,7 @@ from tlo.methods import Metadata, cardio_metabolic_disorders
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 from tlo.population import IndividualProperties
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -43,11 +44,7 @@ class DiabeticRetinopathy(Module):
         "init_prob_any_dr": Parameter(Types.LIST, "Initial probability of anyone with diabetic retinopathy"),
         "prob_any_dmo": Parameter(Types.LIST, "Probability of anyone with diabetic retinopathy having "
                                               "Diabetic Macular Oedema (DMO)"),
-        "p_medication": Parameter(Types.REAL, "Diabetic retinopathy treatment/medication effectiveness"),
-        "init_prob_ever_diet_mgmt_if_diagnosed": Parameter(
-            Types.REAL, "Initial probability of ever having had a diet management session if ever diagnosed "
-                        "with diabetic retinopathy"
-        ),
+        "p_laser_success": Parameter(Types.REAL, "Diabetic retinopathy treatment/medication effectiveness"),
         "rp_dr_tobacco": Parameter(
             Types.REAL, "relative prevalence at baseline of diabetic retinopathy if tobacco"
         ),
@@ -150,39 +147,12 @@ class DiabeticRetinopathy(Module):
         super().__init__()
         self.cons_item_codes = None  # (Will store consumable item codes)
 
-    def read_parameters(self, data_folder: str | Path) -> None:
-        """ initialise module parameters. Here we are assigning values to all parameters defined at the beginning of
-        this module.
-
-        :param data_folder: Path to the folder containing parameter values
-
-        """
-        #TODO Read from resourcefile
-        self.parameters['rate_onset_to_mild_or_moderate_dr'] = 0.29
-        self.parameters['rate_mild_or_moderate_to_severe'] = 0.5
-
-        self.parameters['rate_severe_to_proliferative'] = 0.07
-
-        self.parameters['init_prob_any_dr'] = [0.4, 0.3, 0.3]
-        self.parameters['prob_any_dmo'] = [0.1, 0.2, 0.3, 0.4]  # not in resourcefile
-
-        self.parameters['probs_for_dmo_when_dr_status_mild_or_moderate'] = [0.7, 0.1, 0.2]
-        self.parameters['probs_for_dmo_when_dr_status_severe'] = [0.3, 0.5, 0.2]
-        self.parameters['probs_for_dmo_when_dr_status_proliferative'] = [0.1, 0.7, 0.2]
-
-        # self.parameters['init_prob_any_dr'] = [0.2, 0.3, 0.3, 0.15, 0.05]
-        # self.parameters['init_prob_proliferative_dr'] = 0.09
-        self.parameters['p_medication'] = 0.8  # not in resourcefile
-        self.parameters["prob_diabetes_controlled"] = 0.5  # not in resource file
-        self.parameters["prob_eye_exam"] = 0.07
-        self.parameters["prob_mild_to_none_if_controlled_diabetes"] = 0.21  # not in resource file
-        self.parameters['prob_repeat_laser'] = 0.3
-
-        self.parameters['rp_dr_ex_alc'] = 1.1
-        self.parameters['rp_dr_tobacco'] = 1.3
-        self.parameters['rp_dr_high_sugar'] = 1.2
-        self.parameters['rp_dr_low_ex'] = 1.3
-        self.parameters['rp_dr_urban'] = 1.4
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
+        """ Read all parameters and define symptoms (if any)"""
+        self.load_parameters_from_dataframe(
+            read_csv_files(resourcefilepath / "ResourceFile_Diabetic_Retinopathy",
+                           files="parameter_values")
+        )
 
     def initialise_population(self, population: Population) -> None:
         """ Set property values for the initial population
@@ -191,17 +161,17 @@ class DiabeticRetinopathy(Module):
 
         """
         df = population.props
-        # p = self.parameters
+        p = self.parameters
 
         alive_diabetes_idx = df.loc[df.is_alive & df.nc_diabetes].index
 
         # any_dr_idx = alive_diabetes_idx[
-        #     self.rng.random_sample(size=len(alive_diabetes_idx)) < self.parameters['init_prob_any_dr']
+        #     self.rng.random_sample(size=len(alive_diabetes_idx)) < p['init_prob_any_dr']
         #     ]
         # no_dr_idx = set(alive_diabetes_idx) - set(any_dr_idx)
         #
         # proliferative_dr_idx = any_dr_idx[
-        #     self.rng.random_sample(size=len(any_dr_idx)) < self.parameters['init_prob_proliferative_dr']
+        #     self.rng.random_sample(size=len(any_dr_idx)) < p['init_prob_proliferative_dr']
         #     ]
         #
         # mild_dr_idx = set(any_dr_idx) - set(proliferative_dr_idx)
@@ -223,16 +193,16 @@ class DiabeticRetinopathy(Module):
         # -------------------- dr_status -----------
         # Determine who has diabetic retinopathy at all stages:
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
-        assert sum(self.parameters['init_prob_any_dr']) <= 1.0
+        assert sum(p['init_prob_any_dr']) <= 1.0
 
         lm_init_dr_status_any_dr = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            sum(self.parameters['init_prob_any_dr']),
-            Predictor('li_ex_alc').when(True, self.parameters['rp_dr_ex_alc']),
-            Predictor('li_tob').when(True, self.parameters['rp_dr_tobacco']),
-            Predictor('li_high_sugar').when(True, self.parameters['rp_dr_high_sugar']),
-            Predictor('li_low_ex').when(True, self.parameters['rp_dr_low_ex']),
-            Predictor('li_urban').when(True, self.parameters['rp_dr_urban']),
+            sum(p['init_prob_any_dr']),
+            Predictor('li_ex_alc').when(True, p['rp_dr_ex_alc']),
+            Predictor('li_tob').when(True, p['rp_dr_tobacco']),
+            Predictor('li_high_sugar').when(True, p['rp_dr_high_sugar']),
+            Predictor('li_low_ex').when(True, p['rp_dr_low_ex']),
+            Predictor('li_urban').when(True, p['rp_dr_urban']),
         )
 
         # any_dr = \
@@ -249,11 +219,11 @@ class DiabeticRetinopathy(Module):
             categories = [cat for cat in df.dr_status.cat.categories if cat != 'none']
 
             # Verify probabilities match categories
-            assert len(categories) == len(self.parameters['init_prob_any_dr'])
+            assert len(categories) == len(p['init_prob_any_dr'])
 
             # Normalize probabilities
-            total_prob = sum(self.parameters['init_prob_any_dr'])
-            probs = [p / total_prob for p in self.parameters['init_prob_any_dr']]
+            total_prob = sum(p['init_prob_any_dr'])
+            probs = [p / total_prob for p in p['init_prob_any_dr']]
 
             # Assign DR stages
             df.loc[dr_idx, 'dr_status'] = self.rng.choice(
@@ -262,17 +232,17 @@ class DiabeticRetinopathy(Module):
                 p=probs
             )
 
-        # dr_stage_probs = self.parameters["init_prob_any_dr"]
+        # dr_stage_probs = p["init_prob_any_dr"]
         # Determine the stage of DR for those who have DM:
         # if any_dr.sum():
         #     categories = [cat for cat in df.dr_status.cat.categories if cat != 'none']
         #
         #     # Make sure we have the right number of probabilities
-        #     assert len(categories) == len(self.parameters['init_prob_any_dr'])
+        #     assert len(categories) == len(p['init_prob_any_dr'])
         #
         #     # Normalize probabilities
-        #     sum_probs = sum(self.parameters['init_prob_any_dr'])
-        #     prob_by_stage_of_dr_if_dr = [p / sum_probs for p in self.parameters['init_prob_any_dr']]
+        #     sum_probs = sum(p['init_prob_any_dr'])
+        #     prob_by_stage_of_dr_if_dr = [p / sum_probs for p in p['init_prob_any_dr']]
         #
         #     # Assign statuses
         #     df.loc[any_dr, "dr_status"] = self.rng.choice(
@@ -281,9 +251,9 @@ class DiabeticRetinopathy(Module):
         #         p=prob_by_stage_of_dr_if_dr
         #     )
 
-        # sum_probs = sum(self.parameters['init_prob_any_dr'])
+        # sum_probs = sum(p['init_prob_any_dr'])
         # if sum_probs > 0:
-        #     prob_by_stage_of_dr_if_dr = [i / sum_probs for i in self.parameters['init_prob_any_dr']]
+        #     prob_by_stage_of_dr_if_dr = [i / sum_probs for i in p['init_prob_any_dr']]
         #     assert (sum(prob_by_stage_of_dr_if_dr) - 1.0) < 1e-10
         #     # df.loc[any_dr, "dr_status"] = self.rng.choice(
         #     #     dr_stage_probs[1:],  # exclude "none"
@@ -334,22 +304,23 @@ class DiabeticRetinopathy(Module):
     def make_the_linear_models(self) -> None:
         """Make and save LinearModels that will be used when the module is running"""
         self.lm = dict()
+        p =self.parameters
 
         self.lm['onset_mild_or_moderate_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            intercept=self.parameters['rate_onset_to_mild_or_moderate_dr']
+            intercept=p['rate_onset_to_mild_or_moderate_dr']
         )
 
         self.lm['mildmoderate_severe_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['rate_mild_or_moderate_to_severe'],
+            p['rate_mild_or_moderate_to_severe'],
             Predictor('had_treatment_during_this_stage', external=True)
             .when(True, 0.0).otherwise(1.0)
         )
 
         self.lm['severe_proliferative_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['rate_severe_to_proliferative'],
+            p['rate_severe_to_proliferative'],
             Predictor('had_treatment_during_this_stage', external=True)
             .when(True, 0.0).otherwise(1.0)
         )
@@ -406,6 +377,7 @@ class DiabeticRetinopathy(Module):
         """Update DMO status for people with diabetic retinopathy.
         Ensures dmo_status is none when dr_status is none/nan."""
         df = self.sim.population.props
+        p = self.parameters
 
         # First reset dmo_status to 'none' for anyone without DR
         no_dr_mask = (df.dr_status == 'none') | df.dr_status.isna()
@@ -420,11 +392,11 @@ class DiabeticRetinopathy(Module):
                 dr_stage = df.at[person, 'dr_status']
 
                 if dr_stage == 'mild_or_moderate':
-                    probs = self.parameters['probs_for_dmo_when_dr_status_mild_or_moderate']
+                    probs = p['probs_for_dmo_when_dr_status_mild_or_moderate']
                 elif dr_stage == 'severe':
-                    probs = self.parameters['probs_for_dmo_when_dr_status_severe']
+                    probs = p['probs_for_dmo_when_dr_status_severe']
                 elif dr_stage == 'proliferative':
-                    probs = self.parameters['probs_for_dmo_when_dr_status_proliferative']
+                    probs = p['probs_for_dmo_when_dr_status_proliferative']
 
                 df.at[person, 'dmo_status'] = self.rng.choice(
                     ['none', 'clinically_significant', 'non_clinically_significant'],
