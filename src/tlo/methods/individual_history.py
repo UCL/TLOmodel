@@ -166,17 +166,10 @@ class IndividualHistoryTracker(Module):
         # Target is single individual
         if not isinstance(data["target"], Population):
 
-            # Copy full new status for individual
-            row_after = self.sim.population.props.loc[abs(data['target'])].fillna(-99999)
+            pop = self.sim.population.props
 
-            # Check if individual is in mni after the event
-            mni_instances_after = False
-            if 'PregnancySupervisor' in self.sim.modules:
-                mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-                if data['target'] in mni:
-                    mni_instances_after = True
-            else:
-                mni_instances_after = None
+            # Copy full new status for individual
+            row_after = pop.loc[data['target']].fillna(-99999)
 
             # Create and store event for this individual, regardless of whether any property change occurred
             link_info = {'event_name' : data['event_name']}
@@ -189,26 +182,37 @@ class IndividualHistoryTracker(Module):
                 if self.row_before[key] != row_after[key]: # Note: used fillna previously, so this is safe
                     link_info[key] = row_after[key]
 
-            if 'PregnancySupervisor' in self.sim.modules:
+            if 'PregnancySupervisor' in self.sim.modules and pop.loc[data['target']].sex == 'F':
+        
+                mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+                # Check if individual is in mni after the event
+                mni_instances_after = False
+                if data['target'] in mni:
+                    mni_instances_after = True
+            
                 # Now check and store changes in the mni dictionary, accounting for following cases:
-                # Individual is in mni dictionary before and after
+                
+                # 1. Individual is not in mni neither before nor after event, can pass
+                if not self.mni_instances_before and not self.mni_instances_after:
+                    pass
+                # 2. Individual is in mni dictionary before and after
                 if self.mni_instances_before and mni_instances_after:
                     for key in self.mni_row_before:
                         if self.mni_values_differ(self.mni_row_before[key], mni[data['target']][key]):
                             link_info[key] = mni[data['target']][key]
-                # Individual is only in mni dictionary before event
+                # 3. Individual is only in mni dictionary before event
                 elif self.mni_instances_before and not mni_instances_after:
                     default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
                     for key in self.mni_row_before:
                         if self.mni_values_differ(self.mni_row_before[key], default[key]):
                             link_info[key] = default[key]
-                # Individual is only in mni dictionary after event
+                # 4. Individual is only in mni dictionary after event
                 elif mni_instances_after and not self.mni_instances_before:
                     default = self.sim.modules['PregnancySupervisor'].default_all_mni_values
                     for key in default:
                         if self.mni_values_differ(default[key], mni[data['target']][key]):
                             link_info[key] = mni[data['target']][key]
-                # Else, no need to do anything
 
             # Add individual to the chain links
             chain_links[data['target']] = link_info
