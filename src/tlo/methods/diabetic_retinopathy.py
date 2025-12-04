@@ -84,6 +84,14 @@ class DiabeticRetinopathy(Module):
             "Probability that a patient who remains proliferative at follow-up/review will "
             "require a repeat of HSI_Dr_Laser_Pan_Retinal_Coagulation"
         ),
+        "next_exam_if_mild_or_moderate": Parameter(
+            Types.INT,
+            "Number of months until next eye exam if DR status is mild or moderate"
+        ),
+        "next_exam_if_severe": Parameter(
+            Types.INT,
+            "Number of months until next eye exam if DR status is severe"
+        ),
     }
 
     PROPERTIES = {
@@ -525,6 +533,7 @@ class HSI_Dr_Eye_Examination(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
+        p = self.parameters
 
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
@@ -568,14 +577,14 @@ class HSI_Dr_Eye_Examination(HSI_Event, IndividualScopeEventMixin):
                 )
 
                 # Repeat eye exam in 1 year if dr_status is mild_or_moderate or dmo_status is non_clinically_significant
-                next_exam_if_mild_or_moderate = self.sim.date + pd.DateOffset(years=1)
+                next_exam_if_mild_or_moderate = self.sim.date + pd.DateOffset(months=p['next_exam_if_mild_or_moderate'])
                 self.sim.modules['HealthSystem'].schedule_hsi_event(self,
                                                                     topen=next_exam_if_mild_or_moderate,
                                                                     tclose=None,
                                                                     priority=1)
 
             elif person.dr_status == 'severe':
-                next_exam_if_severe = self.sim.date + pd.DateOffset(months=3)
+                next_exam_if_severe = self.sim.date + pd.DateOffset(months=p['next_exam_if_severe'])
                 self.sim.modules['HealthSystem'].schedule_hsi_event(self,
                                                                     topen=next_exam_if_severe,
                                                                     tclose=None,
