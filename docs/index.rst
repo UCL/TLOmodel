@@ -54,6 +54,7 @@ Contents
    aims
    writeups
    data_sources
+   data_collection
    getting_started
    azure_batch
    reference/index
