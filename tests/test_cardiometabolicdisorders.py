@@ -1015,3 +1015,169 @@ def test_hsi_following_presentation_at_generic_emergency_hsi(seed):
     hsi_generic = HSI_GenericEmergencyFirstAppt(module=sim.modules['HealthSeekingBehaviour'], person_id=1)
     hsi_generic.run(squeeze_factor=0.0)
     assert [] == sim.modules['HealthSystem'].find_events_for_person(1)
+
+
+def test_refill_medication_did_not_run_weather_event(seed):
+    """Test that when a refill medication HSI does not run due to weather,
+    the person drops off medication but may reschedule treatment"""
+
+    # Make a list of all conditions to test
+    condition_list = ['diabetes', 'hypertension', 'chronic_lower_back_pain',
+                      'chronic_kidney_disease', 'chronic_ischemic_hd']
+
+    for condition in condition_list:
+        # Create the sim with an enabled healthcare system
+        sim = make_simulation_health_system_functional(seed=seed)
+
+        # make initial population
+        sim.make_initial_population(n=50)
+
+        # simulate for zero days
+        sim = start_sim_and_clear_event_queues(sim)
+
+        df = sim.population.props
+
+        # Get target person and make them have condition, diagnosed and on medication
+        person_id = 0
+        df.at[person_id, f"nc_{condition}"] = True
+        df.at[person_id, f"nc_{condition}_ever_diagnosed"] = True
+        df.at[person_id, f"nc_{condition}_on_medication"] = True
+
+        # Create the Refill_Medication HSI event
+        hsi_refill = HSI_CardioMetabolicDisorders_Refill_Medication(
+            module=sim.modules['CardioMetabolicDisorders'],
+            person_id=person_id,
+            condition=condition
+        )
+
+        # Call the did_not_run_weather_event method
+        hsi_refill.did_not_run_weather_event()
+
+        # Check that the individual has dropped off medication
+        assert not df.at[person_id, f"nc_{condition}_on_medication"]
+
+        # Check if a new StartWeightLossAndMedication HSI was scheduled
+        # (depends on random probability, so we check the queue)
+        scheduled_hsis = sim.modules['HealthSystem'].find_events_for_person(person_id)
+
+        if len(scheduled_hsis) > 0:
+            # If an HSI was scheduled, verify it's the correct type
+            date_event, event = scheduled_hsis[0]
+            assert isinstance(event, HSI_CardioMetabolicDisorders_StartWeightLossAndMedication)
+            assert event.condition == condition
+
+            # Check that it's scheduled with the correct delay
+            expected_delay_days = sim.modules["HealthSystem"].parameters[
+                                      "scale_factor_delay_in_seeking_care_weather"
+                                  ] * 1
+            assert date_event >= sim.date + pd.DateOffset(days=expected_delay_days)
+            assert date_event <= sim.date + pd.DateOffset(
+                days=expected_delay_days + 15
+            )
+
+
+def test_refill_medication_never_ran_weather_event(seed):
+    """Test that when a refill medication HSI never runs due to weather,
+    the person drops off medication but may reschedule treatment"""
+
+    # Make a list of all conditions to test
+    condition_list = ['diabetes', 'hypertension', 'chronic_lower_back_pain',
+                      'chronic_kidney_disease', 'chronic_ischemic_hd']
+
+    for condition in condition_list:
+        # Create the sim with an enabled healthcare system
+        sim = make_simulation_health_system_functional(seed=seed)
+
+        # make initial population
+        sim.make_initial_population(n=50)
+
+        # simulate for zero days
+        sim = start_sim_and_clear_event_queues(sim)
+
+        df = sim.population.props
+
+        # Get target person and make them have condition, diagnosed and on medication
+        person_id = 0
+        df.at[person_id, f"nc_{condition}"] = True
+        df.at[person_id, f"nc_{condition}_ever_diagnosed"] = True
+        df.at[person_id, f"nc_{condition}_on_medication"] = True
+
+        # Create the Refill_Medication HSI event
+        hsi_refill = HSI_CardioMetabolicDisorders_Refill_Medication(
+            module=sim.modules['CardioMetabolicDisorders'],
+            person_id=person_id,
+            condition=condition
+        )
+
+        # Call the never_ran_weather_event method
+        hsi_refill.never_ran_weather_event()
+
+        # Check that the individual has dropped off medication
+        assert not df.at[person_id, f"nc_{condition}_on_medication"]
+
+        # Check if a new StartWeightLossAndMedication HSI was scheduled
+        scheduled_hsis = sim.modules['HealthSystem'].find_events_for_person(person_id)
+
+        if len(scheduled_hsis) > 0:
+            # If an HSI was scheduled, verify it's the correct type
+            date_event, event = scheduled_hsis[0]
+            assert isinstance(event, HSI_CardioMetabolicDisorders_StartWeightLossAndMedication)
+            assert event.condition == condition
+
+            # Check that it's scheduled with the correct delay
+            expected_delay_days = sim.modules["HealthSystem"].parameters[
+                "scale_factor_delay_in_seeking_care_weather"
+            ]
+            assert date_event >= sim.date + pd.DateOffset(days=expected_delay_days)
+            assert date_event <= sim.date + pd.DateOffset(
+                days=expected_delay_days + 15
+            )
+
+
+def test_weather_event_with_high_probability_of_rescheduling(seed):
+    """Test that with probability = 1.0, the person always reschedules after weather disruption"""
+
+    condition = 'diabetes'
+
+    # Create the sim with an enabled healthcare system
+    sim = make_simulation_health_system_functional(seed=seed)
+
+    # Set probability of seeking further appointment to 1.0
+    sim.modules['CardioMetabolicDisorders'].parameters[
+        f'{condition}_hsi'
+    ]['pr_seeking_further_appt_if_drug_not_available'] = 1.0
+
+    # make initial population
+    sim.make_initial_population(n=50)
+
+    # simulate for zero days
+    sim = start_sim_and_clear_event_queues(sim)
+
+    df = sim.population.props
+
+    # Get target person and make them have condition, diagnosed and on medication
+    person_id = 0
+    df.at[person_id, f"nc_{condition}"] = True
+    df.at[person_id, f"nc_{condition}_ever_diagnosed"] = True
+    df.at[person_id, f"nc_{condition}_on_medication"] = True
+
+    # Create the Refill_Medication HSI event
+    hsi_refill = HSI_CardioMetabolicDisorders_Refill_Medication(
+        module=sim.modules['CardioMetabolicDisorders'],
+        person_id=person_id,
+        condition=condition
+    )
+
+    # Call the did_not_run_weather_event method
+    hsi_refill.did_not_run_weather_event()
+
+    # Check that the individual has dropped off medication
+    assert not df.at[person_id, f"nc_{condition}_on_medication"]
+
+    # With probability 1.0, should always reschedule
+    scheduled_hsis = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert len(scheduled_hsis) > 0
+
+    date_event, event = scheduled_hsis[0]
+    assert isinstance(event, HSI_CardioMetabolicDisorders_StartWeightLossAndMedication)
+    assert event.condition == condition
