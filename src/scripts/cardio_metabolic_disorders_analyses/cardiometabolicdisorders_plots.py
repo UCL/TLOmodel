@@ -498,8 +498,8 @@ def make_incidence_plot(condition, type):
                                   files=None)
     else:
         inc_range = read_csv_files(resourcefilepath / "cmd" / f"ResourceFile_cmd_event_{type}", files=None)
-    asymptomatic_error = [(inc_range[f'{condition}']['value'].values - inc_range[f'{condition}']['prior_min'].values),
-                          (inc_range[f'{condition}']['prior_max'].values - inc_range[f'{condition}']['value'].values)]
+    asymptomatic_error = [(inc_range[f'{condition}']['value'].values - inc_range[f'{condition}']['lower'].values),
+                          (inc_range[f'{condition}']['upper'].values - inc_range[f'{condition}']['value'].values)]
 
     bar_width = 0.75
     opacity = 0.25
