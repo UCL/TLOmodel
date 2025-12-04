@@ -2067,12 +2067,10 @@ def test_mode_2_clinics(seed, tmpdir):
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
             self.ACCEPTED_FACILITY_LEVEL = level
 
-            self.this_hsi_event_ran = False
-
         def apply(self, person_id, squeeze_factor):
             self.this_hsi_event_ran = True
 
-    def create_simulation(tmpdir: Path, tot_population) -> dict:
+    def create_simulation(tmpdir: Path, tot_population) -> Simulation:
         class DummyModuleGenericClinic(Module):
             METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
 
@@ -2120,10 +2118,10 @@ def test_mode_2_clinics(seed, tmpdir):
         )
         sim.make_initial_population(n=tot_population)
 
-        sim.modules["HealthSystem"].parameters["clinic_configuration"] = pd.DataFrame(
+        sim.modules["HealthSystem"]._clinic_configuration = pd.DataFrame(
             [{"Facility_ID": 20.0, "Officer_Type_Code": "DCSA", "Clinic1": 0.6, "GenericClinic": 0.4}]
         )
-        sim.modules["HealthSystem"].parameters["clinic_mapping"] = pd.DataFrame(
+        sim.modules["HealthSystem"]._clinic_mapping = pd.DataFrame(
             [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
         )
         sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "GenericClinic"]
@@ -2182,7 +2180,7 @@ def test_mode_2_clinics(seed, tmpdir):
     assert abs(ratio - expect) < 1e-7, "GenericClinic capabilities are not split correctly"
 
     # Schedule an identical appointment for all individuals, assigning clinic as follows:
-    # half individuals have clinic_eligibility=GenericClinic and half clinic_eligibility=Hiv
+    # half individuals have clinic_eligibility=GenericClinic and half clinic_eligibility=Clinic1
     sim = schedule_hsi_events(50, 50, sim)
     ## This hsi is only created to get the expected items; therefore the treatment_id is not important
     hsi1 = DummyHSIEvent(

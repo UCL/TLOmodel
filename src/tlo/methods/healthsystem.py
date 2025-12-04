@@ -596,7 +596,7 @@ class HealthSystem(Module):
             / f"{self.parameters['clinic_configuration_name']}.csv"
         )
 
-        self.parameters["clinic_configuration"] = pd.read_csv(filepath)
+        self._clinic_configuration = pd.read_csv(filepath)
         filepath = (
             path_to_resourcefiles_for_healthsystem
             / "human_resources"
@@ -605,12 +605,12 @@ class HealthSystem(Module):
             / f"{self.parameters['clinic_configuration_name']}.csv"
         )
 
-        self.parameters["clinic_mapping"] = pd.read_csv(filepath)
-        self._clinic_names = self.parameters["clinic_configuration"].columns.difference(
+        self._clinic_mapping = pd.read_csv(filepath)
+        self._clinic_names = self._clinic_configuration.columns.difference(
             ["Facility_ID", "Officer_Type_Code"]
         )
         # Ensure that a valid clinic configuration has been specified
-        self.validate_clinic_configuration(self.parameters["clinic_configuration"])
+        self.validate_clinic_configuration(self._clinic_configuration)
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters["Officer_Types_Table"] = pd.read_csv(
@@ -754,7 +754,7 @@ class HealthSystem(Module):
             )
 
         ## Check that mapping does not contain any clinics for which there is no column in the configuration file
-        all_valid = self.parameters["clinic_mapping"]["Clinic"].isin(self._clinic_names).all()
+        all_valid = self._clinic_mapping["Clinic"].isin(self._clinic_names).all()
         if not all_valid:
             raise ValueError(
                 "The clinic mapping file contains at least one clinic name that is not present in the "
@@ -1091,12 +1091,12 @@ class HealthSystem(Module):
 
         ## format_clinic_capabilities fills out the supplied clinic/officer values with missing
         ## combinations
-        self.parameters["clinic_configuration"] = self.format_clinic_capabilities()
+        self._clinic_configuration = self.format_clinic_capabilities()
         self._daily_capabilities = {}
         self._daily_capabilities_per_staff = {}
         self._officers_with_availability = {}
         for clinic in self._clinic_names:
-            multiplier = self.parameters["clinic_configuration"][clinic]
+            multiplier = self._clinic_configuration[clinic]
             updated_capabilities = capabilities.copy()
             updated_capabilities["Total_Mins_Per_Day"] = updated_capabilities["Total_Mins_Per_Day"] * multiplier
             updated_capabilities["Staff_Count"] = updated_capabilities["Staff_Count"] * multiplier
@@ -1108,14 +1108,14 @@ class HealthSystem(Module):
             # never available.)
             self._officers_with_availability[clinic] = {k for k, v in self._daily_capabilities[clinic].items() if v > 0}
 
-    def get_clinic_eligibility(self, queue_item: HSIEventQueueItem):
+    def get_clinic_eligibility(self, treatment_id: str) -> str:
         """
         Determine the clinic mapped to the HSI Event treatment ID. If no clinic is mapped, then a default value of
         'GenericClinic' is returned. Note that we assume that a treatment ID is mapped to at most one clinic, returning
         the first match.
         """
-        eligible_treatment_ids = self.parameters["clinic_mapping"].loc[
-            self.parameters["clinic_mapping"]["Treatment"] == queue_item.hsi_event.TREATMENT_ID, "Clinic"
+        eligible_treatment_ids = self._clinic_mapping.loc[
+            self._clinic_mapping["Treatment"] == treatment_id, "Clinic"
         ]
         clinic = eligible_treatment_ids.iloc[0] if not eligible_treatment_ids.empty else "GenericClinic"
         return clinic
@@ -1219,7 +1219,7 @@ class HealthSystem(Module):
         the proportion of GenericClinic is set to 1, and capabilities for all other clinics are set to 0.
         """
 
-        capabilities_cl = self.parameters["clinic_configuration"]
+        capabilities_cl = self._clinic_configuration
         # Create dataframe containing background information about facility and officer types
         facility_ids = set(self._facility_by_facility_id.keys())
         officer_type_codes = set(self.parameters["Officer_Types_Table"]["Officer_Category"].values)
@@ -1553,12 +1553,7 @@ class HealthSystem(Module):
             # The HSI is allowed and will be added to the HSI_EVENT_QUEUE.
             # Let the HSI gather information about itself (facility_id and appt-footprint time requirements):
             hsi_event.initialise()
-            ## Create a dummy item so that we can query the clinic eligibility
-            clinic_eligibility = "GenericClinic"
-            dummy_item: HSIEventQueueItem = HSIEventQueueItem(
-                clinic_eligibility, priority, topen, 1, 1, tclose, hsi_event
-            )
-            clinic_eligibility = self.get_clinic_eligibility(dummy_item)
+            clinic_eligibility = self.get_clinic_eligibility(hsi_event.TREATMENT_ID)
 
             self._add_hsi_event_queue_item_to_hsi_event_queue(
                 clinic_eligibility=clinic_eligibility,
