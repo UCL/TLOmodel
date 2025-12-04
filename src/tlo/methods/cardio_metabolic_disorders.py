@@ -1748,11 +1748,16 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         # a probability of restarting treatment again.
         person_id = self.target
         self.sim.population.props.at[person_id, f'nc_{self.condition}_on_medication'] = False
+        hsi_event_instance = HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+            module=self.module,
+            person_id=person_id,
+            condition=self.condition  # Don't forget this!
+        )
         # The individual will try again to restart treatment
         if (self.module.rng.random_sample() <
             self.module.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
+                hsi_event=hsi_event_instance,
                 topen=self.sim.date +  pd.DateOffset(
                     days= (self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"] * 1)),
                 tclose=self.sim.date + pd.DateOffset(
@@ -1761,15 +1766,22 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
                 priority=1
             )
     def never_ran_weather_event(self):
+        print("RESCHEDULE")
+
         # If this HSI event never ran, then the persons ceases to be taking medication. However, they have
         # a probability of restarting treatment again.
         person_id = self.target
         self.sim.population.props.at[person_id, f'nc_{self.condition}_on_medication'] = False
         # The individual will try again to restart treatment
+        hsi_event_instance = HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+            module=self.module,
+            person_id=person_id,
+            condition=self.condition  # Don't forget this!
+        )
         if (self.module.rng.random_sample() <
             self.module.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
+                hsi_event=hsi_event_instance,
                 topen=self.sim.date +  pd.DateOffset(
                     days= (self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"])),
                 tclose=self.sim.date + pd.DateOffset(
