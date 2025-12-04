@@ -6,7 +6,7 @@ heatmaps_cons_wast.py.
 
 import logging
 from pathlib import Path
-from typing import Dict
+from typing import Callable, Dict
 
 import numpy as np
 import pandas as pd
@@ -14,6 +14,7 @@ import scipy.stats as st
 import seaborn as sns
 from matplotlib import lines as mpl_lines
 from matplotlib import pyplot as plt
+from matplotlib.ticker import FuncFormatter
 from PIL import Image
 from run_costing_analysis_wast import run_costing_analysis_wast as run_costing
 
@@ -21,6 +22,91 @@ from src.scripts.costing.cost_estimation import apply_discounting_to_cost_data
 from tlo.analysis.utils import create_pickles_locally, extract_results
 
 plt.style.use('seaborn-darkgrid')
+
+scenario_label_map = {
+    "SQ": "Status Quo",
+    "GM": "Growth Monitoring",
+    "CS": "Care-Seeking",
+    "FS": "Food Supplements",
+    "GM_CS": "Growth Monitoring and\nCare-Seeking",
+    "GM_FS": "Growth Monitoring and\nFood Supplements",
+    "CS_FS": "Care-Seeking and\nFood Supplements",
+    "GM_CS_FS": "Growth Monitoring and\nCare-Seeking and\nFood Supplements",
+}
+
+def get_scenario_label(scen_abbr: str) -> str:
+    """Return display label for a scenario code; fall back to code if unknown."""
+    return scenario_label_map.get(scen_abbr, scen_abbr)
+
+def map_scenario_labels(scen_abbrs_list: list) -> list:
+    """Map a list of scenario abbreviations to their labels to be displayed in figs."""
+    return [get_scenario_label(s) for s in scen_abbrs_list]
+
+def apply_millions_formatter_to_ax(ax, axis: str = 'x, y', x_decimals: int = 1, y_decimals: int = 1):
+    if 'x' in axis:
+        x_fmt = FuncFormatter(lambda v, pos: f"{v/1e6:,.{x_decimals}f}" if v != 0 else "0")
+        ax.xaxis.set_major_formatter(x_fmt)
+    if 'y' in axis:
+        y_fmt = FuncFormatter(lambda v, pos: f"{v/1e6:,.{y_decimals}f}" if v != 0 else "0")
+        ax.yaxis.set_major_formatter(y_fmt)
+
+def patch_plt_subplots_apply_millions_formatter(
+    axis: str = 'x, y', x_decimals: int = 1, y_decimals: int = 1, *formatter_args, **formatter_kwargs
+) -> Callable[[], None]:
+    """
+    Monkeypatch `plt.subplots` so any Axes returned have `apply_millions_formatter_to_ax`
+    applied with the same arguments you would pass to `apply_millions_formatter_to_ax`.
+    Returns a function that restores the original `plt.subplots` when called.
+    """
+    try:
+        _orig_subplots = plt.subplots
+    except Exception:
+        return lambda: None
+
+    # Ensure explicit parameters are available to the existing forwarding logic below.
+    # This preserves backward compatibility while making defaults visible in IDE tooltips.
+    if 'axis' not in formatter_kwargs:
+        formatter_kwargs['axis'] = axis
+    if 'x_decimals' not in formatter_kwargs:
+        formatter_kwargs['x_decimals'] = x_decimals
+    if 'y_decimals' not in formatter_kwargs:
+        formatter_kwargs['y_decimals'] = y_decimals
+
+    def _patched_subplots(*args, **kwargs):
+        fig_ax = _orig_subplots(*args, **kwargs)
+        try:
+            # fig_ax is typically (fig, ax) where ax can be a single Axes or an array of Axes
+            if isinstance(fig_ax, tuple) and len(fig_ax) == 2:
+                fig, axs = fig_ax
+                # Detect iterable of axes vs single Axes
+                if hasattr(axs, "flatten") or (hasattr(axs, "__iter__") and not hasattr(axs, "plot")):
+                    try:
+                        iter_axes = axs.flatten()  # numpy/matplotlib ndarray of axes
+                    except Exception:
+                        iter_axes = axs
+                    for ax in iter_axes:
+                        try:
+                            apply_millions_formatter_to_ax(ax, *formatter_args, **formatter_kwargs)
+                        except Exception:
+                            pass
+                else:
+                    try:
+                        apply_millions_formatter_to_ax(axs, *formatter_args, **formatter_kwargs)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        return fig_ax
+
+    plt.subplots = _patched_subplots
+
+    def _restore():
+        try:
+            plt.subplots = _orig_subplots
+        except Exception:
+            pass
+
+    return _restore
 
 def return_mean_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -986,7 +1072,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     fontsize=12.5
                 )
 
-                # Add text labels for ci_low and interv_ci_upper
+                # Add text labels for interv_ci_lower and interv_ci_upper
                 text_color = 'black' if scenario in ['Status Quo'] else 'white'
                 ax.text(scenario,
                         interv_ci_upper / 2 + interv_ci_upper / 4 if \
@@ -1054,8 +1140,10 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     y_top2 = ax2.get_ylim()[1]
                     s1 = y_top2 * 0.02  # space between bar and value of the bar
                     ax2.text(scenario, scen_averted_data[0] + s1 if scen_averted_data[0] >= 0 else 0 + s1,
-                             f"{scen_averted_data[0]:,.0f}", color=get_scen_colour(scenario), ha='right', va='bottom',
+                             f"{scen_averted_data[0]:,.0f}", color=get_scen_colour(scenario), ha='center', va='bottom',
                              fontsize=12.5, fontweight='bold')
+
+                    # # Display lower and upper CI within the bars
                     # ax2.text(scenario, averted_ci_upper / 2 + averted_ci_upper / 4 if \
                     #     averted_ci_upper < y_top2 / 2 + y_top2 / 15 else y_top2 / 2 + y_top2 / 15,
                     #          f"{averted_ci_upper:,.0f}", color='white', ha='center', va='top', fontsize=12.5)
@@ -1069,8 +1157,10 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 f'{cohort}: Sum of averted {outcome_type.replace("_", " ")} due to {cause} and 95% CI over '
                 f'intervention period ({min_interv_year}--{max_interv_year})'
             )
-            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-            plt.xticks(rotation=45, fontsize=8)
+            handles2, labels2 = ax2.get_legend_handles_labels()
+            ax2.legend(handles2, map_scenario_labels(labels2), loc='center left', bbox_to_anchor=(1, 0.5), labelspacing=1.4)
+            ax2.set_xticks(list(range(len(labels2))))
+            ax2.set_xticklabels(labels2, rotation=45, fontsize=8)
 
             fig2.savefig(
                 outputs_path / (
@@ -1086,31 +1176,9 @@ def plot_sum_outcome_and_CIs_intervention_period(
             # SQ timestamp associated with scenarios for which we want the costs to be calculated
             SQ_results_timestamp = interv_timestamps_dict["SQ"]
 
-            def _apply_millions_formatter_to_ax(ax, x_decimals: int = 1, y_decimals: int = 0):
-                import matplotlib.ticker as mtick
-                x_fmt = mtick.FuncFormatter(lambda v, pos: f"{v/1e6:,.{x_decimals}f}")
-                y_fmt = mtick.FuncFormatter(lambda v, pos: f"{v/1e6:,.{y_decimals}f}")
-                ax.xaxis.set_major_formatter(x_fmt)
-                ax.yaxis.set_major_formatter(y_fmt)
-
             def plot_and_table_cost_effectiveness(
                 in_averted_DALYs: dict, in_data_impl_cost_name: str, in_sharing_GM_CS: float, in_FS_multiplier: float
             ) -> None:
-                # Ensure subplots created inside this function get the millions formatter applied automatically
-                # by temporarily monkeypatching `plt.subplots`.
-                try:
-                    _orig_subplots = plt.subplots
-                    def _patched_subplots(*args, **kwargs):
-                        fig, ax = _orig_subplots(*args, **kwargs)
-                        try:
-                            _apply_millions_formatter_to_ax(ax)
-                        except Exception:
-                            pass
-                        return fig, ax
-                    plt.subplots = _patched_subplots
-                except Exception:
-                    pass
-
                 ce_suffix = f"{in_data_impl_cost_name}_GM-CS-sharing{in_sharing_GM_CS}_FSmultiplier{in_FS_multiplier}"
                 timestamps_and_ce_suffix = f"{timestamps_suffix}__{ce_suffix}"
                 # -----------
@@ -1425,6 +1493,9 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 # Add axis labels
                 ax_ce.set_xlabel("DALYs Averted, millions")
                 ax_ce.set_ylabel("Total Incremental Costs (2023 USD), millions")
+                # Format both axis to millions; x rounded to 1 decimal, but y to 0 decimals
+                # patch_plt_subplots_apply_millions_formatter(y_decimals=0)
+                # #TODO: uncomment only when creating this, otherwise it messes with other figures axis
                 # ax_ce.set_title(
                 #     f"$\\bf{{unit\\ cost:}}$ {in_data_impl_cost_name}; "
                 #     f"$\\bf{{CS\\ &\\ GM\\ sharing:}}$ {in_sharing_GM_CS} prop of implem. costs; "
@@ -1459,19 +1530,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 proxy_handles.append(frontier_handle)
 
                 # map scenario short codes to display full names in legend
-                scenario_label_map = {
-                    "SQ": "Status Quo",
-                    "GM": "Growth Monitoring",
-                    "CS": "Care-Seeking",
-                    "FS": "Food Supplements",
-                    "GM_CS": "Growth Monitoring and\nCare-Seeking",
-                    "GM_FS": "Growth Monitoring and\nFood Supplements",
-                    "CS_FS": "Care-Seeking and\nFood Supplements",
-                    "GM_CS_FS": "Growth Monitoring and\nCare-Seeking and\nFood Supplements",
-                }
-                mapped_labels = [scenario_label_map.get(s, s) for s in ordered_scenarios]
-
-                ax_ce.legend(proxy_handles, mapped_labels + ['cost-effectiveness\nfrontier'], loc="center left",
+                ax_ce.legend(proxy_handles, map_scenario_labels(ordered_scenarios) + ['cost-effectiveness\nfrontier'], loc="center left",
                              bbox_to_anchor=(1, 0.5), fontsize=12, labelspacing=1.4)
 
                 plt.tight_layout()
@@ -1647,7 +1706,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     ########################################
                     print("\ncreating sensitivity CE table ...")
                     print("\n    per 5 years...")
-                    # includes total_cost ranges (min--max) for the same grid used in the CE sensitivity plot
+                    # includes total_cost ranges (min—max) for the same grid used in the CE sensitivity plot
                     table_rows = []
                     row_labels = []
                     for unit_cost in data_impl_cost_name:
