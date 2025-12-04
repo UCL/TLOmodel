@@ -54,14 +54,14 @@ class ScenarioDefinitions:
             }
         }
 
-    def remove_IPT(self) -> Dict:
+    def remove_TPT(self) -> Dict:
         return {
             'Hiv': {
                 'type_of_scaleup': 'remove_IPT',
             }
         }
 
-    def target_IPT(self) -> Dict:
+    def target_TPT(self) -> Dict:
         return {
             'Hiv': {
                 'type_of_scaleup': 'target_IPT',

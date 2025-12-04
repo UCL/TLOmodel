@@ -2315,7 +2315,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 for person in give_prep:
                     if (self.module.parameters['injectable_prep_allowed'] &
                         (self.sim.date.year >= 2025)):
-                        type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
+                        type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.7, 0.3])
                     else:
                         type_of_prep = 'oral'
 
@@ -3055,7 +3055,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                                                              ):
                             if (self.module.parameters['injectable_prep_allowed'] &
                                 (self.sim.date.year >= 2025)):
-                                type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
+                                type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.7, 0.3])
                             else:
                                 type_of_prep = 'oral'
 
@@ -3309,6 +3309,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
         # HIV test is negative - check that PrEP is available and if it is, initiate or continue PrEP:
+        # 30 days supply oral tablets, injection lasts 8 weeks
         else:
             days_on_prep = self.module.parameters[
                                'initial_dispensation_period_months'] * 30 if self.type_of_prep == 'oral' else 56

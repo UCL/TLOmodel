@@ -89,9 +89,9 @@ class HIV_Progam_Elements(BaseScenario):
 
             "Remove PrEP for AGYW": scenario_definitions.remove_prep_agyw(),
 
-            "Remove IPT for PLHIV": scenario_definitions.remove_IPT(),
+            "Remove TPT for PLHIV": scenario_definitions.remove_TPT(),
 
-            "Targeted IPT": scenario_definitions.target_IPT(),
+            "Targeted TPT": scenario_definitions.target_TPT(),
 
             "Remove VMMC": scenario_definitions.remove_vmmc(),
 
