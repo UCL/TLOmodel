@@ -50,64 +50,6 @@ def apply_millions_formatter_to_ax(ax, axis: str = 'x, y', x_decimals: int = 1, 
         y_fmt = FuncFormatter(lambda v, pos: f"{v/1e6:,.{y_decimals}f}" if v != 0 else "0")
         ax.yaxis.set_major_formatter(y_fmt)
 
-def patch_plt_subplots_apply_millions_formatter(
-    axis: str = 'x, y', x_decimals: int = 1, y_decimals: int = 1, *formatter_args, **formatter_kwargs
-) -> Callable[[], None]:
-    """
-    Monkeypatch `plt.subplots` so any Axes returned have `apply_millions_formatter_to_ax`
-    applied with the same arguments you would pass to `apply_millions_formatter_to_ax`.
-    Returns a function that restores the original `plt.subplots` when called.
-    """
-    try:
-        _orig_subplots = plt.subplots
-    except Exception:
-        return lambda: None
-
-    # Ensure explicit parameters are available to the existing forwarding logic below.
-    # This preserves backward compatibility while making defaults visible in IDE tooltips.
-    if 'axis' not in formatter_kwargs:
-        formatter_kwargs['axis'] = axis
-    if 'x_decimals' not in formatter_kwargs:
-        formatter_kwargs['x_decimals'] = x_decimals
-    if 'y_decimals' not in formatter_kwargs:
-        formatter_kwargs['y_decimals'] = y_decimals
-
-    def _patched_subplots(*args, **kwargs):
-        fig_ax = _orig_subplots(*args, **kwargs)
-        try:
-            # fig_ax is typically (fig, ax) where ax can be a single Axes or an array of Axes
-            if isinstance(fig_ax, tuple) and len(fig_ax) == 2:
-                fig, axs = fig_ax
-                # Detect iterable of axes vs single Axes
-                if hasattr(axs, "flatten") or (hasattr(axs, "__iter__") and not hasattr(axs, "plot")):
-                    try:
-                        iter_axes = axs.flatten()  # numpy/matplotlib ndarray of axes
-                    except Exception:
-                        iter_axes = axs
-                    for ax in iter_axes:
-                        try:
-                            apply_millions_formatter_to_ax(ax, *formatter_args, **formatter_kwargs)
-                        except Exception:
-                            pass
-                else:
-                    try:
-                        apply_millions_formatter_to_ax(axs, *formatter_args, **formatter_kwargs)
-                    except Exception:
-                        pass
-        except Exception:
-            pass
-        return fig_ax
-
-    plt.subplots = _patched_subplots
-
-    def _restore():
-        try:
-            plt.subplots = _orig_subplots
-        except Exception:
-            pass
-
-    return _restore
-
 def return_mean_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
     """
     Returns a DataFrame with mean, lower CI, and upper CI for each year and each draw across runs.
@@ -1151,7 +1093,12 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     #     averted_ci_upper < y_top2 / 2 + y_top2 / 15 else y_top2 / 2 - y_top2 / 15,
                     #          f"{averted_ci_lower:,.0f}", color='white', ha='center', va='bottom', fontsize=12.5)
 
-            plt.ylabel(f'{cohort}: Averted {outcome_type}, sum over intervention period)')
+            if cause in ['any cause', 'SAM']:
+                # Apply millions formatter to y-axis values for SAM outcomes
+                plt.ylabel(f"Averted {outcome_type}, millions (Cumulative: {min_interv_year}—{max_interv_year})")
+                apply_millions_formatter_to_ax(ax2, axis='y')
+            else:
+                plt.ylabel(f"Averted {outcome_type} (Cumulative: {min_interv_year}—{max_interv_year})")
             plt.xlabel('Scenario')
             plt.title(
                 f'{cohort}: Sum of averted {outcome_type.replace("_", " ")} due to {cause} and 95% CI over '
@@ -1494,7 +1441,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 ax_ce.set_xlabel("DALYs Averted, millions")
                 ax_ce.set_ylabel("Total Incremental Costs (2023 USD), millions")
                 # Format both axis to millions; x rounded to 1 decimal, but y to 0 decimals
-                # patch_plt_subplots_apply_millions_formatter(y_decimals=0)
+                apply_millions_formatter_to_ax(ax_ce, y_decimals=0)
                 # #TODO: uncomment only when creating this, otherwise it messes with other figures axis
                 # ax_ce.set_title(
                 #     f"$\\bf{{unit\\ cost:}}$ {in_data_impl_cost_name}; "
