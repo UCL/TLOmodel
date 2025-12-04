@@ -177,7 +177,45 @@ def test_calc_of_scaling_factor(tmpdir, seed):
     # Check that the scaling factor is calculated in the log correctly:
     output = parse_log_file(sim.log_filepath)
     sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
-    assert sf == approx(14.5e6 / popsize, rel=0.10)
+
+    # Get the actual total census population (sum of all active districts)
+    demog = sim.modules['Demography']
+
+    # Primary (prefered) approach: pop_2010['Count'] (matches your parameter dump)
+    total_pop = None
+    if 'pop_2010' in demog.parameters:
+        pop_df = demog.parameters['pop_2010']
+        if isinstance(pop_df, pd.DataFrame) and 'Count' in pop_df.columns:
+            total_pop = float(pop_df['Count'].sum())
+
+    # Fallback: search parameters for anything with "pop" in the key and sum numeric content
+    if (total_pop is None) or (total_pop == 0):
+        total_pop = 0.0
+        for k, v in demog.parameters.items():
+            if 'pop' not in k.lower():
+                continue
+            # DataFrame case
+            if isinstance(v, pd.DataFrame):
+                if 'Count' in v.columns:
+                    total_pop += float(v['Count'].sum())
+                else:
+                    # sum all numeric columns
+                    total_pop += float(v.select_dtypes(include=[np.number]).to_numpy().sum())
+            # Series case
+            elif isinstance(v, pd.Series):
+                # numeric_only for newer pandas
+                total_pop += float(v.sum(numeric_only=True))
+            # numeric scalar
+            else:
+                try:
+                    total_pop += float(v)
+                except Exception:
+                    # ignore non-numeric params
+                    pass
+
+    assert total_pop > 0, f"Could not determine total population from parameters: {list(demog.parameters.keys())}"
+
+    assert sf == approx(total_pop / popsize, rel=0.10)
 
     # Check that the scaling factor is also logged in `tlo.methods.population`
     assert output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor'] == \

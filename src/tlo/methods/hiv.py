@@ -113,11 +113,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ),
         "hv_on_cotrimoxazole": Property(
             Types.BOOL,
-            "Whether the person is currently taking and receiving a malaria-protective effect from cotrimoxazole",
+            "Whether the person is currently taking and receiving a malaria-protective "
+            "effect from cotrimoxazole",
         ),
         "hv_is_on_prep": Property(
             Types.BOOL,
-            "Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis",
+            "Whether the person is currently taking and receiving a protective effect "
+            "from Pre-Exposure Prophylaxis",
         ),
         "hv_behaviour_change": Property(
             Types.BOOL,
@@ -140,6 +142,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.DATA_FRAME, "prob of time since infection for baseline adult pop"
         ),
         "art_coverage": Parameter(Types.DATA_FRAME, "coverage of ART at baseline"),
+        "art_coverage_pregnant_women": Parameter(Types.REAL, "coverage of pregnant women on ART at baseline"),
         "treatment_cascade": Parameter(Types.DATA_FRAME, "spectrum estimates of treatment cascade"),
         # Natural history - transmission - overall rates
         "beta": Parameter(Types.REAL, "Transmission rate"),
@@ -431,8 +434,19 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Shortcut to parameters dict
         p = self.parameters
 
-        workbook = read_csv_files(resourcefilepath/'ResourceFile_HIV', files=None)
+        workbook = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
+
+        # preg_art_path = resourcefilepath / 'ResourceFile_HIV' / 'art_coverage_pregnant_women.csv'
+        # preg_art_df = pd.read_csv(preg_art_path)
+        #
+        # # Extract the value for 'art_coverage_pregnant_women'
+        # art_cov_value = preg_art_df.loc[
+        #     preg_art_df['parameter_name'] == 'art_coverage_pregnant_women', 'value'
+        # ].values[0]
+        #
+        # # Assign it to the parameters dictionary
+        # p['art_coverage_pregnant_women'] = float(art_cov_value)
 
         # Load data on HIV prevalence
         p["hiv_prev"] = workbook["hiv_prevalence"]
@@ -743,6 +757,20 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             worksheet.year == 2010, ["year", "single_age", "sex", "prop_coverage"]
         ]
 
+        # hiv_positive_pregnant_women = df[
+        #     df.is_alive &
+        #     (df.sex == "F") &
+        #     df.hv_inf &
+        #     (df["is_pregnant"]) &
+        #     (df.hv_art == "not")].index
+        # # Randomly assign ART based on coverage parameter
+        # n = len(hiv_positive_pregnant_women)
+        # n_to_assign = int(n * params["art_coverage_pregnant_women"])
+        # assigned_art_preg = self.rng.choice(hiv_positive_pregnant_women, size=n_to_assign, replace=False)
+        #
+        # df.loc[assigned_art_preg, "hv_art"] = "on_VL_suppressed"
+
+
         # merge all susceptible individuals with their coverage probability based on sex and age
         prob_art = df.loc[df.is_alive, ["age_years", "sex"]].merge(
             art_data,
@@ -776,6 +804,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         )
         p["overall_prob_of_art"] = p["scaled_rel_prob_by_time_infected"] * p["prob_art"]
         random_draw = self.rng.random_sample(size=len(df))
+
+        # art_idx = df.index[
+        #     (random_draw < p["overall_prob_of_art"]) & df.is_alive & df.hv_inf
+        #     ].union(assigned_art_preg)
 
         art_idx = df.index[
             (random_draw < p["overall_prob_of_art"]) & df.is_alive & df.hv_inf
@@ -1678,6 +1710,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             )
             schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
+
 # ---------------------------------------------------------------------------
 #   Main Polling Event
 # ---------------------------------------------------------------------------
@@ -2474,7 +2507,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             # set cap for number of repeat tests
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.
 
-
             if (
                 self.counter_for_test_not_available
                 <= self.module.parameters["hiv_healthseekingbehaviour_cap"]
@@ -2532,7 +2564,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
                 # Add used equipment
                 self.add_equipment({'Drip stand', 'Stool, adjustable height', 'Autoclave',
-                                       'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
+                                    'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
 
                 # Schedule follow-up appts
                 # schedule first follow-up appt, 3 days from procedure;
@@ -2744,7 +2776,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # check whether person had Rx at least 3 months ago and is now due repeat prescription
         # alternate routes into testing/tx may mean person already has recent ARV dispensation
         if person['hv_date_last_ART'] > (
-                self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
+            self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         if art_status_at_beginning_of_hsi == "not":
@@ -2945,13 +2977,13 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     self.module.item_codes_for_consumables_required[
                         "First line ART regimen: young child"
                     ]: dispensation_days
-                    * 2
+                       * 2
                 },
                 optional_item_codes={
                     self.module.item_codes_for_consumables_required[
                         "First line ART regimen: young child: cotrimoxazole"
                     ]: dispensation_days
-                    * 240
+                       * 240
                 },
                 return_individual_results=True,
             )
@@ -2962,7 +2994,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First line ART regimen: older child']: dispensation_days * 3},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
+                                'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
                 return_individual_results=True)
 
         else:
@@ -2971,7 +3003,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First-line ART regimen: adult']: dispensation_days},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                    'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
+                                         'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
                 return_individual_results=True)
 
         # add drug names to dict
