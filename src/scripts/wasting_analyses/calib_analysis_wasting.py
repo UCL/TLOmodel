@@ -188,6 +188,8 @@ class WastingAnalyses:
             plotting = plotting.rename(columns=self.__wasting_types_desc)
             # filter data to include only years from 2015 onwards
             plotting = plotting.loc[plotting.index >= 2015]
+            # and up to 2030
+            plotting = plotting.loc[plotting.index <= 2030]
             # check for invalid values
             if (plotting < 0).any().any() or (plotting > 1).any().any():
                 print(f"Warning plot_wasting_incidence: Invalid values detected in plotting data for age group {age}:")
