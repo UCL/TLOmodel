@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Optional
+
 # from typing import Union
 
 import numpy as np
@@ -13,6 +15,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 # from tlo.methods.symptommanager import Symptom
 from tlo.population import IndividualProperties
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -105,6 +108,8 @@ class CMDChronicKidneyDisease(Module):
         ),
         "nc_ckd_total_dialysis_sessions": Property(Types.INT,
                                                    "total number of dialysis sessions the person has ever had"),
+        "nc_ckd_on_dialysis": Property(Types.BOOL,
+                                       "Whether this person is on dialysis"),
     }
 
     def __init__(self):
@@ -113,33 +118,13 @@ class CMDChronicKidneyDisease(Module):
         self.kidney_transplant_waiting_list = deque()
         self.daly_wts = dict()
 
-    def read_parameters(self, data_folder: str | Path) -> None:
-        """ initialise module parameters. Here we are assigning values to all parameters defined at the beginning of
-        this module.
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+        """Setup parameters used by the module"""
 
-        :param data_folder: Path to the folder containing parameter values
-
-        """
-        # TODO Read from resourcefile
-        self.parameters['rate_onset_to_stage1_4'] = 0.29
-        self.parameters['rate_stage1_4_to_stage5'] = 0.4
-
-        self.parameters['init_prob_any_ckd'] = [0.6, 0.4]
-
-        self.parameters['rp_ckd_nc_diabetes'] = 1.1
-        self.parameters['rp_ckd_hiv_infection'] = 1.2
-        self.parameters['rp_ckd_li_bmi'] = 1.3
-        self.parameters['rp_ckd_nc_hypertension'] = 1.3
-        self.parameters['rp_ckd_nc_chronic_ischemic_hd'] = 1.2
-        self.parameters['rp_ckd_herbal_use_baseline'] = 1.35
-
-        #
-        self.parameters['prob_ckd_renal_clinic'] = 0.7
-        self.parameters['prob_ckd_transplant_eval'] = 0.3
-        self.parameters['prop_herbal_use_ckd'] = 0.35
-
-        self.parameters['prob_transplant_success'] = 0.8
-        self.parameters['max_surgeries_per_month'] = 3
+        self.load_parameters_from_dataframe(
+            read_csv_files(resourcefilepath / "ResourceFile_CMD_Chronic_Kidney_Disease",
+                           files="parameter_values")
+        )
 
         #todo use chronic_kidney_disease_symptoms from cardio_metabolic_disorders.py
 
@@ -155,7 +140,7 @@ class CMDChronicKidneyDisease(Module):
 
         """
         df = population.props
-        # p = self.parameters
+        p = self.parameters
 
         alive_ckd_idx = df.loc[df.is_alive & df.nc_chronic_kidney_disease].index
 
@@ -168,25 +153,26 @@ class CMDChronicKidneyDisease(Module):
         df.loc[list(alive_ckd_idx), "ckd_stage_at_which_treatment_given"] = "pre_diagnosis"
         df.loc[list(alive_ckd_idx), "ckd_date_diagnosis"] = pd.NaT
         df.loc[list(alive_ckd_idx), "nc_ckd_total_dialysis_sessions"] = 0
+        df.loc[list(alive_ckd_idx), "nc_ckd_on_dialysis"] = False
 
         df.loc[list(alive_ckd_idx), "uses_herbal_medicine"] = \
-            self.rng.random(len(alive_ckd_idx)) < self.parameters['prop_herbal_use_ckd']
+            self.rng.random(len(alive_ckd_idx)) < p['prop_herbal_use_ckd']
         df.loc[list(df.loc[df.is_alive & ~df.nc_chronic_kidney_disease].index), "uses_herbal_medicine"] = False
 
         # -------------------- ckd_status -----------
         # Determine who has CKD at all stages:
         # check parameters are sensible: probability of having any CKD stage cannot exceed 1.0
-        assert sum(self.parameters['init_prob_any_ckd']) <= 1.0
+        assert sum(p['init_prob_any_ckd']) <= 1.0
 
         lm_init_ckd_status_any_ckd = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            sum(self.parameters['init_prob_any_ckd']),
-            Predictor('nc_diabetes').when(True, self.parameters['rp_ckd_nc_diabetes']),
-            Predictor('hv_inf').when(True, self.parameters['rp_ckd_hiv_infection']),
-            Predictor('li_bmi').when(True, self.parameters['rp_ckd_li_bmi']),
-            Predictor('nc_hypertension').when(True, self.parameters['rp_ckd_nc_hypertension']),
-            Predictor('nc_chronic_ischemic_hd').when(True, self.parameters['rp_ckd_nc_chronic_ischemic_hd']),
-            Predictor('uses_herbal_medicine').when(True, self.parameters['rp_ckd_herbal_use_baseline']),
+            sum(p['init_prob_any_ckd']),
+            Predictor('nc_diabetes').when(True, p['rp_ckd_nc_diabetes']),
+            Predictor('hv_inf').when(True, p['rp_ckd_hiv_infection']),
+            Predictor('li_bmi').when(True, p['rp_ckd_li_bmi']),
+            Predictor('nc_hypertension').when(True, p['rp_ckd_nc_hypertension']),
+            Predictor('nc_chronic_ischemic_hd').when(True, p['rp_ckd_nc_chronic_ischemic_hd']),
+            Predictor('uses_herbal_medicine').when(True, p['rp_ckd_herbal_use_baseline']),
 
         )
 
@@ -201,11 +187,11 @@ class CMDChronicKidneyDisease(Module):
             categories = [cat for cat in df.ckd_status.cat.categories if cat != 'pre_diagnosis']
 
             # Verify probabilities match categories
-            assert len(categories) == len(self.parameters['init_prob_any_ckd'])
+            assert len(categories) == len(p['init_prob_any_ckd'])
 
             # Normalize probabilities
-            total_prob = sum(self.parameters['init_prob_any_ckd'])
-            probs = [p / total_prob for p in self.parameters['init_prob_any_ckd']]
+            total_prob = sum(p['init_prob_any_ckd'])
+            probs = [p / total_prob for p in p['init_prob_any_ckd']]
 
             # Assign CKD stages
             df.loc[ckd_idx, 'ckd_status'] = self.rng.choice(
@@ -228,8 +214,11 @@ class CMDChronicKidneyDisease(Module):
         # ----- DISABILITY-WEIGHTS -----
         if "HealthBurden" in self.sim.modules:
             # For those with End-stage renal disease, with kidney transplant (any stage after stage1_4)
-            self.daly_wts["stage5_ckd"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            self.daly_wts["stage5_ckd_with_transplant"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=977
+            )
+            self.daly_wts["stage5_ckd_on_dialysis"] = self.sim.modules["HealthBurden"].get_daly_weight(
+                sequlae_code=987
             )
 
     def report_daly_values(self):
@@ -242,7 +231,13 @@ class CMDChronicKidneyDisease(Module):
         disability_series_for_alive_persons.loc[
             (df.ckd_status == "stage5") &
             (~pd.isnull(df.ckd_date_transplant))
-            ] = self.daly_wts['stage5_ckd']
+            ] = self.daly_wts['stage5_ckd_with_transplant']
+
+        # Assign daly_wt to those with CKD stage stage5 and are on dialysis
+        disability_series_for_alive_persons.loc[
+            (df.ckd_status == "stage5") &
+            df.nc_ckd_on_dialysis
+            ] = self.daly_wts['stage5_ckd_on_dialysis']
 
         return disability_series_for_alive_persons
 
@@ -257,6 +252,7 @@ class CMDChronicKidneyDisease(Module):
         self.sim.population.props.at[child_id, 'ckd_diagnosed'] = False
         self.sim.population.props.at[child_id, 'ckd_date_diagnosis'] = pd.NaT
         self.sim.population.props.at[child_id, 'nc_ckd_total_dialysis_sessions'] = 0
+        self.sim.population.props.at[child_id, 'nc_ckd_on_dialysis'] = False
 
     def on_simulation_end(self) -> None:
         pass
@@ -264,17 +260,18 @@ class CMDChronicKidneyDisease(Module):
     def make_the_linear_models(self) -> None:
         """Make and save LinearModels that will be used when the module is running"""
         self.lm = dict()
+        p = self.parameters
 
         self.lm['onset_stage1_4'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['rate_onset_to_stage1_4'],
+            p['rate_onset_to_stage1_4'],
             Predictor('uses_herbal_medicine')
-            .when(True, self.parameters['rp_ckd_herbal_use_baseline'])
+            .when(True, p['rp_ckd_herbal_use_baseline'])
         )
 
         self.lm['stage1_to_4_stage5'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['rate_stage1_4_to_stage5'],
+            p['rate_stage1_4_to_stage5'],
             Predictor('had_treatment_during_this_stage', external=True)
             .when(True, 0.0).otherwise(1.0)
         )
@@ -495,6 +492,9 @@ class HSI_Haemodialysis_Refill(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'nc_chronic_kidney_disease']:
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
+        if not df.at[person_id, 'nc_ckd_on_dialysis']:
+            df.at[person_id, 'nc_ckd_on_dialysis'] = True
+
         # Increment total number of dialysis sessions the person has ever had in their lifetime
         df.at[person_id, 'nc_ckd_total_dialysis_sessions'] += 1
 
@@ -631,6 +631,7 @@ class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
         if transplant_successful:
             # df.at[person_id, 'ckd_transplant_successful'] = True
             df.at[person_id, 'ckd_date_transplant'] = self.sim.date
+            df.at[person_id, 'nc_ckd_on_dialysis'] = False
             # df.at[person_id, 'ckd_on_anti_rejection_drugs'] = True
             # df.at[person_id, 'ckd_on_transplant_waiting_list'] = False
             # df.at[person_id, 'ckd_stage_at_which_treatment_given'] = df.at[person_id, 'ckd_status']
@@ -645,7 +646,7 @@ class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
             )
 
         else:
-            df.at[person_id, 'ckd_date_transplant'] = self.sim.date
+            df.at[person_id, 'ckd_date_transplant'] = self.sim.date  #todo Upile look at this logic, related to DALYs
 
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
