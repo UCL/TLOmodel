@@ -317,6 +317,23 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             disability_weights_for_each_person_with_symptoms, fill_value=0.0
         )
 
+    def report_prevalence(self):
+        # This returns age- and sex-specific prevalence of schisto for all individuals
+        df = self.sim.population.props
+
+        # Identify individuals currently infected
+        is_infected = df[self.cols_of_infection_status].isin(['Low-infection', 'High-infection']).any(axis=1)
+        infected_df = df[(df['is_alive']) & (is_infected)]
+        alive_df = df[df['is_alive']]
+
+        prevalence_counts = (
+            infected_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
+
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'Schisto': prevalence_by_age_group_sex}
+
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]], mda=False) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is
         infected and receiving treatment following a diagnosis, or for a person who is receiving treatment as part of a

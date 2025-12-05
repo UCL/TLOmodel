@@ -1313,6 +1313,22 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         return dalys
 
+    def report_prevalence(self):
+        # This reports age- and sex-specific prevalence of HIV for all individuals
+        df = self.sim.population.props
+
+        hiv_df = df[(df['hv_inf']) & (df['is_alive'])]
+
+        alive_df = df[df['is_alive']]
+
+        prevalence_counts = (
+            hiv_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
+
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'HIV': prevalence_by_age_group_sex}
+
     def mtct_during_breastfeeding(self, mother_id, child_id):
         """
         Compute risk of mother-to-child transmission and schedule HivInfectionDuringBreastFeedingEvent.
