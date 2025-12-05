@@ -72,6 +72,34 @@ class IndividualHistoryTracker(Module):
         # Could the notification of birth simply take place here?
         pass
 
+    def copy_of_pop_dataframe(self):
+        df_copy = self.sim.population.props.copy()
+        for col in df_copy.columns:
+            df_copy[col] = df_copy[col].apply(
+                lambda x: copy.deepcopy(x) if isinstance(x, (list, dict, pd.Series)) else x
+            )
+        return df_copy
+    
+    def copy_of_pop_dataframe_row(self, person_ID):
+        copy_of_row = self.sim.population.props.loc[person_ID].copy()
+        for col,val in copy_of_row.items():
+            if isinstance(val, (list, dict, pd.Series)):
+                copy_of_row[col] = copy.deepcopy(val)
+        copy_of_row = copy_of_row.fillna(-99999)
+        return copy_of_row
+        
+    def copy_of_mni(self):
+        """Function to safely copy entire mni dictionary, ensuring that series attributes
+        are safely copied too.
+        """
+        return copy.deepcopy(self.sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+    
+    def copy_of_mni_row(self, person_ID):
+        """Function to safely copy mni entry for single individual, ensuring that series attributes
+        are safely copied too.
+        """
+        return copy.deepcopy(self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_ID])
+        
     def log_eav_dataframe_to_individual_histories(self, df):
         for idx, row in df.iterrows():
             logger.info(key='individual_histories',
@@ -131,14 +159,14 @@ class IndividualHistoryTracker(Module):
         if not isinstance(data['target'], Population):
 
             # Save row for comparison after event has occurred
-            self.row_before = self.sim.population.props.loc[abs(data['target'])].copy().fillna(-99999)
+            self.row_before = self.copy_of_pop_dataframe_row(data['target'])
 
             # Check if individual is already in mni dictionary, if so copy her original status
             if 'PregnancySupervisor' in self.sim.modules:
                 mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
                 if data['target'] in mni:
                     self.mni_instances_before = True
-                    self.mni_row_before = mni[data['target']].copy()
+                    self.mni_row_before = self.copy_of_mni_row(data['target'])
             else:
                 self.mni_row_before = None
 
@@ -146,10 +174,9 @@ class IndividualHistoryTracker(Module):
 
             # This will be a population-wide event. In order to find individuals for which this led to
             # a meaningful change, make a copy of the while pop dataframe/mni before the event has occurred.
-            self.df_before = self.sim.population.props.copy()
+            self.df_before = self.copy_of_pop_dataframe()
             if 'PregnancySupervisor' in self.sim.modules:
-                self.entire_mni_before = copy.deepcopy(
-                                            self.sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+                self.entire_mni_before = self.copy_of_mni()
             else:
                 self.entire_mni_before = None
 
@@ -164,12 +191,12 @@ class IndividualHistoryTracker(Module):
         chain_links = {}
 
         # Target is single individual
-        if not isinstance(data["target"], Population):
+        if not isinstance(data['target'], Population):
 
             pop = self.sim.population.props
 
             # Copy full new status for individual
-            row_after = pop.loc[data['target']].fillna(-99999)
+            row_after = self.copy_of_pop_dataframe_row(data['target'])
 
             # Create and store event for this individual, regardless of whether any property change occurred
             link_info = {'event_name' : data['event_name']}
@@ -221,11 +248,11 @@ class IndividualHistoryTracker(Module):
             # Target is entire population. Identify individuals for which properties have changed
             # and store their changes.
 
-            # Population frame after event
-            df_after = self.sim.population.props
+            # Population dataframe after event
+            df_after = self.copy_of_pop_dataframe()
             
             if 'PregnancySupervisor' in self.sim.modules:
-                entire_mni_after = copy.deepcopy(self.sim.modules['PregnancySupervisor'].mother_and_newborn_info)
+                entire_mni_after = self.copy_of_mni()
             else:
                 entire_mni_after = None
 
@@ -357,7 +384,7 @@ class IndividualHistoryTracker(Module):
 
 
 def df_to_eav(df, date, event_name):
-    """Function to convert dataframe into EAV"""
+    """Function to convert entire population dataframe into custom EAV"""
     eav = df.stack(dropna=False).reset_index()
     eav.columns = ['entity', 'attribute', 'value']
     eav['event_name'] = event_name
@@ -366,7 +393,7 @@ def df_to_eav(df, date, event_name):
 
 
 def convert_chain_links_into_eav(chain_links):
-
+    """Function to convert chain links into custom EAV"""
     rows = []
 
     for e, data in chain_links.items():
@@ -386,3 +413,5 @@ def convert_chain_links_into_eav(chain_links):
     eav = pd.DataFrame(rows)
     
     return eav
+
+    

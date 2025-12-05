@@ -386,7 +386,27 @@ def check_info_value_changes(df):
             prev_info = row["Info"]
 
     return problems
+    
+def remove_events_for_individual_after_death(df):
+    rows_to_drop = []
 
+    # Group by entity
+    for entity, g in df.groupby("entity"):
+        died = False
+
+        for idx, row in g.iterrows():
+            current_info = row["Info"]
+
+            if not died:
+                # Check if this row marks death
+                if isinstance(current_info, dict) and current_info.get("is_alive") is False:
+                    died = True
+            else:
+                # Already dead → mark this row for removal
+                rows_to_drop.append(idx)
+
+    # Drop all marked rows
+    return df.drop(index=rows_to_drop)
 
 def reconstruct_individual_histories(df):
 
@@ -404,8 +424,14 @@ def reconstruct_individual_histories(df):
             .reset_index(drop=True)
     )
 
+    df_final = remove_events_for_individual_after_death(df_final)
+
     problems = check_info_value_changes(df_final)
-    print(problems)
+    if len(problems)>0:
+        print("Values didn't change but were still detected")
+        print(problems)
+        
+    
 
     return df_final
 
