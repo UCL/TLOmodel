@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.pregnancy_supervisor module &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>tlo.methods.pregnancy_supervisor module &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
@@ -596,6 +597,162 @@ generator.</p>
 <td><p>REAL</p></td>
 <td><p>Probability an intervention which is included in “interventions_under_analysis” will beavailable</p></td>
 </tr>
+<tr class="row-even"><td><p>parameter_update_year</p></td>
+<td><p>INT</p></td>
+<td><p>Year when parameters are updated from 2010 to 2015 values</p></td>
+</tr>
+<tr class="row-odd"><td><p>main_polling_frequency_weeks</p></td>
+<td><p>INT</p></td>
+<td><p>Frequency of PregnancySupervisorEvent in weeks</p></td>
+</tr>
+<tr class="row-even"><td><p>hsi_event_window_days</p></td>
+<td><p>INT</p></td>
+<td><p>HSI event tclose window in days</p></td>
+</tr>
+<tr class="row-odd"><td><p>pregnancy_max_days</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum days for pregnancy feasible</p></td>
+</tr>
+<tr class="row-even"><td><p>death_delay_days_after_abortion</p></td>
+<td><p>INT</p></td>
+<td><p>Days to delay death event after abortion</p></td>
+</tr>
+<tr class="row-odd"><td><p>death_delay_days_after_ectopic_rupture</p></td>
+<td><p>INT</p></td>
+<td><p>Days to delay death event after ectopic rupture to allow any treatment effects to mitigate risk of death</p></td>
+</tr>
+<tr class="row-even"><td><p>ectopic_event_min_weeks</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum weeks before ectopic pregnancy event</p></td>
+</tr>
+<tr class="row-odd"><td><p>ectopic_event_max_weeks</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum weeks before ectopic pregnancy event</p></td>
+</tr>
+<tr class="row-even"><td><p>ectopic_rupture_min_weeks</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum weeks before ectopic rupture event</p></td>
+</tr>
+<tr class="row-odd"><td><p>ectopic_rupture_max_weeks</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum weeks before ectopic rupture event</p></td>
+</tr>
+<tr class="row-even"><td><p>week_anc_care_seeking_applied</p></td>
+<td><p>INT</p></td>
+<td><p>Weeks of gestation at which initial care seeking is applied</p></td>
+</tr>
+<tr class="row-odd"><td><p>week_length_minus_one</p></td>
+<td><p>INT</p></td>
+<td><p>Length of a week minus one day, allows for scheduling of early ANC cases</p></td>
+</tr>
+<tr class="row-even"><td><p>min_age_reproductive</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum age for reproductive period</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_age_reproductive</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum age for reproductive period</p></td>
+</tr>
+<tr class="row-even"><td><p>gestation_week_for_first_risk_application</p></td>
+<td><p>INT</p></td>
+<td><p>Gestational age in weeks when initial pregnancy risks are applied</p></td>
+</tr>
+<tr class="row-odd"><td><p>gestation_week_ectopic_limit</p></td>
+<td><p>INT</p></td>
+<td><p>Gestational age limit in weeks for ectopic pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>gestation_week_min_for_glycemic_diabetes</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum gestational age to apply gestational diabetes control event</p></td>
+</tr>
+<tr class="row-odd"><td><p>preterm_labour_min_weeks</p></td>
+<td><p>INT</p></td>
+<td><p>Min weeks to be classified as preterm labour</p></td>
+</tr>
+<tr class="row-even"><td><p>preterm_labour_gestation_22_max</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum gestation week for preterm labour calculation at 22 weeks</p></td>
+</tr>
+<tr class="row-odd"><td><p>preterm_labour_gestation_27_max</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum gestation week for preterm labour calculation at 27 weeks</p></td>
+</tr>
+<tr class="row-even"><td><p>preterm_labour_gestation_31_max</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum gestation week for preterm labour calculation at 31 weeks</p></td>
+</tr>
+<tr class="row-odd"><td><p>preterm_labour_gestation_35_max</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum gestation week for preterm labour calculation at 35 weeks</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_2_min_week</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum week for ANC month 2</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_2_max_week</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum week for ANC month 2</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_3_min_week</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum week for ANC month 3</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_3_max_week</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum week for ANC month 3</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_4_min_week</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum week for ANC month 4</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_4_max_week</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum week for ANC month 4</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_5_min_week</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum week for ANC month 5</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_5_max_week</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum week for ANC month 5</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_6_min_week</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum week for ANC month 6</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_6_max_week</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum week for ANC month 6</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_7_min_week</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum week for ANC month 7</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_7_max_week</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum week for ANC month 7</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_8_min_week</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum week for ANC month 8</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_8_max_week</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum week for ANC month 8</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_9_min_week</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum week for ANC month 9</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_9_max_week</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum week for ANC month 9</p></td>
+</tr>
+<tr class="row-even"><td><p>earliest_anc_care_seeking_month</p></td>
+<td><p>INT</p></td>
+<td><p>Earliest month ANC can be scheduled</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -695,12 +852,12 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘Labour’, ‘CareOfWomenDuringPregnancy’, ‘HealthSystem’, ‘Contraception’}</p>
-<p>CAUSES_OF_DEATH : {‘ectopic_pregnancy’: &lt;tlo.methods.causes.Cause object at 0x147588b50&gt;, ‘spontaneous_abortion’: &lt;tlo.methods.causes.Cause object at 0x1475be290&gt;, ‘induced_abortion’: &lt;tlo.methods.causes.Cause object at 0x1475bf3d0&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1475bcb50&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x1475bd650&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x1475bc250&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x1475bec90&gt;, ‘antenatal_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1475bf010&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x1475bc8d0&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘CareOfWomenDuringPregnancy’, ‘Labour’, ‘HealthSystem’, ‘Lifestyle’, ‘Contraception’}</p>
+<p>CAUSES_OF_DEATH : {‘ectopic_pregnancy’: &lt;tlo.methods.causes.Cause object at 0x333b6ce10&gt;, ‘spontaneous_abortion’: &lt;tlo.methods.causes.Cause object at 0x333cefb90&gt;, ‘induced_abortion’: &lt;tlo.methods.causes.Cause object at 0x333ceff50&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x333ced850&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x333c49710&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x333c48110&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x333c48510&gt;, ‘antenatal_sepsis’: &lt;tlo.methods.causes.Cause object at 0x333c48490&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x333c48bd0&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
-<p>OPTIONAL_INIT_DEPENDENCIES : {‘Malaria’, ‘Hiv’, ‘CardioMetabolicDisorders’, ‘HealthBurden’}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘Hiv’, ‘CardioMetabolicDisorders’, ‘Malaria’}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class PregnancySupervisor):</strong></p>
 <dl class="py method">

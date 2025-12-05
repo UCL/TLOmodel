@@ -210,6 +210,51 @@ tlo.methods.newborn_outcomes module
         * - treatment_effect_kmc
           - LIST
           - treatment effect of kangaroo mother care on preterm mortality
+        * - prob_dist_mild_disability_preterm_<32weeks
+          - LIST
+          - probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm <32 weeks
+        * - prob_dist_mild_disability_preterm_32_36weeks
+          - LIST
+          - probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm 32-36 weeks
+        * - prob_dist_mod_severe_disability_preterm_<32weeks
+          - LIST
+          - probability distribution for moderate/severe disability types in preterm <32 weeks
+        * - prob_dist_mod_severe_disability_preterm_32_36weeks
+          - LIST
+          - probability distribution for moderate/severe disability types in preterm 32-36 weeks
+        * - prob_dist_mild_impairment_post_sepsis
+          - LIST
+          - probability distribution for mild disability types following sepsis
+        * - prob_dist_mod_severe_impairment_post_sepsis
+          - LIST
+          - probability distribution for moderate/severe disability types following sepsis
+        * - prob_dist_mild_impairment_post_enceph
+          - LIST
+          - probability distribution for mild disability types following encephalopathy
+        * - prob_dist_mod_severe_impairment_post_enceph
+          - LIST
+          - probability distribution for moderate/severe disability types following encephalopathy
+        * - prob_breastfeeding_status_change_6m_nonexclusive
+          - LIST
+          - probability distribution for breastfeeding status changes at 6 months for non-exclusive
+        * - prob_breastfeeding_status_change_6m_exclusive
+          - LIST
+          - probability distribution for breastfeeding status changes at 6 months for exclusive
+        * - neonatal_ward_beddays
+          - INT
+          - number of beddays for neonatal ward inpatient care
+        * - breastfeeding_update_interval_neonates
+          - INT
+          - time interval for breastfeeding status update for neonates
+        * - breastfeeding_update_interval_after_6mo
+          - INT
+          - time interval for breastfeeding status update after infant is 6mo
+        * - postnatal_check_early_event_min_days
+          - INT
+          - minimum days to schedule postnatal check for early event
+        * - postnatal_check_early_event_max_days
+          - INT
+          - maximum days to schedule postnatal check for early event
 
 
      **PROPERTIES:**
@@ -298,13 +343,13 @@ tlo.methods.newborn_outcomes module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'Labour', 'PregnancySupervisor'}
+     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'Labour', 'PostnatalSupervisor', 'PregnancySupervisor'}
 
-     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x147607d50>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x147604750>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x147606590>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x147604710>, 'preterm_other': <tlo.methods.causes.Cause object at 0x1476049d0>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x1476057d0>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x147606550>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x147605bd0>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x147607390>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x1476064d0>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x147607150>}
+     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x334327f90>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x334326ed0>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x334324e90>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x334326dd0>, 'preterm_other': <tlo.methods.causes.Cause object at 0x334326c90>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x3343252d0>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x334325150>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x334324d50>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x334326e90>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x334325f50>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x3343245d0>}
 
-     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x147606ad0>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x147606610>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x147605ad0>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x147606010>}
+     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x334326850>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x334327610>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x3343246d0>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x334325510>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 

@@ -35,7 +35,7 @@ CareOfWomenDuringPregnancy
 * ``AntenatalCare_FollowUp`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``AntenatalCare_FollowUp`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``AntenatalCare_Inpatient`` at facility level 1a with appointment footprint:  and bed days footprint: ``maternity_bed`` (1 days).
-* ``AntenatalCare_Inpatient`` at facility level 1b with appointment footprint:  and bed days footprint: ``maternity_bed`` (1 days).
+* ``AntenatalCare_Inpatient`` at facility level 1b with appointment footprint: .
 * ``AntenatalCare_Outpatient`` at facility level 1a with appointment footprint: ``ANCSubsequent``.
 * ``AntenatalCare_Outpatient`` at facility level 1a with appointment footprint: ``ANCSubsequent``.
 * ``AntenatalCare_Outpatient`` at facility level 1a with appointment footprint: ``ANCSubsequent``.

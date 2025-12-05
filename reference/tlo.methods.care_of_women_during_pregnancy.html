@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.care_of_women_during_pregnancy module &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>tlo.methods.care_of_women_during_pregnancy module &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
@@ -138,29 +139,37 @@ generator.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>prob_seek_anc2</p></td>
+<tr class="row-even"><td><p>max_anc_visits</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum number of ANC visits</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_seek_anc2</p></td>
 <td><p>LIST</p></td>
 <td><p>Probability a woman who is not predicted to attended four or more ANC visits will attend ANC2</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_seek_anc3</p></td>
+<tr class="row-even"><td><p>prob_seek_anc3</p></td>
 <td><p>LIST</p></td>
 <td><p>Probability a woman who is not predicted to attended four or more ANC visits will attend ANC3</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_seek_anc5</p></td>
+<tr class="row-odd"><td><p>prob_seek_anc5</p></td>
 <td><p>LIST</p></td>
 <td><p>Probability a woman who is predicted to attend four or more ANC visits will attend ANC5</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_seek_anc6</p></td>
+<tr class="row-even"><td><p>prob_seek_anc6</p></td>
 <td><p>LIST</p></td>
 <td><p>Probability a woman who is predicted to attend four or more ANC visits will attend ANC6</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_seek_anc7</p></td>
+<tr class="row-odd"><td><p>prob_seek_anc7</p></td>
 <td><p>LIST</p></td>
 <td><p>Probability a woman who is predicted to attend four or more ANC visits will attend ANC7</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_seek_anc8</p></td>
+<tr class="row-even"><td><p>prob_seek_anc8</p></td>
 <td><p>LIST</p></td>
 <td><p>Probability a woman who is predicted to attend four or more ANC visits will attend ANC8</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_consistency_threshold</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum ANC appts required to attend for remaining ANC appts to be automatically scheduled</p></td>
 </tr>
 <tr class="row-even"><td><p>effect_of_ifa_for_resolving_anaemia</p></td>
 <td><p>LIST</p></td>
@@ -246,6 +255,114 @@ generator.</p>
 <td><p>LIST</p></td>
 <td><p>specificity of a blood test to detect syphilis</p></td>
 </tr>
+<tr class="row-odd"><td><p>anc_gestational_age_weeks_anc2</p></td>
+<td><p>INT</p></td>
+<td><p>recommended gestational age in weeks for ANC2</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_gestational_age_weeks_anc3</p></td>
+<td><p>INT</p></td>
+<td><p>recommended gestational age in weeks for ANC3</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_gestational_age_weeks_anc4</p></td>
+<td><p>INT</p></td>
+<td><p>recommended gestational age in weeks for ANC4</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_gestational_age_weeks_anc5</p></td>
+<td><p>INT</p></td>
+<td><p>recommended gestational age in weeks for ANC5</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_gestational_age_weeks_anc6</p></td>
+<td><p>INT</p></td>
+<td><p>recommended gestational age in weeks for ANC6</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_gestational_age_weeks_anc7</p></td>
+<td><p>INT</p></td>
+<td><p>recommended gestational age in weeks for ANC7</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_gestational_age_weeks_anc8</p></td>
+<td><p>INT</p></td>
+<td><p>recommended gestational age in weeks for ANC8</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_gestational_age_weeks_late_anc</p></td>
+<td><p>INT</p></td>
+<td><p>gestational age in weeks for late ANC visits</p></td>
+</tr>
+<tr class="row-odd"><td><p>gestational_age_weeks_upper_bound</p></td>
+<td><p>INT</p></td>
+<td><p>gestational age beyond normal length of pregnancy</p></td>
+</tr>
+<tr class="row-even"><td><p>focused_anc_gestational_age_weeks_visit2</p></td>
+<td><p>INT</p></td>
+<td><p>recommended gestational age in weeks for focused ANC visit 2</p></td>
+</tr>
+<tr class="row-odd"><td><p>focused_anc_gestational_age_weeks_visit3</p></td>
+<td><p>INT</p></td>
+<td><p>recommended gestational age in weeks for focused ANC visit 3</p></td>
+</tr>
+<tr class="row-even"><td><p>focused_anc_gestational_age_weeks_visit4</p></td>
+<td><p>INT</p></td>
+<td><p>recommended gestational age in weeks for focused ANC visit 4</p></td>
+</tr>
+<tr class="row-odd"><td><p>delivery_weeks_placental_abruption</p></td>
+<td><p>INT</p></td>
+<td><p>gestational age in weeks for delivery in placental abruption</p></td>
+</tr>
+<tr class="row-even"><td><p>delivery_weeks_placenta_praevia_severe</p></td>
+<td><p>INT</p></td>
+<td><p>gestational age in weeks for delivery in severe placenta praevia</p></td>
+</tr>
+<tr class="row-odd"><td><p>delivery_weeks_placenta_praevia_mild</p></td>
+<td><p>INT</p></td>
+<td><p>gestational age in weeks for delivery in mild placenta praevia</p></td>
+</tr>
+<tr class="row-even"><td><p>delivery_weeks_prom_no_infection</p></td>
+<td><p>INT</p></td>
+<td><p>gestational age in weeks for delivery in PROM without infection</p></td>
+</tr>
+<tr class="row-odd"><td><p>delivery_weeks_chorioamnionitis</p></td>
+<td><p>INT</p></td>
+<td><p>gestational age in weeks for delivery in chorioamnionitis</p></td>
+</tr>
+<tr class="row-even"><td><p>delivery_ga_weeks_cs</p></td>
+<td><p>INT</p></td>
+<td><p>gestational age in weeks at which CS will most likely be scheduled for in those for which it is indicated</p></td>
+</tr>
+<tr class="row-odd"><td><p>follow_up_days_anaemia</p></td>
+<td><p>INT</p></td>
+<td><p>days until follow-up for anaemia treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>days_to_glycaemic_control_event</p></td>
+<td><p>INT</p></td>
+<td><p>days to glycaemic control event</p></td>
+</tr>
+<tr class="row-odd"><td><p>follow_up_days_gestational_diabetes</p></td>
+<td><p>INT</p></td>
+<td><p>days until follow-up for gestational diabetes</p></td>
+</tr>
+<tr class="row-even"><td><p>days_to_rupture_ectopic_untreated</p></td>
+<td><p>INT</p></td>
+<td><p>days until rupture event if individual has untreated ectopic pregnancy</p></td>
+</tr>
+<tr class="row-odd"><td><p>bmi_min_gdm</p></td>
+<td><p>REAL</p></td>
+<td><p>Min BMI to be diagnosed with gestational diabetes</p></td>
+</tr>
+<tr class="row-even"><td><p>avg_mother_weight_kg</p></td>
+<td><p>REAL</p></td>
+<td><p>Average weight of mother</p></td>
+</tr>
+<tr class="row-odd"><td><p>beddays_default</p></td>
+<td><p>INT</p></td>
+<td><p>default beddays for antenatal inpatient admission</p></td>
+</tr>
+<tr class="row-even"><td><p>beddays_postabortion</p></td>
+<td><p>INT</p></td>
+<td><p>beddays following abortion</p></td>
+</tr>
+<tr class="row-odd"><td><p>beddays_etopic_pregnancy</p></td>
+<td><p>INT</p></td>
+<td><p>default following etopic pregnancy</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -321,8 +438,8 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘Labour’, ‘Contraception’}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘PregnancySupervisor’, ‘HealthSystem’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Labour’, ‘Lifestyle’, ‘Contraception’}</p>
+<p>INIT_DEPENDENCIES : {‘PregnancySupervisor’, ‘HealthSystem’, ‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class CareOfWomenDuringPregnancy):</strong></p>

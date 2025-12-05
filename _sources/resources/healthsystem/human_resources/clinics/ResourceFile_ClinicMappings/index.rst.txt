@@ -1,0 +1,8 @@
+ResourceFile_ClinicMappings
+===========================
+
+.. toctree::
+    :maxdepth: 1
+
+    Default.csv
+

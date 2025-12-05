@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pregnancy NotUsing HIVeffect (.csv) &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>Pregnancy NotUsing HIVeffect (.csv) &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="../../../_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
@@ -159,148 +160,328 @@
 <tr class="row-odd"><th class="head"></th>
 <th class="head"><p>age_</p></th>
 <th class="head"><p>RR_pregnancy</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>0</p></td>
 <td><p>15</p></td>
 <td><p>1.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
 <td><p>16</p></td>
 <td><p>1.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>2</p></td>
 <td><p>17</p></td>
 <td><p>1.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>3</p></td>
 <td><p>18</p></td>
 <td><p>1.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>4</p></td>
 <td><p>19</p></td>
 <td><p>1.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>5</p></td>
 <td><p>20</p></td>
 <td><p>0.9</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>6</p></td>
 <td><p>21</p></td>
 <td><p>0.9</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>7</p></td>
 <td><p>22</p></td>
 <td><p>0.9</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>8</p></td>
 <td><p>23</p></td>
 <td><p>0.9</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>9</p></td>
 <td><p>24</p></td>
 <td><p>0.9</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>10</p></td>
 <td><p>25</p></td>
 <td><p>0.8</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>11</p></td>
 <td><p>26</p></td>
 <td><p>0.8</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>12</p></td>
 <td><p>27</p></td>
 <td><p>0.8</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>13</p></td>
 <td><p>28</p></td>
 <td><p>0.8</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>14</p></td>
 <td><p>29</p></td>
 <td><p>0.8</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>15</p></td>
 <td><p>30</p></td>
 <td><p>0.7</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>16</p></td>
 <td><p>31</p></td>
 <td><p>0.7</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>32</p></td>
 <td><p>0.7</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
 <td><p>33</p></td>
 <td><p>0.7</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>19</p></td>
 <td><p>34</p></td>
 <td><p>0.7</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>20</p></td>
 <td><p>35</p></td>
 <td><p>0.5</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
 <td><p>36</p></td>
 <td><p>0.5</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>22</p></td>
 <td><p>37</p></td>
 <td><p>0.5</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>23</p></td>
 <td><p>38</p></td>
 <td><p>0.5</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>24</p></td>
 <td><p>39</p></td>
 <td><p>0.5</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>25</p></td>
 <td><p>40</p></td>
 <td><p>0.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>26</p></td>
 <td><p>41</p></td>
 <td><p>0.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>27</p></td>
 <td><p>42</p></td>
 <td><p>0.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>28</p></td>
 <td><p>43</p></td>
 <td><p>0.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>29</p></td>
 <td><p>44</p></td>
 <td><p>0.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>30</p></td>
 <td><p>45</p></td>
 <td><p>0.3</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>31</p></td>
 <td><p>46</p></td>
 <td><p>0.3</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>32</p></td>
 <td><p>47</p></td>
 <td><p>0.3</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>33</p></td>
 <td><p>48</p></td>
 <td><p>0.3</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>34</p></td>
 <td><p>49</p></td>
 <td><p>0.3</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 </tbody>
 </table>

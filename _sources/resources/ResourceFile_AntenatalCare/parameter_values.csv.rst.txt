@@ -3,37 +3,63 @@ parameter values (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_AntenatalCare/parameter_values.csv>`
 
-====  ==============================================  ========================================  ============
-  ..  parameter\_name                                 value                                     Unnamed: 2
-====  ==============================================  ========================================  ============
-   0  prob\_seek\_anc2                                [0.98, 0.98]
-   1  prob\_seek\_anc3                                [0.55, 0.55]                              [0.77, 0.77]
-   2  prob\_seek\_anc5                                [0.125, 0.125]
-   3  prob\_seek\_anc6                                [0.0625, 0.0625]
-   4  prob\_seek\_anc7                                [0.03125, 0.03125]
-   5  prob\_seek\_anc8                                [0.03125, 0.03125]
-   6
-   7  effect\_of\_ifa\_for\_resolving\_anaemia        [0.7, 0.7]
-   8  treatment\_effect\_blood\_transfusion\_anaemia  [0.9, 0.9]
-   9
-  10  prob\_intervention\_delivered\_urine\_ds        [0.53, 0.53]
-  11  prob\_intervention\_delivered\_bp               [0.70, 0.69]
-  12  prob\_adherent\_ifa                             [0.37, 0.34]
-  13  prob\_intervention\_delivered\_syph\_test       [0.43, 0.14]
-  14  prob\_intervention\_delivered\_gdm\_test        [0.48, 0.48]
-  15  prob\_delivery\_modes\_ec                       [[0,  0, 1], [0,  0, 1]]
-  16  prob\_delivery\_modes\_spe                      [[0.05,  0.05, 0.9], [0.05,  0.05, 0.9]]
-  17
-  18  sensitivity\_bp\_monitoring                     [0.74, 0.74]
-  19  specificity\_bp\_monitoring                     [0.79, 0.79]
-  20  sensitivity\_urine\_protein\_1\_plus            [0.541, 0.541]
-  21  specificity\_urine\_protein\_1\_plus            [0.841, 0.841]
-  22  sensitivity\_poc\_hb\_test                      [0.851, 0.851]
-  23  specificity\_poc\_hb\_test                      [0.801, 0.801]
-  24  sensitivity\_fbc\_hb\_test                      [1.0, 1.0]
-  25  specificity\_fbc\_hb\_test                      [1.0, 1.0]
-  26  sensitivity\_blood\_test\_glucose               [1.0, 1.0]
-  27  specificity\_blood\_test\_glucose               [1.0, 1.0]
-  28  sensitivity\_blood\_test\_syphilis              [0.82, 0.82]
-  29  specificity\_blood\_test\_syphilis              [0.96, 0.96]
-====  ==============================================  ========================================  ============
+====  ==============================================  ========================================  ==============  ============  ============  =============  ===========
+  ..  parameter\_name                                 value                                     param\_label    prior\_min    prior\_max    prior\_note    reference
+====  ==============================================  ========================================  ==============  ============  ============  =============  ===========
+   0  prob\_seek\_anc2                                [0.98, 0.98]                              local           [0.01, 0.01]  [100, 100]    vague prior
+   1  prob\_seek\_anc3                                [0.55, 0.55]                              local           [0.55, 0.55]  [0.77, 0.77]  vague prior
+   2  prob\_seek\_anc5                                [0.125, 0.125]                            local           [0.01, 0.01]  [100, 100]    vague prior
+   3  prob\_seek\_anc6                                [0.0625, 0.0625]                          local           [0.01, 0.01]  [100, 100]    vague prior
+   4  prob\_seek\_anc7                                [0.03125, 0.03125]                        local           [0.01, 0.01]  [100, 100]    vague prior
+   5  prob\_seek\_anc8                                [0.03125, 0.03125]                        local           [0.01, 0.01]  [100, 100]    vague prior
+   6  effect\_of\_ifa\_for\_resolving\_anaemia        [0.7, 0.7]                                universal       [0, 0]        [1, 1]        vague prior
+   7  treatment\_effect\_blood\_transfusion\_anaemia  [0.9, 0.9]                                universal       [0, 0]        [1, 1]        vague prior
+   8  prob\_intervention\_delivered\_urine\_ds        [0.53, 0.53]                              local           [0, 0]        [1, 1]        vague prior
+   9  prob\_intervention\_delivered\_bp               [0.70, 0.69]                              local           [0, 0]        [1, 1]        vague prior
+  10  prob\_adherent\_ifa                             [0.37, 0.34]                              local           [0, 0]        [1, 1]        vague prior
+  11  prob\_intervention\_delivered\_syph\_test       [0.43, 0.14]                              local           [0, 0]        [1, 1]        vague prior
+  12  prob\_intervention\_delivered\_gdm\_test        [0.48, 0.48]                              local           [0, 0]        [1, 1]        vague prior
+  13  prob\_delivery\_modes\_ec                       [[0,  0, 1], [0,  0, 1]]                  local           [0, 0, 0]     [1, 1, 1]     vague prior
+  14  prob\_delivery\_modes\_spe                      [[0.05,  0.05, 0.9], [0.05,  0.05, 0.9]]  local           [0, 0, 0]     [1, 1, 1]     vague prior
+  15  sensitivity\_bp\_monitoring                     [0.74, 0.74]                              universal       [0, 0]        [1, 1]        vague prior
+  16  specificity\_bp\_monitoring                     [0.79, 0.79]                              universal       [0, 0]        [1, 1]        vague prior
+  17  sensitivity\_urine\_protein\_1\_plus            [0.541, 0.541]                            universal       [0, 0]        [1, 1]        vague prior
+  18  specificity\_urine\_protein\_1\_plus            [0.841, 0.841]                            universal       [0, 0]        [1, 1]        vague prior
+  19  sensitivity\_poc\_hb\_test                      [0.851, 0.851]                            universal       [0, 0]        [1, 1]        vague prior
+  20  specificity\_poc\_hb\_test                      [0.801, 0.801]                            universal       [0, 0]        [1, 1]        vague prior
+  21  sensitivity\_fbc\_hb\_test                      [1.0, 1.0]                                universal       [0, 0]        [1, 1]        vague prior
+  22  specificity\_fbc\_hb\_test                      [1.0, 1.0]                                universal       [0, 0]        [1, 1]        vague prior
+  23  sensitivity\_blood\_test\_glucose               [1.0, 1.0]                                universal       [0, 0]        [1, 1]        vague prior
+  24  specificity\_blood\_test\_glucose               [1.0, 1.0]                                universal       [0, 0]        [1, 1]        vague prior
+  25  sensitivity\_blood\_test\_syphilis              [0.82, 0.82]                              universal       [0, 0]        [1, 1]        vague prior
+  26  specificity\_blood\_test\_syphilis              [0.96, 0.96]                              universal       [0, 0]        [1, 1]        vague prior
+  27  anc\_gestational\_age\_weeks\_anc2              20                                        local           16            24            vague prior
+  28  anc\_gestational\_age\_weeks\_anc3              26                                        local           22            30            vague prior
+  29  anc\_gestational\_age\_weeks\_anc4              30                                        local           26            34            vague prior
+  30  anc\_gestational\_age\_weeks\_anc5              34                                        local           30            38            vague prior
+  31  anc\_gestational\_age\_weeks\_anc6              36                                        local           32            40            vague prior
+  32  anc\_gestational\_age\_weeks\_anc7              38                                        local           36            42            vague prior
+  33  anc\_gestational\_age\_weeks\_anc8              40                                        local           38            42            vague prior
+  34  anc\_gestational\_age\_weeks\_late\_anc         42                                        local           40            44            vague prior
+  35  gestational\_age\_weeks\_upper\_bound           50                                        undetermined    45            55            structural
+  36  focused\_anc\_gestational\_age\_weeks\_visit2   22                                        local           20            24            vague prior
+  37  focused\_anc\_gestational\_age\_weeks\_visit3   30                                        local           28            32            vague prior
+  38  focused\_anc\_gestational\_age\_weeks\_visit4   36                                        local           34            38            vague prior
+  39  delivery\_weeks\_placental\_abruption           28                                        local           26            30            vague prior
+  40  delivery\_weeks\_placenta\_praevia\_severe      28                                        local           26            30            vague prior
+  41  delivery\_weeks\_placenta\_praevia\_mild        37                                        local           35            39            vague prior
+  42  delivery\_weeks\_prom\_no\_infection            37                                        local           35            39            vague prior
+  43  delivery\_weeks\_chorioamnionitis               28                                        local           26            30            vague prior
+  44  delivery\_ga\_weeks\_cs                         37                                        local           35            39            vague prior
+  45  follow\_up\_days\_anaemia                       28                                        local           21            35            vague prior
+  46  follow\_up\_days\_gestational\_diabetes         28                                        local           21            35            vague prior
+  47  days\_to\_glycaemic\_control\_event             7                                         local           1             31            vague prior
+  48  days\_to\_rupture\_ectopic\_untreated           7                                         local           3             14            vague prior
+  49  beddays\_default                                1                                         local           1             5             vague prior
+  50  beddays\_postabortion                           3                                         local           1             15            vague prior
+  51  beddays\_etopic\_pregnancy                      5                                         local           1             15            vague prior
+  52  max\_anc\_visits                                8                                         local           1             20            vague prior
+  53  anc\_consistency\_threshold                     4                                         local           1             20            vague prior
+  54  bmi\_min\_gdm                                   4                                         local           1             10            vague prior
+  55  avg\_mother\_weight\_kg                         65                                        local           40            120           vague prior
+====  ==============================================  ========================================  ==============  ============  ============  =============  ===========

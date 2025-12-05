@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.contraception module &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>tlo.methods.contraception module &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
@@ -210,6 +211,62 @@ generator.</p>
 <td><p>DATE</p></td>
 <td><p>The date since which the FP interventions (pop &amp; ppfp) are implemented, if at all (ie, if use_interventions==True</p></td>
 </tr>
+<tr class="row-odd"><td><p>min_age_contraception</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum age for contraception use.</p></td>
+</tr>
+<tr class="row-even"><td><p>max_age_contraception</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum age for contraception use.</p></td>
+</tr>
+<tr class="row-odd"><td><p>sterilization_age_limit</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum age for sterilization procedures.</p></td>
+</tr>
+<tr class="row-even"><td><p>polling_frequency_months</p></td>
+<td><p>INT</p></td>
+<td><p>Frequency in months for contraception main polling event.</p></td>
+</tr>
+<tr class="row-odd"><td><p>min_simulation_year</p></td>
+<td><p>INT</p></td>
+<td><p>Minimum year for simulation time trends.</p></td>
+</tr>
+<tr class="row-even"><td><p>max_simulation_year</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum year for simulation time trends.</p></td>
+</tr>
+<tr class="row-odd"><td><p>transition_year</p></td>
+<td><p>INT</p></td>
+<td><p>Transition year for time trend calculations.</p></td>
+</tr>
+<tr class="row-even"><td><p>initiation_trend_rate_pre_transition</p></td>
+<td><p>REAL</p></td>
+<td><p>Annual rate of increase in contraception initiation before transition year.</p></td>
+</tr>
+<tr class="row-odd"><td><p>initiation_trend_rate_post_transition</p></td>
+<td><p>REAL</p></td>
+<td><p>Annual rate of increase in contraception initiation after transition year.</p></td>
+</tr>
+<tr class="row-even"><td><p>discontinuation_trend_rate_pre_transition</p></td>
+<td><p>REAL</p></td>
+<td><p>Annual rate of decrease in contraception discontinuation before transition year.</p></td>
+</tr>
+<tr class="row-odd"><td><p>discontinuation_trend_rate_post_transition</p></td>
+<td><p>REAL</p></td>
+<td><p>Annual rate of decrease in contraception discontinuation after transition year.</p></td>
+</tr>
+<tr class="row-even"><td><p>age_modification_factors</p></td>
+<td><p>LIST</p></td>
+<td><p>Age-specific modification factors for time trends by age groups defined in parameter age_ranges.</p></td>
+</tr>
+<tr class="row-odd"><td><p>reference_year</p></td>
+<td><p>INT</p></td>
+<td><p>Reference year for time trend calculations.</p></td>
+</tr>
+<tr class="row-even"><td><p>age_ranges</p></td>
+<td><p>LIST</p></td>
+<td><p>Age range labels for demographic analysis (e.g., [‘15-19’, ‘20-24’, …]).</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -249,13 +306,13 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Hiv’, ‘Labour’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Labour’, ‘Hiv’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthSystem’}</p>
 <p>__annotations__ : {}</p>
-<p>all_contraception_states : {‘not_using’, ‘implant’, ‘other_modern’, ‘periodic_abstinence’, ‘injections’, ‘pill’, ‘male_condom’, ‘other_traditional’, ‘IUD’, ‘female_sterilization’, ‘withdrawal’}</p>
-<p>contraceptives_initiated_with_additional_items : {‘implant’, ‘injections’, ‘IUD’, ‘pill’, ‘female_sterilization’}</p>
+<p>all_contraception_states : {‘withdrawal’, ‘male_condom’, ‘female_sterilization’, ‘IUD’, ‘other_modern’, ‘periodic_abstinence’, ‘implant’, ‘not_using’, ‘other_traditional’, ‘injections’, ‘pill’}</p>
+<p>contraceptives_initiated_with_additional_items : {‘female_sterilization’, ‘implant’, ‘IUD’, ‘injections’, ‘pill’}</p>
 <p><strong>Functions (defined or overridden in class Contraception):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.Contraception.__init__">

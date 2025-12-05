@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parameters &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>Parameters &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="_static/favicon.png"/>
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference</a></li>
@@ -729,6 +730,31 @@
 <td><p>The probability for scheduling a follow-up appointment following treatment failure</p></td>
 <td><p>Real</p></td>
 <td><p>0.3</p></td>
+</tr>
+<tr class="row-odd"><td><p>main_polling_frequency</p></td>
+<td><p>Frequency of main polling event in months</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>child_age_threshold</p></td>
+<td><p>Maximum age in years for child classification</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>inpatient_bed_days</p></td>
+<td><p>Number of bed days required for inpatient care of ALRI</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>treatment_window_days</p></td>
+<td><p>Buffer window days that ALRI treatment event can be scheduled</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>follow_up_appointment_days</p></td>
+<td><p>Days after which follow-up appointment is scheduled</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
 </tr>
 </tbody>
 </table>
@@ -2232,35 +2258,45 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>prob_seek_anc2</p></td>
+<tr class="row-even"><td><p>max_anc_visits</p></td>
+<td><p>Maximum number of ANC visits</p></td>
+<td><p>Integer</p></td>
+<td><p>8</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_seek_anc2</p></td>
 <td><p>Probability a woman who is not predicted to attended four or more ANC visits will attend ANC2</p></td>
 <td><p>List</p></td>
 <td><p>[0.98, 0.98]</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_seek_anc3</p></td>
+<tr class="row-even"><td><p>prob_seek_anc3</p></td>
 <td><p>Probability a woman who is not predicted to attended four or more ANC visits will attend ANC3</p></td>
 <td><p>List</p></td>
 <td><p>[0.55, 0.55]</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_seek_anc5</p></td>
+<tr class="row-odd"><td><p>prob_seek_anc5</p></td>
 <td><p>Probability a woman who is predicted to attend four or more ANC visits will attend ANC5</p></td>
 <td><p>List</p></td>
 <td><p>[0.125, 0.125]</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_seek_anc6</p></td>
+<tr class="row-even"><td><p>prob_seek_anc6</p></td>
 <td><p>Probability a woman who is predicted to attend four or more ANC visits will attend ANC6</p></td>
 <td><p>List</p></td>
 <td><p>[0.0625, 0.0625]</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_seek_anc7</p></td>
+<tr class="row-odd"><td><p>prob_seek_anc7</p></td>
 <td><p>Probability a woman who is predicted to attend four or more ANC visits will attend ANC7</p></td>
 <td><p>List</p></td>
 <td><p>[0.03125, 0.03125]</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_seek_anc8</p></td>
+<tr class="row-even"><td><p>prob_seek_anc8</p></td>
 <td><p>Probability a woman who is predicted to attend four or more ANC visits will attend ANC8</p></td>
 <td><p>List</p></td>
 <td><p>[0.03125, 0.03125]</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_consistency_threshold</p></td>
+<td><p>Minimum ANC appts required to attend for remaining ANC appts to be automatically scheduled</p></td>
+<td><p>Integer</p></td>
+<td><p>4</p></td>
 </tr>
 <tr class="row-even"><td><p>effect_of_ifa_for_resolving_anaemia</p></td>
 <td><p>treatment effectiveness of starting iron and folic acid on resolving anaemia</p></td>
@@ -2366,6 +2402,141 @@
 <td><p>specificity of a blood test to detect syphilis</p></td>
 <td><p>List</p></td>
 <td><p>[0.96, 0.96]</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_gestational_age_weeks_anc2</p></td>
+<td><p>recommended gestational age in weeks for ANC2</p></td>
+<td><p>Integer</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_gestational_age_weeks_anc3</p></td>
+<td><p>recommended gestational age in weeks for ANC3</p></td>
+<td><p>Integer</p></td>
+<td><p>26</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_gestational_age_weeks_anc4</p></td>
+<td><p>recommended gestational age in weeks for ANC4</p></td>
+<td><p>Integer</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_gestational_age_weeks_anc5</p></td>
+<td><p>recommended gestational age in weeks for ANC5</p></td>
+<td><p>Integer</p></td>
+<td><p>34</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_gestational_age_weeks_anc6</p></td>
+<td><p>recommended gestational age in weeks for ANC6</p></td>
+<td><p>Integer</p></td>
+<td><p>36</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_gestational_age_weeks_anc7</p></td>
+<td><p>recommended gestational age in weeks for ANC7</p></td>
+<td><p>Integer</p></td>
+<td><p>38</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_gestational_age_weeks_anc8</p></td>
+<td><p>recommended gestational age in weeks for ANC8</p></td>
+<td><p>Integer</p></td>
+<td><p>40</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_gestational_age_weeks_late_anc</p></td>
+<td><p>gestational age in weeks for late ANC visits</p></td>
+<td><p>Integer</p></td>
+<td><p>42</p></td>
+</tr>
+<tr class="row-odd"><td><p>gestational_age_weeks_upper_bound</p></td>
+<td><p>gestational age beyond normal length of pregnancy</p></td>
+<td><p>Integer</p></td>
+<td><p>50</p></td>
+</tr>
+<tr class="row-even"><td><p>focused_anc_gestational_age_weeks_visit2</p></td>
+<td><p>recommended gestational age in weeks for focused ANC visit 2</p></td>
+<td><p>Integer</p></td>
+<td><p>22</p></td>
+</tr>
+<tr class="row-odd"><td><p>focused_anc_gestational_age_weeks_visit3</p></td>
+<td><p>recommended gestational age in weeks for focused ANC visit 3</p></td>
+<td><p>Integer</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-even"><td><p>focused_anc_gestational_age_weeks_visit4</p></td>
+<td><p>recommended gestational age in weeks for focused ANC visit 4</p></td>
+<td><p>Integer</p></td>
+<td><p>36</p></td>
+</tr>
+<tr class="row-odd"><td><p>delivery_weeks_placental_abruption</p></td>
+<td><p>gestational age in weeks for delivery in placental abruption</p></td>
+<td><p>Integer</p></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-even"><td><p>delivery_weeks_placenta_praevia_severe</p></td>
+<td><p>gestational age in weeks for delivery in severe placenta praevia</p></td>
+<td><p>Integer</p></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-odd"><td><p>delivery_weeks_placenta_praevia_mild</p></td>
+<td><p>gestational age in weeks for delivery in mild placenta praevia</p></td>
+<td><p>Integer</p></td>
+<td><p>37</p></td>
+</tr>
+<tr class="row-even"><td><p>delivery_weeks_prom_no_infection</p></td>
+<td><p>gestational age in weeks for delivery in PROM without infection</p></td>
+<td><p>Integer</p></td>
+<td><p>37</p></td>
+</tr>
+<tr class="row-odd"><td><p>delivery_weeks_chorioamnionitis</p></td>
+<td><p>gestational age in weeks for delivery in chorioamnionitis</p></td>
+<td><p>Integer</p></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-even"><td><p>delivery_ga_weeks_cs</p></td>
+<td><p>gestational age in weeks at which CS will most likely be scheduled for in those for which it is indicated</p></td>
+<td><p>Integer</p></td>
+<td><p>37</p></td>
+</tr>
+<tr class="row-odd"><td><p>follow_up_days_anaemia</p></td>
+<td><p>days until follow-up for anaemia treatment</p></td>
+<td><p>Integer</p></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-even"><td><p>days_to_glycaemic_control_event</p></td>
+<td><p>days to glycaemic control event</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>follow_up_days_gestational_diabetes</p></td>
+<td><p>days until follow-up for gestational diabetes</p></td>
+<td><p>Integer</p></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-even"><td><p>days_to_rupture_ectopic_untreated</p></td>
+<td><p>days until rupture event if individual has untreated ectopic pregnancy</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>bmi_min_gdm</p></td>
+<td><p>Min BMI to be diagnosed with gestational diabetes</p></td>
+<td><p>Real</p></td>
+<td><p>4.0</p></td>
+</tr>
+<tr class="row-even"><td><p>avg_mother_weight_kg</p></td>
+<td><p>Average weight of mother</p></td>
+<td><p>Real</p></td>
+<td><p>65.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>beddays_default</p></td>
+<td><p>default beddays for antenatal inpatient admission</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>beddays_postabortion</p></td>
+<td><p>beddays following abortion</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>beddays_etopic_pregnancy</p></td>
+<td><p>default following etopic pregnancy</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
 </tr>
 </tbody>
 </table>
@@ -2832,6 +3003,76 @@
 <td><p>Date</p></td>
 <td><p>2023-01-01 00:00:00</p></td>
 </tr>
+<tr class="row-odd"><td><p>min_age_contraception</p></td>
+<td><p>Minimum age for contraception use.</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>max_age_contraception</p></td>
+<td><p>Maximum age for contraception use.</p></td>
+<td><p>Integer</p></td>
+<td><p>50</p></td>
+</tr>
+<tr class="row-odd"><td><p>sterilization_age_limit</p></td>
+<td><p>Minimum age for sterilization procedures.</p></td>
+<td><p>Integer</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-even"><td><p>polling_frequency_months</p></td>
+<td><p>Frequency in months for contraception main polling event.</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>min_simulation_year</p></td>
+<td><p>Minimum year for simulation time trends.</p></td>
+<td><p>Integer</p></td>
+<td><p>2010</p></td>
+</tr>
+<tr class="row-even"><td><p>max_simulation_year</p></td>
+<td><p>Maximum year for simulation time trends.</p></td>
+<td><p>Integer</p></td>
+<td><p>2101</p></td>
+</tr>
+<tr class="row-odd"><td><p>transition_year</p></td>
+<td><p>Transition year for time trend calculations.</p></td>
+<td><p>Integer</p></td>
+<td><p>2020</p></td>
+</tr>
+<tr class="row-even"><td><p>initiation_trend_rate_pre_transition</p></td>
+<td><p>Annual rate of increase in contraception initiation before transition year.</p></td>
+<td><p>Real</p></td>
+<td><p>0.05</p></td>
+</tr>
+<tr class="row-odd"><td><p>initiation_trend_rate_post_transition</p></td>
+<td><p>Annual rate of increase in contraception initiation after transition year.</p></td>
+<td><p>Real</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-even"><td><p>discontinuation_trend_rate_pre_transition</p></td>
+<td><p>Annual rate of decrease in contraception discontinuation before transition year.</p></td>
+<td><p>Real</p></td>
+<td><p>-0.05</p></td>
+</tr>
+<tr class="row-odd"><td><p>discontinuation_trend_rate_post_transition</p></td>
+<td><p>Annual rate of decrease in contraception discontinuation after transition year.</p></td>
+<td><p>Real</p></td>
+<td><p>-0.01</p></td>
+</tr>
+<tr class="row-even"><td><p>age_modification_factors</p></td>
+<td><p>Age-specific modification factors for time trends by age groups defined in parameter age_ranges.</p></td>
+<td><p>List</p></td>
+<td><p>[1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]</p></td>
+</tr>
+<tr class="row-odd"><td><p>reference_year</p></td>
+<td><p>Reference year for time trend calculations.</p></td>
+<td><p>Integer</p></td>
+<td><p>2010</p></td>
+</tr>
+<tr class="row-even"><td><p>age_ranges</p></td>
+<td><p>Age range labels for demographic analysis (e.g., [‘15-19’, ‘20-24’, …]).</p></td>
+<td><p>List</p></td>
+<td><p>[‘15-19’, ‘20-24’, ‘25-29’, ‘30-34’, ‘35-39’, ‘40-44’, ‘45-49’]</p></td>
+</tr>
 </tbody>
 </table>
 <section id="method-use-in-2010">
@@ -2980,35 +3221,85 @@
 <thead>
 <tr class="row-odd"><th class="head"><p>age</p></th>
 <th class="head"><p>AnnualProb</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>16</p></td>
 <td><p>0.0780862</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>0.148498</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
 <td><p>0.298088</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>19</p></td>
 <td><p>0.402345</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>20</p></td>
 <td><p>0.532862</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
 <td><p>0.552413</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>22</p></td>
 <td><p>0.586474</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>23</p></td>
 <td><p>0.569371</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>24</p></td>
 <td><p>0.598742</p></td>
+<td><p>local</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 </tbody>
 </table>
@@ -3020,35 +3311,85 @@
 <thead>
 <tr class="row-odd"><th class="head"><p><a href="#id36"><span class="problematic" id="id37">age_</span></a></p></th>
 <th class="head"><p>RR_pregnancy</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>16</p></td>
 <td><p>1.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>1.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
 <td><p>1.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>19</p></td>
 <td><p>1.4</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>20</p></td>
 <td><p>0.9</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
 <td><p>0.9</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>22</p></td>
 <td><p>0.9</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>23</p></td>
 <td><p>0.9</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>24</p></td>
 <td><p>0.9</p></td>
+<td><p>local</p></td>
+<td><p>0.1</p></td>
+<td><p>4</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 </tbody>
 </table>
@@ -3186,35 +3527,85 @@
 <thead>
 <tr class="row-odd"><th class="head"><p>age</p></th>
 <th class="head"><p>r_init1_age</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>16</p></td>
 <td><p>0.224538</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>0.147192</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
 <td><p>0.089718</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>19</p></td>
 <td><p>0.0469456</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>20</p></td>
 <td><p>0.0151724</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
 <td><p>-0.00829227</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>22</p></td>
 <td><p>-0.0254293</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>23</p></td>
 <td><p>-0.0377144</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>24</p></td>
 <td><p>-0.0462588</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 </tbody>
 </table>
@@ -3290,35 +3681,85 @@
 <thead>
 <tr class="row-odd"><th class="head"><p>age</p></th>
 <th class="head"><p>r_discont_age</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>16</p></td>
 <td><p>-0.628712</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
 <td><p>-0.438627</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
 <td><p>-0.29471</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>19</p></td>
 <td><p>-0.185198</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>20</p></td>
 <td><p>-0.101633</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
 <td><p>-0.037841</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>22</p></td>
 <td><p>0.0107489</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-odd"><td><p>23</p></td>
 <td><p>0.0475587</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 <tr class="row-even"><td><p>24</p></td>
 <td><p>0.0751794</p></td>
+<td><p>local</p></td>
+<td><p>-1</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td><p>nan</p></td>
 </tr>
 </tbody>
 </table>
@@ -3998,13 +4439,13 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Karonga</p></td>
-<td><p>Rumphi</p></td>
-<td><p>Mzuzu City</p></td>
+<tr class="row-even"><td><p>Rumphi</p></td>
 <td><p>Likoma</p></td>
-<td><p>Chitipa</p></td>
 <td><p>Mzimba</p></td>
+<td><p>Mzuzu City</p></td>
 <td><p>Nkhata Bay</p></td>
+<td><p>Karonga</p></td>
+<td><p>Chitipa</p></td>
 </tr>
 </tbody>
 </table>
@@ -4026,16 +4467,16 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Dedza</p></td>
+<tr class="row-even"><td><p>Ntcheu</p></td>
 <td><p>Nkhotakota</p></td>
-<td><p>Mchinji</p></td>
 <td><p>Kasungu</p></td>
-<td><p>Salima</p></td>
-<td><p>Dowa</p></td>
-<td><p>Ntchisi</p></td>
 <td><p>Lilongwe City</p></td>
-<td><p>Ntcheu</p></td>
+<td><p>Dedza</p></td>
 <td><p>Lilongwe</p></td>
+<td><p>Salima</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>Mchinji</p></td>
+<td><p>Dowa</p></td>
 </tr>
 </tbody>
 </table>
@@ -4062,21 +4503,21 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Nsanje</p></td>
-<td><p>Mangochi</p></td>
+<tr class="row-even"><td><p>Chikwawa</p></td>
+<td><p>Nsanje</p></td>
 <td><p>Neno</p></td>
-<td><p>Phalombe</p></td>
-<td><p>Mwanza</p></td>
-<td><p>Balaka</p></td>
-<td><p>Chikwawa</p></td>
-<td><p>Thyolo</p></td>
+<td><p>Blantyre City</p></td>
+<td><p>Mangochi</p></td>
 <td><p>Blantyre</p></td>
 <td><p>Chiradzulu</p></td>
-<td><p>Machinga</p></td>
-<td><p>Mulanje</p></td>
-<td><p>Blantyre City</p></td>
+<td><p>Phalombe</p></td>
 <td><p>Zomba City</p></td>
 <td><p>Zomba</p></td>
+<td><p>Mulanje</p></td>
+<td><p>Mwanza</p></td>
+<td><p>Balaka</p></td>
+<td><p>Thyolo</p></td>
+<td><p>Machinga</p></td>
 </tr>
 </tbody>
 </table>
@@ -5658,6 +6099,11 @@
 <td><p>Staffing availability after switch in <cite>year_use_funded_or_actual_staffing_switch</cite>. Acceptable values are the same as those for Parameter <cite>use_funded_or_actual_staffing</cite>.</p></td>
 <td><p>String</p></td>
 <td><p>funded_plus</p></td>
+</tr>
+<tr class="row-odd"><td><p>clinic_configuration_name</p></td>
+<td><p>Name of configuration of clinics to use.</p></td>
+<td><p>String</p></td>
+<td><p>Default</p></td>
 </tr>
 </tbody>
 </table>
@@ -12013,6 +12459,81 @@
 <td><p>List</p></td>
 <td><p>[0.49, 0.49]</p></td>
 </tr>
+<tr class="row-even"><td><p>prob_dist_mild_disability_preterm_&lt;32weeks</p></td>
+<td><p>probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm &lt;32 weeks</p></td>
+<td><p>List</p></td>
+<td><p>[[0.5, 0.5], [0.5, 0.5]]</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_dist_mild_disability_preterm_32_36weeks</p></td>
+<td><p>probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm 32-36 weeks</p></td>
+<td><p>List</p></td>
+<td><p>[[0.5, 0.5], [0.5, 0.5]]</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_dist_mod_severe_disability_preterm_&lt;32weeks</p></td>
+<td><p>probability distribution for moderate/severe disability types in preterm &lt;32 weeks</p></td>
+<td><p>List</p></td>
+<td><p>[[0.5, 0.5], [0.5, 0.5]]</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_dist_mod_severe_disability_preterm_32_36weeks</p></td>
+<td><p>probability distribution for moderate/severe disability types in preterm 32-36 weeks</p></td>
+<td><p>List</p></td>
+<td><p>[[0.5, 0.5], [0.5, 0.5]]</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_dist_mild_impairment_post_sepsis</p></td>
+<td><p>probability distribution for mild disability types following sepsis</p></td>
+<td><p>List</p></td>
+<td><p>[[0.5, 0.5], [0.5, 0.5]]</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_dist_mod_severe_impairment_post_sepsis</p></td>
+<td><p>probability distribution for moderate/severe disability types following sepsis</p></td>
+<td><p>List</p></td>
+<td><p>[[0.5, 0.5], [0.5, 0.5]]</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_dist_mild_impairment_post_enceph</p></td>
+<td><p>probability distribution for mild disability types following encephalopathy</p></td>
+<td><p>List</p></td>
+<td><p>[[0.5, 0.5], [0.5, 0.5]]</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_dist_mod_severe_impairment_post_enceph</p></td>
+<td><p>probability distribution for moderate/severe disability types following encephalopathy</p></td>
+<td><p>List</p></td>
+<td><p>[[0.5, 0.5], [0.5, 0.5]]</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_breastfeeding_status_change_6m_nonexclusive</p></td>
+<td><p>probability distribution for breastfeeding status changes at 6 months for non-exclusive</p></td>
+<td><p>List</p></td>
+<td><p>[[0.5, 0.5], [0.5, 0.5]]</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_breastfeeding_status_change_6m_exclusive</p></td>
+<td><p>probability distribution for breastfeeding status changes at 6 months for exclusive</p></td>
+<td><p>List</p></td>
+<td><p>[[0.5, 0.5], [0.5, 0.5]]</p></td>
+</tr>
+<tr class="row-even"><td><p>neonatal_ward_beddays</p></td>
+<td><p>number of beddays for neonatal ward inpatient care</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>breastfeeding_update_interval_neonates</p></td>
+<td><p>time interval for breastfeeding status update for neonates</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-even"><td><p>breastfeeding_update_interval_after_6mo</p></td>
+<td><p>time interval for breastfeeding status update after infant is 6mo</p></td>
+<td><p>Integer</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-odd"><td><p>postnatal_check_early_event_min_days</p></td>
+<td><p>minimum days to schedule postnatal check for early event</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>postnatal_check_early_event_max_days</p></td>
+<td><p>maximum days to schedule postnatal check for early event</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -12550,155 +13071,225 @@
 <td><p>List</p></td>
 <td><p>[2e-05, 2e-05]</p></td>
 </tr>
-<tr class="row-even"><td><p>baseline_prob_anaemia_per_week</p></td>
+<tr class="row-even"><td><p>bmi_obesity</p></td>
+<td><p>BMI for obesity classification</p></td>
+<td><p>List</p></td>
+<td><p>[3, 3]</p></td>
+</tr>
+<tr class="row-odd"><td><p>baseline_prob_anaemia_per_week</p></td>
 <td><p>Weekly probability of anaemia in pregnancy</p></td>
 <td><p>List</p></td>
 <td><p>[0.017, 0.024]</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_anaemia_maternal_malaria</p></td>
+<tr class="row-even"><td><p>rr_anaemia_maternal_malaria</p></td>
 <td><p>relative risk of anaemia secondary to malaria infection</p></td>
 <td><p>List</p></td>
 <td><p>[1.45, 1.45]</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_anaemia_recent_haemorrhage</p></td>
+<tr class="row-odd"><td><p>rr_anaemia_recent_haemorrhage</p></td>
 <td><p>relative risk of anaemia secondary to recent haemorrhage</p></td>
 <td><p>List</p></td>
 <td><p>[1.93, 1.93]</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_anaemia_hiv_no_art</p></td>
+<tr class="row-even"><td><p>rr_anaemia_hiv_no_art</p></td>
 <td><p>relative risk of anaemia for a woman with HIV not on ART</p></td>
 <td><p>List</p></td>
 <td><p>[4.19, 4.19]</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_type_of_anaemia_pn</p></td>
+<tr class="row-odd"><td><p>prob_type_of_anaemia_pn</p></td>
 <td><p>probability of a woman with anaemia having mild, moderate or severe anaemia</p></td>
 <td><p>List</p></td>
 <td><p>[[0.52, 0.475, 0.005], [0.52, 0.475, 0.005]]</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_late_sepsis_endometritis</p></td>
+<tr class="row-even"><td><p>prob_late_sepsis_endometritis</p></td>
 <td><p>probability of developing sepsis following postpartum endometritis infection</p></td>
 <td><p>List</p></td>
 <td><p>[6.9e-05, 6.2e-05]</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_sepsis_endometritis_post_cs</p></td>
+<tr class="row-odd"><td><p>rr_sepsis_endometritis_post_cs</p></td>
 <td><p>relative risk of endometritis following caesarean delivery</p></td>
 <td><p>List</p></td>
 <td><p>[12.1, 12.1]</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_late_sepsis_urinary_tract</p></td>
+<tr class="row-even"><td><p>prob_late_sepsis_urinary_tract</p></td>
 <td><p>probability of developing sepsis following postpartum UTI</p></td>
 <td><p>List</p></td>
 <td><p>[5.4e-05, 5.4e-05]</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_late_sepsis_skin_soft_tissue</p></td>
+<tr class="row-odd"><td><p>prob_late_sepsis_skin_soft_tissue</p></td>
 <td><p>probability of developing sepsis following postpartum skin/soft tissue infection</p></td>
 <td><p>List</p></td>
 <td><p>[3.9e-05, 3.5e-05]</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_sepsis_sst_post_cs</p></td>
+<tr class="row-even"><td><p>rr_sepsis_sst_post_cs</p></td>
 <td><p>relative risk of skin/soft tissue sepsis following caesarean delivery</p></td>
 <td><p>List</p></td>
 <td><p>[3.9, 3.9]</p></td>
 </tr>
-<tr class="row-even"><td><p>cfr_postpartum_sepsis</p></td>
+<tr class="row-odd"><td><p>cfr_postpartum_sepsis</p></td>
 <td><p>case fatality rate for postnatal sepsis</p></td>
 <td><p>List</p></td>
 <td><p>[0.75, 0.49]</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_early_onset_neonatal_sepsis_week_1</p></td>
+<tr class="row-even"><td><p>prob_early_onset_neonatal_sepsis_week_1</p></td>
 <td><p>Baseline probability of a newborn developing sepsis in week one of life</p></td>
 <td><p>List</p></td>
 <td><p>[0.02, 0.017]</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_eons_maternal_chorio</p></td>
+<tr class="row-odd"><td><p>rr_eons_maternal_chorio</p></td>
 <td><p>relative risk of EONS in newborns whose mothers have chorioamnionitis</p></td>
 <td><p>List</p></td>
 <td><p>[6.6, 6.6]</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_eons_maternal_prom</p></td>
+<tr class="row-even"><td><p>rr_eons_maternal_prom</p></td>
 <td><p>relative risk of EONS in newborns whose mothers have PROM</p></td>
 <td><p>List</p></td>
 <td><p>[4.9, 4.9]</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_eons_preterm_neonate</p></td>
+<tr class="row-odd"><td><p>rr_eons_preterm_neonate</p></td>
 <td><p>relative risk of EONS in preterm newborns</p></td>
 <td><p>List</p></td>
 <td><p>[3.36, 3.36]</p></td>
 </tr>
-<tr class="row-odd"><td><p>cfr_early_onset_neonatal_sepsis</p></td>
+<tr class="row-even"><td><p>cfr_early_onset_neonatal_sepsis</p></td>
 <td><p>case fatality for early onset neonatal sepsis</p></td>
 <td><p>List</p></td>
 <td><p>[0.064, 0.056]</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_late_onset_neonatal_sepsis</p></td>
+<tr class="row-odd"><td><p>prob_late_onset_neonatal_sepsis</p></td>
 <td><p>probability of late onset neonatal sepsis (all cause)</p></td>
 <td><p>List</p></td>
 <td><p>[0.0045, 0.0038]</p></td>
 </tr>
-<tr class="row-odd"><td><p>cfr_late_neonatal_sepsis</p></td>
+<tr class="row-even"><td><p>cfr_late_neonatal_sepsis</p></td>
 <td><p>Risk of death from late neonatal sepsis</p></td>
 <td><p>List</p></td>
 <td><p>[0.064, 0.056]</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_sepsis_disabilities</p></td>
+<tr class="row-odd"><td><p>prob_sepsis_disabilities</p></td>
 <td><p>Probabilities of varying disability levels after neonatal sepsis</p></td>
 <td><p>List</p></td>
 <td><p>[[0.4, 0.1, 0.3, 0.1, 0.1], [0.4, 0.1, 0.3, 0.1, 0.1]]</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_care_seeking_postnatal_emergency</p></td>
+<tr class="row-even"><td><p>prob_care_seeking_postnatal_emergency</p></td>
 <td><p>baseline probability of emergency care seeking for women in the postnatal period</p></td>
 <td><p>List</p></td>
 <td><p>[0.782, 0.782]</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_care_seeking_postnatal_emergency_neonate</p></td>
+<tr class="row-odd"><td><p>prob_care_seeking_postnatal_emergency_neonate</p></td>
 <td><p>baseline probability care will be sought for a neonate with a complication</p></td>
 <td><p>List</p></td>
 <td><p>[0.782, 0.782]</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_care_seeking_fistula_repair</p></td>
+<tr class="row-even"><td><p>odds_care_seeking_fistula_repair</p></td>
 <td><p>odds of a woman seeking care for treatment of obstetric fistula</p></td>
 <td><p>List</p></td>
 <td><p>[1.5, 1.5]</p></td>
 </tr>
-<tr class="row-even"><td><p>aor_cs_fistula_age_15_19</p></td>
+<tr class="row-odd"><td><p>aor_cs_fistula_age_15_19</p></td>
 <td><p>odds ratio for care seeking for treatment of obstetric fistula in 15-19 year olds</p></td>
 <td><p>List</p></td>
 <td><p>[0.31, 0.31]</p></td>
 </tr>
-<tr class="row-odd"><td><p>aor_cs_fistula_age_lowest_education</p></td>
+<tr class="row-even"><td><p>aor_cs_fistula_age_lowest_education</p></td>
 <td><p>odds ratio for care seeking for treatment of obstetric fistula in women in the lowest education quantile</p></td>
 <td><p>List</p></td>
 <td><p>[0.69, 0.69]</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_early_init_bf</p></td>
+<tr class="row-odd"><td><p>treatment_effect_early_init_bf</p></td>
 <td><p>effect of early initiation of breastfeeding on neonatal sepsis rates</p></td>
 <td><p>List</p></td>
 <td><p>[0.55, 0.55]</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_iron_folic_acid_anaemia</p></td>
+<tr class="row-even"><td><p>treatment_effect_iron_folic_acid_anaemia</p></td>
 <td><p>effect of iron and folic acid supplementation on anaemia risk</p></td>
 <td><p>List</p></td>
 <td><p>[0.3, 0.3]</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_abx_prom</p></td>
+<tr class="row-odd"><td><p>treatment_effect_abx_prom</p></td>
 <td><p>effect of early antibiotics given to a mother with PROM on neonatal sepsis rates</p></td>
 <td><p>List</p></td>
 <td><p>[0.67, 0.67]</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_clean_birth</p></td>
+<tr class="row-even"><td><p>treatment_effect_clean_birth</p></td>
 <td><p>Treatment effect of clean birth practices on early onset neonatal sepsis risk</p></td>
 <td><p>List</p></td>
 <td><p>[0.73, 0.73]</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_cord_care</p></td>
+<tr class="row-odd"><td><p>treatment_effect_cord_care</p></td>
 <td><p>Treatment effect of chlorhexidine cord care on early onset neonatal sepsis risk</p></td>
 <td><p>List</p></td>
 <td><p>[0.77, 0.77]</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_anti_htns_progression_pn</p></td>
+<tr class="row-even"><td><p>treatment_effect_anti_htns_progression_pn</p></td>
 <td><p>Treatment effect of oral anti hypertensives on progression from mild/mod to severe gestationalhypertension</p></td>
 <td><p>List</p></td>
 <td><p>[0.49, 0.49]</p></td>
+</tr>
+<tr class="row-odd"><td><p>main_polling_event_frequency_weeks</p></td>
+<td><p>PostnatalSupervisorEvent polling frequency in weeks</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>fistula_repair_min_days</p></td>
+<td><p>Minimum days after birth to schedule obstetric fistula repair</p></td>
+<td><p>List</p></td>
+<td><p>[7, 7]</p></td>
+</tr>
+<tr class="row-odd"><td><p>fistula_repair_max_days</p></td>
+<td><p>Maximum days after birth to schedule obstetric fistula repair</p></td>
+<td><p>List</p></td>
+<td><p>[42, 42]</p></td>
+</tr>
+<tr class="row-even"><td><p>fistula_repair_appointment_window_days</p></td>
+<td><p>Number of days for fistula repair appointment scheduling window</p></td>
+<td><p>List</p></td>
+<td><p>[7, 7]</p></td>
+</tr>
+<tr class="row-odd"><td><p>emergency_postnatal_care_appointment_window_days</p></td>
+<td><p>Number of days for emergency postnatal care appointment scheduling window</p></td>
+<td><p>List</p></td>
+<td><p>[2, 2]</p></td>
+</tr>
+<tr class="row-even"><td><p>pnc_one_maternal_appt_max_days_without_complications</p></td>
+<td><p>Maximum number of days from current date for pnc_one_maternal_appt if no complications</p></td>
+<td><p>List</p></td>
+<td><p>[35, 35]</p></td>
+</tr>
+<tr class="row-odd"><td><p>pnc_one_maternal_appt_window_days</p></td>
+<td><p>Number of days for pnc_one_maternal_appt scheduling window</p></td>
+<td><p>List</p></td>
+<td><p>[2, 2]</p></td>
+</tr>
+<tr class="row-even"><td><p>postnatal_check_sepsis_appt_window_days</p></td>
+<td><p>Number of days for postnatal check if sepsis - scheduling window</p></td>
+<td><p>List</p></td>
+<td><p>[1, 1]</p></td>
+</tr>
+<tr class="row-odd"><td><p>pnc_one_neonatal_sepsis_appt_window_days</p></td>
+<td><p>Number of days for pnc_one_neonatal if sepsis - scheduling window</p></td>
+<td><p>List</p></td>
+<td><p>[1, 1]</p></td>
+</tr>
+<tr class="row-even"><td><p>final_week_postnatal_period</p></td>
+<td><p>Final week of the postnatal period - week 6</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-odd"><td><p>postnatal_reset_week</p></td>
+<td><p>Week at which postnatal variables are reset overall: Changes made 2 weeks afterthe end of the postnatal and neonatal period in case either the mother or newborn are receiving treatment following the last PNC visit</p></td>
+<td><p>Integer</p></td>
+<td><p>8</p></td>
+</tr>
+<tr class="row-even"><td><p>obstetric_fistula_repair_beddays</p></td>
+<td><p>Number of beddays required for obstetric fistula repair</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>neonatal_period_end_days</p></td>
+<td><p>End of neonatal period in days</p></td>
+<td><p>Integer</p></td>
+<td><p>28</p></td>
 </tr>
 </tbody>
 </table>
@@ -13304,6 +13895,201 @@
 <td><p>Real</p></td>
 <td><p>1.0</p></td>
 </tr>
+<tr class="row-even"><td><p>parameter_update_year</p></td>
+<td><p>Year when parameters are updated from 2010 to 2015 values</p></td>
+<td><p>Integer</p></td>
+<td><p>2015</p></td>
+</tr>
+<tr class="row-odd"><td><p>main_polling_frequency_weeks</p></td>
+<td><p>Frequency of PregnancySupervisorEvent in weeks</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>hsi_event_window_days</p></td>
+<td><p>HSI event tclose window in days</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>pregnancy_max_days</p></td>
+<td><p>Maximum days for pregnancy feasible</p></td>
+<td><p>Integer</p></td>
+<td><p>280</p></td>
+</tr>
+<tr class="row-even"><td><p>death_delay_days_after_abortion</p></td>
+<td><p>Days to delay death event after abortion</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>death_delay_days_after_ectopic_rupture</p></td>
+<td><p>Days to delay death event after ectopic rupture to allow any treatment effects to mitigate risk of death</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>ectopic_event_min_weeks</p></td>
+<td><p>Minimum weeks before ectopic pregnancy event</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>ectopic_event_max_weeks</p></td>
+<td><p>Maximum weeks before ectopic pregnancy event</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>ectopic_rupture_min_weeks</p></td>
+<td><p>Minimum weeks before ectopic rupture event</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>ectopic_rupture_max_weeks</p></td>
+<td><p>Maximum weeks before ectopic rupture event</p></td>
+<td><p>Integer</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-even"><td><p>week_anc_care_seeking_applied</p></td>
+<td><p>Weeks of gestation at which initial care seeking is applied</p></td>
+<td><p>Integer</p></td>
+<td><p>8</p></td>
+</tr>
+<tr class="row-odd"><td><p>week_length_minus_one</p></td>
+<td><p>Length of a week minus one day, allows for scheduling of early ANC cases</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-even"><td><p>min_age_reproductive</p></td>
+<td><p>Minimum age for reproductive period</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_age_reproductive</p></td>
+<td><p>Maximum age for reproductive period</p></td>
+<td><p>Integer</p></td>
+<td><p>50</p></td>
+</tr>
+<tr class="row-even"><td><p>gestation_week_for_first_risk_application</p></td>
+<td><p>Gestational age in weeks when initial pregnancy risks are applied</p></td>
+<td><p>Integer</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>gestation_week_ectopic_limit</p></td>
+<td><p>Gestational age limit in weeks for ectopic pregnancy</p></td>
+<td><p>Integer</p></td>
+<td><p>9</p></td>
+</tr>
+<tr class="row-even"><td><p>gestation_week_min_for_glycemic_diabetes</p></td>
+<td><p>Minimum gestational age to apply gestational diabetes control event</p></td>
+<td><p>Integer</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-odd"><td><p>preterm_labour_min_weeks</p></td>
+<td><p>Min weeks to be classified as preterm labour</p></td>
+<td><p>Integer</p></td>
+<td><p>24</p></td>
+</tr>
+<tr class="row-even"><td><p>preterm_labour_gestation_22_max</p></td>
+<td><p>Maximum gestation week for preterm labour calculation at 22 weeks</p></td>
+<td><p>Integer</p></td>
+<td><p>27</p></td>
+</tr>
+<tr class="row-odd"><td><p>preterm_labour_gestation_27_max</p></td>
+<td><p>Maximum gestation week for preterm labour calculation at 27 weeks</p></td>
+<td><p>Integer</p></td>
+<td><p>31</p></td>
+</tr>
+<tr class="row-even"><td><p>preterm_labour_gestation_31_max</p></td>
+<td><p>Maximum gestation week for preterm labour calculation at 31 weeks</p></td>
+<td><p>Integer</p></td>
+<td><p>35</p></td>
+</tr>
+<tr class="row-odd"><td><p>preterm_labour_gestation_35_max</p></td>
+<td><p>Maximum gestation week for preterm labour calculation at 35 weeks</p></td>
+<td><p>Integer</p></td>
+<td><p>37</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_2_min_week</p></td>
+<td><p>Minimum week for ANC month 2</p></td>
+<td><p>Integer</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_2_max_week</p></td>
+<td><p>Maximum week for ANC month 2</p></td>
+<td><p>Integer</p></td>
+<td><p>8</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_3_min_week</p></td>
+<td><p>Minimum week for ANC month 3</p></td>
+<td><p>Integer</p></td>
+<td><p>9</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_3_max_week</p></td>
+<td><p>Maximum week for ANC month 3</p></td>
+<td><p>Integer</p></td>
+<td><p>13</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_4_min_week</p></td>
+<td><p>Minimum week for ANC month 4</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_4_max_week</p></td>
+<td><p>Maximum week for ANC month 4</p></td>
+<td><p>Integer</p></td>
+<td><p>17</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_5_min_week</p></td>
+<td><p>Minimum week for ANC month 5</p></td>
+<td><p>Integer</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_5_max_week</p></td>
+<td><p>Maximum week for ANC month 5</p></td>
+<td><p>Integer</p></td>
+<td><p>22</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_6_min_week</p></td>
+<td><p>Minimum week for ANC month 6</p></td>
+<td><p>Integer</p></td>
+<td><p>23</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_6_max_week</p></td>
+<td><p>Maximum week for ANC month 6</p></td>
+<td><p>Integer</p></td>
+<td><p>27</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_7_min_week</p></td>
+<td><p>Minimum week for ANC month 7</p></td>
+<td><p>Integer</p></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_7_max_week</p></td>
+<td><p>Maximum week for ANC month 7</p></td>
+<td><p>Integer</p></td>
+<td><p>31</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_8_min_week</p></td>
+<td><p>Minimum week for ANC month 8</p></td>
+<td><p>Integer</p></td>
+<td><p>32</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_8_max_week</p></td>
+<td><p>Maximum week for ANC month 8</p></td>
+<td><p>Integer</p></td>
+<td><p>35</p></td>
+</tr>
+<tr class="row-even"><td><p>anc_month_9_min_week</p></td>
+<td><p>Minimum week for ANC month 9</p></td>
+<td><p>Integer</p></td>
+<td><p>36</p></td>
+</tr>
+<tr class="row-odd"><td><p>anc_month_9_max_week</p></td>
+<td><p>Maximum week for ANC month 9</p></td>
+<td><p>Integer</p></td>
+<td><p>40</p></td>
+</tr>
+<tr class="row-even"><td><p>earliest_anc_care_seeking_month</p></td>
+<td><p>Earliest month ANC can be scheduled</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
+</tr>
 </tbody>
 </table>
 <section id="all-interventions">
@@ -13596,7 +14382,7 @@
 <tr class="row-even"><td><p>base_rate_injrti</p></td>
 <td><p>Base rate of RTI per year</p></td>
 <td><p>Real</p></td>
-<td><p>0.00420322902234662</p></td>
+<td><p>0.004203229</p></td>
 </tr>
 <tr class="row-odd"><td><p>rr_injrti_age04</p></td>
 <td><p>risk ratio of RTI in age 0-4 compared to base rate of RTI</p></td>
@@ -13666,27 +14452,27 @@
 <tr class="row-even"><td><p>prob_death_iss_less_than_9</p></td>
 <td><p>Proportion of people who pass away in the following month after medical treatment for injuries with an ISSscore less than or equal to 9</p></td>
 <td><p>Real</p></td>
-<td><p>0.00733191462346883</p></td>
+<td><p>0.007331915</p></td>
 </tr>
 <tr class="row-odd"><td><p>prob_death_iss_10_15</p></td>
 <td><p>Proportion of people who pass away in the following month after medical treatment for injuries with an ISSscore from 10 to 15</p></td>
 <td><p>Real</p></td>
-<td><p>0.0111021545889758</p></td>
+<td><p>0.011102155</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_death_iss_16_24</p></td>
 <td><p>Proportion of people who pass away in the following month after medical treatment for injuries with an ISSscore from 16 to 24</p></td>
 <td><p>Real</p></td>
-<td><p>0.0313608577284893</p></td>
+<td><p>0.031360858</p></td>
 </tr>
 <tr class="row-odd"><td><p>prob_death_iss_25_35</p></td>
 <td><p>Proportion of people who pass away in the following month after medical treatment for injuries with an ISSscore from 25 to 34</p></td>
 <td><p>Real</p></td>
-<td><p>0.133987145668097</p></td>
+<td><p>0.133987146</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_death_iss_35_plus</p></td>
 <td><p>Proportion of people who pass away in the following month after medical treatment for injuries with an ISSscore 35 and above</p></td>
 <td><p>Real</p></td>
-<td><p>0.22782740761579</p></td>
+<td><p>0.227827408</p></td>
 </tr>
 <tr class="row-odd"><td><p>prob_perm_disability_with_treatment_severe_TBI</p></td>
 <td><p>probability that someone with a treated severe TBI is permanently disabled</p></td>
@@ -14108,570 +14894,675 @@
 <td><p>Integer</p></td>
 <td><p>5</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_death_MAIS3</p></td>
+<tr class="row-odd"><td><p>prob_death_non_serious</p></td>
+<td><p>A parameter to determine the probability of death for non serious condition</p></td>
+<td><p>Real</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_death_MAIS1</p></td>
+<td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 1</p></td>
+<td><p>Real</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_death_MAIS2</p></td>
+<td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 2</p></td>
+<td><p>Real</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_death_MAIS3</p></td>
 <td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 3</p></td>
 <td><p>Real</p></td>
 <td><p>0.05</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_death_MAIS4</p></td>
+<tr class="row-odd"><td><p>prob_death_MAIS4</p></td>
 <td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 4</p></td>
 <td><p>Real</p></td>
 <td><p>0.31</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_death_MAIS5</p></td>
+<tr class="row-even"><td><p>prob_death_MAIS5</p></td>
 <td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 5</p></td>
 <td><p>Real</p></td>
 <td><p>0.59</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_death_MAIS6</p></td>
+<tr class="row-odd"><td><p>prob_death_MAIS6</p></td>
 <td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 6</p></td>
 <td><p>Real</p></td>
 <td><p>0.83</p></td>
 </tr>
-<tr class="row-odd"><td><p>femur_fracture_skeletal_traction_mean_los</p></td>
+<tr class="row-even"><td><p>femur_fracture_skeletal_traction_mean_los</p></td>
 <td><p>The mean length of stay for a person with a femur fracture being treated with skeletal traction</p></td>
 <td><p>Integer</p></td>
 <td><p>52</p></td>
 </tr>
-<tr class="row-even"><td><p>other_skeletal_traction_los</p></td>
+<tr class="row-odd"><td><p>other_skeletal_traction_los</p></td>
 <td><p>The mean length of stay for a person with a non-femur fracture being treated with skeletal traction</p></td>
 <td><p>Integer</p></td>
 <td><p>42</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_foot_frac_require_cast</p></td>
+<tr class="row-even"><td><p>prob_foot_frac_require_cast</p></td>
 <td><p>The probability that a person with a foot fracture will be treated with a plaster cast</p></td>
 <td><p>Real</p></td>
 <td><p>0.613</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_foot_frac_require_maj_surg</p></td>
+<tr class="row-odd"><td><p>prob_foot_frac_require_maj_surg</p></td>
 <td><p>The probability that a person with a foot fracture will be treated with a major surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.263</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_foot_frac_require_min_surg</p></td>
+<tr class="row-even"><td><p>prob_foot_frac_require_min_surg</p></td>
 <td><p>The probability that a person with a foot fracture will be treated with a major surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.038</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_foot_frac_require_amp</p></td>
+<tr class="row-odd"><td><p>prob_foot_frac_require_amp</p></td>
 <td><p>The probability that a person with a foot fracture will be treated with amputation via a major surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.086</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_tib_fib_frac_require_cast</p></td>
+<tr class="row-even"><td><p>prob_tib_fib_frac_require_cast</p></td>
 <td><p>The probability that a person with a tibia/fibula fracture will be treated with a plaster cast</p></td>
 <td><p>Real</p></td>
 <td><p>0.71</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_tib_fib_frac_require_maj_surg</p></td>
+<tr class="row-odd"><td><p>prob_tib_fib_frac_require_maj_surg</p></td>
 <td><p>The probability that a person with a tibia/fibula fracture will be treated with a major surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.066</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_tib_fib_frac_require_min_surg</p></td>
+<tr class="row-even"><td><p>prob_tib_fib_frac_require_min_surg</p></td>
 <td><p>The probability that a person with a tibia/fibula fracture will be treated with a minor surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.175</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_tib_fib_frac_require_amp</p></td>
+<tr class="row-odd"><td><p>prob_tib_fib_frac_require_amp</p></td>
 <td><p>The probability that a person with a tibia/fibula fracture will be treated with an amputation via major surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.024</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_tib_fib_frac_require_traction</p></td>
+<tr class="row-even"><td><p>prob_tib_fib_frac_require_traction</p></td>
 <td><p>The probability that a person with a tibia/fibula fracture will be treated with skeletal traction</p></td>
 <td><p>Real</p></td>
 <td><p>0.025</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_femural_fracture_require_major_surgery</p></td>
+<tr class="row-odd"><td><p>prob_femural_fracture_require_major_surgery</p></td>
 <td><p>The probability that a person with a femur fracture will be treated with major surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.187</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_femural_fracture_require_minor_surgery</p></td>
+<tr class="row-even"><td><p>prob_femural_fracture_require_minor_surgery</p></td>
 <td><p>The probability that a person with a femur fracture will be treated with minor surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.007</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_femural_fracture_require_cast</p></td>
+<tr class="row-odd"><td><p>prob_femural_fracture_require_cast</p></td>
 <td><p>The probability that a person with a femur fracture will be treated with a plaster cast</p></td>
 <td><p>Real</p></td>
 <td><p>0.024</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_femural_fracture_require_amputation</p></td>
+<tr class="row-even"><td><p>prob_femural_fracture_require_amputation</p></td>
 <td><p>The probability that a person with a femur fracture will be treated with amputation via major surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.005</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_femural_fracture_require_traction</p></td>
+<tr class="row-odd"><td><p>prob_femural_fracture_require_traction</p></td>
 <td><p>The probability that a person with a femur fracture will be treated with skeletal traction</p></td>
 <td><p>Real</p></td>
 <td><p>0.777</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_pelvis_fracture_traction</p></td>
+<tr class="row-even"><td><p>prob_pelvis_fracture_traction</p></td>
 <td><p>The probability that a person with a pelvis fracture will be treated with skeletal traction</p></td>
 <td><p>Real</p></td>
 <td><p>0.71</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_pelvis_frac_major_surgery</p></td>
+<tr class="row-odd"><td><p>prob_pelvis_frac_major_surgery</p></td>
 <td><p>The probability that a person with a pelvis fracture will be treated with major surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.12</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_pelvis_frac_minor_surgery</p></td>
+<tr class="row-even"><td><p>prob_pelvis_frac_minor_surgery</p></td>
 <td><p>The probability that a person with a pelvis fracture will be treated with minor surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.05</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_pelvis_frac_cast</p></td>
+<tr class="row-odd"><td><p>prob_pelvis_frac_cast</p></td>
 <td><p>The probability that a person with a pelvis fracture will be treated with a cast</p></td>
 <td><p>Real</p></td>
 <td><p>0.12</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_dis_hip_require_maj_surg</p></td>
+<tr class="row-even"><td><p>prob_dis_hip_require_maj_surg</p></td>
 <td><p>The probability that a person with a dislocated hip will be treated with a major surgery</p></td>
 <td><p>Real</p></td>
 <td><p>0.167</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_dis_hip_require_cast</p></td>
+<tr class="row-odd"><td><p>prob_dis_hip_require_cast</p></td>
 <td><p>The probability that a person with a dislocated hip will be treated with a plaster cast</p></td>
 <td><p>Real</p></td>
 <td><p>0.333</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_hip_dis_require_traction</p></td>
+<tr class="row-even"><td><p>prob_hip_dis_require_traction</p></td>
 <td><p>The probability that a person with a dislocated hip will be treated with skeletal traction</p></td>
 <td><p>Real</p></td>
 <td><p>0.5</p></td>
 </tr>
-<tr class="row-even"><td><p>hdu_cut_off_iss_score</p></td>
+<tr class="row-odd"><td><p>hdu_cut_off_iss_score</p></td>
 <td><p>The ISS score used as a criteria to admit patients to the HDU/ICU units</p></td>
 <td><p>Integer</p></td>
 <td><p>29</p></td>
 </tr>
-<tr class="row-odd"><td><p>mean_icu_days</p></td>
+<tr class="row-even"><td><p>mean_icu_days</p></td>
 <td><p>The mean length of stay in the ICUfor those without TBI</p></td>
 <td><p>Real</p></td>
 <td><p>4.8</p></td>
 </tr>
-<tr class="row-even"><td><p>sd_icu_days</p></td>
+<tr class="row-odd"><td><p>sd_icu_days</p></td>
 <td><p>The standard deviation in length of stay in the ICU for those without TBI</p></td>
 <td><p>Real</p></td>
 <td><p>6.0</p></td>
 </tr>
-<tr class="row-odd"><td><p>mean_tbi_icu_days</p></td>
+<tr class="row-even"><td><p>mean_tbi_icu_days</p></td>
 <td><p>The mean length of stay in the ICU for those with TBI</p></td>
 <td><p>Real</p></td>
 <td><p>8.4</p></td>
 </tr>
-<tr class="row-even"><td><p>sd_tbi_icu_days</p></td>
+<tr class="row-odd"><td><p>sd_tbi_icu_days</p></td>
 <td><p>The standard deviation in length of stay in the ICU for those with TBI</p></td>
 <td><p>Real</p></td>
 <td><p>6.4</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_open_fracture_contaminated</p></td>
+<tr class="row-even"><td><p>prob_open_fracture_contaminated</p></td>
 <td><p>The probability that an open fracture will be contaminated</p></td>
 <td><p>Real</p></td>
 <td><p>0.07</p></td>
 </tr>
-<tr class="row-even"><td><p>allowed_interventions</p></td>
+<tr class="row-odd"><td><p>allowed_interventions</p></td>
 <td><p>List of additional interventions that can be included when performing model analysis</p></td>
 <td><p>List</p></td>
 <td><p>[]</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_112</p></td>
+<tr class="row-even"><td><p>head_prob_112</p></td>
 <td><p>The probability that this person’s head injury is a skull fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.0455</p></td>
 </tr>
-<tr class="row-even"><td><p>head_prob_113</p></td>
+<tr class="row-odd"><td><p>head_prob_113</p></td>
 <td><p>The probability that this person’s head injury is a basilar skull fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.0045</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_133a</p></td>
+<tr class="row-even"><td><p>head_prob_133a</p></td>
 <td><p>The probability that this person’s head injury is a Subarachnoid hematoma</p></td>
 <td><p>Real</p></td>
 <td><p>0.09149906</p></td>
 </tr>
-<tr class="row-even"><td><p>head_prob_133b</p></td>
+<tr class="row-odd"><td><p>head_prob_133b</p></td>
 <td><p>The probability that this person’s head injury is a Brain contusion</p></td>
 <td><p>Real</p></td>
 <td><p>0.301946898</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_133c</p></td>
+<tr class="row-even"><td><p>head_prob_133c</p></td>
 <td><p>The probability that this person’s head injury is an Intraventricular haemorrhage</p></td>
 <td><p>Real</p></td>
 <td><p>0.013724859</p></td>
 </tr>
-<tr class="row-even"><td><p>head_prob_133d</p></td>
+<tr class="row-odd"><td><p>head_prob_133d</p></td>
 <td><p>The probability that this person’s head injury is a Subgaleal hematoma</p></td>
 <td><p>Real</p></td>
 <td><p>0.050324483</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_134a</p></td>
+<tr class="row-even"><td><p>head_prob_134a</p></td>
 <td><p>The probability that this person’s head injury is an Epidural hematoma</p></td>
 <td><p>Real</p></td>
 <td><p>0.086670324</p></td>
 </tr>
-<tr class="row-even"><td><p>head_prob_134b</p></td>
+<tr class="row-odd"><td><p>head_prob_134b</p></td>
 <td><p>The probability that this person’s head injury is a Subdural hematoma</p></td>
 <td><p>Real</p></td>
 <td><p>0.080003376</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_135</p></td>
+<tr class="row-even"><td><p>head_prob_135</p></td>
 <td><p>The probability that this person’s head injury is a Diffuse axonal injury/midline shift</p></td>
 <td><p>Real</p></td>
 <td><p>0.061731</p></td>
 </tr>
-<tr class="row-even"><td><p>head_prob_1101</p></td>
+<tr class="row-odd"><td><p>head_prob_1101</p></td>
 <td><p>The probability that this person’s head injury is a laceration</p></td>
 <td><p>Real</p></td>
 <td><p>0.253536</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_1114</p></td>
+<tr class="row-even"><td><p>head_prob_1114</p></td>
 <td><p>The probability that this person’s head injury is a burn</p></td>
 <td><p>Real</p></td>
 <td><p>0.010564</p></td>
 </tr>
-<tr class="row-even"><td><p>face_prob_211</p></td>
+<tr class="row-odd"><td><p>face_prob_211</p></td>
 <td><p>The probability that this person’s face injury is a Facial fracture (nasal/unspecified)</p></td>
 <td><p>Real</p></td>
 <td><p>0.158585</p></td>
 </tr>
-<tr class="row-odd"><td><p>face_prob_212</p></td>
+<tr class="row-even"><td><p>face_prob_212</p></td>
 <td><p>The probability that this person’s face injury is a Facial fracture (mandible/zygomatic)</p></td>
 <td><p>Real</p></td>
 <td><p>0.294515</p></td>
 </tr>
-<tr class="row-even"><td><p>face_prob_241</p></td>
+<tr class="row-odd"><td><p>face_prob_241</p></td>
 <td><p>The probability that this person’s face injury is a soft tissue injury</p></td>
 <td><p>Real</p></td>
 <td><p>0.339</p></td>
 </tr>
-<tr class="row-odd"><td><p>face_prob_2101</p></td>
+<tr class="row-even"><td><p>face_prob_2101</p></td>
 <td><p>The probability that this person’s face injury is a laceration</p></td>
 <td><p>Real</p></td>
 <td><p>0.194845</p></td>
 </tr>
-<tr class="row-even"><td><p>face_prob_2114</p></td>
+<tr class="row-odd"><td><p>face_prob_2114</p></td>
 <td><p>The probability that this person’s face injury is a burn</p></td>
 <td><p>Real</p></td>
 <td><p>0.010255</p></td>
 </tr>
-<tr class="row-odd"><td><p>face_prob_291</p></td>
+<tr class="row-even"><td><p>face_prob_291</p></td>
 <td><p>The probability that this person’s face injury is an eye injury</p></td>
 <td><p>Real</p></td>
 <td><p>0.0028</p></td>
 </tr>
-<tr class="row-even"><td><p>neck_prob_3101</p></td>
+<tr class="row-odd"><td><p>neck_prob_3101</p></td>
 <td><p>The probability that this person’s neck injury is a laceration</p></td>
 <td><p>Real</p></td>
 <td><p>0.06972</p></td>
 </tr>
-<tr class="row-odd"><td><p>neck_prob_3113</p></td>
+<tr class="row-even"><td><p>neck_prob_3113</p></td>
 <td><p>The probability that this person’s neck injury is a burn</p></td>
 <td><p>Real</p></td>
 <td><p>0.01428</p></td>
 </tr>
-<tr class="row-even"><td><p>neck_prob_342</p></td>
+<tr class="row-odd"><td><p>neck_prob_342</p></td>
 <td><p>The probability that this person’s neck injury is a Soft tissue injury in neck (vertebral artery laceration)</p></td>
 <td><p>Real</p></td>
 <td><p>0.004</p></td>
 </tr>
-<tr class="row-odd"><td><p>neck_prob_343</p></td>
+<tr class="row-even"><td><p>neck_prob_343</p></td>
 <td><p>The probability that this person’s neck injury is a Soft tissue injury in neck (pharynx contusion)</p></td>
 <td><p>Real</p></td>
 <td><p>0.004</p></td>
 </tr>
-<tr class="row-even"><td><p>neck_prob_361</p></td>
+<tr class="row-odd"><td><p>neck_prob_361</p></td>
 <td><p>The probability that this person’s neck injury is a Sternomastoid m. hemorrhage/ Hemorrhage, supraclavicular triangle/Hemorrhage, posterior triangle/Anterior vertebral vessel hemorrhage/ Neck muscle hemorrhage</p></td>
 <td><p>Real</p></td>
 <td><p>0.495</p></td>
 </tr>
-<tr class="row-odd"><td><p>neck_prob_363</p></td>
+<tr class="row-even"><td><p>neck_prob_363</p></td>
 <td><p>The probability that this person’s neck injury is a Hematoma in carotid sheath/Carotid sheath hemorrhage</p></td>
 <td><p>Real</p></td>
 <td><p>0.405</p></td>
 </tr>
-<tr class="row-even"><td><p>neck_prob_322</p></td>
+<tr class="row-odd"><td><p>neck_prob_322</p></td>
 <td><p>The probability that this person’s neck injury is an Atlanto-occipital subluxation</p></td>
 <td><p>Real</p></td>
 <td><p>0.00264</p></td>
 </tr>
-<tr class="row-odd"><td><p>neck_prob_323</p></td>
+<tr class="row-even"><td><p>neck_prob_323</p></td>
 <td><p>The probability that this person’s neck injury is an Atlanto-axial subluxation</p></td>
 <td><p>Real</p></td>
 <td><p>0.00536</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_4101</p></td>
+<tr class="row-odd"><td><p>thorax_prob_4101</p></td>
 <td><p>The probability that this person’s thorax injury is a laceration</p></td>
 <td><p>Real</p></td>
 <td><p>0.49036</p></td>
 </tr>
-<tr class="row-odd"><td><p>thorax_prob_4113</p></td>
+<tr class="row-even"><td><p>thorax_prob_4113</p></td>
 <td><p>The probability that this person’s thorax injury is a burn</p></td>
 <td><p>Real</p></td>
 <td><p>0.04264</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_461</p></td>
+<tr class="row-odd"><td><p>thorax_prob_461</p></td>
 <td><p>The probability that this person’s thorax injury is Chest wall bruises/haematoma</p></td>
 <td><p>Real</p></td>
 <td><p>0.0945</p></td>
 </tr>
-<tr class="row-odd"><td><p>thorax_prob_463</p></td>
+<tr class="row-even"><td><p>thorax_prob_463</p></td>
 <td><p>The probability that this person’s thorax injury is Haemothorax</p></td>
 <td><p>Real</p></td>
 <td><p>0.0945</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_453a</p></td>
+<tr class="row-odd"><td><p>thorax_prob_453a</p></td>
 <td><p>The probability that this person’s thorax injury is a Lung contusion</p></td>
 <td><p>Real</p></td>
 <td><p>0.0539</p></td>
 </tr>
-<tr class="row-odd"><td><p>thorax_prob_453b</p></td>
+<tr class="row-even"><td><p>thorax_prob_453b</p></td>
 <td><p>The probability that this person’s thorax injury is a Diaphragm rupture</p></td>
 <td><p>Real</p></td>
 <td><p>0.0161</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_412</p></td>
+<tr class="row-odd"><td><p>thorax_prob_412</p></td>
 <td><p>The probability that this person’s thorax injury is a rib fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.0392</p></td>
 </tr>
-<tr class="row-odd"><td><p>thorax_prob_414</p></td>
+<tr class="row-even"><td><p>thorax_prob_414</p></td>
 <td><p>The probability that this person’s thorax injury is flail chest</p></td>
 <td><p>Real</p></td>
 <td><p>0.0098</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_441</p></td>
+<tr class="row-odd"><td><p>thorax_prob_441</p></td>
 <td><p>The probability that this person’s thorax injury is a Chest wall lacerations/avulsions</p></td>
 <td><p>Real</p></td>
 <td><p>0.08586</p></td>
 </tr>
-<tr class="row-odd"><td><p>thorax_prob_442</p></td>
+<tr class="row-even"><td><p>thorax_prob_442</p></td>
 <td><p>The probability that this person’s thorax injury is a Surgical emphysema</p></td>
 <td><p>Real</p></td>
 <td><p>0.01749</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_443</p></td>
+<tr class="row-odd"><td><p>thorax_prob_443</p></td>
 <td><p>The probability that this person’s thorax injury is a Closed pneumothorax/ open pneumothorax</p></td>
 <td><p>Real</p></td>
 <td><p>0.05565</p></td>
 </tr>
-<tr class="row-odd"><td><p>abdomen_prob_5101</p></td>
+<tr class="row-even"><td><p>abdomen_prob_5101</p></td>
 <td><p>The probability that this person’s abdomen injury is a laceration</p></td>
 <td><p>Real</p></td>
 <td><p>0.11026</p></td>
 </tr>
-<tr class="row-even"><td><p>abdomen_prob_5113</p></td>
+<tr class="row-odd"><td><p>abdomen_prob_5113</p></td>
 <td><p>The probability that this person’s thorax injury is a burn</p></td>
 <td><p>Real</p></td>
 <td><p>0.03874</p></td>
 </tr>
-<tr class="row-odd"><td><p>abdomen_prob_552</p></td>
+<tr class="row-even"><td><p>abdomen_prob_552</p></td>
 <td><p>The probability that this person’s thorax injury is a skull fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.047656</p></td>
 </tr>
-<tr class="row-even"><td><p>abdomen_prob_553</p></td>
+<tr class="row-odd"><td><p>abdomen_prob_553</p></td>
 <td><p>The probability that this person’s thorax injury is an Injury to stomach/intestines/colon</p></td>
 <td><p>Real</p></td>
 <td><p>0.77441</p></td>
 </tr>
-<tr class="row-odd"><td><p>abdomen_prob_554</p></td>
+<tr class="row-even"><td><p>abdomen_prob_554</p></td>
 <td><p>The probability that this person’s thorax injury is an Injury to spleen/Urinary bladder/Liver/Urethra/Diaphragm</p></td>
 <td><p>Real</p></td>
 <td><p>0.028934</p></td>
 </tr>
-<tr class="row-even"><td><p>spine_prob_612</p></td>
+<tr class="row-odd"><td><p>spine_prob_612</p></td>
 <td><p>The probability that this person’s spine injury is a vertabrae fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.364</p></td>
 </tr>
-<tr class="row-odd"><td><p>spine_prob_673a</p></td>
+<tr class="row-even"><td><p>spine_prob_673a</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
 <td><p>Real</p></td>
 <td><p>0.015840216</p></td>
 </tr>
-<tr class="row-even"><td><p>spine_prob_673b</p></td>
+<tr class="row-odd"><td><p>spine_prob_673b</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury below neck level</p></td>
 <td><p>Real</p></td>
 <td><p>0.040731984</p></td>
 </tr>
-<tr class="row-odd"><td><p>spine_prob_674a</p></td>
+<tr class="row-even"><td><p>spine_prob_674a</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
 <td><p>Real</p></td>
 <td><p>0.074477731</p></td>
 </tr>
-<tr class="row-even"><td><p>spine_prob_674b</p></td>
+<tr class="row-odd"><td><p>spine_prob_674b</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury below neck level</p></td>
 <td><p>Real</p></td>
 <td><p>0.116490809</p></td>
 </tr>
-<tr class="row-odd"><td><p>spine_prob_675a</p></td>
+<tr class="row-even"><td><p>spine_prob_675a</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
 <td><p>Real</p></td>
 <td><p>0.134791137</p></td>
 </tr>
-<tr class="row-even"><td><p>spine_prob_675b</p></td>
+<tr class="row-odd"><td><p>spine_prob_675b</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury below neck level</p></td>
 <td><p>Real</p></td>
 <td><p>0.210827163</p></td>
 </tr>
-<tr class="row-odd"><td><p>spine_prob_676</p></td>
+<tr class="row-even"><td><p>spine_prob_676</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
 <td><p>Real</p></td>
 <td><p>0.04284096</p></td>
 </tr>
-<tr class="row-even"><td><p>upper_ex_prob_7101</p></td>
+<tr class="row-odd"><td><p>upper_ex_prob_7101</p></td>
 <td><p>The probability that this person’s upper extremity injury is a laceration</p></td>
 <td><p>Real</p></td>
 <td><p>0.43896</p></td>
 </tr>
-<tr class="row-odd"><td><p>upper_ex_prob_7113</p></td>
+<tr class="row-even"><td><p>upper_ex_prob_7113</p></td>
 <td><p>The probability that this person’s upper extremity injury is a burn</p></td>
 <td><p>Real</p></td>
 <td><p>0.03304</p></td>
 </tr>
-<tr class="row-even"><td><p>upper_ex_prob_712a</p></td>
+<tr class="row-odd"><td><p>upper_ex_prob_712a</p></td>
 <td><p>The probability that this person’s upper extremity injury is a Fracture to Clavicle, scapula, humerus</p></td>
 <td><p>Real</p></td>
 <td><p>0.10802</p></td>
 </tr>
-<tr class="row-odd"><td><p>upper_ex_prob_712b</p></td>
+<tr class="row-even"><td><p>upper_ex_prob_712b</p></td>
 <td><p>The probability that this person’s upper extremity injury is a Fracture to Hand/wrist</p></td>
 <td><p>Real</p></td>
 <td><p>0.28969</p></td>
 </tr>
-<tr class="row-even"><td><p>upper_ex_prob_712c</p></td>
+<tr class="row-odd"><td><p>upper_ex_prob_712c</p></td>
 <td><p>The probability that this person’s upper extremity injury is a Fracture to Radius/ulna</p></td>
 <td><p>Real</p></td>
 <td><p>0.09329</p></td>
 </tr>
-<tr class="row-odd"><td><p>upper_ex_prob_722</p></td>
+<tr class="row-even"><td><p>upper_ex_prob_722</p></td>
 <td><p>The probability that this person’s upper extremity injury is a dislocated shoulder</p></td>
 <td><p>Real</p></td>
 <td><p>0.025</p></td>
 </tr>
-<tr class="row-even"><td><p>upper_ex_prob_782a</p></td>
+<tr class="row-odd"><td><p>upper_ex_prob_782a</p></td>
 <td><p>The probability that this person’s upper extremity injury is an Amputated finger</p></td>
 <td><p>Real</p></td>
 <td><p>0.00750024</p></td>
 </tr>
-<tr class="row-odd"><td><p>upper_ex_prob_782b</p></td>
+<tr class="row-even"><td><p>upper_ex_prob_782b</p></td>
 <td><p>The probability that this person’s upper extremity injury is a Unilateral arm amputation</p></td>
 <td><p>Real</p></td>
 <td><p>0.00102276</p></td>
 </tr>
-<tr class="row-even"><td><p>upper_ex_prob_782c</p></td>
+<tr class="row-odd"><td><p>upper_ex_prob_782c</p></td>
 <td><p>The probability that this person’s upper extremity injury is a Thumb amputation</p></td>
 <td><p>Real</p></td>
 <td><p>0.002841</p></td>
 </tr>
-<tr class="row-odd"><td><p>upper_ex_prob_783</p></td>
+<tr class="row-even"><td><p>upper_ex_prob_783</p></td>
 <td><p>The probability that this person’s upper extremity injury is a bilateral arm amputation</p></td>
 <td><p>Real</p></td>
 <td><p>0.000636</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_8101</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_8101</p></td>
 <td><p>The probability that this person’s lower extremity injury is a laceration</p></td>
 <td><p>Real</p></td>
 <td><p>0.186094109</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_8113</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_8113</p></td>
 <td><p>The probability that this person’s lower extremity injury is a burn</p></td>
 <td><p>Real</p></td>
 <td><p>0.014007083</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_811</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_811</p></td>
 <td><p>The probability that this person’s lower extremity injury is a foot fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.023610948</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_813do</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_813do</p></td>
 <td><p>The probability that this person’s lower extremity injury is an open foot fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.013281158</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_812</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_812</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Fracture to patella, tibia, fibula, ankle</p></td>
 <td><p>Real</p></td>
 <td><p>0.354164215</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_813eo</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_813eo</p></td>
 <td><p>The probability that this person’s lower extremity injury is an open Fracture to patella, tibia, fibula, ankle</p></td>
 <td><p>Real</p></td>
 <td><p>0.199217371</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_813a</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_813a</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Hip fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.029513685</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_813b</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_813b</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Pelvis fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.023610948</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_813bo</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_813bo</p></td>
 <td><p>The probability that this person’s lower extremity injury is an open Pelvis fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.005902737</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_813c</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_813c</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Femur fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.076765094</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_813co</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_813co</p></td>
 <td><p>The probability that this person’s lower extremity injury is an open Femur fracture</p></td>
 <td><p>Real</p></td>
 <td><p>0.01177596</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_822a</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_822a</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Dislocated hip</p></td>
 <td><p>Real</p></td>
 <td><p>0.037338982</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_822b</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_822b</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Dislocated knee</p></td>
 <td><p>Real</p></td>
 <td><p>0.002383339</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_882</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_882</p></td>
 <td><p>The probability that this person’s lower extremity injury is an Amputation of toes</p></td>
 <td><p>Real</p></td>
 <td><p>0.00731139</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_883</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_883</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Unilateral leg amputation</p></td>
 <td><p>Real</p></td>
 <td><p>0.007511491</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_884</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_884</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Bilateral leg amputation</p></td>
 <td><p>Real</p></td>
 <td><p>0.007511491</p></td>
 </tr>
-<tr class="row-even"><td><p>blocked_interventions</p></td>
+<tr class="row-odd"><td><p>blocked_interventions</p></td>
 <td><p>A list of interventions that are blocked in a simulation</p></td>
 <td><p>List</p></td>
 <td><p>[]</p></td>
 </tr>
-<tr class="row-odd"><td><p>unavailable_treatment_mortality_mais_cutoff</p></td>
+<tr class="row-even"><td><p>unavailable_treatment_mortality_mais_cutoff</p></td>
 <td><p>A cut-off score above which an injury will result in additional mortality if the person has sought healthcare and not received it.</p></td>
 <td><p>Integer</p></td>
 <td><p>5</p></td>
 </tr>
-<tr class="row-even"><td><p>consider_death_no_treatment_ISS_cut_off</p></td>
+<tr class="row-odd"><td><p>consider_death_no_treatment_ISS_cut_off</p></td>
 <td><p>A cut-off score above which an injuries will be considered severe enough to cause mortality in those whohave not sought care.</p></td>
 <td><p>Integer</p></td>
 <td><p>15</p></td>
 </tr>
-<tr class="row-odd"><td><p>maximum_number_of_times_HSI_events_should_run</p></td>
+<tr class="row-even"><td><p>maximum_number_of_times_HSI_events_should_run</p></td>
 <td><p>limit on the number of times an HSI event can run</p></td>
 <td><p>Integer</p></td>
 <td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>hsi_schedule_window_days</p></td>
+<td><p>Number of days window to schedule HSI appointment</p></td>
+<td><p>Integer</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_frequency</p></td>
+<td><p>Frequency in months for RTI polling events that determine new injuries</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>rti_check_death_no_med_event_frequency_days</p></td>
+<td><p>Frequency in days for RTI check death no med event</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>rti_recovery_event_frequency_days</p></td>
+<td><p>Frequency in days for RTI recovery event</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>incidence_rate_frequency</p></td>
+<td><p>Number of months per year for rate conversion calculations</p></td>
+<td><p>Integer</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-even"><td><p>incidence_rate_per_population</p></td>
+<td><p>Population base for incidence rate calculations</p></td>
+<td><p>Integer</p></td>
+<td><p>100000</p></td>
+</tr>
+<tr class="row-odd"><td><p>days_to_death_without_treatment</p></td>
+<td><p>Number of days until death for untreated RTI patients</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>max_treatment_duration_days</p></td>
+<td><p>Maximum number of days for RTI treatment duration</p></td>
+<td><p>Integer</p></td>
+<td><p>150</p></td>
+</tr>
+<tr class="row-odd"><td><p>intervention_incidence_reduction_factor</p></td>
+<td><p>Factor by which interventions reduce RTI incidence (applied when reduce_incidence in allowed_interventions)</p></td>
+<td><p>Real</p></td>
+<td><p>0.335</p></td>
+</tr>
+<tr class="row-even"><td><p>laceration_recovery_days</p></td>
+<td><p>Number of days for recovery assessment period</p></td>
+<td><p>Integer</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>hsi_opening_delay_days</p></td>
+<td><p>Number of days delay before HSI appointments can be scheduled</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_initialisation_delay_months</p></td>
+<td><p>Delay in months at initialisation for first main polling event</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>rti_recovery_initialisation_delay_months</p></td>
+<td><p>Delay in months at initialisation for rti recovery event</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>rti_check_death_no_med_initialisation_delay_months</p></td>
+<td><p>Delay in months at initialisation for rti check death no med event</p></td>
+<td><p>Integer</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>non_permanent_tbi_recovery_months</p></td>
+<td><p>Recovery duration in months for tbi if non permanent; sets  date for date_to_remove_daly_column</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-even"><td><p>rti_fracture_cast_recovery_weeks</p></td>
+<td><p>Recovery duration in weeks for fracture cast; sets  date for date_to_remove_daly_column</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p>rti_open_fracture_recovery_months</p></td>
+<td><p>Recovery duration in months for open fracture; sets  date for date_to_remove_daly_column</p></td>
+<td><p>Integer</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>rti_burn_recovery_weeks</p></td>
+<td><p>Recovery duration in weeks for rti burn; sets  date for date_to_remove_daly_column</p></td>
+<td><p>Integer</p></td>
+<td><p>4</p></td>
 </tr>
 </tbody>
 </table>
@@ -15399,7 +16290,7 @@
 <tr class="row-odd"><td><p>mean_years_to_1stdev_natural_improvement_in_stunting</p></td>
 <td><p>Mean time (in years) to a one standard deviation improvement in stunting without any treatment.</p></td>
 <td><p>Real</p></td>
-<td><p>1.840675229013975</p></td>
+<td><p>1.840675229</p></td>
 </tr>
 <tr class="row-even"><td><p>effectiveness_of_complementary_feeding_education_in_stunting_reduction</p></td>
 <td><p>Probability of stunting being reduced by one standard deviation (category) by education about supplementary feeding (but not supplying supplementary feeding consmables).</p></td>
@@ -15415,6 +16306,31 @@
 <td><p>Probability of a stunted or severely stunted person being checked and correctly diagnosed</p></td>
 <td><p>Real</p></td>
 <td><p>0.01</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_age_for_stunting_years</p></td>
+<td><p>Maximum age (in years) for which stunting assessment and interventions apply</p></td>
+<td><p>Real</p></td>
+<td><p>5.0</p></td>
+</tr>
+<tr class="row-even"><td><p>haz_threshold_stunted</p></td>
+<td><p>HAZ score threshold below which a child is considered stunted</p></td>
+<td><p>Real</p></td>
+<td><p>-2.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>haz_threshold_severe_stunted</p></td>
+<td><p>HAZ score threshold below which a child is considered severely stunted</p></td>
+<td><p>Real</p></td>
+<td><p>-3.0</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_frequency_months</p></td>
+<td><p>Frequency in months for the main stunting polling event</p></td>
+<td><p>Integer</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>followup_appointment_months</p></td>
+<td><p>Interval in months for scheduling follow-up appointments after stunting treatment</p></td>
+<td><p>Integer</p></td>
+<td><p>6</p></td>
 </tr>
 </tbody>
 </table>

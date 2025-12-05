@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.postnatal_supervisor module &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>tlo.methods.postnatal_supervisor module &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
@@ -224,125 +225,181 @@ generator.</p>
 <td><p>LIST</p></td>
 <td><p>weekly risk of death from  severe hypertension in the postnatal period</p></td>
 </tr>
-<tr class="row-odd"><td><p>baseline_prob_anaemia_per_week</p></td>
+<tr class="row-odd"><td><p>bmi_obesity</p></td>
+<td><p>LIST</p></td>
+<td><p>BMI for obesity classification</p></td>
+</tr>
+<tr class="row-even"><td><p>baseline_prob_anaemia_per_week</p></td>
 <td><p>LIST</p></td>
 <td><p>Weekly probability of anaemia in pregnancy</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_anaemia_maternal_malaria</p></td>
+<tr class="row-odd"><td><p>rr_anaemia_maternal_malaria</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of anaemia secondary to malaria infection</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_anaemia_recent_haemorrhage</p></td>
+<tr class="row-even"><td><p>rr_anaemia_recent_haemorrhage</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of anaemia secondary to recent haemorrhage</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_anaemia_hiv_no_art</p></td>
+<tr class="row-odd"><td><p>rr_anaemia_hiv_no_art</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of anaemia for a woman with HIV not on ART</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_type_of_anaemia_pn</p></td>
+<tr class="row-even"><td><p>prob_type_of_anaemia_pn</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of a woman with anaemia having mild, moderate or severe anaemia</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_late_sepsis_endometritis</p></td>
+<tr class="row-odd"><td><p>prob_late_sepsis_endometritis</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of developing sepsis following postpartum endometritis infection</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_sepsis_endometritis_post_cs</p></td>
+<tr class="row-even"><td><p>rr_sepsis_endometritis_post_cs</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of endometritis following caesarean delivery</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_late_sepsis_urinary_tract</p></td>
+<tr class="row-odd"><td><p>prob_late_sepsis_urinary_tract</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of developing sepsis following postpartum UTI</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_late_sepsis_skin_soft_tissue</p></td>
+<tr class="row-even"><td><p>prob_late_sepsis_skin_soft_tissue</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of developing sepsis following postpartum skin/soft tissue infection</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_sepsis_sst_post_cs</p></td>
+<tr class="row-odd"><td><p>rr_sepsis_sst_post_cs</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of skin/soft tissue sepsis following caesarean delivery</p></td>
 </tr>
-<tr class="row-odd"><td><p>cfr_postpartum_sepsis</p></td>
+<tr class="row-even"><td><p>cfr_postpartum_sepsis</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality rate for postnatal sepsis</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_early_onset_neonatal_sepsis_week_1</p></td>
+<tr class="row-odd"><td><p>prob_early_onset_neonatal_sepsis_week_1</p></td>
 <td><p>LIST</p></td>
 <td><p>Baseline probability of a newborn developing sepsis in week one of life</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_eons_maternal_chorio</p></td>
+<tr class="row-even"><td><p>rr_eons_maternal_chorio</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of EONS in newborns whose mothers have chorioamnionitis</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_eons_maternal_prom</p></td>
+<tr class="row-odd"><td><p>rr_eons_maternal_prom</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of EONS in newborns whose mothers have PROM</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_eons_preterm_neonate</p></td>
+<tr class="row-even"><td><p>rr_eons_preterm_neonate</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of EONS in preterm newborns</p></td>
 </tr>
-<tr class="row-even"><td><p>cfr_early_onset_neonatal_sepsis</p></td>
+<tr class="row-odd"><td><p>cfr_early_onset_neonatal_sepsis</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality for early onset neonatal sepsis</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_late_onset_neonatal_sepsis</p></td>
+<tr class="row-even"><td><p>prob_late_onset_neonatal_sepsis</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of late onset neonatal sepsis (all cause)</p></td>
 </tr>
-<tr class="row-even"><td><p>cfr_late_neonatal_sepsis</p></td>
+<tr class="row-odd"><td><p>cfr_late_neonatal_sepsis</p></td>
 <td><p>LIST</p></td>
 <td><p>Risk of death from late neonatal sepsis</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_sepsis_disabilities</p></td>
+<tr class="row-even"><td><p>prob_sepsis_disabilities</p></td>
 <td><p>LIST</p></td>
 <td><p>Probabilities of varying disability levels after neonatal sepsis</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_care_seeking_postnatal_emergency</p></td>
+<tr class="row-odd"><td><p>prob_care_seeking_postnatal_emergency</p></td>
 <td><p>LIST</p></td>
 <td><p>baseline probability of emergency care seeking for women in the postnatal period</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_care_seeking_postnatal_emergency_neonate</p></td>
+<tr class="row-even"><td><p>prob_care_seeking_postnatal_emergency_neonate</p></td>
 <td><p>LIST</p></td>
 <td><p>baseline probability care will be sought for a neonate with a complication</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_care_seeking_fistula_repair</p></td>
+<tr class="row-odd"><td><p>odds_care_seeking_fistula_repair</p></td>
 <td><p>LIST</p></td>
 <td><p>odds of a woman seeking care for treatment of obstetric fistula</p></td>
 </tr>
-<tr class="row-odd"><td><p>aor_cs_fistula_age_15_19</p></td>
+<tr class="row-even"><td><p>aor_cs_fistula_age_15_19</p></td>
 <td><p>LIST</p></td>
 <td><p>odds ratio for care seeking for treatment of obstetric fistula in 15-19 year olds</p></td>
 </tr>
-<tr class="row-even"><td><p>aor_cs_fistula_age_lowest_education</p></td>
+<tr class="row-odd"><td><p>aor_cs_fistula_age_lowest_education</p></td>
 <td><p>LIST</p></td>
 <td><p>odds ratio for care seeking for treatment of obstetric fistula in women in the lowest education quantile</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_early_init_bf</p></td>
+<tr class="row-even"><td><p>treatment_effect_early_init_bf</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of early initiation of breastfeeding on neonatal sepsis rates</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_iron_folic_acid_anaemia</p></td>
+<tr class="row-odd"><td><p>treatment_effect_iron_folic_acid_anaemia</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of iron and folic acid supplementation on anaemia risk</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_abx_prom</p></td>
+<tr class="row-even"><td><p>treatment_effect_abx_prom</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of early antibiotics given to a mother with PROM on neonatal sepsis rates</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_clean_birth</p></td>
+<tr class="row-odd"><td><p>treatment_effect_clean_birth</p></td>
 <td><p>LIST</p></td>
 <td><p>Treatment effect of clean birth practices on early onset neonatal sepsis risk</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_cord_care</p></td>
+<tr class="row-even"><td><p>treatment_effect_cord_care</p></td>
 <td><p>LIST</p></td>
 <td><p>Treatment effect of chlorhexidine cord care on early onset neonatal sepsis risk</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_anti_htns_progression_pn</p></td>
+<tr class="row-odd"><td><p>treatment_effect_anti_htns_progression_pn</p></td>
 <td><p>LIST</p></td>
 <td><p>Treatment effect of oral anti hypertensives on progression from mild/mod to severe gestationalhypertension</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_event_frequency_weeks</p></td>
+<td><p>INT</p></td>
+<td><p>PostnatalSupervisorEvent polling frequency in weeks</p></td>
+</tr>
+<tr class="row-odd"><td><p>fistula_repair_min_days</p></td>
+<td><p>LIST</p></td>
+<td><p>Minimum days after birth to schedule obstetric fistula repair</p></td>
+</tr>
+<tr class="row-even"><td><p>fistula_repair_max_days</p></td>
+<td><p>LIST</p></td>
+<td><p>Maximum days after birth to schedule obstetric fistula repair</p></td>
+</tr>
+<tr class="row-odd"><td><p>fistula_repair_appointment_window_days</p></td>
+<td><p>LIST</p></td>
+<td><p>Number of days for fistula repair appointment scheduling window</p></td>
+</tr>
+<tr class="row-even"><td><p>emergency_postnatal_care_appointment_window_days</p></td>
+<td><p>LIST</p></td>
+<td><p>Number of days for emergency postnatal care appointment scheduling window</p></td>
+</tr>
+<tr class="row-odd"><td><p>pnc_one_maternal_appt_max_days_without_complications</p></td>
+<td><p>LIST</p></td>
+<td><p>Maximum number of days from current date for pnc_one_maternal_appt if no complications</p></td>
+</tr>
+<tr class="row-even"><td><p>pnc_one_maternal_appt_window_days</p></td>
+<td><p>LIST</p></td>
+<td><p>Number of days for pnc_one_maternal_appt scheduling window</p></td>
+</tr>
+<tr class="row-odd"><td><p>postnatal_check_sepsis_appt_window_days</p></td>
+<td><p>LIST</p></td>
+<td><p>Number of days for postnatal check if sepsis - scheduling window</p></td>
+</tr>
+<tr class="row-even"><td><p>pnc_one_neonatal_sepsis_appt_window_days</p></td>
+<td><p>LIST</p></td>
+<td><p>Number of days for pnc_one_neonatal if sepsis - scheduling window</p></td>
+</tr>
+<tr class="row-odd"><td><p>final_week_postnatal_period</p></td>
+<td><p>INT</p></td>
+<td><p>Final week of the postnatal period - week 6</p></td>
+</tr>
+<tr class="row-even"><td><p>postnatal_reset_week</p></td>
+<td><p>INT</p></td>
+<td><p>Week at which postnatal variables are reset overall: Changes made 2 weeks afterthe end of the postnatal and neonatal period in case either the mother or newborn are receiving treatment following the last PNC visit</p></td>
+</tr>
+<tr class="row-odd"><td><p>obstetric_fistula_repair_beddays</p></td>
+<td><p>INT</p></td>
+<td><p>Number of beddays required for obstetric fistula repair</p></td>
+</tr>
+<tr class="row-even"><td><p>neonatal_period_end_days</p></td>
+<td><p>INT</p></td>
+<td><p>End of neonatal period in days</p></td>
 </tr>
 </tbody>
 </table>
@@ -399,10 +456,10 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘Labour’, ‘NewbornOutcomes’, ‘PregnancySupervisor’}</p>
-<p>CAUSES_OF_DEATH : {‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x143ff5110&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x143ff46d0&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x143ff7190&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x143ff6110&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x143ff5850&gt;, ‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x143ff7a10&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x143ff6350&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x143ff7c90&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘NewbornOutcomes’, ‘Labour’, ‘Lifestyle’, ‘PregnancySupervisor’}</p>
+<p>CAUSES_OF_DEATH : {‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x3340a6890&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x3340a6490&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x3340a4690&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x3340a64d0&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x3340a5390&gt;, ‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x3340a5990&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x3340a5950&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x3340a4290&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class PostnatalSupervisor):</strong></p>

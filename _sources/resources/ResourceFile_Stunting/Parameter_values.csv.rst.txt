@@ -1,46 +1,45 @@
-Parameter values (.csv)
+parameter values (.csv)
 =======================
 
-:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Stunting/Parameter_values.csv>`
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Stunting/parameter_values.csv>`
 
-====  =============================================================================  =========================  =================================================================================================================================  ============
-  ..  parameter\_name                                                                value                      notes                                                                                                                              References
-====  =============================================================================  =========================  =================================================================================================================================  ============
-   0  prev\_HAZ\_distribution\_age\_0\_5mo                                           [-0.8482365, 1.416337]
-   1  prev\_HAZ\_distribution\_age\_6\_11mo                                          [-0.9940219, 1.504431]
-   2  prev\_HAZ\_distribution\_age\_12\_23mo                                         [-1.522101, 1.431207]
-   3  prev\_HAZ\_distribution\_age\_24\_35mo                                         [-1.669291, 1.343577]
-   4  prev\_HAZ\_distribution\_age\_36\_47mo                                         [-1.797365, 1.212469]
-   5  prev\_HAZ\_distribution\_age\_48\_59mo                                         [-1.620094, 1.11541]
-   6
-   7  or\_stunting\_male                                                             1.38
-   8  or\_stunting\_preterm\_and\_AGA                                                2.13
-   9  or\_stunting\_SGA\_and\_term                                                   2.36
-  10  or\_stunting\_SGA\_and\_preterm                                                5.95
-  11  or\_stunting\_hhwealth\_Q5                                                     1.69                       ref group Q1 (richest)
-  12  or\_stunting\_hhwealth\_Q4                                                     1.48
-  13  or\_stunting\_hhwealth\_Q3                                                     1.4
-  14  or\_stunting\_hhwealth\_Q2                                                     1.29
-  15
-  16  base\_inc\_rate\_stunting\_by\_agegp                                           [0.8,0.8,0.8,0.8,0.8,0.8]  1-5, 6-11, 12-23, 24-35, 36-47, 48-59mo
-  17  rr\_stunting\_preterm\_and\_AGA                                                1.62
-  18  rr\_stunting\_SGA\_and\_term                                                   1.65
-  19  rr\_stunting\_SGA\_and\_preterm                                                2.98
-  20  rr\_stunting\_prior\_wasting                                                   1.93
-  21  rr\_stunting\_untreated\_HIV                                                   1.5
-  22  rr\_stunting\_wealth\_level                                                    0.2
-  23  rr\_stunting\_no\_exclusive\_breastfeeding                                     1.4
-  24  rr\_stunting\_no\_continued\_breastfeeding                                     1.3
-  25  rr\_stunting\_per\_diarrhoeal\_episode                                         1.04
-  26
-  27  r\_progression\_severe\_stunting\_by\_agegp                                    [0.8,0.8,0.8,0.8,0.8,0.8]  1-5, 6-11, 12-23, 24-35, 36-47, 48-59mo
-  28  rr\_progress\_severe\_stunting\_if\_prior\_wasting                             1.93
-  29  rr\_progress\_severe\_stunting\_untreated\_HIV                                 1.3
-  30
-  31  mean\_years\_to\_1stdev\_natural\_improvement\_in\_stunting                    1.840675229013975          Probability of remaining stunted for next 3 months = 0.873
-  32
-  33  effectiveness\_of\_complementary\_feeding\_education\_in\_stunting\_reduction  0.25                       mean difference
-  34  effectiveness\_of\_food\_supplementation\_in\_stunting\_reduction              0.41                       mean difference
-  35
-  36  prob\_stunting\_diagnosed\_at\_generic\_appt                                   0.01                       This value is decided by comparing model and real usage on U5Malnutrition. Implementing this value, the model/data ratio is 1.52.
-====  =============================================================================  =========================  =================================================================================================================================  ============
+====  =============================================================================  =========================  ==============  =============  =============  ===============  ======================  =================================================================================================================================
+  ..  parameter\_name                                                                value                      param\_label    prior\_min     prior\_max     prior\_note      reference               remarks
+====  =============================================================================  =========================  ==============  =============  =============  ===============  ======================  =================================================================================================================================
+   0  prev\_HAZ\_distribution\_age\_0\_5mo                                           [-0.8482365, 1.416337]     local           [-3, 0]        [1, 3]         vague prior
+   1  prev\_HAZ\_distribution\_age\_6\_11mo                                          [-0.9940219, 1.504431]     local           [-3, 0]        [1, 3]         vague prior
+   2  prev\_HAZ\_distribution\_age\_12\_23mo                                         [-1.522101, 1.431207]      local           [-3, 0]        [1, 3]         vague prior
+   3  prev\_HAZ\_distribution\_age\_24\_35mo                                         [-1.669291, 1.343577]      local           [-3, 0]        [1, 3]         vague prior
+   4  prev\_HAZ\_distribution\_age\_36\_47mo                                         [-1.797365, 1.212469]      local           [-3, 0]        [1, 3]         vague prior
+   5  prev\_HAZ\_distribution\_age\_48\_59mo                                         [-1.620094, 1.11541]       local           [-3, 0]        [1, 3]         vague prior
+   6  or\_stunting\_male                                                             1.38                       universal       0.01           100            vague prior
+   7  or\_stunting\_preterm\_and\_AGA                                                2.13                       universal       0.01           100            vague prior
+   8  or\_stunting\_SGA\_and\_term                                                   2.36                       universal       0.01           100            vague prior
+   9  or\_stunting\_SGA\_and\_preterm                                                5.95                       universal       0.01           100            vague prior
+  10  or\_stunting\_hhwealth\_Q5                                                     1.69                       local           0.01           100            vague prior      ref group Q1 (richest)
+  11  or\_stunting\_hhwealth\_Q4                                                     1.48                       local           0.01           100            vague prior
+  12  or\_stunting\_hhwealth\_Q3                                                     1.4                        local           0.01           100            vague prior
+  13  or\_stunting\_hhwealth\_Q2                                                     1.29                       local           0.01           100            vague prior
+  14  base\_inc\_rate\_stunting\_by\_agegp                                           [0.8,0.8,0.8,0.8,0.8,0.8]  local           [0,0,0,0,0,0]  [1,1,1,1,1,1]  vague prior                              1-5, 6-11, 12-23, 24-35, 36-47, 48-59mo
+  15  rr\_stunting\_preterm\_and\_AGA                                                1.62                       local           0.01           100            vague prior
+  16  rr\_stunting\_SGA\_and\_term                                                   1.65                       local           0.01           100            vague prior
+  17  rr\_stunting\_SGA\_and\_preterm                                                2.98                       local           0.01           100            vague prior
+  18  rr\_stunting\_prior\_wasting                                                   1.93                       local           0.01           100            vague prior
+  19  rr\_stunting\_untreated\_HIV                                                   1.5                        local           0.01           100            vague prior
+  20  rr\_stunting\_wealth\_level                                                    0.2                        local           0.01           100            vague prior
+  21  rr\_stunting\_no\_exclusive\_breastfeeding                                     1.4                        local           0.01           100            vague prior
+  22  rr\_stunting\_no\_continued\_breastfeeding                                     1.3                        local           0.01           100            vague prior
+  23  rr\_stunting\_per\_diarrhoeal\_episode                                         1.04                       local           0.01           100            vague prior
+  24  r\_progression\_severe\_stunting\_by\_agegp                                    [0.8,0.8,0.8,0.8,0.8,0.8]  local           [0,0,0,0,0,0]  [1,1,1,1,1,1]  vague prior                              1-5, 6-11, 12-23, 24-35, 36-47, 48-59mo
+  25  rr\_progress\_severe\_stunting\_if\_prior\_wasting                             1.93                       local           0.01           100            vague prior
+  26  rr\_progress\_severe\_stunting\_untreated\_HIV                                 1.3                        local           0.01           100            vague prior
+  27  mean\_years\_to\_1stdev\_natural\_improvement\_in\_stunting                    1.840675229                local           0.5            10             vague prior                              Probability of remaining stunted for next 3 months = 0.873,
+  28  effectiveness\_of\_complementary\_feeding\_education\_in\_stunting\_reduction  0.25                       local           0              1              vague prior                              mean difference
+  29  effectiveness\_of\_food\_supplementation\_in\_stunting\_reduction              0.41                       universal       0              1              vague prior                              mean difference
+  30  prob\_stunting\_diagnosed\_at\_generic\_appt                                   0.01                       undetermined    0              1              calibration                              This value is decided by comparing model and real usage on U5Malnutrition. Implementing this value, the model/data ratio is 1.52.
+  31  max\_age\_for\_stunting\_years                                                 5                          local           0              10             vague prior
+  32  haz\_threshold\_stunted                                                        -2                         universal       -5             0              vague prior
+  33  haz\_threshold\_severe\_stunted                                                -3                         universal       -5             0              vague prior
+  34  main\_polling\_frequency\_months                                               1                          undetermined    1              12             design decision
+  35  followup\_appointment\_months                                                  6                          local           1              24             vague prior
+====  =============================================================================  =========================  ==============  =============  =============  ===============  ======================  =================================================================================================================================

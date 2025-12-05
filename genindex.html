@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>Index &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=6ea10ece" />
@@ -14,7 +14,7 @@
     <link rel="shortcut icon" href="_static/favicon.png"/>
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -46,6 +46,7 @@
 <li class="toctree-l1"><a class="reference internal" href="aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference</a></li>
@@ -902,6 +903,8 @@
       <li><a href="reference/tlo.scenario.html#tlo.scenario.BaseScenario.add_arguments">add_arguments() (BaseScenario method)</a>
 </li>
       <li><a href="reference/tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event.add_equipment">add_equipment() (HSI_Event method)</a>
+</li>
+      <li><a href="reference/tlo.notify.html#tlo.notify.Notifier.add_listener">add_listener() (Notifier method)</a>
 </li>
       <li><a href="reference/tlo.cli.html#tlo.cli.add_tasks">add_tasks() (in module tlo.cli)</a>
 </li>
@@ -1787,10 +1790,10 @@
         <li><a href="reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.check_properties">(Diarrhoea method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.check_subsequent_anc_can_run">check_subsequent_anc_can_run() (CareOfWomenDuringPregnancy method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/tlo.methods.cervical_cancer.html#tlo.methods.cervical_cancer.CervicalCancer.choose_cin_procedure_and_schedule_it">choose_cin_procedure_and_schedule_it() (CervicalCancer method)</a>
 </li>
       <li><a href="reference/tlo.methods.chronicsyndrome.html#tlo.methods.chronicsyndrome.ChronicSyndrome">ChronicSyndrome (class in tlo.methods.chronicsyndrome)</a>
@@ -1806,6 +1809,8 @@
       <li><a href="reference/tlo.methods.chronicsyndrome.html#tlo.methods.chronicsyndrome.ChronicSyndromeLoggingEvent">ChronicSyndromeLoggingEvent (class in tlo.methods.chronicsyndrome)</a>
 </li>
       <li><a href="reference/tlo.util.html#tlo.util.BitsetHandler.clear">clear() (BitsetHandler method)</a>
+</li>
+      <li><a href="reference/tlo.notify.html#tlo.notify.Notifier.clear_listeners">clear_listeners() (Notifier method)</a>
 </li>
       <li><a href="reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.clear_symptoms">clear_symptoms() (SymptomManager method)</a>
 </li>
@@ -2075,6 +2080,8 @@
 </li>
       <li><a href="reference/tlo.methods.html#tlo.methods.Metadata.DISEASE_MODULE">DISEASE_MODULE (Metadata attribute)</a>
 </li>
+      <li><a href="reference/tlo.notify.html#tlo.notify.Notifier.dispatch">dispatch() (Notifier method)</a>
+</li>
       <li><a href="reference/tlo.methods.pregnancy_supervisor.html#tlo.methods.pregnancy_supervisor.PregnancySupervisor.do_after_abortion">do_after_abortion() (PregnancySupervisor method)</a>
 </li>
       <li><a href="reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.do_and_log_individual_contraception_change">do_and_log_individual_contraception_change() (Contraception method)</a>
@@ -2293,10 +2300,12 @@
 </li>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.flatten_multi_index_series_into_dict_for_logging">flatten_multi_index_series_into_dict_for_logging() (in module tlo.analysis.utils)</a>
 </li>
-      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.format_daily_capabilities">format_daily_capabilities() (HealthSystem method)</a>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.format_clinic_capabilities">format_clinic_capabilities() (HealthSystem method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.format_daily_capabilities">format_daily_capabilities() (HealthSystem method)</a>
+</li>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.format_gbd">format_gbd() (in module tlo.analysis.utils)</a>
 </li>
       <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.format_hsi_event_details_as_csv">format_hsi_event_details_as_csv() (in module tlo.analysis.hsi_events)</a>
@@ -2365,6 +2374,10 @@
 </li>
       <li><a href="reference/tlo.docs.html#tlo.docs.get_classes_in_module">get_classes_in_module() (in module tlo.docs)</a>
 </li>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_clinic_eligibility">get_clinic_eligibility() (HealthSystem method)</a>
+</li>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_clinic_squeeze_factors">get_clinic_squeeze_factors() (HealthSystem method)</a>
+</li>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_coarse_appt_type">get_coarse_appt_type() (in module tlo.analysis.utils)</a>
 </li>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_cause_of_death_or_daly_label">get_color_cause_of_death_or_daly_label() (in module tlo.analysis.utils)</a>
@@ -2415,10 +2428,10 @@
 </li>
       <li><a href="reference/tlo.docs.html#tlo.docs.get_fully_qualified_name">get_fully_qualified_name() (in module tlo.docs)</a>
 </li>
-      <li><a href="reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.get_generic_symptoms_dict">get_generic_symptoms_dict() (SymptomManager_SpuriousSymptomOnset method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.get_generic_symptoms_dict">get_generic_symptoms_dict() (SymptomManager_SpuriousSymptomOnset method)</a>
+</li>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.get_grid">get_grid() (in module tlo.analysis.utils)</a>
 </li>
       <li><a href="reference/tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.get_hsi_event_classes_per_module">get_hsi_event_classes_per_module() (in module tlo.analysis.hsi_events)</a>
@@ -3203,6 +3216,8 @@
 </li>
       <li><a href="reference/tlo.logging.core.html#tlo.logging.core.Logger.log">log() (Logger method)</a>
 </li>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_clinic_current_capabilities_and_usage">log_clinic_current_capabilities_and_usage() (HealthSystem method)</a>
+</li>
       <li><a href="reference/tlo.scenario.html#tlo.scenario.BaseScenario.log_configuration">log_configuration() (BaseScenario method)</a>
 </li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_current_capabilities_and_usage">log_current_capabilities_and_usage() (HealthSystem method)</a>
@@ -3463,6 +3478,8 @@
 </li>
         <li><a href="reference/tlo.methods.wasting.html#module-tlo.methods.wasting">tlo.methods.wasting</a>
 </li>
+        <li><a href="reference/tlo.notify.html#module-tlo.notify">tlo.notify</a>
+</li>
         <li><a href="reference/tlo.population.html#module-tlo.population">tlo.population</a>
 </li>
         <li><a href="reference/tlo.progressbar.html#module-tlo.progressbar">tlo.progressbar</a>
@@ -3605,6 +3622,8 @@
 </li>
       </ul></li>
       <li><a href="reference/tlo.util.html#tlo.util.BitsetHandler.not_empty">not_empty() (BitsetHandler method)</a>
+</li>
+      <li><a href="reference/tlo.notify.html#tlo.notify.Notifier">Notifier (class in tlo.notify)</a>
 </li>
       <li><a href="reference/tlo.scenario.html#tlo.scenario.SampleRunner.number_of_draws">number_of_draws (SampleRunner property)</a>
 </li>
@@ -4147,6 +4166,8 @@
       <li><a href="reference/tlo.methods.tb.html#tlo.methods.tb.Tb.relapse_event">relapse_event() (Tb method)</a>
 </li>
       <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.remove_beddays_footprint">remove_beddays_footprint() (HealthSystem method)</a>
+</li>
+      <li><a href="reference/tlo.notify.html#tlo.notify.Notifier.remove_listener">remove_listener() (Notifier method)</a>
 </li>
       <li><a href="reference/tlo.methods.alri.html#tlo.methods.alri.Alri.report_daly_values">report_daly_values() (Alri method)</a>
 
@@ -5037,6 +5058,13 @@
 </li>
       </ul></li>
       <li>
+    tlo.notify
+
+      <ul>
+        <li><a href="reference/tlo.notify.html#module-tlo.notify">module</a>
+</li>
+      </ul></li>
+      <li>
     tlo.population
 
       <ul>
@@ -5191,6 +5219,10 @@
 
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.validate_clinic_configuration">validate_clinic_configuration() (HealthSystem method)</a>
+</li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict.values">values() (LogsDict method)</a>
 </li>

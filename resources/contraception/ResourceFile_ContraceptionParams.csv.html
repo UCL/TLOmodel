@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ContraceptionParams (.csv) &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>ContraceptionParams (.csv) &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="../../_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
@@ -142,6 +143,11 @@
 <tr class="row-odd"><th class="head"></th>
 <th class="head"><p>parameter_name</p></th>
 <th class="head"><p>value</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 <th class="head"><p>Notes</p></th>
 </tr>
 </thead>
@@ -149,36 +155,211 @@
 <tr class="row-even"><td><p>0</p></td>
 <td><p>rr_fail_under25</p></td>
 <td><p>2.2</p></td>
+<td><p>universal</p></td>
+<td><p>0.01</p></td>
+<td><p>1</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 <td><p>From Guttmacher analysis.</p></td>
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
 <td><p>days_between_appts_for_maintenance</p></td>
 <td><p>[4383, 1461, 91, 91, 91, 91]</p></td>
-<td><p>for sorted(states_that_may_require_HSI_to_maintain_on):  [‘IUD’, ‘implant’, ‘injections’, ‘male_condom’, ‘other_modern’, ‘pill’]</p></td>
+<td><p>local</p></td>
+<td><p>[0, 0, 0, 0, 0, 0]</p></td>
+<td><p>[1, 1, 1, 1, 1, 1]</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+<td><p>for sorted(states_that_may_require_HSI_to_maintain_on):  [‘IUD’, ‘implant’, ‘injections’, ‘male_condom’, ‘other_modern’, ‘pill’]</p></td>
 </tr>
 <tr class="row-even"><td><p>2</p></td>
 <td><p>scaling_factor_on_monthly_risk_of_pregnancy</p></td>
 <td><p>[1.227, 0.7191, 0.6632, 0.84945, 0.86135, 0.645, 0.941]</p></td>
+<td><p>undetermined</p></td>
+<td><p>[0, 0, 0, 0, 0, 0, 0]</p></td>
+<td><p>[1, 1, 1, 1, 1, 1, 1]</p></td>
+<td><p>calibration</p></td>
+<td></td>
 <td><p>From Calibration to 2010 WPP age-specific fertility rate</p></td>
 </tr>
 <tr class="row-odd"><td><p>3</p></td>
 <td><p>max_number_of_runs_of_hsi_if_consumable_not_available</p></td>
 <td><p>1000</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>10000</p></td>
+<td><p>design decision</p></td>
+<td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>4</p></td>
 <td><p>max_days_delay_between_decision_to_change_method_and_hsi_scheduled</p></td>
 <td><p>7</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>21</p></td>
+<td><p>design decision</p></td>
+<td></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>5</p></td>
 <td><p>use_interventions</p></td>
 <td><p>0</p></td>
+<td><p>scenario</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+<td><p>design decision</p></td>
+<td></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>6</p></td>
 <td><p>interventions_start_date</p></td>
 <td><p>2023, 1, 1</p></td>
+<td><p>undetermined</p></td>
+<td><p>2010, 1, 1</p></td>
+<td><p>2030, 1, 1</p></td>
+<td><p>design decision</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>min_age_contraception</p></td>
+<td><p>15</p></td>
+<td><p>universal</p></td>
+<td><p>10</p></td>
+<td><p>20</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>max_age_contraception</p></td>
+<td><p>50</p></td>
+<td><p>universal</p></td>
+<td><p>40</p></td>
+<td><p>55</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>sterilization_age_limit</p></td>
+<td><p>30</p></td>
+<td><p>local</p></td>
+<td><p>25</p></td>
+<td><p>35</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>polling_frequency_months</p></td>
+<td><p>1</p></td>
+<td><p>undetermined</p></td>
+<td><p>1</p></td>
+<td><p>12</p></td>
+<td><p>design decision</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>min_simulation_year</p></td>
+<td><p>2010</p></td>
+<td><p>scenario</p></td>
+<td></td>
+<td></td>
+<td><p>scenario</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>max_simulation_year</p></td>
+<td><p>2101</p></td>
+<td><p>scenario</p></td>
+<td></td>
+<td></td>
+<td><p>scenario</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>transition_year</p></td>
+<td><p>2020</p></td>
+<td><p>undetermined</p></td>
+<td><p>2015</p></td>
+<td><p>2025</p></td>
+<td><p>calibration</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>initiation_trend_rate_pre_transition</p></td>
+<td><p>0.05</p></td>
+<td><p>undetermined</p></td>
+<td><p>0.01</p></td>
+<td><p>0.1</p></td>
+<td><p>calibration</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>initiation_trend_rate_post_transition</p></td>
+<td><p>0.01</p></td>
+<td><p>undetermined</p></td>
+<td><p>0.005</p></td>
+<td><p>0.05</p></td>
+<td><p>calibration</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>discontinuation_trend_rate_pre_transition</p></td>
+<td><p>-0.05</p></td>
+<td><p>undetermined</p></td>
+<td><p>-0.1</p></td>
+<td><p>-0.01</p></td>
+<td><p>calibration</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>discontinuation_trend_rate_post_transition</p></td>
+<td><p>-0.01</p></td>
+<td><p>undetermined</p></td>
+<td><p>-0.05</p></td>
+<td><p>-0.005</p></td>
+<td><p>calibration</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>age_modification_factors</p></td>
+<td><p>[1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]</p></td>
+<td><p>undetermined</p></td>
+<td><p>[0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]</p></td>
+<td><p>[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]</p></td>
+<td><p>calibration</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>reference_year</p></td>
+<td><p>2010</p></td>
+<td><p>undetermined</p></td>
+<td><p>2000</p></td>
+<td><p>2020</p></td>
+<td><p>design decision</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>age_ranges</p></td>
+<td><p>[“15-19”, “20-24”, “25-29”, “30-34”, “35-39”, “40-44”, “45-49”]</p></td>
+<td><p>undetermined</p></td>
+<td></td>
+<td></td>
+<td><p>design decision</p></td>
+<td></td>
 <td></td>
 </tr>
 </tbody>

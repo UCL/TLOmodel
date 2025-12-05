@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.newborn_outcomes module &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>tlo.methods.newborn_outcomes module &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
@@ -379,6 +380,66 @@ generator.</p>
 <td><p>LIST</p></td>
 <td><p>treatment effect of kangaroo mother care on preterm mortality</p></td>
 </tr>
+<tr class="row-even"><td><p>prob_dist_mild_disability_preterm_&lt;32weeks</p></td>
+<td><p>LIST</p></td>
+<td><p>probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm &lt;32 weeks</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_dist_mild_disability_preterm_32_36weeks</p></td>
+<td><p>LIST</p></td>
+<td><p>probability distribution for mild disability types (mild_motor_and_cog vs mild_motor) in preterm 32-36 weeks</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_dist_mod_severe_disability_preterm_&lt;32weeks</p></td>
+<td><p>LIST</p></td>
+<td><p>probability distribution for moderate/severe disability types in preterm &lt;32 weeks</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_dist_mod_severe_disability_preterm_32_36weeks</p></td>
+<td><p>LIST</p></td>
+<td><p>probability distribution for moderate/severe disability types in preterm 32-36 weeks</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_dist_mild_impairment_post_sepsis</p></td>
+<td><p>LIST</p></td>
+<td><p>probability distribution for mild disability types following sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_dist_mod_severe_impairment_post_sepsis</p></td>
+<td><p>LIST</p></td>
+<td><p>probability distribution for moderate/severe disability types following sepsis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_dist_mild_impairment_post_enceph</p></td>
+<td><p>LIST</p></td>
+<td><p>probability distribution for mild disability types following encephalopathy</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_dist_mod_severe_impairment_post_enceph</p></td>
+<td><p>LIST</p></td>
+<td><p>probability distribution for moderate/severe disability types following encephalopathy</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_breastfeeding_status_change_6m_nonexclusive</p></td>
+<td><p>LIST</p></td>
+<td><p>probability distribution for breastfeeding status changes at 6 months for non-exclusive</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_breastfeeding_status_change_6m_exclusive</p></td>
+<td><p>LIST</p></td>
+<td><p>probability distribution for breastfeeding status changes at 6 months for exclusive</p></td>
+</tr>
+<tr class="row-even"><td><p>neonatal_ward_beddays</p></td>
+<td><p>INT</p></td>
+<td><p>number of beddays for neonatal ward inpatient care</p></td>
+</tr>
+<tr class="row-odd"><td><p>breastfeeding_update_interval_neonates</p></td>
+<td><p>INT</p></td>
+<td><p>time interval for breastfeeding status update for neonates</p></td>
+</tr>
+<tr class="row-even"><td><p>breastfeeding_update_interval_after_6mo</p></td>
+<td><p>INT</p></td>
+<td><p>time interval for breastfeeding status update after infant is 6mo</p></td>
+</tr>
+<tr class="row-odd"><td><p>postnatal_check_early_event_min_days</p></td>
+<td><p>INT</p></td>
+<td><p>minimum days to schedule postnatal check for early event</p></td>
+</tr>
+<tr class="row-even"><td><p>postnatal_check_early_event_max_days</p></td>
+<td><p>INT</p></td>
+<td><p>maximum days to schedule postnatal check for early event</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -494,10 +555,10 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘PostnatalSupervisor’, ‘CareOfWomenDuringPregnancy’, ‘Labour’, ‘PregnancySupervisor’}</p>
-<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x147607d50&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x147604750&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x147606590&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x147604710&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x1476049d0&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x1476057d0&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x147606550&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x147605bd0&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x147607390&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x1476064d0&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x147607150&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x147606ad0&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x147606610&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x147605ad0&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x147606010&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘CareOfWomenDuringPregnancy’, ‘Labour’, ‘PostnatalSupervisor’, ‘PregnancySupervisor’}</p>
+<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x334327f90&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x334326ed0&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x334324e90&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x334326dd0&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x334326c90&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x3343252d0&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x334325150&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x334324d50&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x334326e90&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x334325f50&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x3343245d0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x334326850&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x334327610&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x3343246d0&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x334325510&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p>__annotations__ : {}</p>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>parameter values (.csv) &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>parameter values (.csv) &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="../../_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
@@ -140,158 +141,516 @@
 <tr class="row-odd"><th class="head"></th>
 <th class="head"><p>parameter_name</p></th>
 <th class="head"><p>value</p></th>
-<th class="head"><p>Unnamed: 2</p></th>
+<th class="head"><p>param_label</p></th>
+<th class="head"><p>prior_min</p></th>
+<th class="head"><p>prior_max</p></th>
+<th class="head"><p>prior_note</p></th>
+<th class="head"><p>reference</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>0</p></td>
 <td><p>prob_seek_anc2</p></td>
 <td><p>[0.98, 0.98]</p></td>
+<td><p>local</p></td>
+<td><p>[0.01, 0.01]</p></td>
+<td><p>[100, 100]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
 <td><p>prob_seek_anc3</p></td>
 <td><p>[0.55, 0.55]</p></td>
+<td><p>local</p></td>
+<td><p>[0.55, 0.55]</p></td>
 <td><p>[0.77, 0.77]</p></td>
+<td><p>vague prior</p></td>
+<td></td>
 </tr>
 <tr class="row-even"><td><p>2</p></td>
 <td><p>prob_seek_anc5</p></td>
 <td><p>[0.125, 0.125]</p></td>
+<td><p>local</p></td>
+<td><p>[0.01, 0.01]</p></td>
+<td><p>[100, 100]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>3</p></td>
 <td><p>prob_seek_anc6</p></td>
 <td><p>[0.0625, 0.0625]</p></td>
+<td><p>local</p></td>
+<td><p>[0.01, 0.01]</p></td>
+<td><p>[100, 100]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>4</p></td>
 <td><p>prob_seek_anc7</p></td>
 <td><p>[0.03125, 0.03125]</p></td>
+<td><p>local</p></td>
+<td><p>[0.01, 0.01]</p></td>
+<td><p>[100, 100]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>5</p></td>
 <td><p>prob_seek_anc8</p></td>
 <td><p>[0.03125, 0.03125]</p></td>
+<td><p>local</p></td>
+<td><p>[0.01, 0.01]</p></td>
+<td><p>[100, 100]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>6</p></td>
-<td></td>
-<td></td>
+<td><p>effect_of_ifa_for_resolving_anaemia</p></td>
+<td><p>[0.7, 0.7]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>7</p></td>
-<td><p>effect_of_ifa_for_resolving_anaemia</p></td>
-<td><p>[0.7, 0.7]</p></td>
+<td><p>treatment_effect_blood_transfusion_anaemia</p></td>
+<td><p>[0.9, 0.9]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>8</p></td>
-<td><p>treatment_effect_blood_transfusion_anaemia</p></td>
-<td><p>[0.9, 0.9]</p></td>
+<td><p>prob_intervention_delivered_urine_ds</p></td>
+<td><p>[0.53, 0.53]</p></td>
+<td><p>local</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>9</p></td>
-<td></td>
-<td></td>
+<td><p>prob_intervention_delivered_bp</p></td>
+<td><p>[0.70, 0.69]</p></td>
+<td><p>local</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>10</p></td>
-<td><p>prob_intervention_delivered_urine_ds</p></td>
-<td><p>[0.53, 0.53]</p></td>
+<td><p>prob_adherent_ifa</p></td>
+<td><p>[0.37, 0.34]</p></td>
+<td><p>local</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>11</p></td>
-<td><p>prob_intervention_delivered_bp</p></td>
-<td><p>[0.70, 0.69]</p></td>
+<td><p>prob_intervention_delivered_syph_test</p></td>
+<td><p>[0.43, 0.14]</p></td>
+<td><p>local</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>12</p></td>
-<td><p>prob_adherent_ifa</p></td>
-<td><p>[0.37, 0.34]</p></td>
+<td><p>prob_intervention_delivered_gdm_test</p></td>
+<td><p>[0.48, 0.48]</p></td>
+<td><p>local</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>13</p></td>
-<td><p>prob_intervention_delivered_syph_test</p></td>
-<td><p>[0.43, 0.14]</p></td>
+<td><p>prob_delivery_modes_ec</p></td>
+<td><p>[[0,  0, 1], [0,  0, 1]]</p></td>
+<td><p>local</p></td>
+<td><p>[0, 0, 0]</p></td>
+<td><p>[1, 1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>14</p></td>
-<td><p>prob_intervention_delivered_gdm_test</p></td>
-<td><p>[0.48, 0.48]</p></td>
+<td><p>prob_delivery_modes_spe</p></td>
+<td><p>[[0.05,  0.05, 0.9], [0.05,  0.05, 0.9]]</p></td>
+<td><p>local</p></td>
+<td><p>[0, 0, 0]</p></td>
+<td><p>[1, 1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>15</p></td>
-<td><p>prob_delivery_modes_ec</p></td>
-<td><p>[[0,  0, 1], [0,  0, 1]]</p></td>
+<td><p>sensitivity_bp_monitoring</p></td>
+<td><p>[0.74, 0.74]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>16</p></td>
-<td><p>prob_delivery_modes_spe</p></td>
-<td><p>[[0.05,  0.05, 0.9], [0.05,  0.05, 0.9]]</p></td>
+<td><p>specificity_bp_monitoring</p></td>
+<td><p>[0.79, 0.79]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
-<td></td>
-<td></td>
+<td><p>sensitivity_urine_protein_1_plus</p></td>
+<td><p>[0.541, 0.541]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
-<td><p>sensitivity_bp_monitoring</p></td>
-<td><p>[0.74, 0.74]</p></td>
+<td><p>specificity_urine_protein_1_plus</p></td>
+<td><p>[0.841, 0.841]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>19</p></td>
-<td><p>specificity_bp_monitoring</p></td>
-<td><p>[0.79, 0.79]</p></td>
+<td><p>sensitivity_poc_hb_test</p></td>
+<td><p>[0.851, 0.851]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>20</p></td>
-<td><p>sensitivity_urine_protein_1_plus</p></td>
-<td><p>[0.541, 0.541]</p></td>
+<td><p>specificity_poc_hb_test</p></td>
+<td><p>[0.801, 0.801]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
-<td><p>specificity_urine_protein_1_plus</p></td>
-<td><p>[0.841, 0.841]</p></td>
+<td><p>sensitivity_fbc_hb_test</p></td>
+<td><p>[1.0, 1.0]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>22</p></td>
-<td><p>sensitivity_poc_hb_test</p></td>
-<td><p>[0.851, 0.851]</p></td>
+<td><p>specificity_fbc_hb_test</p></td>
+<td><p>[1.0, 1.0]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>23</p></td>
-<td><p>specificity_poc_hb_test</p></td>
-<td><p>[0.801, 0.801]</p></td>
+<td><p>sensitivity_blood_test_glucose</p></td>
+<td><p>[1.0, 1.0]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>24</p></td>
-<td><p>sensitivity_fbc_hb_test</p></td>
+<td><p>specificity_blood_test_glucose</p></td>
 <td><p>[1.0, 1.0]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>25</p></td>
-<td><p>specificity_fbc_hb_test</p></td>
-<td><p>[1.0, 1.0]</p></td>
+<td><p>sensitivity_blood_test_syphilis</p></td>
+<td><p>[0.82, 0.82]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>26</p></td>
-<td><p>sensitivity_blood_test_glucose</p></td>
-<td><p>[1.0, 1.0]</p></td>
+<td><p>specificity_blood_test_syphilis</p></td>
+<td><p>[0.96, 0.96]</p></td>
+<td><p>universal</p></td>
+<td><p>[0, 0]</p></td>
+<td><p>[1, 1]</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>27</p></td>
-<td><p>specificity_blood_test_glucose</p></td>
-<td><p>[1.0, 1.0]</p></td>
+<td><p>anc_gestational_age_weeks_anc2</p></td>
+<td><p>20</p></td>
+<td><p>local</p></td>
+<td><p>16</p></td>
+<td><p>24</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-even"><td><p>28</p></td>
-<td><p>sensitivity_blood_test_syphilis</p></td>
-<td><p>[0.82, 0.82]</p></td>
+<td><p>anc_gestational_age_weeks_anc3</p></td>
+<td><p>26</p></td>
+<td><p>local</p></td>
+<td><p>22</p></td>
+<td><p>30</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>29</p></td>
-<td><p>specificity_blood_test_syphilis</p></td>
-<td><p>[0.96, 0.96]</p></td>
+<td><p>anc_gestational_age_weeks_anc4</p></td>
+<td><p>30</p></td>
+<td><p>local</p></td>
+<td><p>26</p></td>
+<td><p>34</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>anc_gestational_age_weeks_anc5</p></td>
+<td><p>34</p></td>
+<td><p>local</p></td>
+<td><p>30</p></td>
+<td><p>38</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>anc_gestational_age_weeks_anc6</p></td>
+<td><p>36</p></td>
+<td><p>local</p></td>
+<td><p>32</p></td>
+<td><p>40</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>anc_gestational_age_weeks_anc7</p></td>
+<td><p>38</p></td>
+<td><p>local</p></td>
+<td><p>36</p></td>
+<td><p>42</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>anc_gestational_age_weeks_anc8</p></td>
+<td><p>40</p></td>
+<td><p>local</p></td>
+<td><p>38</p></td>
+<td><p>42</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>anc_gestational_age_weeks_late_anc</p></td>
+<td><p>42</p></td>
+<td><p>local</p></td>
+<td><p>40</p></td>
+<td><p>44</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>gestational_age_weeks_upper_bound</p></td>
+<td><p>50</p></td>
+<td><p>undetermined</p></td>
+<td><p>45</p></td>
+<td><p>55</p></td>
+<td><p>structural</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>focused_anc_gestational_age_weeks_visit2</p></td>
+<td><p>22</p></td>
+<td><p>local</p></td>
+<td><p>20</p></td>
+<td><p>24</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>focused_anc_gestational_age_weeks_visit3</p></td>
+<td><p>30</p></td>
+<td><p>local</p></td>
+<td><p>28</p></td>
+<td><p>32</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>focused_anc_gestational_age_weeks_visit4</p></td>
+<td><p>36</p></td>
+<td><p>local</p></td>
+<td><p>34</p></td>
+<td><p>38</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>delivery_weeks_placental_abruption</p></td>
+<td><p>28</p></td>
+<td><p>local</p></td>
+<td><p>26</p></td>
+<td><p>30</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>delivery_weeks_placenta_praevia_severe</p></td>
+<td><p>28</p></td>
+<td><p>local</p></td>
+<td><p>26</p></td>
+<td><p>30</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>delivery_weeks_placenta_praevia_mild</p></td>
+<td><p>37</p></td>
+<td><p>local</p></td>
+<td><p>35</p></td>
+<td><p>39</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>delivery_weeks_prom_no_infection</p></td>
+<td><p>37</p></td>
+<td><p>local</p></td>
+<td><p>35</p></td>
+<td><p>39</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>delivery_weeks_chorioamnionitis</p></td>
+<td><p>28</p></td>
+<td><p>local</p></td>
+<td><p>26</p></td>
+<td><p>30</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>delivery_ga_weeks_cs</p></td>
+<td><p>37</p></td>
+<td><p>local</p></td>
+<td><p>35</p></td>
+<td><p>39</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>follow_up_days_anaemia</p></td>
+<td><p>28</p></td>
+<td><p>local</p></td>
+<td><p>21</p></td>
+<td><p>35</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>follow_up_days_gestational_diabetes</p></td>
+<td><p>28</p></td>
+<td><p>local</p></td>
+<td><p>21</p></td>
+<td><p>35</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>days_to_glycaemic_control_event</p></td>
+<td><p>7</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>31</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>days_to_rupture_ectopic_untreated</p></td>
+<td><p>7</p></td>
+<td><p>local</p></td>
+<td><p>3</p></td>
+<td><p>14</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td><p>beddays_default</p></td>
+<td><p>1</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>5</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>beddays_postabortion</p></td>
+<td><p>3</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>15</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>beddays_etopic_pregnancy</p></td>
+<td><p>5</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>15</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>max_anc_visits</p></td>
+<td><p>8</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>20</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td><p>anc_consistency_threshold</p></td>
+<td><p>4</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>20</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>54</p></td>
+<td><p>bmi_min_gdm</p></td>
+<td><p>4</p></td>
+<td><p>local</p></td>
+<td><p>1</p></td>
+<td><p>10</p></td>
+<td><p>vague prior</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>55</p></td>
+<td><p>avg_mother_weight_kg</p></td>
+<td><p>65</p></td>
+<td><p>local</p></td>
+<td><p>40</p></td>
+<td><p>120</p></td>
+<td><p>vague prior</p></td>
 <td></td>
 </tr>
 </tbody>

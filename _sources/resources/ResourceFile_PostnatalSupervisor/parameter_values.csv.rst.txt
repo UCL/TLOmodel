@@ -3,66 +3,73 @@ parameter values (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_PostnatalSupervisor/parameter_values.csv>`
 
-====  ==================================================  ==========================================================  ==========================================================================================================================================================================================================================================
-  ..  parameter\_name                                     value                                                       Unnamed: 2
-====  ==================================================  ==========================================================  ==========================================================================================================================================================================================================================================
-   0  prob\_obstetric\_fistula                            [0.00426, 0.00426]
-   1  rr\_obstetric\_fistula\_obstructed\_labour          [14.8, 14.8]                                                https://pubmed.ncbi.nlm.nih.gov/28550462/
-   2  prevalence\_type\_of\_fistula                       [[0.924, 0.076] , [0.924, 0.076]]                           https://pubmed.ncbi.nlm.nih.gov/17869256/#:~:text=This%20study%20from%20Southern%20Malawi,were%20not%20of%20obstetric%20origin.
-   3
-   4  prob\_secondary\_pph                                [0.0002, 0.00034]
-   5  rr\_secondary\_pph\_endometritis                    [1, 1]                                                      Delete?
-   6  prob\_secondary\_pph\_severity                      [[0.33, 0.33, 0.34], [0.33, 0.33, 0.34]]
-   7  cfr\_secondary\_postpartum\_haemorrhage             [0.22, 0.08]
-   8
-   9  prob\_htn\_resolves                                 [0.167, 0.167]
-  10  weekly\_prob\_gest\_htn\_pn                         [0.0025, 0.0025]
-  11  rr\_gest\_htn\_obesity                              [3.31, 3.31]
-  12  weekly\_prob\_pre\_eclampsia\_pn                    [0.0017, 0.0017]                                            [0.0016, 0.0016]
-  13  rr\_pre\_eclampsia\_obesity                         [3.2, 3.2]
-  14  rr\_pre\_eclampsia\_chronic\_htn                    [2.26, 2.26]
-  15  rr\_pre\_eclampsia\_diabetes\_mellitus              [3.7, 3.7]
-  16  probs\_for\_mgh\_matrix\_pn                         [[0.918, 0.032, 0.05, 0, 0], [0.918, 0.032, 0.05, 0, 0]]    [[0.884, 0.066, 0.05, 0, 0], [0.884, 0.066, 0.05, 0, 0]]
-  17  probs\_for\_sgh\_matrix\_pn                         [[0, 0.92, 0, 0.08, 0], [0, 0.92, 0, 0.08, 0]]
-  18  probs\_for\_mpe\_matrix\_pn                         [[0, 0, 0.95, 0.05, 0], [0, 0, 0.95, 0.05, 0]]              [[0, 0, 0.89, 0.11, 0], [0, 0, 0.89, 0.11, 0]]
-  19  probs\_for\_spe\_matrix\_pn                         [[0, 0, 0, 0.95, 0.05], [0, 0, 0, 0.95, 0.05]]
-  20  probs\_for\_ec\_matrix\_pn                          [[0, 0, 0, 0, 1],  [0, 0, 0, 0, 1]]
-  21  cfr\_eclampsia                                      [0.028, 0.03]
-  22  cfr\_severe\_pre\_eclampsia                         [0.018, 0.018]
-  23  weekly\_prob\_death\_severe\_gest\_htn              [0.00002, 0.00002]
-  24
-  25  baseline\_prob\_anaemia\_per\_week                  [0.017, 0.024]
-  26  rr\_anaemia\_maternal\_malaria                      [1.45, 1.45]
-  27  rr\_anaemia\_recent\_haemorrhage                    [1.93, 1.93]
-  28  rr\_anaemia\_hiv\_no\_art                           [4.19, 4.19]
-  29  prob\_type\_of\_anaemia\_pn                         [[0.52,0.475, 0.005], [0.52,0.475, 0.005]]
-  30
-  31  prob\_late\_sepsis\_endometritis                    [0.000069, 0.000062]
-  32  rr\_sepsis\_endometritis\_post\_cs                  [12.1, 12.1]
-  33  prob\_late\_sepsis\_urinary\_tract                  [0.000054, 0.000054]
-  34  prob\_late\_sepsis\_skin\_soft\_tissue              [0.000039, 0.000035]
-  35  rr\_sepsis\_sst\_post\_cs                           [3.9, 3.9]                                                  https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-018-1891-1
-  36  cfr\_postpartum\_sepsis                             [0.75, 0.49]
-  37
-  38  prob\_early\_onset\_neonatal\_sepsis\_week\_1       [0.02, 0.017]
-  39  rr\_eons\_maternal\_chorio                          [6.6, 6.6]
-  40  rr\_eons\_maternal\_prom                            [4.9, 4.9]
-  41  rr\_eons\_preterm\_neonate                          [3.36, 3.36]
-  42  cfr\_early\_onset\_neonatal\_sepsis                 [0.064, 0.056]
-  43  prob\_late\_onset\_neonatal\_sepsis                 [0.0045, 0.0038]
-  44  cfr\_late\_neonatal\_sepsis                         [0.064, 0.056]
-  45  prob\_sepsis\_disabilities                          [[0.4, 0.1,  0.3,  0.1, 0.1], [0.4, 0.1,  0.3,  0.1, 0.1]]
-  46
-  47  prob\_care\_seeking\_postnatal\_emergency           [0.782, 0.782]                                              Chinkhumba, J. et al. (2017) ‘Household costs and time to seek care for pregnancy related complications: The role of results-based financing’, PLOS ONE. Public Library of Science, 12(9), p. e0182326. doi: 10.1371/JOURNAL.PONE.0182326.
-  48  prob\_care\_seeking\_postnatal\_emergency\_neonate  [0.782, 0.782]                                              Chinkhumba, J. et al. (2017) ‘Household costs and time to seek care for pregnancy related complications: The role of results-based financing’, PLOS ONE. Public Library of Science, 12(9), p. e0182326. doi: 10.1371/JOURNAL.PONE.0182326.
-  49  odds\_care\_seeking\_fistula\_repair                [1.5, 1.5]
-  50  aor\_cs\_fistula\_age\_15\_19                       [0.31, 0.31]
-  51  aor\_cs\_fistula\_age\_lowest\_education            [0.69, 0.69]
-  52
-  53  treatment\_effect\_iron\_folic\_acid\_anaemia       [0.3, 0.3]
-  54  treatment\_effect\_early\_init\_bf                  [0.55, 0.55]
-  55  treatment\_effect\_abx\_prom                        [0.67, 0.67]
-  56  treatment\_effect\_cord\_care                       [0.77,0.77]
-  57  treatment\_effect\_clean\_birth                     [0.73, 0.73]
-  58  treatment\_effect\_anti\_htns\_progression\_pn      [0.49, 0.49]
-====  ==================================================  ==========================================================  ==========================================================================================================================================================================================================================================
+====  ===========================================================  ==========================================================  ==============  ============================================================  ======================================================  ===============  ==========================================================================================================================================================================================================================================
+  ..  parameter\_name                                              value                                                       param\_label    prior\_min                                                    prior\_max                                              prior\_note      reference
+====  ===========================================================  ==========================================================  ==============  ============================================================  ======================================================  ===============  ==========================================================================================================================================================================================================================================
+   0  prob\_obstetric\_fistula                                     [0.00426, 0.00426]                                          undetermined    [0, 0]                                                        [0.1, 0.1]                                              calibration
+   1  rr\_obstetric\_fistula\_obstructed\_labour                   [14.8, 14.8]                                                local           [0.01, 0.01]                                                  [100, 100]                                              vague prior      https://pubmed.ncbi.nlm.nih.gov/28550462/
+   2  prevalence\_type\_of\_fistula                                [[0.924, 0.076] , [0.924, 0.076]]                           local           [[0.01, 0.01],[0.01, 0.01]]                                   [[1, 1],[1,1]]                                          vague prior      https://pubmed.ncbi.nlm.nih.gov/17869256/#:~:text=This%20study%20from%20Southern%20Malawi,were%20not%20of%20obstetric%20origin.
+   3  prob\_secondary\_pph                                         [0.0002, 0.00034]                                           undetermined    [0, 0]                                                        [0.01, 0.01]                                            calibration
+   4  rr\_secondary\_pph\_endometritis                             [1,1]                                                       local           [0.01,0.01]                                                   [100,100]                                               vague prior
+   5  prob\_secondary\_pph\_severity                               [[0.33, 0.33, 0.34], [0.33, 0.33, 0.34]]                    local           [[0.1, 0.1, 0.1], [0.1, 0.1, 0.1]]                            [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]                      vague prior
+   6  cfr\_secondary\_postpartum\_haemorrhage                      [0.22, 0.08]                                                undetermined    [0, 0]                                                        [1, 1]                                                  calibration
+   7  prob\_htn\_resolves                                          [0.167, 0.167]                                              undetermined    [0, 0]                                                        [1, 1]                                                  calibration
+   8  weekly\_prob\_gest\_htn\_pn                                  [0.0025, 0.0025]                                            undetermined    [0, 0]                                                        [0.1, 0.1]                                              calibration
+   9  rr\_gest\_htn\_obesity                                       [3.31, 3.31]                                                local           [0.01, 0.01]                                                  [100, 100]                                              vague prior
+  10  weekly\_prob\_pre\_eclampsia\_pn                             [0.0017, 0.0017]                                            undetermined    [0, 0]                                                        [0.1, 0.1]                                              calibration
+  11  rr\_pre\_eclampsia\_obesity                                  [3.2, 3.2]                                                  local           [0.01, 0.01]                                                  [100, 100]                                              calibration
+  12  rr\_pre\_eclampsia\_chronic\_htn                             [2.26, 2.26]                                                local           [0.01, 0.01]                                                  [100, 100]                                              calibration
+  13  rr\_pre\_eclampsia\_diabetes\_mellitus                       [3.7, 3.7]                                                  local           [0.01, 0.01]                                                  [100, 100]                                              calibration
+  14  probs\_for\_mgh\_matrix\_pn                                  [[0.918, 0.032, 0.05, 0, 0], [0.918, 0.032, 0.05, 0, 0]]    undetermined    [[0.5, 0.001, 0.001, 0, 0], [0.5, 0.001, 0.001, 0, 0]]        [[1.0, 0.5, 0.5, 0.1, 0.1], [1.0, 0.5, 0.5, 0.1, 0.1]]  calibration
+  15  probs\_for\_sgh\_matrix\_pn                                  [[0, 0.92, 0, 0.08, 0], [0, 0.92, 0, 0.08, 0]]              undetermined    [[0, 0, 0, 0, 0],[0, 0, 0, 0, 0]]                             [[1, 1, 1, 1, 1],[1, 1, 1, 1, 1]]                       calibration
+  16  probs\_for\_mpe\_matrix\_pn                                  [[0, 0, 0.95, 0.05, 0], [0, 0, 0.95, 0.05, 0]]              undetermined    [[0, 0, 0, 0, 0],[0, 0, 0, 0, 0]]                             [[1, 1, 1, 1, 1],[1, 1, 1, 1, 1]]                       calibration
+  17  probs\_for\_spe\_matrix\_pn                                  [[0, 0, 0, 0.95, 0.05], [0, 0, 0, 0.95, 0.05]]              undetermined    [[0, 0, 0, 0, 0],[0, 0, 0, 0, 0]]                             [[1, 1, 1, 1, 1],[1, 1, 1, 1, 1]]                       calibration
+  18  probs\_for\_ec\_matrix\_pn                                   [[0, 0, 0, 0, 1],  [0, 0, 0, 0, 1]]                         undetermined    [[0, 0, 0, 0, 0],[0, 0, 0, 0, 0]]                             [[1, 1, 1, 1, 1],[1, 1, 1, 1, 1]]                       calibration
+  19  cfr\_eclampsia                                               [0.028, 0.03]                                               undetermined    [0, 0]                                                        [1, 1]                                                  calibration
+  20  cfr\_severe\_pre\_eclampsia                                  [0.018, 0.018]                                              undetermined    [0, 0]                                                        [1, 1]                                                  calibration
+  21  weekly\_prob\_death\_severe\_gest\_htn                       [0.00002, 0.00002]                                          undetermined    [0, 0]                                                        [0.1, 0.1]                                              calibration
+  22  bmi\_obesity                                                 [3,3]                                                       local           [2,2]                                                         [4,4]                                                   vague prior
+  23  baseline\_prob\_anaemia\_per\_week                           [0.017, 0.024]                                              undetermined    [0, 0]                                                        [0.5, 0.5]                                              calibration
+  24  rr\_anaemia\_maternal\_malaria                               [1.45, 1.45]                                                local           [0.01, 0.01]                                                  [100, 100]                                              vague prior
+  25  rr\_anaemia\_recent\_haemorrhage                             [1.93, 1.93]                                                local           [0.01, 0.01]                                                  [100, 100]                                              vague prior
+  26  rr\_anaemia\_hiv\_no\_art                                    [4.19, 4.19]                                                local           [0.01, 0.01]                                                  [100, 100]                                              vague prior
+  27  prob\_type\_of\_anaemia\_pn                                  [[0.52,0.475, 0.005], [0.52,0.475, 0.005]]                  undetermined    [[0.1, 0.1, 0.001], [0.1, 0.1, 0.001]]                        [[0.9, 0.9, 0.5], [0.9, 0.9, 0.5]]                      calibration
+  28  prob\_late\_sepsis\_endometritis                             [0.000069, 0.000062]                                        undetermined    [0, 0]                                                        [0.01, 0.01]                                            calibration
+  29  rr\_sepsis\_endometritis\_post\_cs                           [12.1, 12.1]                                                local           [0.01, 0.01]                                                  [100, 100]                                              vague prior
+  30  prob\_late\_sepsis\_urinary\_tract                           [0.000054, 0.000054]                                        undetermined    [0, 0]                                                        [0.01, 0.01]                                            calibration
+  31  prob\_late\_sepsis\_skin\_soft\_tissue                       [0.000039, 0.000035]                                        undetermined    [0, 0]                                                        [0.01, 0.01]                                            calibration
+  32  rr\_sepsis\_sst\_post\_cs                                    [3.9, 3.9]                                                  local           [0.01, 0.01]                                                  [100, 100]                                              vague prior      https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-018-1891-1
+  33  cfr\_postpartum\_sepsis                                      [0.75, 0.49]                                                undetermined    [0, 0]                                                        [1, 1]                                                  calibration
+  34  prob\_early\_onset\_neonatal\_sepsis\_week\_1                [0.02, 0.017]                                               undetermined    [0, 0]                                                        [0.5, 0.5]                                              calibration
+  35  rr\_eons\_maternal\_chorio                                   [6.6, 6.6]                                                  local           [0.01, 0.01]                                                  [100, 100]                                              vague prior
+  36  rr\_eons\_maternal\_prom                                     [4.9, 4.9]                                                  local           [0.01, 0.01]                                                  [100, 100]                                              vague prior
+  37  rr\_eons\_preterm\_neonate                                   [3.36, 3.36]                                                local           [0.01, 0.01]                                                  [100, 100]                                              vague prior
+  38  cfr\_early\_onset\_neonatal\_sepsis                          [0.064, 0.056]                                              undetermined    [0, 0]                                                        [1, 1]                                                  calibration
+  39  prob\_late\_onset\_neonatal\_sepsis                          [0.0045, 0.0038]                                            undetermined    [0, 0]                                                        [0.5, 0.5]                                              calibration
+  40  cfr\_late\_neonatal\_sepsis                                  [0.064, 0.056]                                              undetermined    [0, 0]                                                        [1, 1]                                                  calibration
+  41  prob\_sepsis\_disabilities                                   [[0.4, 0.1,  0.3,  0.1, 0.1], [0.4, 0.1,  0.3,  0.1, 0.1]]  local           [[0.1, 0.01, 0.1, 0.01, 0.01], [0.1, 0.01, 0.1, 0.01, 0.01]]  [[0.8, 0.5, 0.8, 0.5, 0.5], [0.8, 0.5, 0.8, 0.5, 0.5]]  vague prior
+  42  prob\_care\_seeking\_postnatal\_emergency                    [0.782, 0.782]                                              local           [0, 0]                                                        [1, 1]                                                  vague prior      Chinkhumba, J. et al. (2017) 'Household costs and time to seek care for pregnancy related complications: The role of results-based financing', PLOS ONE. Public Library of Science, 12(9), p. e0182326. doi: 10.1371/JOURNAL.PONE.0182326.
+  43  prob\_care\_seeking\_postnatal\_emergency\_neonate           [0.782, 0.782]                                              local           [0, 0]                                                        [1, 1]                                                  vague prior      Chinkhumba, J. et al. (2017) 'Household costs and time to seek care for pregnancy related complications: The role of results-based financing', PLOS ONE. Public Library of Science, 12(9), p. e0182326. doi: 10.1371/JOURNAL.PONE.0182326.
+  44  odds\_care\_seeking\_fistula\_repair                         [1.5, 1.5]                                                  local           [0.01, 0.01]                                                  [100, 100]                                              vague prior
+  45  aor\_cs\_fistula\_age\_15\_19                                [0.31, 0.31]                                                local           [0.01, 0.01]                                                  [100, 100]                                              vague prior
+  46  aor\_cs\_fistula\_age\_lowest\_education                     [0.69, 0.69]                                                local           [0.01, 0.01]                                                  [100, 100]                                              vague prior
+  47  treatment\_effect\_iron\_folic\_acid\_anaemia                [0.3, 0.3]                                                  universal       [0, 0]                                                        [1, 1]                                                  vague prior
+  48  treatment\_effect\_early\_init\_bf                           [0.55, 0.55]                                                universal       [0, 0]                                                        [1, 1]                                                  vague prior
+  49  treatment\_effect\_abx\_prom                                 [0.67, 0.67]                                                universal       [0, 0]                                                        [1, 1]                                                  vague prior
+  50  treatment\_effect\_cord\_care                                [0.77,0.77]                                                 universal       [0, 0]                                                        [1, 1]                                                  vague prior
+  51  treatment\_effect\_clean\_birth                              [0.73, 0.73]                                                universal       [0, 0]                                                        [1, 1]                                                  vague prior
+  52  treatment\_effect\_anti\_htns\_progression\_pn               [0.49, 0.49]                                                universal       [0, 0]                                                        [1, 1]                                                  vague prior
+  53  main\_polling\_event\_frequency\_weeks                       1                                                           undetermined    0                                                             10                                                      vague prior
+  54  fistula\_repair\_min\_days                                   [7, 7]                                                      local           [1, 1]                                                        [30, 30]                                                vague prior
+  55  fistula\_repair\_max\_days                                   [42, 42]                                                    local           [7, 7]                                                        [90, 90]                                                vague prior
+  56  fistula\_repair\_appointment\_window\_days                   [7, 7]                                                      local           [1, 1]                                                        [30, 30]                                                vague prior
+  57  emergency\_postnatal\_care\_appointment\_window\_days        [2, 2]                                                      local           [1, 1]                                                        [14, 14]                                                vague prior
+  58  pnc\_one\_maternal\_appt\_max\_days\_without\_complications  [35, 35]                                                    local           [7, 7]                                                        [90, 90]                                                vague prior
+  59  pnc\_one\_maternal\_appt\_window\_days                       [2, 2]                                                      local           [1, 1]                                                        [14, 14]                                                vague prior
+  60  postnatal\_check\_sepsis\_appt\_window\_days                 [1, 1]                                                      local           [1, 1]                                                        [14, 14]                                                vague prior
+  61  pnc\_one\_neonatal\_sepsis\_appt\_window\_days               [1, 1]                                                      local           [1, 1]                                                        [14, 14]                                                vague prior
+  62  final\_week\_postnatal\_period                               6                                                           undetermined    4                                                             10                                                      design decision
+  63  postnatal\_reset\_week                                       8                                                           undetermined    6                                                             12                                                      design decision
+  64  obstetric\_fistula\_repair\_beddays                          5                                                           local           1                                                             14                                                      vague prior
+  65  neonatal\_period\_end\_days                                  28                                                          universal       21                                                            35                                                      vague prior
+====  ===========================================================  ==========================================================  ==============  ============================================================  ======================================================  ===============  ==========================================================================================================================================================================================================================================

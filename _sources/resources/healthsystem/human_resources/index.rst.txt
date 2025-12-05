@@ -6,6 +6,7 @@ human_resources
 
     absenteeism/index.rst
     actual/index.rst
+    clinics/index.rst
     definitions/index.rst
     funded/index.rst
     funded_plus/index.rst

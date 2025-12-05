@@ -31,4 +31,5 @@ HealthSystem parameters (.csv)
   22  year\_use\_funded\_or\_actual\_staffing\_switch   2100
   23  cons\_override\_treatment\_ids                    []
   24  cons\_override\_treatment\_ids\_prob\_avail       1.0
+  25  clinic\_configuration\_name                       Default
 ====  ================================================  ============

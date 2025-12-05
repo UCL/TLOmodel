@@ -1,0 +1,9 @@
+clinics
+=======
+
+.. toctree::
+    :maxdepth: 1
+
+    ResourceFile_ClinicConfigurations/index.rst
+    ResourceFile_ClinicMappings/index.rst
+

@@ -3,42 +3,42 @@ Discontinuation ByAge (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/contraception/ResourceFile_Contraception/Discontinuation_ByAge.csv>`
 
-====  =====  =================
-  ..    age    r\_discont\_age
-====  =====  =================
-   0     15         -0.881595
-   1     16         -0.628712
-   2     17         -0.438627
-   3     18         -0.29471
-   4     19         -0.185198
-   5     20         -0.101633
-   6     21         -0.037841
-   7     22          0.0107489
-   8     23          0.0475587
-   9     24          0.0751794
-  10     25          0.0955912
-  11     26          0.110321
-  12     27          0.120557
-  13     28          0.127226
-  14     29          0.131062
-  15     30          0.132644
-  16     31          0.132435
-  17     32          0.130802
-  18     33          0.128045
-  19     34          0.124401
-  20     35          0.120065
-  21     36          0.115193
-  22     37          0.109913
-  23     38          0.104328
-  24     39          0.0985241
-  25     40          0.0925688
-  26     41          0.0865184
-  27     42          0.0804186
-  28     43          0.0743063
-  29     44          0.0682116
-  30     45          0.0621585
-  31     46          0.0561666
-  32     47          0.0502512
-  33     48          0.0444246
-  34     49          0.038696
-====  =====  =================
+====  =====  =================  ==============  ============  ============  =============  ===========
+  ..    age    r\_discont\_age  param\_label      prior\_min    prior\_max  prior\_note    reference
+====  =====  =================  ==============  ============  ============  =============  ===========
+   0     15         -0.881595   local                     -1             1  vague prior
+   1     16         -0.628712   local                     -1             1  vague prior
+   2     17         -0.438627   local                     -1             1  vague prior
+   3     18         -0.29471    local                     -1             1  vague prior
+   4     19         -0.185198   local                     -1             1  vague prior
+   5     20         -0.101633   local                     -1             1  vague prior
+   6     21         -0.037841   local                     -1             1  vague prior
+   7     22          0.0107489  local                     -1             1  vague prior
+   8     23          0.0475587  local                     -1             1  vague prior
+   9     24          0.0751794  local                     -1             1  vague prior
+  10     25          0.0955912  local                     -1             1  vague prior
+  11     26          0.110321   local                     -1             1  vague prior
+  12     27          0.120557   local                     -1             1  vague prior
+  13     28          0.127226   local                     -1             1  vague prior
+  14     29          0.131062   local                     -1             1  vague prior
+  15     30          0.132644   local                     -1             1  vague prior
+  16     31          0.132435   local                     -1             1  vague prior
+  17     32          0.130802   local                     -1             1  vague prior
+  18     33          0.128045   local                     -1             1  vague prior
+  19     34          0.124401   local                     -1             1  vague prior
+  20     35          0.120065   local                     -1             1  vague prior
+  21     36          0.115193   local                     -1             1  vague prior
+  22     37          0.109913   local                     -1             1  vague prior
+  23     38          0.104328   local                     -1             1  vague prior
+  24     39          0.0985241  local                     -1             1  vague prior
+  25     40          0.0925688  local                     -1             1  vague prior
+  26     41          0.0865184  local                     -1             1  vague prior
+  27     42          0.0804186  local                     -1             1  vague prior
+  28     43          0.0743063  local                     -1             1  vague prior
+  29     44          0.0682116  local                     -1             1  vague prior
+  30     45          0.0621585  local                     -1             1  vague prior
+  31     46          0.0561666  local                     -1             1  vague prior
+  32     47          0.0502512  local                     -1             1  vague prior
+  33     48          0.0444246  local                     -1             1  vague prior
+  34     49          0.038696   local                     -1             1  vague prior
+====  =====  =================  ==============  ============  ============  =============  ===========

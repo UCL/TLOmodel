@@ -1,0 +1,9 @@
+Default (.csv)
+==============
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/human_resources/clinics/ResourceFile_ClinicConfigurations/Default.csv>`
+
+==============  =====================  ===============
+Facility\_ID    Officer\_Type\_Code    GenericClinic
+==============  =====================  ===============
+==============  =====================  ===============

@@ -217,13 +217,13 @@ tlo.methods.wasting module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Severe Acute Malnutrition': <tlo.methods.causes.Cause object at 0x147083f90>}
+     CAUSES_OF_DEATH : {'Severe Acute Malnutrition': <tlo.methods.causes.Cause object at 0x3341f3550>}
 
-     CAUSES_OF_DISABILITY : {'Severe Acute Malnutrition': <tlo.methods.causes.Cause object at 0x147083e10>}
+     CAUSES_OF_DISABILITY : {'Severe Acute Malnutrition': <tlo.methods.causes.Cause object at 0x3341f3390>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthBurden', 'NewbornOutcomes', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'NewbornOutcomes', 'HealthBurden', 'SymptomManager', 'Demography'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      __annotations__ : {}
 

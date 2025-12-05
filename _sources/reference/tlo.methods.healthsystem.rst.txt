@@ -147,6 +147,9 @@ tlo.methods.healthsystem module
         * - use_funded_or_actual_staffing_postSwitch
           - STRING
           - Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.
+        * - clinic_configuration_name
+          - STRING
+          - Name of configuration of clinics to use.
 
 
      **PROPERTIES:**
@@ -170,19 +173,21 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     capabilities_today : <property object at 0x143bcd9e0>
+     capabilities_today : <property object at 0x3337b7a60>
 
-     hsi_event_counts : <property object at 0x143bcdbc0>
+     hsi_event_counts : <property object at 0x3337b7c40>
 
-     never_ran_hsi_event_counts : <property object at 0x143bcdc10>
+     never_ran_hsi_event_counts : <property object at 0x3337b7c90>
 
-     use_funded_or_actual_staffing : <property object at 0x143bcdad0>
+     use_funded_or_actual_staffing : <property object at 0x3337b7b50>
 
      **Functions (defined or overridden in class HealthSystem):**
 
      .. automethod:: __init__
 
      .. automethod:: read_parameters
+
+     .. automethod:: validate_clinic_configuration
 
      .. automethod:: pre_initialise_population
 
@@ -200,7 +205,11 @@ tlo.methods.healthsystem module
 
      .. automethod:: setup_daily_capabilities
 
+     .. automethod:: get_clinic_eligibility
+
      .. automethod:: format_daily_capabilities
+
+     .. automethod:: format_clinic_capabilities
 
      .. automethod:: _rescale_capabilities_to_capture_effective_capability
 
@@ -244,6 +253,8 @@ tlo.methods.healthsystem module
 
      .. automethod:: get_squeeze_factors
 
+     .. automethod:: get_clinic_squeeze_factors
+
      .. automethod:: record_hsi_event
 
      .. automethod:: write_to_hsi_log
@@ -253,6 +264,8 @@ tlo.methods.healthsystem module
      .. automethod:: write_to_never_ran_hsi_log
 
      .. automethod:: log_current_capabilities_and_usage
+
+     .. automethod:: log_clinic_current_capabilities_and_usage
 
      .. automethod:: remove_beddays_footprint
 
@@ -355,7 +368,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x143bcdf30>
+     current_pop_size : <property object at 0x3337b7fb0>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 

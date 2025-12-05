@@ -1,0 +1,277 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tlo.notify module &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Resource files" href="../resources/index.html" />
+    <link rel="prev" title="tlo.util module" href="tlo.util.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_collection.html">Data Collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tlo.html">tlo package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.html">tlo.analysis package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.hsi_events.html">tlo.analysis.hsi_events module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.life_expectancy.html">tlo.analysis.life_expectancy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.analysis.utils.html">tlo.analysis.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.cli.html">tlo.cli module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.core.html">tlo.core module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.dependencies.html">tlo.dependencies module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.docs.html">tlo.docs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.events.html">tlo.events module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.lm.html">tlo.lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.html">tlo.logging package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.core.html">tlo.logging.core module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.encoding.html">tlo.logging.encoding module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.helpers.html">tlo.logging.helpers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.logging.reader.html">tlo.logging.reader module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.html">tlo.methods package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.alri.html">tlo.methods.alri module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.bed_days.html">tlo.methods.bed_days module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.bladder_cancer.html">tlo.methods.bladder_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.breast_cancer.html">tlo.methods.breast_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.cancer_consumables.html">tlo.methods.cancer_consumables module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.cardio_metabolic_disorders.html">tlo.methods.cardio_metabolic_disorders module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.care_of_women_during_pregnancy.html">tlo.methods.care_of_women_during_pregnancy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.causes.html">tlo.methods.causes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.cervical_cancer.html">tlo.methods.cervical_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.chronicsyndrome.html">tlo.methods.chronicsyndrome module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.consumables.html">tlo.methods.consumables module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.contraception.html">tlo.methods.contraception module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.copd.html">tlo.methods.copd module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.demography.html">tlo.methods.demography module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.depression.html">tlo.methods.depression module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.diarrhoea.html">tlo.methods.diarrhoea module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.dxmanager.html">tlo.methods.dxmanager module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.enhanced_lifestyle.html">tlo.methods.enhanced_lifestyle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.epi.html">tlo.methods.epi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.epilepsy.html">tlo.methods.epilepsy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.equipment.html">tlo.methods.equipment module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.fullmodel.html">tlo.methods.fullmodel module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthburden.html">tlo.methods.healthburden module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthseekingbehaviour.html">tlo.methods.healthseekingbehaviour module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthsystem.html">tlo.methods.healthsystem module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hiv.html">tlo.methods.hiv module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hiv_tb_calibration.html">tlo.methods.hiv_tb_calibration module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hsi_event.html">tlo.methods.hsi_event module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.hsi_generic_first_appts.html">tlo.methods.hsi_generic_first_appts module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.labour.html">tlo.methods.labour module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.labour_lm.html">tlo.methods.labour_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.malaria.html">tlo.methods.malaria module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.measles.html">tlo.methods.measles module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.mockitis.html">tlo.methods.mockitis module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.newborn_outcomes.html">tlo.methods.newborn_outcomes module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.newborn_outcomes_lm.html">tlo.methods.newborn_outcomes_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.oesophagealcancer.html">tlo.methods.oesophagealcancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.other_adult_cancers.html">tlo.methods.other_adult_cancers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.postnatal_supervisor.html">tlo.methods.postnatal_supervisor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.postnatal_supervisor_lm.html">tlo.methods.postnatal_supervisor_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.pregnancy_helper_functions.html">tlo.methods.pregnancy_helper_functions module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.pregnancy_supervisor.html">tlo.methods.pregnancy_supervisor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.pregnancy_supervisor_lm.html">tlo.methods.pregnancy_supervisor_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.prostate_cancer.html">tlo.methods.prostate_cancer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.rti.html">tlo.methods.rti module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.scenario_switcher.html">tlo.methods.scenario_switcher module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.schisto.html">tlo.methods.schisto module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.simplified_births.html">tlo.methods.simplified_births module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.skeleton.html">tlo.methods.skeleton module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.stunting.html">tlo.methods.stunting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.symptommanager.html">tlo.methods.symptommanager module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.tb.html">tlo.methods.tb module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.wasting.html">tlo.methods.wasting module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">tlo.notify module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.population.html">tlo.population module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.progressbar.html">tlo.progressbar module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.scenario.html">tlo.scenario module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.simulation.html">tlo.simulation module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.test.html">tlo.test package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.test.random_birth.html">tlo.test.random_birth module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.test.random_death.html">tlo.test.random_death module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.util.html">tlo.util module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../case-studies/index.html">Case studies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Reference</a></li>
+      <li class="breadcrumb-item active">tlo.notify module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/tlo.notify.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tlo.notify">
+<span id="tlo-notify-module"></span><h1>tlo.notify module<a class="headerlink" href="#module-tlo.notify" title="Link to this heading"></a></h1>
+<p>A dead simple synchronous notification dispatcher.</p>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p># In the notifying class/module
+from tlo.notify import notifier</p>
+<p>notifier.dispatch(“simulation.on_start”, data={“one”: 1, “two”: 2})</p>
+<p># In the listening class/module
+from tlo.notify import notifier</p>
+<dl class="simple">
+<dt>def on_notification(data):</dt><dd><p>print(“Received notification:”, data)</p>
+</dd>
+</dl>
+<p>notifier.add_listener(“simulation.on_start”, on_notification)</p>
+</section>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.notify.Notifier">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Notifier</span></span><a class="headerlink" href="#tlo.notify.Notifier" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A simple synchronous notification dispatcher supporting listeners.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.notify.Notifier.add_listener">
+<span class="sig-name descname"><span class="pre">add_listener</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">notification_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">listener</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.notify.Notifier.add_listener" title="Link to this definition"></a></dt>
+<dd><p>Register a listener for a specific notification.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>notification_key</strong> – The identifier to listen for.</p></li>
+<li><p><strong>listener</strong> – A callable to be invoked when the notification is dispatched.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.notify.Notifier.remove_listener">
+<span class="sig-name descname"><span class="pre">remove_listener</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">notification_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">listener</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.notify.Notifier.remove_listener" title="Link to this definition"></a></dt>
+<dd><p>Remove a previously registered listener for a notification.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>notification_key</strong> – The identifier.</p></li>
+<li><p><strong>listener</strong> – The listener callable to remove.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.notify.Notifier.dispatch">
+<span class="sig-name descname"><span class="pre">dispatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">notification_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.notify.Notifier.dispatch" title="Link to this definition"></a></dt>
+<dd><p>Dispatch a notification to all registered listeners.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>notification_key</strong> – The identifier.</p></li>
+<li><p><strong>data</strong> – Optional data to pass to each listener.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.notify.Notifier.clear_listeners">
+<span class="sig-name descname"><span class="pre">clear_listeners</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.notify.Notifier.clear_listeners" title="Link to this definition"></a></dt>
+<dd><p>Clear all registered listeners. Essential because the notifier is a global singleton.
+e.g. if you are running multiple tests or simulations in the same process.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tlo.util.html" class="btn btn-neutral float-left" title="tlo.util module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../resources/index.html" class="btn btn-neutral float-right" title="Resource files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

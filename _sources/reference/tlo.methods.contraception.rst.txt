@@ -81,6 +81,48 @@ tlo.methods.contraception module
         * - interventions_start_date
           - DATE
           - The date since which the FP interventions (pop & ppfp) are implemented, if at all (ie, if use_interventions==True
+        * - min_age_contraception
+          - INT
+          - Minimum age for contraception use.
+        * - max_age_contraception
+          - INT
+          - Maximum age for contraception use.
+        * - sterilization_age_limit
+          - INT
+          - Minimum age for sterilization procedures.
+        * - polling_frequency_months
+          - INT
+          - Frequency in months for contraception main polling event.
+        * - min_simulation_year
+          - INT
+          - Minimum year for simulation time trends.
+        * - max_simulation_year
+          - INT
+          - Maximum year for simulation time trends.
+        * - transition_year
+          - INT
+          - Transition year for time trend calculations.
+        * - initiation_trend_rate_pre_transition
+          - REAL
+          - Annual rate of increase in contraception initiation before transition year.
+        * - initiation_trend_rate_post_transition
+          - REAL
+          - Annual rate of increase in contraception initiation after transition year.
+        * - discontinuation_trend_rate_pre_transition
+          - REAL
+          - Annual rate of decrease in contraception discontinuation before transition year.
+        * - discontinuation_trend_rate_post_transition
+          - REAL
+          - Annual rate of decrease in contraception discontinuation after transition year.
+        * - age_modification_factors
+          - LIST
+          - Age-specific modification factors for time trends by age groups defined in parameter age_ranges.
+        * - reference_year
+          - INT
+          - Reference year for time trend calculations.
+        * - age_ranges
+          - LIST
+          - Age range labels for demographic analysis (e.g., ['15-19', '20-24', ...]).
 
 
      **PROPERTIES:**
@@ -112,7 +154,7 @@ tlo.methods.contraception module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Hiv', 'Labour'}
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'Hiv'}
 
      INIT_DEPENDENCIES : {'Demography'}
 
@@ -122,9 +164,9 @@ tlo.methods.contraception module
 
      __annotations__ : {}
 
-     all_contraception_states : {'not_using', 'implant', 'other_modern', 'periodic_abstinence', 'injections', 'pill', 'male_condom', 'other_traditional', 'IUD', 'female_sterilization', 'withdrawal'}
+     all_contraception_states : {'withdrawal', 'male_condom', 'female_sterilization', 'IUD', 'other_modern', 'periodic_abstinence', 'implant', 'not_using', 'other_traditional', 'injections', 'pill'}
 
-     contraceptives_initiated_with_additional_items : {'implant', 'injections', 'IUD', 'pill', 'female_sterilization'}
+     contraceptives_initiated_with_additional_items : {'female_sterilization', 'implant', 'IUD', 'injections', 'pill'}
 
      **Functions (defined or overridden in class Contraception):**
 

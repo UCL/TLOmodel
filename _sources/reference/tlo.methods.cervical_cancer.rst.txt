@@ -259,13 +259,13 @@ tlo.methods.cervical_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'CervicalCancer': <tlo.methods.causes.Cause object at 0x1522f5190>}
+     CAUSES_OF_DEATH : {'CervicalCancer': <tlo.methods.causes.Cause object at 0x333c23890>}
 
-     CAUSES_OF_DISABILITY : {'CervicalCancer': <tlo.methods.causes.Cause object at 0x1522f7650>}
+     CAUSES_OF_DISABILITY : {'CervicalCancer': <tlo.methods.causes.Cause object at 0x333c21b10>}
 
-     INIT_DEPENDENCIES : {'Hiv', 'Lifestyle', 'Demography', 'HealthSystem', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Hiv', 'Demography', 'Lifestyle'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'HealthSeekingBehaviour'}
 

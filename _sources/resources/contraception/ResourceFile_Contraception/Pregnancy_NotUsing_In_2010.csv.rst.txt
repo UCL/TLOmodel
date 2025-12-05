@@ -3,42 +3,42 @@ Pregnancy NotUsing In 2010 (.csv)
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/contraception/ResourceFile_Contraception/Pregnancy_NotUsing_In_2010.csv>`
 
-====  =====  ============
-  ..    age    AnnualProb
-====  =====  ============
-   0     15     0.0153272
-   1     16     0.0780862
-   2     17     0.148498
-   3     18     0.298088
-   4     19     0.402345
-   5     20     0.532862
-   6     21     0.552413
-   7     22     0.586474
-   8     23     0.569371
-   9     24     0.598742
-  10     25     0.622747
-  11     26     0.569917
-  12     27     0.605366
-  13     28     0.550112
-  14     29     0.556307
-  15     30     0.473691
-  16     31     0.474888
-  17     32     0.512612
-  18     33     0.514211
-  19     34     0.460733
-  20     35     0.439926
-  21     36     0.420458
-  22     37     0.400272
-  23     38     0.367537
-  24     39     0.375536
-  25     40     0.339787
-  26     41     0.178505
-  27     42     0.197169
-  28     43     0.174295
-  29     44     0.147198
-  30     45     0.0753617
-  31     46     0.0791707
-  32     47     0.0387705
-  33     48     0.050504
-  34     49     0.0356053
-====  =====  ============
+====  =====  ============  ==============  ============  ============  =============  ===========
+  ..    age    AnnualProb  param\_label      prior\_min    prior\_max  prior\_note    reference
+====  =====  ============  ==============  ============  ============  =============  ===========
+   0     15     0.0153272  local                      0             1  vague prior
+   1     16     0.0780862  local                      0             1  vague prior
+   2     17     0.148498   local                      0             1  vague prior
+   3     18     0.298088   local                      0             1  vague prior
+   4     19     0.402345   local                      0             1  vague prior
+   5     20     0.532862   local                      0             1  vague prior
+   6     21     0.552413   local                      0             1  vague prior
+   7     22     0.586474   local                      0             1  vague prior
+   8     23     0.569371   local                      0             1  vague prior
+   9     24     0.598742   local                      0             1  vague prior
+  10     25     0.622747   local                      0             1  vague prior
+  11     26     0.569917   local                      0             1  vague prior
+  12     27     0.605366   local                      0             1  vague prior
+  13     28     0.550112   local                      0             1  vague prior
+  14     29     0.556307   local                      0             1  vague prior
+  15     30     0.473691   local                      0             1  vague prior
+  16     31     0.474888   local                      0             1  vague prior
+  17     32     0.512612   local                      0             1  vague prior
+  18     33     0.514211   local                      0             1  vague prior
+  19     34     0.460733   local                      0             1  vague prior
+  20     35     0.439926   local                      0             1  vague prior
+  21     36     0.420458   local                      0             1  vague prior
+  22     37     0.400272   local                      0             1  vague prior
+  23     38     0.367537   local                      0             1  vague prior
+  24     39     0.375536   local                      0             1  vague prior
+  25     40     0.339787   local                      0             1  vague prior
+  26     41     0.178505   local                      0             1  vague prior
+  27     42     0.197169   local                      0             1  vague prior
+  28     43     0.174295   local                      0             1  vague prior
+  29     44     0.147198   local                      0             1  vague prior
+  30     45     0.0753617  local                      0             1  vague prior
+  31     46     0.0791707  local                      0             1  vague prior
+  32     47     0.0387705  local                      0             1  vague prior
+  33     48     0.050504   local                      0             1  vague prior
+  34     49     0.0356053  local                      0             1  vague prior
+====  =====  ============  ==============  ============  ============  =============  ===========

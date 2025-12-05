@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods package &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>tlo.methods package &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
@@ -1132,6 +1133,7 @@
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem"><code class="docutils literal notranslate"><span class="pre">HealthSystem</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.__init__"><code class="docutils literal notranslate"><span class="pre">HealthSystem.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.read_parameters"><code class="docutils literal notranslate"><span class="pre">HealthSystem.read_parameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.validate_clinic_configuration"><code class="docutils literal notranslate"><span class="pre">HealthSystem.validate_clinic_configuration()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.pre_initialise_population"><code class="docutils literal notranslate"><span class="pre">HealthSystem.pre_initialise_population()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.initialise_population"><code class="docutils literal notranslate"><span class="pre">HealthSystem.initialise_population()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.initialise_simulation"><code class="docutils literal notranslate"><span class="pre">HealthSystem.initialise_simulation()</span></code></a></li>
@@ -1140,7 +1142,9 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.setup_priority_policy"><code class="docutils literal notranslate"><span class="pre">HealthSystem.setup_priority_policy()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.process_healthsystem_organisation_files"><code class="docutils literal notranslate"><span class="pre">HealthSystem.process_healthsystem_organisation_files()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.setup_daily_capabilities"><code class="docutils literal notranslate"><span class="pre">HealthSystem.setup_daily_capabilities()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_clinic_eligibility"><code class="docutils literal notranslate"><span class="pre">HealthSystem.get_clinic_eligibility()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.format_daily_capabilities"><code class="docutils literal notranslate"><span class="pre">HealthSystem.format_daily_capabilities()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.format_clinic_capabilities"><code class="docutils literal notranslate"><span class="pre">HealthSystem.format_clinic_capabilities()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._rescale_capabilities_to_capture_effective_capability"><code class="docutils literal notranslate"><span class="pre">HealthSystem._rescale_capabilities_to_capture_effective_capability()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.update_consumables_availability_to_represent_merging_of_levels_1b_and_2"><code class="docutils literal notranslate"><span class="pre">HealthSystem.update_consumables_availability_to_represent_merging_of_levels_1b_and_2()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_service_availability"><code class="docutils literal notranslate"><span class="pre">HealthSystem.get_service_availability()</span></code></a></li>
@@ -1162,11 +1166,13 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_facility_info"><code class="docutils literal notranslate"><span class="pre">HealthSystem.get_facility_info()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_appt_footprint_as_time_request"><code class="docutils literal notranslate"><span class="pre">HealthSystem.get_appt_footprint_as_time_request()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors"><code class="docutils literal notranslate"><span class="pre">HealthSystem.get_squeeze_factors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_clinic_squeeze_factors"><code class="docutils literal notranslate"><span class="pre">HealthSystem.get_clinic_squeeze_factors()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.record_hsi_event"><code class="docutils literal notranslate"><span class="pre">HealthSystem.record_hsi_event()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.write_to_hsi_log"><code class="docutils literal notranslate"><span class="pre">HealthSystem.write_to_hsi_log()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.call_and_record_never_ran_hsi_event"><code class="docutils literal notranslate"><span class="pre">HealthSystem.call_and_record_never_ran_hsi_event()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.write_to_never_ran_hsi_log"><code class="docutils literal notranslate"><span class="pre">HealthSystem.write_to_never_ran_hsi_log()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_current_capabilities_and_usage"><code class="docutils literal notranslate"><span class="pre">HealthSystem.log_current_capabilities_and_usage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_clinic_current_capabilities_and_usage"><code class="docutils literal notranslate"><span class="pre">HealthSystem.log_clinic_current_capabilities_and_usage()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.remove_beddays_footprint"><code class="docutils literal notranslate"><span class="pre">HealthSystem.remove_beddays_footprint()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.find_events_for_person"><code class="docutils literal notranslate"><span class="pre">HealthSystem.find_events_for_person()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.reset_queue"><code class="docutils literal notranslate"><span class="pre">HealthSystem.reset_queue()</span></code></a></li>

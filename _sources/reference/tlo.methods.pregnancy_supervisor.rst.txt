@@ -372,6 +372,123 @@ tlo.methods.pregnancy_supervisor module
         * - intervention_analysis_availability
           - REAL
           - Probability an intervention which is included in "interventions_under_analysis" will beavailable
+        * - parameter_update_year
+          - INT
+          - Year when parameters are updated from 2010 to 2015 values
+        * - main_polling_frequency_weeks
+          - INT
+          - Frequency of PregnancySupervisorEvent in weeks
+        * - hsi_event_window_days
+          - INT
+          - HSI event tclose window in days
+        * - pregnancy_max_days
+          - INT
+          - Maximum days for pregnancy feasible
+        * - death_delay_days_after_abortion
+          - INT
+          - Days to delay death event after abortion
+        * - death_delay_days_after_ectopic_rupture
+          - INT
+          - Days to delay death event after ectopic rupture to allow any treatment effects to mitigate risk of death 
+        * - ectopic_event_min_weeks
+          - INT
+          - Minimum weeks before ectopic pregnancy event
+        * - ectopic_event_max_weeks
+          - INT
+          - Maximum weeks before ectopic pregnancy event
+        * - ectopic_rupture_min_weeks
+          - INT
+          - Minimum weeks before ectopic rupture event
+        * - ectopic_rupture_max_weeks
+          - INT
+          - Maximum weeks before ectopic rupture event
+        * - week_anc_care_seeking_applied
+          - INT
+          - Weeks of gestation at which initial care seeking is applied
+        * - week_length_minus_one
+          - INT
+          - Length of a week minus one day, allows for scheduling of early ANC cases
+        * - min_age_reproductive
+          - INT
+          - Minimum age for reproductive period
+        * - max_age_reproductive
+          - INT
+          - Maximum age for reproductive period
+        * - gestation_week_for_first_risk_application
+          - INT
+          - Gestational age in weeks when initial pregnancy risks are applied
+        * - gestation_week_ectopic_limit
+          - INT
+          - Gestational age limit in weeks for ectopic pregnancy
+        * - gestation_week_min_for_glycemic_diabetes
+          - INT
+          - Minimum gestational age to apply gestational diabetes control event
+        * - preterm_labour_min_weeks
+          - INT
+          - Min weeks to be classified as preterm labour
+        * - preterm_labour_gestation_22_max
+          - INT
+          - Maximum gestation week for preterm labour calculation at 22 weeks
+        * - preterm_labour_gestation_27_max
+          - INT
+          - Maximum gestation week for preterm labour calculation at 27 weeks
+        * - preterm_labour_gestation_31_max
+          - INT
+          - Maximum gestation week for preterm labour calculation at 31 weeks
+        * - preterm_labour_gestation_35_max
+          - INT
+          - Maximum gestation week for preterm labour calculation at 35 weeks
+        * - anc_month_2_min_week
+          - INT
+          - Minimum week for ANC month 2
+        * - anc_month_2_max_week
+          - INT
+          - Maximum week for ANC month 2
+        * - anc_month_3_min_week
+          - INT
+          - Minimum week for ANC month 3
+        * - anc_month_3_max_week
+          - INT
+          - Maximum week for ANC month 3
+        * - anc_month_4_min_week
+          - INT
+          - Minimum week for ANC month 4
+        * - anc_month_4_max_week
+          - INT
+          - Maximum week for ANC month 4
+        * - anc_month_5_min_week
+          - INT
+          - Minimum week for ANC month 5
+        * - anc_month_5_max_week
+          - INT
+          - Maximum week for ANC month 5
+        * - anc_month_6_min_week
+          - INT
+          - Minimum week for ANC month 6
+        * - anc_month_6_max_week
+          - INT
+          - Maximum week for ANC month 6
+        * - anc_month_7_min_week
+          - INT
+          - Minimum week for ANC month 7
+        * - anc_month_7_max_week
+          - INT
+          - Maximum week for ANC month 7
+        * - anc_month_8_min_week
+          - INT
+          - Minimum week for ANC month 8
+        * - anc_month_8_max_week
+          - INT
+          - Maximum week for ANC month 8
+        * - anc_month_9_min_week
+          - INT
+          - Minimum week for ANC month 9
+        * - anc_month_9_max_week
+          - INT
+          - Maximum week for ANC month 9
+        * - earliest_anc_care_seeking_month
+          - INT
+          - Earliest month ANC can be scheduled
 
 
      **PROPERTIES:**
@@ -448,17 +565,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'Labour', 'CareOfWomenDuringPregnancy', 'HealthSystem', 'Contraception'}
+     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'Labour', 'HealthSystem', 'Lifestyle', 'Contraception'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x147588b50>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x1475be290>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x1475bf3d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1475bcb50>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x1475bd650>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x1475bc250>, 'eclampsia': <tlo.methods.causes.Cause object at 0x1475bec90>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x1475bf010>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x333b6ce10>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x333cefb90>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x333ceff50>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x333ced850>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x333c49710>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x333c48110>, 'eclampsia': <tlo.methods.causes.Cause object at 0x333c48510>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x333c48490>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x1475bc8d0>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x333c48bd0>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
      METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Malaria', 'Hiv', 'CardioMetabolicDisorders', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv', 'CardioMetabolicDisorders', 'Malaria'}
 
      __annotations__ : {}
 

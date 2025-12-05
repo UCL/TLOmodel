@@ -111,6 +111,21 @@ tlo.methods.stunting module
         * - prob_stunting_diagnosed_at_generic_appt
           - REAL
           - Probability of a stunted or severely stunted person being checked and correctly diagnosed
+        * - max_age_for_stunting_years
+          - REAL
+          - Maximum age (in years) for which stunting assessment and interventions apply
+        * - haz_threshold_stunted
+          - REAL
+          - HAZ score threshold below which a child is considered stunted
+        * - haz_threshold_severe_stunted
+          - REAL
+          - HAZ score threshold below which a child is considered severely stunted
+        * - main_polling_frequency_months
+          - INT
+          - Frequency in months for the main stunting polling event
+        * - followup_appointment_months
+          - INT
+          - Interval in months for scheduling follow-up appointments after stunting treatment
 
 
      **PROPERTIES:**
@@ -130,7 +145,7 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'Hiv', 'NewbornOutcomes', 'Demography', 'Diarrhoea', 'Wasting'}
+     INIT_DEPENDENCIES : {'NewbornOutcomes', 'Wasting', 'Hiv', 'Diarrhoea', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
@@ -284,7 +299,7 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Hiv', 'Diarrhoea', 'Wasting'}
+     ALTERNATIVE_TO : {'Wasting', 'Hiv', 'Diarrhoea'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

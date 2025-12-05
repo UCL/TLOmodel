@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.rti module &mdash; TLOmodel 0.1.dev2578+g0e5de81a3 documentation</title>
+  <title>tlo.methods.rti module &mdash; TLOmodel 0.1.dev2595+gf639e646b.d20251205 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=f815c6f8"></script>
+      <script src="../_static/documentation_options.js?v=3b2d0e5f"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_collection.html">Data Collection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
@@ -531,457 +532,541 @@ generator.</p>
 <td><p>INT</p></td>
 <td><p>A parameter to determine which level of injury severity corresponds to the emergency health care seeking symptom and which to the non-emergency generic injury symptom</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_death_MAIS3</p></td>
+<tr class="row-odd"><td><p>prob_death_non_serious</p></td>
+<td><p>REAL</p></td>
+<td><p>A parameter to determine the probability of death for non serious condition</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_death_MAIS1</p></td>
+<td><p>REAL</p></td>
+<td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_death_MAIS2</p></td>
+<td><p>REAL</p></td>
+<td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 2</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_death_MAIS3</p></td>
 <td><p>REAL</p></td>
 <td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 3</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_death_MAIS4</p></td>
+<tr class="row-odd"><td><p>prob_death_MAIS4</p></td>
 <td><p>REAL</p></td>
 <td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 4</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_death_MAIS5</p></td>
+<tr class="row-even"><td><p>prob_death_MAIS5</p></td>
 <td><p>REAL</p></td>
 <td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 5</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_death_MAIS6</p></td>
+<tr class="row-odd"><td><p>prob_death_MAIS6</p></td>
 <td><p>REAL</p></td>
 <td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 6</p></td>
 </tr>
-<tr class="row-odd"><td><p>femur_fracture_skeletal_traction_mean_los</p></td>
+<tr class="row-even"><td><p>femur_fracture_skeletal_traction_mean_los</p></td>
 <td><p>INT</p></td>
 <td><p>The mean length of stay for a person with a femur fracture being treated with skeletal traction</p></td>
 </tr>
-<tr class="row-even"><td><p>other_skeletal_traction_los</p></td>
+<tr class="row-odd"><td><p>other_skeletal_traction_los</p></td>
 <td><p>INT</p></td>
 <td><p>The mean length of stay for a person with a non-femur fracture being treated with skeletal traction</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_foot_frac_require_cast</p></td>
+<tr class="row-even"><td><p>prob_foot_frac_require_cast</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a foot fracture will be treated with a plaster cast</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_foot_frac_require_maj_surg</p></td>
+<tr class="row-odd"><td><p>prob_foot_frac_require_maj_surg</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a foot fracture will be treated with a major surgery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_foot_frac_require_min_surg</p></td>
+<tr class="row-even"><td><p>prob_foot_frac_require_min_surg</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a foot fracture will be treated with a major surgery</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_foot_frac_require_amp</p></td>
+<tr class="row-odd"><td><p>prob_foot_frac_require_amp</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a foot fracture will be treated with amputation via a major surgery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_tib_fib_frac_require_cast</p></td>
+<tr class="row-even"><td><p>prob_tib_fib_frac_require_cast</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a tibia/fibula fracture will be treated with a plaster cast</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_tib_fib_frac_require_maj_surg</p></td>
+<tr class="row-odd"><td><p>prob_tib_fib_frac_require_maj_surg</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a tibia/fibula fracture will be treated with a major surgery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_tib_fib_frac_require_min_surg</p></td>
+<tr class="row-even"><td><p>prob_tib_fib_frac_require_min_surg</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a tibia/fibula fracture will be treated with a minor surgery</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_tib_fib_frac_require_amp</p></td>
+<tr class="row-odd"><td><p>prob_tib_fib_frac_require_amp</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a tibia/fibula fracture will be treated with an amputation via major surgery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_tib_fib_frac_require_traction</p></td>
+<tr class="row-even"><td><p>prob_tib_fib_frac_require_traction</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a tibia/fibula fracture will be treated with skeletal traction</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_femural_fracture_require_major_surgery</p></td>
+<tr class="row-odd"><td><p>prob_femural_fracture_require_major_surgery</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a femur fracture will be treated with major surgery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_femural_fracture_require_minor_surgery</p></td>
+<tr class="row-even"><td><p>prob_femural_fracture_require_minor_surgery</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a femur fracture will be treated with minor surgery</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_femural_fracture_require_cast</p></td>
+<tr class="row-odd"><td><p>prob_femural_fracture_require_cast</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a femur fracture will be treated with a plaster cast</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_femural_fracture_require_amputation</p></td>
+<tr class="row-even"><td><p>prob_femural_fracture_require_amputation</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a femur fracture will be treated with amputation via major surgery</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_femural_fracture_require_traction</p></td>
+<tr class="row-odd"><td><p>prob_femural_fracture_require_traction</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a femur fracture will be treated with skeletal traction</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_pelvis_fracture_traction</p></td>
+<tr class="row-even"><td><p>prob_pelvis_fracture_traction</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a pelvis fracture will be treated with skeletal traction</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_pelvis_frac_major_surgery</p></td>
+<tr class="row-odd"><td><p>prob_pelvis_frac_major_surgery</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a pelvis fracture will be treated with major surgery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_pelvis_frac_minor_surgery</p></td>
+<tr class="row-even"><td><p>prob_pelvis_frac_minor_surgery</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a pelvis fracture will be treated with minor surgery</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_pelvis_frac_cast</p></td>
+<tr class="row-odd"><td><p>prob_pelvis_frac_cast</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a pelvis fracture will be treated with a cast</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_dis_hip_require_maj_surg</p></td>
+<tr class="row-even"><td><p>prob_dis_hip_require_maj_surg</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a dislocated hip will be treated with a major surgery</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_dis_hip_require_cast</p></td>
+<tr class="row-odd"><td><p>prob_dis_hip_require_cast</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a dislocated hip will be treated with a plaster cast</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_hip_dis_require_traction</p></td>
+<tr class="row-even"><td><p>prob_hip_dis_require_traction</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that a person with a dislocated hip will be treated with skeletal traction</p></td>
 </tr>
-<tr class="row-even"><td><p>hdu_cut_off_iss_score</p></td>
+<tr class="row-odd"><td><p>hdu_cut_off_iss_score</p></td>
 <td><p>INT</p></td>
 <td><p>The ISS score used as a criteria to admit patients to the HDU/ICU units</p></td>
 </tr>
-<tr class="row-odd"><td><p>mean_icu_days</p></td>
+<tr class="row-even"><td><p>mean_icu_days</p></td>
 <td><p>REAL</p></td>
 <td><p>The mean length of stay in the ICUfor those without TBI</p></td>
 </tr>
-<tr class="row-even"><td><p>sd_icu_days</p></td>
+<tr class="row-odd"><td><p>sd_icu_days</p></td>
 <td><p>REAL</p></td>
 <td><p>The standard deviation in length of stay in the ICU for those without TBI</p></td>
 </tr>
-<tr class="row-odd"><td><p>mean_tbi_icu_days</p></td>
+<tr class="row-even"><td><p>mean_tbi_icu_days</p></td>
 <td><p>REAL</p></td>
 <td><p>The mean length of stay in the ICU for those with TBI</p></td>
 </tr>
-<tr class="row-even"><td><p>sd_tbi_icu_days</p></td>
+<tr class="row-odd"><td><p>sd_tbi_icu_days</p></td>
 <td><p>REAL</p></td>
 <td><p>The standard deviation in length of stay in the ICU for those with TBI</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_open_fracture_contaminated</p></td>
+<tr class="row-even"><td><p>prob_open_fracture_contaminated</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that an open fracture will be contaminated</p></td>
 </tr>
-<tr class="row-even"><td><p>allowed_interventions</p></td>
+<tr class="row-odd"><td><p>allowed_interventions</p></td>
 <td><p>LIST</p></td>
 <td><p>List of additional interventions that can be included when performing model analysis</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_112</p></td>
+<tr class="row-even"><td><p>head_prob_112</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s head injury is a skull fracture</p></td>
 </tr>
-<tr class="row-even"><td><p>head_prob_113</p></td>
+<tr class="row-odd"><td><p>head_prob_113</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s head injury is a basilar skull fracture</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_133a</p></td>
+<tr class="row-even"><td><p>head_prob_133a</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s head injury is a Subarachnoid hematoma</p></td>
 </tr>
-<tr class="row-even"><td><p>head_prob_133b</p></td>
+<tr class="row-odd"><td><p>head_prob_133b</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s head injury is a Brain contusion</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_133c</p></td>
+<tr class="row-even"><td><p>head_prob_133c</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s head injury is an Intraventricular haemorrhage</p></td>
 </tr>
-<tr class="row-even"><td><p>head_prob_133d</p></td>
+<tr class="row-odd"><td><p>head_prob_133d</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s head injury is a Subgaleal hematoma</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_134a</p></td>
+<tr class="row-even"><td><p>head_prob_134a</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s head injury is an Epidural hematoma</p></td>
 </tr>
-<tr class="row-even"><td><p>head_prob_134b</p></td>
+<tr class="row-odd"><td><p>head_prob_134b</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s head injury is a Subdural hematoma</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_135</p></td>
+<tr class="row-even"><td><p>head_prob_135</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s head injury is a Diffuse axonal injury/midline shift</p></td>
 </tr>
-<tr class="row-even"><td><p>head_prob_1101</p></td>
+<tr class="row-odd"><td><p>head_prob_1101</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s head injury is a laceration</p></td>
 </tr>
-<tr class="row-odd"><td><p>head_prob_1114</p></td>
+<tr class="row-even"><td><p>head_prob_1114</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s head injury is a burn</p></td>
 </tr>
-<tr class="row-even"><td><p>face_prob_211</p></td>
+<tr class="row-odd"><td><p>face_prob_211</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s face injury is a Facial fracture (nasal/unspecified)</p></td>
 </tr>
-<tr class="row-odd"><td><p>face_prob_212</p></td>
+<tr class="row-even"><td><p>face_prob_212</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s face injury is a Facial fracture (mandible/zygomatic)</p></td>
 </tr>
-<tr class="row-even"><td><p>face_prob_241</p></td>
+<tr class="row-odd"><td><p>face_prob_241</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s face injury is a soft tissue injury</p></td>
 </tr>
-<tr class="row-odd"><td><p>face_prob_2101</p></td>
+<tr class="row-even"><td><p>face_prob_2101</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s face injury is a laceration</p></td>
 </tr>
-<tr class="row-even"><td><p>face_prob_2114</p></td>
+<tr class="row-odd"><td><p>face_prob_2114</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s face injury is a burn</p></td>
 </tr>
-<tr class="row-odd"><td><p>face_prob_291</p></td>
+<tr class="row-even"><td><p>face_prob_291</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s face injury is an eye injury</p></td>
 </tr>
-<tr class="row-even"><td><p>neck_prob_3101</p></td>
+<tr class="row-odd"><td><p>neck_prob_3101</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s neck injury is a laceration</p></td>
 </tr>
-<tr class="row-odd"><td><p>neck_prob_3113</p></td>
+<tr class="row-even"><td><p>neck_prob_3113</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s neck injury is a burn</p></td>
 </tr>
-<tr class="row-even"><td><p>neck_prob_342</p></td>
+<tr class="row-odd"><td><p>neck_prob_342</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s neck injury is a Soft tissue injury in neck (vertebral artery laceration)</p></td>
 </tr>
-<tr class="row-odd"><td><p>neck_prob_343</p></td>
+<tr class="row-even"><td><p>neck_prob_343</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s neck injury is a Soft tissue injury in neck (pharynx contusion)</p></td>
 </tr>
-<tr class="row-even"><td><p>neck_prob_361</p></td>
+<tr class="row-odd"><td><p>neck_prob_361</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s neck injury is a Sternomastoid m. hemorrhage/ Hemorrhage, supraclavicular triangle/Hemorrhage, posterior triangle/Anterior vertebral vessel hemorrhage/ Neck muscle hemorrhage</p></td>
 </tr>
-<tr class="row-odd"><td><p>neck_prob_363</p></td>
+<tr class="row-even"><td><p>neck_prob_363</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s neck injury is a Hematoma in carotid sheath/Carotid sheath hemorrhage</p></td>
 </tr>
-<tr class="row-even"><td><p>neck_prob_322</p></td>
+<tr class="row-odd"><td><p>neck_prob_322</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s neck injury is an Atlanto-occipital subluxation</p></td>
 </tr>
-<tr class="row-odd"><td><p>neck_prob_323</p></td>
+<tr class="row-even"><td><p>neck_prob_323</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s neck injury is an Atlanto-axial subluxation</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_4101</p></td>
+<tr class="row-odd"><td><p>thorax_prob_4101</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is a laceration</p></td>
 </tr>
-<tr class="row-odd"><td><p>thorax_prob_4113</p></td>
+<tr class="row-even"><td><p>thorax_prob_4113</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is a burn</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_461</p></td>
+<tr class="row-odd"><td><p>thorax_prob_461</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is Chest wall bruises/haematoma</p></td>
 </tr>
-<tr class="row-odd"><td><p>thorax_prob_463</p></td>
+<tr class="row-even"><td><p>thorax_prob_463</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is Haemothorax</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_453a</p></td>
+<tr class="row-odd"><td><p>thorax_prob_453a</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is a Lung contusion</p></td>
 </tr>
-<tr class="row-odd"><td><p>thorax_prob_453b</p></td>
+<tr class="row-even"><td><p>thorax_prob_453b</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is a Diaphragm rupture</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_412</p></td>
+<tr class="row-odd"><td><p>thorax_prob_412</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is a rib fracture</p></td>
 </tr>
-<tr class="row-odd"><td><p>thorax_prob_414</p></td>
+<tr class="row-even"><td><p>thorax_prob_414</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is flail chest</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_441</p></td>
+<tr class="row-odd"><td><p>thorax_prob_441</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is a Chest wall lacerations/avulsions</p></td>
 </tr>
-<tr class="row-odd"><td><p>thorax_prob_442</p></td>
+<tr class="row-even"><td><p>thorax_prob_442</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is a Surgical emphysema</p></td>
 </tr>
-<tr class="row-even"><td><p>thorax_prob_443</p></td>
+<tr class="row-odd"><td><p>thorax_prob_443</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is a Closed pneumothorax/ open pneumothorax</p></td>
 </tr>
-<tr class="row-odd"><td><p>abdomen_prob_5101</p></td>
+<tr class="row-even"><td><p>abdomen_prob_5101</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s abdomen injury is a laceration</p></td>
 </tr>
-<tr class="row-even"><td><p>abdomen_prob_5113</p></td>
+<tr class="row-odd"><td><p>abdomen_prob_5113</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is a burn</p></td>
 </tr>
-<tr class="row-odd"><td><p>abdomen_prob_552</p></td>
+<tr class="row-even"><td><p>abdomen_prob_552</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is a skull fracture</p></td>
 </tr>
-<tr class="row-even"><td><p>abdomen_prob_553</p></td>
+<tr class="row-odd"><td><p>abdomen_prob_553</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is an Injury to stomach/intestines/colon</p></td>
 </tr>
-<tr class="row-odd"><td><p>abdomen_prob_554</p></td>
+<tr class="row-even"><td><p>abdomen_prob_554</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s thorax injury is an Injury to spleen/Urinary bladder/Liver/Urethra/Diaphragm</p></td>
 </tr>
-<tr class="row-even"><td><p>spine_prob_612</p></td>
+<tr class="row-odd"><td><p>spine_prob_612</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s spine injury is a vertabrae fracture</p></td>
 </tr>
-<tr class="row-odd"><td><p>spine_prob_673a</p></td>
+<tr class="row-even"><td><p>spine_prob_673a</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
 </tr>
-<tr class="row-even"><td><p>spine_prob_673b</p></td>
+<tr class="row-odd"><td><p>spine_prob_673b</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury below neck level</p></td>
 </tr>
-<tr class="row-odd"><td><p>spine_prob_674a</p></td>
+<tr class="row-even"><td><p>spine_prob_674a</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
 </tr>
-<tr class="row-even"><td><p>spine_prob_674b</p></td>
+<tr class="row-odd"><td><p>spine_prob_674b</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury below neck level</p></td>
 </tr>
-<tr class="row-odd"><td><p>spine_prob_675a</p></td>
+<tr class="row-even"><td><p>spine_prob_675a</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
 </tr>
-<tr class="row-even"><td><p>spine_prob_675b</p></td>
+<tr class="row-odd"><td><p>spine_prob_675b</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury below neck level</p></td>
 </tr>
-<tr class="row-odd"><td><p>spine_prob_676</p></td>
+<tr class="row-even"><td><p>spine_prob_676</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
 </tr>
-<tr class="row-even"><td><p>upper_ex_prob_7101</p></td>
+<tr class="row-odd"><td><p>upper_ex_prob_7101</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s upper extremity injury is a laceration</p></td>
 </tr>
-<tr class="row-odd"><td><p>upper_ex_prob_7113</p></td>
+<tr class="row-even"><td><p>upper_ex_prob_7113</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s upper extremity injury is a burn</p></td>
 </tr>
-<tr class="row-even"><td><p>upper_ex_prob_712a</p></td>
+<tr class="row-odd"><td><p>upper_ex_prob_712a</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s upper extremity injury is a Fracture to Clavicle, scapula, humerus</p></td>
 </tr>
-<tr class="row-odd"><td><p>upper_ex_prob_712b</p></td>
+<tr class="row-even"><td><p>upper_ex_prob_712b</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s upper extremity injury is a Fracture to Hand/wrist</p></td>
 </tr>
-<tr class="row-even"><td><p>upper_ex_prob_712c</p></td>
+<tr class="row-odd"><td><p>upper_ex_prob_712c</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s upper extremity injury is a Fracture to Radius/ulna</p></td>
 </tr>
-<tr class="row-odd"><td><p>upper_ex_prob_722</p></td>
+<tr class="row-even"><td><p>upper_ex_prob_722</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s upper extremity injury is a dislocated shoulder</p></td>
 </tr>
-<tr class="row-even"><td><p>upper_ex_prob_782a</p></td>
+<tr class="row-odd"><td><p>upper_ex_prob_782a</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s upper extremity injury is an Amputated finger</p></td>
 </tr>
-<tr class="row-odd"><td><p>upper_ex_prob_782b</p></td>
+<tr class="row-even"><td><p>upper_ex_prob_782b</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s upper extremity injury is a Unilateral arm amputation</p></td>
 </tr>
-<tr class="row-even"><td><p>upper_ex_prob_782c</p></td>
+<tr class="row-odd"><td><p>upper_ex_prob_782c</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s upper extremity injury is a Thumb amputation</p></td>
 </tr>
-<tr class="row-odd"><td><p>upper_ex_prob_783</p></td>
+<tr class="row-even"><td><p>upper_ex_prob_783</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s upper extremity injury is a bilateral arm amputation</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_8101</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_8101</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is a laceration</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_8113</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_8113</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is a burn</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_811</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_811</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is a foot fracture</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_813do</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_813do</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is an open foot fracture</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_812</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_812</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Fracture to patella, tibia, fibula, ankle</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_813eo</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_813eo</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is an open Fracture to patella, tibia, fibula, ankle</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_813a</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_813a</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Hip fracture</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_813b</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_813b</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Pelvis fracture</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_813bo</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_813bo</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is an open Pelvis fracture</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_813c</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_813c</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Femur fracture</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_813co</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_813co</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is an open Femur fracture</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_822a</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_822a</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Dislocated hip</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_822b</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_822b</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Dislocated knee</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_882</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_882</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is an Amputation of toes</p></td>
 </tr>
-<tr class="row-even"><td><p>lower_ex_prob_883</p></td>
+<tr class="row-odd"><td><p>lower_ex_prob_883</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Unilateral leg amputation</p></td>
 </tr>
-<tr class="row-odd"><td><p>lower_ex_prob_884</p></td>
+<tr class="row-even"><td><p>lower_ex_prob_884</p></td>
 <td><p>REAL</p></td>
 <td><p>The probability that this person’s lower extremity injury is a Bilateral leg amputation</p></td>
 </tr>
-<tr class="row-even"><td><p>blocked_interventions</p></td>
+<tr class="row-odd"><td><p>blocked_interventions</p></td>
 <td><p>LIST</p></td>
 <td><p>A list of interventions that are blocked in a simulation</p></td>
 </tr>
-<tr class="row-odd"><td><p>unavailable_treatment_mortality_mais_cutoff</p></td>
+<tr class="row-even"><td><p>unavailable_treatment_mortality_mais_cutoff</p></td>
 <td><p>INT</p></td>
 <td><p>A cut-off score above which an injury will result in additional mortality if the person has sought healthcare and not received it.</p></td>
 </tr>
-<tr class="row-even"><td><p>consider_death_no_treatment_ISS_cut_off</p></td>
+<tr class="row-odd"><td><p>consider_death_no_treatment_ISS_cut_off</p></td>
 <td><p>INT</p></td>
 <td><p>A cut-off score above which an injuries will be considered severe enough to cause mortality in those whohave not sought care.</p></td>
 </tr>
-<tr class="row-odd"><td><p>maximum_number_of_times_HSI_events_should_run</p></td>
+<tr class="row-even"><td><p>maximum_number_of_times_HSI_events_should_run</p></td>
 <td><p>INT</p></td>
 <td><p>limit on the number of times an HSI event can run</p></td>
+</tr>
+<tr class="row-odd"><td><p>hsi_schedule_window_days</p></td>
+<td><p>INT</p></td>
+<td><p>Number of days window to schedule HSI appointment</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_frequency</p></td>
+<td><p>INT</p></td>
+<td><p>Frequency in months for RTI polling events that determine new injuries</p></td>
+</tr>
+<tr class="row-odd"><td><p>rti_check_death_no_med_event_frequency_days</p></td>
+<td><p>INT</p></td>
+<td><p>Frequency in days for RTI check death no med event</p></td>
+</tr>
+<tr class="row-even"><td><p>rti_recovery_event_frequency_days</p></td>
+<td><p>INT</p></td>
+<td><p>Frequency in days for RTI recovery event</p></td>
+</tr>
+<tr class="row-odd"><td><p>incidence_rate_frequency</p></td>
+<td><p>INT</p></td>
+<td><p>Number of months per year for rate conversion calculations</p></td>
+</tr>
+<tr class="row-even"><td><p>incidence_rate_per_population</p></td>
+<td><p>INT</p></td>
+<td><p>Population base for incidence rate calculations</p></td>
+</tr>
+<tr class="row-odd"><td><p>days_to_death_without_treatment</p></td>
+<td><p>INT</p></td>
+<td><p>Number of days until death for untreated RTI patients</p></td>
+</tr>
+<tr class="row-even"><td><p>max_treatment_duration_days</p></td>
+<td><p>INT</p></td>
+<td><p>Maximum number of days for RTI treatment duration</p></td>
+</tr>
+<tr class="row-odd"><td><p>intervention_incidence_reduction_factor</p></td>
+<td><p>REAL</p></td>
+<td><p>Factor by which interventions reduce RTI incidence (applied when reduce_incidence in allowed_interventions)</p></td>
+</tr>
+<tr class="row-even"><td><p>laceration_recovery_days</p></td>
+<td><p>INT</p></td>
+<td><p>Number of days for recovery assessment period</p></td>
+</tr>
+<tr class="row-odd"><td><p>hsi_opening_delay_days</p></td>
+<td><p>INT</p></td>
+<td><p>Number of days delay before HSI appointments can be scheduled</p></td>
+</tr>
+<tr class="row-even"><td><p>main_polling_initialisation_delay_months</p></td>
+<td><p>INT</p></td>
+<td><p>Delay in months at initialisation for first main polling event</p></td>
+</tr>
+<tr class="row-odd"><td><p>rti_recovery_initialisation_delay_months</p></td>
+<td><p>INT</p></td>
+<td><p>Delay in months at initialisation for rti recovery event</p></td>
+</tr>
+<tr class="row-even"><td><p>rti_check_death_no_med_initialisation_delay_months</p></td>
+<td><p>INT</p></td>
+<td><p>Delay in months at initialisation for rti check death no med event</p></td>
+</tr>
+<tr class="row-odd"><td><p>non_permanent_tbi_recovery_months</p></td>
+<td><p>INT</p></td>
+<td><p>Recovery duration in months for tbi if non permanent; sets  date for date_to_remove_daly_column</p></td>
+</tr>
+<tr class="row-even"><td><p>rti_fracture_cast_recovery_weeks</p></td>
+<td><p>INT</p></td>
+<td><p>Recovery duration in weeks for fracture cast; sets  date for date_to_remove_daly_column</p></td>
+</tr>
+<tr class="row-odd"><td><p>rti_open_fracture_recovery_months</p></td>
+<td><p>INT</p></td>
+<td><p>Recovery duration in months for open fracture; sets  date for date_to_remove_daly_column</p></td>
+</tr>
+<tr class="row-even"><td><p>rti_burn_recovery_weeks</p></td>
+<td><p>INT</p></td>
+<td><p>Recovery duration in weeks for rti burn; sets  date for date_to_remove_daly_column</p></td>
 </tr>
 </tbody>
 </table>
@@ -1170,9 +1255,9 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Demography’, ‘Lifestyle’, ‘HealthSystem’}</p>
-<p>CAUSES_OF_DEATH : {‘RTI_death_without_med’: &lt;tlo.methods.causes.Cause object at 0x1477476d0&gt;, ‘RTI_death_with_med’: &lt;tlo.methods.causes.Cause object at 0x1477464d0&gt;, ‘RTI_unavailable_med’: &lt;tlo.methods.causes.Cause object at 0x147745b90&gt;, ‘RTI_imm_death’: &lt;tlo.methods.causes.Cause object at 0x147746790&gt;, ‘RTI_death_shock’: &lt;tlo.methods.causes.Cause object at 0x147744c50&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘RTI’: &lt;tlo.methods.causes.Cause object at 0x1477460d0&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘Demography’}</p>
+<p>CAUSES_OF_DEATH : {‘RTI_death_without_med’: &lt;tlo.methods.causes.Cause object at 0x3348208d0&gt;, ‘RTI_death_with_med’: &lt;tlo.methods.causes.Cause object at 0x3348232d0&gt;, ‘RTI_unavailable_med’: &lt;tlo.methods.causes.Cause object at 0x334822ed0&gt;, ‘RTI_imm_death’: &lt;tlo.methods.causes.Cause object at 0x334820dd0&gt;, ‘RTI_death_shock’: &lt;tlo.methods.causes.Cause object at 0x334823150&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘RTI’: &lt;tlo.methods.causes.Cause object at 0x334823010&gt;}</p>
 <p>DATE_TO_REMOVE_DALY_COLUMNS : [‘rt_date_to_remove_daly_1’, ‘rt_date_to_remove_daly_2’, ‘rt_date_to_remove_daly_3’, ‘rt_date_to_remove_daly_4’, ‘rt_date_to_remove_daly_5’, ‘rt_date_to_remove_daly_6’, ‘rt_date_to_remove_daly_7’, ‘rt_date_to_remove_daly_8’]</p>
 <p>FRACTURE_CODES : [‘112’, ‘113’, ‘211’, ‘212’, ‘412’, ‘414’, ‘612’, ‘712’, ‘811’, ‘812’, ‘813’]</p>
 <p>INIT_DEPENDENCIES : {‘HealthBurden’, ‘SymptomManager’}</p>
@@ -1181,7 +1266,7 @@ generator.</p>
 <p>INJURY_COLUMNS : [‘rt_injury_1’, ‘rt_injury_2’, ‘rt_injury_3’, ‘rt_injury_4’, ‘rt_injury_5’, ‘rt_injury_6’, ‘rt_injury_7’, ‘rt_injury_8’]</p>
 <p>INJURY_DATE_COLUMN_MAP : {‘rt_injury_1’: ‘rt_date_to_remove_daly_1’, ‘rt_injury_2’: ‘rt_date_to_remove_daly_2’, ‘rt_injury_3’: ‘rt_date_to_remove_daly_3’, ‘rt_injury_4’: ‘rt_date_to_remove_daly_4’, ‘rt_injury_5’: ‘rt_date_to_remove_daly_5’, ‘rt_injury_6’: ‘rt_date_to_remove_daly_6’, ‘rt_injury_7’: ‘rt_date_to_remove_daly_7’, ‘rt_injury_8’: ‘rt_date_to_remove_daly_8’, ‘rt_date_to_remove_daly_1’: ‘rt_injury_1’, ‘rt_date_to_remove_daly_2’: ‘rt_injury_2’, ‘rt_date_to_remove_daly_3’: ‘rt_injury_3’, ‘rt_date_to_remove_daly_4’: ‘rt_injury_4’, ‘rt_date_to_remove_daly_5’: ‘rt_injury_5’, ‘rt_date_to_remove_daly_6’: ‘rt_injury_6’, ‘rt_date_to_remove_daly_7’: ‘rt_injury_7’, ‘rt_date_to_remove_daly_8’: ‘rt_injury_8’}</p>
 <p>INJURY_INDICES : range(1, 9)</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
+<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>NO_TREATMENT_RECOVERY_TIMES_IN_DAYS : {‘112’: 49, ‘113’: 49, ‘1101’: 7, ‘211’: 49, ‘212’: 49, ‘241’: 7, ‘2101’: 7, ‘291’: 7, ‘342’: 42, ‘343’: 42, ‘361’: 7, ‘363’: 14, ‘322’: 42, ‘323’: 42, ‘3101’: 7, ‘3113’: 56, ‘412’: 35, ‘414’: 365, ‘461’: 7, ‘463’: 14, ‘453a’: 84, ‘453b’: 84, ‘441’: 14, ‘442’: 14, ‘4101’: 7, ‘552’: 90, ‘553’: 90, ‘554’: 90, ‘5101’: 7, ‘5113’: 56, ‘612’: 63, ‘712a’: 70, ‘712b’: 70, ‘722’: 84, ‘7101’: 7, ‘7113’: 56, ‘813do’: 240, ‘811’: 70, ‘812’: 70, ‘813eo’: 240, ‘813bo’: 240, ‘813co’: 240, ‘822a’: 60, ‘822b’: 180, ‘8101’: 7, ‘8113’: 56}</p>
 <p>SWAPPING_CODES : [‘712b’, ‘812’, ‘3113’, ‘4113’, ‘5113’, ‘7113’, ‘8113’, ‘813a’, ‘813b’, ‘P673a’, ‘P673b’, ‘P674a’, ‘P674b’, ‘P675a’, ‘P675b’, ‘P676’, ‘P782b’, ‘P783’, ‘P883’, ‘P884’, ‘813bo’, ‘813co’, ‘813do’, ‘813eo’]</p>
 <p>__annotations__ : {}</p>
@@ -1699,7 +1784,7 @@ system with for treatment.</p>
 <li><p>rt_inj_severity - The qualitative description of the severity of this person’s injuries</p></li>
 <li><p>the symptoms this person has</p></li>
 </ol>
-<p>Schedule to take place every month</p>
+<p>Schedule to take place</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
@@ -1707,7 +1792,7 @@ system with for treatment.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTIPollingEvent.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTIPollingEvent.__init__" title="Link to this definition"></a></dt>
-<dd><p>Schedule to take place every month</p>
+<dd><p>Schedule to take place</p>
 </dd></dl>
 
 <dl class="py method">

@@ -327,6 +327,15 @@ tlo.methods.rti module
         * - rt_emergency_care_ISS_score_cut_off
           - INT
           - A parameter to determine which level of injury severity corresponds to the emergency health care seeking symptom and which to the non-emergency generic injury symptom
+        * - prob_death_non_serious
+          - REAL
+          - A parameter to determine the probability of death for non serious condition
+        * - prob_death_MAIS1
+          - REAL
+          - A parameter to determine the probability of death without medical intervention with a military AISscore of 1
+        * - prob_death_MAIS2
+          - REAL
+          - A parameter to determine the probability of death without medical intervention with a military AISscore of 2
         * - prob_death_MAIS3
           - REAL
           - A parameter to determine the probability of death without medical intervention with a military AISscore of 3
@@ -666,6 +675,60 @@ tlo.methods.rti module
         * - maximum_number_of_times_HSI_events_should_run
           - INT
           - limit on the number of times an HSI event can run
+        * - hsi_schedule_window_days
+          - INT
+          - Number of days window to schedule HSI appointment
+        * - main_polling_frequency
+          - INT
+          - Frequency in months for RTI polling events that determine new injuries
+        * - rti_check_death_no_med_event_frequency_days
+          - INT
+          - Frequency in days for RTI check death no med event
+        * - rti_recovery_event_frequency_days
+          - INT
+          - Frequency in days for RTI recovery event
+        * - incidence_rate_frequency
+          - INT
+          - Number of months per year for rate conversion calculations
+        * - incidence_rate_per_population
+          - INT
+          - Population base for incidence rate calculations
+        * - days_to_death_without_treatment
+          - INT
+          - Number of days until death for untreated RTI patients
+        * - max_treatment_duration_days
+          - INT
+          - Maximum number of days for RTI treatment duration
+        * - intervention_incidence_reduction_factor
+          - REAL
+          - Factor by which interventions reduce RTI incidence (applied when reduce_incidence in allowed_interventions)
+        * - laceration_recovery_days
+          - INT
+          - Number of days for recovery assessment period
+        * - hsi_opening_delay_days
+          - INT
+          - Number of days delay before HSI appointments can be scheduled
+        * - main_polling_initialisation_delay_months
+          - INT
+          - Delay in months at initialisation for first main polling event
+        * - rti_recovery_initialisation_delay_months
+          - INT
+          - Delay in months at initialisation for rti recovery event
+        * - rti_check_death_no_med_initialisation_delay_months
+          - INT
+          - Delay in months at initialisation for rti check death no med event
+        * - non_permanent_tbi_recovery_months
+          - INT
+          - Recovery duration in months for tbi if non permanent; sets  date for date_to_remove_daly_column
+        * - rti_fracture_cast_recovery_weeks
+          - INT
+          - Recovery duration in weeks for fracture cast; sets  date for date_to_remove_daly_column
+        * - rti_open_fracture_recovery_months
+          - INT
+          - Recovery duration in months for open fracture; sets  date for date_to_remove_daly_column
+        * - rti_burn_recovery_weeks
+          - INT
+          - Recovery duration in weeks for rti burn; sets  date for date_to_remove_daly_column
 
 
      **PROPERTIES:**
@@ -808,11 +871,11 @@ tlo.methods.rti module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Demography', 'Lifestyle', 'HealthSystem'}
+     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'Demography'}
 
-     CAUSES_OF_DEATH : {'RTI_death_without_med': <tlo.methods.causes.Cause object at 0x1477476d0>, 'RTI_death_with_med': <tlo.methods.causes.Cause object at 0x1477464d0>, 'RTI_unavailable_med': <tlo.methods.causes.Cause object at 0x147745b90>, 'RTI_imm_death': <tlo.methods.causes.Cause object at 0x147746790>, 'RTI_death_shock': <tlo.methods.causes.Cause object at 0x147744c50>}
+     CAUSES_OF_DEATH : {'RTI_death_without_med': <tlo.methods.causes.Cause object at 0x3348208d0>, 'RTI_death_with_med': <tlo.methods.causes.Cause object at 0x3348232d0>, 'RTI_unavailable_med': <tlo.methods.causes.Cause object at 0x334822ed0>, 'RTI_imm_death': <tlo.methods.causes.Cause object at 0x334820dd0>, 'RTI_death_shock': <tlo.methods.causes.Cause object at 0x334823150>}
 
-     CAUSES_OF_DISABILITY : {'RTI': <tlo.methods.causes.Cause object at 0x1477460d0>}
+     CAUSES_OF_DISABILITY : {'RTI': <tlo.methods.causes.Cause object at 0x334823010>}
 
      DATE_TO_REMOVE_DALY_COLUMNS : ['rt_date_to_remove_daly_1', 'rt_date_to_remove_daly_2', 'rt_date_to_remove_daly_3', 'rt_date_to_remove_daly_4', 'rt_date_to_remove_daly_5', 'rt_date_to_remove_daly_6', 'rt_date_to_remove_daly_7', 'rt_date_to_remove_daly_8']
 
@@ -830,7 +893,7 @@ tlo.methods.rti module
 
      INJURY_INDICES : range(1, 9)
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      NO_TREATMENT_RECOVERY_TIMES_IN_DAYS : {'112': 49, '113': 49, '1101': 7, '211': 49, '212': 49, '241': 7, '2101': 7, '291': 7, '342': 42, '343': 42, '361': 7, '363': 14, '322': 42, '323': 42, '3101': 7, '3113': 56, '412': 35, '414': 365, '461': 7, '463': 14, '453a': 84, '453b': 84, '441': 14, '442': 14, '4101': 7, '552': 90, '553': 90, '554': 90, '5101': 7, '5113': 56, '612': 63, '712a': 70, '712b': 70, '722': 84, '7101': 7, '7113': 56, '813do': 240, '811': 70, '812': 70, '813eo': 240, '813bo': 240, '813co': 240, '822a': 60, '822b': 180, '8101': 7, '8113': 56}
 

@@ -18,6 +18,9 @@ tlo.methods.care_of_women_during_pregnancy module
         * - Item
           - Type
           - Description
+        * - max_anc_visits
+          - INT
+          - Maximum number of ANC visits
         * - prob_seek_anc2
           - LIST
           - Probability a woman who is not predicted to attended four or more ANC visits will attend ANC2
@@ -36,6 +39,9 @@ tlo.methods.care_of_women_during_pregnancy module
         * - prob_seek_anc8
           - LIST
           - Probability a woman who is predicted to attend four or more ANC visits will attend ANC8
+        * - anc_consistency_threshold
+          - INT
+          - Minimum ANC appts required to attend for remaining ANC appts to be automatically scheduled
         * - effect_of_ifa_for_resolving_anaemia
           - LIST
           - treatment effectiveness of starting iron and folic acid on resolving anaemia
@@ -99,6 +105,87 @@ tlo.methods.care_of_women_during_pregnancy module
         * - specificity_blood_test_syphilis
           - LIST
           - specificity of a blood test to detect syphilis
+        * - anc_gestational_age_weeks_anc2
+          - INT
+          - recommended gestational age in weeks for ANC2
+        * - anc_gestational_age_weeks_anc3
+          - INT
+          - recommended gestational age in weeks for ANC3
+        * - anc_gestational_age_weeks_anc4
+          - INT
+          - recommended gestational age in weeks for ANC4
+        * - anc_gestational_age_weeks_anc5
+          - INT
+          - recommended gestational age in weeks for ANC5
+        * - anc_gestational_age_weeks_anc6
+          - INT
+          - recommended gestational age in weeks for ANC6
+        * - anc_gestational_age_weeks_anc7
+          - INT
+          - recommended gestational age in weeks for ANC7
+        * - anc_gestational_age_weeks_anc8
+          - INT
+          - recommended gestational age in weeks for ANC8
+        * - anc_gestational_age_weeks_late_anc
+          - INT
+          - gestational age in weeks for late ANC visits
+        * - gestational_age_weeks_upper_bound
+          - INT
+          - gestational age beyond normal length of pregnancy
+        * - focused_anc_gestational_age_weeks_visit2
+          - INT
+          - recommended gestational age in weeks for focused ANC visit 2
+        * - focused_anc_gestational_age_weeks_visit3
+          - INT
+          - recommended gestational age in weeks for focused ANC visit 3
+        * - focused_anc_gestational_age_weeks_visit4
+          - INT
+          - recommended gestational age in weeks for focused ANC visit 4
+        * - delivery_weeks_placental_abruption
+          - INT
+          - gestational age in weeks for delivery in placental abruption
+        * - delivery_weeks_placenta_praevia_severe
+          - INT
+          - gestational age in weeks for delivery in severe placenta praevia
+        * - delivery_weeks_placenta_praevia_mild
+          - INT
+          - gestational age in weeks for delivery in mild placenta praevia
+        * - delivery_weeks_prom_no_infection
+          - INT
+          - gestational age in weeks for delivery in PROM without infection
+        * - delivery_weeks_chorioamnionitis
+          - INT
+          - gestational age in weeks for delivery in chorioamnionitis
+        * - delivery_ga_weeks_cs
+          - INT
+          - gestational age in weeks at which CS will most likely be scheduled for in those for which it is indicated
+        * - follow_up_days_anaemia
+          - INT
+          - days until follow-up for anaemia treatment
+        * - days_to_glycaemic_control_event
+          - INT
+          - days to glycaemic control event
+        * - follow_up_days_gestational_diabetes
+          - INT
+          - days until follow-up for gestational diabetes
+        * - days_to_rupture_ectopic_untreated
+          - INT
+          - days until rupture event if individual has untreated ectopic pregnancy
+        * - bmi_min_gdm
+          - REAL
+          - Min BMI to be diagnosed with gestational diabetes
+        * - avg_mother_weight_kg
+          - REAL
+          - Average weight of mother
+        * - beddays_default
+          - INT
+          - default beddays for antenatal inpatient admission
+        * - beddays_postabortion
+          - INT
+          -  beddays following abortion
+        * - beddays_etopic_pregnancy
+          - INT
+          - default following etopic pregnancy
 
 
      **PROPERTIES:**
@@ -157,9 +244,9 @@ tlo.methods.care_of_women_during_pregnancy module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'Labour', 'Contraception'}
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'Lifestyle', 'Contraception'}
 
-     INIT_DEPENDENCIES : {'Demography', 'PregnancySupervisor', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'PregnancySupervisor', 'HealthSystem', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
