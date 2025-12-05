@@ -7,6 +7,7 @@ import numpy as np
 
 from tlo import Date, logging
 from tlo.events import Event
+from tlo.notify import notifier
 
 if TYPE_CHECKING:
     from tlo import Module, Simulation
@@ -197,12 +198,40 @@ class HSI_Event:
                 facility_id=self.facility_info.id
             )
 
+
     def run(self, squeeze_factor):
         """Make the event happen."""
+
+        # Dispatch notification that HSI event is about to run
+        notifier.dispatch("hsi_event.pre-run",
+                          data={"target": self.target,
+                                "module" : self.module.name,
+                                "event_name": self.__class__.__name__})
+
         updated_appt_footprint = self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
         self._run_after_hsi_event()
+
+        # Dispatch notification that HSI event has just ran
+        if updated_appt_footprint is not None:
+            footprint = updated_appt_footprint
+        else:
+            footprint = self.EXPECTED_APPT_FOOTPRINT
+
+        if self.facility_info:
+            level = self.facility_info.level
+        else:
+            level = "N/A"
+
+        notifier.dispatch("hsi_event.post-run",
+                          data={"target": self.target,
+                                "event_name": self.__class__.__name__,
+                                "footprint": footprint,
+                                "level": level
+                                })
+
         return updated_appt_footprint
+
 
     def get_consumables(
         self,
