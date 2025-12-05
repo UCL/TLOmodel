@@ -5,7 +5,7 @@ Road traffic injury module.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -36,10 +37,9 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     The road traffic injuries module for the TLO model, handling all injuries related to road traffic accidents.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.ASSIGN_INJURIES_AND_DALY_CHANGES = None
         self.cons_item_codes = None  # (Will store consumable item codes)
 
@@ -1107,11 +1107,11 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         'RTI': Cause(gbd_causes='Road injuries', label='Transport Injuries')
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """ Reads the parameters used in the RTI module"""
         p = self.parameters
 
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
+        dfd = read_csv_files(resourcefilepath / 'ResourceFile_RTI', files='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         if "HealthBurden" in self.sim.modules:
             # get the DALY weights of the seq associated with road traffic injuries
@@ -3362,12 +3362,11 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries = self.sim.modules['RTI']
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
 
-        if 'DiagRadio' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
-
-        elif 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
+        if 'Tomography' in self.EXPECTED_APPT_FOOTPRINT:
             self.ACCEPTED_FACILITY_LEVEL = '3'
             self.add_equipment({'Computed Tomography (CT machine)', 'CT scanner accessories'})
+
+        self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
     def did_not_run(self, *args, **kwargs):
         pass
@@ -3670,7 +3669,9 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
 
         if df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off_iss_score:
 
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('ICU'))
+            self.add_equipment({*self.healthcare_system.equipment.from_pkg_names('ICU'),
+                                *self.healthcare_system.equipment.from_pkg_names('Emergency'),
+                                'Motorcycle ambulance'})
 
             mean_icu_days = p['mean_icu_days']
             sd_icu_days = p['sd_icu_days']
@@ -3974,7 +3975,9 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self._number_of_times_this_event_has_run = 0
-        self._maximum_number_times_event_should_run = self.module.parameters['maximum_number_of_times_HSI_events_should_run']
+        self._maximum_number_times_event_should_run = self.module.parameters[
+            "maximum_number_of_times_HSI_events_should_run"
+        ]
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -4001,7 +4004,13 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key='rti_general_message',
                          data=f"Hypovolemic shock treatment available for person {person_id}")
             df.at[person_id, 'rt_in_shock'] = False
-            self.add_equipment({'Infusion pump', 'Drip stand', 'Oxygen cylinder, with regulator', 'Nasal Prongs'})
+            self.add_equipment({'Infusion pump',
+                                'Drip stand',
+                                'Oxygen cylinder, with regulator',
+                                'Nasal Prongs',
+                                'Anti-shock garment',
+                                *self.healthcare_system.equipment.from_pkg_names('Blood Transfusion')
+                                })
         else:
             if self._number_of_times_this_event_has_run < self._maximum_number_times_event_should_run:
                 self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
@@ -4106,7 +4115,12 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                               f"{person_id}"
                          )
 
-            self.add_equipment({'Casting platform', 'Casting chairs', 'Bucket, 10L'})
+            self.add_equipment({
+                *self.healthcare_system.equipment.from_pkg_names('Minor Surgery'),
+                *self.healthcare_system.equipment.from_pkg_names('Casting'),
+                'Crutches, Elbow',
+                'Crutches, Axillary',
+            })
 
             # update the property rt_med_int to indicate they are recieving treatment
             df.at[person_id, 'rt_med_int'] = True
@@ -4238,7 +4252,12 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                          data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
                          )
 
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
+            self.add_equipment({
+                *self.healthcare_system.equipment.from_pkg_names('Major Surgery'),
+                *self.healthcare_system.equipment.from_pkg_names('Casting'),
+                'Crutches, Elbow',
+                'Crutches, Axillary',
+            })
 
             person = df.loc[person_id]
             # update the dataframe to show this person is recieving treatment
@@ -4448,6 +4467,11 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                                   f"{person_id}")
                 logger.debug(key='rti_general_message',
                              data=f"This facility treated their {burncounts} burns")
+
+                self.add_equipment({
+                    'Cradle, burns',
+                })
+
                 df.at[person_id, 'rt_med_int'] = True
                 person = df.loc[person_id]
                 injury_column, _ = road_traffic_injuries.rti_find_injury_column(
@@ -4859,7 +4883,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._number_of_times_this_event_has_run = 0
-        self._maximum_number_times_event_should_run = self.module.parameters['maximum_number_of_times_HSI_events_should_run']
+        self._maximum_number_times_event_should_run = self.module.parameters[
+            "maximum_number_of_times_HSI_events_should_run"
+        ]
 
         p = self.module.parameters
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']

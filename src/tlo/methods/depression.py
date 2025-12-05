@@ -18,6 +18,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import DiagnosisFunction, HSIEventScheduler
@@ -32,9 +33,8 @@ logger.setLevel(logging.INFO)
 # ---------------------------------------------------------------------------------------------------------
 
 class Depression(Module, GenericFirstAppointmentsMixin):
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
     INIT_DEPENDENCIES = {
         'Demography', 'Contraception', 'HealthSystem', 'Lifestyle', 'SymptomManager'
@@ -198,6 +198,42 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         'pr_assessed_for_depression_for_perinatal_female': Parameter(
             Types.REAL,
             'Probability that a perinatal female is assessed for depression during antenatal or postnatal services'),
+
+        'recently_pregnant_threshold_years': Parameter(
+            Types.INT, 'Time period to consider a woman as recently pregnant'
+        ),
+
+        'max_talking_therapy_sessions': Parameter(
+            Types.INT, 'Maximum number of talking therapy sessions per course'
+        ),
+
+        'talking_therapy_interval_months': Parameter(
+            Types.INT, 'Interval between talking therapy sessions in months'
+        ),
+
+        'antidepr_refill_interval_months': Parameter(
+            Types.INT, 'Interval for antidepressant refill appointments in months'
+        ),
+
+        'antidepr_refill_window_days': Parameter(
+            Types.INT, 'Window period for antidepressant refill appointments in days'
+        ),
+
+        'selfharm_suicide_event_max_days': Parameter(
+            Types.INT, 'Maximum days for scheduling self-harm/suicide events'
+        ),
+
+        'depression_polling_frequency_months': Parameter(
+            Types.INT, 'Frequency of depression polling events in months'
+        ),
+
+        'age_threshold_adult_care': Parameter(
+            Types.INT, 'Minimum age for care in non-peds in years'
+        ),
+
+        'age_threshold_depression': Parameter(
+            Types.INT, 'Minimum age for depression'
+        ),
     }
 
     # Properties of individuals 'owned' by this module
@@ -222,11 +258,11 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                                                      'or had a last pregnancy less than one year ago')
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         "read parameters, register disease module with healthsystem and register symptoms"
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
-                          sheet_name='parameter_values')
+            read_csv_files(resourcefilepath / 'ResourceFile_Depression',
+                          files='parameter_values')
         )
         p = self.parameters
 
@@ -267,13 +303,15 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         # risk of ever having depression in initial population
         self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel.multiplicative(
             Predictor('age_years').apply(
-                lambda x: (x if x > 15 else 0) * self.parameters['init_rp_ever_depr_per_year_older_m']
+                lambda x: (x if x > p['age_threshold_depression'] else 0) *
+                          self.parameters['init_rp_ever_depr_per_year_older_m']
             )
         )
 
         # risk of ever having depression in initial population (female)
         self.linearModels['Depression_Ever_At_Population_Initialisation_Females'] = LinearModel.multiplicative(
-            Predictor('age_years').apply(lambda x: (x if x > 15 else 0) * p['init_rp_ever_depr_per_year_older_f'])
+            Predictor('age_years').apply(lambda x: (x if x > p['age_threshold_depression'] else 0) *
+                                                   p['init_rp_ever_depr_per_year_older_f'])
         )
 
         # risk of ever having diagnosed depression in initial population
@@ -391,6 +429,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
 
     def initialise_population(self, population):
         df = population.props
+        p = self.parameters
         df['de_depr'] = False
         df['de_ever_depr'] = False
         df['de_date_init_most_rec_depr'] = pd.NaT
@@ -401,7 +440,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         df['de_ever_talk_ther'] = False
         df['de_ever_non_fatal_self_harm_event'] = False
         df['de_recently_pregnant'] = df['is_pregnant'] | (
-            df['date_of_last_pregnancy'] > (self.sim.date - DateOffset(years=1))
+            df['date_of_last_pregnancy'] > (self.sim.date - DateOffset(years=p['recently_pregnant_threshold_years']))
         )
         df['de_cc'] = False
 
@@ -487,12 +526,14 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         df = sim.population.props
         if df['de_on_antidepr'].sum():
             for person_id in df.loc[df['de_on_antidepr']].index:
-                date_of_next_appt_scheduled = self.sim.date + DateOffset(days=self.rng.randint(0, 30))
+                date_of_next_appt_scheduled = self.sim.date + DateOffset(
+                    days=self.rng.randint(0, self.parameters['antidepr_refill_interval_months']*30)
+                )
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self),
                     priority=1,
                     topen=date_of_next_appt_scheduled,
-                    tclose=date_of_next_appt_scheduled + DateOffset(days=7)
+                    tclose=date_of_next_appt_scheduled + DateOffset(days=self.parameters['antidepr_refill_window_days'])
                 )
 
     def on_birth(self, mother_id, child_id):
@@ -694,7 +735,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
     def do_at_generic_first_appt(
         self, individual_properties: IndividualProperties, **kwargs
     ) -> None:
-        if individual_properties["age_years"] > 5:
+        if individual_properties["age_years"] > self.parameters["age_threshold_adult_care"]:
             self.do_at_generic_first_appt_emergency(
                 individual_properties=individual_properties,
                 **kwargs,
@@ -736,7 +777,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['depression_polling_frequency_months']))
 
     def apply(self, population):
         # Create some shortcuts
@@ -747,12 +788,12 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -----------------------------------------------------------------------------------------------------
         # Update properties that are used by the module
         df['de_recently_pregnant'] = df['is_pregnant'] | (
-            df['date_of_last_pregnancy'] > (self.sim.date - DateOffset(years=1)))
+            df['date_of_last_pregnancy'] > (self.sim.date - DateOffset(years=p['recently_pregnant_threshold_years'])))
 
         assert (df.loc[df['is_pregnant'], 'de_recently_pregnant']).all()
         assert not (df['de_recently_pregnant'] & pd.isnull(df['date_of_last_pregnancy'])).any()
         assert (df.loc[((~df['is_pregnant']) & df['de_recently_pregnant']), 'date_of_last_pregnancy'] > (
-            self.sim.date - DateOffset(years=1))).all()
+            self.sim.date - DateOffset(years=p['recently_pregnant_threshold_years']))).all()
 
         # -----------------------------------------------------------------------------------------------------
         # Determine who will be onset with depression among those who are not currently depressed
@@ -795,8 +836,12 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[df['is_alive'] & df['de_depr']]
         )
         for person_id in will_self_harm_in_next_3mo.loc[will_self_harm_in_next_3mo].index:
-            self.sim.schedule_event(DepressionSelfHarmEvent(self.module, person_id),
-                                    self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
+            self.sim.schedule_event(
+                DepressionSelfHarmEvent(self.module, person_id),
+                self.sim.date + DateOffset(
+                    days=self.module.rng.randint(0, p['selfharm_suicide_event_max_days'])
+                )
+            )
 
         # Schedule Suicide events for those with current depression (individual level events)
         will_suicide_in_next_3mo = apply_linear_model(
@@ -804,8 +849,12 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[df['is_alive'] & df['de_depr']]
         )
         for person_id in will_suicide_in_next_3mo.loc[will_suicide_in_next_3mo].index:
-            self.sim.schedule_event(DepressionSuicideEvent(self.module, person_id),
-                                    self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
+            self.sim.schedule_event(
+                DepressionSuicideEvent(self.module, person_id),
+                self.sim.date + DateOffset(
+                    days=self.module.rng.randint(0, p['selfharm_suicide_event_max_days'])
+                )
+            )
 
 
 class DepressionSelfHarmEvent(Event, IndividualScopeEventMixin):
@@ -954,10 +1003,10 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'de_ever_talk_ther']:
             df.at[person_id, 'de_ever_talk_ther'] = True
 
-        if self.num_of_sessions_had < 5:
+        if self.num_of_sessions_had < self.module.parameters['max_talking_therapy_sessions']:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=self,
-                topen=self.sim.date + pd.DateOffset(months=6),
+                topen=self.sim.date + pd.DateOffset(months=self.module.parameters['talking_therapy_interval_months']),
                 tclose=None,
                 priority=1
             )
@@ -978,6 +1027,7 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        p = self.module.parameters
 
         # If person is already on anti-depressants, do not do anything
         if df.at[person_id, 'de_on_antidepr']:
@@ -998,8 +1048,12 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self.module),
                 priority=1,
-                topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
+                topen=self.sim.date + DateOffset(months=p['antidepr_refill_interval_months']),
+                tclose=(
+                    self.sim.date +
+                    DateOffset(months=p['antidepr_refill_interval_months']) +
+                    DateOffset(days=p['antidepr_refill_window_days'])
+                )
             )
 
 
@@ -1020,6 +1074,7 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        p = self.module.parameters
 
         assert df.at[person_id, 'de_ever_diagnosed_depression'], "The person is not diagnosed and so should not be " \
                                                                  "receiving an HSI. "
@@ -1039,8 +1094,12 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self.module),
                 priority=1,
-                topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
+                topen=self.sim.date + DateOffset(months=p['antidepr_refill_interval_months']),
+                tclose=(
+                    self.sim.date +
+                    DateOffset(months=p['antidepr_refill_interval_months']) +
+                    DateOffset(days=p['antidepr_refill_window_days'])
+                )
             )
         else:
             # If medication was not available, the persons ceases to be taking antidepressants

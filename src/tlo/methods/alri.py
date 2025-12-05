@@ -24,7 +24,7 @@ from __future__ import annotations
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -37,7 +37,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date, sample_outcome
+from tlo.util import random_date, read_csv_files, sample_outcome
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -799,11 +799,10 @@ class Alri(Module, GenericFirstAppointmentsMixin):
                                               ' episodes interfering with one another.'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, log_indivdual=None, do_checks=False):
+    def __init__(self, name=None, log_indivdual=None, do_checks=False):
         super().__init__(name)
 
         # Store arguments provided
-        self.resourcefilepath = resourcefilepath
         self.do_checks = do_checks
 
         assert (log_indivdual is None or isinstance(log_indivdual, int)) and (not isinstance(log_indivdual, bool))
@@ -824,13 +823,13 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         # Pointer to store the logging event used by this module
         self.logging_event = None
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """
         * Setup parameters values used by the module
         * Define symptoms
         """
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Alri.xlsx', sheet_name='Parameter_values')
+            read_csv_files(resourcefilepath / 'ResourceFile_Alri', files='Parameter_values')
         )
 
         self.check_params_read_in_ok()
@@ -2970,7 +2969,7 @@ class AlriPropertiesOfOtherModules(Module):
                                                    categories=['MAM', 'SAM', 'well']),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         pass
 
     def initialise_population(self, population):

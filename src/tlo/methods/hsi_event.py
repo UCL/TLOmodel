@@ -171,11 +171,21 @@ class HSI_Event:
         Do things following the event's `apply` and `post_apply_hook` functions running.
          * Impose the bed-days footprint
          * Record the equipment that has been added before and during the course of the HSI Event.
+         * Include in the equipment used those items associated with in-patient admissions if bed-days are used.
         """
 
         self.healthcare_system.bed_days.impose_beddays_footprint(
             person_id=self.target, footprint=self.bed_days_allocated_to_this_event
         )
+
+        if sum(self.BEDDAYS_FOOTPRINT.values()) > 0:
+            # Add to the internal record of equipment used anything to do with in-patients.
+            # Note that adding this here means that these items are not used, but the bed-days can still be available
+            # even if these items are not all available.
+            # (Note that the list of equipment is the same as retrieved from
+            # `self.healthcare_system.equipment.from_pkg_names('In-patient')` but the result has been cached on the
+            # healthsystem module to save time as it is used a lot (every HSI that has any bed-days).
+            self._EQUIPMENT |= self.healthcare_system.in_patient_equipment_package
 
         if self.facility_info is not None:
             # If there is a facility_info (e.g., healthsystem not running in disabled mode), then record equipment used
@@ -289,10 +299,10 @@ class HSI_Event:
         """Returns ``True`` if all the (currently) declared items of equipment are available. This is called by the
         ``HealthSystem`` module before the HSI is run and so is looking only at those items that are declared when this
         instance was created. The evaluation of whether equipment is available is only done *once* for this instance of
-        the event: i.e., if the equipment is not available for the instance of this ``HSI_Event``, then it will remain not
-        available if the same event is re-scheduled/re-entered into the HealthSystem queue. This is representing that
-        if the facility that a particular person attends for the ``HSI_Event`` does not have the equipment available, then
-        it will also not be available on another day."""
+        the event: i.e., if the equipment is not available for the instance of this ``HSI_Event``, then it will remain
+        not available if the same event is re-scheduled/re-entered into the HealthSystem queue. This is representing
+        that if the facility that a particular person attends for the ``HSI_Event`` does not have the equipment
+        available, then it will also not be available on another day."""
 
         if self._is_all_declared_equipment_available is None:
             # Availability has not already been evaluated: determine availability
@@ -325,7 +335,7 @@ class HSI_Event:
         self.facility_info = health_system.get_facility_info(self)
 
         # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
-        # Types.
+        # Types
         # (HSI that require a bed for one or more days always need such appointments, but this may have been
         # missed in the declaration of the `EXPECTED_APPT_FOOTPRINT` in the HSI.)
         # NB. The in-patient day Appointment time is automatically applied on subsequent days.
@@ -343,28 +353,6 @@ class HSI_Event:
                 appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
             )
         )
-
-
-        # Do checks
-        self._check_if_appt_footprint_can_run()
-
-    def _check_if_appt_footprint_can_run(self) -> bool:
-        """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
-        this does not demand officers that are _never_ available), and issue warning if not.
-        """
-        if self.healthcare_system._officers_with_availability.issuperset(
-            self.expected_time_requests.keys()
-        ):
-            return True
-        else:
-            logger.debug(
-                key="message",
-                data=(
-                    f"The expected footprint of {self.TREATMENT_ID} is not possible with the configuration of "
-                    f"officers."
-                ),
-            )
-            return False
 
     @staticmethod
     def _return_item_codes_in_dict(

@@ -1,0 +1,540 @@
+import os
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+from tlo import DAYS_IN_YEAR, Date, DateOffset, Simulation
+from tlo.methods import (
+    cervical_cancer,
+    demography,
+    enhanced_lifestyle,
+    epi,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    simplified_births,
+    symptommanager,
+)
+
+# %% Setup:
+try:
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+except NameError:
+    # running interactively
+    resourcefilepath = Path('./resources')
+
+# parameters for whole suite of tests:
+start_date = Date(2010, 1, 1)
+popsize = 5000
+hpv_cin_options = ['hpv', 'cin1', 'cin2', 'cin3']
+hpv_stage_options = ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']
+
+
+# %% Construction of simulation objects:
+def make_simulation_healthsystemdisabled(seed):
+    """Make the simulation with:
+    * All HSI occur
+    * All Consumables available
+    """
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(),
+                 cervical_cancer.CervicalCancer(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=True, cons_availability='all'),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 epi.Epi(),
+                 hiv.DummyHivModule(),
+                 )
+
+    return sim
+
+
+def make_simulation_nohsi(seed):
+    """Make the simulation with:
+    * the healthsystem enable but with no service availabilty (so no HSI run)
+    """
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(),
+                 cervical_cancer.CervicalCancer(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 epi.Epi(),
+                 hiv.DummyHivModule(),
+                 )
+
+    return sim
+
+
+# %% Manipulation of parameters:
+def zero_out_init_prev(sim):
+    # Set initial prevalence to zero:
+    sim.modules['CervicalCancer'].parameters['init_prev_cin_hpv_cc_stage_hiv'] \
+        = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    sim.modules['CervicalCancer'].parameters['init_prev_cin_hpv_cc_stage_nhiv'] \
+        = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    return sim
+
+
+def make_high_init_prev(sim):
+    # Set initial prevalence to a high value:
+    sim.modules['CervicalCancer'].parameters['init_prev_cin_hpv_cc_stage'] \
+        = [0.55, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+    return sim
+
+
+def incr_rate_of_onset_stage1(sim):
+    # Rate of cancer onset per month:
+    sim.modules['CervicalCancer'].parameters['r_stage1_cin3'] = 0.2
+    return sim
+
+
+def zero_rate_of_onset_stage1(sim):
+    # Rate of cancer onset per month:
+    sim.modules['CervicalCancer'].parameters['r_stage1_cin3'] = 0.00
+    return sim
+
+
+def incr_rates_of_progression(sim):
+    # Rates of cancer progression per month:
+    sim.modules['CervicalCancer'].parameters['r_stage2a_stage1'] *= 5
+    sim.modules['CervicalCancer'].parameters['r_stage2b_stage2a'] *= 5
+    sim.modules['CervicalCancer'].parameters['r_stage3_stage2b'] *= 5
+    sim.modules['CervicalCancer'].parameters['r_stage4_stage3'] *= 5
+    return sim
+
+
+def make_treatment_ineffective(sim):
+    # Treatment effect of 1.0 will not retard progression
+    sim.modules['CervicalCancer'].parameters['prob_cure_stage1'] = 0.0
+    sim.modules['CervicalCancer'].parameters['prob_cure_stage2a'] = 0.0
+    sim.modules['CervicalCancer'].parameters['prob_cure_stage2b'] = 0.0
+    sim.modules['CervicalCancer'].parameters['prob_cure_stage3'] = 0.0
+    return sim
+
+def make_screening_mandatory(sim):
+    sim.modules['CervicalCancer'].parameters['prob_xpert_screen'] = 1.0
+    sim.modules['CervicalCancer'].parameters['prob_via_screen'] = 1.0
+    return sim
+
+def make_cin_treatment_perfect(sim):
+    sim.modules['CervicalCancer'].parameters['prob_cryotherapy_successful'] = 1.0
+    sim.modules['CervicalCancer'].parameters['prob_thermoabl_successful'] = 1.0
+    return sim
+
+def make_vaginal_bleeding_referral_perfect(sim):
+    sim.modules['CervicalCancer'].parameters['prob_referral_biopsy_given_vaginal_bleeding']  = 1.0
+    return sim
+
+def make_biopsy_accuracy_perfect(sim):
+    # Biopsy is perfectly sensitive
+    sim.modules['CervicalCancer'].parameters['sensitivity_of_biopsy_for_cervical_cancer'] = 1.0
+    return sim
+
+def make_treamtment_perfectly_effective(sim):
+    # All get symptoms and treatment effect of 1.0 will stop progression
+    sim.modules['CervicalCancer'].parameters['prob_cure_stage1'] = 1.0
+    sim.modules['CervicalCancer'].parameters['prob_cure_stage2a'] = 1.0
+    sim.modules['CervicalCancer'].parameters['prob_cure_stage2b'] = 1.0
+    sim.modules['CervicalCancer'].parameters['prob_cure_stage3'] = 1.0
+    return sim
+
+def make_perfect_healthcare_seeking(sim):
+    # Force that everyone seeks care with onset of a symptom
+    sim.modules['HealthSeekingBehaviour'].parameters['force_any_symptom_to_lead_to_healthcareseeking'] = True
+    return sim
+
+
+def get_population_of_interest(sim):
+    # Function to make filtering the simulation population for the population of interest easier
+    # Population of interest in this module is living females aged 15 and above
+    population_of_interest = \
+        sim.population.props.is_alive & (sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F')
+    return population_of_interest
+
+def get_population_of_interest_30_to_50(sim):
+    # Function to make filtering the simulation population for the population of interest easier
+    # Population of interest for this function is 30 to 50 as it encompasses both HIV and non-HIV individuals eligible
+    # for screening
+    population_of_interest = \
+        sim.population.props.is_alive & (
+                sim.population.props.age_years.between(30, 50, inclusive='left') & (sim.population.props.sex == 'F'))
+    return population_of_interest
+
+# %% Checks:
+def check_dtypes(sim):
+    # check types of columns
+    df = sim.population.props
+    orig = sim.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
+
+def check_configuration_of_population(sim):
+    # get df for alive persons:
+    df = sim.population.props.copy()
+
+    # get df for alive persons:
+    df = df.loc[df.is_alive]
+
+    # check that no one under 15 has cancer
+    assert not df.loc[df.age_years < 15].ce_cc_ever.any()
+
+    # check that diagnosis and treatment is never applied to someone who has never had cancer:
+    assert df.loc[~df.ce_cc_ever, 'ce_date_palliative_care'].isna().all()
+
+    # check that treatment is never done for those with stage 4
+    assert 0 == (df.ce_stage_at_which_treatment_given == 'stage4').sum()
+    assert 0 == (df.loc[~pd.isnull(df.ce_date_treatment)].ce_stage_at_which_treatment_given == 'none').sum()
+
+    # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
+    assert set(df.index[~pd.isnull(df.ce_date_diagnosis)]).issubset(df.index[df.ce_cc_ever])
+    assert (df.loc[~pd.isnull(df.ce_date_diagnosis)].ce_date_diagnosis <= sim.date).all()
+
+    # check that date diagnosed is consistent with the age of the person (ie. not before they were 15.0
+    age_at_dx = (df.loc[~pd.isnull(df.ce_date_diagnosis)].ce_date_diagnosis - df.loc[
+        ~pd.isnull(df.ce_date_diagnosis)].date_of_birth)
+    assert all([int(x.days / DAYS_IN_YEAR) >= 15 for x in age_at_dx])
+
+    # check that those treated are a subset of those diagnosed:
+    assert set(df.index[~pd.isnull(df.ce_date_treatment)]).issubset(df.index[~pd.isnull(df.ce_date_diagnosis)])
+
+    # check that those on palliative care are a subset of those diagnosed (and that the order of dates makes sense):
+    assert set(df.index[~pd.isnull(df.ce_date_palliative_care)]).issubset(df.index[~pd.isnull(df.ce_date_diagnosis)])
+    assert (df.loc[~pd.isnull(df.ce_date_palliative_care)].ce_date_diagnosis <= df.loc[
+        ~pd.isnull(df.ce_date_palliative_care)].ce_date_diagnosis).all()
+
+
+# %% Tests:
+def test_config_of_pop_high_prevalence(seed):
+    """Tests of the way the population is configured: with high initial prevalence values """
+    sim = make_simulation_healthsystemdisabled(seed=seed)
+    sim = make_high_init_prev(sim)
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=100))
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+
+
+def test_initial_config_of_pop_zero_prevalence(seed):
+    """Tests of the way the population is configured: with zero initial prevalence values """
+    sim = make_simulation_healthsystemdisabled(seed=seed)
+    sim = zero_out_init_prev(sim)
+    sim.make_initial_population(n=popsize)
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+    df = sim.population.props
+    assert (df.loc[df.is_alive].ce_hpv_cc_status == 'none').all()
+
+
+def test_config_of_pop_usual_prevalence(seed):
+    """Tests of the way the population is configured: with usual initial prevalence values"""
+    sim = make_simulation_healthsystemdisabled(seed=seed)
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=100))
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+
+@pytest.mark.slow
+def test_run_sim_from_high_prevalence(seed):
+    """Run the simulation from the usual prevalence values and high rates of incidence and check configuration of
+    properties at the end"""
+    sim = make_simulation_healthsystemdisabled(seed=seed)
+    sim = make_high_init_prev(sim)
+    sim = incr_rates_of_progression(sim)
+    sim = incr_rate_of_onset_stage1(sim)
+    sim.make_initial_population(n=popsize)
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+    sim.simulate(end_date=Date(2012, 1, 1))
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+
+
+@pytest.mark.slow
+def test_check_progression_through_stages_is_happening(seed):
+    """Put all people into the first stage, let progression happen (with no treatment effect) and check that people end
+    up in late stages and some die of this cause.
+    Use a functioning healthsystem that allows HSI and check that diagnosis, treatment and palliative care is happening.
+    """
+
+    sim = make_simulation_healthsystemdisabled(seed=seed)
+
+    # set initial prevalence to be zero
+    sim = zero_out_init_prev(sim)
+
+    # no incidence of new cases
+    sim = zero_rate_of_onset_stage1(sim)
+
+    # remove effect of treatment:
+    sim = make_treatment_ineffective(sim)
+
+    # increase progression rates:
+    sim = incr_rates_of_progression(sim)
+
+    # make initial population
+    sim.make_initial_population(n=popsize)
+
+    # force that all persons aged over 15 are in the stage 1 to begin with:
+    population_of_interest = get_population_of_interest(sim)
+    sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'stage1'
+    check_configuration_of_population(sim)
+
+    # Simulate
+    sim.simulate(end_date=Date(2010, 8, 1))
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+
+    # Look at distribution of status:
+    df = sim.population.props
+    distr = df.loc[population_of_interest, "ce_hpv_cc_status"].value_counts(normalize=True)
+    assert (distr.loc[['stage2a', 'stage2b', 'stage3', 'stage4']] > 0.0).all()
+
+    # check that some people have died of cervical cancer
+    assert (df.cause_of_death == 'CervicalCancer').any()
+
+    df = sim.population.props
+    # check that people are being diagnosed, going onto treatment and palliative care:
+    assert (df.ce_date_diagnosis > start_date).any()
+    assert (df.ce_date_treatment > start_date).any()
+    assert (df.ce_date_palliative_care > start_date).any()
+
+
+@pytest.mark.slow
+def test_that_there_is_no_treatment_without_the_hsi_running(seed):
+    """Put all people into the first stage, let progression happen (with no treatment effect) and check that people end
+    up in late stages and some die of this cause.
+    Use a healthsystem that does not allows HSI and check that diagnosis, treatment and palliative care do not occur.
+    """
+    sim = make_simulation_nohsi(seed=seed)
+
+    # set initial prevalence to be zero
+    sim = zero_out_init_prev(sim)
+
+    # no incidence of new cases
+    sim = zero_rate_of_onset_stage1(sim)
+
+    # remove effect of treatment:
+    sim = make_treatment_ineffective(sim)
+
+    # make initial population
+    sim.make_initial_population(n=popsize)
+
+    population_of_interest = get_population_of_interest(sim)
+    sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'stage1'
+
+    # Simulate
+    sim.simulate(end_date=Date(2010, 8, 1))
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+
+    df = sim.population.props
+    assert len(df.loc[df.is_alive & (df.ce_hpv_cc_status != 'none')]) > 0
+
+    # check that some people have died of cervical cancer
+    assert (df.cause_of_death == 'CervicalCancer').any()
+
+    # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
+    assert not (df.ce_date_diagnosis > start_date).any()
+    assert not (df.ce_date_treatment > start_date).any()
+    assert not (df.ce_stage_at_which_treatment_given != 'none').any()
+    assert not (df.ce_date_palliative_care > start_date).any()
+
+
+@pytest.mark.slow
+def test_check_progression_to_death_is_blocked_by_treatment(seed):
+    """Put all people into the first stage but on treatment, let progression happen, and check that people do move into
+    a late stage or die"""
+    sim = make_simulation_healthsystemdisabled(seed=seed)
+
+    # set initial prevalence to be zero
+    sim = zero_out_init_prev(sim)
+
+    # no incidence of new cases
+    sim = zero_rate_of_onset_stage1(sim)
+
+    # make everyone with a symptom seek care
+    sim = make_perfect_healthcare_seeking(sim)
+
+    # make all persons with symptoms be perfectly referred to care
+    sim = make_vaginal_bleeding_referral_perfect(sim)
+
+    # make biopsy perfect
+    sim = make_biopsy_accuracy_perfect(sim)
+
+    # make treatment percectly effective:
+    sim = make_treamtment_perfectly_effective(sim)
+
+    # increase progression rates:
+    sim = incr_rates_of_progression(sim)
+
+    # make initial population
+    sim.make_initial_population(n=popsize)
+
+    # force that all persons aged over 15 are in stage 1 to begin with:
+    # get the population of interest
+    population_of_interest = get_population_of_interest(sim)
+    sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'stage1'
+
+    # force that they are all symptomatic
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=population_of_interest.index[population_of_interest].tolist(),
+        symptom_string='vaginal_bleeding',
+        add_or_remove='+',
+        disease_module=sim.modules['CervicalCancer']
+    )
+    check_configuration_of_population(sim)
+
+    # Simulate
+    sim.simulate(end_date=Date(2010, 8, 1))
+    check_dtypes(sim)
+
+    # there should have been no year of live lost to cervical cancer
+    df = sim.population.props
+    assert not (df.cause_of_death == 'CervicalCancer').any()
+    yll = sim.modules['HealthBurden'].years_life_lost
+    assert 'CervicalCancer' not in yll.columns
+
+    # Everyone that has been treated is now in 'none' category.
+    assert (df.loc[df.is_alive & df.ce_ever_treated, 'ce_hpv_cc_status'] == 'hpv').all()
+
+
+@pytest.mark.slow
+def test_screening_age_conditions(seed):
+    """Ensure individuals screened are of the corresponding eligible screening age"""
+    sim = make_simulation_healthsystemdisabled(seed=seed)
+
+    # make screening mandatory:
+    sim = make_screening_mandatory(sim)
+
+    # make initial population
+    sim.make_initial_population(n=popsize)
+
+    # force initial ce_hpv_cc_status to cin2 to ensure CIN treatment occurs
+    population_of_interest = get_population_of_interest_30_to_50(sim)
+    sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'cin2'
+
+    # Simulate
+    sim.simulate(end_date=Date(2010, 8, 1))
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+
+    df = sim.population.props
+
+    df["age_at_last_screen"] = (
+        df["ce_date_last_screened"].dt.year - df["date_of_birth"].dt.year).astype("Int64")  # Nullable integer type
+
+    # If have HIV, screening 25+
+    hv_screened = df.loc[
+        (df["hv_diagnosed"]) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
+    ]
+    assert (hv_screened.dropna() >= 25).all(), "Some individuals diagnosed with HIV were screened below age 25."
+
+    # If do not have HIV, screening 30+
+    hv_non_screened = df.loc[
+        (~df["hv_diagnosed"]) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
+    ]
+    assert (hv_non_screened.dropna() >= 30).all(), "Some individuals without HIV were screened below age 30."
+
+def test_check_all_cin_removed(seed):
+    """Ensure that individuals that are successfully treated for CIN have CIN removed """
+    sim = make_simulation_healthsystemdisabled(seed=seed)
+
+    # make screening mandatory
+    sim = make_screening_mandatory(sim)
+
+    # make cin treatment perfect
+    sim = make_cin_treatment_perfect(sim)
+
+    # make initial population
+    sim.make_initial_population(n=popsize)
+
+    population_of_interest = get_population_of_interest_30_to_50(sim)
+    sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'cin2'  # everyone has cin2
+    check_configuration_of_population(sim)
+
+    # Simulate
+    sim.simulate(end_date=Date(2010, 6, 1))
+
+    df = sim.population.props[population_of_interest]
+    df_screened_cin = df[
+        (df["ce_xpert_hpv_ever_pos"] | df["ce_via_cin_ever_detected"])
+    ]
+    assert len(df_screened_cin)
+    assert (
+        df_screened_cin["ce_date_cin_removal"].notnull()
+        & (df_screened_cin["ce_date_cryotherapy"].notnull() | df_screened_cin["ce_date_thermoabl"].notnull())
+        & (~df_screened_cin["ce_hpv_cc_status"].isin(['cin1', 'cin2', 'cin3']))
+    ).all().all(), "Some individuals with detected CIN have not had it removed ."
+
+
+def test_transition_year_logic(seed):
+    """Ensure that different screenings occur based on transition year """
+
+    sim = make_simulation_healthsystemdisabled(seed=seed)
+    sim = make_screening_mandatory(sim)
+
+    # Update transition_year so that simulation does not need to run through 2024
+    transition_year = 2011
+    sim.modules['CervicalCancer'].parameters['transition_screening_method_year'] = transition_year
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(transition_year+2, 1, 1))
+
+    df = sim.population.props
+
+    # All XPERT screening after transition_year
+    screened = df.loc[
+        (df["ce_date_xpert"].notnull() | df['ce_date_via'].notnull()), ["ce_date_xpert", "ce_date_via"]
+    ]
+    assert len(screened)
+    # Create a Series taking non-null values from the `screened` DataFrame for latest date
+    date_screened = screened["ce_date_xpert"].combine_first(screened["ce_date_via"])
+
+    # If the screen happened after transition-year it must have been xpert
+    assert screened.loc[date_screened.dt.year >= transition_year, 'ce_date_xpert'].notnull().all()
+
+    # All VIA before transition_year unless it is a confirmation test following XPERT
+    screened_by_via = df.loc[df['ce_date_via'].notnull()]
+    assert (
+        (screened_by_via["ce_date_via"].dt.year < transition_year) |  # Either... happened before transition year
+        (
+                                                                      # ... Or... was confirmatory
+            (screened_by_via["ce_date_via"].dt.year >= transition_year) &
+            (screened_by_via["ce_date_xpert"].notnull()) &
+            (screened_by_via["ce_xpert_hpv_ever_pos"])
+        )
+    ).all(), "Some rows violate the VIA/Xpert date conditions."
+
+def test_vaginal_bleeding(seed):
+    """Ensure that some of those who have vaginal bleeding are diagnosed (given perfect referral)."""
+
+    sim = make_simulation_healthsystemdisabled(seed=123)
+    sim = make_screening_mandatory(sim)
+    sim = make_cin_treatment_perfect(sim)
+    sim = make_vaginal_bleeding_referral_perfect(sim)
+
+    # Simulate
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2010, 6, 1))
+
+    df = sim.population.props
+
+    # check that those with symptom are a subset of those with cancer:
+    vaginal_bleeding_symptom = set(sim.modules['SymptomManager'].who_has('vaginal_bleeding'))
+    df_ce_cc_ever_true = set(df.index[df.ce_cc_ever])
+
+    if not vaginal_bleeding_symptom and not df_ce_cc_ever_true:
+        pass
+    else:
+        assert vaginal_bleeding_symptom.issubset(df_ce_cc_ever_true)

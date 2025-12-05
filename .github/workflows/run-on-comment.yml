@@ -71,7 +71,7 @@ jobs:
     steps:
     - name: Check permissions of commenting user
       id: has_permissions
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const response = await github.rest.repos.getCollaboratorPermissionLevel({
@@ -88,7 +88,7 @@ jobs:
         exit 1
 
     - name: React to comment
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           github.rest.reactions.createForIssueComment({
@@ -100,7 +100,7 @@ jobs:
 
     - name: Get SHA of last commit on default branch if issue or pull-request branch
       id: sha
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         result-encoding: string
         script: |
@@ -115,7 +115,7 @@ jobs:
           return pr.head.sha;
 
     - name: Checkout SHA
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         lfs: true
         ref: ${{ steps.sha.outputs.result }}
@@ -126,7 +126,7 @@ jobs:
     - name: Get comment-bot token
       if: always() && steps.has_permissions.outputs.result == 'true'
       id: get_comment_bot_token
-      uses: peter-murray/workflow-application-token-action@8e4e6fbf6fcc8a272781d97597969d21b3812974
+      uses: peter-murray/workflow-application-token-action@d17e3a9a36850ea89f35db16c1067dd2b68ee343
       with:
         application_id: ${{ secrets.application-id }}
         application_private_key: ${{ secrets.application-private-key }}
@@ -134,7 +134,7 @@ jobs:
 
     - name: Create comment with test result and link to workflow run information
       if: always() && steps.has_permissions.outputs.result == 'true'
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         github-token: ${{ steps.get_comment_bot_token.outputs.token }}
         script: |
@@ -194,7 +194,7 @@ jobs:
 
     - name: Upload artifact if requested
       if: "${{ inputs.artifact-path != '' }}"
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.artifact-path }}

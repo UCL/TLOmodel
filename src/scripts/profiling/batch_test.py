@@ -52,33 +52,34 @@ log_config = {
     "custom_levels": {"*": logging.INFO}
 }
 
-sim = Simulation(start_date=start_date, seed=int(seed_arg), log_config=log_config)
+sim = Simulation(start_date=start_date, seed=int(seed_arg),
+                 log_config=log_config, resourcefilepath=resourcefilepath)
 
 # Register the appropriate modules
 sim.register(
     # Standard modules:
-    demography.Demography(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    demography.Demography(),
+    enhanced_lifestyle.Lifestyle(),
+    symptommanager.SymptomManager(),
+    healthseekingbehaviour.HealthSeekingBehaviour(),
+    healthburden.HealthBurden(),
 
     # HealthSystem
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(),
 
     # Modules for birth/labour/newborns --> Simplified Births
-    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    simplified_births.SimplifiedBirths(),
 
     # Disease modules considered complete:
-    depression.Depression(resourcefilepath=resourcefilepath),
-    diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-    epi.Epi(resourcefilepath=resourcefilepath),
-    epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
-    hiv.Hiv(resourcefilepath=resourcefilepath),
-    malaria.Malaria(resourcefilepath=resourcefilepath),
-    cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
-    oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
+    depression.Depression(),
+    diarrhoea.Diarrhoea(),
+    epi.Epi(),
+    epilepsy.Epilepsy(),
+    hiv.Hiv(),
+    malaria.Malaria(),
+    cardio_metabolic_disorders.CardioMetabolicDisorders(),
+    oesophagealcancer.OesophagealCancer(),
+    other_adult_cancers.OtherAdultCancer()
 )
 
 # Run the simulation

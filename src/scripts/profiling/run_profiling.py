@@ -298,7 +298,7 @@ def run_profiling(
         print(f"Writing {output_ipysession_file}", end="...", flush=True)
         scale_run_session.save(output_ipysession_file)
         print("done")
-        
+
     if write_flat_html:
         output_html_file = output_dir / f"{output_name}.flat.html"
         console_renderer = ConsoleRenderer(
@@ -306,7 +306,6 @@ def run_profiling(
             timeline=False,
             color=True,
             flat=True,
-            flat_time="total",
             processor_options={"show_regex": ".*/tlo/.*", "hide_regex": ".*/pandas/.*", "filter_threshold": 1e-3}
         )
         converter = Ansi2HTMLConverter(title=output_name)
@@ -327,7 +326,7 @@ def run_profiling(
         additional_stats=additional_stats,
     )
     print("done")
-    
+
     # Write out logged profiling statistics
     logged_statistics_file = output_dir / f"{output_name}.logged-stats.csv"
     print(f"Writing {logged_statistics_file}", end="...", flush=True)

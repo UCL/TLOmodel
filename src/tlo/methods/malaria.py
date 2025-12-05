@@ -31,14 +31,13 @@ logger.setLevel(logging.INFO)
 
 
 class Malaria(Module, GenericFirstAppointmentsMixin):
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         """Create instance of Malaria module
 
         :param name: Name of this module (optional, defaults to name of class)
         :param resourcefilepath: Path to the TLOmodel `resources` directory
         """
         super().__init__(name)
-        self.resourcefilepath = Path(resourcefilepath)
 
         # cleaned coverage values for IRS and ITN (populated in `read_parameters`)
         self.itn_irs = None
@@ -227,9 +226,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         'ma_iptp': Property(Types.BOOL, 'if woman has IPTp in current pregnancy'),
     }
 
-    def read_parameters(self, data_folder):
-        # workbook = pd.read_excel(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
-        workbook = read_csv_files(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria', files=None)
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+        # workbook = pd.read_excel(resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
+        workbook = read_csv_files(resourcefilepath / 'malaria' / 'ResourceFile_malaria', files=None)
         self.load_parameters_from_dataframe(workbook['parameters'])
 
         p = self.parameters
@@ -242,9 +241,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p['rdt_testing_rates'] = workbook['WHO_TestData2023']
         p['highrisk_districts'] = workbook['highrisk_districts']
 
-        inf_inc_sheet = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
-        clin_inc_sheet = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_ClinInc_expanded.csv')
-        sev_inc_sheet = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
+        inf_inc_sheet = pd.read_csv(resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
+        clin_inc_sheet = pd.read_csv(resourcefilepath / 'malaria' / 'ResourceFile_malaria_ClinInc_expanded.csv')
+        sev_inc_sheet = pd.read_csv(resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
 
         # load parameters for scale-up projections
         p['scaleup_parameters'] = workbook["scaleup_parameters"]
@@ -417,11 +416,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         def _draw_incidence_for(_col, _where):
             """a helper function to perform random draw for selected individuals on column of probabilities"""
             # create an index from the individuals to lookup entries in the current incidence table
-            district_age_lookup = (
-                df[_where]
-                .set_index(['district_num_of_residence', 'ma_age_edited'])
-                .index
-            )
+            district_age_lookup = pd.MultiIndex.from_frame(
+                df.loc[_where, ['district_num_of_residence', 'ma_age_edited']])
+
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
             # update the index so it's the same as the original population dataframe for these individuals
@@ -629,7 +626,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         self.item_codes_for_consumables_required['paracetamol'] = get_item_code('Paracetamol 500mg_1000_CMST')
 
         # malaria treatment complicated - same consumables for adults and children
-        self.item_codes_for_consumables_required['malaria_complicated_artesunate'] = get_item_code('Injectable artesunate')
+        self.item_codes_for_consumables_required['malaria_complicated_artesunate'] = get_item_code(
+            'Injectable artesunate')
 
         self.item_codes_for_consumables_required['malaria_complicated_optional_items'] = [
             get_item_code('Malaria test kit (RDT)'),
@@ -1264,7 +1262,9 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
             # 35–44 kg: 4 tablets every 12 hours for 3 days
             # paracetamol syrup in 1ml doses, 15ml 4x per day, 3 days
             drugs_available = self.get_consumables(
-                item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children']: 24},
+                item_codes={
+                    self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children']: 24
+                },
                 optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol_syrup']: 180,
                                      self.module.item_codes_for_consumables_required['malaria_rdt']: 1}
             )
@@ -1330,8 +1330,10 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, 'ma_tx_counter'] += 1
 
                 # Add used equipment
-                self.add_equipment({'Drip stand', 'Haemoglobinometer',
-                                       'Analyser, Combined Chemistry and Electrolytes'})
+                self.add_equipment({'Drip stand',
+                                    'Haemoglobinometer',
+                                    'Analyser, Combined Chemistry and Electrolytes',
+                                    })
 
                 # rdt is offered as part of the treatment package
                 # Log the test: line-list of summary information about each test
@@ -1597,10 +1599,8 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # infected in the last time-step, clinical and severe cases only
         # incidence rate per 1000 person-years
         # include those cases that have died in the case load
-        tmp = len(
-            df.loc[(df.ma_date_symptoms > (now - DateOffset(months=self.repeat)))]
-        )
-        pop = len(df[df.is_alive])
+        tmp = sum(df.ma_date_symptoms > (now - DateOffset(months=self.repeat)))
+        pop = sum(df.is_alive)
 
         inc_1000py = ((tmp / pop) * 1000) if pop else 0
 
@@ -1612,7 +1612,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ]
         )
 
-        pop2_10 = len(df[df.is_alive & (df.age_years.between(2, 10))])
+        pop2_10 = sum(df.is_alive & (df.age_years.between(2, 10)))
         inc_1000py_2_10 = ((tmp2 / pop2_10) * 1000) if pop2_10 else 0
 
         inc_1000py_hiv = 0  # if running without hiv/tb
@@ -1661,7 +1661,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # population size - children
-        child2_10_pop = len(df[df.is_alive & (df.age_years.between(2, 10))])
+        child2_10_pop = sum(df.is_alive & (df.age_years.between(2, 10)))
 
         # prevalence in children aged 2-10
         child_prev = child2_10_inf / child2_10_pop if child2_10_pop else 0
@@ -1673,7 +1673,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & ((df.ma_inf_type == 'clinical') | (df.ma_inf_type == 'severe'))
                 ]
         )
-        pop2 = len(df[df.is_alive])
+        pop2 = sum(df.is_alive)
         prev_clin = total_clin / pop2
 
         prev = {
@@ -1772,9 +1772,9 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ PREVALENCE OF INFECTION ------------------------------------
         infected = (
-            df[df.is_alive & df.ma_is_infected].groupby('district_num_of_residence').size()
+            df.district_num_of_residence[df.is_alive & df.ma_is_infected].value_counts()
         )
-        pop = df[df.is_alive].groupby('district_num_of_residence').size()
+        pop = df.district_num_of_residence[df.is_alive].value_counts()
         prev = infected / pop
         prev_ed = prev.fillna(0)
         assert prev_ed.all() >= 0  # checks

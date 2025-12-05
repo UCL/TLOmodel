@@ -15,7 +15,7 @@ from __future__ import annotations
 import math
 from itertools import combinations
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -30,7 +30,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
+from tlo.util import random_date, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -213,10 +213,9 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                   'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has')
                   }
 
-    def __init__(self, name=None, resourcefilepath=None, do_log_df: bool = False, do_condition_combos: bool = False):
+    def __init__(self, name=None, do_log_df: bool = False, do_condition_combos: bool = False):
 
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         self.conditions = CardioMetabolicDisorders.conditions
         self.events = CardioMetabolicDisorders.events
@@ -256,35 +255,37 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         self.lms_event_death = dict()
         self.lms_event_symptoms = dict()
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
 
-        ResourceFile_cmd_condition_onset.xlsx = parameters for onset of conditions
-        ResourceFile_cmd_condition_removal.xlsx  = parameters for removal of conditions
-        ResourceFile_cmd_condition_death.xlsx  = parameters for death rate from conditions
-        ResourceFile_cmd_condition_prevalence.xlsx  = initial and target prevalence for conditions
-        ResourceFile_cmd_condition_symptoms.xlsx  = symptoms for conditions
-        ResourceFile_cmd_condition_hsi.xlsx  = HSI parameters for conditions
-        ResourceFile_cmd_condition_testing.xlsx  = community testing parameters for conditions (currently only
-        hypertension)
-        ResourceFile_cmd_events.xlsx  = parameters for occurrence of events
-        ResourceFile_cmd_events_death.xlsx  = parameters for death rate from events
-        ResourceFile_cmd_events_symptoms.xlsx  = symptoms for events
-        ResourceFile_cmd_events_hsi.xlsx  = HSI parameters for events
+        Folders
+            ResourceFile_cmd_condition_onset = parameters for onset of conditions
+            ResourceFile_cmd_condition_removal  = parameters for removal of conditions
+            ResourceFile_cmd_condition_death  = parameters for death rate from conditions
+            ResourceFile_cmd_condition_prevalence  = initial and target prevalence for conditions
+            ResourceFile_cmd_condition_symptoms  = symptoms for conditions
+            ResourceFile_cmd_condition_hsi  = HSI parameters for conditions
+            ResourceFile_cmd_condition_testing  = community testing parameters for conditions (currently only
+            hypertension)
+            ResourceFile_cmd_events  = parameters for occurrence of events
+            ResourceFile_cmd_events_death  = parameters for death rate from events
+            ResourceFile_cmd_events_symptoms  = symptoms for events
+            ResourceFile_cmd_events_hsi  = HSI parameters for events
 
         """
-        cmd_path = Path(self.resourcefilepath) / "cmd"
-        cond_onset = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_onset.xlsx", sheet_name=None)
-        cond_removal = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_removal.xlsx", sheet_name=None)
-        cond_death = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_death.xlsx", sheet_name=None)
-        cond_prevalence = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_prevalence.xlsx", sheet_name=None)
-        cond_symptoms = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_symptoms.xlsx", sheet_name=None)
-        cond_hsi = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_hsi.xlsx", sheet_name=None)
-        cond_testing = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_testing.xlsx", sheet_name=None)
-        events_onset = pd.read_excel(cmd_path / "ResourceFile_cmd_events.xlsx", sheet_name=None)
-        events_death = pd.read_excel(cmd_path / "ResourceFile_cmd_events_death.xlsx", sheet_name=None)
-        events_symptoms = pd.read_excel(cmd_path / "ResourceFile_cmd_events_symptoms.xlsx", sheet_name=None)
-        events_hsi = pd.read_excel(cmd_path / "ResourceFile_cmd_events_hsi.xlsx", sheet_name=None)
+
+        cmd_path = resourcefilepath / "cmd"
+        cond_onset = read_csv_files(cmd_path / "ResourceFile_cmd_condition_onset", files=None)
+        cond_removal = read_csv_files(cmd_path / "ResourceFile_cmd_condition_removal", files=None)
+        cond_death = read_csv_files(cmd_path / "ResourceFile_cmd_condition_death", files=None)
+        cond_prevalence = read_csv_files(cmd_path / "ResourceFile_cmd_condition_prevalence", files=None)
+        cond_symptoms = read_csv_files(cmd_path / "ResourceFile_cmd_condition_symptoms", files=None)
+        cond_hsi = read_csv_files(cmd_path / "ResourceFile_cmd_condition_hsi", files=None)
+        cond_testing = read_csv_files(cmd_path / "ResourceFile_cmd_condition_testing", files=None)
+        events_onset = read_csv_files(cmd_path / "ResourceFile_cmd_events", files=None)
+        events_death = read_csv_files(cmd_path / "ResourceFile_cmd_events_death", files=None)
+        events_symptoms = read_csv_files(cmd_path / "ResourceFile_cmd_events_symptoms", files=None)
+        events_hsi = read_csv_files(cmd_path / "ResourceFile_cmd_events_hsi", files=None)
 
         self.load_parameters_from_dataframe(pd.read_csv(cmd_path / "ResourceFile_cmd_parameters.csv"))
 
@@ -1779,10 +1780,21 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
 
         # Run a test to diagnose whether the person has condition:
         if _ev == 'ever_stroke':
-            self.add_equipment({'Computed Tomography (CT machine)', 'CT scanner accessories'})
+            self.add_equipment({'Computed Tomography (CT machine)',
+                                'CT scanner accessories',
+                                'Analyser, Blood Gas',
+                                'Knee continuous passive motion machine',
+                                'Knee continuous range of motion machine',
+                                'Dual ergometer',
+                                'Patellar reflex hammer',
+                                *self.healthcare_system.equipment.from_pkg_names('Emergency')
+                                })
 
         if _ev == 'ever_heart_attack':
-            self.add_equipment({'Electrocardiogram'})
+            self.add_equipment({'Electrocardiogram',
+                                'Analyser, Blood Gas',
+                                *self.healthcare_system.equipment.from_pkg_names('Emergency')})
+
 
         dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
             dx_tests_to_run=f'assess_{_ev}',

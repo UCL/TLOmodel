@@ -31,10 +31,8 @@ Job ID: calibration_script-2022-04-12T190518Z
 
 """
 
-import os
 import random
-
-import pandas as pd
+from pathlib import Path
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -51,6 +49,7 @@ from tlo.methods import (
     tb,
 )
 from tlo.scenario import BaseScenario
+from tlo.util import read_csv_files
 
 number_of_draws = 1
 runs_per_draw = 5
@@ -68,9 +67,9 @@ class TestScenario(BaseScenario):
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
-        self.sampled_parameters = pd.read_excel(
-            os.path.join(self.resources, "../../../../resources/ResourceFile_HIV/parameters.csv"),
-            sheet_name="LHC_samples",
+        self.sampled_parameters = read_csv_files(
+            Path("./resources")/"ResourceFile_HIV",
+            files="LHC_samples",
         )
 
     def log_configuration(self):
@@ -85,12 +84,10 @@ class TestScenario(BaseScenario):
 
     def modules(self):
         return [
-            demography.Demography(resourcefilepath=self.resources),
-            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(
-                resourcefilepath=self.resources,
-                service_availability=["*"],  # all treatment allowed
+            demography.Demography(),
+            simplified_births.SimplifiedBirths(),
+            enhanced_lifestyle.Lifestyle(),
+            healthsystem.HealthSystem(service_availability=["*"],  # all treatment allowed
                 mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
                 cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
                 ignore_priority=True,  # do not use the priority information in HSI event to schedule
@@ -99,13 +96,13 @@ class TestScenario(BaseScenario):
                 disable_and_reject_all=False,  # disable healthsystem and no HSI runs
                 store_hsi_events_that_have_run=False,  # convenience function for debugging
             ),
-            symptommanager.SymptomManager(resourcefilepath=self.resources),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-            healthburden.HealthBurden(resourcefilepath=self.resources),
-            epi.Epi(resourcefilepath=self.resources),
-            hiv.Hiv(resourcefilepath=self.resources),
-            tb.Tb(resourcefilepath=self.resources),
-            hiv_tb_calibration.Deviance(resourcefilepath=self.resources),
+            symptommanager.SymptomManager(),
+            healthseekingbehaviour.HealthSeekingBehaviour(),
+            healthburden.HealthBurden(),
+            epi.Epi(),
+            hiv.Hiv(),
+            tb.Tb(),
+            hiv_tb_calibration.Deviance(),
         ]
 
     def draw_parameters(self, draw_number, rng):

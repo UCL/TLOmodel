@@ -9,7 +9,7 @@ import math
 from collections import defaultdict
 from pathlib import Path
 from types import MappingProxyType
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -74,9 +74,8 @@ class Demography(Module):
     The core demography module.
     """
 
-    def __init__(self, name=None, resourcefilepath=None, equal_allocation_by_district: bool = False):
+    def __init__(self, name=None, equal_allocation_by_district: bool = False):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.equal_allocation_by_district = equal_allocation_by_district
         self.initial_model_to_data_popsize_ratio = None  # will store scaling factor
         self.popsize_by_year = dict()  # will store total population size each year
@@ -84,7 +83,7 @@ class Demography(Module):
         self.gbd_causes_of_death = set()  # will store all the causes of death defined in the GBD data
         self.gbd_causes_of_death_not_represented_in_disease_modules = set()
         #  will store causes of death in GBD not represented in the simulation
-        self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
+        self.other_death_poll = None  # will hold pointer to the OtherDeathPoll object
         self.districts = None  # will store all the districts in a list
 
     OPTIONAL_INIT_DEPENDENCIES = {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher'}
@@ -160,30 +159,30 @@ class Demography(Module):
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Load the parameters from `ResourceFile_Demography_parameters.csv` and data from other `ResourceFiles`."""
 
         # General parameters
         self.load_parameters_from_dataframe(pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Demography_parameters.csv')
+            resourcefilepath / 'demography' / 'ResourceFile_Demography_parameters.csv')
         )
 
         # Initial population size:
         self.parameters['pop_2010'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_2010.csv'
+            resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv'
         )
 
         # Lookup dicts to map from district_num_of_residence (in the df) and District name and Region name
         self.districts = self.parameters['pop_2010']['District'].drop_duplicates().to_list()
         self.parameters['district_num_to_district_name'] = \
-            self.parameters['pop_2010'][['District_Num', 'District']].drop_duplicates()\
-                                                                     .set_index('District_Num')['District']\
-                                                                     .to_dict()
+            self.parameters['pop_2010'][['District_Num', 'District']].drop_duplicates() \
+                .set_index('District_Num')['District'] \
+                .to_dict()
 
         self.parameters['district_num_to_region_name'] = \
-            self.parameters['pop_2010'][['District_Num', 'Region']].drop_duplicates()\
-                                                                   .set_index('District_Num')['Region']\
-                                                                   .to_dict()
+            self.parameters['pop_2010'][['District_Num', 'Region']].drop_duplicates() \
+                .set_index('District_Num')['Region'] \
+                .to_dict()
 
         districts_in_region = defaultdict(set)
         for _district in self.parameters['pop_2010'][['District', 'Region']].drop_duplicates().itertuples():
@@ -192,17 +191,17 @@ class Demography(Module):
 
         # Fraction of babies that are male
         self.parameters['fraction_of_births_male'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_Frac_Births_Male.csv'
+            resourcefilepath / 'demography' / 'ResourceFile_Pop_Frac_Births_Male.csv'
         ).set_index('Year')['frac_births_male']
 
         # All-Cause Mortality schedule:
         self.parameters['all_cause_mortality_schedule'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
+            resourcefilepath / 'demography' / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
         )
 
         # GBD Dataset for Causes of Death
         self.parameters['gbd_causes_of_death_data'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDeath_GBD2019.csv'
+            resourcefilepath / 'gbd' / 'ResourceFile_CausesOfDeath_GBD2019.csv'
         ).set_index(['Sex', 'Age_Grp'])
 
     def pre_initialise_population(self):
@@ -245,10 +244,6 @@ class Demography(Module):
     def initialise_population(self, population):
         """Set properties for this module and compute the initial population scaling factor"""
         df = population.props
-
-        # Compute the initial population scaling factor
-        self.initial_model_to_data_popsize_ratio = \
-            self.compute_initial_model_to_data_popsize_ratio(population.initial_size)
 
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
@@ -304,6 +299,20 @@ class Demography(Module):
                 logger.warning(key="warning",
                                data="No men found. Direct birth mothers search will exclude woman at person_id=0.")
 
+        # Compute the initial scaling factor
+        self.initial_model_to_data_popsize_ratio = \
+            self.compute_initial_model_to_data_popsize_ratio(population.initial_size)
+
+        # Compute the initial population scaling factor by district
+        # compute the scaling factors by district
+        # get the actual numbers in each district in 2010
+        district_pop = self.parameters['pop_2010'].groupby('District')['Count'].sum()
+        # get the numbers in new population dataframe by district
+        model_pop = df.district_of_residence[df.is_alive].value_counts()
+
+        self.initial_model_to_data_popsize_ratio_district = \
+            self.compute_initial_model_to_data_popsize_ratio_by_district(district_pop, model_pop)
+
     def initialise_simulation(self, sim):
         """
         * Schedule the AgeUpdateEvent, the OtherDeathPoll and the DemographyLoggingEvent
@@ -326,6 +335,13 @@ class Demography(Module):
                 data={'scaling_factor': 1.0 / self.initial_model_to_data_popsize_ratio},
                 description='The data-to-model scaling factor (based on the initial population size, used to '
                             'multiply-up results so that they correspond to the real population size.'
+            )
+            _logger.warning(
+                key='scaling_factor_district',
+                data={
+                    'scaling_factor_district': (1.0 / self.initial_model_to_data_popsize_ratio_district).to_dict()},
+                description='The data-to-model district_level scaling factor (based on the initial population size,'
+                            'used to multiply-up results so that they correspond to the real population size.'
             )
 
         # Check that the simulation does not run too long
@@ -595,6 +611,10 @@ class Demography(Module):
             if person.hs_is_inpatient:
                 self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
 
+        # Clear symptoms for the deceased person
+        if 'SymptomManager' in self.sim.modules:
+            self.sim.modules['SymptomManager'].clear_symptoms_for_deceased_person(individual_id)
+
     def create_mappers_from_causes_of_death_to_label(self):
         """Use a helper function to create mappers for causes of death to label."""
         return create_mappers_from_causes_to_label(
@@ -679,6 +699,15 @@ class Demography(Module):
         return initial_population_size / self.parameters['pop_2010']['Count'].sum()
 
 
+    def compute_initial_model_to_data_popsize_ratio_by_district(self, district_pop: pd.Series,
+                                                                model_pop: pd.Series) -> pd.Series:
+        """Compute ratio of initial model population size to estimated population size in 2010 district-wise.
+        :returns: Ratio of ``initial_population`` to 2010 baseline population district-by-district in
+        pd.Series indexed by district name.
+        """
+        return model_pop / district_pop
+
+
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This event updates the age_exact_years, age_years and age_range columns for the population based
@@ -706,6 +735,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
     It does this by computing the GBD death rates that are implied by all the causes of death other than those that are
     represented in the disease module registered in this simulation.
     """
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
         self.causes_to_represent = self.module.gbd_causes_of_death_not_represented_in_disease_modules

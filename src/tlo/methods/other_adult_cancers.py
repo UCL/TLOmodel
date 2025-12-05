@@ -7,7 +7,7 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
@@ -22,6 +22,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -34,9 +35,8 @@ logger.setLevel(logging.INFO)
 class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
     """Other Adult Cancers Disease Module"""
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.linear_models_for_progession_of_oac_status = dict()
         self.lm_onset_early_other_adult_ca_symptom = None
         self.daly_wts = dict()
@@ -72,7 +72,6 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         'Multiple myeloma',
         'Leukemia',
         'Other neoplasms',
-        'Cervical cancer',
         'Uterine cancer',
         'Colon and rectum cancer',
         'Lip and oral cavity cancer',
@@ -176,7 +175,40 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_metastatic": Parameter(
             Types.REAL, "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
                         "other_adult_ca metastatic"
-        )
+        ),
+        "odds_ratio_health_seeking_in_adults_early_other_adult_ca_symptom": Parameter(
+            Types.REAL, "odds ratio for health seeking in adults with early other adult cancer symptom"
+        ),
+        "post_treatment_check_months": Parameter(
+            Types.REAL, "months to first post-treatment check appointment"
+        ),
+        "follow_up_appt_months": Parameter(
+            Types.REAL, "months between follow-up appointments after treatment"
+        ),
+        "palliative_care_interval_months": Parameter(
+            Types.REAL, "months between palliative care appointments"
+        ),
+        "treatment_bed_days": Parameter(
+            Types.REAL, "number of bed days required for cancer treatment"
+        ),
+        "palliative_care_bed_days": Parameter(
+            Types.REAL, "number of bed days required for palliative care"
+        ),
+        "min_age_adult_cancer": Parameter(
+            Types.REAL, "minimum age for adult cancer"
+        ),
+        "initial_polling_start_months": Parameter(
+            Types.INT, "initial polling months delay"
+        ),
+        "initial_polling_start_months_palliative_care": Parameter(
+            Types.REAL, "initial polling months delay for pal care"
+        ),
+        "initial_polling_start_delay_weeks_palliative_care": Parameter(
+            Types.REAL, "week delay after initial_polling_start_months_palliative_care for initial pal care"
+        ),
+        "main_polling_event_frequency_months": Parameter(
+            Types.REAL, "frequency of main polling event"
+        ),
     }
 
     PROPERTIES = {
@@ -212,19 +244,19 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Setup parameters used by the module, now including disability weights"""
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Other_Adult_Cancers.xlsx",
-                          sheet_name="parameter_values")
+            read_csv_files(resourcefilepath / "ResourceFile_Other_Adult_Cancers",
+                           files="parameter_values")
         )
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='early_other_adult_ca_symptom',
-                    odds_ratio_health_seeking_in_adults=4.00,
+                    odds_ratio_health_seeking_in_adults=self.parameters['odds_ratio_health_seeking_in_adults_early_other_adult_ca_symptom'],
                     no_healthcareseeking_in_children=True)
         )
 
@@ -262,7 +294,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         if sum(oac_status_):
             sum_probs = sum(p['in_prop_other_adult_cancer_stage'])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['in_prop_other_adult_cancer_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i / sum_probs for i in p['in_prop_other_adult_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[oac_status_, "oac_status"] = self.rng.choice(
                     [val for val in df.oac_status.cat.categories if val != 'none'],
@@ -375,6 +407,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
+        p = self.parameters
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
         self.item_codes_other_can = get_consumable_item_codes_cancers(self)
@@ -385,7 +418,8 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(OtherAdultCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(OtherAdultCancerMainPollingEvent(self), sim.date +
+                           DateOffset(months=p['initial_polling_start_months']))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -424,7 +458,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_local_ln_other_adult_ca_undergone_curative_treatment']),
             Predictor('oac_status').when('site_confined', 1.0)
-                                   .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['metastatic'] = LinearModel(
@@ -433,7 +467,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_metastatic_undergone_curative_treatment']),
             Predictor('oac_status').when('local_ln', 1.0)
-                                   .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         # Check that the dict labels are correct as these are used to set the value of oac_status
@@ -469,12 +503,12 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         # 'early_other_adult_ca_symptom'.
         # todo: note dependent on underlying status not symptoms + add for other stages
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-             diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom=DxTest(
+            diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom=DxTest(
                 property='oac_status',
                 sensitivity=self.parameters['sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_'
                                             'adult_ca_site_confined'],
                 target_categories=["site_confined", "local_ln", "metastatic"]
-             )
+            )
         )
 
         # ----- DISABILITY-WEIGHT -----
@@ -513,8 +547,9 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
-                topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
+                topen=self.sim.date + DateOffset(months=p['initial_polling_start_months_palliative_care']),
+                tclose=self.sim.date + DateOffset(months=p['initial_polling_start_months_palliative_care']) +
+                       DateOffset(weeks=p['initial_polling_start_delay_weeks_palliative_care'])
             )
 
     def on_birth(self, mother_id, child_id):
@@ -555,9 +590,9 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         disability_series_for_alive_persons.loc[
             (
                 ~pd.isnull(df.oac_date_treatment) & (
-                    (df.oac_status == "site_confined") |
-                    (df.oac_status == "local_ln")
-                ) & (df.oac_status == df.oac_stage_at_which_treatment_given)
+                (df.oac_status == "site_confined") |
+                (df.oac_status == "local_ln")
+            ) & (df.oac_status == df.oac_stage_at_which_treatment_given)
             )
         ] = self.daly_wts['site_confined_local_ln_treated']
 
@@ -599,7 +634,10 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         schedule_hsi_event: HSIEventScheduler,
         **kwargs
     ) -> None:
-        if individual_properties["age_years"] > 5 and "early_other_adult_ca_symptom" in symptoms:
+        p = self.parameters
+
+        if (individual_properties["age_years"] > p["min_age_adult_cancer"] and
+            "early_other_adult_ca_symptom" in symptoms):
             event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
                 person_id=person_id,
                 module=self,
@@ -620,7 +658,8 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        p = module.parameters
+        super().__init__(module, frequency=DateOffset(months=p['main_polling_event_frequency_months']))
         # scheduled to run every 1 month : do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
@@ -668,7 +707,7 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                    InstantaneousDeath(self.module, person_id, "OtherAdultCancer"), self.sim.date
+                InstantaneousDeath(self.module, person_id, "OtherAdultCancer"), self.sim.date
             )
         df.loc[selected_to_die, 'oac_date_death'] = self.sim.date
 
@@ -685,6 +724,7 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
     treatment or palliative care.
     It is for people with the symptom other_adult_ca_symptom.
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -715,7 +755,16 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
 
         if cons_avail:
             # If consumables are available add used equipment and run the dx_test representing the biopsy
-            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
+            # Equipment for general cancer investigation
+            self.add_equipment({
+                'Ultrasound scanning machine',
+                'Ordinary Microscope',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Use a diagnostic_device to diagnose whether the person has other adult cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -770,11 +819,13 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "OtherAdultCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({"general_bed": int(self.module.parameters['treatment_bed_days'])}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -807,17 +858,30 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             # If consumables are available and the treatment will go ahead - update the equipment
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
+            # Additional cancer treatment equipment for general adult cancers
+            self.add_equipment({
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'Analyser, Hormones',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Sample Rack',
+                'Ordinary Microscope',
+                'Safety Goggles'
+            })
+
             # Record date and stage of starting treatment
             df.at[person_id, "oac_date_treatment"] = self.sim.date
             df.at[person_id, "oac_stage_at_which_treatment_given"] = df.at[person_id, "oac_status"]
 
             # Schedule a post-treatment check for 12 months:
+            # NOTE: interval of check-ups could be subject to reivew.
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(months=3),
+                topen=self.sim.date + DateOffset(months=p['post_treatment_check_months']),
                 tclose=None,
                 priority=0
             )
@@ -853,6 +917,17 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
         assert not pd.isnull(df.at[person_id, "oac_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "oac_date_treatment"])
 
+        # Equipment for post-treatment monitoring and follow-up
+        self.add_equipment({
+            'Analyser, Haematology',
+            'Analyser, Chemistry',
+            'X-ray machine',
+            'Ultrasound scanning machine',
+            'Sample Rack',
+            'Ordinary Microscope',
+            'Safety Goggles'
+        })
+
         if df.at[person_id, 'oac_status'] == 'metastatic':
             # If has progressed to metastatic, then start Palliative Care immediately:
             hs.schedule_hsi_event(
@@ -866,13 +941,14 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
             )
 
         else:
-            # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in three months
+            # NOTE: interval of check-ups could be subject to reivew.
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=3),
+                topen=self.sim.date + DateOffset(months=self.module.parameters['follow_up_appt_months']),
                 tclose=None,
                 priority=0
             )
@@ -899,11 +975,13 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "OtherAdultCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'general_bed': int(self.module.parameters['palliative_care_bed_days'])}))
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -917,19 +995,28 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.add_equipment({'Infusion pump', 'Drip stand'})
+            self.add_equipment({
+                'Infusion pump',
+                'Drip stand',
+                'Analyser, Haematology',
+                'Analyser, Chemistry',
+                'X-ray machine',
+                'Ultrasound scanning machine',
+                'Sample Rack',
+                'Safety Goggles'
+            })
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oac_date_palliative_care"]):
                 df.at[person_id, "oac_date_palliative_care"] = self.sim.date
 
-            # Schedule another instance of the event for one month
+            # Schedule another instance of the event
             hs.schedule_hsi_event(
                 hsi_event=HSI_OtherAdultCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=1),
+                topen=self.sim.date + DateOffset(months=p['palliative_care_interval_months']),
                 tclose=None,
                 priority=0
             )
@@ -991,11 +1078,11 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: the .between function I think includes the two dates so events on these dates counted twice
         # todo:_ I think we need to replace with date_lastlog <= x < date_now
         n_newly_diagnosed_site_confined = (
-                df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'site_confined1')).sum()
+            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'site_confined1')).sum()
         n_newly_diagnosed_local_ln = (
-                df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'local_ln')).sum()
+            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'local_ln')).sum()
         n_newly_diagnosed_metastatic = (
-                df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'metastatic')).sum()
+            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'metastatic')).sum()
 
         n_sy_early_other_adult_ca_symptom = (df.is_alive & (df.sy_early_other_adult_ca_symptom >= 1)).sum()
 
