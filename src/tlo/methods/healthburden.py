@@ -4,7 +4,7 @@ and Disability-Adjusted Life-years (DALYS).
 """
 from copy import copy
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -60,19 +60,23 @@ class HealthBurden(Module):
         'Age_Limit_For_YLL': Parameter(
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
-            Types.LIST, 'List of the strings of causes of disability defined in the GBD data')
+            Types.LIST, 'List of the strings of causes of disability defined in the GBD data'),
+        'logging_frequency_prevalence': Parameter(Types.STRING,
+                                                  'Set to the frequency at which we want to make calculations of the prevalence logger')
     }
 
     PROPERTIES = {}
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         p = self.parameters
-        p['DALY_Weight_Database'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_DALY_Weights.csv')
+        p['DALY_Weight_Database'] = pd.read_csv(resourcefilepath / 'ResourceFile_DALY_Weights.csv')
         p['Age_Limit_For_YLL'] = 90.0  # Frontier life expectancy at birth
         #                       https://cdn.who.int/media/docs/default-source/gho-documents/global-health-estimates/
         #                       ghe2019_daly-methods.pdf?sfvrsn=31b25009_7
         p['gbd_causes_of_disability'] = set(pd.read_csv(
-            Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDALYS_GBD2019.csv', header=None)[0].values)
+            resourcefilepath / 'gbd' / 'ResourceFile_CausesOfDALYS_GBD2019.csv', header=None)[0].values)
+        p['logging_frequency_prevalence'] = 'month'
+
 
     def initialise_population(self, population):
         pass
