@@ -12,7 +12,7 @@ import seaborn as sns
 from collections import defaultdict
 from ast import literal_eval
 
-from scripts.costing.costing_validation import consumables_dispensed_summary
+from scripts.costing.cost_estimation import load_unit_cost_assumptions
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
@@ -41,10 +41,10 @@ from tlo.analysis.utils import create_pickles_locally
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('consumables_costing-2025-11-25T213613Z.py', outputfilepath)[0]
+results_folder = get_scenario_outputs('consumables_costing-2025-12-04T200931Z.py', outputfilepath)[0] # consumables_costing-2025-12-02T185908Z
 
 #log = pd.read_csv(results_folder1 / "0" / "0" / 'impact_of_consumables_availability__2025-11-25T120830.log', sep="\t")
-#create_pickles_locally(scenario_output_dir = "outputs/consumables_costing-2025-11-25T213613Z")
+#create_pickles_locally(scenario_output_dir = "outputs/consumables_costing-2025-12-04T200931Z")
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
@@ -65,9 +65,6 @@ cost_scenarios = {0: "Actual", 1: "Perfect consumable availability"}
 
 # Costing parameters
 discount_rate = 0
-#log['tlo.methods.healthsystem.summary'].keys()
-#log['tlo.methods.healthsystem']['Consumables'].to_csv(figurespath / 'draft_cons_log_0.csv')
-#log['tlo.methods.healthsystem.summary']['Consumables'].columns
 
 # Extract consumables dispensed data
 def drop_outside_period(_df):
@@ -146,8 +143,6 @@ def get_quantity_of_consumables_dispensed(results_folder):
 
 idx = pd.IndexSlice
 
-#info, years, TARGET_PERIOD = load_simulation_metadata(results_folder)
-
 consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder)
 
 consumables_dispensed_summary = compute_summary_statistics(consumables_dispensed, central_measure = 'median')
@@ -156,63 +151,79 @@ consumables_dispensed_summary = consumables_dispensed_summary.reset_index()
 consumables_dispensed_summary[idx['year']] = pd.to_datetime(
     consumables_dispensed_summary[idx['date']]).dt.year
 
-#consumables_dispensed_summary = consumables_dispensed_summary.rename(columns={
-#    ('date',''): 'date',
-#    ('TREATMENT_ID',''): 'TREATMENT_ID',
-#    ('item',''): 'item'
-#})
-# Add consumable name
-consumables_dict = \
-    pd.read_csv(path_for_consumable_resourcefiles / 'ResourceFile_Consumables_Items_and_Packages.csv', low_memory=False,
-                encoding="ISO-8859-1")[['Items', 'Item_Code']]
-    consumables_dict = dict(zip(consumables_dict['Item_Code'], consumables_dict['Items']))
-consumables_dispensed_summary[idx['item_name']] = consumables_dispensed_summary[idx['item']].map(consumables_dict)
-
-consumables_dispensed_summary.to_csv(figurespath / 'sample_output.csv')
-
-"""
-# Fix column names
-df.columns = df.columns.set_names(['draw', 'run'])
-
-# Make date/TREATMENT_ID/item ordinary columns
-df = df.rename(columns={
-    ('date',''): 'date',
-    ('TREATMENT_ID',''): 'TREATMENT_ID',
-    ('item',''): 'item'
-})
-df = df.set_index(['date', 'TREATMENT_ID', 'item'])
-"""
-summary_list = []
-
-for idx, row in df.iterrows():
-    # row is a Series with MultiIndex columns (draw, run)
-    row_df = row.to_frame().T  # convert to 1-row DataFrame
-    stats = compute_summary_statistics(row_df)
-
-    # stats will have MultiIndex columns (draw, stat)
-    # we want to attach back the index
-    stats.insert(0, 'date', idx[0])
-    stats.insert(1, 'TREATMENT_ID', idx[1])
-    stats.insert(2, 'item', idx[2])
-
-    summary_list.append(stats)
-
-summary_df = pd.concat(summary_list, ignore_index=True)
-
-consumables_dispensed = consumables_dispensed.reset_index().rename(
-    columns=['date', 'TREATMENT_ID', 'item_code'])
-consumables_dispensed[idx['Item_Code']] = pd.to_numeric(consumables_dispensed[idx['Item_Code']])
-
-consumables_dispensed_summary = compute_summary_statistics(consumables_dispensed, central_measure = 'median')
-consumables_dispensed_summary = consumables_dispensed_summary.reset_index()
-consumables_dispensed_summary[idx['year']] = pd.to_datetime(
-    consumables_dispensed_summary[idx['date']]).dt.year
-
+# Add consumable name and unit cost
 consumables_dict = \
     pd.read_csv(path_for_consumable_resourcefiles / 'ResourceFile_Consumables_Items_and_Packages.csv', low_memory=False,
                 encoding="ISO-8859-1")[['Items', 'Item_Code']]
 consumables_dict = dict(zip(consumables_dict['Item_Code'], consumables_dict['Items']))
-
+unit_costs = load_unit_cost_assumptions(resourcefilepath)
+consumables_costs_by_item_code = unit_costs["consumables"]
+consumables_costs_by_item_code = dict(zip(consumables_costs_by_item_code['Item_Code'], consumables_costs_by_item_code['Price_per_unit']))
 consumables_dispensed_summary[idx['item_name']] = consumables_dispensed_summary[idx['item']].map(consumables_dict)
+consumables_dispensed_summary[idx['unit_cost']] = consumables_dispensed_summary[idx['item']].map(consumables_costs_by_item_code)
 
-consumables_dispensed_summary.to_csv(figurespath / 'sample_output.csv')
+consumables_dispensed_summary.to_csv(figurespath / 'sample_output_v1.csv')
+
+# Extract supplementary data
+# 1. Count of HSIs
+def get_hsi_summary(results_folder, key, var, do_scaling = True):
+    def flatten_nested_dict(d, parent_key=()):
+        items = {}
+        for k, v in d.items():
+            new_key = parent_key + (k,)
+            if isinstance(v, dict):
+                items.update(flatten_nested_dict(v, new_key))
+            else:
+                items[new_key] = v
+        return items
+
+    def get_counts_of_hsi_events(_df: pd.Series):
+        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
+        _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
+        flat_series = _df[(var)].apply(flatten_nested_dict)
+
+        return flat_series.apply(pd.Series).stack().stack()
+
+
+    count = compute_summary_statistics(extract_results(
+        Path(results_folder),
+        module='tlo.methods.healthsystem.summary',
+        key=key,
+        custom_generate_series=get_counts_of_hsi_events,
+        do_scaling=do_scaling,
+    ), central_measure='mean')
+
+    return count
+
+count_by_treatment_id = get_hsi_summary(results_folder, key = 'HSI_Event_non_blank_appt_footprint',
+                                        var = "TREATMENT_ID", do_scaling = True)
+count_by_treatment_id = count_by_treatment_id.droplevel(2)
+count_by_appointment = get_hsi_summary(results_folder, key = 'HSI_Event_non_blank_appt_footprint',
+                                        var = "Number_By_Appt_Type_Code_And_Level", do_scaling = True)
+
+count_by_treatment_id.to_csv(figurespath / 'sample_hsi_count_by_treatment.csv')
+count_by_appointment.to_csv(figurespath / 'sample_hsi_count_by_appointment.csv')
+
+# Disease specific information
+# TODO update code to extract relevant results alongside prevalance
+log['tlo.methods.tb'].keys()
+# tb_incidence - num_new_active_tb, prop_active_tb_in_plhiv; tb_prevalence -> tbPrevActive, tbPrevActiveAdult, tbPrevActiveChild; tb_mdr - tbPropActiveCasesMdr; tb_treatment - tbPropDiagnosed, tbTreatmentCoverage, tbIptCoverage
+log['tlo.methods.malaria'].keys()
+# prevalence; tx_coverage - 'number_diagnosed', 'number_treated', 'proportion_diagnosed', 'treatment_coverage'
+log['tlo.methods.epi'].keys()
+# ep_vaccine_coverage - 'epBcgCoverage', 'epDtp3Coverage', 'epHep3Coverage',
+#        'epHib3Coverage', 'epHpvCoverage', 'epMeasles2Coverage',
+#        'epMeaslesCoverage', 'epNumInfantsUnder1', 'epOpv3Coverage',
+#        'epPneumo3Coverage', 'epRota2Coverage', 'epRubellaCoverage'
+log['tlo.methods.cardio_metabolic_disorders'].keys()
+# diabetes_prevalence, 'diabetes_diagnosis_prevalence', 'diabetes_medication_prevalence'
+#  'hypertension_prevalence', 'hypertension_diagnosis_prevalence', 'hypertension_medication_prevalence'
+# 'chronic_kidney_disease_prevalence', 'chronic_kidney_disease_diagnosis_prevalence'
+# 'chronic_ischemic_hd_prevalence', 'chronic_ischemic_hd_diagnosis_prevalence', 'chronic_ischemic_hd_medication_prevalence'
+# 'ever_stroke_prevalence'
+# 'ever_heart_attack_prevalence'
+log['tlo.methods.wasting'].keys()
+# 'wasting_prevalence_props' - 'total_mod_under5_prop', 'total_sev_under5_prop'
+
+#TODO add bednets and IRS
+
