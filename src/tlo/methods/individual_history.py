@@ -194,7 +194,7 @@ class IndividualHistoryTracker(Module):
                 # Now check and store changes in the mni dictionary, accounting for following cases:
                 
                 # 1. Individual is not in mni neither before nor after event, can pass
-                if not self.mni_instances_before and not self.mni_instances_after:
+                if not self.mni_instances_before and not mni_instances_after:
                     pass
                 # 2. Individual is in mni dictionary before and after
                 if self.mni_instances_before and mni_instances_after:
@@ -223,6 +223,7 @@ class IndividualHistoryTracker(Module):
 
             # Population frame after event
             df_after = self.sim.population.props
+            
             if 'PregnancySupervisor' in self.sim.modules:
                 entire_mni_after = copy.deepcopy(self.sim.modules['PregnancySupervisor'].mother_and_newborn_info)
             else:
@@ -298,19 +299,21 @@ class IndividualHistoryTracker(Module):
         It allows us to identify the individuals for which this event led to a significant (i.e. property) change,
         and to store the properties which have changed as a result of it.
         """
+        # Create an empty dict to store changes for each of the individuals
+        chain_links = {}
 
-        # Create a mask of where values are different
-        diff_mask = (df_before != df_after) & ~(df_before.isna() & df_after.isna())
+        # Individuals undergoing changes in the generap pop dataframe
+        persons_changed = []
+
+        # Collect changes in the pop dataframe before/after the event
+        same = df_before.eq(df_after) | (df_before.isna() & df_after.isna())
+        diff_mask = ~same
+        
+        # Collect changes in the mni dictionary
         if 'PregnancySupervisor' in self.sim.modules:
             diff_mni = self.compare_entire_mni_dicts(entire_mni_before, entire_mni_after)
         else:
             diff_mni = []
-
-        # Create an empty dict to store changes for each of the individuals
-        chain_links = {}
-
-        # Loop through each row of the mask
-        persons_changed = []
 
         for idx, row in diff_mask.iterrows():
             changed_cols = row.index[row].tolist()
@@ -334,7 +337,7 @@ class IndividualHistoryTracker(Module):
 
                 # Append the event and changes to the individual key
                 chain_links[idx] = link_info
-
+        
         if 'PregnancySupervisor' in self.sim.modules:
             # For individuals which only underwent changes in mni dictionary, save changes here
             if len(diff_mni)>0:
@@ -349,6 +352,7 @@ class IndividualHistoryTracker(Module):
                             link_info[key_prop] = diff_mni[key][key_prop]
 
                         chain_links[key] = link_info
+        
         return chain_links
 
 
@@ -362,15 +366,23 @@ def df_to_eav(df, date, event_name):
 
 
 def convert_chain_links_into_eav(chain_links):
-    df = pd.DataFrame.from_dict(chain_links, orient="index")
-    id_cols = ["event_name"]
 
-    eav = df.reset_index().melt(
-        id_vars=["index"] + id_cols,  # index = person ID
-        var_name="attribute",
-        value_name="value"
-    )
+    rows = []
 
-    eav.rename(columns={"index": "entity"}, inplace=True)
-    eav = eav[["entity", "event_name", "attribute", "value"]]
+    for e, data in chain_links.items():
+        event_name = data.get("event_name")
+
+        for attr, val in data.items():
+            if attr == "event_name":
+                continue
+            
+            rows.append({
+                "entity": e,
+                "event_name": event_name,
+                "attribute": attr,
+                "value": val
+            })
+
+    eav = pd.DataFrame(rows)
+    
     return eav
