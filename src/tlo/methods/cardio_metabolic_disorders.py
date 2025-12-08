@@ -146,6 +146,8 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         'prob_care_provided_given_seek_emergency_care': Parameter(
             Types.REAL, "The probability that correct care is fully provided to persons that have sought emergency care"
                         " for a Cardio-metabolic disorder."),
+        'prob_ckd_patient_gets_dialysis': Parameter(
+            Types.REAL, "The probability that patient with ckd has disease progression ultimately needing dialysis"),
         'interval_between_polls':
             Parameter(Types.INT, 'months between the main polling event'),
         'emergency_care_symptom_max_days':
@@ -250,7 +252,9 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                                                             'treatment'),
                   'nc_weight_loss_worked': Property(Types.BOOL,
                                                     'whether or not weight loss treatment worked'),
-                  'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has')
+                  'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has'),
+                  'nc_ckd_total_dialysis_sessions': Property(Types.INT,
+                                                          'total number of dialysis sessions the person has ever had'),
                   }
 
     def __init__(self, name=None, do_log_df: bool = False, do_condition_combos: bool = False):
@@ -460,7 +464,6 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             sample_eligible_treatment_success(on_med, p_treatment_works, condition)
 
             # ----- Impose the symptom on random sample of those with each condition to have:
-            # TODO: @britta make linear model data-specific and add in needed complexity
             for symptom in self.prob_symptoms[condition].keys():
                 lm_init_symptoms = LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -496,6 +499,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         # ----- Set all other parameters to False / NaT
         df.loc[df.is_alive, 'nc_ever_weight_loss_treatment'] = False
         df.loc[df.is_alive, 'nc_weight_loss_worked'] = False
+        df.loc[df.is_alive, 'nc_ckd_total_dialysis_sessions'] = 0
 
     def initialise_simulation(self, sim):
         """Schedule:
@@ -783,6 +787,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             df.at[child_id, f'nc_{event}_scheduled_date_death'] = pd.NaT
             df.at[child_id, f'nc_{event}_medication_prevents_death'] = False
         df.at[child_id, 'nc_risk_score'] = 0
+        df.at[child_id, 'nc_ckd_total_dialysis_sessions'] = 0
 
     def update_risk_score(self):
         """
@@ -1635,9 +1640,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-
         self.condition = condition
+        self.ACCEPTED_FACILITY_LEVEL = '3' if condition == 'chronic_kidney_disease' else '1b'
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1667,9 +1671,10 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         # Monthly doses of medications as follows. Diabetes - 1000mg metformin daily (1000*30.5),
         # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 1 dialysis bag (estimate),
         # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
+        #todo adjust the dosages for diabetes second and third dosage
         dose = {'diabetes': 30_500,
                 'hypertension': 610,
-                'chronic_kidney_disease': 1,
+                'chronic_kidney_disease': 12,  # 8 in a month: dialysis two times a week
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
@@ -1694,6 +1699,19 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                 tclose=self.sim.date + DateOffset(months=p['medication_refill_interval_months']) +
                        DateOffset(days=p['medication_refill_deadline_window_days'])
             )
+            # Schedule dialysis refill for those with chronic_kidney_disease and start
+            # scheduling immediately, if possible
+            if self.condition == "chronic_kidney_disease":
+                if self.module.rng.random_sample() < self.module.parameters["prob_ckd_patient_gets_dialysis"]:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_CardioMetabolicDisorders_Dialysis_Refill(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=1,
+                        topen=self.sim.date,
+                        tclose=self.sim.date + pd.DateOffset(days=1)
+                    )
         else:
             # If person 'decides to' seek another appointment, schedule a new HSI appointment for tomorrow.
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give up coming back to
@@ -1722,9 +1740,8 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-
         self.condition = condition
+        self.ACCEPTED_FACILITY_LEVEL = '3' if condition == 'chronic_kidney_disease' else '1b'
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1748,15 +1765,18 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         # Monthly doses of medications as follows. Diabetes - 1000mg metformin daily (1000*30.5),
-        # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 1 dialysis bag (estimate),
-        # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
+        # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 2 dialysis sessions per week
+        # (8 sessions in a month),lower back pain - 2400mg aspirin daily  (2400*30.5),
+        # CIHD - 75mg aspirin daily (75*30.5)
         dose = {'diabetes': 30_500,
                 'hypertension': 610,
-                'chronic_kidney_disease': 1,
+                'chronic_kidney_disease': 8,  # 8 in a month: dialysis two times a week
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
                 'ever_heart_attack': 2288}
+
+
 
         # Check availability of medication for condition
         if self.get_consumables(
@@ -1789,6 +1809,48 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         person_id = self.target
         self.sim.population.props.at[person_id, f'nc_{self.condition}_on_medication'] = False
 
+
+class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEventMixin):
+    """This is a Health System Interaction Event in which a person receives a dialysis session 2 times a week
+    adding up to 8 times a month."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment_Haemodialysis'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '3'
+
+    def apply(self, person_id, squeeze_factor):
+
+        df = self.sim.population.props
+
+        if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'nc_chronic_kidney_disease']:
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
+        # Increment total number of dialysis sessions the person has ever had in their lifetime
+        df.at[person_id, 'nc_ckd_total_dialysis_sessions'] += 1
+
+
+        self.add_equipment({'Chair', 'Dialysis Machine', 'Dialyser (Artificial Kidney)',
+                            'Bloodlines', 'Dialysate solution', 'Dialysis water treatment system'})
+
+        next_session_date = self.sim.date + pd.DateOffset(days=3)
+        self.sim.modules['HealthSystem'].schedule_hsi_event(self,
+            topen=next_session_date,
+            tclose=next_session_date + pd.DateOffset(days=1),
+            priority=1
+        )
+
+    def never_ran(self) -> None:
+        """What to do if the event is never run by the HealthSystem"""
+        # Reschedule this HSI to happen again 3 days time.
+        next_session_date = self.sim.date + pd.DateOffset(days=3)
+        self.sim.modules['HealthSystem'].schedule_hsi_event(self,
+            topen=next_session_date,
+            tclose=next_session_date + pd.DateOffset(days=1),
+            priority=1
+        )
 
 class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
     """
