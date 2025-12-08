@@ -26,7 +26,6 @@ class StaffingScenario(BaseScenario):
         self.initial_population_size = 200
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.number_of_draws = 2
         self.runs_per_draw = 2
 
     def log_configuration(self):
@@ -60,6 +59,7 @@ class StaffingScenario(BaseScenario):
                     'mode_appt_constraints': 1,
                     'mode_appt_constraints_postSwitch': 2,
                     "scale_to_effective_capabilities": True,
+                    "year_HR_scaling_by_level_and_officer_type": 2025,
                     # This happens in the year before mode change, as the model calibration is done by that year
                     "year_mode_switch": 2020,
                     'cons_availability': 'default',
@@ -123,9 +123,7 @@ class StaffingScenario(BaseScenario):
                     self._default_of_all_scenarios(),
                     {
                         "HealthSystem": {
-                            'ResourceFile_HR_scaling_by_level_and_officer_type': "default",
-                            'mode_appt_constraints_postSwitch': 2,
-                            "use_funded_or_actual_staffing": "actual",
+                            'HR_scaling_by_level_and_officer_type_mode': "default",
                         },
                     }
                 ),
@@ -135,9 +133,7 @@ class StaffingScenario(BaseScenario):
                     self._default_of_all_scenarios(),
                     {
                         "HealthSystem": {
-                            'ResourceFile_HR_scaling_by_level_and_officer_type': "default",
-                            'mode_appt_constraints_postSwitch': 2,
-                            "use_funded_or_actual_staffing": "funded_plus",
+                            'HR_scaling_by_level_and_officer_type_mode': "default",
                         },
                     }
                 ),
@@ -147,29 +143,21 @@ class StaffingScenario(BaseScenario):
                     self._default_of_all_scenarios(),
                     {
                         "HealthSystem": {
-                            'ResourceFile_HR_scaling_by_level_and_officer_type': "custom_doubling",
-                            'mode_appt_constraints_postSwitch': 2,
-                            "use_funded_or_actual_staffing": "funded_plus",
+                            'HR_scaling_by_level_and_officer_type_mode': "custom_doubling",
                         },
                     }
                 ),
-
 
             "Worse Case":
                 mix_scenarios(
                     self._default_of_all_scenarios(),
                     {
                         "HealthSystem": {
-                            'ResourceFile_HR_scaling_by_level_and_officer_type': "custom_worse",
-                            'mode_appt_constraints_postSwitch': 2,
-                            "use_funded_or_actual_staffing": "actual",
+                            'HR_scaling_by_level_and_officer_type_mode': "custom_worse",
                         },
                     }
                 ),
         }
-
-
-
 
     # To be sensitivity analysis
     # def _baseline_scenario(self) -> Dict:
