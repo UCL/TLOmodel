@@ -48,6 +48,10 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
         Metadata.USES_HEALTHSYSTEM,
     }
 
+    # No CAUSES_OF_DEATH or CAUSES_OF_DISABILITY assigned as per GBD 2019
+    # (impact captured indirectly, through increased risk of diarrhoea and obstructed labour
+    # — see diarrhoea and labour modules)
+
     PARAMETERS = {
         # Prevalence of stunting by age group at initiation
         'prev_HAZ_distribution_age_0_5mo': Parameter(
@@ -131,6 +135,25 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
         'prob_stunting_diagnosed_at_generic_appt': Parameter(
             Types.REAL,
             'Probability of a stunted or severely stunted person being checked and correctly diagnosed'),
+
+        # Age and classification thresholds
+        'max_age_for_stunting_years': Parameter(
+            Types.REAL,
+            'Maximum age (in years) for which stunting assessment and interventions apply'),
+        'haz_threshold_stunted': Parameter(
+            Types.REAL,
+            'HAZ score threshold below which a child is considered stunted'),
+        'haz_threshold_severe_stunted': Parameter(
+            Types.REAL,
+            'HAZ score threshold below which a child is considered severely stunted'),
+
+        # Event timing
+        'main_polling_frequency_months': Parameter(
+            Types.INT,
+            'Frequency in months for the main stunting polling event'),
+        'followup_appointment_months': Parameter(
+            Types.INT,
+            'Interval in months for scheduling follow-up appointments after stunting treatment'),
     }
 
     PROPERTIES = {
@@ -149,7 +172,7 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
 
     def read_parameters(self, resourcefilepath: Optional[Path]=None):
         self.load_parameters_from_dataframe(
-            read_csv_files(resourcefilepath / 'ResourceFile_Stunting', files='Parameter_values')
+            read_csv_files(resourcefilepath / 'ResourceFile_Stunting', files='parameter_values')
         )
 
     def initialise_population(self, population):
@@ -167,11 +190,13 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
             mean, stdev = p[f'prev_HAZ_distribution_age_{_agegp[0]}_{_agegp[1]}mo']
             haz_distribution = norm(loc=mean, scale=stdev)
 
-            # Compute proportion "stunted" (HAZ <-2)
-            p_stunted = haz_distribution.cdf(-2.0)
+            # Compute proportion "stunted" (HAZ < threshold)
+            p_stunted = haz_distribution.cdf(p['haz_threshold_stunted'])
 
-            # Compute proportion "severely stunted" given "stunted" (HAZ <-3 given HAZ <-2)
-            p_severely_stunted_given_stunted = haz_distribution.cdf(-3.0) / haz_distribution.cdf(-2.0)
+            # Compute proportion "severely stunted" given "stunted"
+            # (HAZ < severe threshold given HAZ < stunted threshold)
+            p_severely_stunted_given_stunted = (haz_distribution.cdf(p['haz_threshold_severe_stunted']) /
+                                                haz_distribution.cdf(p['haz_threshold_stunted']))
 
             # Return results needed as named tuple:
             result = namedtuple('probs', ['prob_stunting', 'prob_severe_given_stunting'])
@@ -304,7 +329,7 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
 
         # Schedule the HSI for provision of treatment based on the probability of
         # stunting diagnosis, provided the necessary symptoms are there.
-        if individual_properties["age_years"] <= 5 and is_stunted:
+        if individual_properties["age_years"] <= self.parameters["max_age_for_stunting_years"] and is_stunted:
             # Schedule the HSI for provision of treatment based on the probability of
             # stunting diagnosis
             if p_stunting_diagnosed > self.rng.random_sample():
@@ -346,7 +371,7 @@ class Models:
             ).when(
                 "4 <= age_exact_years < 5", p["base_inc_rate_stunting_by_agegp"][5]
             ).when(
-                "age_exact_years >= 5", 0.0
+                f"age_exact_years >= {p['max_age_for_stunting_years']}", 0.0
             ),
             Predictor('li_wealth',
                       conditions_are_mutually_exclusive=True).when(1, 1.0)
@@ -407,7 +432,7 @@ class Models:
                 p['r_progression_severe_stunting_by_agegp'][5]
             )
             .when(
-                'age_exact_years >= 5.0', 1.0
+                f'age_exact_years >= {p["max_age_for_stunting_years"]}', 1.0
             ),
             Predictor('un_ever_wasted',
                       conditions_are_exhaustive=True,
@@ -440,7 +465,7 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """Regular event that controls the onset of stunting, progression to severe stunting and natural recovery."""
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['main_polling_frequency_months']))
         assert isinstance(module, Stunting)
 
     def apply(self, population):
@@ -455,7 +480,7 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Onset of Stunting
         eligible_for_stunting = (df.is_alive &
-                                 (df.age_exact_years < 5.0) &
+                                 (df.age_exact_years < self.module.parameters['max_age_for_stunting_years']) &
                                  (df.un_HAZ_category == 'HAZ>=-2'))
         idx_will_be_stunted = self.apply_model(
             model=models.lm_prob_becomes_stunted,
@@ -466,7 +491,7 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Recovery from Stunting
         eligible_for_recovery = (df.is_alive &
-                                 (df.age_exact_years < 5.0) &
+                                 (df.age_exact_years < self.module.parameters['max_age_for_stunting_years']) &
                                  (df.un_HAZ_category != 'HAZ>=-2') &
                                  ~df.index.isin(idx_will_be_stunted))
         idx_will_recover = self.apply_model(
@@ -478,7 +503,7 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Progression to Severe Stunting
         eligible_for_progression = (df.is_alive &
-                                    (df.age_exact_years < 5.0) &
+                                    (df.age_exact_years < self.module.parameters['max_age_for_stunting_years']) &
                                     (df.un_HAZ_category == '-3<=HAZ<-2') & ~df.index.isin(idx_will_be_stunted)
                                     & ~df.index.isin(idx_will_recover))
         idx_will_progress = self.apply_model(
@@ -523,8 +548,9 @@ class StuntingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Log the current distribution of stunting classification by age"""
         df = population.props
 
-        subset = df.loc[df.is_alive & (df.age_years < 5)].copy()
-        subset["age_years"] = pd.Categorical(subset["age_years"], categories=range(5))
+        max_age = int(self.module.parameters['max_age_for_stunting_years'])
+        subset = df.loc[df.is_alive & (df.age_years < max_age)].copy()
+        subset["age_years"] = pd.Categorical(subset["age_years"], categories=range(max_age))
         d_to_log = subset.groupby(
             by=['age_years', 'un_HAZ_category']).size().sort_index().to_dict()
 
@@ -560,8 +586,9 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
         if not person.is_alive:
             return
 
-        # Only do anything if child is under 5 and remains stunted
-        if (person.age_years < 5) and (person.un_HAZ_category in ['HAZ<-3', '-3<=HAZ<-2']):
+        # Only do anything if child is under max age and remains stunted
+        if (person.age_years < self.module.parameters['max_age_for_stunting_years']) and \
+           (person.un_HAZ_category in ['HAZ<-3', '-3<=HAZ<-2']):
 
             # Provide supplementary feeding if consumable available, otherwise provide 'education only' (which has a
             # different probability of success).
@@ -581,7 +608,7 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=self,
                 priority=2,  # <-- lower priority that for wasting and most other HSI
-                topen=self.sim.date + pd.DateOffset(months=6)
+                topen=self.sim.date + pd.DateOffset(months=self.module.parameters['followup_appointment_months'])
             )
 
 

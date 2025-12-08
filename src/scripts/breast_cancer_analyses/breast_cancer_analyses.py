@@ -23,15 +23,18 @@ from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
     newborn_outcomes,
     oesophagealcancer,
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    tb,
 )
 
 # Where will outputs go
@@ -72,7 +75,10 @@ def run_sim(service_availability):
                  pregnancy_supervisor.PregnancySupervisor(),
                  postnatal_supervisor.PostnatalSupervisor(),
                  oesophagealcancer.OesophagealCancer(),
-                 breast_cancer.BreastCancer()
+                 breast_cancer.BreastCancer(),
+                 epi.Epi(),
+                 tb.Tb(),
+                 hiv.Hiv()
                  )
 
     # Run the simulation
