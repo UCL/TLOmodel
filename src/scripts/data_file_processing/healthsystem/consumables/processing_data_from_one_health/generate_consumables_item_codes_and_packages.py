@@ -376,6 +376,16 @@ cons = add_record(
     'Unit_Cost': np.nan},
 )
 
+cons = add_record(
+    cons, {
+        'Intervention_Cat': "Added by UN",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "Haemodialysis dialysate flow of 500 ml/min",
+        'Item_Code': 282,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 200},
+)
 
 # --------------
 # --------------
