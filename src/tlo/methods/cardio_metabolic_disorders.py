@@ -465,7 +465,6 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         # ----- Set all other parameters to False / NaT
         df.loc[df.is_alive, 'nc_ever_weight_loss_treatment'] = False
         df.loc[df.is_alive, 'nc_weight_loss_worked'] = False
-
         df.loc[df.is_alive, 'nc_ckd_total_dialysis_sessions'] = 0
 
     def initialise_simulation(self, sim):
@@ -754,7 +753,6 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             df.at[child_id, f'nc_{event}_scheduled_date_death'] = pd.NaT
             df.at[child_id, f'nc_{event}_medication_prevents_death'] = False
         df.at[child_id, 'nc_risk_score'] = 0
-
         df.at[child_id, 'nc_ckd_total_dialysis_sessions'] = 0
 
     def update_risk_score(self):
