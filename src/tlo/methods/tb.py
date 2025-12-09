@@ -1045,6 +1045,22 @@ class Tb(Module):
 
         return health_values.loc[df.is_alive]
 
+    def report_prevalence(self):
+        # This reports age- and sex-specific prevalence of active TB for all individuals
+        df = self.sim.population.props
+
+        # Select alive individuals with active TB
+        tb_df = df[(df['is_alive']) & (df['tb_inf'] == 'active')]
+        alive_df = df[df['is_alive']]
+
+        prevalence_counts = (
+            tb_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
+
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'TB': prevalence_by_age_group_sex}
+
     def calculate_untreated_proportion(self, population, strain):
         """
         calculate the proportion of active TB cases not on correct treatment
@@ -2900,9 +2916,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ACTIVE
         num_active_tb_cases = len(df[(df.tb_inf == "active") & df.is_alive])
         prev_active = num_active_tb_cases / len(df[df.is_alive])
-
         assert prev_active <= 1
-
         # prevalence of active TB in adults
         num_active_adult = len(
             df[(df.tb_inf == "active") & (df.age_years >= 15) & df.is_alive]
