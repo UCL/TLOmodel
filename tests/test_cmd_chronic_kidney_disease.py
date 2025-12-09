@@ -11,11 +11,14 @@ from tlo.methods import (
     demography,
     depression,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     simplified_births,
     symptommanager,
+    tb,
 )
 
 try:
@@ -49,6 +52,9 @@ def get_simulation(seed):
                  cardio_metabolic_disorders.CardioMetabolicDisorders(),
                  cmd_chronic_kidney_disease.CMDChronicKidneyDisease(),
                  depression.Depression(),
+                 hiv.Hiv(),
+                 epi.Epi(),
+                 tb.Tb(),
                  )
     return sim
 
@@ -75,6 +81,9 @@ def get_simulation_healthsystemdisabled(seed):
                  cardio_metabolic_disorders.CardioMetabolicDisorders(),
                  cmd_chronic_kidney_disease.CMDChronicKidneyDisease(),
                  depression.Depression(),
+                 hiv.Hiv(),
+                 epi.Epi(),
+                 tb.Tb(),
                  )
     return sim
 
@@ -95,7 +104,10 @@ def get_simulation_nohsi(seed):
                  healthburden.HealthBurden(),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(),
                  cmd_chronic_kidney_disease.CMDChronicKidneyDisease(),
-                 depression.Depression()
+                 depression.Depression(),
+                 hiv.Hiv(),
+                 epi.Epi(),
+                 tb.Tb(),
                  )
     return sim
 
