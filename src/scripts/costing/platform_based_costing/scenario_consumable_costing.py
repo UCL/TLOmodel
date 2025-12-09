@@ -50,8 +50,7 @@ class ConsumablesCosting(BaseScenario):
 
     def modules(self):
         return (
-                fullmodel(use_simplified_births = False,
-                          module_kwargs={"HealthSystem": {"disable": False}}) #
+                fullmodel() #
                 + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher()]
         )
 
@@ -59,12 +58,12 @@ class ConsumablesCosting(BaseScenario):
         return {
             'HealthSystem': {
                 'cons_availability': 'default',
-                'year_cons_availability_switch': 2019, # 2020
+                'year_cons_availability_switch': 2020,
                 'cons_availability_postSwitch': ['default', 'all'][draw_number],
                 'mode_appt_constraints':1,
                 'mode_appt_constraints_postSwitch':[2,1][draw_number],
-                'year_mode_switch':2019,
-                'policy_name': 'Default',
+                'year_mode_switch':2020,
+                'policy_name': 'Naive',
                 'use_funded_or_actual_staffing': 'actual',
                 'scale_to_effective_capabilities':True,  # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
                 'yearly_HR_scaling_mode': 'historical_scaling', # allow historical HRH scaling to occur 2018-2024
@@ -74,7 +73,7 @@ class ConsumablesCosting(BaseScenario):
             "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
                 "max_healthsystem_function": [[False, False], [False, True]][draw_number],
                 "max_healthcare_seeking": [[False, False], [False, True]][draw_number],
-                "year_of_switch": 2019,
+                "year_of_switch": 2020,
             }
         }
 
