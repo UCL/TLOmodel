@@ -52,8 +52,11 @@ class HSIEventQueueItem(NamedTuple):
 
     Ensure priority is above topen in order for held-over events with low priority not
     to jump ahead higher priority ones which were opened later.
+
+
     """
 
+    clinic_eligibility: str
     priority: int
     topen: Date
     rand_queue_counter: (
@@ -353,28 +356,6 @@ class HSI_Event:
                 appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
             )
         )
-
-
-        # Do checks
-        self._check_if_appt_footprint_can_run()
-
-    def _check_if_appt_footprint_can_run(self) -> bool:
-        """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
-        this does not demand officers that are _never_ available), and issue warning if not.
-        """
-        if self.healthcare_system._officers_with_availability.issuperset(
-            self.expected_time_requests.keys()
-        ):
-            return True
-        else:
-            logger.debug(
-                key="message",
-                data=(
-                    f"The expected footprint of {self.TREATMENT_ID} is not possible with the configuration of "
-                    f"officers."
-                ),
-            )
-            return False
 
     @staticmethod
     def _return_item_codes_in_dict(
