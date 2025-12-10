@@ -1511,6 +1511,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
+            p["prob_receive_viral_load_test_result"] = 0
+            p["prob_of_viral_suppression_following_VL_test"] = 0
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1533,6 +1535,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
+            p["prob_receive_viral_load_test_result"] = 0
+            p["prob_of_viral_suppression_following_VL_test"] = 0
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1563,6 +1567,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
+            p["prob_receive_viral_load_test_result"] = 0
+            p["prob_of_viral_suppression_following_VL_test"] = 0
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1585,6 +1591,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
+            p["prob_receive_viral_load_test_result"] = 0
+            p["prob_of_viral_suppression_following_VL_test"] = 0
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1608,6 +1616,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
+            p["prob_receive_viral_load_test_result"] = 0
+            p["prob_of_viral_suppression_following_VL_test"] = 0
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1633,6 +1643,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
+            p["prob_receive_viral_load_test_result"] = 0
+            p["prob_of_viral_suppression_following_VL_test"] = 0
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1659,6 +1671,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
+            p["prob_receive_viral_load_test_result"] = 0
+            p["prob_of_viral_suppression_following_VL_test"] = 0
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1683,6 +1697,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
+            p["prob_receive_viral_load_test_result"] = 0
+            p["prob_of_viral_suppression_following_VL_test"] = 0
 
 
         # ----------------------------------------------
@@ -1702,6 +1718,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
+            p["prob_receive_viral_load_test_result"] = 0
+            p["prob_of_viral_suppression_following_VL_test"] = 0
 
             # reduce general testing
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
@@ -1727,6 +1745,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
+            p["prob_receive_viral_load_test_result"] = 0
+            p["prob_of_viral_suppression_following_VL_test"] = 0
 
             # reduce general testing
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
@@ -1764,6 +1784,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # no viral load tests available
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0.0})  # 190 for VL test
+            p["prob_receive_viral_load_test_result"] = 0
+            p["prob_of_viral_suppression_following_VL_test"] = 0
 
             # reduce general testing
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
