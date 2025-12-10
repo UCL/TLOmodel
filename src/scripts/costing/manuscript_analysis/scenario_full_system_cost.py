@@ -46,8 +46,7 @@ class FullSystemCosting(BaseScenario):
 
     def modules(self):
         return (
-                fullmodel(use_simplified_births = False,
-                          module_kwargs={"HealthSystem": {"disable": False}}) #
+                fullmodel() #
                 + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher()]
         )
 
@@ -55,22 +54,22 @@ class FullSystemCosting(BaseScenario):
         return {
             'HealthSystem': {
                 'cons_availability': 'default',
-                'year_cons_availability_switch': 2019, # 2019?
+                'year_cons_availability_switch': 2020,
                 'cons_availability_postSwitch': ['default', 'default', 'scenario6', 'scenario6'][draw_number],
                 'mode_appt_constraints':1,
                 'mode_appt_constraints_postSwitch':2,
-                'year_mode_switch':2019,
-                'policy_name': 'Default', #TODO check if this should be HTM?
+                'year_mode_switch':2020,
+                'policy_name': 'Naive',
                 'use_funded_or_actual_staffing': 'actual',
                 'scale_to_effective_capabilities':True,  # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
-                'yearly_HR_scaling_mode': ['historical_scaling', 'GDP_growth', 'historical_scaling', 'GDP_growth'][draw_number], # TODO update 'GDP_growth' to match with relevant 'historical_scaling_maintained' scenario
+                'yearly_HR_scaling_mode': ['historical_scaling', 'historical_scaling_maintained', 'historical_scaling', 'historical_scaling_maintained'][draw_number], # TODO update 'GDP_growth' to match with relevant 'historical_scaling_maintained' scenario
                 'equip_availability':'all',
                 'beds_availability':'all',
                 },
             "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
                 "max_healthsystem_function": [False, False],
                 "max_healthcare_seeking": [False, False],
-                "year_of_switch": 2019,
+                "year_of_switch": 2020,
             }
         }
 
