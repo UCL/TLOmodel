@@ -583,7 +583,7 @@ class Demography(Module):
             'aids_at_art_reinitiation': person['hv_aids_at_art_reinitiation']
         }
 
-        logger.info(key='death_MIHPSA', data=mihpsa_data_to_log_for_each_death)
+        # logger.info(key='death_MIHPSA', data=mihpsa_data_to_log_for_each_death)
 
         # - log all the properties for the deceased person
         logger_detail.info(key='properties_of_deceased_persons',

@@ -3368,7 +3368,7 @@ class Hiv_AdherenceCounselling(Event, IndividualScopeEventMixin):
 
         if not person["is_alive"]:
             return
-
+        print("adherence counselling", self.sim.date.year)
         df.at[person_id, "hv_art"] = self.module.update_viral_suppression_status()
 
 
@@ -5464,6 +5464,13 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             + person_years_oral_prep * 76.15
             + person_years_inj_prep * 88.36
         )
+
+        # add on FSW outreach if scenario=7
+        # costs are $279 per person reached, assume 25% FSW reached
+        # todo these costs are very high compared to other countries ($9 - $242, median ~ $30/40ish)
+        FSW_costs = n_fsw * 0.25 * 279
+        if self.module.parameters['select_mihpsa_scenario'] == 7:
+            TotalCost_Undiscounted += FSW_costs
 
 
         logger.info(
