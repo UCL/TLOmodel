@@ -604,16 +604,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         tests_per_year = min(1.0, 12.0 / p["interval_for_viral_load_measurement_months"])
         f_benefit = tests_per_year * p["prob_receive_viral_load_test_result"]
 
-        def adjust(pct):
-            if pd.isna(pct):
+        def adjust(p_base):
+            if pd.isna(p_base):
                 return np.nan
-            p_base = pct / 100.0
             p_adj = p_base + f_benefit * (1 - p_base) * p["prob_of_viral_suppression_following_VL_test"]
             return max(0.0, min(1.0, p_adj))
 
         p["prob_start_art_or_vs"]["adjusted_viral_suppression_on_art"] = (
-            p["prob_start_art_or_vs"]["virally_suppressed_on_art"].apply(adjust)
+            p["prob_start_art_or_vs"]["overall_adjusted_viral_suppression_on_art"].apply(adjust)
         )
+
 
     def pre_initialise_population(self):
         """Do things required before the population is created
