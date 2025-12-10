@@ -54,6 +54,13 @@ class ScenarioDefinitions:
             }
         }
 
+    def switch_to_injectable_prep(self) -> Dict:
+        return {
+            'Hiv': {
+                'type_of_scaleup': 'switch_to_injectable_prep',
+            }
+        }
+
     def remove_TPT(self) -> Dict:
         return {
             'Hiv': {

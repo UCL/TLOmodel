@@ -89,6 +89,8 @@ class HIV_Progam_Elements(BaseScenario):
 
             "Remove PrEP for AGYW": scenario_definitions.remove_prep_agyw(),
 
+            "Switch to injectable PrEP": scenario_definitions.switch_to_injectable_prep(),
+
             "Remove TPT for PLHIV": scenario_definitions.remove_TPT(),
 
             "Targeted TPT": scenario_definitions.target_TPT(),

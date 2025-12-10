@@ -503,6 +503,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "whether injectable prep is allowed"
         ),
+        "ratio_oral_to_injectable_prep": Parameter(
+            Types.LIST,
+            "ratio of oral to injectable prep, given if injectable_prep_allowed=True"
+        ),
         "linked_to_care_after_selftest": Parameter(
             Types.REAL,
             "probability a person who has had a self-test will be linked to care"
@@ -1284,7 +1288,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             year: year >= p["viral_load_testing_start_year"] for year in range(2010, sim.end_date.year + 1)
         }
 
-    def update_parameters_for_program_scaleup(self):
+    def update_parameters_for_program_change(self):
         """
         options for program scale-up are 'target' or 'max'
         other options switch on / off various interventions
@@ -1322,6 +1326,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         if p['type_of_scaleup'] == 'remove_prep_agyw':
             p["prob_prep_for_agyw"] = 0
+
+        if p['type_of_scaleup'] == 'switch_to_injectable_prep':
+            p["ratio_oral_to_injectable_prep"] = [0.0, 1.0]
 
         if p['type_of_scaleup'] == 'remove_IPT':
             # this is currently only for high-risk districts
@@ -2311,11 +2318,13 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 give_prep = high_risk_idx[
                     self.module.rng.random_sample(len(high_risk_idx)) < rescaled_probs
                     ]
+
                 # dates are scattered throughout year
                 for person in give_prep:
                     if (self.module.parameters['injectable_prep_allowed'] &
                         (self.sim.date.year >= 2025)):
-                        type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.7, 0.3])
+                        type_of_prep = self.module.rng.choice(["oral", "injectable"],
+                                                              p=p['ratio_oral_to_injectable_prep'])
                     else:
                         type_of_prep = 'oral'
 
@@ -2348,7 +2357,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 for person in eligible_fsw_idx:
                     if (self.module.parameters['injectable_prep_allowed'] &
                         (self.sim.date.year >= 2025)):
-                        type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.3, 0.7])
+                        type_of_prep = self.module.rng.choice(["oral", "injectable"],
+                                                              p=p['ratio_oral_to_injectable_prep'])
                     else:
                         type_of_prep = 'oral'
 
@@ -2862,7 +2872,7 @@ class HivScaleUpEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         if self.module.parameters['type_of_scaleup'] != 'none':
-            self.module.update_parameters_for_program_scaleup()
+            self.module.update_parameters_for_program_change()
 
 
 # ---------------------------------------------------------------------------
@@ -3055,7 +3065,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                                                              ):
                             if (self.module.parameters['injectable_prep_allowed'] &
                                 (self.sim.date.year >= 2025)):
-                                type_of_prep = self.module.rng.choice(["oral", "injectable"], p=[0.7, 0.3])
+                                type_of_prep = self.module.rng.choice(["oral", "injectable"],
+                                                                      p=self.module.parameters['ratio_oral_to_injectable_prep'])
                             else:
                                 type_of_prep = 'oral'
 
