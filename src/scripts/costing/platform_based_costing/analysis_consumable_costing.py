@@ -20,7 +20,8 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    compute_summary_statistics
+    compute_summary_statistics,
+    create_pickles_locally
 )
 
 # Define a timestamp for script outputs
@@ -41,10 +42,10 @@ from tlo.analysis.utils import create_pickles_locally
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('consumables_costing-2025-12-04T200931Z.py', outputfilepath)[0] # consumables_costing-2025-12-02T185908Z
+results_folder = get_scenario_outputs('consumables_costing-2025-12-07T170335Z.py', outputfilepath)[0] # consumables_costing-2025-12-02T185908Z
 
 #log = pd.read_csv(results_folder1 / "0" / "0" / 'impact_of_consumables_availability__2025-11-25T120830.log', sep="\t")
-#create_pickles_locally(scenario_output_dir = "outputs/consumables_costing-2025-12-04T200931Z")
+#create_pickles_locally(scenario_output_dir = "outputs/consumables_costing-2025-12-07T170335Z")
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
