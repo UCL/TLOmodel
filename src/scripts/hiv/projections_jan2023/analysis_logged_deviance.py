@@ -36,8 +36,8 @@ resourcefilepath = './resources'
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 1_000
+end_date = Date(2040, 1, 1)
+popsize = 10_000
 
 # set up the log config
 log_config = {
@@ -83,7 +83,7 @@ sim.register(
 
 
 # set the scenario
-sim.modules["Hiv"].parameters["select_mihpsa_scenario"] = 1
+sim.modules["Hiv"].parameters["select_mihpsa_scenario"] = 10
 sim.modules["Hiv"].parameters["injectable_prep_allowed"] = False
 
 

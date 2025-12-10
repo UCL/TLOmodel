@@ -621,15 +621,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         tests_per_year = min(1.0, 12.0 / p["interval_for_viral_load_measurement_months"])
         f_benefit = tests_per_year * p["prob_receive_viral_load_test_result"]
 
-        def adjust(pct):
-            if pd.isna(pct):
+        def adjust(p_base):
+            if pd.isna(p_base):
                 return np.nan
-            p_base = pct / 100.0
             p_adj = p_base + f_benefit * (1 - p_base) * p["prob_of_viral_suppression_following_VL_test"]
             return max(0.0, min(1.0, p_adj))
 
         p["prob_start_art_or_vs"]["adjusted_viral_suppression_on_art"] = (
-            p["prob_start_art_or_vs"]["virally_suppressed_on_art"].apply(adjust)
+            p["prob_start_art_or_vs"]["overall_adjusted_viral_suppression_on_art"].apply(adjust)
         )
 
     def pre_initialise_population(self):
@@ -1730,6 +1729,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                 {190: 0.0})  # 190 for VL test
 
             # reduce general testing
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {196: 0.1})
+
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.5
 
@@ -1739,11 +1741,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
             # drop availability of ARVs by 50%
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {2671: 0.0})  # Adult ART
+                {2671: 0.5})  # Adult ART
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {2672: 0.0})  # Child ART
+                {2672: 0.5})  # Child ART
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {2673: 0.0})  # Infant ART
+                {2673: 0.5})  # Infant ART
 
 
         # ----------------------------------------------
@@ -1764,6 +1766,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                 {190: 0.0})  # 190 for VL test
 
             # reduce general testing
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {196: 0.25})
+
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * 0.5
             p["annual_rate_selftest"] = 0
@@ -5414,11 +5419,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         Total_AGYW_PG = TOTAL_AGYW + TOTAL_PG
 
         # get numbers of tests performed
-        current_testing_rate = self.module.per_capita_testing_rate()  # this stores annual test numbers
         number_tests = self.module.stored_test_numbers[-1]
         number_selftests = self.module.stored_selftest_numbers
-        print('number_tests', number_tests)
-        print('number_selftests', number_selftests)
 
         num_on_art = len(
             df.loc[df.is_alive
@@ -5426,15 +5428,11 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.hv_art != "not")
                 ]
         )  # todo this includes children
-        print('num_on_art', num_on_art)
 
         N_NewVMMC = len(df[df.hv_VMMC_in_last_year & (df.age_years >= 15)])
-        print('N_NewVMMC', N_NewVMMC)
 
         person_years_oral_prep = PY_PREP_ORAL_FSW + PY_PREP_ORAL_AGYW
-        print('person_years_oral_prep', person_years_oral_prep)
         person_years_inj_prep = PY_PREP_INJECT_AGYW + PY_PREP_INJECT_FSW
-        print('person_years_inj_prep', person_years_inj_prep)
 
         TotalCost_Undiscounted = (
             number_tests * 13.03
