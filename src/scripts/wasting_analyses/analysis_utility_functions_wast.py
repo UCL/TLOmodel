@@ -84,6 +84,39 @@ def return_sum_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
 
     return result
 
+def compute_scen_sum_and_averted(
+    interv: str, interv_df: pd.DataFrame, sq_sum_df_name: str, limit_to_zero: bool, sq_dict: dict = None
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Sum `interv_df` across years into a single-row DataFrame labeled "start_year—end_year", then compute averted outcome
+    (DALYs or deaths) as compared to sum of otucome under SQ. If limit_to_zero True, averted outcome cannot be negative.
+    Returns (scen_sum_df, averted_mean_ci_df).
+    """
+    # Sum Series -> single-row DataFrame and set new index 'year' as "first-last"
+    scen_sum = interv_df.sum(axis=0)
+    start_year = str(interv_df.index.min())
+    end_year = str(interv_df.index.max())
+    year_label = f"{start_year}-{end_year}"
+    scen_sum_df = scen_sum.to_frame().T
+    scen_sum_df.index.name = "year"
+    scen_sum_df.index = [year_label]
+
+    # Obtain SQ sum DALYs
+    if interv != "SQ":
+        sq_sum_df = sq_dict[sq_sum_df_name]
+    else:
+        sq_sum_df = scen_sum_df
+
+    # Compute averted DALYs, mean and CI across runs
+    if limit_to_zero:
+        sum_averted_df = (sq_sum_df - scen_sum_df).clip(lower=0)
+        assert (sum_averted_df >= 0).all().all(), "Negative averted outcome found in sum_averted_df, which should be limited to zero"
+    else:
+        sum_averted_df = sq_sum_df - scen_sum_df
+    averted_mean_ci_df = return_mean_95_CI_across_runs(sum_averted_df)
+
+    return scen_sum_df, averted_mean_ci_df
+
 def extract_birth_data_frames_and_outcomes(
     folder,
     years_of_interest,
@@ -137,7 +170,8 @@ def extract_death_data_frames_and_outcomes(
     births_df,
     years_of_interest,
     intervention_years,
-    interv
+    interv,
+    sq_deaths: dict = None
 ) -> Dict[str, pd.DataFrame]:
     """
     Extracts and summarizes death data (neonatal and under-5) by cause, year, and intervention period.
@@ -297,68 +331,105 @@ def extract_death_data_frames_and_outcomes(
     interv_under5_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_under5_Diarrhoea_deaths_with_SAM_df)
 
+    under5_scen_sum_deaths_df, under5_averted_deaths_mean_ci_df = compute_scen_sum_and_averted(
+        interv, interv_under5_deaths_df,
+        'under5_scen_sum_deaths_df', True, sq_deaths
+    )
+    under5_scen_sum_SAM_deaths_df, under5_averted_SAM_deaths_mean_ci_df = compute_scen_sum_and_averted(
+        interv, interv_under5_SAM_deaths_df,
+        'under5_scen_sum_SAM_deaths_df', True, sq_deaths
+    )
+    under5_scen_sum_ALRI_deaths_df, under5_averted_ALRI_deaths_mean_ci_df = compute_scen_sum_and_averted(
+        interv, interv_under5_ALRI_deaths_df,
+        'under5_scen_sum_ALRI_deaths_df',False, sq_deaths
+    )
+    under5_scen_sum_Diarrhoea_deaths_df, under5_averted_Diarrhoea_deaths_mean_ci_df = compute_scen_sum_and_averted(
+        interv, interv_under5_Diarrhoea_deaths_df,
+        'under5_scen_sum_Diarrhoea_deaths_df', False, sq_deaths
+    )
+
+    under5_scen_sum_ALRI_deaths_with_SAM_df, under5_averted_ALRI_deaths_with_SAM_mean_ci_df = \
+        compute_scen_sum_and_averted(
+            interv, interv_under5_ALRI_deaths_with_SAM_df,
+            'under5_scen_sum_ALRI_deaths_with_SAM_df', False, sq_deaths
+        )
+    under5_scen_sum_Diarrhoea_deaths_with_SAM_df, under5_averted_Diarrhoea_deaths_with_SAM_mean_ci_df = \
+        compute_scen_sum_and_averted(
+            interv, interv_under5_Diarrhoea_deaths_with_SAM_df,
+            'under5_scen_sum_Diarrhoea_deaths_with_SAM_df', False, sq_deaths
+    )
+
     # UNDER-5 MORTALITY RATE, i.e. the number of deaths of children under 5 years old per 1,000 live births
     under5mr_df = (under5_deaths_df / births_df) * 1000
     under5mr_per_year_per_draw_df = return_mean_95_CI_across_runs(under5mr_df)
 
-    return {'neo_deaths_df': neonatal_deaths_df,
-            'neo_SAM_deaths_df': neonatal_SAM_deaths_df,
-            'neo_ALRI_deaths_df': neonatal_ALRI_deaths_df,
-            'neo_Diarrhoea_deaths_df': neonatal_Diarrhoea_deaths_df,
-            'neo_ALRI_deaths_with_SAM_df': neonatal_ALRI_deaths_with_SAM_df,
-            'neo_Diarrhoea_deaths_with_SAM_df': neonatal_Diarrhoea_deaths_with_SAM_df,
-            'neo_deaths_mean_ci_df': neo_deaths_mean_ci_per_year_per_draw_df,
-            'neo_SAM_deaths_mean_ci_df': neo_SAM_deaths_mean_ci_per_year_per_draw_df,
-            'neo_ALRI_deaths_mean_ci_df': neo_ALRI_deaths_mean_ci_per_year_per_draw_df,
-            'neo_Diarrhoea_deaths_mean_ci_df': neo_Diarrhoea_deaths_mean_ci_per_year_per_draw_df,
-            'neo_ALRI_deaths_with_SAM_mean_ci_df': neo_ALRI_deaths_with_SAM_mean_ci_per_year_per_draw_df,
-            'neo_Diarrhoea_deaths_with_SAM_mean_ci_df': neo_Diarrhoea_deaths_with_SAM_mean_ci_per_year_per_draw_df,
-            'interv_neo_deaths_df': interv_neo_deaths_df,
-            'interv_neo_deaths_sum_ci_df': interv_neo_deaths_sum_per_draw_CI_across_runs_df,
-            'interv_neo_SAM_deaths_df': interv_neo_SAM_deaths_df,
-            'interv_neo_SAM_deaths_sum_ci_df': interv_neo_SAM_deaths_sum_per_draw_CI_across_runs_df,
-            'interv_neo_ALRI_deaths_df': interv_neo_ALRI_deaths_df,
-            'interv_neo_ALRI_deaths_sum_ci_df': interv_neo_ALRI_deaths_sum_per_draw_CI_across_runs_df,
-            'interv_neo_Diarrhoea_deaths_df': interv_neo_Diarrhoea_deaths_df,
-            'interv_neo_Diarrhoea_deaths_sum_ci_df': interv_neo_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df,
-            'interv_neo_ALRI_deaths_with_SAM_df': interv_neo_ALRI_deaths_with_SAM_df,
-            'interv_neo_ALRI_deaths_with_SAM_sum_ci_df': interv_neo_ALRI_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
-            'interv_neo_Diarrhoea_deaths_with_SAM_df': interv_neo_Diarrhoea_deaths_with_SAM_df,
-            'interv_neo_Diarrhoea_deaths_with_SAM_sum_ci_df':
-                interv_neo_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
-            'neonatal_mort_rate_df': nmr_df,
-            'neo_mort_rate_mean_ci_df': nmr_per_year_per_draw_df,
-            'under5_deaths_df': under5_deaths_df,
-            'under5_SAM_deaths_df': under5_SAM_deaths_df,
-            'under5_ALRI_deaths_df': under5_ALRI_deaths_df,
-            'under5_Diarrhoea_deaths_df': under5_Diarrhoea_deaths_df,
-            'under5_ALRI_deaths_with_SAM_df': under5_ALRI_deaths_with_SAM_df,
-            'under5_Diarrhoea_deaths_with_SAM_df': under5_Diarrhoea_deaths_with_SAM_df,
-            'under5_deaths_mean_ci_df': under5_deaths_mean_ci_per_year_per_draw_df,
-            'under5_SAM_deaths_mean_ci_df': under5_SAM_deaths_mean_ci_per_year_per_draw_df,
-            'under5_ALRI_deaths_mean_ci_df': under5_ALRI_deaths_mean_ci_per_year_per_draw_df,
-            'under5_Diarrhoea_deaths_mean_ci_df': under5_Diarrhoea_deaths_mean_ci_per_year_per_draw_df,
-            'under5_ALRI_deaths_with_SAM_mean_ci_df': under5_ALRI_deaths_with_SAM_mean_ci_per_year_per_draw_df,
-            'under5_Diarrhoea_deaths_with_SAM_mean_ci_df':
-                under5_Diarrhoea_deaths_with_SAM_mean_ci_per_year_per_draw_df,
-            'interv_under5_deaths_df': interv_under5_deaths_df,
-            'interv_under5_deaths_sum_ci_df': interv_under5_deaths_sum_per_draw_CI_across_runs_df,
-            'interv_under5_SAM_deaths_df': interv_under5_SAM_deaths_df,
-            'interv_under5_SAM_deaths_sum_ci_df': interv_under5_SAM_deaths_sum_per_draw_CI_across_runs_df,
-            'interv_under5_ALRI_deaths_df': interv_under5_ALRI_deaths_df,
-            'interv_under5_ALRI_deaths_sum_ci_df': interv_under5_ALRI_deaths_sum_per_draw_CI_across_runs_df,
-            'interv_under5_Diarrhoea_deaths_df': interv_under5_Diarrhoea_deaths_df,
-            'interv_under5_Diarrhoea_deaths_sum_ci_df': interv_under5_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df,
-            'interv_under5_ALRI_deaths_with_SAM_df': interv_under5_ALRI_deaths_with_SAM_df,
-            'interv_under5_ALRI_deaths_with_SAM_sum_ci_df':
-                interv_under5_ALRI_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
-            'interv_under5_Diarrhoea_deaths_with_SAM_df':
-                interv_under5_Diarrhoea_deaths_with_SAM_df,
-            'interv_under5_Diarrhoea_deaths_with_SAM_sum_ci_df':
-                interv_under5_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
-            'under5_mort_rate_df': under5mr_df,
-            'under5_mort_rate_mean_ci_df': under5mr_per_year_per_draw_df,
-            'interv_years': intervention_years}
+    return {
+        "neo_deaths_df": neonatal_deaths_df,
+        "neo_SAM_deaths_df": neonatal_SAM_deaths_df,
+        "neo_ALRI_deaths_df": neonatal_ALRI_deaths_df,
+        "neo_Diarrhoea_deaths_df": neonatal_Diarrhoea_deaths_df,
+        "neo_ALRI_deaths_with_SAM_df": neonatal_ALRI_deaths_with_SAM_df,
+        "neo_Diarrhoea_deaths_with_SAM_df": neonatal_Diarrhoea_deaths_with_SAM_df,
+        "neo_deaths_mean_ci_df": neo_deaths_mean_ci_per_year_per_draw_df,
+        "neo_SAM_deaths_mean_ci_df": neo_SAM_deaths_mean_ci_per_year_per_draw_df,
+        "neo_ALRI_deaths_mean_ci_df": neo_ALRI_deaths_mean_ci_per_year_per_draw_df,
+        "neo_Diarrhoea_deaths_mean_ci_df": neo_Diarrhoea_deaths_mean_ci_per_year_per_draw_df,
+        "neo_ALRI_deaths_with_SAM_mean_ci_df": neo_ALRI_deaths_with_SAM_mean_ci_per_year_per_draw_df,
+        "neo_Diarrhoea_deaths_with_SAM_mean_ci_df": neo_Diarrhoea_deaths_with_SAM_mean_ci_per_year_per_draw_df,
+        "interv_neo_deaths_df": interv_neo_deaths_df,
+        "interv_neo_deaths_sum_ci_df": interv_neo_deaths_sum_per_draw_CI_across_runs_df,
+        "interv_neo_SAM_deaths_df": interv_neo_SAM_deaths_df,
+        "interv_neo_SAM_deaths_sum_ci_df": interv_neo_SAM_deaths_sum_per_draw_CI_across_runs_df,
+        "interv_neo_ALRI_deaths_df": interv_neo_ALRI_deaths_df,
+        "interv_neo_ALRI_deaths_sum_ci_df": interv_neo_ALRI_deaths_sum_per_draw_CI_across_runs_df,
+        "interv_neo_Diarrhoea_deaths_df": interv_neo_Diarrhoea_deaths_df,
+        "interv_neo_Diarrhoea_deaths_sum_ci_df": interv_neo_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df,
+        "interv_neo_ALRI_deaths_with_SAM_df": interv_neo_ALRI_deaths_with_SAM_df,
+        "interv_neo_ALRI_deaths_with_SAM_sum_ci_df": interv_neo_ALRI_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
+        "interv_neo_Diarrhoea_deaths_with_SAM_df": interv_neo_Diarrhoea_deaths_with_SAM_df,
+        "interv_neo_Diarrhoea_deaths_with_SAM_sum_ci_df": interv_neo_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
+        "neonatal_mort_rate_df": nmr_df,
+        "neo_mort_rate_mean_ci_df": nmr_per_year_per_draw_df,
+        "under5_deaths_df": under5_deaths_df,
+        "under5_SAM_deaths_df": under5_SAM_deaths_df,
+        "under5_ALRI_deaths_df": under5_ALRI_deaths_df,
+        "under5_Diarrhoea_deaths_df": under5_Diarrhoea_deaths_df,
+        "under5_ALRI_deaths_with_SAM_df": under5_ALRI_deaths_with_SAM_df,
+        "under5_Diarrhoea_deaths_with_SAM_df": under5_Diarrhoea_deaths_with_SAM_df,
+        "under5_deaths_mean_ci_df": under5_deaths_mean_ci_per_year_per_draw_df,
+        "under5_SAM_deaths_mean_ci_df": under5_SAM_deaths_mean_ci_per_year_per_draw_df,
+        "under5_ALRI_deaths_mean_ci_df": under5_ALRI_deaths_mean_ci_per_year_per_draw_df,
+        "under5_Diarrhoea_deaths_mean_ci_df": under5_Diarrhoea_deaths_mean_ci_per_year_per_draw_df,
+        "under5_ALRI_deaths_with_SAM_mean_ci_df": under5_ALRI_deaths_with_SAM_mean_ci_per_year_per_draw_df,
+        "under5_Diarrhoea_deaths_with_SAM_mean_ci_df": under5_Diarrhoea_deaths_with_SAM_mean_ci_per_year_per_draw_df,
+        "interv_under5_deaths_df": interv_under5_deaths_df,
+        "interv_under5_deaths_sum_ci_df": interv_under5_deaths_sum_per_draw_CI_across_runs_df,
+        "interv_under5_SAM_deaths_df": interv_under5_SAM_deaths_df,
+        "interv_under5_SAM_deaths_sum_ci_df": interv_under5_SAM_deaths_sum_per_draw_CI_across_runs_df,
+        "interv_under5_ALRI_deaths_df": interv_under5_ALRI_deaths_df,
+        "interv_under5_ALRI_deaths_sum_ci_df": interv_under5_ALRI_deaths_sum_per_draw_CI_across_runs_df,
+        "interv_under5_Diarrhoea_deaths_df": interv_under5_Diarrhoea_deaths_df,
+        "interv_under5_Diarrhoea_deaths_sum_ci_df": interv_under5_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df,
+        "interv_under5_ALRI_deaths_with_SAM_df": interv_under5_ALRI_deaths_with_SAM_df,
+        "interv_under5_ALRI_deaths_with_SAM_sum_ci_df": interv_under5_ALRI_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
+        "interv_under5_Diarrhoea_deaths_with_SAM_df": interv_under5_Diarrhoea_deaths_with_SAM_df,
+        "interv_under5_Diarrhoea_deaths_with_SAM_sum_ci_df": interv_under5_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
+        "under5_mort_rate_df": under5mr_df,
+        "under5_mort_rate_mean_ci_df": under5mr_per_year_per_draw_df,
+        "under5_scen_sum_deaths_df": under5_scen_sum_deaths_df,
+        "under5_averted_deaths_mean_ci_df": under5_averted_deaths_mean_ci_df,
+        "under5_scen_sum_SAM_deaths_df": under5_scen_sum_SAM_deaths_df,
+        "under5_averted_SAM_deaths_mean_ci_df": under5_averted_SAM_deaths_mean_ci_df,
+        "under5_scen_sum_ALRI_deaths_df": under5_scen_sum_ALRI_deaths_df,
+        "under5_averted_ALRI_deaths_mean_ci_df": under5_averted_ALRI_deaths_mean_ci_df,
+        "under5_scen_sum_Diarrhoea_deaths_df": under5_scen_sum_Diarrhoea_deaths_df,
+        "under5_averted_Diarrhoea_deaths_mean_ci_df": under5_averted_Diarrhoea_deaths_mean_ci_df,
+        "under5_scen_sum_ALRI_deaths_with_SAM_df": under5_scen_sum_ALRI_deaths_with_SAM_df,
+        "under5_averted_ALRI_deaths_with_SAM_mean_ci_df": under5_averted_ALRI_deaths_with_SAM_mean_ci_df,
+        "under5_scen_sum_Diarrhoea_deaths_with_SAM_df": under5_scen_sum_Diarrhoea_deaths_with_SAM_df,
+        "under5_averted_Diarrhoea_deaths_with_SAM_mean_ci_df": under5_averted_Diarrhoea_deaths_with_SAM_mean_ci_df,
+        "interv_years": intervention_years,
+    }
 
 def extract_daly_data_frames_and_outcomes(
     folder,
@@ -460,50 +531,21 @@ def extract_daly_data_frames_and_outcomes(
     interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_under5_Diarrhoea_dalys_df)
 
-    def compute_scen_sum_and_averted(
-        interv_dalys_df: pd.DataFrame, sq_sum_dalys_df_name: str, limit_to_zero: bool
-    ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Sum `interv_dalys_df` across years into a single-row DataFrame labeled "start-end", then compute averted DALYs
-        as compared to sum of DALYs under SQ. If limit_to_zero True, averted DALYs cannot be negative.
-        Returns (scen_sum_dalys_df, averted_dalys_mean_ci_df).
-        """
-        # Sum Series -> single-row DataFrame and set new index 'year' as "first-last"
-        scen_sum_dalys = interv_dalys_df.sum(axis=0)
-        start_year = str(interv_dalys_df.index.min())
-        end_year = str(interv_dalys_df.index.max())
-        year_label = f"{start_year}-{end_year}"
-        scen_sum_dalys_df = scen_sum_dalys.to_frame().T
-        scen_sum_dalys_df.index.name = "year"
-        scen_sum_dalys_df.index = [year_label]
-
-        # Obtain SQ sum DALYs
-        if interv != "SQ":
-            sq_sum_dalys_df = sq_dalys[sq_sum_dalys_df_name]
-        else:
-            sq_sum_dalys_df = scen_sum_dalys_df
-
-        # Compute averted DALYs, mean and CI across runs
-        if limit_to_zero:
-            sum_averted_dalys_df = (sq_sum_dalys_df - scen_sum_dalys_df).clip(lower=0)
-            assert (sum_averted_dalys_df >= 0).all().all(), "Negative averted DALYs found in under_sum_averted_dalys_df, which should be limited to zero"
-        else:
-            sum_averted_dalys_df = sq_sum_dalys_df - scen_sum_dalys_df
-        averted_dalys_mean_ci_df = return_mean_95_CI_across_runs(sum_averted_dalys_df)
-
-        return scen_sum_dalys_df, averted_dalys_mean_ci_df
-
     under5_scen_sum_dalys_df, under5_averted_dalys_mean_ci_df = compute_scen_sum_and_averted(
-        interv_under5_dalys_df, 'under5_scen_sum_dalys_df', True
+        interv, interv_under5_dalys_df, 'under5_scen_sum_dalys_df',
+        True, sq_dalys
     )
     under5_scen_sum_SAM_dalys_df, under5_averted_SAM_dalys_mean_ci_df = compute_scen_sum_and_averted(
-        interv_under5_SAM_dalys_df, 'under5_scen_sum_SAM_dalys_df', True
+        interv, interv_under5_SAM_dalys_df, 'under5_scen_sum_SAM_dalys_df',
+        True, sq_dalys
     )
     under5_scen_sum_ALRI_dalys_df, under5_averted_ALRI_dalys_mean_ci_df = compute_scen_sum_and_averted(
-        interv_under5_ALRI_dalys_df, 'under5_scen_sum_ALRI_dalys_df', False
+        interv, interv_under5_ALRI_dalys_df, 'under5_scen_sum_ALRI_dalys_df',
+        False, sq_dalys
     )
     under5_scen_sum_Diarrhoea_dalys_df, under5_averted_Diarrhoea_dalys_mean_ci_df = compute_scen_sum_and_averted(
-        interv_under5_Diarrhoea_dalys_df, 'under5_scen_sum_Diarrhoea_dalys_df', False
+        interv, interv_under5_Diarrhoea_dalys_df, 'under5_scen_sum_Diarrhoea_dalys_df',
+        False, sq_dalys
     )
 
     return {
@@ -954,7 +996,10 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                  'interv_neo_ALRI_deaths_sum_ci_df', 'interv_neo_Diarrhoea_deaths_sum_ci_df']
             under5_outcomes = ['interv_under5_deaths_sum_ci_df', 'interv_under5_SAM_deaths_sum_ci_df',
                                'interv_under5_ALRI_deaths_sum_ci_df', 'interv_under5_Diarrhoea_deaths_sum_ci_df']
-            under5_averted_outcomes = [None, None, None, None] # only prepared for DALYs
+            under5_averted_outcomes = ['under5_averted_deaths_mean_ci_df',
+                                       'under5_averted_SAM_deaths_mean_ci_df',
+                                       'under5_averted_ALRI_deaths_mean_ci_df',
+                                       'under5_averted_Diarrhoea_deaths_mean_ci_df']
         elif outcome_type == "deaths_with_SAM":
             neonatal_outcomes = [None, None,
                                  'interv_neo_ALRI_deaths_with_SAM_sum_ci_df',
@@ -962,12 +1007,15 @@ def plot_sum_outcome_and_CIs_intervention_period(
             under5_outcomes = [None, None,
                                'interv_under5_ALRI_deaths_with_SAM_sum_ci_df',
                                'interv_under5_Diarrhoea_deaths_with_SAM_sum_ci_df']
-            under5_averted_outcomes = [None, None, None, None] # only prepared for DALYs
+            under5_averted_outcomes = [None, None,
+                                       'under5_averted_ALRI_deaths_with_SAM_mean_ci_df',
+                                       'under5_averted_Diarrhoea_deaths_with_SAM_mean_ci_df']
         else:  # outcome_type == "DALYs"
             neonatal_outcomes = [None, None, None, None]  # No DALYs for neonatal
             under5_outcomes = ['interv_under5_dalys_sum_ci_df', 'interv_under5_SAM_dalys_sum_ci_df',
                                'interv_under5_ALRI_dalys_sum_ci_df', 'interv_under5_Diarrhoea_dalys_sum_ci_df']
-            under5_averted_outcomes = ['under5_averted_dalys_mean_ci_df', 'under5_averted_SAM_dalys_mean_ci_df',
+            under5_averted_outcomes = ['under5_averted_dalys_mean_ci_df',
+                                       'under5_averted_SAM_dalys_mean_ci_df',
                                        'under5_averted_ALRI_dalys_mean_ci_df',
                                        'under5_averted_Diarrhoea_dalys_mean_ci_df']
         outcome = under5_outcomes[i] if cohort == 'Under-5' else neonatal_outcomes[i]
@@ -1055,7 +1103,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
         if averted_outcome:
             fig2, ax2 = plt.subplots()
 
-            averted_DALYs = {}
+            averted_dict = {}
             for scenario in scenarios_to_compare:
                 if scenario == 'Status Quo':
                     # Only horizontal lines, no bar
@@ -1073,7 +1121,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     # Extract data for the scenario
                     scen_averted_data = \
                         outcomes_dict[interv][averted_outcome][draw][f'{min_interv_year}-{max_interv_year}']
-                    averted_DALYs[scenario] = scen_averted_data
+                    averted_dict[scenario] = scen_averted_data
 
                     ax2.bar(scenario, scen_averted_data[0],
                             yerr=[[scen_averted_data[0] - scen_averted_data[1]],
@@ -1081,9 +1129,29 @@ def plot_sum_outcome_and_CIs_intervention_period(
                             label=scenario, color=get_scen_colour(scenario), capsize=5)
                     y_top2 = ax2.get_ylim()[1]
                     s1 = y_top2 * 0.02  # space between bar and value of the bar
+                    # compute number of spaces to pad to 6 digits for printing the value
+                    try:
+                        val = int(abs(scen_averted_data[0]))
+                    except Exception:
+                        val = 0
+                    digits = len(str(val)) if val != 0 else 1
+                    n = max(0, 6 - digits)
+                    if n == 4:
+                        n= n+4
+                    elif n == 3:
+                        n= n+5
+                    elif n == 2:
+                        if scen_averted_data[0] > 0:
+                            n= n+2
+                        else:
+                            n= n+1
+                    elif n == 1:
+                        if scen_averted_data[0] > 0:
+                            n= n+1
+                    h_space = " " * n
                     ax2.text(scenario, scen_averted_data[0] + s1 if scen_averted_data[0] >= 0 else 0 + s1,
-                             f"{scen_averted_data[0]:,.0f}", color=get_scen_colour(scenario), ha='center', va='bottom',
-                             fontsize=12.5, fontweight='bold')
+                             f"{h_space}{scen_averted_data[0]:,.0f}", color=get_scen_colour(scenario),
+                             ha='center', va='bottom', fontsize=12.5, fontweight='bold')
 
                     # # Display lower and upper CI within the bars
                     # ax2.text(scenario, averted_ci_upper / 2 + averted_ci_upper / 4 if \
@@ -1098,12 +1166,17 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 plt.ylabel(f"Averted {outcome_type}, millions (Cumulative: {min_interv_year}—{max_interv_year})")
                 apply_millions_formatter_to_ax(ax2, axis='y')
             else:
-                plt.ylabel(f"Averted {outcome_type} (Cumulative: {min_interv_year}—{max_interv_year})")
+                if outcome_type == 'deaths_with_SAM':
+                    outcome_type_plot = 'deaths'
+                else:
+                    outcome_type_plot = outcome_type
+                plt.ylabel(f"Averted {outcome_type_plot} (Cumulative: {min_interv_year}—{max_interv_year})")
             plt.xlabel('Scenario')
             plt.title(
                 f'{cohort}: Sum of averted {outcome_type.replace("_", " ")} due to {cause} and 95% CI over '
-                f'intervention period ({min_interv_year}--{max_interv_year})'
+                f'intervention period ({min_interv_year}—{max_interv_year})'
             )
+            # Update scenario abbreviations to full names for labels
             handles2, labels2 = ax2.get_legend_handles_labels()
             ax2.legend(handles2, map_scenario_labels(labels2), loc='center left', bbox_to_anchor=(1, 0.5), labelspacing=1.4)
             ax2.set_xticks(list(range(len(labels2))))
@@ -1510,6 +1583,10 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     max_impl_costs_lower = (averted_dalys_lower * CET) - incremental_costs
                     max_impl_costs_upper = (averted_dalys_upper * CET) - incremental_costs
 
+                    ICER_sq = total_cost / averted_dalys
+                    ICER_sq_lower = total_cost / averted_dalys_upper
+                    ICER_sq_upper = total_cost / averted_dalys_lower
+
                     net_health_benefit = averted_dalys - (total_cost / CET)
                     net_health_benefit_lower = averted_dalys_lower - (total_cost / CET)
                     net_health_benefit_upper = averted_dalys_upper - (total_cost / CET)
@@ -1526,6 +1603,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                             "Incremental consumable-related costs (2023 USD)": f"{incremental_costs:,.0f}",
                             "Maximum additional implementation costs (2023 USD, 95% CI)": f"{max_impl_costs:,.0f} ({max_impl_costs_lower:,.0f}; {max_impl_costs_upper:,.0f})",
                             "Implementation costs estimate (2023 USD)": f"{impl_cost:,.0f}",
+                            "ICER (2023 USD)": f"{ICER_sq:,.1f} ({ICER_sq_lower:,.1f}; {ICER_sq_upper:,.1f})" if domination[scen] == "" else domination[scen],
                             "Incremental net health benefit (95% CI)": f"{net_health_benefit:,.0f} ({net_health_benefit_lower:,.0f}; {net_health_benefit_upper:,.0f})",
                             "Incremental net monetary benefit (95% CI)": f"{net_monetary_benefit:,.0f} ({net_monetary_benefit_lower:,.0f}; {net_monetary_benefit_upper:,.0f})",
                         }
@@ -1566,7 +1644,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         for GM_CS__multiplier in sharing_GM_CS:
                             for FS__multiplier in FS_multiplier:
                                 plot_and_table_cost_effectiveness(
-                                    averted_DALYs, unit_cost, GM_CS__multiplier, FS__multiplier
+                                    averted_dict, unit_cost, GM_CS__multiplier, FS__multiplier
                                 )
 
                     ########################################
@@ -1714,7 +1792,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     total_cost_range_table_per1 = total_cost_range_table.applymap(_divide_range_cell)
                     total_cost_range_table_per1.to_csv(Path(str(out_table_path_without_csv) + "_per1year.csv"), index=True)
                 else: # cause != "any cause":
-                    table_effectiveness(averted_DALYs, f"{outcome_type}_{cause}")
+                    table_effectiveness(averted_dict, f"{outcome_type}_{cause}")
             # if outcome_type == "deaths":
             #     table_effectiveness(averted_deaths, f"{outcome_type}_{cause}")
 
