@@ -1259,6 +1259,19 @@ class HealthSystem(Module):
 
         return capabilities_ex
 
+    def _compute_factors_for_effective_capabilities(self):
+        """Compute factor to rescale capabilities to capture effective capability.
+        Computation of these factors is split from the actual rescaling to facilitate
+        capturing them even when running the model in mode 1."""
+        self._rescaling_factors = defaultdict(dict)
+        for clinic, clinic_cl in self._daily_capabilities.items():
+            for facID_and_officer in clinic_cl.keys():
+                rescaling_factor[clinic][facID_and_officer] = self._summary_counter.frac_time_used_by_facID_and_officer(
+                    facID_and_officer=facID_and_officer
+                )
+
+
+
     def _rescale_capabilities_to_capture_effective_capability(self):
         # Notice that capabilities will only be expanded through this process
         # (i.e. won't reduce available capabilities if these were under-used in the last year).
@@ -1267,12 +1280,9 @@ class HealthSystem(Module):
         # this may eventually come into conflict with the Switcher functions.
         for clinic, clinic_cl in self._daily_capabilities.items():
             for facID_and_officer in clinic_cl.keys():
-                rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
-                    facID_and_officer=facID_and_officer
-                )
+                rescaling_factor = self._rescaling_factors[clinic][facID_and_officer]
                 if rescaling_factor > 1 and rescaling_factor != float("inf"):
                     self._daily_capabilities[clinic][facID_and_officer] *= rescaling_factor
-
                     # We assume that increased daily capabilities is a result of each staff performing more
                     # daily patient facing time per day than contracted (or equivalently performing appts more
                     # efficiently).
@@ -2242,6 +2252,11 @@ class HealthSystem(Module):
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
+
+        # Capture rescaling factors at the end of historical scaling i.e. in 2025
+        if (self.sim.date.year == 2025):
+            self._compute_factors_for_effective_capabilities()
+
         # If we are at the end of the year preceeding the mode switch, and if wanted
         # to rescale capabilities to capture effective availability as was recorded, on
         # average, in the past year, do so here.
@@ -2996,6 +3011,7 @@ class HealthSystemSummaryCounter:
             "calendar year.",
             data={
                 "average_Frac_Time_Used_Overall": np.mean(self._frac_time_used_overall),
+                "rescale_factor": {clinic: {k: v for k, v in clinic_v.items()} for clinic, clinic_f in self._rescaling_factors.items()},
                 # <-- leaving space here for additional summary measures that may be needed in the future.
             },
         )
