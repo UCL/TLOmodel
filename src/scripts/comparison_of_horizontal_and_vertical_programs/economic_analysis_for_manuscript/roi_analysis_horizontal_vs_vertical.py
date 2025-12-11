@@ -383,6 +383,7 @@ def do_incremental_cost_and_health_plot(incremental_cost_df: pd.DataFrame,
                                         icer_lookup: Optional[dict[int, str]] = None,
                                         # needs to be provided if plot_icers_on_frontier = True
                                         frontier_color: str = "black",
+                                        frontier_scenarios: Optional[list[int]] = None,
                                         frontier_linewidth: float = 2.0,
                                         legend_position: Literal['inset', 'offset'] = "offset"):
 
@@ -463,15 +464,25 @@ def do_incremental_cost_and_health_plot(incremental_cost_df: pd.DataFrame,
 
     # --- Frontier overlay (upper convex hull in (cost, dalys) vs baseline) ---
     if overlay_frontier:
+        if frontier_scenarios is None:
+            frontier_scenarios = new_order
+        # Determine which draws to include in frontier
+        frontier_draw_set = set(frontier_scenarios) if frontier_scenarios is not None else set(
+            incremental_dalys_df.index)
+
+        # Ensure baseline (0, 0) is included in the plotting data
+        x_median.loc[0] = 0.0
+        y_median.loc[0] = 0.0
+
         # Build dict in (cost, dalys) using *medians vs baseline*
         points_by_draw = {
             int(d): (float(y_median[d]), float(x_median[d] * 1e6))  # (cost, dalys)
-            for d in incremental_dalys_df.index
+            for d in frontier_draw_set.union({0})  # Ensure baseline is included
         }
         # add baseline origin because we're dealing with incremental costs
         points_by_draw.setdefault(0, (0.0, 0.0))
 
-        frontier_draws, frontier_cd = upper_convex_frontier_from_dict(points_by_draw, include_collinear=False)
+        frontier_draws, frontier_cd = upper_convex_frontier_from_dict(points_by_draw, include_collinear=True)
 
         # convert for plotting on scaled axes (x=DALYs millions, y=cost billions)
         fx = frontier_cd[:, 1] / 1e6
@@ -1150,7 +1161,7 @@ for rates in alternative_discount_rates:
         # Unpack strings
         lo_str, med_str, hi_str = [c[1] for c in components_sorted]
         # Construct final display string
-        return f"{med_str} [{lo_str} - {hi_str}]"
+        return f"${med_str} [${lo_str} - ${hi_str}]"
 
 
     # Apply formatter
@@ -1225,6 +1236,19 @@ for rates in alternative_discount_rates:
                                         figname='cea_plane.png',
                                         icer_lookup=icer_lookup,
                                         overlay_frontier=False,
+                                        legend_position="inset")
+
+    do_incremental_cost_and_health_plot(incremental_cost_df=summarize_cost_data(incremental_scenario_cost, chosen_metric),
+                                        incremental_dalys_df=summarize_cost_data(num_dalys_averted, chosen_metric),
+                                        draws_with_icer_labels=[7, 32, 39],
+                                        horizontal_scenarios=[1, 2, 3, 4, 5, 6, 7],
+                                        vertical_scenarios=[8, 16, 24, 32],
+                                        diagonal_scenarios=[15, 23, 31, 39],
+                                        scenario_dict=all_manuscript_scenarios,
+                                        figname='cea_plane_select_frontier.png',
+                                        icer_lookup=icer_lookup,
+                                        overlay_frontier=True,
+                                        frontier_scenarios=[7,32,39],
                                         legend_position="inset")
 
     # 4. Return on Investment
