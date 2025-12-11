@@ -1712,6 +1712,14 @@ def create_summary_treemap_by_cost_subgroup(_df: pd.DataFrame,
     if _draw is not None:
         _df = _df[_df.draw == _draw]
 
+    if _year != 'all':
+        _df = _df[_df['year'].isin(_year)]
+
+    if 'mean' in _df.stat.unique():
+        _df = _df[_df['stat'] == 'mean']
+    else:
+        _df = _df[_df['stat'] == 'median']
+
     # Remove non-specific subgroup for consumables
     if _cost_category == 'medical consumables':
         _df = _df[~(_df.cost_subgroup == 'supply chain (all consumables)')]
