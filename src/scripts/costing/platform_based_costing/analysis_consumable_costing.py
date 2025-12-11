@@ -32,7 +32,7 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
 # Create folders to store results
 resourcefilepath = Path("./resources")
-outputfilepath = Path('./outputs/')
+outputfilepath = Path('./outputs/sakshi.mohan@york.ac.uk')
 figurespath = Path('./outputs/platform_based_costing/')
 path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables"
 if not os.path.exists(figurespath):
@@ -42,10 +42,10 @@ from tlo.analysis.utils import create_pickles_locally
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('consumables_costing-2025-12-07T170335Z.py', outputfilepath)[0] # consumables_costing-2025-12-02T185908Z
+results_folder = get_scenario_outputs('consumables_costing-2025-12-09T212822Z.py', outputfilepath)[0] # consumables_costing-2025-12-02T185908Z
 
 #log = pd.read_csv(results_folder1 / "0" / "0" / 'impact_of_consumables_availability__2025-11-25T120830.log', sep="\t")
-#create_pickles_locally(scenario_output_dir = "outputs/consumables_costing-2025-12-07T170335Z")
+#create_pickles_locally(scenario_output_dir = "outputs/sakshi.mohan@york.ac.uk/consumables_costing-2025-12-09T212822Z")
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
@@ -55,10 +55,10 @@ info = get_scenario_info(results_folder)
 # Declare default parameters for cost analysis
 # ------------------------------------------------------------------------------------------------------------------
 # Period relevant for costing
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2030, 12, 31))  # This is the period that is costed
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2030, 12, 31))  # This is the period that is costed
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
-list_of_years_for_plot = list(range(2010, 2031))
+list_of_years_for_plot = list(range(2025, 2031))
 number_of_years_costed = relevant_period_for_costing[1] - 2023 + 1
 
 # Scenarios
@@ -163,7 +163,7 @@ consumables_costs_by_item_code = dict(zip(consumables_costs_by_item_code['Item_C
 consumables_dispensed_summary[idx['item_name']] = consumables_dispensed_summary[idx['item']].map(consumables_dict)
 consumables_dispensed_summary[idx['unit_cost']] = consumables_dispensed_summary[idx['item']].map(consumables_costs_by_item_code)
 
-consumables_dispensed_summary.to_csv(figurespath / 'sample_output_v1.csv')
+consumables_dispensed_summary.to_csv(figurespath / 'sample_output_v2.csv')
 
 # Extract supplementary data
 # 1. Count of HSIs
@@ -202,8 +202,8 @@ count_by_treatment_id = count_by_treatment_id.droplevel(2)
 count_by_appointment = get_hsi_summary(results_folder, key = 'HSI_Event_non_blank_appt_footprint',
                                         var = "Number_By_Appt_Type_Code_And_Level", do_scaling = True)
 
-count_by_treatment_id.to_csv(figurespath / 'sample_hsi_count_by_treatment.csv')
-count_by_appointment.to_csv(figurespath / 'sample_hsi_count_by_appointment.csv')
+count_by_treatment_id.to_csv(figurespath / 'sample_hsi_count_by_treatment_v2.csv')
+count_by_appointment.to_csv(figurespath / 'sample_hsi_count_by_appointment_v2.csv')
 
 # Disease specific information
 # TODO update code to extract relevant results alongside prevalance
@@ -228,3 +228,17 @@ log['tlo.methods.wasting'].keys()
 
 #TODO add bednets and IRS
 
+'''
+# Convert log file to pickle
+import json
+import pickle
+
+parsed = []
+
+with open("outputs/consumables_costing-2025-12-09T212822Z/1/0/tlo.methods.healthsystem.summary.log", "r") as f:
+    for line in f:
+        parsed.append(json.loads(line.strip()))
+
+with open("outputs/consumables_costing-2025-12-09T212822Z/1/0/tlo.methods.healthsystem.summary.pkl", "wb") as f:
+    pickle.dump(parsed, f)
+'''
