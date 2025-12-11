@@ -999,7 +999,7 @@ for rates in alternative_discount_rates:
     # 1. Calculate incremental cost
     # -----------------------------------------------------------------------------------------------------------------------
     total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
-    #total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'), _metric=chosen_metric)
+    # total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'), _metric=chosen_metric)
 
     incremental_scenario_cost = (pd.DataFrame(
         find_difference_relative_to_comparison(
@@ -1007,9 +1007,9 @@ for rates in alternative_discount_rates:
             comparison=0)  # sets the comparator to draw 0 which is the Actual scenario
     ).T.iloc[0].unstack()).T
 
+    incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost, _metric=chosen_metric)
     incremental_scenario_cost_subset_for_figure = incremental_scenario_cost[
         incremental_scenario_cost.index.get_level_values('draw').isin(list(main_manuscript_scenarios.keys()))]
-
 
     # 2. Monetary value of health impact
     # -----------------------------------------------------------------------------------------------------------------------
@@ -1030,15 +1030,15 @@ for rates in alternative_discount_rates:
                          ).T.iloc[0].unstack(level='run'))
 
     # Plot DALYs
-    num_dalys_averted_subset_for_figure = num_dalys_averted[
-        num_dalys_averted.index.get_level_values('draw').isin(list(main_manuscript_scenarios.keys()))]
-    num_dalys_averted_summarised = summarize_cost_data(num_dalys_averted_subset_for_figure, _metric=chosen_metric)
+    num_dalys_averted_summarized = summarize_cost_data(num_dalys_averted, _metric=chosen_metric)
+    num_dalys_averted_subset_for_figure = num_dalys_averted_summarized[
+        num_dalys_averted_summarized.index.get_level_values('draw').isin(list(main_manuscript_scenarios.keys()))]
     name_of_plot = f'Incremental DALYs averted compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
     fig, ax = do_standard_bar_plot_with_ci(
-        (num_dalys_averted_summarised / 1e6),
+        (num_dalys_averted_subset_for_figure / 1e6),
         annotations=[
             f"{row['median'] / 1e6:.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
-            for _, row in num_dalys_averted_summarised.iterrows()
+            for _, row in num_dalys_averted_subset_for_figure.iterrows()
         ],
         xticklabels_horizontal_and_wrapped=False,
         put_labels_in_legend=True,
@@ -1053,52 +1053,131 @@ for rates in alternative_discount_rates:
 
     # 3. Estimate and plot ICERs
     # ----------------------------------------------------
-    invalid = (num_dalys_averted < 0) & (incremental_scenario_cost > 0)
-    # TODO this is a quick and dirty workaround to  calculate the ICER for HIV without HSS which has a negative health impact for only 1 out of 5 runs
-    # Might need to fix the above
-    icers = (incremental_scenario_cost[~invalid] /
-             num_dalys_averted[~invalid]) # Element-wise division
+    # Because ICERs and ROI estimates are ratios, we calculate them using a stat-by-stat comparison rather than a
+    # run-by-run comparison
+    # STEP 1 — Compute ICERs
+    icers_summarized = (incremental_scenario_cost_summarized /
+                        num_dalys_averted_summarized)
+    # STEP 2 — Dominance classification for EACH STATISTIC
+    stats = [chosen_metric, 'lower', 'upper']
+    dominance_by_stat = {stat: {} for stat in stats}
 
-    icers_summarized = summarize_cost_data(icers, _metric=chosen_metric)
-    dominant_scenarios = (summarize_cost_data(incremental_scenario_cost,_metric=chosen_metric)['median'] < 0) & (summarize_cost_data(num_dalys_averted,_metric=chosen_metric)['median'] > 0)
-    dominated_scenarios =  (summarize_cost_data(incremental_scenario_cost,_metric=chosen_metric)['median'] > 0) & (summarize_cost_data(num_dalys_averted,_metric=chosen_metric)['median'] < 0)
-    icers_summarized[(dominated_scenarios|dominant_scenarios)] = np.nan  # The dominated and dominant scenarios are assigned as ICER of NaN
+    for stat in stats:
+        for idx in incremental_scenario_cost_summarized.index:
+
+            dC = incremental_scenario_cost_summarized.loc[idx, stat]
+            dE = num_dalys_averted_summarized.loc[idx, stat]
+
+            # Both must be numeric to classify
+            if pd.isna(dC) or pd.isna(dE):
+                dominance_by_stat[stat][idx] = None
+            elif dC < 0 and dE > 0:
+                dominance_by_stat[stat][idx] = "Dominant"
+            elif dC > 0 and dE < 0:
+                dominance_by_stat[stat][idx] = "Dominated"
+            else:
+                dominance_by_stat[stat][idx] = None
+    # STEP 3 — Replace ICERs with NaN ONLY when dominance applies there
+    for stat in stats:
+        mask = np.array([dominance_by_stat[stat][idx] is not None
+                         for idx in icers_summarized.index])
+        icers_summarized.loc[mask, stat] = np.nan
+    # STEP 4 — Subset scenarios for manuscript
     icers_summarized_subset_for_figure = icers_summarized[
-        icers_summarized.index.get_level_values('draw').isin(list(main_manuscript_scenarios.keys()))]
-
-    # Extract ICERs into a table for manuscript
-    icers_summarized_subset_for_table = icers_summarized_subset_for_figure.reset_index()
-    icers_summarized_subset_for_table['scenario'] = icers_summarized_subset_for_table['draw'].map(
-        all_manuscript_scenarios)
-    icers_summarized_subset_for_table['ICER (2023 USD)'] = icers_summarized_subset_for_table.apply(
-        lambda
-            row: "Dominated"  # if incremental health is negative, the scenario is dominated - reporting a negative ICER can be confusing
-        if row['median'] < 0 else (
-            f"${row['median']:.2f} [${row['lower']:.2f} - ${row['upper']:.2f}]"
-            if not any(pd.isna(row[['median', 'lower', 'upper']])) else "Dominant" # TODO add the Dominated case
-        ),
-        axis=1
+        icers_summarized.index
+        .get_level_values('draw')
+        .isin(list(main_manuscript_scenarios.keys()))
+    ]
+    icers_summarized_subset_for_table = (
+        icers_summarized_subset_for_figure.reset_index()
     )
-    reorder_rows_for_csv(icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']], desired_order).to_csv(figurespath / 'tabulated_icers.csv',
-                                                                              index=False)
+    icers_summarized_subset_for_table['scenario'] = (
+        icers_summarized_subset_for_table['draw']
+        .map(all_manuscript_scenarios)
+    )
+
+
+    # STEP 5 — Safe numeric formatting with dominance labels per statistic
+    def format_component(value, dom_label):
+        """Return the correct label for each component of the ICER triplet."""
+        if dom_label == "Dominant":
+            return "Dominant"
+        if dom_label == "Dominated":
+            return "Dominated"
+        # If numeric and valid
+        if isinstance(value, (int, float)) and not pd.isna(value):
+            return f"{value:.2f}"
+        # No information
+        return "Not estimable"
+
+
+    # STEP 6 — Reorder numeric ICER values safely (i.e. min value should be lower bound and max value upper bound)
+    def reorder_numeric_bounds(row, idx):
+        """Return reordered numeric values (min/max) without
+           changing dominance labels or textual components."""
+        vals = []
+        for stat in [chosen_metric, "lower", "upper"]:
+            v = row[stat]
+            if isinstance(v, (int, float)) and not pd.isna(v):
+                vals.append(v)
+        if len(vals) == 0:
+            return None, None
+        return min(vals), max(vals)
+
+
+    # STEP 7 — Build final ICER string with mixed numeric/dominance info
+    def format_icer_row(row):
+        idx = row['draw']
+        components = []
+
+        # Build sortable components (priority, string)
+        for stat in ['lower', 'median', 'upper']:
+            dom = dominance_by_stat[stat][idx]
+            value = row[stat]
+
+            if dom == "Dominant":
+                components.append((0, "Dominant"))  # lowest bound
+            elif dom == "Dominated":
+                components.append((2, "Dominated"))  # highest bound
+            elif isinstance(value, (int, float)) and not pd.isna(value):
+                components.append((1 + value / 1e9, f"{value:.2f}"))
+                # slight offset ensures relative ordering among numeric values
+            else:
+                components.append((3, "Not estimable"))
+
+        # Sort by priority (Dominant -> numeric -> Dominated)
+        components_sorted = sorted(components, key=lambda x: x[0])
+        # Unpack strings
+        lo_str, med_str, hi_str = [c[1] for c in components_sorted]
+        # Construct final display string
+        return f"{med_str} [{lo_str} - {hi_str}]"
+
+
+    # Apply formatter
+    icers_summarized_subset_for_table['ICER (2023 USD)'] = \
+        icers_summarized_subset_for_table.apply(format_icer_row, axis=1)
+
+    reorder_rows_for_csv(icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']], desired_order).to_csv(
+        figurespath / 'tabulated_icers.csv',
+        index=False)
 
     # Create a lookup from draw to formatted ICER string
     icer_lookup = dict(zip(
         icers_summarized_subset_for_table['draw'],
         icers_summarized_subset_for_table['ICER (2023 USD)']
     ))
-
+    '''
     # Plot ICERs
     annotations_icers = []
     for _, row in icers_summarized_subset_for_figure.iterrows():
         if not any(pd.isna(row[[chosen_metric, 'lower', 'upper']])) and np.isfinite(row[chosen_metric]):
             annotations_icers.append(f"{row[chosen_metric]:.2f} ({row['lower']:.2f}-\n{row['upper']:.2f})")
-        elif pd.isna(row['median']):  # or chosen_metric if that's 'median'
+        elif pd.isna(row[chosen_metric]):  # or chosen_metric if that's 'median'
             annotations_icers.append("Dominated")
         else:
             annotations_icers.append("")
 
-    for stat in ['median', 'lower', 'upper']:
+    for stat in [chosen_metric, 'lower', 'upper']:
         icers_summarized_subset_for_figure.loc[icers_summarized_subset_for_figure[stat].isna(), stat] = 0.1
     name_of_plot = f'Incremental cost-effectiveness ratios (ICERs), {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
     fig, ax = do_standard_bar_plot_with_ci(
@@ -1114,6 +1193,7 @@ for rates in alternative_discount_rates:
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
     plt.close(fig)
+'''
 
 
     # Plot incremental health and cost in a scatterplot
