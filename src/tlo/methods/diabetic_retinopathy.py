@@ -92,6 +92,10 @@ class DiabeticRetinopathy(Module):
             Types.INT,
             "Number of months until next eye screening if DR status is severe"
         ),
+        "rr_diabetes_duration_greater_than_15": Parameter(
+            Types.REAL,
+            "Relative risk multiplier for diabetic retinopathy when diabetes duration > 15 years"
+        ),
     }
 
     PROPERTIES = {
@@ -224,6 +228,7 @@ class DiabeticRetinopathy(Module):
             Predictor('li_high_sugar').when(True, p['rp_dr_high_sugar']),
             Predictor('li_low_ex').when(True, p['rp_dr_low_ex']),
             Predictor('li_urban').when(True, p['rp_dr_urban']),
+            # Predictor().when('nc_hypertension', p['rp_ckd_nc_hypertension']),
         )
 
         # any_dr = \
@@ -339,14 +344,18 @@ class DiabeticRetinopathy(Module):
             LinearModelType.MULTIPLICATIVE,
             p['rate_mild_or_moderate_to_severe'],
             Predictor('had_treatment_during_this_stage', external=True)
-            .when(True, 0.0).otherwise(1.0)
+            .when(True, 0.0).otherwise(1.0),
+            Predictor('diabetes_duration_greater_than_15_years', external=True)
+            .when(True, p['rr_diabetes_duration_greater_than_15'])
         )
 
         self.lm['severe_proliferative_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['rate_severe_to_proliferative'],
             Predictor('had_treatment_during_this_stage', external=True)
-            .when(True, 0.0).otherwise(1.0)
+            .when(True, 0.0).otherwise(1.0),
+            Predictor('diabetes_duration_greater_than_15_years', external=True)
+            .when(True, p['rr_diabetes_duration_greater_than_15'])
         )
 
     def look_up_consumable_item_codes(self):
@@ -447,6 +456,21 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population: Population) -> None:
         df = population.props
 
+        # Getting all those with diagnosed diabetes from the cardio_metabolic_disorders module
+        alive_diabetes_diagnosed_in_cmd = df.is_alive & df.nc_diabetes & df.nc_diabetes_date_diagnosis.notna()
+
+        # Compute diabetes duration (years)
+        diabetes_duration_years = pd.Series(0.0, index=df.index)
+
+        diabetes_duration_years.loc[alive_diabetes_diagnosed_in_cmd] = (
+            (self.sim.date - df.loc[alive_diabetes_diagnosed_in_cmd, 'nc_diabetes_date_diagnosis']).dt.days / 365.25
+        )
+
+        # Compute the boolean threshold as a variable you can inspect
+        # Boolean for >15 years
+        diabetes_duration_greater_than_15_years = diabetes_duration_years >= 15
+        print(f'long diabetes {diabetes_duration_greater_than_15_years}')
+
         had_treatment_during_this_stage = \
             df.is_alive & ~pd.isnull(df.dr_date_treatment) & \
             (df.dr_status == df.dr_stage_at_which_treatment_given)
@@ -464,7 +488,8 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         mildmoderate_to_severe = self.module.lm['mildmoderate_severe_dr'].predict(
             diabetes_and_alive_mild_moderate_dr,
             self.module.rng,
-            had_treatment_during_this_stage=had_treatment_during_this_stage)
+            had_treatment_during_this_stage=had_treatment_during_this_stage,
+            diabetes_duration_greater_than_15_years=diabetes_duration_greater_than_15_years)
         # moderate_to_severe_idx = moderate_to_severe[moderate_to_severe].index
         mildmoderate_to_severe_idx = df.index[np.where(mildmoderate_to_severe)[0]]
         df.loc[mildmoderate_to_severe_idx, 'dr_status'] = 'severe'
@@ -472,7 +497,8 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         severe_to_proliferative = self.module.lm['severe_proliferative_dr'].predict(
             diabetes_and_alive_severedr,
             self.module.rng,
-            had_treatment_during_this_stage=had_treatment_during_this_stage)
+            had_treatment_during_this_stage=had_treatment_during_this_stage,
+            diabetes_duration_greater_than_15_years=diabetes_duration_greater_than_15_years)
         # severe_to_proliferative_idx = mild_to_moderate[severe_to_proliferative].index
         severe_to_proliferative_idx = df.index[np.where(severe_to_proliferative)[0]]
         df.loc[severe_to_proliferative_idx, 'dr_status'] = 'proliferative'
