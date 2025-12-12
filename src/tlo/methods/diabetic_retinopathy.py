@@ -469,7 +469,6 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         # Compute the boolean threshold as a variable you can inspect
         # Boolean for >15 years
         diabetes_duration_greater_than_15_years = diabetes_duration_years >= 15
-        print(f'long diabetes {diabetes_duration_greater_than_15_years}')
 
         had_treatment_during_this_stage = \
             df.is_alive & ~pd.isnull(df.dr_date_treatment) & \
@@ -609,7 +608,7 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
             if person.dr_status == 'mild_or_moderate' or person.dmo_status == 'non_clinically_significant':
                 # schedule HSI_CardioMetabolicDisorders_StartWeightLossAndMedication
                 # and repeat HSI_DR_Dmo_Screening in 1 year
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hs.schedule_hsi_event(
                     hsi_event=cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
                         person_id=person_id,
                         module=self.sim.modules["CardioMetabolicDisorders"],
@@ -623,30 +622,30 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
                 # non_clinically_significant
                 next_screening_if_mild_or_moderate = \
                     self.sim.date + pd.DateOffset(months=p['next_screening_if_mild_or_moderate'])
-                self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                                    topen=next_screening_if_mild_or_moderate,
-                                                                    tclose=None,
-                                                                    priority=1)
+                hs.schedule_hsi_event(self,
+                                      topen=next_screening_if_mild_or_moderate,
+                                      tclose=None,
+                                      priority=1)
 
             elif person.dr_status == 'severe':
                 next_screening_if_severe = self.sim.date + pd.DateOffset(months=p['next_screening_if_severe'])
-                self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                                    topen=next_screening_if_severe,
-                                                                    tclose=None,
-                                                                    priority=1)
+                hs.schedule_hsi_event(self,
+                                      topen=next_screening_if_severe,
+                                      tclose=None,
+                                      priority=1)
 
-            elif person.dr_status == 'proliferative':
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
+            if person.dr_status == 'proliferative':
+                hs.schedule_hsi_event(
                     hsi_event=HSI_Dr_Laser_Pan_Retinal_Coagulation(self.module, person_id),
                     topen=self.sim.date,
                     priority=0
                 )
 
-            if person.dmo_status == "clinically_significant" and person.dr_status != "none":
+            if person.dmo_status == 'clinically_significant':
                 # Randomise between AntiVEGF or Focal Laser
                 treatment_for_cs_dmo = HSI_Dr_Dmo_AntiVEGF \
                     if self.module.rng.random_sample() < 0.5 else HSI_Dr_Dmo_Focal_Laser
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hs.schedule_hsi_event(
                     hsi_event=treatment_for_cs_dmo(module=self.module, person_id=person_id),
                     topen=self.sim.date,
                     priority=0
