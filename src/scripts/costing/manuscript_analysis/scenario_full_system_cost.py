@@ -38,8 +38,7 @@ class FullSystemCosting(BaseScenario):
                 '*': logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
-                "tlo.methods.healthsystem.summary": logging.INFO,
-                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO, # detailed healthsystem log has been removed
                 "tlo.methods.hiv": logging.INFO,
             }
         }
