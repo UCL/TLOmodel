@@ -254,6 +254,12 @@ class HealthSystem(Module):
             "List of services to be available. NB. This parameter is over-ridden if an argument is provided"
             " to the module initialiser.",
         ),
+        "year_service_availability_switch": Parameter(Types.INT, "Year in which service availability changes."),
+        "Service_Availability_postSwitch": Parameter(
+            Types.LIST,
+            "List of services to be available after the switch in `year_service_availability_switch`"
+        ),
+
         "policy_name": Parameter(Types.STRING, "Name of priority policy adopted"),
         "year_mode_switch": Parameter(Types.INT, "Year in which mode switch is enforced"),
         "scale_to_effective_capabilities": Parameter(
@@ -905,6 +911,15 @@ class HealthSystem(Module):
             ),
             Date(self.parameters["year_use_funded_or_actual_staffing_switch"], 1, 1),
         )
+
+        # Schedule service availability switch
+        sim.schedule_event(
+            HealthSystemChangeParameters(
+                self, parameters={"service_availability": self.parameters["service_availability_postSwitch"]}
+            ),
+            Date(self.parameters["year_service_availability_switch"], 1, 1),
+        )
+
 
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
@@ -3066,6 +3081,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         * `beds_availability`
         * `equip_availability`
         * `use_funded_or_actual_staffing`
+        * `year_service_availability_switch`
     Note that no checking is done here on the suitability of values of each parameter."""
 
     def __init__(self, module: HealthSystem, parameters: Dict):
@@ -3098,6 +3114,19 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if "use_funded_or_actual_staffing" in self._parameters:
             self.module.use_funded_or_actual_staffing = self._parameters["use_funded_or_actual_staffing"]
+
+        if "service_availability" in self._parameters:
+            self.module.service_availability = self._parameters["service_availability"]
+            ## As part of the switching, clear the queue of any events currently scheduled
+            ## that might require one of the omitted services when they actually run.
+            retained_events = []
+            while len(self.module.HSI_EVENT_QUEUE) > 0:
+                next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
+                if next_event_tuple.hsi_event.TREATMENT_ID in self.module.service_availability:
+                    retained_events.append(next_event_tuple)
+
+            self.module.HSI_EVENT_QUEUE = hp.heapify(retained_items)
+
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
