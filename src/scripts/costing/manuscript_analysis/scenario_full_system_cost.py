@@ -24,11 +24,11 @@ class FullSystemCosting(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 12, 31)
+        self.end_date = Date(2031, 1, 1)
         self.pop_size = 100_000
         self.scenarios = list(range(0,4)) # add scenarios as necessary
         self.number_of_draws = len(self.scenarios)
-        self.runs_per_draw = 5
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
@@ -61,7 +61,7 @@ class FullSystemCosting(BaseScenario):
                 'policy_name': 'Naive',
                 'use_funded_or_actual_staffing': 'actual',
                 'scale_to_effective_capabilities':True,  # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
-                'yearly_HR_scaling_mode': ['historical_scaling', 'historical_scaling_maintained', 'historical_scaling', 'historical_scaling_maintained'][draw_number], # TODO update 'GDP_growth' to match with relevant 'historical_scaling_maintained' scenario
+                'yearly_HR_scaling_mode': ['historical_scaling', 'historical_scaling_maintained', 'historical_scaling', 'historical_scaling_maintained'][draw_number],
                 'equip_availability':'all',
                 'beds_availability':'all',
                 },
