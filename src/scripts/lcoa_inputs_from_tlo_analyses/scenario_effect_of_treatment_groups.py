@@ -1,15 +1,22 @@
 ############################################################################
 # 1. allow historical HRH scaling to occur 2018-2024 by setting 'yearly_HR_scaling_mode': 'historical_scaling'
 # We don't care about future HRH scaling because constraints are derived from the state of play in 2025.
+# We will run everything in mode 1; HR will be available regardless;
+# We need the productivity factor; rescaling is generally used in mode 2 BUT
+# Rescaling factors are perhaps calculated at the time of mode switch; so we might need to detach that logic.
 
 # 2. Modify 'Service_Availability' to exclude pre-defined groups of TREATMENT_ID at a time.
-
 # 3. HealthSystem should update 'Service_Availability' in 2025.
-# Question: Can we use HealthSystemChangeParameters for this? So define a new parameter for year of change
+# Use HealthSystemChangeParameters for this? So define a new parameter for year of change
 # and then use the same logic as for switching mode, or  consumables availability switch?
 # Note that this requires is to update HealthSystemChangeParameters as well.
-#
+# Note that at the time of switching service availability, HSI Event Queue needs
+# to be emptied of events that require services no longer available.
+
 # 4. Turn on the following loggers: healthsystem.summary, demography, healthburden
+
+## Questions:
+# 1. is it ok to reset rescaling factors
 ############################################################################
 
 
@@ -49,7 +56,7 @@ from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
 
-class EffectOfEachTreatment(BaseScenario):
+class EffectOfEachTreatmentGroup(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
@@ -62,7 +69,7 @@ class EffectOfEachTreatment(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment_status_quo',
+            'filename': 'effect_of_each_treatment_group_status_quo',
             'directory': Path('./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -92,12 +99,17 @@ class EffectOfEachTreatment(BaseScenario):
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
         treatments = get_filtered_treatment_ids(depth=1)
+        treatment_groups = {
+          'MATERNAL_CARE': ['AntenatalCare_FollowUp', 'AntenatalCare_Inpatient'],
+          'CARDIAC_TREATMENTS': ['CardioMetabolicDisorders_Investigation', 'CardioMetabolicDisorders_Treatment'],
+        }
 
         # Return 'Service_Availability' values, with scenarios for everything, nothing, and ones for which each
         # treatment is omitted
         service_availability = dict({"Everything": ["*"], "Nothing": []})
         service_availability.update(
-            {f"No {t.replace('_*', '*')}": [x for x in treatments if x != t] for t in treatments}
+           {f"No {group_name}": [x for x in treatments if x not in group_treatments]
+           for group_name, group_treatments in treatment_groups.items()}
         )
 
         return service_availability
