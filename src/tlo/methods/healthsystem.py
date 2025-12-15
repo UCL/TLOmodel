@@ -1266,9 +1266,10 @@ class HealthSystem(Module):
         self._rescaling_factors = defaultdict(dict)
         for clinic, clinic_cl in self._daily_capabilities.items():
             for facID_and_officer in clinic_cl.keys():
-                rescaling_factor[clinic][facID_and_officer] = self._summary_counter.frac_time_used_by_facID_and_officer(
+                self._rescaling_factors[clinic][facID_and_officer] = self._summary_counter.frac_time_used_by_facID_and_officer(
                     facID_and_officer=facID_and_officer
                 )
+        self._summary_counter._rescaling_factors = self._rescaling_factors
 
 
 
@@ -1278,6 +1279,7 @@ class HealthSystem(Module):
         # Note: Currently relying on module variable rather than parameter for
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
+        self._compute_factors_for_effective_capabilities()
         for clinic, clinic_cl in self._daily_capabilities.items():
             for facID_and_officer in clinic_cl.keys():
                 rescaling_factor = self._rescaling_factors[clinic][facID_and_officer]
@@ -2919,6 +2921,7 @@ class HealthSystemSummaryCounter:
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
         #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
+        self._rescaling_factors = defaultdict(dict)
 
     def record_hsi_event(
         self, treatment_id: str, hsi_event_name: str, squeeze_factor: float, appt_footprint: Counter, level: str
@@ -3011,7 +3014,7 @@ class HealthSystemSummaryCounter:
             "calendar year.",
             data={
                 "average_Frac_Time_Used_Overall": np.mean(self._frac_time_used_overall),
-                "rescale_factor": {clinic: {k: v for k, v in clinic_v.items()} for clinic, clinic_f in self._rescaling_factors.items()},
+                "rescale_factor": {clinic: {k: v for k, v in clinic_v.items()} for clinic, clinic_v in self._rescaling_factors.items()},
                 # <-- leaving space here for additional summary measures that may be needed in the future.
             },
         )
