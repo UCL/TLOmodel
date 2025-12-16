@@ -2892,3 +2892,79 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
         == {"Dummy": 1}
         # recorded in both the usual and the 'non-blank' logger
     )
+
+
+@pytest.mark.slow
+def test_service_availability_switch(tmpdir, seed):
+    """Test that the service availability is updated in the year specified.
+    Simultaneously check that the switch triggers related behaviors:
+    1) compute and write to logs rescaling factors
+    2) clear hsi event queue of any events scheduled to run after the switch
+    that need one of the unavailable services.
+    """
+
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            },
+        },
+        resourcefilepath=resourcefilepath,
+    )
+
+    # Register the core modules
+    # Set the year of service availability switch to start_date + 1 year
+    sim.register(
+        demography.Demography(),
+        simplified_births.SimplifiedBirths(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        mockitis.Mockitis(),
+        chronicsyndrome.ChronicSyndrome(),
+    )
+
+    # Define the "switch" from Mode 1 to Mode 1, with the rescaling
+    hs_params = sim.modules["HealthSystem"].parameters
+    hs_params["year_service_availability_switch"] = start_date.year + 1
+    hs_params["Service_availability_postSwitch"] = ["Alri_Pneumonia_Treatment_Inpatient"]
+
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    # read the results
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+    breakpoint()
+    # Do the checks
+    assert len(output["tlo.methods.healthsystem"]["HSI_Event"]) > 0
+    hsi_events = output["tlo.methods.healthsystem"]["HSI_Event"]
+    hsi_events["date"] = pd.to_datetime(hsi_events["date"]).dt.year
+
+    # Check that all squeeze factors were high in 2010, but not all were high in 2011
+    # thanks to rescaling of capabilities
+    assert (
+        hsi_events.loc[
+            (hsi_events["Person_ID"] >= 0)
+            & (hsi_events["Number_By_Appt_Type_Code"] != {})
+            & (hsi_events["date"] == 2010),
+            "Squeeze_Factor",
+        ]
+        >= 100.0
+    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
+
+    assert not (
+        hsi_events.loc[
+            (hsi_events["Person_ID"] >= 0)
+            & (hsi_events["Number_By_Appt_Type_Code"] != {})
+            & (hsi_events["date"] == 2011),
+            "Squeeze_Factor",
+        ]
+        >= 100.0
+    ).all()  # All the events that had a non-blank footprint experienced high squeezing.

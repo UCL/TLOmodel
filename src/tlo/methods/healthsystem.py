@@ -255,7 +255,7 @@ class HealthSystem(Module):
             " to the module initialiser.",
         ),
         "year_service_availability_switch": Parameter(Types.INT, "Year in which service availability changes."),
-        "Service_Availability_postSwitch": Parameter(
+        "Service_availability_postSwitch": Parameter(
             Types.LIST,
             "List of services to be available after the switch in `year_service_availability_switch`"
         ),
@@ -915,7 +915,8 @@ class HealthSystem(Module):
         # Schedule service availability switch
         sim.schedule_event(
             HealthSystemChangeParameters(
-                self, parameters={"service_availability": self.parameters["service_availability_postSwitch"]}
+                self,
+                parameters={"service_availability": self.parameters["Service_availability_postSwitch"]}
             ),
             Date(self.parameters["year_service_availability_switch"], 1, 1),
         )
@@ -3122,7 +3123,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.use_funded_or_actual_staffing = self._parameters["use_funded_or_actual_staffing"]
 
         if "service_availability" in self._parameters:
-            self.module.service_availability = self._parameters["service_availability"]
+            self.module.parameters['Service_Availability'] = self._parameters["service_availability"]
             ## As part of the switching, clear the queue of any events currently scheduled
             ## that might require one of the omitted services when they actually run.
             retained_events = []
@@ -3133,7 +3134,8 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
                 else:
                     self.module.call_and_record_never_ran_hsi_event(hsi_event=next_event_tuple.hsi_event, priority=next_event_tuple.priority)
 
-            self.module.HSI_EVENT_QUEUE = hp.heapify(retained_items)
+            self.module.HSI_EVENT_QUEUE = retained_events
+            hp.heapify(self.module.HSI_EVENT_QUEUE)
 
 
 
