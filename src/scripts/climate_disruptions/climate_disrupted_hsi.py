@@ -31,23 +31,22 @@ scenario_names_all = [
 ]
 
 if climate_sensitivity_analysis:
-    scenario_names = scenario_names_all
+    scenario_names = scenario_names_all[1:]
     suffix = "climate_SA"
     scenarios_of_interest = range(len(scenario_names))
 if parameter_sensitivity_analysis:
-    scenario_names_all = range(0, 9, 1)
+    scenario_names_all =  range(0, 10, 1)
     scenario_names = scenario_names_all
     suffix = "parameter_SA"
-    scenarios_of_interest = range(0, 10, 1)
+    scenarios_of_interest = [0,1,2,3,4,7,8,9]#range(0, 10, 1)
 
 if main_text:
     scenario_names = [
         "Baseline",
         "SSP 2.45 Mean",
-        "SSP 5.85 Mean",
     ]
     suffix = "main_text"
-    scenarios_of_interest = [0, 6, 7]
+    scenarios_of_interest = [0, 1]
 if mode_2:
     scenario_names = [
         "Baseline",
@@ -55,7 +54,7 @@ if mode_2:
     ]
     suffix = "mode_2"
     scenarios_of_interest = [0, 1]
-    max_year = 2035
+    max_year = 2040
 precipitation_files = {
     "Baseline": "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
     "SSP 1.26 High": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp126/highest_monthly_prediction_weather_by_facility.csv",
@@ -117,11 +116,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return sum_event_counts(_df, "never_ran_hsi_event_key_to_counts")
 
     def get_num_treatments_total_delayed(_df):
-        return sum_event_counts(_df, "weather_delayed_hsi_event_key_to_counts")
+        """Count total number of delayed HSI events from full info logger"""
+        _df["date"] = pd.to_datetime(_df["date"])
+        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
+
+        # Each row is one delayed event
+        return pd.Series(len(_df), name="total")
 
     def get_num_treatments_total_cancelled(_df):
-        return sum_event_counts(_df, "weather_cancelled_hsi_event_key_to_counts")
+        """Count total number of cancelled HSI events from full info logger"""
+        _df["date"] = pd.to_datetime(_df["date"])
+        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
 
+        # Each row is one cancelled event
+        return pd.Series(len(_df), name="total")
     def get_population_total(_df):
         """Returns the total population across the entire period"""
         _df["date"] = pd.to_datetime(_df["date"])
@@ -153,8 +161,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     baseline_population = None
 
     for draw in range(len(scenario_names_all)):
+        print(draw)
         if draw not in scenarios_of_interest:
             continue
+        print(draw)
 
         print(f"Processing draw {draw}...")
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"
@@ -199,7 +209,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             collapse_columns=True,
         )[draw]
 
-        if draw == 0:
+        if scenario_names[draw] == 'Baseline':
             # Baseline: no weather disruptions
             num_weather_delayed = {"mean": pd.Series([0]), "lower": pd.Series([0]), "upper": pd.Series([0])}
             num_weather_cancelled = {"mean": pd.Series([0]), "lower": pd.Series([0]), "upper": pd.Series([0])}
@@ -208,13 +218,39 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             baseline_treatments_total = num_treatments_total["mean"].values[0]
             baseline_never_ran_total = num_never_ran_appts["mean"].values[0]
             baseline_population = population_data["mean"].values[0]
+        elif main_text:
+            num_weather_delayed = summarize(
+                extract_results(
+                    results_folder,
+                    module="tlo.methods.healthsystem.summary",
+                    key="Weather_delayed_HSI_Event_full_info",
+                    custom_generate_series=get_num_treatments_total_delayed,
+                    do_scaling=True,
+                ),
+                only_mean=False,
+                collapse_columns=True,
+            )
+
+            print(f"  Extracting weather-cancelled appointments...")
+            num_weather_cancelled = summarize(
+                extract_results(
+                    results_folder,
+                    module="tlo.methods.healthsystem.summary",
+                    key="Weather_cancelled_HSI_Event_full_info",
+                    custom_generate_series=get_num_treatments_total_cancelled,
+                    do_scaling=True,
+                ),
+                only_mean=False,
+                collapse_columns=True,
+            )
+
         else:
             print(f"  Extracting weather-delayed appointments...")
             num_weather_delayed = summarize(
                 extract_results(
                     results_folder,
                     module="tlo.methods.healthsystem.summary",
-                    key="weather_delayed_hsi_event_counts",
+                    key="Weather_delayed_HSI_Event_full_info",
                     custom_generate_series=get_num_treatments_total_delayed,
                     do_scaling=True,
                 ),
@@ -227,7 +263,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 extract_results(
                     results_folder,
                     module="tlo.methods.healthsystem.summary",
-                    key="weather_cancelled_hsi_event_counts",
+                    key="Weather_cancelled_HSI_Event_full_info",
                     custom_generate_series=get_num_treatments_total_cancelled,
                     do_scaling=True,
                 ),
@@ -287,9 +323,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     weather_cancelled_upper_values = series_to_value(all_draws_weather_cancelled_upper)
 
     # Create summary DataFrames
-    summary_df = pd.DataFrame({
-        'Scenario': [scenario_names[i] if climate_sensitivity_analysis else f"Draw {i}"
-                     for i, _ in enumerate(scenarios_of_interest)],
+    print(scenarios_of_interest)
+    print(treatments_mean_values)
+    print(never_ran_mean_values)
+    print(weather_delayed_mean_values)
+    print(weather_cancelled_mean_values)
+    summary_df = pd.DataFrame({'Scenario': [scenario_names[i] if climate_sensitivity_analysis
+             else f"Draw {draw}" if parameter_sensitivity_analysis
+             else f"Draw {i}"
+             for i, draw in enumerate(scenarios_of_interest)],
         'treatments_mean': treatments_mean_values,
         'treatments_lower': treatments_lower_values,
         'treatments_upper': treatments_upper_values,
