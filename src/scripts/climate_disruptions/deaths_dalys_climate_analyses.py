@@ -17,7 +17,7 @@ from tlo.analysis.utils import (
 
 
 min_year = 2026
-max_year = 2035
+max_year = 2041
 spacing_of_years = 1
 scenario_names_all = [
     "Baseline",
@@ -51,15 +51,15 @@ scenario_colours = [
     "#f07167",  # Low
     "#f59e96",  # Mean
 ]
-climate_sensitivity_analysis = False
+climate_sensitivity_analysis = True
 parameter_sensitivity_analysis = False
-main_text = False
-mode_2 = True
+main_text = True
+mode_2 = False
 if climate_sensitivity_analysis:
 
     suffix = "climate_SA"
-    scenarios_of_interest = range(len(scenario_names_all))
-    scenario_names = scenario_names_all
+    scenarios_of_interest = range(len(scenario_names_all) -1)
+    scenario_names = scenario_names_all[1:]
 if parameter_sensitivity_analysis:
     scenario_names = range(0, 9, 1)
     scenarios_of_interest = scenario_names
@@ -71,7 +71,7 @@ if main_text:
         "SSP 2.45 Mean",
     ]
     suffix = "main_text"
-    scenarios_of_interest = [0, 6]
+    scenarios_of_interest = [0, 1]
 
 if mode_2:
     scenario_names = [
@@ -220,13 +220,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
         df_all_years_data_population_lower = pd.DataFrame(all_years_data_population_lower)
         df_all_years_data_population_upper = pd.DataFrame(all_years_data_population_upper)
-        df_all_years_DALYS_mean = df_all_years_DALYS_mean.drop("month")
-        df_all_years_DALYS_lower = df_all_years_DALYS_lower.drop(index="month")
-        df_all_years_DALYS_upper = df_all_years_DALYS_upper.drop(index="month")
 
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
-
+        print(df_all_years_deaths_mean.index)
         # Panel A: Deaths
         for i, condition in enumerate(df_all_years_deaths_mean.index):
             axes[0].plot(
@@ -419,26 +416,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     yerr = np.vstack([yerr_lower, yerr_upper])
 
     # Plot with CI error bars
-    fig, ax = plt.subplots(figsize=(12, 6))
-    mean_change.plot(
-        kind="bar",
-        color=scenario_colours[1 : len(mean_change) + 1],
-        ax=ax,
-        yerr=yerr,
-        capsize=5,
-        error_kw=dict(linewidth=1, alpha=0.8),
-    )
+    if main_text:
+        fig, ax = plt.subplots(figsize=(12, 6))
+        mean_change.plot(
+            kind="bar",
+            color=scenario_colours[1 : len(mean_change) + 1],
+            ax=ax,
+            yerr=yerr,
+            capsize=5,
+            error_kw=dict(linewidth=1, alpha=0.8),
+        )
 
-    ax.set_title("Percentage Change in Total DALYs (with 95% CI)")
-    ax.set_xlabel("Scenario")
-    ax.set_ylabel("Percentage change in DALYs")
-    ax.set_xticklabels(scenario_names[1:], rotation=45, ha="right")
-    ax.axhline(0, color="black", linewidth=1)
-    ax.grid(axis="y", linestyle="--", alpha=0.5)
+        ax.set_title("Percentage Change in Total DALYs (with 95% CI)")
+        ax.set_xlabel("Scenario")
+        ax.set_ylabel("Percentage change in DALYs")
+        ax.set_xticklabels(scenario_names[1:], rotation=45, ha="right")
+        ax.axhline(0, color="black", linewidth=1)
+        ax.grid(axis="y", linestyle="--", alpha=0.5)
 
-    fig.tight_layout()
-    fig.savefig(output_folder / f"relative_change_in_total_DALYs_across_draws_with_CI_{suffix}.png")
-    plt.close(fig)
+        fig.tight_layout()
+        fig.savefig(output_folder / f"relative_change_in_total_DALYs_across_draws_with_CI_{suffix}.png")
+        plt.close(fig)
     # Plotting as bar charts
     deaths_totals_mean = df_deaths_all_draws_mean.sum()
     dalys_totals_mean = df_dalys_all_draws_mean.sum()

@@ -936,36 +936,54 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
     return SHORT_TREATMENT_ID_TO_COLOR_MAP.get(_standardize_short_treatment_id(short_treatment_id), np.nan)
 
 
-CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType(
-    {
-        "Maternal Disorders": "green",
-        "Neonatal Disorders": "springgreen",
-        "Congenital birth defects": "mediumaquamarine",
-        "Lower respiratory infections": "darkorange",
-        "Childhood Diarrhoea": "tan",
-        "AIDS": "deepskyblue",
-        "Malaria": "lightsteelblue",
-        "Measles": "cornflowerblue",
-        "TB (non-AIDS)": "mediumslateblue",
-        "Schistosomiasis": "skyblue",
-        "Heart Disease": "sienna",
-        "Kidney Disease": "chocolate",
-        "Diabetes": "peru",
-        "Stroke": "burlywood",
-        "Cancer (Bladder)": "deeppink",
-        "Cancer (Breast)": "darkmagenta",
-        "Cancer (Oesophagus)": "mediumvioletred",
-        "Cancer (Other)": "crimson",
-        "Cancer (Prostate)": "hotpink",
-        "Depression / Self-harm": "goldenrod",
-        "Epilepsy": "gold",
-        "COPD": "khaki",
-        "Transport Injuries": "lightsalmon",
-        "Lower Back Pain": "slategray",
-        "Other": "dimgrey",
-    }
-)
+CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
+    # Maternal & Child Health
+    'Maternal Disorders': 'green',
+    'Neonatal Disorders': 'springgreen',
+    'Congenital birth defects': 'mediumaquamarine',
 
+    # Childhood Infectious
+    'Lower respiratory infections': 'darkorange',
+    'Childhood Diarrhoea': 'tan',
+    'Childhood Undernutrition': 'tomato',
+
+    # Major Infectious Diseases
+    'AIDS': 'deepskyblue',
+    'Malaria': 'lightsteelblue',
+    'Measles': 'cornflowerblue',
+    'TB (non-AIDS)': 'mediumslateblue',
+    'Schistosomiasis': 'skyblue',
+
+    # Cardiovascular & Metabolic
+    'Heart Disease': 'sienna',
+    'Kidney Disease': 'chocolate',
+    'Diabetes': 'peru',
+    'Stroke': 'burlywood',
+
+    # Cancers
+    'Cancer (Bladder)': 'deeppink',
+    'Cancer (Breast)': 'darkmagenta',
+    'Cancer (Cervix)': 'mediumturquoise',
+    'Cancer (Oesophagus)': 'mediumvioletred',
+    'Cancer (Other)': 'crimson',
+    'Cancer (Prostate)': 'hotpink',
+
+    # Mental Health & Neurological
+    'Depression / Self-harm': 'goldenrod',
+    'Epilepsy': 'gold',
+
+    # Respiratory
+    'COPD': 'khaki',
+
+    # Injuries
+    'Transport Injuries': 'lightsalmon',
+
+    # Musculoskeletal
+    'Lower Back Pain': 'slategray',
+
+    # Other
+    'Other': 'dimgrey',
+})
 
 def order_of_cause_of_death_or_daly_label(cause_of_death_label: Union[str, pd.Index]) -> Union[int, pd.Index]:
     """Define a standard order for Cause-of-Death labels."""
