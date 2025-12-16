@@ -16,7 +16,9 @@
 # 4. Turn on the following loggers: healthsystem.summary, demography, healthburden
 
 ## Questions:
-# 1. is it ok to reset rescaling factors
+# 1. is it ok to reset rescaling factors? I've separated the computation of rescaling factors
+# from their application. At the time of computing them, I "reset" them
+#
 ############################################################################
 
 

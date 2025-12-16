@@ -1597,6 +1597,12 @@ class HealthSystem(Module):
         # Create HSIEventQueue Item, including a counter for the number of HSI_Events, to assist with sorting in the
         # queue (NB. the sorting is done ascending and by the order of the items in the tuple).
 
+        # First check that the service the HSI needs is available. If not, don't add to queue.
+        # Don't increment the counter; log and return.
+        if hsi_event.TREATMENT_ID not in self.service_availability:
+            self.call_and_record_never_ran_hsi_event(hsi_event=hsi_event, priority=priority)
+            return
+
         self.hsi_event_queue_counter += 1
 
         if self.randomise_queue:
@@ -2271,7 +2277,7 @@ class HealthSystem(Module):
         """Write to log the current states of the summary counters and reset them."""
 
         # Capture rescaling factors at the end of historical scaling i.e. in 2025
-        if (self.sim.date.year == 2025):
+        if (self.sim.date.year == self.parameters['year_service_availability_switch']):
             self._compute_factors_for_effective_capabilities()
 
         # If we are at the end of the year preceeding the mode switch, and if wanted
@@ -3124,6 +3130,8 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
                 next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
                 if next_event_tuple.hsi_event.TREATMENT_ID in self.module.service_availability:
                     retained_events.append(next_event_tuple)
+                else:
+                    self.module.call_and_record_never_ran_hsi_event(hsi_event=next_event_tuple.hsi_event, priority=next_event_tuple.priority)
 
             self.module.HSI_EVENT_QUEUE = hp.heapify(retained_items)
 
