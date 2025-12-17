@@ -902,6 +902,7 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType(
         "CardioMetabolicDisorders*": "brown",
         "BladderCancer*": "orchid",
         "BreastCancer*": "mediumvioletred",
+        "CervicalCancer*": "violet",
         "OesophagealCancer*": "deeppink",
         "ProstateCancer*": "hotpink",
         "OtherAdultCancer*": "palevioletred",
