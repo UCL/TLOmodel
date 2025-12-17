@@ -6,8 +6,8 @@ from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
 import geopandas as gpd
 
-min_year = 2026
-max_year = 2035
+min_year = 2025
+max_year = 2041
 spacing_of_years = 1
 PREFIX_ON_FILENAME = "1"
 scenario_names_all = [
@@ -61,13 +61,13 @@ district_colours = [
     "azure",
 ]
 
-vmin = -100
-vmax = 100
+vmin = -1000
+vmax = 1000
 
 climate_sensitivity_analysis = False
 parameter_sensitivity_analysis = True
-main_text = False
-mode_2 = True
+main_text = True
+mode_2 = False
 if climate_sensitivity_analysis:
     scenario_names = [
         "Baseline",
@@ -94,7 +94,7 @@ if main_text:
         "SSP 2.45 Mean",
     ]
     suffix = "main_text"
-    scenarios_of_interest = [0, 6]
+    scenarios_of_interest = [0, 1]
 
 if mode_2:
     scenario_names = [
@@ -207,30 +207,29 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 only_mean=True,
                 collapse_columns=True,
             )[(draw,)]
+            # result_data_population = summarize(
+            #     extract_results(
+            #         results_folder,
+            #         module="tlo.methods.demography",
+            #         key="population",
+            #         custom_generate_series=get_population_for_year,
+            #         do_scaling=True,
+            #     ),
+            #     only_mean=True,
+            #     collapse_columns=True,
+            # )[draw]
 
-            result_data_population = summarize(
-                extract_results(
-                    results_folder,
-                    module="tlo.methods.demography",
-                    key="population",
-                    custom_generate_series=get_population_for_year,
-                    do_scaling=True,
-                ),
-                only_mean=True,
-                collapse_columns=True,
-            )[draw]
 
+            all_years_data_dalys_mean_per_1000[target_year] = result_data_dalys["mean"]#/result_data_population['mean'] * 1000
 
-            all_years_data_dalys_mean_per_1000[target_year] = result_data_dalys["mean"]/result_data_population['mean'] * 1000
+            all_years_data_deaths_mean_per_1000[target_year] = result_data_deaths["mean"]#/result_data_population['mean'] * 1000
 
-            all_years_data_deaths_mean_per_1000[target_year] = result_data_deaths["mean"]/result_data_population['mean'] * 1000
+            all_years_data_dalys_lower_per_1000[target_year] = result_data_dalys["lower"]#/result_data_population['lower'] * 1000
 
-            all_years_data_dalys_lower_per_1000[target_year] = result_data_dalys["lower"]/result_data_population['lower'] * 1000
+            all_years_data_deaths_lower_per_1000[target_year] = result_data_deaths["lower"]#/result_data_population['lower'] * 1000
 
-            all_years_data_deaths_lower_per_1000[target_year] = result_data_deaths["lower"]/result_data_population['lower'] * 1000
-
-            all_years_data_dalys_upper_per_1000[target_year] = result_data_dalys["upper"]/result_data_population['upper'] * 1000
-            all_years_data_deaths_upper_per_1000[target_year] = result_data_deaths["upper"]/result_data_population['upper'] * 1000
+            all_years_data_dalys_upper_per_1000[target_year] = result_data_dalys["upper"]#/result_data_population['upper'] * 1000
+            all_years_data_deaths_upper_per_1000[target_year] = result_data_deaths["upper"]#/result_data_population['upper'] * 1000
 
             all_years_data_dalys_mean[target_year] = result_data_dalys["mean"]
             all_years_data_deaths_mean[target_year] = result_data_deaths["mean"]
