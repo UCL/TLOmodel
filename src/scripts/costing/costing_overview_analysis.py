@@ -40,15 +40,15 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
 # Create folders to store results
 resourcefilepath = Path("./resources")
-outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
-figurespath = Path('./outputs/costing/overview/')
+outputfilepath = Path('./outputs/sakshi.mohan@york.ac.uk')
+figurespath = Path('./outputs/costing_dec25/overview/')
 if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('htm_and_hss_runs-2025-10-14T084418Z.py', outputfilepath)[0] # January 2025 runs
+results_folder = get_scenario_outputs('full_system_costing-2025-12-15T162956Z.py', outputfilepath)[0] # Dec 2025 runs
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
@@ -65,8 +65,8 @@ list_of_years_for_plot = list(range(2023, 2031))
 number_of_years_costed = relevant_period_for_costing[1] - 2023 + 1
 
 # Scenarios
-cost_scenarios = {0: "Actual", 2: "Expanded HRH", 4: "Improved consumable availability",
-                  7: "Expanded HRH + Improved consumable availability"}
+cost_scenarios = {0: "Actual", 1: "Expanded HRH", 2: "Improved consumable availability",
+                  3: "Expanded HRH + Improved consumable availability"}
 
 # Costing parameters
 discount_rate = 0.03
@@ -142,38 +142,38 @@ print(f"Under current system capacity, total healthcare delivery costs for 2023�
       f"\{cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], averaging "
       f"{undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}m] annually. Scenario analysis highlighted strong interdependencies "
       f"within the health system. Improving consumable availability alone increased consumables costs by "
-      f"{(consumable_cost_by_draw[4]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%, while expanding human resources for health (HRH) alone increased them by "
-      f"{(consumable_cost_by_draw[2]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%. "
+      f"{(consumable_cost_by_draw[2]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%, while expanding human resources for health (HRH) alone increased them by "
+      f"{(consumable_cost_by_draw[1]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%. "
       f"When both HRH and consumable availability were expanded together, consumable costs rose by "
-      f"{(consumable_cost_by_draw[7]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
+      f"{(consumable_cost_by_draw[3]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
       f",a combined effect larger than either change alone, illustrating how bottlenecks in one component constrain the impact of improvements in another.")
 # Results 1
 print(f"The total cost of healthcare delivery in Malawi between 2023 and 2030 was estimated to be "
       f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], under the actual scenario, and increased to "
-      f"\${cost_by_draw[4,'mean']/1e9:,.2f} billion [\${cost_by_draw[4,'lower']/1e9:,.2f}b - \${cost_by_draw[4,'upper']/1e9:,.2f}b] under the improved consumable availability scenario, "
-      f"followed by \${cost_by_draw[2,'mean']/1e9:,.2f} billion [\${cost_by_draw[2,'lower']/1e9:,.2f}b - \${cost_by_draw[2,'upper']/1e9:,.2f}b] under the expanded HRH scenario and finally "
-      f"\${cost_by_draw[7,'mean']/1e9:,.2f} billion [\${cost_by_draw[7,'lower']/1e9:,.2f}b - \${cost_by_draw[7,'upper']/1e9:,.2f}b] under the expanded HRH + improved consumable availability scenario.")
+      f"\${cost_by_draw[2,'mean']/1e9:,.2f} billion [\${cost_by_draw[2,'lower']/1e9:,.2f}b - \${cost_by_draw[2,'upper']/1e9:,.2f}b] under the improved consumable availability scenario, "
+      f"followed by \${cost_by_draw[1,'mean']/1e9:,.2f} billion [\${cost_by_draw[1,'lower']/1e9:,.2f}b - \${cost_by_draw[1,'upper']/1e9:,.2f}b] under the expanded HRH scenario and finally "
+      f"\${cost_by_draw[3,'mean']/1e9:,.2f} billion [\${cost_by_draw[3,'lower']/1e9:,.2f}b - \${cost_by_draw[3,'upper']/1e9:,.2f}b] under the expanded HRH + improved consumable availability scenario.")
 # Results 2
 print(f"This translates to an average annual cost of "
       f"\${undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}m], under the actual scenario, "
-      f"\${undiscounted_cost_by_draw[4,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[4,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[4,'upper']/1e6/number_of_years_costed:,.2f}m] under the improved consumable availability scenario, followed by "
-      f"\${undiscounted_cost_by_draw[2,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[2,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[2,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH scenario and finally "
-      f"\${undiscounted_cost_by_draw[7,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[7,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[7,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH + improved consumable availability scenario.")
+      f"\${undiscounted_cost_by_draw[2,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[2,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[2,'upper']/1e6/number_of_years_costed:,.2f}m] under the improved consumable availability scenario, followed by "
+      f"\${undiscounted_cost_by_draw[1,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[1,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[1,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH scenario and finally "
+      f"\${undiscounted_cost_by_draw[3,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[3,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[3,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH + improved consumable availability scenario.")
 # Results 3
 print(f"In per capita terms, this is "
       f"\${per_capita_cost_by_draw[0,'mean']:,.2f} [\${per_capita_cost_by_draw[0,'lower']:,.2f} - \${per_capita_cost_by_draw[0,'upper']:,.2f}], "
-      f"\${per_capita_cost_by_draw[4,'mean']:,.2f} [\${per_capita_cost_by_draw[4,'lower']:,.2f} - \${per_capita_cost_by_draw[4,'upper']:,.2f}], "
-      f"\${per_capita_cost_by_draw[2,'mean']:,.2f} [\${per_capita_cost_by_draw[2,'lower']:,.2f} - \${per_capita_cost_by_draw[2,'upper']:,.2f}], and "
-      f"\${per_capita_cost_by_draw[7,'mean']:,.2f} [\${per_capita_cost_by_draw[7,'lower']:,.2f} - \${per_capita_cost_by_draw[7,'upper']:,.2f}] respectively under the four scenarios.")
+      f"\${per_capita_cost_by_draw[2,'mean']:,.2f} [\${per_capita_cost_by_draw[2,'lower']:,.2f} - \${per_capita_cost_by_draw[2,'upper']:,.2f}], "
+      f"\${per_capita_cost_by_draw[1,'mean']:,.2f} [\${per_capita_cost_by_draw[1,'lower']:,.2f} - \${per_capita_cost_by_draw[1,'upper']:,.2f}], and "
+      f"\${per_capita_cost_by_draw[3,'mean']:,.2f} [\${per_capita_cost_by_draw[3,'lower']:,.2f} - \${per_capita_cost_by_draw[3,'upper']:,.2f}] respectively under the four scenarios.")
 
 # Results 4
 print(f"Notably, improving consumable availability alone increases the cost of medical consumables by just "
-      f"{(consumable_cost_by_draw[4]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
+      f"{(consumable_cost_by_draw[2]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
       f"because the limited health workforce (HRH) restricts the number of feasible appointments and, consequently, the quantity of consumables dispensed. "
       f"In contrast, expanding HRH alone raises consumable costs by "
-      f"{(consumable_cost_by_draw[2]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
+      f"{(consumable_cost_by_draw[1]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
       f". When both HRH and consumable availability are expanded together, consumable costs increase by "
-      f"{(consumable_cost_by_draw[7]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
+      f"{(consumable_cost_by_draw[3]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
       f"compared to the actual scenario.")
 # Results 5
 cost_of_hiv_testing =  input_costs[(input_costs.cost_subgroup == 'Test, HIV EIA Elisa') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
@@ -206,13 +206,13 @@ art_new = tlo_availability_df[(tlo_availability_df.item_code == 2671) &
 print(f"First, the changes are driven by which constraint is binding. For example, the pattern for the Jadelle"
       f" contraceptive implant differs markedly from that of adult antiretroviral therapy (ART). "
       f"Expanding HRH alone increases the cost of Jadelle by just "
-      f"{(cost_of_jadelle[2]/cost_of_jadelle[0] - 1)*100:.2f}\%, whereas improved consumable availability results in a "
-      f"{(cost_of_jadelle[4]/cost_of_jadelle[0] - 1)*100:.2f}\% increase, rising to "
-      f"{(cost_of_jadelle[7]/cost_of_jadelle[0] - 1)*100:.2f}\% when both HRH and consumables expand. "
+      f"{(cost_of_jadelle[1]/cost_of_jadelle[0] - 1)*100:.2f}\%, whereas improved consumable availability results in a "
+      f"{(cost_of_jadelle[2]/cost_of_jadelle[0] - 1)*100:.2f}\% increase, rising to "
+      f"{(cost_of_jadelle[3]/cost_of_jadelle[0] - 1)*100:.2f}\% when both HRH and consumables expand. "
       f"In contrast, ART costs rise more modestly across the same scenarios "
-      f"({(cost_of_hiv_treatment[2]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
-      f"{(cost_of_hiv_treatment[4]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, and "
-      f"{(cost_of_hiv_treatment[7]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%). "
+      f"({(cost_of_hiv_treatment[1]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
+      f"{(cost_of_hiv_treatment[2]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, and "
+      f"{(cost_of_hiv_treatment[3]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%). "
       f"This reflects differences in baseline availability: ART already had very high availability in level 1a/1b facilities "
       f"({art_actual*100:.2f}\%), "
       f"and the improved supply chain scenario increased this by only around "
@@ -226,14 +226,14 @@ print(f"Second, cost changes do not scale linearly with changes in service cover
       f"The dynamic nature of the model aggregates multiple interacting processes — such as population growth, "
       f"prevention coverage, HIV prevalence, testing rates, testing yields, etc. — into the resulting cost estimates. "
       f"Consequently, while ART costs increase progressively across scenarios "
-      f"({(cost_of_hiv_treatment[2]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
-      f"{(cost_of_hiv_treatment[4]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
-      f"{(cost_of_hiv_treatment[7]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%), "
+      f"({(cost_of_hiv_treatment[1]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
+      f"{(cost_of_hiv_treatment[2]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
+      f"{(cost_of_hiv_treatment[3]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%), "
       f"the cost of HIV testing shows a different pattern: a small increase under expanded HRH "
-      f"({(cost_of_hiv_testing[2]/cost_of_hiv_testing[0] - 1)*100:.2f}\%) "
+      f"({(cost_of_hiv_testing[1]/cost_of_hiv_testing[0] - 1)*100:.2f}\%) "
       f"but reductions of "
-      f"{(cost_of_hiv_testing[4]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% and "
-      f"{(cost_of_hiv_testing[7]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% under the improved consumables and combined scenarios.")
+      f"{(cost_of_hiv_testing[2]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% and "
+      f"{(cost_of_hiv_testing[3]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% under the improved consumables and combined scenarios.")
 
 # Browse HIV logs
 def get_hiv_summary(results_folder, key, var, summarise_func = 'sum', do_scaling = True):
@@ -253,7 +253,7 @@ def get_hiv_summary(results_folder, key, var, summarise_func = 'sum', do_scaling
         do_scaling=do_scaling,
     ), central_measure = 'mean')
 
-    hiv_stat_summmary = hiv_stat.loc[hiv_stat.index.isin(list_of_years_for_plot),[(0,'central'),(2,'central'),(4,'central'),(7,'central')]].agg(summarise_func)
+    hiv_stat_summmary = hiv_stat.loc[hiv_stat.index.isin(list_of_years_for_plot),[(0,'central'),(1,'central'),(2,'central'),(3,'central')]].agg(summarise_func)
 
     return hiv_stat_summmary
 
@@ -300,19 +300,19 @@ do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
                          show_title = False,
                          _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
+                         _year=list_of_years_for_plot, _draws= [1],
+                         disaggregate_by= 'cost_category',
+                         _y_lim = 400,
+                         show_title = False,
+                         _outputfilepath = figurespath)
+do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
                          _year=list_of_years_for_plot, _draws= [2],
                          disaggregate_by= 'cost_category',
                          _y_lim = 400,
                          show_title = False,
                          _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
-                         _year=list_of_years_for_plot, _draws= [4],
-                         disaggregate_by= 'cost_category',
-                         _y_lim = 400,
-                         show_title = False,
-                         _outputfilepath = figurespath)
-do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
-                         _year=list_of_years_for_plot, _draws= [7],
+                         _year=list_of_years_for_plot, _draws= [3],
                          disaggregate_by= 'cost_category',
                          _y_lim = 400,
                          show_title = False,
@@ -394,7 +394,7 @@ def generate_detail_cost_table(_groupby_var, _groupby_var_name, _longtable = Fal
                            draw_data['upper'].astype(str) + ']'
 
     # Combine draw data into a single DataFrame
-    table_data = pd.concat([pivot_data[0], pivot_data[2], pivot_data[4], pivot_data[7]], axis=1, keys=['draw=0', 'draw=2', 'draw=4', 'draw=7']).reset_index()
+    table_data = pd.concat([pivot_data[0], pivot_data[1], pivot_data[2], pivot_data[3]], axis=1, keys=['draw=0', 'draw=1', 'draw=2', 'draw=3']).reset_index()
 
     # Rename columns for clarity
     table_data.columns = ['Cost Category', _groupby_var_name, 'Actual', 'Expanded HRH', 'Improved consumable availability', 'Expanded HRH +\n Improved consumable availability']
