@@ -70,7 +70,11 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
         for line in log_file:
             # only parse lines that are json log lines (old-style logging is not supported)
             if line.startswith('{'):
-                log_data_json = json.loads(line)
+                try:
+                    log_data_json = json.loads(line)
+                except json.JSONDecodeError:
+                    # Skip malformed or partial JSON log lines
+                    continue
                 uuid = log_data_json['uuid']
                 # if this is a header line (only header lines have a `type` key)
                 if 'type' in log_data_json:
@@ -537,16 +541,22 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
         for run_folder in run_folders:
             # Find the original log-file written by the simulation
             if compressed_file_name_prefix is None:
-                logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+                logfile = [Path(run_folder) / x for x in os.listdir(run_folder) if x.endswith('.log')][0]
             else:
-                compressed_file_name = [
-                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)
-                ][0]
-                logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
+                logfiles = [
+                    Path(run_folder) / x
+                    for x in os.listdir(run_folder)
+                    if x.endswith(".log.gz")
+                    and not x.startswith("stdout")
+                    and not x.startswith("stderr")
+                ]
 
-            logfile = Path(run_folder) / logfile
+                for compressed_log in logfiles:
+                    logfile = uncompress_and_save_logfile(compressed_log)
+                    turn_log_into_pickles(logfile)
+
+            logfile = Path(logfile).resolve()
             turn_log_into_pickles(logfile)
-
 
 def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
     """Helper function to produce tables summarising deaths in the model run (given be a logfile) and the corresponding
