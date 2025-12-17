@@ -53,8 +53,11 @@ class HSIEventQueueItem(NamedTuple):
 
     Ensure priority is above topen in order for held-over events with low priority not
     to jump ahead higher priority ones which were opened later.
+
+
     """
 
+    clinic_eligibility: str
     priority: int
     topen: Date
     rand_queue_counter: (

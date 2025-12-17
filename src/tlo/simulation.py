@@ -28,6 +28,7 @@ from tlo.dependencies import (
     topologically_sort_modules,
 )
 from tlo.events import Event, IndividualScopeEventMixin
+from tlo.notify import notifier
 from tlo.progressbar import ProgressBar
 
 if TYPE_CHECKING:
