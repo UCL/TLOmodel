@@ -29,9 +29,8 @@ class HealthBurden(Module):
     This module holds all the stuff to do with recording DALYS
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # instance variables
         self.multi_index_for_age_and_wealth_and_time = None
@@ -62,7 +61,8 @@ class HealthBurden(Module):
         'gbd_causes_of_disability': Parameter(
             Types.LIST, 'List of the strings of causes of disability defined in the GBD data'),
         'logging_frequency_prevalence': Parameter(Types.STRING,
-                                                  'Set to the frequency at which we want to make calculations of the prevalence logger')
+                                                  'Set to the frequency at which we want to make calculations of the prevalence logger.'
+                                                  'Can be day, month or year.')
     }
 
     PROPERTIES = {}
@@ -96,8 +96,6 @@ class HealthBurden(Module):
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         wealth_index = sim.modules['Lifestyle'].PROPERTIES['li_wealth'].categories
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
-        month_index = list(range(self.sim.start_date.month, self.sim.end_date.month + 1))
-        day_index = list(range(self.sim.start_date.day, self.sim.end_date.day + 1))
 
         self.multi_index_for_age_and_wealth_and_time = pd.MultiIndex.from_product(
             [sex_index, age_index, wealth_index, year_index], names=['sex', 'age_range', 'li_wealth', 'year'])
@@ -108,17 +106,22 @@ class HealthBurden(Module):
         self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         if self.parameters['logging_frequency_prevalence'] == 'day':
-            self.prevalence_of_diseases = pd.DataFrame(index=day_index)
+            self.prevalence_of_diseases = pd.DataFrame(
+                index=list(range(self.sim.start_date.day, self.sim.end_date.day + 1)))
         elif self.parameters['logging_frequency_prevalence'] == 'month':
-            self.prevalence_of_diseases = pd.DataFrame(index=month_index)
+            self.prevalence_of_diseases = pd.DataFrame(
+                index=list(range(self.sim.start_date.month, self.sim.end_date.month + 1)))
+        elif self.parameters['logging_frequency_prevalence'] == 'year':
+            self.prevalence_of_diseases = pd.DataFrame(
+                index=year_index)
         else:
-            self.prevalence_of_diseases = pd.DataFrame(index=year_index)
+            raise ValueError(f'Argument for frequency of recording prevalencne is not valid: '
+                             f'{self.parameters["logging_frequency_prevalence"]}')
 
         # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
             m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHBURDEN in m.METADATA
         ]
-        # 2) Collect the module that are expected to return prevalences
 
         # Check that all registered disease modules have the report_daly_values() function
         for module_name in self.recognised_modules_names:
@@ -566,7 +569,7 @@ class HealthBurden(Module):
         self._years_written_to_log += [year]
 
     def write_to_log_prevalence(self):
-        """Write to the log the prevalence of conditions .
+        """Write to the log the prevalence of conditions.
         N.B. This is called at the end of the simulation as well as at the end of each month, so we need to check that
         the year is not being written to the log more than once."""
         # Check that the format of the internal storage is as expected.
