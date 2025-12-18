@@ -104,18 +104,6 @@ class HealthBurden(Module):
         self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
-        if self.parameters['logging_frequency_prevalence'] == 'day':
-            self.prevalence_of_diseases = pd.DataFrame(
-                index=list(range(self.sim.start_date.day, self.sim.end_date.day + 1)))
-        elif self.parameters['logging_frequency_prevalence'] == 'month':
-            self.prevalence_of_diseases = pd.DataFrame(
-                index=list(range(self.sim.start_date.month, self.sim.end_date.month + 1)))
-        elif self.parameters['logging_frequency_prevalence'] == 'year':
-            self.prevalence_of_diseases = pd.DataFrame(
-                index=year_index)
-        else:
-            raise ValueError(f'Argument for frequency of recording prevalencne is not valid: '
-                             f'{self.parameters["logging_frequency_prevalence"]}')
 
         # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
@@ -146,8 +134,18 @@ class HealthBurden(Module):
         sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
 
         # 6) Schedule the Prevalence Logger Event (first event to occur at the beginning of the simulation)
-        if self.module.recognised_modules_names:
-            sim.schedule_event(GetCurrentPrevalenceAndWriteToLog(self), sim.date)
+        if self.recognised_modules_names:
+
+            if self.parameters['logging_frequency_prevalence'] == 'day':
+                frequency = pd.DateOffset(days=1)
+            elif self.parameters['logging_frequency_prevalence'] == 'month':
+                frequency = pd.DateOffset(months=1)
+            elif self.parameters['logging_frequency_prevalence'] == 'year':
+                frequency = pd.DateOffset(years=1)
+            else:
+                raise ValueError(f'Argument for frequency of recording prevalencne is not valid: '
+                                 f'{self.parameters["logging_frequency_prevalence"]}')
+            sim.schedule_event(GetCurrentPrevalenceAndWriteToLog(self, frequency=frequency), sim.date)
 
     def process_causes_of_disability(self):
         """
