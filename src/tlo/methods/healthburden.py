@@ -704,7 +704,9 @@ class GetCurrentDiseaseStatisticsAndWriteToLog(RegularEvent, PopulationScopeEven
         data = {}
 
         # Calculate the population size and add it to the dict
-        data[('HealthBurden', 'population')] = sum(self.sim.population.props['is_alive'])
+        df = population.props
+        data[('HealthBurden', 'population_total')] = sum(df.is_alive)
+        data[('HealthBurden', 'population_by_age_and_sex')] = df.loc[df.is_alive].groupby(['age_range', 'sex']).size().unstack(fill_value=0).to_dict()
 
         # Collect results from all registered modules
         for disease_module_name in self.module.recognised_modules_names:
