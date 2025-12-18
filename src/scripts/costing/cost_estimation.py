@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import squarify
+import re
 
 from tlo import Date
 from tlo.analysis.utils import (
@@ -166,6 +167,117 @@ def apply_discounting_to_cost_data(_df: pd.DataFrame,
     _df.loc[:, _column_for_discounting] = _df[_column_for_discounting] / _df['year'].apply(get_discount_factor)
 
     return _df
+
+# Clean the names of consumables in input cost dataframe
+def clean_consumable_name(name: str) -> str:
+    """
+    Clean consumable names for analysis and plotting.
+    Removes procurement suffixes, packaging metadata,
+    harmonises spelling, and capitalises the first letter.
+    """
+    if not isinstance(name, str):
+        return name
+
+    cleaned = name
+
+    # --- 1. Remove common procurement suffixes ---
+    cleaned = re.sub(
+        r'_(CMST|IDA|Each_CMST|each_CMST|each|ID|PFR|nt)(\b|_)',
+        '',
+        cleaned,
+        flags=re.IGNORECASE
+    )
+
+    # --- 2. Remove trailing numeric package indicators ---
+    cleaned = re.sub(r'_\d+(\.\d+)?$', '', cleaned)
+    cleaned = re.sub(
+        r'\b\d+\s*(tests|pieces|doses|pack|packs|box|boxes)\b',
+        '',
+        cleaned,
+        flags=re.IGNORECASE
+    )
+
+    # --- 3. Remove awkward characters ---
+    cleaned = cleaned.replace('Â', '')
+    cleaned = cleaned.replace('½', '1/2')
+
+    # --- 4. Normalise whitespace ---
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+
+    # --- 5. Harmonise common spelling variants ---
+    harmonisation = {
+        'Amoxycillin': 'Amoxicillin',
+        'Gentamycin': 'Gentamicin',
+        'Declofenac': 'Diclofenac',
+        'Frusemide': 'Furosemide',
+        'Cotrimoxizole': 'Cotrimoxazole',
+        "ringer's lactate": "Ringer's lactate",
+    }
+
+    for old, new in harmonisation.items():
+        cleaned = re.sub(rf'\b{old}\b', new, cleaned, flags=re.IGNORECASE)
+
+    # --- 6. Canonical renaming for key nutrition / diagnostics items ---
+    canonical_map = {
+        'Therapeutic spread, sachet 92g/CAR-150':
+            'Ready-to-use therapeutic food (RUTF)',
+        'Therapeutic spread, sachet 92g / CAR-150':
+            'Ready-to-use therapeutic food (RUTF)',
+        'VL test':
+            'Viral load test',
+        'Dietary supplements (country-specific)':
+            'Multiple micronutrient powder (MNP) supplement'
+    }
+
+    # Apply canonical renaming (case-insensitive exact match)
+    for old, new in canonical_map.items():
+        if cleaned.lower() == old.lower():
+            cleaned = new
+            break
+
+    # --- 7. Capitalise first letter only (preserve acronyms elsewhere) ---
+    cleaned = re.sub(r'^.', lambda m: m.group(0).upper(), cleaned)
+
+    return cleaned
+
+# Clean the names of equipment in the cost dataframe, Drop irrelevant ones
+def clean_equipment_name(name: str, equipment_drop_list = None) -> str:
+    """
+    Clean and standardise medical equipment names for analysis.
+    Applies light normalisation and explicit renaming only.
+    """
+    if not isinstance(name, str):
+        return name
+
+    cleaned = name
+
+    # --- 1. Fix known encoding artefacts ---
+    cleaned = cleaned.replace('â\x80\x99', '’')
+    cleaned = cleaned.replace('Â', '')
+
+    # --- 2. Normalise slashes and whitespace ---
+    cleaned = re.sub(r'\s*/\s*', ' / ', cleaned)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+
+    # --- 3. Explicit canonical renaming (keep minimal) ---
+    rename_map = {
+        'Image view station, for conferences':
+            'Clinical image viewing workstation (PACS / case review)',
+        'Cusco’s / bivalved Speculum (small, medium, large)':
+            'Cusco’s / bivalved speculum (small, medium, large)',
+        'Cuscoâ\x80\x99s/ bivalved Speculum (small, medium, large)':
+            'Cusco’s / bivalved speculum (small, medium, large)',
+    }
+
+    for old, new in rename_map.items():
+        if cleaned.lower() == old.lower():
+            cleaned = new
+            break
+
+    # --- 4. Capitalise first letter only (preserve acronyms) ---
+    cleaned = re.sub(r'^.', lambda m: m.group(0).upper(), cleaned)
+
+    return cleaned
 
 
 def estimate_input_cost_of_scenarios(results_folder: Path,
@@ -1722,7 +1834,7 @@ def create_summary_treemap_by_cost_subgroup(_df: pd.DataFrame,
 
     # Remove non-specific subgroup for consumables
     if _cost_category == 'medical consumables':
-        _df = _df[~(_df.cost_subgroup == 'supply chain (all consumables)')]
+        _df = _df[~(_df.cost_subgroup.str.contains('all consumables'))] # These are supply chain costs
 
     # Create summary dataframe for treemap
     _df = _df.groupby('cost_subgroup')['cost'].sum().reset_index()

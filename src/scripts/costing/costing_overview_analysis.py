@@ -20,7 +20,8 @@ from scripts.costing.cost_estimation import (
     do_line_plot_of_cost,
     do_stacked_bar_plot_of_cost_by_category,
     estimate_input_cost_of_scenarios,
-    summarize_cost_data,
+    clean_consumable_name,
+    clean_equipment_name,
 )
 from tlo import Date
 from tlo.analysis.utils import (
@@ -120,27 +121,117 @@ input_costs_variable_discounting = estimate_input_cost_of_scenarios(results_fold
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = discount_rate_lomas, summarize = True)
 
-# Temporary fix to the cost of F-75 Therapeutic milk
-# The amount currently listed as 102.5 g should, in fact, be 102.5 ml. A sachet of 102.5 g is used to prepare 500 ml of
-# F-75 milk. So it should have been: 102.5÷500×102.5 = 21 g per feed (every 3 hours for 3 days)
-
 def scale_consumable_cost(cost_df, item_name, scaling_factor):
     cost_df.loc[cost_df.cost_subgroup == item_name, 'cost'] = scaling_factor * cost_df.loc[cost_df.cost_subgroup == item_name, 'cost']
     return cost_df
 
-input_costs = scale_consumable_cost(cost_df = input_costs,
-                                                         item_name = 'F-75 therapeutic milk, 102.5 g',
-                                                         scaling_factor = 102.5/500)
-input_costs_undiscounted = scale_consumable_cost(cost_df = input_costs_undiscounted,
-                                                         item_name = 'F-75 therapeutic milk, 102.5 g',
-                                                         scaling_factor = 102.5/500)
-input_costs_variable_discounting = scale_consumable_cost(cost_df = input_costs_variable_discounting,
-                                                         item_name = 'F-75 therapeutic milk, 102.5 g',
-                                                         scaling_factor = 102.5/500)
+def clean_consumables_cost_for_manuscript(df, drop_consumables):
+    # 1. Temporary fix to the cost of F-75 Therapeutic milk
+    # # The amount currently listed as 102.5 g should, in fact, be 102.5 ml. A sachet of 102.5 g is used to prepare 500 ml of
+    # # F-75 milk. So it should have been: 102.5÷500×102.5 = 21 g per feed (every 3 hours for 3 days)
+    df = scale_consumable_cost(
+        cost_df=df,
+        item_name='F-75 therapeutic milk, 102.5 g',
+        scaling_factor=102.5 / 500
+    )
+
+    # 2. Clean consumable names
+    df['cost_subgroup'] = (
+        df['cost_subgroup']
+        .astype(str)
+        .apply(clean_consumable_name)
+    )
+
+    # 3. Drop non-consumables
+    drop_consumables = drop_consumables
+
+    df = df[
+        ~df['cost_subgroup'].isin(drop_consumables)
+    ]
+
+    return df
+
+def clean_equipment_cost_for_manuscript(df, drop_equipment):
+    # 2. Clean consumable names
+    df['cost_subgroup'] = (
+        df['cost_subgroup']
+        .astype(str)
+        .apply(clean_equipment_name)
+    )
+
+    # 3. Drop non-medical equipment
+    drop_mask = (
+        input_costs['cost_subgroup'].isin(drop_equipment)
+        & (input_costs['cost'] == 0)
+    )
+
+    df = df[
+        ~df['cost_subgroup'].isin(drop_mask)
+    ]
+
+    return df
+
+drop_consumables = ['Endoscope',
+        'Cystoscope',
+        'Complementary feeding--education only drugs/supplies to service a client']
+
+# Furniture, fittings, tools, containers
+drop_equipment = [
+    'Wheelbarrows',
+    'Shovels',
+    'Basin',
+    'Bucket Stand',
+    'Bucket without tap 20 LITRES',
+    'Bench',
+    'Chair',
+    'Desk',
+    'Table',
+    'Shelves',
+    'Cabinet, filing',
+    'Cupboard, for medicine, lockable',
+    'Linen',
+    'Pillow cases',
+    'Pillows of various shapes',
+    'Mixing bowls',
+    'Measuring Cup',
+    'Measuring gauges',
+    'Clock, wall type',
+    'Mirror',
+    'Pedal bin',
+    'Waste Bin',
+    'Otto Bins',
+    'Water container, 20 litres with tap, on stand with soap',
+    'Racks, storage, set',
+    'Sample Rack',
+    'Containers for Decontamination, Cleaning, Instruments and Linen',
+]
+# IT / software / office-adjacent
+drop_equipment += [
+    'Analytical software',
+    'Medical software',
+    'Office software',
+    'Computer set',
+    'Laptop',
+    'Printer',
+    'Router machine',
+    'UPS (uninterruptible power supply)',
+    'Receiver',
+]
+# Cleaning / garments
+drop_equipment += [
+    'Cleaning utensils, set',
+    'Backsplit cotton gown',
+]
+
+input_costs = clean_consumables_cost_for_manuscript(input_costs, drop_consumables)
+input_costs_undiscounted = clean_consumables_cost_for_manuscript(input_costs_undiscounted, drop_consumables)
+input_costs_variable_discounting = clean_consumables_cost_for_manuscript(input_costs_variable_discounting, drop_consumables)
+input_costs = clean_equipment_cost_for_manuscript(input_costs, drop_equipment)
+input_costs_undiscounted = clean_equipment_cost_for_manuscript(input_costs_undiscounted, drop_equipment)
+input_costs_variable_discounting = clean_equipment_cost_for_manuscript(input_costs_variable_discounting, drop_equipment)
 
 
 # Get per capita estimates:
-
 # Get population size for per capita estimates
 def get_total_population_by_year(_df):
     years_needed = [i.year for i in TARGET_PERIOD]  # Malaria scale-up period years
@@ -225,9 +316,9 @@ print(f"Notably, improving consumable availability alone increases the cost of m
       f"{(consumable_cost_by_draw[3]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
       f"compared to the actual scenario.")
 # Results 5
-cost_of_hiv_testing =  input_costs[(input_costs.cost_subgroup == 'Test, HIV EIA Elisa') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
+cost_of_hiv_testing =  input_costs[(input_costs.cost_subgroup.str.contains('EIA Elisa')) & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
 cost_of_hiv_treatment =  input_costs[(input_costs.cost_subgroup == 'First-line ART regimen: adult') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
-cost_of_jadelle =  input_costs[(input_costs.cost_subgroup == 'Jadelle (implant), box of 2_CMST') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
+cost_of_jadelle =  input_costs[(input_costs.cost_subgroup.str.contains('Jadelle')) & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
 # Get availability estimates
 tlo_availability_df = pd.read_csv(path_for_consumable_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
 tlo_availability_df = tlo_availability_df[['Facility_ID', 'month','item_code', 'available_prop', 'available_prop_scenario6']]
@@ -319,8 +410,8 @@ print(f"Second, cost changes do not scale linearly with changes in system capaci
       f"({(cost_of_hiv_testing[1]/cost_of_hiv_testing[0] - 1)*100:.2f}\%) "
       f"but reductions of "
       f"{(cost_of_hiv_testing[2]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% and "
-      f"{(cost_of_hiv_testing[3]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% under the improved consumables and combined scenarios."
-      f"These reductions arise because increased consumable availability intensifies competition with other services, "
+      f"{(cost_of_hiv_testing[3]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% under the improved consumables and combined scenarios, respectively."
+      f" These reductions arise because increased consumable availability intensifies competition with other services, "
       f"leading to fewer HIV testing appointments being delivered.")
 
 # Get figures for overview paper
@@ -398,22 +489,24 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs_variable_discounting,
 cost_categories = ['human resources for health', 'medical consumables',
        'medical equipment', 'facility operating cost']
 draws = input_costs.draw.unique().tolist()
-colourmap_for_consumables = {'First-line ART regimen: adult':'#1f77b4',
-                             'Test, HIV EIA Elisa': '#ff7f0e',
-                             'VL Test': '#2ca02c',
-                             'Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly': '#d62728',
-                             'Oxygen, 1000 liters, primarily with oxygen cylinders': '#9467bd',
-                             'Phenobarbital, 100 mg': '#8c564b',
-                             'Rotavirus vaccine': '#e377c2',
-                             'Carbamazepine 200mg_1000_CMST': '#7f7f7f',
-                             'Infant resuscitator, clear plastic + mask + bag_each_CMST': '#bcbd22',
-                             'Dietary supplements (country-specific)': '#17becf',
-                             'Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg': '#2b8cbe',
-                             'Pneumococcal vaccine': '#fdae61',
-                             'Pentavalent vaccine (DPT, Hep B, Hib)': '#d73027',
-                             'male circumcision kit, consumables (10 procedures)_1_IDA': '#756bb1',
-                             'Jadelle (implant), box of 2_CMST': '#ffdd44',
-                             'Urine analysis': '#66c2a5'}
+colourmap_for_consumables = {
+    'First-line ART regimen: adult': '#1f77b4',
+    'Test, HIV EIA Elisa': '#ff7f0e',
+    'Viral load test': '#2ca02c',
+    'Depot-medroxyprogesterone acetate 150 mg - 3 monthly': '#d62728',
+    'Oxygen, 1000 liters, primarily with oxygen cylinders': '#9467bd',
+    'Phenobarbital, 100 mg': '#8c564b',
+    'Rotavirus vaccine': '#e377c2',
+    'Carbamazepine 200mg': '#7f7f7f',
+    'Infant resuscitator, clear plastic + mask + bag': '#bcbd22',
+    'Multiple micronutrient powder (MNP) supplement': '#17becf',
+    'Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg': '#2b8cbe',
+    'Ready-to-use therapeutic food (RUTF)': '#fdae61',
+    'Corn Soya Blend (or Supercereal - CSB++)': '#d73027',
+    'Male circumcision kit, consumables (10 procedures)': '#756bb1',
+    'Jadelle (implant), box of 2': '#ffdd44',
+    'Urine analysis': '#66c2a5'
+}
 
 for _cat in cost_categories:
     for _d in draws:
