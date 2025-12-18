@@ -461,7 +461,6 @@ class HealthBurden(Module):
                      .reset_index() \
                      .assign(year=year)
 
-
         # Check that the format of the internal storage is as expected.
         self.check_multi_index()
 
@@ -560,8 +559,6 @@ class HealthBurden(Module):
         """Write to the log the prevalence of conditions.
         N.B. This is called at the end of the simulation as well as at the end of each month, so we need to check that
         the year is not being written to the log more than once."""
-        # Check that the format of the internal storage is as expected.
-        self.check_multi_index()
         self._log_df_line_by_line(
             key='prevalence_of_diseases',
             description='Prevalence of each disease. ALRI: individuals who have ri_current_infection_status = True'
@@ -721,7 +718,7 @@ class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
         self.module.write_to_log(year=self.sim.date.year)
 
 
-class GetCurrentPrevalenceWriteToLog(RegularEvent, PopulationScopeEventMixin):
+class GetCurrentPrevalenceAndWriteToLog(RegularEvent, PopulationScopeEventMixin):
     """
     This event runs every month and asks each disease module to report the prevalence of each disease
     during the previous month.
