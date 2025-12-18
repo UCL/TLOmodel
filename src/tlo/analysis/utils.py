@@ -12,7 +12,7 @@ from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union, Any
 
 import git
 import matplotlib.colors as mcolors
@@ -1466,3 +1466,12 @@ def mix_scenarios(*dicts) -> Dict:
 def flatten_nested_dict(my_dict, sep='_'):
     """Flatten a nested dictionary into a single level dictionary."""
     return pd.pandas.io.json._normalize.nested_to_record(my_dict, sep=sep)
+
+def get_counts_by_sex_and_age_group(df: pd.DataFrame, property: str, targets: Optional[Any|Tuple[Any]] = True) -> dict:
+    """Returns dict giving counts (by age-group and sex) of alive individuals with truthy values for that property."""
+    if isinstance(targets, tuple):
+        return df.loc[df.is_alive & df[property].isin(targets)].groupby(['age_range', 'sex']).size().unstack(fill_value=0).to_dict()
+    elif not targets.startswith(("!", "~")):
+        return df.loc[df.is_alive & df[property]].groupby(['age_range', 'sex']).size().unstack(fill_value=0).to_dict()
+    else:
+        return df.loc[df.is_alive & ~df[property[1:]]].groupby(['age_range', 'sex']).size().unstack(fill_value=0).to_dict()
