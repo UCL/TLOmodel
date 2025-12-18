@@ -149,7 +149,8 @@ undernutrition = [get_item_code('Supplementary spread, sachet 92g/CAR-150'),
                   get_item_code('SAM theraputic foods'),
                   get_item_code('SAM medicines'),
                   get_item_code('Therapeutic spread, sachet 92g/CAR-150'),
-                  get_item_code('F-100 therapeutic diet, sach., 114g/CAR-90')]
+                  get_item_code('F-100 therapeutic diet, sach., 114g/CAR-90'),
+                  get_item_code('Corn Soya Blend (or Supercereal - CSB++)')]
 # Cervical cancer
 cervical_cancer = [get_item_code('Specimen container'),
                    get_item_code('Biopsy needle'),
@@ -264,7 +265,7 @@ list_of_equipment_costs_for_calibration = ['Medical Equipment - Purchase', 'Medi
 list_of_operating_costs_for_calibration = ['Facility utility bills', 'Infrastructure - Rehabilitation', 'Vehicles - Maintenance','Vehicles - Fuel and Maintenance']
 
 # Create folders to store results
-costing_outputs_folder = Path('./outputs/costing')
+costing_outputs_folder = Path('./outputs/costing_dec25')
 if not os.path.exists(costing_outputs_folder):
     os.makedirs(costing_outputs_folder)
 figurespath = costing_outputs_folder / "figures_post_jan2025fix"
