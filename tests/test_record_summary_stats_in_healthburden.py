@@ -131,7 +131,7 @@ class DummyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 
-def test_structure_logging_dummy_disease(tmpdir, seed):
+def test_basic_mechanics_with_dummy_disease(tmpdir, seed):
     start_date = Date(2010, 1, 1)
     end_date = Date(2011, 1, 1)
 
@@ -164,7 +164,7 @@ def test_structure_logging_dummy_disease(tmpdir, seed):
     pd.testing.assert_series_equal(prev_in_healthburden_logger, prevalence_from_actual_module, check_names=False)
 
 
-def test_run_with_healthburden_with_real_diseases(tmpdir, seed):
+def test_run_with_real_diseases(tmpdir, seed):
     """Check that everything runs when using the full model and daily logging cadence."""
 
     sim = Simulation(start_date=start_date,

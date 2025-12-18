@@ -10,7 +10,6 @@ import pandas as pd
 from scipy.stats import norm
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -784,7 +783,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             'prev_severe': sev_wasted / total_under5
         }
 
-        return flatten_nested_dict(prevalence_dict)
+        return prevalence_dict
 
     def wasting_clinical_symptoms(self, person_id) -> None:
         """

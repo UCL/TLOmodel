@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -2571,7 +2570,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
 
             prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
 
-        return flatten_nested_dict(prevalence_by_age_group_sex)
+        return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
 
     def rti_assign_injuries(self, number):
         """

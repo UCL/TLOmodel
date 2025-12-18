@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -248,7 +247,7 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         )
         prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
 
-        return flatten_nested_dict(prevalence_by_age_group_sex)
+        return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
 
     def process_parameters(self):
         """Process the parameters (following being read-in) prior to the simulation starting.

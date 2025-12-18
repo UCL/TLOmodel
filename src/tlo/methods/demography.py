@@ -25,7 +25,6 @@ from tlo import (
     Types,
     logging,
 )
-from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 from tlo.methods.causes import (

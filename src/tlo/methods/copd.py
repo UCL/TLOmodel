@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, flatten_nested_dict
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -233,7 +233,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
 
         prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
 
-        return flatten_nested_dict(prevalence_by_age_group_sex)
+        return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
 
     def define_symptoms(self):
         """Define and register Symptoms"""

@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
-from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, postnatal_supervisor_lm, pregnancy_helper_functions
