@@ -11,10 +11,16 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    individual_history,
+    contraception,
+    individual_history_tracker,
     mockitis,
-    simplified_births,
+    newborn_outcomes,
+    pregnancy_supervisor,
+    care_of_women_during_pregnancy,
+    labour,
+    postnatal_supervisor,
     symptommanager,
+    hiv,
 )
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -42,21 +48,26 @@ def test_individual_history_tracker(tmpdir, seed):
             "directory": tmpdir,
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
-                "tlo.methods.individual_history": logging.INFO
+                "tlo.methods.individual_history_tracker": logging.INFO
             }
         }, resourcefilepath=resourcefilepath
     )
 
     # Register the core modules
     sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
                  enhanced_lifestyle.Lifestyle(),
                  healthsystem.HealthSystem(),
-                 individual_history.IndividualHistoryTracker(),
+                 individual_history_tracker.IndividualHistoryTracker(),
                  symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
-                 mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome()
+                 chronicsyndrome.ChronicSyndrome(),
+                 contraception.Contraception(),
+                 newborn_outcomes.NewbornOutcomes(),
+                 pregnancy_supervisor.PregnancySupervisor(),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                 labour.Labour(),
+                 postnatal_supervisor.PostnatalSupervisor(),
+                 hiv.DummyHivModule(),
                  )
 
     # Run the simulation
@@ -68,7 +79,7 @@ def test_individual_history_tracker(tmpdir, seed):
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     output_chains = parse_log_file(sim.log_filepath, level=logging.INFO)
     individual_histories = reconstruct_individual_histories(
-                            output_chains['tlo.methods.individual_history']['individual_histories'])
+                            output_chains['tlo.methods.individual_history_tracker']['individual_histories'])
 
     # Check that we have a "StartOfSimulation" event for every individual in the initial population,
     #   and that this was logged at the start date
@@ -81,9 +92,12 @@ def test_individual_history_tracker(tmpdir, seed):
     mask = individual_histories["event_name"].isin(["Birth", "StartOfSimulation"])
     assert individual_histories.loc[mask, "Info"].apply(len).eq(num_properties).all()
 
-    # Assert that all HSI events that occurred were also collected in the event chains
-    HSIs_in_individual_histories = individual_histories["event_name"].str.contains('HSI', na=False).sum()
-    assert HSIs_in_individual_histories == len(output['tlo.methods.healthsystem']['HSI_Event'])
+    # Assert that all HSI events that occurred were also collected in the event chains. Do not include Inpatient_Care HSIs, as these
+    # are not currently treated as being individual-specific
+    Num_of_HSIs_in_individual_histories = individual_histories["event_name"].str.contains('HSI', na=False).sum()
+    Num_of_HSIs_in_hs_log = len(output['tlo.methods.healthsystem']['HSI_Event'].loc[
+    output['tlo.methods.healthsystem']['HSI_Event']['Event_Name'] != 'Inpatient_Care'])
+    assert Num_of_HSIs_in_individual_histories == Num_of_HSIs_in_hs_log
 
     # Check that aside from HSIs, StartOfSimulation, and Birth, other events were collected too
     mask = (~individual_histories["event_name"].isin(["StartOfSimulation", "Birth"])) & \
