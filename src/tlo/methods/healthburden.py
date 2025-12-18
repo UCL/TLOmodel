@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types, logging
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import (
@@ -145,7 +146,7 @@ class HealthBurden(Module):
             else:
                 raise ValueError(f'Argument for frequency of recording prevalencne is not valid: '
                                  f'{self.parameters["logging_frequency_prevalence"]}')
-            sim.schedule_event(GetCurrentPrevalenceAndWriteToLog(self, frequency=frequency), sim.date)
+            sim.schedule_event(GetCurrentDiseaseStatisticsAndWriteToLog(self, frequency=frequency), sim.date)
 
     def process_causes_of_disability(self):
         """
@@ -556,37 +557,6 @@ class HealthBurden(Module):
 
         self._years_written_to_log += [year]
 
-    def write_to_log_prevalence(self, prevalence_of_diseases: pd.DataFrame):
-        """Write to the log the prevalence of conditions.
-        N.B. This is called at the end of the simulation as well as at the end of each month, so we need to check that
-        the year is not being written to the log more than once."""
-        self._log_df_line_by_line(
-            key='prevalence_of_diseases',
-            description='Prevalence of each disease. ALRI: individuals who have ri_current_infection_status = True'
-                        'Bladder_Cancer: individuals who have bc_status != none. '
-                        'Breast Cancer: individuals who have brc_stus != none'
-                        'chronic_ischemic_hd, chronic_kidney_disease, chronic_lower_back_pain, diabetes, hypertension (all in CMD): all individuals with nc_{condition} as True'
-                        'COPD: all individuals with ch_lungfuction > 3, which is defined as mild COPD'
-                        'MMR (Demography): sum of direct deaths (cause_of_death == Maternal Disorders), indirect, non-HIV deaths, and  indirect, non-HIV deaths * 0.3 https://www.who.int/publications/i/item/9789240068759, all in LAST MONTH'
-                        'NMR (Demography): sum of all individuals who died in the last logging period who were < 29 days old in LAST MONTH'
-                        'depression: individuals who had a depressive episode in the last logging period'
-                        'diarrhoea: individuals who are gi_has_diarrhoea = True'
-                        'epilepsy: individuals whose ep_seiz_stat != 0'
-                        'HIV: individals whose hv_inf = True'
-                        'instrapartum stillbirths (Labour): number of intrapartum stillbirths IN LAST MONTH'
-                        'malaria: individuals who have clinical or severe infections'
-                        'mealsea: individuals who have me_has_measles = True'
-                        'mockitis: inviduals who have mi_is_infected = True'
-                        'oesphageal cancer: individuals who have oc_status != none'
-                        'other adult cancer: individuals who have oac_status != none'
-                        'antenatal stillbirths (Preganancy Supervisor): number of stillbirths that has happened IN LAST MONTH'
-                        'prostate cancer: individuals who have pc_status != none'
-                        'RTI: individuals who have rt_inj_severity != none'
-                        'schisto: individuals who have Low-infection or High-infection, any parasite'
-                        'TB: individuals who have tb_inf = active',
-            df=prevalence_of_diseases,
-            force_cols=self.prevalence_of_diseases.columns
-        )
 
     def check_multi_index(self):
         """Check that the multi-index of the dataframes are as expected"""
@@ -719,7 +689,7 @@ class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
         self.module.write_to_log(year=self.sim.date.year)
 
 
-class GetCurrentPrevalenceAndWriteToLog(RegularEvent, PopulationScopeEventMixin):
+class GetCurrentDiseaseStatisticsAndWriteToLog(RegularEvent, PopulationScopeEventMixin):
     """
     This event runs every month and asks each disease module to report the prevalence of each disease
     during the previous month.
@@ -730,20 +700,52 @@ class GetCurrentPrevalenceAndWriteToLog(RegularEvent, PopulationScopeEventMixin)
 
     def apply(self, population):
 
-        # dict for collecting results from each module
-        prevalence_from_each_disease_module = {}
+        # dict for collecting results from each module (keys will be a tuple (disease_module_name, stat)) where stat
+        # is the the firs-level key of the dict passed by the disease module.
+        data = {}
 
         # Calculate the population size and add it to the dict
-        prevalence_from_each_disease_module['population'] = sum(self.sim.population.props[self.sim.population.props['is_alive']])
+        data[('HealthBurden', 'population')] = sum(self.sim.population.props['is_alive'])
 
         # Collect results from all registered modules
         for disease_module_name in self.module.recognised_modules_names:
             prevalence_from_disease_module: Dict = self.sim.modules[disease_module_name].report_prevalence()
-            if prevalence_from_disease_module is not None:
-                assert isinstance(prevalence_from_disease_module, dict)
-                if set(prevalence_from_each_disease_module.keys()).intersection(prevalence_from_disease_module):
-                    warnings.warn(f'More than one module is using the same key in report_prevalence: '
-                                  f'{disease_module_name=}.')
-                prevalence_from_each_disease_module.update(prevalence_from_disease_module)
+            assert isinstance(prevalence_from_disease_module, dict)
+            for k, v in prevalence_from_disease_module.items():
+                data[(disease_module_name, k)] = v
 
-        self.module.write_to_log_prevalence(pd.DataFrame(prevalence_from_each_disease_module))
+        multi_index_series = pd.Series(data,
+                                       index=pd.MultiIndex.from_tuples(data.keys(), names=['DiseaseModule', 'Stat']))
+        self._write_to_log(multi_index_series)
+
+
+    def _write_to_log(self, prevalence_of_diseases: pd.Series):
+        """Write to the log the prevalence of conditions.
+        N.B. This is called at the end of the simulation as well as at the end of each month, so we need to check that
+        the year is not being written to the log more than once."""
+        logger.info(
+            key='prevalence_of_diseases',
+            description='Prevalence of each disease. ALRI: individuals who have ri_current_infection_status = True'
+                        'Bladder_Cancer: individuals who have bc_status != none. '
+                        'Breast Cancer: individuals who have brc_stus != none'
+                        'chronic_ischemic_hd, chronic_kidney_disease, chronic_lower_back_pain, diabetes, hypertension (all in CMD): all individuals with nc_{condition} as True'
+                        'COPD: all individuals with ch_lungfuction > 3, which is defined as mild COPD'
+                        'MMR (Demography): sum of direct deaths (cause_of_death == Maternal Disorders), indirect, non-HIV deaths, and  indirect, non-HIV deaths * 0.3 https://www.who.int/publications/i/item/9789240068759, all in LAST MONTH'
+                        'NMR (Demography): sum of all individuals who died in the last logging period who were < 29 days old in LAST MONTH'
+                        'depression: individuals who had a depressive episode in the last logging period'
+                        'diarrhoea: individuals who are gi_has_diarrhoea = True'
+                        'epilepsy: individuals whose ep_seiz_stat != 0'
+                        'HIV: individals whose hv_inf = True'
+                        'instrapartum stillbirths (Labour): number of intrapartum stillbirths IN LAST MONTH'
+                        'malaria: individuals who have clinical or severe infections'
+                        'mealsea: individuals who have me_has_measles = True'
+                        'mockitis: inviduals who have mi_is_infected = True'
+                        'oesphageal cancer: individuals who have oc_status != none'
+                        'other adult cancer: individuals who have oac_status != none'
+                        'antenatal stillbirths (Preganancy Supervisor): number of stillbirths that has happened IN LAST MONTH'
+                        'prostate cancer: individuals who have pc_status != none'
+                        'RTI: individuals who have rt_inj_severity != none'
+                        'schisto: individuals who have Low-infection or High-infection, any parasite'
+                        'TB: individuals who have tb_inf = active',
+            data=flatten_multi_index_series_into_dict_for_logging(prevalence_of_diseases)
+        )
