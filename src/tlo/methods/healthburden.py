@@ -144,6 +144,10 @@ class HealthBurden(Module):
         last_day_of_the_year = Date(sim.date.year, 12, 31)
         sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
 
+        # 6) Schedule the Prevalence Logger Event (first event to occur at the beginning of the simulation)
+        if self.module.recognised_modules_names:
+            sim.schedule_event(GetCurrentPrevalenceAndWriteToLog(self), sim.date)
+
     def process_causes_of_disability(self):
         """
         1) Collect causes of disability that are reported by each disease module
