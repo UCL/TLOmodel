@@ -614,7 +614,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This reports age- and sex-specific prevalence of other adult cancers for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'oac_status', '!none')
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'oac_status', ("site_confined", "local_ln", "metastatic"))
         return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def do_at_generic_first_appt(

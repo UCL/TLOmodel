@@ -606,16 +606,12 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                 (pd.isnull(df['de_date_depr_resolved'])) |
                 (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
             )
-            ]
+        ]
+        prevalence_counts = (
+            any_depr_in_the_last_month.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
 
-        if any_depr_in_the_last_month.empty:
-            prevalence_by_age_group_sex = {}
-        else:
-            alive_df = df['is_alive'].sum()
-            prevalence_counts = (
-                any_depr_in_the_last_month.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-            )
-            prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+        prevalence_by_age_group_sex = (prevalence_counts / df['is_alive'].sum()).to_dict(orient='index')
 
         return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
 
