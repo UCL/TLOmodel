@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -239,15 +240,8 @@ class Measles(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This reports age- and sex-specific prevalence of measles for all individuals
         df = self.sim.population.props
-        alive_df = df[df['is_alive']]
-
-        measles_df = alive_df[alive_df['me_has_measles']]
-        prevalence_counts = (
-            measles_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-        return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'me_has_measles')
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def process_parameters(self):
         """Process the parameters (following being read-in) prior to the simulation starting.

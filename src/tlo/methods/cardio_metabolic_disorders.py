@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -853,15 +854,8 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         prevalence_dict = {}
 
-        alive_df = df[df['is_alive']]
-
         for condition in self.conditions:
-                prevalence_counts = (
-                    alive_df.groupby(['age_range', 'sex'])[f'nc_{condition}'].sum().unstack(fill_value=0)
-                )
-                prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-                prevalence_dict[condition] = prevalence_by_age_group_sex
+            prevalence_dict[condition] = get_counts_by_sex_and_age_group_divided_by_popsize(df, f'nc_{condition}')
 
         return prevalence_dict
 

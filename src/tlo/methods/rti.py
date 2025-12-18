@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -2556,21 +2557,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This returns dataframe that reports on the prevalence of RTIs for all individuals
         df = self.sim.population.props
-        df_valid_dates = df[df['rt_date_inj'].notna()]
-
-        if df_valid_dates.empty:
-            prevalence_by_age_group_sex = {}
-            pass
-        else:
-            alive_df = df[df['is_alive']]
-
-            prevalence_counts = (
-                df_valid_dates.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-            )
-
-            prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-        return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'rt_road_traffic_inc')
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def rti_assign_injuries(self, number):
         """

@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, get_counts_by_sex_and_age_group
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import (
@@ -706,7 +706,7 @@ class GetCurrentDiseaseStatisticsAndWriteToLog(RegularEvent, PopulationScopeEven
         # Calculate the population size and add it to the dict
         df = population.props
         data[('HealthBurden', 'population_total')] = sum(df.is_alive)
-        data[('HealthBurden', 'population_by_age_and_sex')] = get_counts_by_sex_and_age_group(df, 'is_alive')
+        data[('HealthBurden', 'population_by_age_and_sex')] = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'is_alive')
 
         # Collect results from all registered modules
         for disease_module_name in self.module.recognised_modules_names:

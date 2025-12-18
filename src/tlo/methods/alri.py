@@ -30,6 +30,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -1020,18 +1021,8 @@ class Alri(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This reports age- and sex-specific prevalence of ALRI for all individuals
         df = self.sim.population.props
-
-        # Select alive individuals with current ALRI infection
-        alri_df = df[(df['is_alive']) & (df['ri_current_infection_status'])]
-        alive_df = df[df['is_alive']]
-
-        prevalence_counts = (
-            alri_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-        return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'ri_current_infection_status')
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def over_ride_availability_of_certain_consumables(self):
         """Over-ride the availability of certain consumables, according the parameter values provided."""

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -294,36 +295,9 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
         return health_values  # returns the series
 
     def report_prevalence(self):
-        logger.debug(key='debug', data='This is mockitis reporting my prevalence ')
-
-        df = self.sim.population.props  # shortcut to population properties dataframe
-
-        # Select alive individuals with Mockitis infection
-        mockitis_df = df[(df['is_alive']) & (df['mi_is_infected'])]
-
-        prevalence_by_age_group_sex = {}
-
-        if mockitis_df.empty:
-            pass
-        else:
-            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
-            sexes = ['male', 'female']
-            total_alive = len(df[df['is_alive']])
-
-            for age_group in age_groups:
-                age_range = age_groups[age_group]
-                prevalence_by_age_group_sex[age_group] = {}
-
-                for sex in sexes:
-                    subset = mockitis_df[
-                        (mockitis_df['age_years'].between(age_range[0], age_range[1])) &
-                        (mockitis_df['sex'] == sex)
-                        ]
-
-                    total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
-                    prevalence_by_age_group_sex[age_group][sex] = total_prev
-
-        return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
+        df = self.sim.population.props
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'mi_is_infected')
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def do_at_generic_first_appt_emergency(
         self,

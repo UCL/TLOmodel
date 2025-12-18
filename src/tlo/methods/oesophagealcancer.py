@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -609,19 +610,8 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This reports age- and sex-specific prevalence of oesophageal cancer for all individuals
         df = self.sim.population.props
-
-        # Select alive individuals with oesophageal cancer (status not 'none')
-        oesophageal_df = df[(df['is_alive']) & (df['oc_status'] != 'none')]
-
-        alive_df = df[df['is_alive']]
-
-        prevalence_counts = (
-            oesophageal_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-        return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'coc_status', '!none')
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,

@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -671,17 +672,8 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This reports age- and sex-specific prevalence of diarrhoea for all individuals
         df = self.sim.population.props
-        diarrhoea_df = df[(df['gi_has_diarrhoea']) & (df['is_alive'])]
-
-        alive_df = df[df['is_alive']]
-
-        prevalence_counts = (
-            diarrhoea_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-        return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'gi_has_diarrhoea')
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""
