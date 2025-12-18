@@ -115,6 +115,8 @@ class Demography(Module):
         'gbd_causes_of_death_data': Parameter(Types.DATA_FRAME,
                                               'Proportion of deaths in each age/sex group attributable to each possible'
                                               ' cause of death in the GBD dataset.'),
+
+        'possible_facilities': Parameter(Types.DATA_FRAME, "Possible facilities for individuals to be assigned"),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -436,6 +438,15 @@ class Demography(Module):
         _district_num_of_residence = df.at[_id_inherit_from, 'district_num_of_residence']
         _district_of_residence = df.at[_id_inherit_from, 'district_of_residence']
         _region_of_residence = df.at[_id_inherit_from, 'region_of_residence']
+        _level_0 = df.at[_id_inherit_from, "level_0"]
+
+        _level_1a = df.at[_id_inherit_from, "level_1a"]
+
+        _level_1b = df.at[_id_inherit_from, "level_1b"]
+
+        _level_2 = df.at[_id_inherit_from, "level_2"]
+
+        _level_3 = df.at[_id_inherit_from, "level_3"]
 
         child = {
             'is_alive': True,
@@ -666,6 +677,7 @@ class Demography(Module):
             'cause': str(cause),
             'label': self.causes_of_death[cause].label,
             'person_id': individual_id,
+            'district_of_residence': person['district_of_residence'],
             'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
         }
 
@@ -694,6 +706,8 @@ class Demography(Module):
                                                                     wealth=person['li_wealth'],
                                                                     date_of_birth=person['date_of_birth'],
                                                                     age_range=person['age_range'],
+                                                                    district_of_residence=person[
+                                                                        'district_of_residence'],
                                                                     cause_of_death=cause,
                                                                     )
 
@@ -957,12 +971,13 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 2) Compute Statistics for the log
         sex_count = df[df.is_alive].groupby('sex').size()
-
+        district_count = df[df.is_alive].groupby("district_of_residence").size()
         logger.info(
             key='population',
             data={'total': sum(sex_count),
                   'male': sex_count['M'],
-                  'female': sex_count['F']
+                  'female': sex_count['F'],
+                  'district_of_residence': district_count.to_dict(),
                   })
 
         # (nb. if you groupby both sex and age_range, you weirdly lose categories where size==0, so
