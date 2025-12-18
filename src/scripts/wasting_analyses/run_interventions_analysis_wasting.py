@@ -166,10 +166,13 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             death_outcomes_dict = pickle.load(f)
     else:
         print("\ndeath outcomes calculation ...")
+        sq_deaths = util_fncs.extract_death_data_frames_and_outcomes(
+            iterv_folders_dict['SQ'], birth_outcomes_dict['SQ']["births_df"], datayears, interventionyears, 'SQ'
+        )
         death_outcomes_dict = {
             interv: util_fncs.extract_death_data_frames_and_outcomes(
                 iterv_folders_dict[interv], birth_outcomes_dict[interv]['births_df'], datayears, interventionyears,
-                interv
+                interv, sq_deaths
             ) for interv in scenario_folders
         }
         print("saving death outcomes to file ...")
@@ -188,7 +191,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         print("\nloading dalys outcomes from file ...")
         with dalys_outcomes_path.open("rb") as f:
             dalys_outcomes_dict = pickle.load(f)
-            SQ_dalys = dalys_outcomes_dict['SQ']
+            # SQ_dalys = dalys_outcomes_dict['SQ']
     else:
         print("\ndalys outcomes for intervention period calculation ...")
         sq_dalys = util_fncs.extract_daly_data_frames_and_outcomes(
@@ -259,12 +262,14 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         )
         print("    plotting sum of deaths ...")
         util_fncs.plot_sum_outcome_and_CIs_intervention_period(
-            cohort, scenarios_dict, scenarios_tocompare, "deaths", death_outcomes_dict,
-            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
+            cohort, scenarios_dict, scenarios_tocompare,"deaths", death_outcomes_dict,
+            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix, interv_timestamps_dict,
+            birth_outcomes_dict, force_calculation
         )
         util_fncs.plot_sum_outcome_and_CIs_intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "deaths_with_SAM", death_outcomes_dict,
-            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
+            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix, interv_timestamps_dict,
+            birth_outcomes_dict, force_calculation
         )
         print("    plotting mean DALYs ...")
         util_fncs.plot_mean_outcome_and_CIs__scenarios_comparison(
@@ -521,34 +526,34 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             fig5.savefig(fig5_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
         plt.close('all')
 
-        # # Outcome 6: figures with averted sum of deaths and CI, scenarios comparison to SQ
-        # for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
-        #     fig6, axes6 = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
-        #
-        #     # Ensure `axes` is always a 2D array for consistent indexing
-        #     if len(cohorts_to_plot) == 1:
-        #         axes6 = np.expand_dims(axes6, axis=-1)
-        #
-        #     # ### Sum of averted deaths over intervention period by cause
-        #     for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
-        #         for j, cohort in enumerate(cohorts_to_plot):
-        #             sum_deaths_png_file_path = outputs_path / (
-        #                 f"{cohort}_sum_averted_{cause_of_death}_deaths_CI_intervention_period_scenarios_comparison__"
-        #                 f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
-        #             )
-        #             if sum_deaths_png_file_path.exists():
-        #                 img = plt.imread(sum_deaths_png_file_path)
-        #                 axes6[i, j].imshow(img)
-        #                 axes6[i, j].axis('off')
-        #     plt.tight_layout()
-        #     pdf.savefig(fig6)  # Save the current page to the PDF
-        #     fig6_png_file_path = outputs_path / (
-        #         f"{cohort_prefix}_averted_sum_deaths_comparison_"
-        #         f"{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
-        #         f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
-        #     )
-        #     fig6.savefig(fig6_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
-        # plt.close('all')
+        # Outcome 6: figures with averted sum of deaths and CI, scenarios comparison to SQ
+        for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
+            fig6, axes6 = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
+
+            # Ensure `axes` is always a 2D array for consistent indexing
+            if len(cohorts_to_plot) == 1:
+                axes6 = np.expand_dims(axes6, axis=-1)
+
+            # ### Sum of averted deaths over intervention period by cause
+            for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
+                for j, cohort in enumerate(cohorts_to_plot):
+                    sum_deaths_png_file_path = outputs_path / (
+                        f"{cohort}_sum_averted_{cause_of_death}_deaths_CI_intervention_period_scenarios_comparison__"
+                        f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+                    )
+                    if sum_deaths_png_file_path.exists():
+                        img = plt.imread(sum_deaths_png_file_path)
+                        axes6[i, j].imshow(img)
+                        axes6[i, j].axis('off')
+            plt.tight_layout()
+            pdf.savefig(fig6)  # Save the current page to the PDF
+            fig6_png_file_path = outputs_path / (
+                f"{cohort_prefix}_averted_sum_deaths_comparison_"
+                f"{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
+                f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+            )
+            fig6.savefig(fig6_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
+        plt.close('all')
 
         # Outcome 7: figures with averted sum of DALYs and CI, scenarios comparison
         for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):

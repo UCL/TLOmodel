@@ -1200,6 +1200,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 in_averted_DALYs: dict, in_data_impl_cost_name: str, in_sharing_GM_CS: float, in_FS_multiplier: float
             ) -> None:
                 ce_suffix = f"{in_data_impl_cost_name}_GM-CS-sharing{in_sharing_GM_CS}_FSmultiplier{in_FS_multiplier}"
+                print("###################")
+                print(f"\nCE SUFFIX: {ce_suffix}")
                 timestamps_and_ce_suffix = f"{timestamps_suffix}__{ce_suffix}"
                 # -----------
                 # Implementation costs estimates based on number of births and unit costs from REFs, discounted by 3%
