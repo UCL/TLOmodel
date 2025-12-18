@@ -38,7 +38,6 @@ class HealthBurden(Module):
         self.years_life_lost_stacked_time = None
         self.years_life_lost_stacked_age_and_time = None
         self.years_lived_with_disability = None
-        self.prevalence_of_diseases = None
         self.recognised_modules_names = None
         self.causes_of_disability = None
         self._causes_of_yll = None
