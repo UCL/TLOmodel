@@ -65,6 +65,14 @@ results_folder = get_scenario_outputs('full_system_costing-2025-12-15T162956Z.py
 # Estimate costs for 2018
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _years = [2018], _draws = [0], summarize = True, cost_only_used_staff=False)
 
+def scale_consumable_cost(cost_df, item_name, scaling_factor):
+    cost_df.loc[cost_df.cost_subgroup == item_name, 'cost'] = scaling_factor * cost_df.loc[cost_df.cost_subgroup == item_name, 'cost']
+    return cost_df
+
+input_costs = scale_consumable_cost(cost_df = input_costs,
+                                                         item_name = 'F-75 therapeutic milk, 102.5 g',
+                                                         scaling_factor = 102.5/500)
+
 # Manually create a dataframe of model costs and relevant calibration values
 def assign_item_codes_to_consumables(_df):
     # Retain only consumable costs
