@@ -33,10 +33,12 @@ def log_prevalences_from_sim_func(sim):
 def test_run_with_healthburden_with_real_diseases(tmpdir, seed):
     """Check that everything runs in the simple cases of Mockitis and Chronic Syndrome and that outputs are as expected."""
 
-    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': outputpath})
-    sim.register(*fullmodel(
-        resourcefilepath=resourcefilepath,
-        use_simplified_births=False, ))
+    sim = Simulation(start_date=start_date,
+                     seed=seed,
+                     resourcefilepath=resourcefilepath,
+                     log_config={'filename': 'test_log', 'directory': outputpath}
+                     )
+    sim.register(*fullmodel(use_simplified_births=False))
     sim.make_initial_population(n=popsize)
     sim.modules['HealthBurden'].parameters['logging_frequency_prevalence'] = 'day'
     sim.simulate(end_date=end_date)
@@ -91,12 +93,15 @@ def test_structure_logging_dummy_disease(tmpdir, seed):
     start_date = Date(2010, 1, 1)
     end_date = Date(2011, 1, 1)
 
-    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'tmp', 'directory': tmpdir})
+    sim = Simulation(start_date=start_date,
+                     seed=0,
+                     resourcefilepath=resourcefilepath,
+                     log_config={'filename': 'tmp', 'directory': tmpdir})
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        mockitis.DummyDisease(resourcefilepath=resourcefilepath, ),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthburden.HealthBurden(),
+        mockitis.DummyDisease(),
+        enhanced_lifestyle.Lifestyle(),
         sort_modules=False,
         check_all_dependencies=False
     )
