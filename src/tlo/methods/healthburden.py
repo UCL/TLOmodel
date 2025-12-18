@@ -730,28 +730,21 @@ class GetCurrentPrevalenceAndWriteToLog(RegularEvent, PopulationScopeEventMixin)
         super().__init__(module, frequency=frequency)
 
     def apply(self, population):
-        if not self.module.recognised_modules_names:
-            return
-        else:
-            # Calculate the population size
-            population_size = len(self.sim.population.props[self.sim.population.props['is_alive']])
-            prevalence_from_each_disease_module = {'population': [population_size]}
-            for disease_module_name in self.module.recognised_modules_names_for_prevalence:
-                if disease_module_name in ['DiseaseThatCausesA']:
-                    continue
-                else:
-                    disease_module = self.sim.modules[disease_module_name]
-                    prevalence_from_disease_module = disease_module.report_prevalence()
-                    if prevalence_from_disease_module is None:
-                        continue
-                    for key, value in prevalence_from_disease_module.items():
-                        prevalence_from_each_disease_module[key] = value
-        prevalence_from_each_disease_module = pd.DataFrame([prevalence_from_each_disease_module])
-        prevalence_from_each_disease_module.drop(
-                prevalence_from_each_disease_module.index.intersection(
-                    ['DiseaseThatCausesA']
-                ),
-                axis=0, inplace=True
-            )
-        self.module.prevalence_of_diseases = prevalence_from_each_disease_module
-        self.module.write_to_log_prevalence()
+
+        # dict for collecting results from each module
+        prevalence_from_each_disease_module = {}
+
+        # Calculate the population size and add it to the dict
+        prevalence_from_each_disease_module['population'] = sum(self.sim.population.props[self.sim.population.props['is_alive']])
+
+        # Collect results from all registered modules
+        for disease_module_name in self.module.recognised_modules_names:
+            prevalence_from_disease_module: Dict = self.sim.modules[disease_module_name].report_prevalence()
+            if prevalence_from_disease_module is not None:
+                assert isinstance(prevalence_from_disease_module, dict)
+                if set(prevalence_from_each_disease_module.keys()).intersection(prevalence_from_disease_module):
+                    warnings.warn(f'More than one module is using the same key in report_prevalence: '
+                                  f'{disease_module_name=}.')
+                prevalence_from_each_disease_module.update(prevalence_from_disease_module)
+
+        self.module.write_to_log_prevalence(pd.DataFrame(prevalence_from_each_disease_module))
