@@ -1,6 +1,7 @@
 """
 General utility functions for TLO analysis
 """
+import collections
 import fileinput
 import gzip
 import json
@@ -1460,3 +1461,8 @@ def mix_scenarios(*dicts) -> Dict:
                 d[mod].update({param: value})
 
     return d
+
+
+def flatten_nested_dict(my_dict, sep='_'):
+    """Flatten a nested dictionary into a single level dictionary."""
+    return pd.pandas.io.json._normalize.nested_to_record(my_dict, sep=sep)

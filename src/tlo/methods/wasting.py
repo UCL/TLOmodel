@@ -10,6 +10,7 @@ import pandas as pd
 from scipy.stats import norm
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -770,7 +771,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         alive_under5 = df[df.is_alive & (df.age_exact_years < p['max_age_child_wasting'])]
 
         if len(alive_under5) == 0:
-            return {'Wasting': {}}
+            return {'prev_moderate': 0.0, 'prev_severe': 0.0}
 
         # Count by wasting category
         mod_wasted = (alive_under5['un_WHZ_category'] == '-3<=WHZ<-2').sum()
@@ -779,11 +780,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         total_under5 = len(alive_under5)
 
         prevalence_dict = {
-            'moderate': mod_wasted / total_under5,
-            'severe': sev_wasted / total_under5
+            'prev_moderate': mod_wasted / total_under5,
+            'prev_severe': sev_wasted / total_under5
         }
 
-        return {'Wasting': prevalence_dict}
+        return flatten_nested_dict(prevalence_dict)
 
     def wasting_clinical_symptoms(self, person_id) -> None:
         """

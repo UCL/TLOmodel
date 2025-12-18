@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -760,7 +761,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
         prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
 
-        return {'Cervical Cancer': prevalence_by_age_group_sex}
+        return flatten_nested_dict(prevalence_by_age_group_sex)
+
     def do_at_generic_first_appt(
         self,
         person_id: int,

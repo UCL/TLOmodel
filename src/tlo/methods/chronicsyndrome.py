@@ -284,7 +284,8 @@ class ChronicSyndrome(Module, GenericFirstAppointmentsMixin):
         return health_values
 
     def report_prevalence(self):
-        return {'ChronicSyndrome':None}
+        return {}
+
     def do_at_generic_first_appt_emergency(
         self,
         person_id: int,

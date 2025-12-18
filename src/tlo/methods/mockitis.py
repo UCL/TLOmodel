@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -323,7 +324,7 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
                     total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
                     prevalence_by_age_group_sex[age_group][sex] = total_prev
 
-        return {'Mockitis': prevalence_by_age_group_sex}
+        return flatten_nested_dict(prevalence_by_age_group_sex)
 
     def do_at_generic_first_appt_emergency(
         self,

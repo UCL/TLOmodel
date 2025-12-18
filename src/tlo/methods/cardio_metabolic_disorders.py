@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -863,7 +864,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
 
                 prevalence_dict[condition] = prevalence_by_age_group_sex
 
-        return prevalence_dict
+        return flatten_nested_dict(prevalence_dict)
 
     def on_hsi_alert(self, person_id, treatment_id):
         """

@@ -18,6 +18,7 @@ from tlo import (
     logging,
     util,
 )
+from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour, pregnancy_helper_functions, pregnancy_supervisor_lm
@@ -953,7 +954,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
 
-        return {'PregnancySupervisor': prevalence_by_age_group_sex}
+        return flatten(prevalence_by_age_group_sex)
 
     def pregnancy_supervisor_property_reset(self, id_or_index):
         """

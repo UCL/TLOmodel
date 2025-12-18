@@ -10,6 +10,7 @@ from typing import Optional
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, hiv
@@ -1059,7 +1060,7 @@ class Tb(Module):
 
         prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
 
-        return {'TB': prevalence_by_age_group_sex}
+        return flatten(prevalence_by_age_group_sex)
 
     def calculate_untreated_proportion(self, population, strain):
         """
@@ -2916,7 +2917,9 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ACTIVE
         num_active_tb_cases = len(df[(df.tb_inf == "active") & df.is_alive])
         prev_active = num_active_tb_cases / len(df[df.is_alive])
+
         assert prev_active <= 1
+
         # prevalence of active TB in adults
         num_active_adult = len(
             df[(df.tb_inf == "active") & (df.age_years >= 15) & df.is_alive]

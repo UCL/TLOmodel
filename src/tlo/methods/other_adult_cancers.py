@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -624,7 +625,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
 
         prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
 
-        return {'Other Adult Cancers': prevalence_by_age_group_sex}
+        return flatten_nested_dict(prevalence_by_age_group_sex)
 
     def do_at_generic_first_appt(
         self,

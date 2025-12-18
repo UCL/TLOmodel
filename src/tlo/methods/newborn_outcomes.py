@@ -1330,7 +1330,8 @@ class NewbornOutcomes(Module):
         return health_values_df
 
     def report_prevalence(self):
-        return None
+        return {}
+
     def run_if_care_of_the_receives_postnatal_check_cant_run(self, hsi_event):
         """
         This function is called by HSI_NewbornOutcomes_ReceivesPostnatalCheck if the HSI is unable to

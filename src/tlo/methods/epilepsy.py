@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -305,7 +306,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
 
         prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
 
-        return {'Epilepsy': prevalence_by_age_group_sex}
+        return flatten(prevalence_by_age_group_sex)
 
     def transition_seizure_stat(self):
         """

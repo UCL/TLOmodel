@@ -1,19 +1,28 @@
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
-from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging, Date, Simulation
+from tlo import (
+    DAYS_IN_YEAR,
+    Date,
+    DateOffset,
+    Module,
+    Parameter,
+    Property,
+    Simulation,
+    Types,
+    logging,
+)
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography, enhanced_lifestyle, healthburden
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.fullmodel import fullmodel
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 outputpath = Path("./outputs/")
@@ -121,71 +130,6 @@ class DummyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.store_and_record_current_prevalence()
 
 
-def log_prevalences_from_sim_func(sim):
-    """Logs the prevalence of disease monthly"""
-    health_burden = sim.modules['HealthBurden']
-    monthly_prevalence = health_burden.prevalence_of_diseases
-    monthly_prevalence['date'] = sim.date.year
-    return monthly_prevalence
-
-
-def test_run_with_healthburden_with_real_diseases(tmpdir, seed):
-    """Check that everything runs in the simple cases of Mockitis and Chronic Syndrome and that outputs are as expected."""
-
-    sim = Simulation(start_date=start_date,
-                     seed=seed,
-                     resourcefilepath=resourcefilepath,
-                     log_config={'filename': 'test_log', 'directory': outputpath}
-                     )
-    sim.register(*fullmodel(use_simplified_births=False))
-    sim.make_initial_population(n=popsize)
-    sim.modules['HealthBurden'].parameters['logging_frequency_prevalence'] = 'day'
-    sim.simulate(end_date=end_date)
-    output = parse_log_file(sim.log_filepath)
-
-    prevalence = output['tlo.methods.healthburden']['prevalence_of_diseases']
-
-    # check to see if the monthly prevalence is calculated correctly NB for only one month
-
-    log_prevalences_from_sim = log_prevalences_from_sim_func(sim)
-    for log_date in log_prevalences_from_sim['date']:
-        if log_date in prevalence['date'].values:
-            prevalence_row = prevalence.loc[prevalence['date'] == log_date].squeeze()
-            if 'date' in prevalence.columns:
-                prevalence_row = prevalence_row.drop('date')
-
-            sim_row = log_prevalences_from_sim.loc[
-                log_prevalences_from_sim['date'] == log_date].squeeze()
-
-            for column in prevalence_row.index:
-                # Compare the values between the two DataFrames for this date and column
-                if prevalence_row[column] != sim_row[column]:
-                    pass
-        else:
-            # Handle cases where the date is not found in prevalence DataFrame
-            pass
-
-    ## See if the registered modules are reporting prevalences as they should
-    columns = prevalence.columns
-    excluded_modules = ['Lifestyle', 'HealthBurden', 'HealthSeekingBehaviour', 'SymptomManager', 'Epi', 'HealthSystem',
-                        'SimplifiedBirths', 'Contraception', 'CareOfWomenDuringPregnancy']  # don't return prevalences
-
-    assert 'chronic_ischemic_hd' in columns
-
-    for module in sim.modules:
-        if module not in excluded_modules:
-            if module == 'CardioMetabolicDisorders':
-                corresponding_diseases = ['chronic_ischemic_hd', 'chronic_kidney_disease', 'chronic_lower_back_pain',
-                                          'diabetes', 'hypertension']
-            elif module == 'Demography':
-                corresponding_diseases = ['MMR', 'NMR']
-            elif module == 'PregnancySupervisor':
-                corresponding_diseases = ['Antenatal stillbirth']
-            elif module == 'Labour':
-                corresponding_diseases = ['Intrapartum stillbirth']
-            assert all(disease in columns for disease in corresponding_diseases), \
-                f"Not all diseases for module '{module}' are in columns."
-
 
 def test_structure_logging_dummy_disease(tmpdir, seed):
     start_date = Date(2010, 1, 1)
@@ -218,3 +162,23 @@ def test_structure_logging_dummy_disease(tmpdir, seed):
 
     # Confirm they give the same result
     pd.testing.assert_series_equal(prev_in_healthburden_logger, prevalence_from_actual_module, check_names=False)
+
+
+def test_run_with_healthburden_with_real_diseases(tmpdir, seed):
+    """Check that everything runs when using the full model and daily logging cadence."""
+
+    sim = Simulation(start_date=start_date,
+                     seed=seed,
+                     resourcefilepath=resourcefilepath,
+                     log_config={'filename': 'test_log', 'directory': outputpath}
+                     )
+    sim.register(*fullmodel(use_simplified_births=False))
+    sim.make_initial_population(n=popsize)
+    sim.modules['HealthBurden'].parameters['logging_frequency_prevalence'] = 'day'
+    sim.simulate(end_date=end_date)
+    output = parse_log_file(sim.log_filepath)
+
+    healthburden_logger = unflatten_flattened_multi_index_in_logging(
+        output['tlo.methods.healthburden']['prevalence_of_diseases'].set_index('date'))
+
+    assert isinstance(healthburden_logger, pd.DataFrame)

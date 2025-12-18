@@ -25,6 +25,7 @@ from tlo import (
     Types,
     logging,
 )
+from tlo.analysis.utils import flatten_nested_dict
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 from tlo.methods.causes import (
@@ -440,12 +441,11 @@ class Demography(Module):
                 maternal_mortality_rate = maternal_deaths/live_births * 1000
             print(live_births)
 
-        metrics_dict = {
+        return {
             'NMR': neonatal_mortality_rate,
             'MMR': maternal_mortality_rate,
             'live_births': live_births
         }
-        return metrics_dict
 
     def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
         """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
