@@ -120,6 +120,25 @@ input_costs_variable_discounting = estimate_input_cost_of_scenarios(results_fold
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = discount_rate_lomas, summarize = True)
 
+# Temporary fix to the cost of F-75 Therapeutic milk
+# The amount currently listed as 102.5 g should, in fact, be 102.5 ml. A sachet of 102.5 g is used to prepare 500 ml of
+# F-75 milk. So it should have been: 102.5÷500×102.5 = 21 g per feed (every 3 hours for 3 days)
+
+def scale_consumable_cost(cost_df, item_name, scaling_factor):
+    cost_df.loc[cost_df.cost_subgroup == item_name, 'cost'] = scaling_factor * cost_df.loc[cost_df.cost_subgroup == item_name, 'cost']
+    return cost_df
+
+input_costs = scale_consumable_cost(cost_df = input_costs,
+                                                         item_name = 'F-75 therapeutic milk, 102.5 g',
+                                                         scaling_factor = 102.5/500)
+input_costs_undiscounted = scale_consumable_cost(cost_df = input_costs_undiscounted,
+                                                         item_name = 'F-75 therapeutic milk, 102.5 g',
+                                                         scaling_factor = 102.5/500)
+input_costs_variable_discounting = scale_consumable_cost(cost_df = input_costs_variable_discounting,
+                                                         item_name = 'F-75 therapeutic milk, 102.5 g',
+                                                         scaling_factor = 102.5/500)
+
+
 # Get per capita estimates:
 
 # Get population size for per capita estimates
