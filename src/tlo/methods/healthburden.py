@@ -40,7 +40,6 @@ class HealthBurden(Module):
         self.years_lived_with_disability = None
         self.prevalence_of_diseases = None
         self.recognised_modules_names = None
-        self.recognised_modules_names_for_prevalence = None
         self.causes_of_disability = None
         self._causes_of_yll = None
         self._causes_of_dalys = None
