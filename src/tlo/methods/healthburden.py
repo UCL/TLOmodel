@@ -557,7 +557,7 @@ class HealthBurden(Module):
 
         self._years_written_to_log += [year]
 
-    def write_to_log_prevalence(self):
+    def write_to_log_prevalence(self, prevalence_of_diseases: pd.DataFrame):
         """Write to the log the prevalence of conditions.
         N.B. This is called at the end of the simulation as well as at the end of each month, so we need to check that
         the year is not being written to the log more than once."""
@@ -585,7 +585,7 @@ class HealthBurden(Module):
                         'RTI: individuals who have rt_inj_severity != none'
                         'schisto: individuals who have Low-infection or High-infection, any parasite'
                         'TB: individuals who have tb_inf = active',
-            df=self.prevalence_of_diseases,
+            df=prevalence_of_diseases,
             force_cols=self.prevalence_of_diseases.columns
         )
 
