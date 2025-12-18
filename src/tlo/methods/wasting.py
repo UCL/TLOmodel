@@ -758,6 +758,33 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                               df.un_am_nutritional_oedema] = self.daly_wts['mod_wasting_with_oedema']
         return total_daly_values
 
+    def report_prevalence(self):
+        """
+        Reports prevalence of wasting categories for all alive children under 5.
+        Returns prevalence proportions for moderate and severe wasting.
+        """
+        df = self.sim.population.props
+        p = self.parameters
+
+        # Select alive children under 5
+        alive_under5 = df[df.is_alive & (df.age_exact_years < p['max_age_child_wasting'])]
+
+        if len(alive_under5) == 0:
+            return {'Wasting': {}}
+
+        # Count by wasting category
+        mod_wasted = (alive_under5['un_WHZ_category'] == '-3<=WHZ<-2').sum()
+        sev_wasted = (alive_under5['un_WHZ_category'] == 'WHZ<-3').sum()
+
+        total_under5 = len(alive_under5)
+
+        prevalence_dict = {
+            'moderate': mod_wasted / total_under5,
+            'severe': sev_wasted / total_under5
+        }
+
+        return {'Wasting': prevalence_dict}
+
     def wasting_clinical_symptoms(self, person_id) -> None:
         """
         Assigns clinical symptoms to the new acute malnutrition case
