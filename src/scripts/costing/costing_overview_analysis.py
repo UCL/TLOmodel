@@ -73,6 +73,36 @@ discount_rate = 0.03
 discount_rate_lomas = {2023: 0.0036, 2024: 0.0040, 2025: 0.0039, 2026: 0.0042, 2027: 0.0042, 2028: 0.0041,
                        2029: 0.0041, 2030: 0.0040}# get the list of discount rates from 2023 until 2030
 
+# Function to extract number of HSIs
+def get_hsi_summary(results_folder, key, var, do_scaling = True):
+    def flatten_nested_dict(d, parent_key=()):
+        items = {}
+        for k, v in d.items():
+            new_key = parent_key + (k,)
+            if isinstance(v, dict):
+                items.update(flatten_nested_dict(v, new_key))
+            else:
+                items[new_key] = v
+        return items
+
+    def get_counts_of_hsi_events(_df: pd.Series):
+        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
+        _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
+        flat_series = _df[(var)].apply(flatten_nested_dict)
+
+        return flat_series.apply(pd.Series).stack().stack()
+
+
+    count = compute_summary_statistics(extract_results(
+        Path(results_folder),
+        module='tlo.methods.healthsystem.summary',
+        key=key,
+        custom_generate_series=get_counts_of_hsi_events,
+        do_scaling=do_scaling,
+    ), central_measure='mean')
+
+    return count
+
 # Estimate standard input costs of scenario
 # -----------------------------------------------------------------------------------------------------------------------
 # Standard 3% discount rate
@@ -202,38 +232,12 @@ art_actual = tlo_availability_df[(tlo_availability_df.item_code == 2671) &
 art_new = tlo_availability_df[(tlo_availability_df.item_code == 2671) &
                     (tlo_availability_df.Facility_Level.isin(['1a','1b']))]['available_prop_scenario6'].mean()
 
-
-print(f"First, the changes are driven by which constraint is binding. For example, the pattern for the Jadelle"
-      f" contraceptive implant differs markedly from that of adult antiretroviral therapy (ART). "
-      f"Expanding HRH alone increases the cost of Jadelle by just "
-      f"{(cost_of_jadelle[1]/cost_of_jadelle[0] - 1)*100:.2f}\%, whereas improved consumable availability results in a "
-      f"{(cost_of_jadelle[2]/cost_of_jadelle[0] - 1)*100:.2f}\% increase, rising to "
-      f"{(cost_of_jadelle[3]/cost_of_jadelle[0] - 1)*100:.2f}\% when both HRH and consumables expand. "
-      f"In contrast, ART costs rise more modestly across the same scenarios "
-      f"({(cost_of_hiv_treatment[1]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
-      f"{(cost_of_hiv_treatment[2]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, and "
-      f"{(cost_of_hiv_treatment[3]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%). "
-      f"This reflects differences in baseline availability: ART already had very high availability in level 1a/1b facilities "
-      f"({art_actual*100:.2f}\%), "
-      f"and the improved supply chain scenario increased this by only around "
-      f"{(art_new - art_actual)*100:.0f} percentage points. "
-      f"For Jadelle, availability increased from "
-      f"{(jadelle_actual)*100:.2f}\% by "
-      f"{(jadelle_new - jadelle_actual)*100:.0f} percentage points, "
-      f"meaning consumable availability was a stronger binding constraint for this service.")
-
-print(f"Second, cost changes do not scale linearly with changes in service coverage or system capacity. "
-      f"The dynamic nature of the model aggregates multiple interacting processes — such as population growth, "
-      f"prevention coverage, HIV prevalence, testing rates, testing yields, etc. — into the resulting cost estimates. "
-      f"Consequently, while ART costs increase progressively across scenarios "
-      f"({(cost_of_hiv_treatment[1]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
-      f"{(cost_of_hiv_treatment[2]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
-      f"{(cost_of_hiv_treatment[3]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%), "
-      f"the cost of HIV testing shows a different pattern: a small increase under expanded HRH "
-      f"({(cost_of_hiv_testing[1]/cost_of_hiv_testing[0] - 1)*100:.2f}\%) "
-      f"but reductions of "
-      f"{(cost_of_hiv_testing[2]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% and "
-      f"{(cost_of_hiv_testing[3]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% under the improved consumables and combined scenarios.")
+# Count of HIV testing service delivered
+count_by_treatment_id = get_hsi_summary(results_folder, key = 'HSI_Event_non_blank_appt_footprint',
+                                        var = "TREATMENT_ID", do_scaling = True)
+hiv_test_services = count_by_treatment_id[count_by_treatment_id.index.get_level_values(1) == 'Hiv_Test']
+idx = pd.IndexSlice
+hiv_test_services = hiv_test_services[hiv_test_services.index.get_level_values(0).isin(list(range(2023,2031)))].loc[:, idx[:, 'central']].sum()
 
 # Browse HIV logs
 def get_hiv_summary(results_folder, key, var, summarise_func = 'sum', do_scaling = True):
@@ -265,6 +269,40 @@ testing_yield = get_hiv_summary(results_folder, key = 'hiv_program_coverage', va
 prop_adults_exposed_to_behav_intv = get_hiv_summary(results_folder, key = 'hiv_program_coverage', var = 'prop_adults_exposed_to_behav_intv', summarise_func = 'mean', do_scaling = False)
 per_capita_testing_rate = get_hiv_summary(results_folder, key = 'hiv_program_coverage', var = 'per_capita_testing_rate', summarise_func = 'mean', do_scaling = False)
 hiv_prev_adult_15plus = get_hiv_summary(results_folder, key = 'summary_inc_and_prev_for_adults_and_children_and_fsw', var = 'hiv_prev_adult_15plus', summarise_func = 'mean', do_scaling = False)
+
+print(f"First, the changes are driven by which constraint is binding. For example, the pattern for the Jadelle"
+      f" contraceptive implant differs markedly from that of adult antiretroviral therapy (ART). "
+      f"Expanding HRH alone increases the cost of Jadelle by just "
+      f"{(cost_of_jadelle[1]/cost_of_jadelle[0] - 1)*100:.2f}\%, whereas improved consumable availability results in a "
+      f"{(cost_of_jadelle[2]/cost_of_jadelle[0] - 1)*100:.2f}\% increase, rising to "
+      f"{(cost_of_jadelle[3]/cost_of_jadelle[0] - 1)*100:.2f}\% when both HRH and consumables expand. "
+      f"In contrast, ART costs rise more modestly across the same scenarios "
+      f"({(cost_of_hiv_treatment[1]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
+      f"{(cost_of_hiv_treatment[2]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, and "
+      f"{(cost_of_hiv_treatment[3]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%). "
+      f"This reflects differences in baseline availability: ART already had very high availability in level 1a/1b facilities "
+      f"({art_actual*100:.2f}\%), "
+      f"and the improved supply chain scenario increased this by only around "
+      f"{(art_new - art_actual)*100:.0f} percentage points. "
+      f"For Jadelle, availability increased from "
+      f"{(jadelle_actual)*100:.2f}\% by "
+      f"{(jadelle_new - jadelle_actual)*100:.0f} percentage points, "
+      f"meaning consumable availability was a stronger binding constraint for this service.")
+
+print(f"Second, cost changes do not scale linearly with changes in system capacity. The dynamic nature of the model "
+      f"aggregates multiple interacting processes—including population growth, prevention coverage, "
+      f" prevalence, testing rates and yields, and competition between appointments (ADD REFERENCE). "
+      f"Consequently, while ART costs increase progressively across scenarios "
+      f"({(cost_of_hiv_treatment[1]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
+      f"{(cost_of_hiv_treatment[2]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%, "
+      f"{(cost_of_hiv_treatment[3]/cost_of_hiv_treatment[0] - 1)*100:.2f}\%), "
+      f"the cost of HIV testing shows a different pattern: a small increase under expanded HRH "
+      f"({(cost_of_hiv_testing[1]/cost_of_hiv_testing[0] - 1)*100:.2f}\%) "
+      f"but reductions of "
+      f"{(cost_of_hiv_testing[2]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% and "
+      f"{(cost_of_hiv_testing[3]/cost_of_hiv_testing[0] - 1)*-100:.2f}\% under the improved consumables and combined scenarios."
+      f"These reductions arise because increased consumable availability intensifies competition with other services, "
+      f"leading to fewer HIV testing appointments being delivered.")
 
 # Get figures for overview paper
 # -----------------------------------------------------------------------------------------------------------------------
