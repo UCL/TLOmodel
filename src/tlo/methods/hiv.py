@@ -1297,13 +1297,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
 
         if p['type_of_scaleup'] == 'reduce_HIV_test':
-            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
-                                                                       "annual_testing_rate_adults"] * 0.75
-            p["selftest_available"] = False
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {196: 0.25})
 
-            # ANC testing - value for mothers and infants testing
-            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75
-            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.5
+            p["annual_rate_selftest"] = 0
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.5 # ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.5 # infant screening
+
+            p["selftest_available"] = False
 
         if p['type_of_scaleup'] == 'remove_VL':
             # update consumables availability (item 190 viral load test) to 0
@@ -1367,12 +1370,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         if p['type_of_scaleup'] == 'remove_all':
             # testing rates
-            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
-                                                                       "annual_testing_rate_adults"] * 0.75
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {196: 0.25})
 
-            # ANC testing - value for mothers and infants testing
-            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75
-            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.5
+            p["annual_rate_selftest"] = 0
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.5 # ANC-based screening
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.5 # infant screening
+
+            p["selftest_available"] = False
 
             # remove VL
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
