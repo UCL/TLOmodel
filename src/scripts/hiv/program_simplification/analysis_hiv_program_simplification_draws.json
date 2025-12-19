@@ -71,7 +71,7 @@
       "draw_number": 7,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "remove_IPT"
+          "type_of_scaleup": "switch_to_injectable_prep"
         }
       },
       "draw_name": "7"
@@ -80,7 +80,7 @@
       "draw_number": 8,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "target_IPT"
+          "type_of_scaleup": "remove_IPT"
         }
       },
       "draw_name": "8"
@@ -89,7 +89,7 @@
       "draw_number": 9,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "remove_vmmc"
+          "type_of_scaleup": "target_IPT"
         }
       },
       "draw_name": "9"
@@ -98,7 +98,7 @@
       "draw_number": 10,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "target_all"
+          "type_of_scaleup": "remove_vmmc"
         }
       },
       "draw_name": "10"
@@ -107,7 +107,7 @@
       "draw_number": 11,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "remove_all"
+          "type_of_scaleup": "target_all"
         }
       },
       "draw_name": "11"
@@ -116,12 +116,21 @@
       "draw_number": 12,
       "parameters": {
         "Hiv": {
-          "type_of_scaleup": "target"
+          "type_of_scaleup": "remove_all"
         }
       },
       "draw_name": "12"
+    },
+    {
+      "draw_number": 13,
+      "parameters": {
+        "Hiv": {
+          "type_of_scaleup": "target"
+        }
+      },
+      "draw_name": "13"
     }
   ],
-  "commit": "c0af27cbb0708984566d45affb92d77ca81982c5",
-  "github": "https://github.com/UCL/TLOmodel/tree/c0af27cbb0708984566d45affb92d77ca81982c5"
+  "commit": "3cb3c72335f02036af471f41923f9b076fb8b056",
+  "github": "https://github.com/UCL/TLOmodel/tree/3cb3c72335f02036af471f41923f9b076fb8b056"
 }
