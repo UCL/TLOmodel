@@ -927,7 +927,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
 
         # Select alive individuals with pregnancy complications
-        complications_df = df[
+        complications_df = df.loc[
             (df['is_alive']) &
             (df['is_pregnant']) &
             (
@@ -942,16 +942,11 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             )
             ]
 
-        alive_df = df[df['is_alive']]
-
-        if len(alive_df) == 0:
-            return {'PregnancySupervisor': {}}
-
         prevalence_counts = (
             complications_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
         )
 
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+        prevalence_by_age_group_sex = (prevalence_counts / df.is_alive.sum()).to_dict(orient='index')
 
         return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
 
