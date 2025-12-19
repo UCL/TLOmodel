@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 
 from tlo import logging
+from tlo.notify import notifier
+
 
 logger = logging.getLogger('tlo.methods.healthsystem')
 logger_summary = logging.getLogger('tlo.methods.healthsystem.summary')
@@ -249,7 +251,11 @@ class Consumables:
                              essential_item_codes: dict,
                              optional_item_codes: Optional[dict] = None,
                              to_log: bool = True,
+                             to_broadcast: bool = True,
                              treatment_id: Optional[str] = None,
+                             target: Optional[int] = None,
+                             event_name: Optional[str] = None,
+                             module: Optional[str] = None
                              ) -> dict:
         """This is a private function called by 'get_consumables` in the `HSI_Event` base class. It queries whether
         item_codes are currently available at a particular Facility_ID and logs the request.
@@ -282,28 +288,31 @@ class Consumables:
                                                              override_probability=override_probability)
 
         # Log the request and the outcome:
-        if to_log:
+        if to_log or to_broadcast:
             items_available = {k: v for k, v in _all_item_codes.items() if available[k]}
             items_not_available = {k: v for k, v in _all_item_codes.items() if not available[k]}
 
             # Log items used if all essential items are available
             items_used = items_available if all(available.get(k, False) for k in essential_item_codes) else {}
 
-            logger.info(
-                key='Consumables',
-                data={
-                    'TREATMENT_ID': treatment_id or "",
-                    'Item_Available': str(items_available),
-                    'Item_NotAvailable': str(items_not_available),
-                    'Item_Used': str(items_used),
-                },
-                description="Record of requested and used consumable items."
-            )
-            self._summary_counter.record_availability(
-                items_available=items_available,
-                items_not_available=items_not_available,
-                items_used=items_used,
-            )
+            if to_log:
+                logger.info(
+                    key='Consumables',
+                    data={
+                        'TREATMENT_ID': treatment_id or "",
+                        'Item_Available': str(items_available),
+                        'Item_NotAvailable': str(items_not_available),
+                        'Item_Used': str(items_used),
+                    },
+                    description="Record of requested and used consumable items."
+                )
+                self._summary_counter.record_availability(
+                    items_available=items_available,
+                    items_not_available=items_not_available,
+                    items_used=items_used,
+                )
+            
+            notifier.dispatch("consumables._request_consumables", data={'target' : target, 'event_name' : event_name, 'Item_Available': str(items_available),'Item_NotAvailable': str(items_not_available), 'Item_Used': str(items_used)})
 
         # Return the result of the check on availability
         return available
