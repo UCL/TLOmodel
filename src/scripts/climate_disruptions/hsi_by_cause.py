@@ -1,12 +1,10 @@
 import argparse
 from pathlib import Path
-from typing import Tuple
 
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy import stats
-import matplotlib.dates as mdates
 
 from tlo import Date
 from tlo.analysis.utils import (
@@ -15,32 +13,28 @@ from tlo.analysis.utils import (
     get_color_short_treatment_id
 )
 
-min_year = 2025
-max_year = 2041
-spacing_of_years = 1
+# Configuration
+MIN_YEAR = 2025
+MAX_YEAR = 2041
+SPACING_OF_YEARS = 1
 PREFIX_ON_FILENAME = '1'
-climate_sensitivity_analysis = True
-parameter_sensitivity_analysis = False
-main_text = True
-scenario_names_all = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low",
-                      "SSP 2.45 Mean", "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
 
-if climate_sensitivity_analysis:
-    scenario_names = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", "SSP 2.45 High", "SSP 2.45 Low",
-                      "SSP 2.45 Mean", "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"]
-    suffix = "climate_SA"
-    scenarios_of_interest = range(len(scenario_names))
-if parameter_sensitivity_analysis:
-    scenario_names_all = range(0, 10, 1)
-    scenario_names = scenario_names_all
-    suffix = "parameter_SA"
+# Analysis type flags
+CLIMATE_SENSITIVITY_ANALYSIS = True
+PARAMETER_SENSITIVITY_ANALYSIS = False
+MAIN_TEXT = True
 
-if main_text:
-    scenario_names = ["Baseline", "SSP 2.45 Mean", ]
-    suffix = "main_text"
-    scenarios_of_interest = [0, 1]
+# Scenario definitions
+SCENARIO_NAMES_ALL = [
+    "Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean",
+    "SSP 2.45 High", "SSP 2.45 Low", "SSP 2.45 Mean",
+    "SSP 5.85 High", "SSP 5.85 Low", "SSP 5.85 Mean"
+]
 
-precipitation_files = {
+SCENARIO_COLOURS = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167'] * 4
+
+# Precipitation file paths
+PRECIPITATION_FILES = {
     "Baseline": "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
     "SSP 1.26 High": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp126/highest_monthly_prediction_weather_by_facility.csv",
     "SSP 1.26 Low": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp126/lowest_monthly_prediction_weather_by_facility.csv",
@@ -53,7 +47,24 @@ precipitation_files = {
     "SSP 5.85 Mean": "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/ssp585/mean_monthly_prediction_weather_by_facility.csv",
 }
 
-scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167'] * 4
+# Determine scenario configuration based on analysis type
+if CLIMATE_SENSITIVITY_ANALYSIS:
+    scenario_names = SCENARIO_NAMES_ALL
+    suffix = "climate_SA"
+    scenarios_of_interest = range(len(scenario_names))
+elif PARAMETER_SENSITIVITY_ANALYSIS:
+    scenario_names = list(range(0, 10, 1))
+    suffix = "parameter_SA"
+    scenarios_of_interest = range(len(scenario_names))
+else:
+    scenario_names = SCENARIO_NAMES_ALL
+    suffix = "default"
+    scenarios_of_interest = range(len(scenario_names))
+
+if MAIN_TEXT:
+    scenario_names = ["Baseline", "SSP 2.45 Mean"]
+    suffix = "main_text"
+    scenarios_of_interest = [0, 1]
 
 
 def paired_draw_significance(
@@ -67,9 +78,9 @@ def paired_draw_significance(
 
     Parameters
     ----------
-    baseline_draws : pd.Series
+    baseline : pd.Series
         Draw-level values for the baseline scenario
-    climate_draws : pd.Series
+    climate : pd.Series
         Draw-level values for the climate scenario
     alpha_levels : tuple
         Significance thresholds (default: 0.05, 0.01, 0.001)
@@ -83,20 +94,14 @@ def paired_draw_significance(
     details : dict (optional)
         Contains p-value, median difference, and 95% CI
     """
-
-
-    # Paired differences
     diff = climate - baseline
 
-    # If all differences are zero, no significance
     if np.allclose(diff, 0):
         return ('', {}) if return_details else ''
 
-    # Wilcoxon signed-rank test (two-sided)
     try:
         stat, p_value = stats.wilcoxon(diff, zero_method='wilcox', alternative='two-sided')
     except ValueError:
-        # All diffs zero or invalid
         return ('', {}) if return_details else ''
 
     # Determine significance stars
@@ -112,7 +117,6 @@ def paired_draw_significance(
     if not return_details:
         return star
 
-    # Effect size + CI (distribution-free)
     median_diff = np.median(diff)
     lower_ci, upper_ci = np.percentile(diff, [2.5, 97.5])
 
@@ -127,19 +131,13 @@ def paired_draw_significance(
     return star, details
 
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
-    """Produce standard set of plots describing the healthcare system utilization across scenarios.
-    - We estimate the healthcare system impact through total treatments and never-ran appointments.
-    - Now includes weather-delayed and weather-cancelled appointments.
-    """
+def create_data_extraction_functions(target_period):
+    """Create data extraction functions with the specified target period."""
 
-    TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
-
-    # Definitions of general helper functions
     def sum_event_counts(_df, column_name):
-        """Generic function to sum event counts from a column of dictionaries"""
+        """Generic function to sum event counts from a column of dictionaries."""
         _df["date"] = pd.to_datetime(_df["date"])
-        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
+        _df = _df.loc[_df["date"].between(*target_period)]
 
         total = {}
         for d in _df[column_name]:
@@ -154,449 +152,160 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return sum_event_counts(_df, "never_ran_hsi_event_key_to_counts")
 
     def get_num_treatments_total_delayed(_df):
-        """Count total number of delayed HSI events from full info logger"""
+        """Count total number of delayed HSI events."""
         _df["date"] = pd.to_datetime(_df["date"])
-        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
-
-        # Each row is one delayed event
+        _df = _df.loc[_df["date"].between(*target_period)]
         return pd.Series(len(_df), name="total")
 
     def get_num_treatments_total_cancelled(_df):
-        """Count total number of cancelled HSI events from full info logger"""
+        """Count total number of cancelled HSI events."""
         _df["date"] = pd.to_datetime(_df["date"])
-        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
-
-        # Each row is one cancelled event
+        _df = _df.loc[_df["date"].between(*target_period)]
         return pd.Series(len(_df), name="total")
 
     def get_population_total(_df):
-        """Returns the total population across the entire period"""
+        """Returns the total population across the entire period."""
         _df["date"] = pd.to_datetime(_df["date"])
-        filtered_df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
+        filtered_df = _df.loc[_df["date"].between(*target_period)]
         numeric_df = filtered_df.drop(columns=["female", "male"], errors="ignore")
-        # Get the mean population across years
         population_mean = numeric_df.sum(numeric_only=True).mean()
         return pd.Series(population_mean, name="population")
 
-    target_year_sequence = range(min_year, max_year, spacing_of_years)
+    return {
+        'get_num_treatments_total': get_num_treatments_total,
+        'get_num_treatments_never_ran': get_num_treatments_never_ran,
+        'get_num_treatments_total_delayed': get_num_treatments_total_delayed,
+        'get_num_treatments_total_cancelled': get_num_treatments_total_cancelled,
+        'get_population_total': get_population_total
+    }
 
-    all_draws_treatments_mean = []
-    all_draws_treatments_lower = []
-    all_draws_treatments_upper = []
 
-    all_draws_never_ran_mean = []
-    all_draws_never_ran_lower = []
-    all_draws_never_ran_upper = []
+def extract_yearly_data(results_folder, target_year, extraction_functions, draw, scenario_name):
+    """Extract data for a specific year and scenario."""
+    target_period = (Date(target_year, 1, 1), Date(target_year, 12, 31))
 
-    all_draws_weather_delayed_mean = []
-    all_draws_weather_delayed_lower = []
-    all_draws_weather_delayed_upper = []
+    data = {}
 
-    all_draws_weather_cancelled_mean = []
-    all_draws_weather_cancelled_lower = []
-    all_draws_weather_cancelled_upper = []
+    # Total treatments
+    data['treatments'] = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='hsi_event_counts',
+            custom_generate_series=extraction_functions['get_num_treatments_total'],
+            do_scaling=True
+        ),
+        only_mean=False,
+        collapse_columns=True,
+    )[draw]
 
-    all_draws_treatments_mean_1000 = []
-    all_draws_treatments_lower_1000 = []
-    all_draws_treatments_upper_1000 = []
+    # Never ran appointments
+    data['never_ran'] = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='never_ran_hsi_event_counts',
+            custom_generate_series=extraction_functions['get_num_treatments_never_ran'],
+            do_scaling=True
+        ),
+        only_mean=False,
+        collapse_columns=True,
+    )[draw]
 
-    all_draws_never_ran_mean_1000 = []
-    all_draws_never_ran_lower_1000 = []
-    all_draws_never_ran_upper_1000 = []
-
-    all_draws_weather_delayed_mean_1000 = []
-    all_draws_weather_cancelled_mean_1000 = []
-
-    # Store raw data for significance testing
-    all_years_by_draw = {}
-
-    for draw in range(len(scenario_names_all)):
-        if draw not in scenarios_of_interest:
-            continue
-        make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
-
-        all_years_data_treatments_mean = {}
-        all_years_data_treatments_upper = {}
-        all_years_data_treatments_lower = {}
-
-        all_years_data_never_ran_mean = {}
-        all_years_data_never_ran_upper = {}
-        all_years_data_never_ran_lower = {}
-
-        all_years_data_weather_delayed_mean = {}
-        all_years_data_weather_delayed_upper = {}
-        all_years_data_weather_delayed_lower = {}
-
-        all_years_data_weather_cancelled_mean = {}
-        all_years_data_weather_cancelled_upper = {}
-        all_years_data_weather_cancelled_lower = {}
-
-        all_years_data_population_mean = {}
-        all_years_data_population_lower = {}
-        all_years_data_population_upper = {}
-
-        for target_year in target_year_sequence:
-            TARGET_PERIOD = (
-                Date(target_year, 1, 1), Date(target_year, 12, 31))
-
-            # Total treatments
-            num_treatments_total = summarize(extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='hsi_event_counts',
-                custom_generate_series=get_num_treatments_total,
-                do_scaling=True
-            ),
+    # Weather-related disruptions
+    if scenario_name == 'Baseline':
+        data['weather_delayed'] = {
+            'mean': pd.Series([0], name='mean'),
+            'lower': pd.Series([0], name='lower'),
+            'upper': pd.Series([0], name='upper')
+        }
+        data['weather_cancelled'] = {
+            'mean': pd.Series([0], name='mean'),
+            'lower': pd.Series([0], name='lower'),
+            'upper': pd.Series([0], name='upper')
+        }
+    else:
+        if MAIN_TEXT:
+            data['weather_delayed'] = summarize(
+                extract_results(
+                    results_folder,
+                    module="tlo.methods.healthsystem.summary",
+                    key="Weather_delayed_HSI_Event_full_info",
+                    custom_generate_series=extraction_functions['get_num_treatments_total_delayed'],
+                    do_scaling=True,
+                ),
                 only_mean=False,
                 collapse_columns=True,
-            )[draw]
-
-            all_years_data_treatments_mean[target_year] = num_treatments_total['mean']
-            all_years_data_treatments_lower[target_year] = num_treatments_total['lower']
-            all_years_data_treatments_upper[target_year] = num_treatments_total['upper']
-
-            result_data_population = summarize(extract_results(
-                results_folder,
-                module='tlo.methods.demography',
-                key='population',
-                custom_generate_series=get_population_total,
-                do_scaling=True
-            ),
-                only_mean=True,
+            )
+            data['weather_cancelled'] = summarize(
+                extract_results(
+                    results_folder,
+                    module="tlo.methods.healthsystem.summary",
+                    key="Weather_cancelled_HSI_Event_full_info",
+                    custom_generate_series=extraction_functions['get_num_treatments_total_cancelled'],
+                    do_scaling=True,
+                ),
+                only_mean=False,
                 collapse_columns=True,
-            )[draw]
-
-            all_years_data_population_mean[target_year] = result_data_population['mean']
-            all_years_data_population_lower[target_year] = result_data_population['lower']
-            all_years_data_population_upper[target_year] = result_data_population['upper']
-
-            # Never ran appointments
-
-            num_never_ran_appts = summarize(
+            )
+        else:
+            data['weather_delayed'] = summarize(
                 extract_results(
                     results_folder,
                     module='tlo.methods.healthsystem.summary',
-                    key='never_ran_hsi_event_counts',
-                    custom_generate_series=get_num_treatments_never_ran,
+                    key='Weather_delayed_HSI_Event_full_info',
+                    custom_generate_series=extraction_functions['get_num_treatments_total_delayed'],
                     do_scaling=True
                 ),
                 only_mean=False,
                 collapse_columns=True,
             )[draw]
-            all_years_data_never_ran_mean[target_year] = num_never_ran_appts['mean']
-            all_years_data_never_ran_lower[target_year] = num_never_ran_appts['lower']
-            all_years_data_never_ran_upper[target_year] = num_never_ran_appts['upper']
-
-            if scenario_names[draw] == 'Baseline':
-                all_years_data_weather_delayed_mean[target_year] = pd.Series([0], name='mean')
-                all_years_data_weather_delayed_lower[target_year] = pd.Series([0], name='lower')
-                all_years_data_weather_delayed_upper[target_year] = pd.Series([0], name='upper')
-
-                all_years_data_weather_cancelled_mean[target_year] = pd.Series([0], name='mean')
-                all_years_data_weather_cancelled_lower[target_year] = pd.Series([0], name='lower')
-                all_years_data_weather_cancelled_upper[target_year] = pd.Series([0], name='upper')
-            elif main_text:
-                num_weather_delayed_appointments = summarize(extract_results(
+            data['weather_cancelled'] = summarize(
+                extract_results(
                     results_folder,
-                    module="tlo.methods.healthsystem.summary",
-                    key="Weather_delayed_HSI_Event_full_info",
-                    custom_generate_series=get_num_treatments_total_delayed,
-                    do_scaling=True,
+                    module='tlo.methods.healthsystem.summary',
+                    key='Weather_cancelled_HSI_Event_full_info',
+                    custom_generate_series=extraction_functions['get_num_treatments_total_cancelled'],
+                    do_scaling=True
                 ),
-                    only_mean=False,
-                    collapse_columns=True,
-                )
-
-                all_years_data_weather_delayed_mean[target_year] = num_weather_delayed_appointments['mean']
-                all_years_data_weather_delayed_lower[target_year] = num_weather_delayed_appointments['lower']
-                all_years_data_weather_delayed_upper[target_year] = num_weather_delayed_appointments['upper']
-
-                num_weather_cancelled_appointments = summarize(
-                    extract_results(
-                        results_folder,
-                        module="tlo.methods.healthsystem.summary",
-                        key="Weather_cancelled_HSI_Event_full_info",
-                        custom_generate_series=get_num_treatments_total_cancelled,
-                        do_scaling=True,
-                    ),
-                    only_mean=False,
-                    collapse_columns=True,
-                )
-                all_years_data_weather_cancelled_mean[target_year] = num_weather_cancelled_appointments['mean']
-                all_years_data_weather_cancelled_lower[target_year] = num_weather_cancelled_appointments['lower']
-                all_years_data_weather_cancelled_upper[target_year] = num_weather_cancelled_appointments['upper']
-
-
-            else:
-
-                # Weather delayed appointments
-
-                num_weather_delayed_appointments = summarize(
-                    extract_results(
-                        results_folder,
-                        module='tlo.methods.healthsystem.summary',
-                        key='Weather_delayed_HSI_Event_full_info',
-                        custom_generate_series=get_num_treatments_total_delayed,
-                        do_scaling=True
-                    ),
-                    only_mean=False,
-                    collapse_columns=True,
-                )[draw]
-
-                all_years_data_weather_delayed_mean[target_year] = num_weather_delayed_appointments['mean']
-                all_years_data_weather_delayed_lower[target_year] = num_weather_delayed_appointments['lower']
-                all_years_data_weather_delayed_upper[target_year] = num_weather_delayed_appointments['upper']
-
-                # Weather cancelled appointments
-                num_weather_cancelled_appointments = summarize(
-                    extract_results(
-                        results_folder,
-                        module='tlo.methods.healthsystem.summary',
-                        key='Weather_cancelled_HSI_Event_full_info',
-                        custom_generate_series=get_num_treatments_total_cancelled,
-                        do_scaling=True
-                    ),
-                    only_mean=False,
-                    collapse_columns=True,
-                )[draw]
-
-                all_years_data_weather_cancelled_mean[target_year] = num_weather_cancelled_appointments['mean']
-                all_years_data_weather_cancelled_lower[target_year] = num_weather_cancelled_appointments['lower']
-                all_years_data_weather_cancelled_upper[target_year] = num_weather_cancelled_appointments['upper']
-
-            # Population data for normalization
-            result_data_population = summarize(extract_results(
-                results_folder,
-                module='tlo.methods.demography',
-                key='population',
-                custom_generate_series=get_population_total,
-                do_scaling=True
-            ),
-                only_mean=True,
+                only_mean=False,
                 collapse_columns=True,
             )[draw]
 
-            all_years_data_population_mean[target_year] = result_data_population['mean']
-            all_years_data_population_lower[target_year] = result_data_population['lower']
-            all_years_data_population_upper[target_year] = result_data_population['upper']
+    # Population data
+    data['population'] = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.demography',
+            key='population',
+            custom_generate_series=extraction_functions['get_population_total'],
+            do_scaling=True
+        ),
+        only_mean=True,
+        collapse_columns=True,
+    )[draw]
 
-        # Convert the accumulated data into DataFrames for plotting
-        df_all_years_treatments_mean = pd.DataFrame(all_years_data_treatments_mean)
-        df_all_years_treatments_lower = pd.DataFrame(all_years_data_treatments_lower)
-        df_all_years_treatments_upper = pd.DataFrame(all_years_data_treatments_upper)
-
-        df_all_years_never_ran_mean = pd.DataFrame(all_years_data_never_ran_mean)
-        df_all_years_never_ran_lower = pd.DataFrame(all_years_data_never_ran_lower)
-        df_all_years_never_ran_upper = pd.DataFrame(all_years_data_never_ran_upper)
-
-        df_all_years_weather_delayed_mean = pd.DataFrame(all_years_data_weather_delayed_mean)
-        df_all_years_weather_delayed_lower = pd.DataFrame(all_years_data_weather_delayed_lower)
-        df_all_years_weather_delayed_upper = pd.DataFrame(all_years_data_weather_delayed_upper)
-
-        df_all_years_weather_cancelled_mean = pd.DataFrame(all_years_data_weather_cancelled_mean)
-        df_all_years_weather_cancelled_lower = pd.DataFrame(all_years_data_weather_cancelled_lower)
-        df_all_years_weather_cancelled_upper = pd.DataFrame(all_years_data_weather_cancelled_upper)
-
-        df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
-        # Store data for this draw
-        all_years_by_draw[draw] = {
-            'treatments': {
-                'mean': df_all_years_treatments_mean.sum(),
-                'lower': df_all_years_treatments_lower.sum(),
-                'upper': df_all_years_treatments_upper.sum()
-            },
-            'never_ran': {
-                'mean': df_all_years_never_ran_mean.sum(),
-                'lower': df_all_years_never_ran_lower.sum(),
-                'upper': df_all_years_never_ran_upper.sum()
-            },
-            'weather_delayed': {
-                'mean': df_all_years_weather_delayed_mean.sum(),
-                'lower': df_all_years_weather_delayed_lower.sum(),
-                'upper': df_all_years_weather_delayed_upper.sum()
-            },
-            'weather_cancelled': {
-                'mean': df_all_years_weather_cancelled_mean.sum(),
-                'lower': df_all_years_weather_cancelled_lower.sum(),
-                'upper': df_all_years_weather_cancelled_upper.sum()
-            },
-            'population': df_all_years_data_population_mean
-        }
+    return data
 
 
-        # Save data to CSV
-        df_all_years_treatments_mean.to_csv(output_folder / f"treatments_by_type_{draw}.csv")
-        df_all_years_never_ran_mean.to_csv(output_folder / f"never_ran_by_type_{draw}.csv")
-        df_all_years_weather_delayed_mean.to_csv(output_folder / f"weather_delayed_by_type_{draw}.csv")
-        df_all_years_weather_cancelled_mean.to_csv(output_folder / f"weather_cancelled_by_type_{draw}.csv")
-
-        # Accumulate data across all draws
-        all_draws_treatments_mean.append(pd.Series(df_all_years_treatments_mean.sum(), name=f'Draw {draw}'))
-        all_draws_never_ran_mean.append(pd.Series(df_all_years_never_ran_mean.sum(), name=f'Draw {draw}'))
-        all_draws_weather_delayed_mean.append(pd.Series(df_all_years_weather_delayed_mean.sum(), name=f'Draw {draw}'))
-        all_draws_weather_cancelled_mean.append(
-            pd.Series(df_all_years_weather_cancelled_mean.sum(), name=f'Draw {draw}'))
-
-        all_draws_treatments_lower.append(pd.Series(df_all_years_treatments_lower.sum(), name=f'Draw {draw}'))
-        all_draws_never_ran_lower.append(pd.Series(df_all_years_never_ran_lower.sum(), name=f'Draw {draw}'))
-        all_draws_weather_delayed_lower.append(pd.Series(df_all_years_weather_delayed_lower.sum(), name=f'Draw {draw}'))
-        all_draws_weather_cancelled_lower.append(
-            pd.Series(df_all_years_weather_cancelled_lower.sum(), name=f'Draw {draw}'))
-
-        all_draws_treatments_upper.append(pd.Series(df_all_years_treatments_upper.sum(), name=f'Draw {draw}'))
-        all_draws_never_ran_upper.append(pd.Series(df_all_years_never_ran_upper.sum(), name=f'Draw {draw}'))
-        all_draws_weather_delayed_upper.append(pd.Series(df_all_years_weather_delayed_upper.sum(), name=f'Draw {draw}'))
-        all_draws_weather_cancelled_upper.append(
-            pd.Series(df_all_years_weather_cancelled_upper.sum(), name=f'Draw {draw}'))
-
-
-    # Combine all draws
-    df_treatments_all_draws_mean = pd.concat(all_draws_treatments_mean, axis=1)
-    df_never_ran_all_draws_mean = pd.concat(all_draws_never_ran_mean, axis=1)
-    df_weather_delayed_all_draws_mean = pd.concat(all_draws_weather_delayed_mean, axis=1)
-    df_weather_cancelled_all_draws_mean = pd.concat(all_draws_weather_cancelled_mean, axis=1)
-
-    df_treatments_all_draws_lower = pd.concat(all_draws_treatments_lower, axis=1)
-    df_never_ran_all_draws_lower = pd.concat(all_draws_never_ran_lower, axis=1)
-    df_weather_delayed_all_draws_lower = pd.concat(all_draws_weather_delayed_lower, axis=1)
-    df_weather_cancelled_all_draws_lower = pd.concat(all_draws_weather_cancelled_lower, axis=1)
-
-    df_treatments_all_draws_upper = pd.concat(all_draws_treatments_upper, axis=1)
-    df_never_ran_all_draws_upper = pd.concat(all_draws_never_ran_upper, axis=1)
-    df_weather_delayed_all_draws_upper = pd.concat(all_draws_weather_delayed_upper, axis=1)
-    df_weather_cancelled_all_draws_upper = pd.concat(all_draws_weather_cancelled_upper, axis=1)
-
-
-    # Final summary plots across all scenarios
-    treatments_totals_mean = df_treatments_all_draws_mean.sum()
-    never_ran_totals_mean = df_never_ran_all_draws_mean.sum()
-    weather_delayed_totals_mean = df_weather_delayed_all_draws_mean.sum()
-    weather_cancelled_totals_mean = df_weather_cancelled_all_draws_mean.sum()
-
-    treatments_totals_lower = df_treatments_all_draws_lower.sum()
-    treatments_totals_upper = df_treatments_all_draws_upper.sum()
-    never_ran_totals_lower = df_never_ran_all_draws_lower.sum()
-    never_ran_totals_upper = df_never_ran_all_draws_upper.sum()
-    weather_delayed_totals_lower = df_weather_delayed_all_draws_lower.sum()
-    weather_delayed_totals_upper = df_weather_delayed_all_draws_upper.sum()
-    weather_cancelled_totals_lower = df_weather_cancelled_all_draws_lower.sum()
-    weather_cancelled_totals_upper = df_weather_cancelled_all_draws_upper.sum()
-
-    treatments_totals_err = np.array([
-        treatments_totals_mean - treatments_totals_lower,
-        treatments_totals_upper - treatments_totals_mean
-    ])
-
-    never_ran_totals_err = np.array([
-        never_ran_totals_mean - never_ran_totals_lower,
-        never_ran_totals_upper - never_ran_totals_mean
-    ])
-
-    weather_delayed_totals_err = np.array([
-        weather_delayed_totals_mean - weather_delayed_totals_lower,
-        weather_delayed_totals_upper - weather_delayed_totals_mean
-    ])
-
-    weather_cancelled_totals_err = np.array([
-        weather_cancelled_totals_mean - weather_cancelled_totals_lower,
-        weather_cancelled_totals_upper - weather_cancelled_totals_mean
-    ])
-
-
-    target_year_final = max_year
-    target_period_final = (Date(2025, 1, 1), Date(target_year_final, 12, 31))
-    scenario_labels_final = ["Baseline", "SSP2-4.5"]
-    scenario_indices_final = [0, 1]
-
-    def get_counts_of_hsi_by_treatment_id(_df):
-        _df = _df.loc[pd.to_datetime(_df['date']).between(*target_period_final)]
-        _counts_by_treatment_id = _df['TREATMENT_ID'].apply(pd.Series).sum().astype(int)
-        return _counts_by_treatment_id.groupby(level=0).sum()
-
-    def get_counts_of_hsi_by_short_treatment_id(_df):
-        _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
-        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
-        return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
-
-    final_data = {}
-    final_data_with_ci = {}
-    for i, draw in enumerate(scenario_indices_final):
-        result_data_full = summarize(
-            extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='HSI_Event',
-                custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
-                do_scaling=True
-            ),
-            only_mean=False,
-            collapse_columns=True,
-        )[draw]
-        final_data[scenario_labels_final[i]] = result_data_full['mean']
-        final_data_with_ci[scenario_labels_final[i]] = {
-            'mean': result_data_full['mean'],
-            'lower': result_data_full['lower'],
-            'upper': result_data_full['upper']
-        }
-
-    df_final = pd.DataFrame(final_data).fillna(0)
-    df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_{suffix}.csv")
-
-    # --- Get full data with confidence intervals for HSI by treatment type
-
-    # --- Plot: stacked bar chart (Baseline vs SSP2.45) with significance stars
-    fig_final, ax_final = plt.subplots(figsize=(12, 8))
-    bottom = np.zeros(2)
-
-    # Store positions for significance testing
-    treatment_positions = {}
+def create_stacked_bar_plot(df_final, final_data_with_ci, scenario_labels, output_path, treatment_significance,
+                            total_star):
+    """Create stacked bar chart comparing scenarios."""
+    fig, ax = plt.subplots(figsize=(12, 8))
+    bottom = np.zeros(len(scenario_labels))
 
     for treatment in df_final.index:
         values = df_final.loc[treatment]
-        ax_final.bar(scenario_labels_final, values, bottom=bottom,
-                     color=get_color_short_treatment_id(treatment),
-                     label=treatment)
-
-        # Store the center position of each treatment segment for significance stars
-        treatment_positions[treatment] = bottom.copy()
+        ax.bar(scenario_labels, values, bottom=bottom,
+               color=get_color_short_treatment_id(treatment),
+               label=treatment)
         bottom += values.values
 
-    ax_final.set_ylabel("Total Number of HSIs", fontsize=12)
-    ax_final.set_xlabel("Scenario", fontsize=12)
+    ax.set_ylabel("Total Number of HSIs", fontsize=12)
+    ax.set_xlabel("Scenario", fontsize=12)
 
-    handles, labels = ax_final.get_legend_handles_labels()
-    labels = [l.replace("*", "") for l in labels]
-
-    ax_final.legend(
-        handles,
-        labels,
-        bbox_to_anchor=(1.05, 1),
-        loc="upper left",
-        title="Treatment Type",
-    )
-    ax_final.tick_params(axis='both', labelsize=11)
-
-    # Calculate significance for each treatment type and store in dictionary
-    treatment_significance = {}
-
-    baseline_draw_index = df_treatments_all_draws_mean.columns[0]
-    climate_draw_index = df_treatments_all_draws_mean.columns[1]
-
-    for treatment in df_final.index:
-        if treatment not in df_treatments_all_draws_mean.index:
-            treatment_significance[treatment] = ''
-            continue
-
-        baseline_draws = df_treatments_all_draws_mean.loc[treatment, baseline_draw_index]
-        climate_draws = df_treatments_all_draws_mean.loc[treatment, climate_draw_index]
-
-        star = paired_draw_significance(baseline_draws, climate_draws)
-        treatment_significance[treatment] = star
-
-    # Update legend with significance indicators
-    handles, labels = ax_final.get_legend_handles_labels()
-
-    handles, labels = ax_final.get_legend_handles_labels()
+    # Update legend with significance
+    handles, labels = ax.get_legend_handles_labels()
     labels = [l.replace("*", "") for l in labels]
     original_index = df_final.index
     clean_index = original_index.str.replace("*", "", regex=False)
@@ -611,84 +320,330 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         else:
             new_labels.append(label)
 
-    ax_final.legend(handles, new_labels, bbox_to_anchor=(1.05, 1), loc='upper left',
-                    title='Treatment Type\n(* p<0.05, ** p<0.01, *** p<0.001)', fontsize=10)
-
-    # Add overall total significance as text annotation
-    total_baseline_mean = df_final['Baseline'].sum()
-    total_baseline_lower = sum([final_data_with_ci['Baseline']['lower'].get(t, 0) for t in df_final.index])
-    total_baseline_upper = sum([final_data_with_ci['Baseline']['upper'].get(t, 0) for t in df_final.index])
-
-    total_climate_mean = df_final['SSP2-4.5'].sum()
-    baseline_total_draws = df_treatments_all_draws_mean.iloc[:, 0].sum()
-    climate_total_draws = df_treatments_all_draws_mean.iloc[:, 1].sum()
-
-    total_star = paired_draw_significance(
-        baseline_total_draws,
-        climate_total_draws
+    ax.legend(
+        handles, new_labels,
+        bbox_to_anchor=(1.05, 1),
+        loc='upper left',
+        title='Treatment Type\n(* p<0.05, ** p<0.01, *** p<0.001)',
+        fontsize=10
     )
-    print(total_star)
+    ax.tick_params(axis='both', labelsize=11)
+
+    # Add overall significance
     if total_star:
-        ax_final.text(
+        ax.text(
             0.5, 1.02,
             f'Overall difference: {total_star}',
-            ha='center',
-            va='bottom',
-            fontsize=11,
-            fontweight='bold',
-            color='darkred',
-            transform=ax_final.transAxes
+            ha='center', va='bottom',
+            fontsize=11, fontweight='bold', color='darkred',
+            transform=ax.transAxes
         )
 
-    fig_final.tight_layout()
-    fig_final.savefig(
-        output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_StackedBar_all_years_{suffix}_with_significance.png",
-        dpi=300)
-    plt.close(fig_final)
-    # Now do by fine treatment ID
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
 
+
+def create_scatter_plot(df_final, treatment_significance, total_star, scenario_labels, output_path):
+    """Create scatter plot comparing scenarios."""
+    fig, ax = plt.subplots(figsize=(7, 7))
+
+    x = df_final[scenario_labels[0]]
+    y = df_final[scenario_labels[1]]
+
+    ax.scatter(x, y, alpha=0.8)
+
+    # 1:1 reference line
+    lims = [min(x.min(), y.min()), max(x.max(), y.max())]
+    ax.plot(lims, lims, linestyle='--', linewidth=1, color='gray')
+    ax.set_xlim(lims)
+    ax.set_ylim(lims)
+
+    # Annotate points with significance
+    for treatment in df_final.index:
+        star = treatment_significance.get(treatment, '')
+        label = f"{treatment} {star}" if star else treatment
+        ax.text(
+            df_final.loc[treatment, scenario_labels[0]],
+            df_final.loc[treatment, scenario_labels[1]],
+            label,
+            fontsize=9, ha='left', va='bottom'
+        )
+
+    # Overall significance
+    if total_star:
+        ax.text(
+            0.5, 1.02,
+            f'Overall difference: {total_star}',
+            ha='center', va='bottom',
+            fontsize=11, fontweight='bold', color='darkred',
+            transform=ax.transAxes
+        )
+
+    ax.set_xlabel(scenario_labels[0])
+    ax.set_ylabel(scenario_labels[1])
+    ax.set_title('Treatment comparison (scatter)')
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+
+
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
+    """Produce standard set of plots describing healthcare system utilization across scenarios."""
+
+    target_period = (Date(MIN_YEAR, 1, 1), Date(MAX_YEAR, 12, 31))
+    extraction_functions = create_data_extraction_functions(target_period)
+
+    target_year_sequence = range(MIN_YEAR, MAX_YEAR, SPACING_OF_YEARS)
+
+    # Storage for accumulated data
+    all_draws_data = {
+        'treatments': {'mean': [], 'lower': [], 'upper': []},
+        'never_ran': {'mean': [], 'lower': [], 'upper': []},
+        'weather_delayed': {'mean': [], 'lower': [], 'upper': []},
+        'weather_cancelled': {'mean': [], 'lower': [], 'upper': []}
+    }
+
+    all_years_by_draw = {}
+
+    # Extract data for each draw
+    for draw in scenarios_of_interest:
+        scenario_name = scenario_names[draw]
+
+        yearly_data = {
+            'treatments': {'mean': {}, 'lower': {}, 'upper': {}},
+            'never_ran': {'mean': {}, 'lower': {}, 'upper': {}},
+            'weather_delayed': {'mean': {}, 'lower': {}, 'upper': {}},
+            'weather_cancelled': {'mean': {}, 'lower': {}, 'upper': {}},
+            'population': {'mean': {}, 'lower': {}, 'upper': {}}
+        }
+
+        for target_year in target_year_sequence:
+            year_data = extract_yearly_data(
+                results_folder, target_year, extraction_functions, draw, scenario_name
+            )
+
+            for metric in ['treatments', 'never_ran', 'weather_delayed', 'weather_cancelled']:
+                yearly_data[metric]['mean'][target_year] = year_data[metric]['mean']
+                yearly_data[metric]['lower'][target_year] = year_data[metric]['lower']
+                yearly_data[metric]['upper'][target_year] = year_data[metric]['upper']
+
+            yearly_data['population']['mean'][target_year] = year_data['population']['mean']
+
+        # Convert to DataFrames
+        df_data = {}
+        for metric in ['treatments', 'never_ran', 'weather_delayed', 'weather_cancelled']:
+            df_data[metric] = {
+                'mean': pd.DataFrame(yearly_data[metric]['mean']),
+                'lower': pd.DataFrame(yearly_data[metric]['lower']),
+                'upper': pd.DataFrame(yearly_data[metric]['upper'])
+            }
+
+        # Store draw data
+        all_years_by_draw[draw] = {
+            metric: {
+                'mean': df_data[metric]['mean'].sum(),
+                'lower': df_data[metric]['lower'].sum(),
+                'upper': df_data[metric]['upper'].sum()
+            }
+            for metric in ['treatments', 'never_ran', 'weather_delayed', 'weather_cancelled']
+        }
+        all_years_by_draw[draw]['population'] = pd.DataFrame(yearly_data['population']['mean'])
+
+        # Save CSVs
+        for metric in ['treatments', 'never_ran', 'weather_delayed', 'weather_cancelled']:
+            df_data[metric]['mean'].to_csv(
+                output_folder / f"{metric}_by_type_{draw}.csv"
+            )
+
+        # Accumulate across draws
+        for metric in ['treatments', 'never_ran', 'weather_delayed', 'weather_cancelled']:
+            for stat in ['mean', 'lower', 'upper']:
+                all_draws_data[metric][stat].append(
+                    pd.Series(df_data[metric][stat].sum(), name=f'Draw {draw}')
+                )
+
+    # Combine all draws
+    df_combined = {}
+    for metric in ['treatments', 'never_ran', 'weather_delayed', 'weather_cancelled']:
+        df_combined[metric] = {
+            stat: pd.concat(all_draws_data[metric][stat], axis=1)
+            for stat in ['mean', 'lower', 'upper']
+        }
+
+    # Calculate totals and confidence intervals
+    totals = {}
+    for metric in ['treatments', 'never_ran', 'weather_delayed', 'weather_cancelled']:
+        totals[metric] = {
+            'mean': df_combined[metric]['mean'].sum(),
+            'lower': df_combined[metric]['lower'].sum(),
+            'upper': df_combined[metric]['upper'].sum()
+        }
+
+    # Final analysis period and scenarios
+    target_year_final = MAX_YEAR
+    target_period_final = (Date(2025, 1, 1), Date(target_year_final, 12, 31))
+    scenario_labels_final = ["Baseline", "SSP2-4.5"]
+    scenario_indices_final = [0, 1]
+
+    # Extract treatment-level data
+    def get_counts_of_hsi_by_treatment_id(_df):
+        _df = _df.loc[pd.to_datetime(_df['date']).between(*target_period_final)]
+        _counts_by_treatment_id = _df['TREATMENT_ID'].apply(pd.Series).sum().astype(int)
+        return _counts_by_treatment_id.groupby(level=0).sum()
+
+    def get_counts_of_hsi_by_short_treatment_id(_df):
+        _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
+        _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
+        return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
+
+    final_data = {}
+    final_data_with_ci = {}
+
+    for i, draw in enumerate(scenario_indices_final):
+        result_data_full = summarize(
+            extract_results(
+                results_folder,
+                module='tlo.methods.healthsystem.summary',
+                key='HSI_Event',
+                custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
+                do_scaling=True
+            ),
+            only_mean=False,
+            collapse_columns=True,
+        )[draw]
+
+        final_data[scenario_labels_final[i]] = result_data_full['mean']
+        final_data_with_ci[scenario_labels_final[i]] = {
+            'mean': result_data_full['mean'],
+            'lower': result_data_full['lower'],
+            'upper': result_data_full['upper']
+        }
+
+    df_final = pd.DataFrame(final_data).fillna(0)
+    df_final.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_{suffix}.csv")
+
+    # Calculate significance for each treatment type
+    treatment_significance = {}
+    baseline_draw_index = df_combined['treatments']['mean'].columns[0]
+    climate_draw_index = df_combined['treatments']['mean'].columns[1]
+
+    for treatment in df_final.index:
+        if treatment not in df_combined['treatments']['mean'].index:
+            treatment_significance[treatment] = ''
+            continue
+
+        baseline_draws = df_combined['treatments']['mean'].loc[treatment, baseline_draw_index]
+        climate_draws = df_combined['treatments']['mean'].loc[treatment, climate_draw_index]
+        treatment_significance[treatment] = paired_draw_significance(baseline_draws, climate_draws)
+
+    # Calculate overall significance
+    baseline_total_draws = df_combined['treatments']['mean'].iloc[:, 0].sum()
+    climate_total_draws = df_combined['treatments']['mean'].iloc[:, 1].sum()
+    total_star = paired_draw_significance(baseline_total_draws, climate_total_draws)
+
+    # Create plots
+    create_stacked_bar_plot(
+        df_final, final_data_with_ci, scenario_labels_final,
+        output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_StackedBar_all_years_{suffix}_with_significance.png",
+        treatment_significance, total_star
+    )
+
+    fig_scatter, ax_scatter = plt.subplots(figsize=(14, 8))
+    x_positions = np.arange(len(scenario_labels_final))
+    jitter_strength = 0.15
+
+    treatments = df_final.index
+
+    for treatment in treatments:
+        y_means = []
+        y_lower = []
+        y_upper = []
+
+        for scenario in scenario_labels_final:
+            y_means.append(final_data_with_ci[scenario]['mean'].get(treatment, 0))
+            y_lower.append(final_data_with_ci[scenario]['lower'].get(treatment, 0))
+            y_upper.append(final_data_with_ci[scenario]['upper'].get(treatment, 0))
+
+        y_means = np.array(y_means)
+        y_lower = np.array(y_lower)
+        y_upper = np.array(y_upper)
+
+        jitter = np.random.uniform(-jitter_strength, jitter_strength, size=len(x_positions))
+        x_jittered = x_positions + jitter
+
+        ax_scatter.scatter(
+            x_jittered, y_means,
+            s=80, alpha=0.8,
+            label=treatment.replace("*", "")
+        )
+
+        ax_scatter.errorbar(
+            x_jittered, y_means,
+            yerr=[y_means - y_lower, y_upper - y_means],
+            fmt="none", capsize=4, alpha=0.6, linewidth=1.5
+        )
+
+        ax_scatter.plot(x_jittered, y_means, linestyle="-", alpha=0.4, linewidth=1)
+
+    ax_scatter.set_yscale('log')
+    ax_scatter.set_title(
+        f"HSI Events by Treatment Type ({MIN_YEAR}-{target_year_final})",
+        fontsize=14, fontweight='bold'
+    )
+    ax_scatter.set_xticks(x_positions)
+    ax_scatter.set_xticklabels(scenario_labels_final, fontsize=12)
+    ax_scatter.set_xlabel("Scenario", fontsize=12)
+    ax_scatter.set_ylabel("Number of HSI Events", fontsize=12)
+    ax_scatter.tick_params(axis='both', labelsize=11)
+    ax_scatter.legend(
+        title="Treatment Type",
+        bbox_to_anchor=(1.05, 1),
+        loc="upper left",
+        fontsize=10
+    )
+    ax_scatter.grid(True, alpha=0.3, linestyle='--')
+
+    plt.tight_layout()
+    fig_scatter.savefig(
+        output_folder / f"{PREFIX_ON_FILENAME}_Treatments_Scatter_{suffix}.png",
+        dpi=300, bbox_inches='tight'
+    )
+    plt.close(fig_scatter)
+
+
+    # Fine-grained treatment analysis
     HSI_of_interest = "HSI_Event_non_blank_appt_footprint"
 
     def get_num_treatments_group(_df):
-        """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
+        """Return the number of treatments by short treatment id."""
         _df = _df.loc[pd.to_datetime(_df.date).between(*target_period_final)]
 
-        # Check if TREATMENT_ID column exists and has data
         if 'TREATMENT_ID' not in _df.columns or _df.empty:
             return pd.Series(dtype=int)
 
-        # Check the type of TREATMENT_ID values
         sample_value = _df['TREATMENT_ID'].iloc[0] if len(_df) > 0 else None
-
         if sample_value is None:
             return pd.Series(dtype=int)
 
-        # If TREATMENT_ID contains dictionaries, expand them
         if isinstance(sample_value, dict):
             _df = _df['TREATMENT_ID'].apply(pd.Series).sum().astype(int)
-            # Now index should be strings from dictionary keys
         else:
-            # TREATMENT_ID is already a string column, just count occurrences
             _df = _df['TREATMENT_ID'].value_counts()
-
-        print(_df.index)
 
         if len(_df) == 0:
             return pd.Series(dtype=int)
 
-        # Check if index contains strings before trying to split
         if isinstance(_df.index[0], str):
-            # Shorten treatment IDs to first two parts
             _df.index = _df.index.map(lambda x: "_".join(x.split('_')[:2]) + "*")
             _df = _df.groupby(level=0).sum()
-        else:
-            print(f"Warning: Expected string index but got {type(_df.index[0])}")
-            return pd.Series(dtype=int)
 
         return _df
 
     final_data_fine = {}
     final_data_fine_with_ci = {}
+
     for i, draw in enumerate(scenario_indices_final):
         result_data_full = summarize(
             extract_results(
@@ -701,23 +656,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             only_mean=False,
             collapse_columns=True,
         )[draw]
+
         final_data_fine[scenario_labels_final[i]] = result_data_full['mean']
+        final_data_fine_with_ci[scenario_labels_final[i]] = {
+            'mean': result_data_full['mean'],
+            'lower': result_data_full['lower'],
+            'upper': result_data_full['upper']
+        }
+
     df_final_fine = pd.DataFrame(final_data_fine).fillna(0)
-    df_final_fine.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Coarse_Treatments_{suffix}_{HSI_of_interest}.csv")
+    df_final_fine.to_csv(
+        output_folder / f"{PREFIX_ON_FILENAME}_Final_Coarse_Treatments_{suffix}_{HSI_of_interest}.csv"
+    )
 
-    # --- Scatter plot for coarse treatment IDs with error bars ---
+    # Create scatter plot with error bars for fine-grained treatments
     fig_scatter, ax_scatter = plt.subplots(figsize=(14, 8))
-
-    # Get x positions for the scenarios
     x_positions = np.arange(len(scenario_labels_final))
     jitter_strength = 0.15
 
-    # Plot each treatment type
-    for i, treatment in enumerate(df_final_fine.index):
-        print(treatment)
-        #colour = get_color_short_treatment_id(treatment)
-        #print(colour)
-        # Get mean and CI values for this treatment
+    for treatment in df_final_fine.index:
         y_means = []
         y_lower = []
         y_upper = []
@@ -736,54 +693,44 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         y_lower = np.array(y_lower)
         y_upper = np.array(y_upper)
 
-        # Add jitter to x positions
         jitter = np.random.uniform(-jitter_strength, jitter_strength, size=len(x_positions))
         x_jittered = x_positions + jitter
 
-        # Plot scatter points
-        ax_scatter.scatter(x_jittered, y_means, s=80, alpha=0.8, label=treatment.replace("*", ""))
+        ax_scatter.scatter(x_jittered, y_means, s=80, alpha=0.8,
+                           label=treatment.replace("*", ""))
         ax_scatter.set_yscale('log')
 
-        # Plot error bars
         ax_scatter.errorbar(
-            x_jittered,
-            y_means,
+            x_jittered, y_means,
             yerr=[y_means - y_lower, y_upper - y_means],
-            fmt="none",
-            #ecolor=colour,
-            capsize=4,
-            alpha=0.6,
-            linewidth=1.5
+            fmt="none", capsize=4, alpha=0.6, linewidth=1.5
         )
 
-        # Connect points with line
         ax_scatter.plot(x_jittered, y_means, linestyle="-", alpha=0.4, linewidth=1)
 
-    ax_scatter.set_title(f"HSI Events by Treatment Type ({min_year}-{target_year_final})", fontsize=14,
-                         fontweight='bold')
+    ax_scatter.set_title(
+        f"HSI Events by Treatment Type ({MIN_YEAR}-{target_year_final})",
+        fontsize=14, fontweight='bold'
+    )
     ax_scatter.set_xticks(x_positions)
     ax_scatter.set_xticklabels(scenario_labels_final, fontsize=12)
     ax_scatter.set_xlabel("Scenario", fontsize=12)
     ax_scatter.set_ylabel("Number of HSI Events", fontsize=12)
     ax_scatter.tick_params(axis='both', labelsize=11)
-
-    # Add legend
     ax_scatter.legend(
         title="Treatment Type",
         bbox_to_anchor=(1.05, 1),
         loc="upper left",
         fontsize=10
     )
-
     ax_scatter.grid(True, alpha=0.3, linestyle='--')
+
     plt.tight_layout()
     fig_scatter.savefig(
         output_folder / f"{PREFIX_ON_FILENAME}_Coarse_Treatments_Scatter_{suffix}_{HSI_of_interest}.png",
-        dpi=300,
-        bbox_inches='tight'
+        dpi=300, bbox_inches='tight'
     )
     plt.close(fig_scatter)
-
 
 
 if __name__ == "__main__":
