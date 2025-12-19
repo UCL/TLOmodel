@@ -283,7 +283,7 @@ calibration_outputs_folder = Path(figurespath / 'calibration')
 if not os.path.exists(calibration_outputs_folder):
     os.makedirs(calibration_outputs_folder)
 
-def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10):
+def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10.5):
     # Filter the dataframe
     _df = _df[(_df.model_cost.notna()) & (_df.index.get_level_values(0).isin(_costs_included))]
 
@@ -319,12 +319,12 @@ def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10):
     yerr_lower = (df_mean['model_cost'] - df_lower['model_cost']).clip(lower = 0)
     yerr_upper = (df_upper['model_cost'] - df_mean['model_cost']).clip(lower = 0)
     plt.errorbar(df_mean.index, df_mean['model_cost'],
-                 yerr=[yerr_lower, yerr_upper],
+                 yerr=[yerr_lower, yerr_upper], markersize = 10,
                  fmt='o', label='Model Cost', ecolor='gray', capsize=5, color='saddlebrown')
 
     # Plot annual_expenditure_2019 and max_annual_budget_2020-22 as dots
-    plt.plot(df_mean.index, df_mean['actual_expenditure_2019'], 'bo', label='Actual Expenditure 2019', markersize=8)
-    plt.plot(df_mean.index, df_mean['max_annual_budget_2020-22'], 'go', label='Max Annual Budget 2020-22', markersize=8)
+    plt.plot(df_mean.index, df_mean['actual_expenditure_2019'], 'bo', label='Actual Expenditure 2019', markersize=9, alpha=0.5)
+    plt.plot(df_mean.index, df_mean['max_annual_budget_2020-22'], 'go', label='Max Annual Budget 2020-22', markersize=9, alpha=0.5)
 
     # Draw a blue line between annual_expenditure_2019 and max_annual_budget_2020-22
     plt.vlines(df_mean.index, df_mean['actual_expenditure_2019'], df_mean['max_annual_budget_2020-22'], color='blue',
@@ -332,8 +332,8 @@ def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10):
 
     # Add labels to the model_cost dots (yellow color, slightly shifted right)
     for i, (x, y) in enumerate(zip(df_mean.index, df_mean['model_cost'])):
-        plt.text(i + 0.05, y, f'{y:.2f}', ha='left', va='bottom', fontsize=9,
-                 color='saddlebrown')  # label model_cost values
+        plt.text(i + 0.08, y, f'{y:.2f}', ha='left', va='bottom', fontsize=11,
+                 color='saddlebrown', fontweight='bold')  # label model_cost values
 
     # Add labels and title
     cost_subcategory = [name for name in globals() if globals()[name] is _costs_included][0]
@@ -351,7 +351,7 @@ def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10):
         spine.set_linewidth(1.5)  # Adjust the border width if desired
 
     # Customize x-axis labels for readability
-    max_label_length = 15  # Define a maximum label length for wrapping
+    max_label_length = 20  # Define a maximum label length for wrapping
     wrapped_labels = [textwrap.fill(str(label), max_label_length) for label in df_mean.index]
     plt.xticks(ticks=range(len(wrapped_labels)), labels=wrapped_labels, rotation=45, ha='right', fontsize=_xtick_fontsize)
 
