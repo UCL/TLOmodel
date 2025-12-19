@@ -619,6 +619,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         "Weather_cancelled_HSI_Event_full_info"
     ]
 
+    ci_data_to_save = {}
+
     for HSI_of_interest in HSI_events_of_interest:
 
         def get_num_treatments_group(_df):
@@ -655,7 +657,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # Skip weather-related events for baseline scenario
             if scenario_name == 'Baseline' and HSI_of_interest in ["Weather_delayed_HSI_Event_full_info",
                                                                    "Weather_cancelled_HSI_Event_full_info"]:
-                # Set to zero for baseline
                 final_data_fine[scenario_labels_final[i]] = pd.Series(dtype=float)
                 final_data_fine_with_ci[scenario_labels_final[i]] = {
                     'mean': pd.Series(dtype=float),
@@ -664,7 +665,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 }
                 continue
 
-            # For MAIN_TEXT analysis, only draw 1 has weather data for climate scenarios
             if MAIN_TEXT and HSI_of_interest in ["Weather_delayed_HSI_Event_full_info",
                                                  "Weather_cancelled_HSI_Event_full_info"]:
                 if draw == 1:  # Climate scenario
@@ -694,7 +694,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         'upper': pd.Series(dtype=float)
                     }
             else:
-                # Standard extraction for non-weather events or non-MAIN_TEXT analysis
                 result_data_full = summarize(
                     extract_results(
                         results_folder,
@@ -714,80 +713,30 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     'upper': result_data_full['upper']
                 }
 
+        # Store CI data for this HSI type
+        ci_data_to_save[HSI_of_interest] = final_data_fine_with_ci
+
         df_final_fine = pd.DataFrame(final_data_fine).fillna(0)
 
-        # Only create plots if there's data
+        # Save mean values (as before)
         if not df_final_fine.empty and df_final_fine.sum().sum() > 0:
             df_final_fine.to_csv(
                 output_folder / f"{PREFIX_ON_FILENAME}_Final_Coarse_Treatments_{suffix}_{HSI_of_interest}.csv"
             )
 
-            # Create scatter plot with error bars for fine-grained treatments
-            fig_scatter, ax_scatter = plt.subplots(figsize=(14, 8))
-            x_positions = np.arange(len(scenario_labels_final))
-            jitter_strength = 0.15
-
-            for treatment in df_final_fine.index:
-                y_means = []
-                y_lower = []
-                y_upper = []
-
-                for scenario in scenario_labels_final:
-                    if scenario in final_data_fine_with_ci:
-                        y_means.append(final_data_fine_with_ci[scenario]['mean'].get(treatment, 0))
-                        y_lower.append(final_data_fine_with_ci[scenario]['lower'].get(treatment, 0))
-                        y_upper.append(final_data_fine_with_ci[scenario]['upper'].get(treatment, 0))
-                    else:
-                        y_means.append(df_final_fine.loc[treatment, scenario])
-                        y_lower.append(df_final_fine.loc[treatment, scenario])
-                        y_upper.append(df_final_fine.loc[treatment, scenario])
-
-                y_means = np.array(y_means)
-                y_lower = np.array(y_lower)
-                y_upper = np.array(y_upper)
-
-                jitter = np.random.uniform(-jitter_strength, jitter_strength, size=len(x_positions))
-                x_jittered = x_positions + jitter
-
-                ax_scatter.scatter(x_jittered, y_means, s=80, alpha=0.8,
-                                   label=treatment.replace("*", ""))
-
-                # Only use log scale if all values are positive
-                if (y_means > 0).all():
-                    ax_scatter.set_yscale('log')
-
-                ax_scatter.errorbar(
-                    x_jittered, y_means,
-                    yerr=[y_means - y_lower, y_upper - y_means],
-                    fmt="none", capsize=4, alpha=0.6, linewidth=1.5
-                )
-
-                ax_scatter.plot(x_jittered, y_means, linestyle="-", alpha=0.4, linewidth=1)
-
-            ax_scatter.set_title(
-                f"{HSI_of_interest.replace('_', ' ')} by Treatment Type ({MIN_YEAR}-{target_year_final})",
-                fontsize=14, fontweight='bold'
-            )
-            ax_scatter.set_xticks(x_positions)
-            ax_scatter.set_xticklabels(scenario_labels_final, fontsize=12)
-            ax_scatter.set_xlabel("Scenario", fontsize=12)
-            ax_scatter.set_ylabel("Number of HSI Events", fontsize=12)
-            ax_scatter.tick_params(axis='both', labelsize=11)
-            ax_scatter.legend(
-                title="Treatment Type",
-                bbox_to_anchor=(1.05, 1),
-                loc="upper left",
-                fontsize=10
-            )
-            ax_scatter.grid(True, alpha=0.3, linestyle='--')
-
-            plt.tight_layout()
-            fig_scatter.savefig(
-                output_folder / f"{PREFIX_ON_FILENAME}_Coarse_Treatments_Scatter_{suffix}_{HSI_of_interest}.png",
-                dpi=300, bbox_inches='tight'
-            )
-            plt.close(fig_scatter)
-
+            # NEW: Save confidence intervals
+            for scenario in scenario_labels_final:
+                if scenario in final_data_fine_with_ci:
+                    ci_df = pd.DataFrame({
+                        'HSI_name': final_data_fine_with_ci[scenario]['mean'].index,
+                        'mean': final_data_fine_with_ci[scenario]['mean'].values,
+                        'lower': final_data_fine_with_ci[scenario]['lower'].values,
+                        'upper': final_data_fine_with_ci[scenario]['upper'].values
+                    })
+                    ci_df.to_csv(
+                        output_folder / f"{PREFIX_ON_FILENAME}_CI_{HSI_of_interest}_{scenario.replace('-', '')}.csv",
+                        index=False
+                    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
