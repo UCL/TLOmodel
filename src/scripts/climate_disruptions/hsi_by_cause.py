@@ -612,125 +612,181 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
     plt.close(fig_scatter)
 
+    # Fine-grained treatment analysis - loop over multiple HSI types
+    HSI_events_of_interest = ["HSI_Event",
+        "HSI_Event_non_blank_appt_footprint",
+        "Weather_delayed_HSI_Event_full_info",
+        "Weather_cancelled_HSI_Event_full_info"
+    ]
 
-    # Fine-grained treatment analysis
-    HSI_of_interest = "HSI_Event_non_blank_appt_footprint"
+    for HSI_of_interest in HSI_events_of_interest:
 
-    def get_num_treatments_group(_df):
-        """Return the number of treatments by short treatment id."""
-        _df = _df.loc[pd.to_datetime(_df.date).between(*target_period_final)]
+        def get_num_treatments_group(_df):
+            """Return the number of treatments by short treatment id."""
+            _df = _df.loc[pd.to_datetime(_df.date).between(*target_period_final)]
 
-        if 'TREATMENT_ID' not in _df.columns or _df.empty:
-            return pd.Series(dtype=int)
+            if 'TREATMENT_ID' not in _df.columns or _df.empty:
+                return pd.Series(dtype=int)
 
-        sample_value = _df['TREATMENT_ID'].iloc[0] if len(_df) > 0 else None
-        if sample_value is None:
-            return pd.Series(dtype=int)
+            sample_value = _df['TREATMENT_ID'].iloc[0] if len(_df) > 0 else None
+            if sample_value is None:
+                return pd.Series(dtype=int)
 
-        if isinstance(sample_value, dict):
-            _df = _df['TREATMENT_ID'].apply(pd.Series).sum().astype(int)
-        else:
-            _df = _df['TREATMENT_ID'].value_counts()
-
-        if len(_df) == 0:
-            return pd.Series(dtype=int)
-
-        if isinstance(_df.index[0], str):
-            _df.index = _df.index.map(lambda x: "_".join(x.split('_')[:2]) + "*")
-            _df = _df.groupby(level=0).sum()
-
-        return _df
-
-    final_data_fine = {}
-    final_data_fine_with_ci = {}
-
-    for i, draw in enumerate(scenario_indices_final):
-        result_data_full = summarize(
-            extract_results(
-                results_folder,
-                module="tlo.methods.healthsystem.summary",
-                key=HSI_of_interest,
-                custom_generate_series=get_num_treatments_group,
-                do_scaling=True,
-            ),
-            only_mean=False,
-            collapse_columns=True,
-        )[draw]
-
-        final_data_fine[scenario_labels_final[i]] = result_data_full['mean']
-        final_data_fine_with_ci[scenario_labels_final[i]] = {
-            'mean': result_data_full['mean'],
-            'lower': result_data_full['lower'],
-            'upper': result_data_full['upper']
-        }
-
-    df_final_fine = pd.DataFrame(final_data_fine).fillna(0)
-    df_final_fine.to_csv(
-        output_folder / f"{PREFIX_ON_FILENAME}_Final_Coarse_Treatments_{suffix}_{HSI_of_interest}.csv"
-    )
-
-    # Create scatter plot with error bars for fine-grained treatments
-    fig_scatter, ax_scatter = plt.subplots(figsize=(14, 8))
-    x_positions = np.arange(len(scenario_labels_final))
-    jitter_strength = 0.15
-
-    for treatment in df_final_fine.index:
-        y_means = []
-        y_lower = []
-        y_upper = []
-
-        for scenario in scenario_labels_final:
-            if scenario in final_data_fine_with_ci:
-                y_means.append(final_data_fine_with_ci[scenario]['mean'].get(treatment, 0))
-                y_lower.append(final_data_fine_with_ci[scenario]['lower'].get(treatment, 0))
-                y_upper.append(final_data_fine_with_ci[scenario]['upper'].get(treatment, 0))
+            if isinstance(sample_value, dict):
+                _df = _df['TREATMENT_ID'].apply(pd.Series).sum().astype(int)
             else:
-                y_means.append(df_final_fine.loc[treatment, scenario])
-                y_lower.append(df_final_fine.loc[treatment, scenario])
-                y_upper.append(df_final_fine.loc[treatment, scenario])
+                _df = _df['TREATMENT_ID'].value_counts()
 
-        y_means = np.array(y_means)
-        y_lower = np.array(y_lower)
-        y_upper = np.array(y_upper)
+            if len(_df) == 0:
+                return pd.Series(dtype=int)
 
-        jitter = np.random.uniform(-jitter_strength, jitter_strength, size=len(x_positions))
-        x_jittered = x_positions + jitter
+            if isinstance(_df.index[0], str):
+                _df.index = _df.index.map(lambda x: "_".join(x.split('_')[:2]) + "*")
+                _df = _df.groupby(level=0).sum()
 
-        ax_scatter.scatter(x_jittered, y_means, s=80, alpha=0.8,
-                           label=treatment.replace("*", ""))
-        ax_scatter.set_yscale('log')
+            return _df
 
-        ax_scatter.errorbar(
-            x_jittered, y_means,
-            yerr=[y_means - y_lower, y_upper - y_means],
-            fmt="none", capsize=4, alpha=0.6, linewidth=1.5
-        )
+        final_data_fine = {}
+        final_data_fine_with_ci = {}
 
-        ax_scatter.plot(x_jittered, y_means, linestyle="-", alpha=0.4, linewidth=1)
+        for i, draw in enumerate(scenario_indices_final):
+            scenario_name = scenario_names[draw]
 
-    ax_scatter.set_title(
-        f"HSI Events by Treatment Type ({MIN_YEAR}-{target_year_final})",
-        fontsize=14, fontweight='bold'
-    )
-    ax_scatter.set_xticks(x_positions)
-    ax_scatter.set_xticklabels(scenario_labels_final, fontsize=12)
-    ax_scatter.set_xlabel("Scenario", fontsize=12)
-    ax_scatter.set_ylabel("Number of HSI Events", fontsize=12)
-    ax_scatter.tick_params(axis='both', labelsize=11)
-    ax_scatter.legend(
-        title="Treatment Type",
-        bbox_to_anchor=(1.05, 1),
-        loc="upper left",
-        fontsize=10
-    )
-    ax_scatter.grid(True, alpha=0.3, linestyle='--')
+            # Skip weather-related events for baseline scenario
+            if scenario_name == 'Baseline' and HSI_of_interest in ["Weather_delayed_HSI_Event_full_info",
+                                                                   "Weather_cancelled_HSI_Event_full_info"]:
+                # Set to zero for baseline
+                final_data_fine[scenario_labels_final[i]] = pd.Series(dtype=float)
+                final_data_fine_with_ci[scenario_labels_final[i]] = {
+                    'mean': pd.Series(dtype=float),
+                    'lower': pd.Series(dtype=float),
+                    'upper': pd.Series(dtype=float)
+                }
+                continue
 
-    plt.tight_layout()
-    fig_scatter.savefig(
-        output_folder / f"{PREFIX_ON_FILENAME}_Coarse_Treatments_Scatter_{suffix}_{HSI_of_interest}.png",
-        dpi=300, bbox_inches='tight'
-    )
-    plt.close(fig_scatter)
+            # For MAIN_TEXT analysis, only draw 1 has weather data for climate scenarios
+            if MAIN_TEXT and HSI_of_interest in ["Weather_delayed_HSI_Event_full_info",
+                                                 "Weather_cancelled_HSI_Event_full_info"]:
+                if draw == 1:  # Climate scenario
+                    result_data_full = summarize(
+                        extract_results(
+                            results_folder,
+                            module="tlo.methods.healthsystem.summary",
+                            key=HSI_of_interest,
+                            custom_generate_series=get_num_treatments_group,
+                            do_scaling=True,
+                        ),
+                        only_mean=False,
+                        collapse_columns=True,
+                    )
+
+                    final_data_fine[scenario_labels_final[i]] = result_data_full['mean']
+                    final_data_fine_with_ci[scenario_labels_final[i]] = {
+                        'mean': result_data_full['mean'],
+                        'lower': result_data_full['lower'],
+                        'upper': result_data_full['upper']
+                    }
+                else:  # Baseline
+                    final_data_fine[scenario_labels_final[i]] = pd.Series(dtype=float)
+                    final_data_fine_with_ci[scenario_labels_final[i]] = {
+                        'mean': pd.Series(dtype=float),
+                        'lower': pd.Series(dtype=float),
+                        'upper': pd.Series(dtype=float)
+                    }
+            else:
+                # Standard extraction for non-weather events or non-MAIN_TEXT analysis
+                result_data_full = summarize(
+                    extract_results(
+                        results_folder,
+                        module="tlo.methods.healthsystem.summary",
+                        key=HSI_of_interest,
+                        custom_generate_series=get_num_treatments_group,
+                        do_scaling=True,
+                    ),
+                    only_mean=False,
+                    collapse_columns=True,
+                )[draw]
+
+                final_data_fine[scenario_labels_final[i]] = result_data_full['mean']
+                final_data_fine_with_ci[scenario_labels_final[i]] = {
+                    'mean': result_data_full['mean'],
+                    'lower': result_data_full['lower'],
+                    'upper': result_data_full['upper']
+                }
+
+        df_final_fine = pd.DataFrame(final_data_fine).fillna(0)
+
+        # Only create plots if there's data
+        if not df_final_fine.empty and df_final_fine.sum().sum() > 0:
+            df_final_fine.to_csv(
+                output_folder / f"{PREFIX_ON_FILENAME}_Final_Coarse_Treatments_{suffix}_{HSI_of_interest}.csv"
+            )
+
+            # Create scatter plot with error bars for fine-grained treatments
+            fig_scatter, ax_scatter = plt.subplots(figsize=(14, 8))
+            x_positions = np.arange(len(scenario_labels_final))
+            jitter_strength = 0.15
+
+            for treatment in df_final_fine.index:
+                y_means = []
+                y_lower = []
+                y_upper = []
+
+                for scenario in scenario_labels_final:
+                    if scenario in final_data_fine_with_ci:
+                        y_means.append(final_data_fine_with_ci[scenario]['mean'].get(treatment, 0))
+                        y_lower.append(final_data_fine_with_ci[scenario]['lower'].get(treatment, 0))
+                        y_upper.append(final_data_fine_with_ci[scenario]['upper'].get(treatment, 0))
+                    else:
+                        y_means.append(df_final_fine.loc[treatment, scenario])
+                        y_lower.append(df_final_fine.loc[treatment, scenario])
+                        y_upper.append(df_final_fine.loc[treatment, scenario])
+
+                y_means = np.array(y_means)
+                y_lower = np.array(y_lower)
+                y_upper = np.array(y_upper)
+
+                jitter = np.random.uniform(-jitter_strength, jitter_strength, size=len(x_positions))
+                x_jittered = x_positions + jitter
+
+                ax_scatter.scatter(x_jittered, y_means, s=80, alpha=0.8,
+                                   label=treatment.replace("*", ""))
+
+                # Only use log scale if all values are positive
+                if (y_means > 0).all():
+                    ax_scatter.set_yscale('log')
+
+                ax_scatter.errorbar(
+                    x_jittered, y_means,
+                    yerr=[y_means - y_lower, y_upper - y_means],
+                    fmt="none", capsize=4, alpha=0.6, linewidth=1.5
+                )
+
+                ax_scatter.plot(x_jittered, y_means, linestyle="-", alpha=0.4, linewidth=1)
+
+            ax_scatter.set_title(
+                f"{HSI_of_interest.replace('_', ' ')} by Treatment Type ({MIN_YEAR}-{target_year_final})",
+                fontsize=14, fontweight='bold'
+            )
+            ax_scatter.set_xticks(x_positions)
+            ax_scatter.set_xticklabels(scenario_labels_final, fontsize=12)
+            ax_scatter.set_xlabel("Scenario", fontsize=12)
+            ax_scatter.set_ylabel("Number of HSI Events", fontsize=12)
+            ax_scatter.tick_params(axis='both', labelsize=11)
+            ax_scatter.legend(
+                title="Treatment Type",
+                bbox_to_anchor=(1.05, 1),
+                loc="upper left",
+                fontsize=10
+            )
+            ax_scatter.grid(True, alpha=0.3, linestyle='--')
+
+            plt.tight_layout()
+            fig_scatter.savefig(
+                output_folder / f"{PREFIX_ON_FILENAME}_Coarse_Treatments_Scatter_{suffix}_{HSI_of_interest}.png",
+                dpi=300, bbox_inches='tight'
+            )
+            plt.close(fig_scatter)
 
 
 if __name__ == "__main__":
