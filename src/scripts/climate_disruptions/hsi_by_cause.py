@@ -56,72 +56,75 @@ precipitation_files = {
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167'] * 4
 
 
-def add_significance_stars(ax, x_positions, baseline_data, climate_data, y_offset_factor=0.05):
+def paired_draw_significance(
+    baseline: pd.Series,
+    climate: pd.Series,
+    alpha_levels=(0.05, 0.01, 0.001),
+    return_details=False
+):
     """
-    Add significance stars to a bar plot where baseline and climate scenarios differ significantly.
+    Compute statistical significance using paired simulation draws.
 
-    Parameters:
-    -----------
-    ax : matplotlib axis
-    x_positions : array-like
-        x-positions of the bars
-    baseline_data : dict
-        Dictionary with 'mean', 'lower', 'upper' for baseline scenario
-    climate_data : dict
-        Dictionary with 'mean', 'lower', 'upper' for climate scenario
-    y_offset_factor : float
-        Factor to offset stars above the bars (relative to y-range)
+    Parameters
+    ----------
+    baseline_draws : pd.Series
+        Draw-level values for the baseline scenario
+    climate_draws : pd.Series
+        Draw-level values for the climate scenario
+    alpha_levels : tuple
+        Significance thresholds (default: 0.05, 0.01, 0.001)
+    return_details : bool
+        If True, return effect size and CI of the difference
+
+    Returns
+    -------
+    star : str
+        Significance stars ('', '*', '**', '***')
+    details : dict (optional)
+        Contains p-value, median difference, and 95% CI
     """
-    # Get y-axis limits
-    y_min, y_max = ax.get_ylim()
-    y_range = y_max - y_min
-    y_offset = y_range * y_offset_factor
 
-    for i, x_pos in enumerate(x_positions):
-        # Extract values for this year
-        baseline_mean = baseline_data['mean'].iloc[i]
-        baseline_lower = baseline_data['lower'].iloc[i]
-        baseline_upper = baseline_data['upper'].iloc[i]
 
-        climate_mean = climate_data['mean'].iloc[i]
-        climate_lower = climate_data['lower'].iloc[i]
-        climate_upper = climate_data['upper'].iloc[i]
+    # Paired differences
+    diff = climate - baseline
 
-        # Check if confidence intervals overlap
-        # Non-overlapping CIs suggest significant difference
-        intervals_overlap = not (baseline_upper < climate_lower or climate_upper < baseline_lower)
+    # If all differences are zero, no significance
+    if np.allclose(diff, 0):
+        return ('', {}) if return_details else ''
 
-        # Calculate approximate z-score (assuming normal distribution)
-        # SE ≈ (upper - lower) / (2 * 1.96) for 95% CI
-        baseline_se = (baseline_upper - baseline_lower) / (2 * 1.96)
-        climate_se = (climate_upper - climate_lower) / (2 * 1.96)
+    # Wilcoxon signed-rank test (two-sided)
+    try:
+        stat, p_value = stats.wilcoxon(diff, zero_method='wilcox', alternative='two-sided')
+    except ValueError:
+        # All diffs zero or invalid
+        return ('', {}) if return_details else ''
 
-        # Calculate difference and pooled SE
-        diff = abs(climate_mean - baseline_mean)
-        pooled_se = np.sqrt(baseline_se ** 2 + climate_se ** 2)
+    # Determine significance stars
+    if p_value < alpha_levels[2]:
+        star = '***'
+    elif p_value < alpha_levels[1]:
+        star = '**'
+    elif p_value < alpha_levels[0]:
+        star = '*'
+    else:
+        star = ''
 
-        if pooled_se > 0:
-            z_score = diff / pooled_se
-            p_value = 2 * (1 - stats.norm.cdf(z_score))  # Two-tailed test
-        else:
-            p_value = 1.0
+    if not return_details:
+        return star
 
-        # Determine significance level and star
-        if p_value < 0.001:
-            star = '***'
-        elif p_value < 0.01:
-            star = '**'
-        elif p_value < 0.05:
-            star = '*'
-        else:
-            star = ''
+    # Effect size + CI (distribution-free)
+    median_diff = np.median(diff)
+    lower_ci, upper_ci = np.percentile(diff, [2.5, 97.5])
 
-        # Add star if significant
-        if star:
-            y_pos = max(baseline_mean, climate_mean) + y_offset
-            ax.text(x_pos, y_pos, star,
-                    ha='center', va='bottom', fontsize=14, fontweight='bold',
-                    color='red')
+    details = {
+        'p_value': p_value,
+        'median_diff': median_diff,
+        'ci_lower': lower_ci,
+        'ci_upper': upper_ci,
+        'n_draws': len(diff),
+    }
+
+    return star, details
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -379,7 +382,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Convert the accumulated data into DataFrames for plotting
         df_all_years_treatments_mean = pd.DataFrame(all_years_data_treatments_mean)
-        print(df_all_years_treatments_mean)
         df_all_years_treatments_lower = pd.DataFrame(all_years_data_treatments_lower)
         df_all_years_treatments_upper = pd.DataFrame(all_years_data_treatments_upper)
 
@@ -396,7 +398,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_weather_cancelled_upper = pd.DataFrame(all_years_data_weather_cancelled_upper)
 
         df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
-
         # Store data for this draw
         all_years_by_draw[draw] = {
             'treatments': {
@@ -422,16 +423,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             'population': df_all_years_data_population_mean
         }
 
-        # PER 1000 POPULATION
-        fig, axes = plt.subplots(2, 2, figsize=(25, 20))
-
-        # Calculate per 1000 rates
-        df_treatments_per_1000_mean = df_all_years_treatments_mean / df_all_years_data_population_mean.iloc[0, 0] * 1000
-        df_never_ran_per_1000_mean = df_all_years_never_ran_mean / df_all_years_data_population_mean.iloc[0, 0] * 1000
-        df_weather_delayed_per_1000_mean = df_all_years_weather_delayed_mean / df_all_years_data_population_mean.iloc[
-            0, 0] * 1000
-        df_weather_cancelled_per_1000_mean = df_all_years_weather_cancelled_mean / \
-                                             df_all_years_data_population_mean.iloc[0, 0] * 1000
 
         # Save data to CSV
         df_all_years_treatments_mean.to_csv(output_folder / f"treatments_by_type_{draw}.csv")
@@ -458,20 +449,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_draws_weather_cancelled_upper.append(
             pd.Series(df_all_years_weather_cancelled_upper.sum(), name=f'Draw {draw}'))
 
-        # Per 1000 for final year only
-        all_draws_treatments_mean_1000.append(pd.Series(df_treatments_per_1000_mean.iloc[:, -1], name=f'Draw {draw}'))
-        all_draws_never_ran_mean_1000.append(pd.Series(df_never_ran_per_1000_mean.iloc[:, -1], name=f'Draw {draw}'))
-        all_draws_weather_delayed_mean_1000.append(
-            pd.Series(df_weather_delayed_per_1000_mean.iloc[:, -1], name=f'Draw {draw}'))
-        all_draws_weather_cancelled_mean_1000.append(
-            pd.Series(df_weather_cancelled_per_1000_mean.iloc[:, -1], name=f'Draw {draw}'))
-
-        if draw == 0:
-            baseline_treatments_by_year = df_all_years_treatments_mean.copy()
-            baseline_never_ran_by_year = df_all_years_never_ran_mean.copy()
-            baseline_weather_delayed_by_year = df_all_years_weather_delayed_mean.copy()
-            baseline_weather_cancelled_by_year = df_all_years_weather_cancelled_mean.copy()
-            baseline_population = df_all_years_data_population_mean.copy()
 
     # Combine all draws
     df_treatments_all_draws_mean = pd.concat(all_draws_treatments_mean, axis=1)
@@ -489,10 +466,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_weather_delayed_all_draws_upper = pd.concat(all_draws_weather_delayed_upper, axis=1)
     df_weather_cancelled_all_draws_upper = pd.concat(all_draws_weather_cancelled_upper, axis=1)
 
-    df_treatments_all_draws_mean_1000 = pd.concat(all_draws_treatments_mean_1000, axis=1)
-    df_never_ran_all_draws_mean_1000 = pd.concat(all_draws_never_ran_mean_1000, axis=1)
-    df_weather_delayed_all_draws_mean_1000 = pd.concat(all_draws_weather_delayed_mean_1000, axis=1)
-    df_weather_cancelled_all_draws_mean_1000 = pd.concat(all_draws_weather_cancelled_mean_1000, axis=1)
 
     # Final summary plots across all scenarios
     treatments_totals_mean = df_treatments_all_draws_mean.sum()
@@ -579,8 +552,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     treatment_positions = {}
 
     for treatment in df_final.index:
-        print(treatment)
-        print(get_color_short_treatment_id(treatment))
         values = df_final.loc[treatment]
         ax_final.bar(scenario_labels_final, values, bottom=bottom,
                      color=get_color_short_treatment_id(treatment),
@@ -607,45 +578,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Calculate significance for each treatment type and store in dictionary
     treatment_significance = {}
+
+    baseline_draw_index = df_treatments_all_draws_mean.columns[0]
+    climate_draw_index = df_treatments_all_draws_mean.columns[1]
+
     for treatment in df_final.index:
-        # Get data for this treatment type from both scenarios
-        baseline_mean = final_data_with_ci['Baseline']['mean'].get(treatment, 0)
-        baseline_lower = final_data_with_ci['Baseline']['lower'].get(treatment, 0)
-        baseline_upper = final_data_with_ci['Baseline']['upper'].get(treatment, 0)
-
-        climate_mean = final_data_with_ci['SSP2-4.5']['mean'].get(treatment, 0)
-        climate_lower = final_data_with_ci['SSP2-4.5']['lower'].get(treatment, 0)
-        climate_upper = final_data_with_ci['SSP2-4.5']['upper'].get(treatment, 0)
-
-        # Calculate standard errors (assuming 95% CI)
-        baseline_se = (baseline_upper - baseline_lower) / (2 * 1.96) if baseline_upper > baseline_lower else 0
-        climate_se = (climate_upper - climate_lower) / (2 * 1.96) if climate_upper > climate_lower else 0
-
-        # Calculate difference and pooled SE
-        diff = abs(climate_mean - baseline_mean)
-        pooled_se = np.sqrt(baseline_se ** 2 + climate_se ** 2)
-
-        if pooled_se > 0 and diff > 0:
-            z_score = diff / pooled_se
-            p_value = 2 * (1 - stats.norm.cdf(z_score))  # Two-tailed test
-
-            # Determine significance level and star
-            if p_value < 0.001:
-                star = '***'
-            elif p_value < 0.01:
-                star = '**'
-            elif p_value < 0.05:
-                star = '*'
-            else:
-                star = ''
-
-            treatment_significance[treatment] = star
-        else:
+        if treatment not in df_treatments_all_draws_mean.index:
             treatment_significance[treatment] = ''
+            continue
+
+        baseline_draws = df_treatments_all_draws_mean.loc[treatment, baseline_draw_index]
+        climate_draws = df_treatments_all_draws_mean.loc[treatment, climate_draw_index]
+
+        star = paired_draw_significance(baseline_draws, climate_draws)
+        treatment_significance[treatment] = star
 
     # Update legend with significance indicators
     handles, labels = ax_final.get_legend_handles_labels()
-    labels = [l.replace("*", "") for l in labels]
 
     handles, labels = ax_final.get_legend_handles_labels()
     labels = [l.replace("*", "") for l in labels]
@@ -671,39 +620,170 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     total_baseline_upper = sum([final_data_with_ci['Baseline']['upper'].get(t, 0) for t in df_final.index])
 
     total_climate_mean = df_final['SSP2-4.5'].sum()
-    total_climate_lower = sum([final_data_with_ci['SSP2-4.5']['lower'].get(t, 0) for t in df_final.index])
-    total_climate_upper = sum([final_data_with_ci['SSP2-4.5']['upper'].get(t, 0) for t in df_final.index])
+    baseline_total_draws = df_treatments_all_draws_mean.iloc[:, 0].sum()
+    climate_total_draws = df_treatments_all_draws_mean.iloc[:, 1].sum()
 
-    total_baseline_se = (total_baseline_upper - total_baseline_lower) / (2 * 1.96)
-    total_climate_se = (total_climate_upper - total_climate_lower) / (2 * 1.96)
-
-    total_diff = abs(total_climate_mean - total_baseline_mean)
-    total_pooled_se = np.sqrt(total_baseline_se ** 2 + total_climate_se ** 2)
-
-    if total_pooled_se > 0:
-        total_z_score = total_diff / total_pooled_se
-        total_p_value = 2 * (1 - stats.norm.cdf(total_z_score))
-
-        if total_p_value < 0.001:
-            total_star = '***'
-        elif total_p_value < 0.01:
-            total_star = '**'
-        elif total_p_value < 0.05:
-            total_star = '*'
-        else:
-            total_star = ''
-
-        if total_star:
-            # Add text annotation showing overall significance
-            ax_final.text(0.5, 1.02, f'Overall difference: {total_star}',
-                          ha='center', va='bottom', fontsize=11, fontweight='bold',
-                          color='darkred', transform=ax_final.transAxes)
+    total_star = paired_draw_significance(
+        baseline_total_draws,
+        climate_total_draws
+    )
+    print(total_star)
+    if total_star:
+        ax_final.text(
+            0.5, 1.02,
+            f'Overall difference: {total_star}',
+            ha='center',
+            va='bottom',
+            fontsize=11,
+            fontweight='bold',
+            color='darkred',
+            transform=ax_final.transAxes
+        )
 
     fig_final.tight_layout()
     fig_final.savefig(
         output_folder / f"{PREFIX_ON_FILENAME}_Final_Treatments_StackedBar_all_years_{suffix}_with_significance.png",
         dpi=300)
     plt.close(fig_final)
+    # Now do by fine treatment ID
+
+    HSI_of_interest = "HSI_Event_non_blank_appt_footprint"
+
+    def get_num_treatments_group(_df):
+        """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
+        _df = _df.loc[pd.to_datetime(_df.date).between(*target_period_final)]
+
+        # Check if TREATMENT_ID column exists and has data
+        if 'TREATMENT_ID' not in _df.columns or _df.empty:
+            return pd.Series(dtype=int)
+
+        # Check the type of TREATMENT_ID values
+        sample_value = _df['TREATMENT_ID'].iloc[0] if len(_df) > 0 else None
+
+        if sample_value is None:
+            return pd.Series(dtype=int)
+
+        # If TREATMENT_ID contains dictionaries, expand them
+        if isinstance(sample_value, dict):
+            _df = _df['TREATMENT_ID'].apply(pd.Series).sum().astype(int)
+            # Now index should be strings from dictionary keys
+        else:
+            # TREATMENT_ID is already a string column, just count occurrences
+            _df = _df['TREATMENT_ID'].value_counts()
+
+        print(_df.index)
+
+        if len(_df) == 0:
+            return pd.Series(dtype=int)
+
+        # Check if index contains strings before trying to split
+        if isinstance(_df.index[0], str):
+            # Shorten treatment IDs to first two parts
+            _df.index = _df.index.map(lambda x: "_".join(x.split('_')[:2]) + "*")
+            _df = _df.groupby(level=0).sum()
+        else:
+            print(f"Warning: Expected string index but got {type(_df.index[0])}")
+            return pd.Series(dtype=int)
+
+        return _df
+
+    final_data_fine = {}
+    final_data_fine_with_ci = {}
+    for i, draw in enumerate(scenario_indices_final):
+        result_data_full = summarize(
+            extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key=HSI_of_interest,
+                custom_generate_series=get_num_treatments_group,
+                do_scaling=True,
+            ),
+            only_mean=False,
+            collapse_columns=True,
+        )[draw]
+        final_data_fine[scenario_labels_final[i]] = result_data_full['mean']
+    df_final_fine = pd.DataFrame(final_data_fine).fillna(0)
+    df_final_fine.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_Final_Coarse_Treatments_{suffix}_{HSI_of_interest}.csv")
+
+    # --- Scatter plot for coarse treatment IDs with error bars ---
+    fig_scatter, ax_scatter = plt.subplots(figsize=(14, 8))
+
+    # Get x positions for the scenarios
+    x_positions = np.arange(len(scenario_labels_final))
+    jitter_strength = 0.15
+
+    # Plot each treatment type
+    for i, treatment in enumerate(df_final_fine.index):
+        print(treatment)
+        #colour = get_color_short_treatment_id(treatment)
+        #print(colour)
+        # Get mean and CI values for this treatment
+        y_means = []
+        y_lower = []
+        y_upper = []
+
+        for scenario in scenario_labels_final:
+            if scenario in final_data_fine_with_ci:
+                y_means.append(final_data_fine_with_ci[scenario]['mean'].get(treatment, 0))
+                y_lower.append(final_data_fine_with_ci[scenario]['lower'].get(treatment, 0))
+                y_upper.append(final_data_fine_with_ci[scenario]['upper'].get(treatment, 0))
+            else:
+                y_means.append(df_final_fine.loc[treatment, scenario])
+                y_lower.append(df_final_fine.loc[treatment, scenario])
+                y_upper.append(df_final_fine.loc[treatment, scenario])
+
+        y_means = np.array(y_means)
+        y_lower = np.array(y_lower)
+        y_upper = np.array(y_upper)
+
+        # Add jitter to x positions
+        jitter = np.random.uniform(-jitter_strength, jitter_strength, size=len(x_positions))
+        x_jittered = x_positions + jitter
+
+        # Plot scatter points
+        ax_scatter.scatter(x_jittered, y_means, s=80, alpha=0.8, label=treatment.replace("*", ""))
+        ax_scatter.set_yscale('log')
+
+        # Plot error bars
+        ax_scatter.errorbar(
+            x_jittered,
+            y_means,
+            yerr=[y_means - y_lower, y_upper - y_means],
+            fmt="none",
+            #ecolor=colour,
+            capsize=4,
+            alpha=0.6,
+            linewidth=1.5
+        )
+
+        # Connect points with line
+        ax_scatter.plot(x_jittered, y_means, linestyle="-", alpha=0.4, linewidth=1)
+
+    ax_scatter.set_title(f"HSI Events by Treatment Type ({min_year}-{target_year_final})", fontsize=14,
+                         fontweight='bold')
+    ax_scatter.set_xticks(x_positions)
+    ax_scatter.set_xticklabels(scenario_labels_final, fontsize=12)
+    ax_scatter.set_xlabel("Scenario", fontsize=12)
+    ax_scatter.set_ylabel("Number of HSI Events", fontsize=12)
+    ax_scatter.tick_params(axis='both', labelsize=11)
+
+    # Add legend
+    ax_scatter.legend(
+        title="Treatment Type",
+        bbox_to_anchor=(1.05, 1),
+        loc="upper left",
+        fontsize=10
+    )
+
+    ax_scatter.grid(True, alpha=0.3, linestyle='--')
+    plt.tight_layout()
+    fig_scatter.savefig(
+        output_folder / f"{PREFIX_ON_FILENAME}_Coarse_Treatments_Scatter_{suffix}_{HSI_of_interest}.png",
+        dpi=300,
+        bbox_inches='tight'
+    )
+    plt.close(fig_scatter)
+
 
 
 if __name__ == "__main__":
