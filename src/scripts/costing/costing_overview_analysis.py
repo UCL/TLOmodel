@@ -161,13 +161,11 @@ def clean_equipment_cost_for_manuscript(df, drop_equipment):
 
     # 3. Drop non-medical equipment
     drop_mask = (
-        input_costs['cost_subgroup'].isin(drop_equipment)
-        & (input_costs['cost'] == 0)
+        df['cost_subgroup'].isin(drop_equipment)
+        & (df['cost'] == 0)
     )
 
-    df = df[
-        ~df['cost_subgroup'].isin(drop_mask)
-    ]
+    df = df[~(drop_mask)]
 
     return df
 
