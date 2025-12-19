@@ -32,6 +32,7 @@ class IndividualHistoryTracker(Module):
         self.mni_instances_before = False
         self.mni_row_before = {}
         self.entire_mni_before = {}
+        self.consumable_access = {}
 
     PARAMETERS = {
         # Options within module
@@ -154,13 +155,9 @@ class IndividualHistoryTracker(Module):
         chain_links = {}
         chain_links[data['target']] = {k: v for k, v in data.items() if k != 'target'}
         
-        # Convert chain_links into EAV-type dataframe
-        eav_plus_event = convert_chain_links_into_eav(chain_links)
-        # log it
-        self.log_eav_dataframe_to_individual_histories(eav_plus_event)
+        self.consumable_access = chain_links
         
         return
-
 
     def on_event_pre_run(self, data):
         """Do this when notified that an event is about to run.
@@ -177,6 +174,7 @@ class IndividualHistoryTracker(Module):
 
         # Initialise these variables
         self.df_before = []
+        self.consumable_access = {}
         self.row_before = pd.Series()
         self.mni_instances_before = False
         self.mni_row_before = {}
@@ -276,6 +274,15 @@ class IndividualHistoryTracker(Module):
 
                 # Add individual to the chain links
                 chain_links[data['target']] = link_info
+                
+                # Update with consumable access info
+                # Consumable access is only at individual level, so this should either be size 0 or 1
+                assert len(self.consumable_access) == 0 or len(self.consumable_access) == 1
+                if len(self.consumable_access) == 1:
+                    chain_links[data['target']].update({k: v for k, v in
+                                                        self.consumable_access[data['target']].items() if k not in chains_links[data['target']]})
+                    self.consumable_access = {}
+
 
         else:
             # Target is entire population. Identify individuals for which properties have changed
@@ -310,6 +317,7 @@ class IndividualHistoryTracker(Module):
         self.mni_instances_before = False
         self.mni_row_before = {}
         self.entire_mni_before = {}
+        self.consumable_access = {}
 
     def mni_values_differ(self, v1, v2):
 

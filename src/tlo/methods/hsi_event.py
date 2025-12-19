@@ -229,8 +229,8 @@ class HSI_Event:
                                 "footprint": footprint,
                                 "level": level,
                                 "treatment_ID": self.TREATMENT_ID,
-                                "equipment", self._EQUIPMENT,
-                                "bed_days", self.bed_days_allocated_to_this_event,
+                                "equipment": self._EQUIPMENT,
+                                "bed_days": self.bed_days_allocated_to_this_event,
                                 })
 
         return updated_appt_footprint
