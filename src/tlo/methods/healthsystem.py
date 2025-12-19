@@ -543,7 +543,7 @@ class HealthSystem(Module):
         self._summary_counter = HealthSystemSummaryCounter()
 
         # Create counter for the running total of footprint of all the HSIs being run today
-        self.running_total_footprint: Counter = Counter()
+        self.running_total_footprint = defaultdict(Counter)
 
         # A reusable store for holding squeeze factors in get_squeeze_factors()
         self._get_squeeze_factors_store_grow = 500
@@ -1825,7 +1825,7 @@ class HealthSystem(Module):
     ):
         for clinic, clinic_cl in current_capabilities.items():
             self.get_clinic_squeeze_factors(
-                clinic, footprints_per_event, total_footprint, clinic_cl, compute_squeeze_factor_to_district_level
+                clinic, footprints_per_event, total_footprint[clinic], clinic_cl, compute_squeeze_factor_to_district_level
             )
 
         return self._get_squeeze_factors_store
@@ -1850,7 +1850,8 @@ class HealthSystem(Module):
         :param footprints_per_event: List, one entry per HSI event, containing the
             minutes required from each health officer in each health facility as a
             Counter (using the standard index)
-        :param total_footprint: Counter, containing the total minutes required from
+        :param total_footprint: a dictionary of Counters, containing for each clinic
+            the total minutes required from
             each health officer in each health facility when non-zero, (using the
             standard index)
         :param current_capabilities: Series giving the amount of time available for
@@ -2083,7 +2084,7 @@ class HealthSystem(Module):
         `runnning_total_footprint`. This runs every day.
         """
         current_capabilities = self.capabilities_today[clinic_name]
-        total_footprint = self.running_total_footprint
+        total_footprint = self.running_total_footprint[clinic_name]
 
         # Combine the current_capabilities and total_footprint per-officer totals
         comparison = pd.DataFrame(index=current_capabilities.keys())
@@ -2132,8 +2133,9 @@ class HealthSystem(Module):
         )
 
         self._summary_counter.record_hs_status(
-            fraction_time_used_across_all_facilities=fraction_time_used_overall,
-            fraction_time_used_by_facID_and_officer=fraction_time_used_by_facID_and_officer.to_dict(),
+            fraction_time_used_across_all_facilities_in_this_clinic=fraction_time_used_overall,
+            fraction_time_used_by_facID_and_officer_in_this_clinic=fraction_time_used_by_facID_and_officer.to_dict(),
+            clinic=clinic_name
         )
 
     def remove_beddays_footprint(self, person_id):
@@ -2712,7 +2714,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                     )
 
                         # Update today's footprint based on actual call and squeeze factor
-                        self.module.running_total_footprint.update(updated_call)
+                        self.module.running_total_footprint[event_clinic].update(updated_call)
 
                         # Write to the log
                         self.module.record_hsi_event(
@@ -2836,7 +2838,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 )
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
-        self.module.running_total_footprint = inpatient_footprints
+        for k in self.module.running_total_footprint.keys():
+           self.module.running_total_footprint[k] = inpatient_footprints
 
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
@@ -2899,8 +2902,8 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ("0", "1a", "1b", "2", "3", "4")}
 
-        self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
-        self._sum_of_daily_frac_time_used_by_facID_and_officer = Counter()
+        self._frac_time_used_overall = defaultdict(list) # Running record of the usage of the healthcare system
+        self._sum_of_daily_frac_time_used_by_facID_and_officer = defaultdict(Counter)
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
         #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
@@ -2943,15 +2946,20 @@ class HealthSystemSummaryCounter:
 
     def record_hs_status(
         self,
-        fraction_time_used_across_all_facilities: float,
-        fraction_time_used_by_facID_and_officer: Dict[str, float],
+        fraction_time_used_across_all_facilities_in_this_clinic: float,
+        fraction_time_used_by_facID_and_officer_in_this_clinic: Dict[str, float],
+        clinic:  Optional[str] = None,
     ) -> None:
         """Record a current status metric of the HealthSystem."""
-        # The fraction of all healthcare worker time that is used:
-        self._frac_time_used_overall.append(fraction_time_used_across_all_facilities)
 
-        for facID_and_officer, fraction_time in fraction_time_used_by_facID_and_officer.items():
-            self._sum_of_daily_frac_time_used_by_facID_and_officer[facID_and_officer] += fraction_time
+        if clinic is None:
+            clinic = "GenericClinic"
+
+        # The fraction of all healthcare worker time that is used for this clinic:
+        self._frac_time_used_overall[clinic].append(fraction_time_used_across_all_facilities_in_this_clinic)
+
+        for facID_and_officer, fraction_time in fraction_time_used_by_facID_and_officer_in_this_clinic.items():
+            self._sum_of_daily_frac_time_used_by_facID_and_officer[clinic][facID_and_officer] += fraction_time
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
@@ -3014,22 +3022,26 @@ class HealthSystemSummaryCounter:
     def frac_time_used_by_facID_and_officer(
         self,
         facID_and_officer: Optional[str] = None,
+        clinic: Optional[str] = None,
     ) -> Union[float, pd.Series]:
         """Average fraction of time used by officer type and level since last reset.
         If `officer_type` and/or `level` is not provided (left to default to `None`) then a pd.Series with a multi-index
         is returned giving the result for all officer_types/levels."""
 
+        if clinic is None:
+            clinic = "GenericClinic"
+
         if facID_and_officer is not None:
             return (
-                self._sum_of_daily_frac_time_used_by_facID_and_officer[facID_and_officer]
-                / len(self._frac_time_used_overall)
+                self._sum_of_daily_frac_time_used_by_facID_and_officer[clinic][facID_and_officer]
+                / len(self._frac_time_used_overall[clinic])
                 # Use len(self._frac_time_used_overall) as proxy for number of days in past year.
             )
         else:
             # Return multiple in the form of a pd.Series with multiindex
             mean_frac_time_used = {
-                (_facID_and_officer): v / len(self._frac_time_used_overall)
-                for (_facID_and_officer), v in self._sum_of_daily_frac_time_used_by_facID_and_officer.items()
+                (_facID_and_officer): v / len(self._frac_time_used_overall[clinic])
+                for (_facID_and_officer), v in self._sum_of_daily_frac_time_used_by_facID_and_officer[clinic].items()
                 if (_facID_and_officer == facID_and_officer or _facID_and_officer is None)
             }
             return pd.Series(
