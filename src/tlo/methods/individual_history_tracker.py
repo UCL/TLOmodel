@@ -232,9 +232,9 @@ class IndividualHistoryTracker(Module):
                 # Create and store event for this individual, regardless of whether any property change occurred
                 link_info = {'event_name' : data['event_name']}
                 if 'footprint' in data.keys():
-                    link_info['footprint'] = data['footprint']
-                    link_info['level'] = data['level']
-                    link_info['treatment_ID'] = data['treatment_ID']
+                    HSI_specific_fields = {'footprint','level','treatment_ID','equipment','bed_days'}
+                    for field in HSI_specific_fields:
+                        link_info[field] = data[field]
 
                 # Store (if any) property changes as a result of the event for this individual
                 for key in self.row_before.index:
