@@ -153,7 +153,7 @@ condoms = [get_item_code("Condom, male"),
            get_item_code("Female Condom_Each_CMST")]
 # Undernutrition
 undernutrition = [get_item_code('Supplementary spread, sachet 92g/CAR-150'),
-                  get_item_code('Complementary feeding--education only drugs/supplies to service a client'),
+                  get_item_code('F-75 therapeutic milk, 102.5 g'),
                   get_item_code('SAM theraputic foods'),
                   get_item_code('SAM medicines'),
                   get_item_code('Therapeutic spread, sachet 92g/CAR-150'),
@@ -276,7 +276,7 @@ list_of_operating_costs_for_calibration = ['Facility utility bills', 'Infrastruc
 costing_outputs_folder = Path('./outputs/costing_dec25')
 if not os.path.exists(costing_outputs_folder):
     os.makedirs(costing_outputs_folder)
-figurespath = costing_outputs_folder / "figures_post_jan2025fix"
+figurespath = costing_outputs_folder / "figures"
 if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 calibration_outputs_folder = Path(figurespath / 'calibration')
@@ -692,3 +692,16 @@ print(f"\item `Jadelle (implant), box of 2\_CMST' -  53,585 units dispensed as p
       f"\item `IUD, Copper T-380A' -  4,079 units dispensed as per OpenLMIS, {consumables_dispensed_dict[str(iud)]:,.0f} units dispensed as per modelled estimates"
       f"\item `Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly' -   2,807,681 units dispensed as per OpenLMIS, {consumables_dispensed_dict[str(depot)]:,.0f} dispensed as per modelled estimates"
       f"\item `Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle' -  1,795,325 units (37,701,825 tablets) dispensed as per OpenLMIS, {consumables_dispensed_dict[str(levonorgestrel)]:,.0f} tablets dispensed as per modelled estimates")
+
+# Undernutrition commodities
+rutf = get_item_code('Therapeutic spread, sachet 92g/CAR-150')
+f75 = get_item_code('F-75 therapeutic milk, 102.5 g')
+sam_meds = get_item_code('SAM medicines')
+csb = get_item_code('Corn Soya Blend (or Supercereal - CSB++)')
+
+print(f"Since nutrition commodities are sourced externally, data on actual units dispensed was not available in OpenLMIS. "
+      f"As per the model, the following quantities were dispensed of the major nutritional commodities - "
+      f"{consumables_dispensed_dict[str(rutf)]:,.0f} sachets of Ready-To-Use Therapeutic Food (RUTF), "
+      f"{consumables_dispensed_dict[str(f75)]/1000:,.0f} kilograms of powder to prepare F-75 therapeutic milk, "
+      f"{consumables_dispensed_dict[str(sam_meds)]:,.0f} courses of standard treatment therapy for Severe Acute Malnutrition (SAM), and "
+      f"{consumables_dispensed_dict[str(csb)]/1000:,.0f} kilograms of Corn Soya Blend (or Supercereal)")
