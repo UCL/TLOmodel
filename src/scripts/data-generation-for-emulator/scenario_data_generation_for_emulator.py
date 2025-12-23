@@ -1,14 +1,14 @@
-"""This Scenario file run the model to track individual histories
+"""This Scenario file generates individual histories for the purpose of generating datasets for emulator training
 
 Run on the batch system using:
 ```
 tlo batch-submit
-    src/scripts/analysis_data_generation/scenario_track_individual_histories.py
+    src/scripts/analysis_data_generation/scenario_data_generation_for_emulator.py
 ```
 
 or locally using:
 ```
-    tlo scenario-run src/scripts/analysis_data_generation/scenario_track_individual_histories.py
+    tlo scenario-run src/scripts/analysis_data_generation/scenario_data_generation_for_emulator.py
 ```
 
 """
@@ -38,7 +38,7 @@ class TrackIndividualHistories(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'track_individual_histories',
+            'filename': 'data_generation_for_emulator',
             'directory': Path('./outputs'),  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
