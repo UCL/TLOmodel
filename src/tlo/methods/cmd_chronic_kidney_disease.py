@@ -9,6 +9,7 @@ from tlo import DateOffset, Module, Parameter, Population, Property, Simulation,
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, cardio_metabolic_disorders
+from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -39,6 +40,16 @@ class CMDChronicKidneyDisease(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'chronic_kidney_disease': Cause(gbd_causes='Chronic kidney disease', label='Kidney Disease'),
+    }
+
+    # Declare Causes of Disability
+    CAUSES_OF_DISABILITY = {
+        'chronic_kidney_disease': Cause(gbd_causes='Chronic kidney disease', label='Kidney Disease'),
     }
 
     PARAMETERS = {
@@ -597,7 +608,7 @@ class CKD_DialysisDeathEvent(Event, IndividualScopeEventMixin):
 
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
-                cause="chronic_kidney_disease_death",
+                cause="chronic_kidney_disease",
                 originating_module=self.module
             )
 
@@ -794,7 +805,6 @@ class HSI_Kidney_Transplant_Evaluation(HSI_Event, IndividualScopeEventMixin):
             )
             # Set person to be on dialysis
             df.at[person_id, 'nc_ckd_on_dialysis'] = True
-            self.schedule_dialysis_death_event(person_id)
 
 
 # class HSI_Haemodialysis_Refill(HSI_Event, IndividualScopeEventMixin):
@@ -905,12 +915,8 @@ class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
 
         else:
             df.at[person_id, 'ckd_date_transplant'] = self.sim.date  #todo Upile look at this logic, related to DALYs
-
-            self.sim.modules['Demography'].do_death(
-                individual_id=person_id,
-                cause='chronic_kidney_disease_death',
-                originating_module=self.module
-            )
+            # Schedule deaths
+            self.schedule_dialysis_death_event(person_id)
 
 
 class HSI_AntiRejectionDrug_Refill(HSI_Event, IndividualScopeEventMixin):
