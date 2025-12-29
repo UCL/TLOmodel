@@ -59,8 +59,7 @@ info = get_scenario_info(results_folder)
 TARGET_PERIOD = (Date(2025, 1, 1), Date(2030, 12, 31))  # This is the period that is costed
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
-list_of_years_for_plot = list(range(2025, 2031))
-number_of_years_costed = relevant_period_for_costing[1] - 2023 + 1
+number_of_years_costed = relevant_period_for_costing[1] - relevant_period_for_costing[0] + 1
 
 # Scenarios
 cost_scenarios = {0: "Actual", 1: "Perfect consumable availability"}
@@ -68,103 +67,75 @@ cost_scenarios = {0: "Actual", 1: "Perfect consumable availability"}
 # Costing parameters
 discount_rate = 0
 
+# Extract results for final output
+# ------------------------------------------------------------------------------------------------------------------
 # Extract consumables dispensed data
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
 
-def get_quantity_of_consumables_dispensed(results_folder):
-    def convert_str_to_dict(row_entry):
-        if isinstance(row_entry, str):
-            row_entry_dict = literal_eval(row_entry)
-        else:
-            row_entry_dict = row_entry
-        return row_entry_dict
+def get_counts_of_items_requested(_df):
+    _df = drop_outside_period(_df).copy()
 
-    def get_counts_of_items_requested(_df):
-        _df = drop_outside_period(_df)
-        # Dict with date and Treatment_ID
-        counts_used = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
-        counts_notavail = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
-
-        for _, row in _df.iterrows():
-            date = row['date']
-            treatment = row['TREATMENT_ID']
-
-            # Used Items
-            for item, num in convert_str_to_dict(row['Item_Used']).items():
-                counts_used[date][treatment][item] += num
-
-            # Not Available Items
-            for item, num in convert_str_to_dict(row['Item_NotAvailable']).items():
-                counts_notavail[date][treatment][item] += num
-
-        # Convert nested dicts → MultiIndex Series
-
-        # Used
-        used_records = []
-        for date, tdict in counts_used.items():
-            for treatment, idict in tdict.items():
-                for item, num in idict.items():
-                    used_records.append((date, treatment, item, 'Used', num))
-
-        used_df = pd.DataFrame(used_records,
-                               columns=['date', 'TREATMENT_ID', 'item', 'status', 'value'])
-
-        # Not Available
-        na_records = []
-        for date, tdict in counts_notavail.items():
-            for treatment, idict in tdict.items():
-                for item, num in idict.items():
-                    na_records.append((date, treatment, item, 'NotAvailable', num))
-
-        notavail_df = pd.DataFrame(na_records,
-                                   columns=['date', 'TREATMENT_ID', 'item', 'status', 'value'])
-
-        # Combine
-        combined = pd.concat([used_df, notavail_df], axis=0)
-
-        # Convert to series with MultiIndex
-        combined_series = combined.set_index(['date', 'TREATMENT_ID', 'item', 'status'])['value']
-
-        return combined_series
-
-    # Extract results using your existing pipeline
-    cons_req = extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem',
-        key='Consumables',
-        custom_generate_series=get_counts_of_items_requested,
-        do_scaling=True
+    _df["year"] = pd.to_datetime(_df["date"]).dt.year
+    _df["Item_Used"] = _df["Item_Used"].apply(
+        lambda x: literal_eval(x) if isinstance(x, str) else x
     )
 
-    # Only keep 'Used'
-    cons_dispensed = cons_req.xs("Used", level='status')
+    # Turn dicts into list of (item, num) pairs and explode
+    used = (
+        _df[["year", "TREATMENT_ID", "Item_Used"]]
+        .assign(item_num=_df["Item_Used"].map(dict.items))
+        .explode("item_num", ignore_index=True)
+    )
 
-    return cons_dispensed
+    # Split tuple into columns
+    used[["item", "value"]] = pd.DataFrame(used["item_num"].tolist(), index=used.index)
+    used["value"] = pd.to_numeric(used["value"], errors="coerce").fillna(0)
+
+    # Aggregate
+    return (
+        used.groupby(["year", "TREATMENT_ID", "item"], sort=False)["value"]
+        .sum()
+    )
+
+# Extract results using your existing pipeline
+cons_dispensed = extract_results(
+    results_folder,
+    module='tlo.methods.healthsystem',
+    key='Consumables',
+    custom_generate_series=get_counts_of_items_requested,
+    do_scaling=True
+)
 
 idx = pd.IndexSlice
-
-consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder)
-
-consumables_dispensed_summary = compute_summary_statistics(consumables_dispensed, central_measure = 'median')
-
-consumables_dispensed_summary = consumables_dispensed_summary.reset_index()
-consumables_dispensed_summary[idx['year']] = pd.to_datetime(
-    consumables_dispensed_summary[idx['date']]).dt.year
-
+cons_dispensed = cons_dispensed.apply(pd.to_numeric, errors="coerce")
+cons_dispensed_summary = compute_summary_statistics(
+    cons_dispensed, central_measure = 'median').reset_index()
 # Add consumable name and unit cost
-consumables_dict = \
+cons_dict = \
     pd.read_csv(path_for_consumable_resourcefiles / 'ResourceFile_Consumables_Items_and_Packages.csv', low_memory=False,
                 encoding="ISO-8859-1")[['Items', 'Item_Code']]
-consumables_dict = dict(zip(consumables_dict['Item_Code'], consumables_dict['Items']))
+cons_dict = dict(zip(cons_dict['Item_Code'], cons_dict['Items']))
 unit_costs = load_unit_cost_assumptions(resourcefilepath)
-consumables_costs_by_item_code = unit_costs["consumables"]
-consumables_costs_by_item_code = dict(zip(consumables_costs_by_item_code['Item_Code'], consumables_costs_by_item_code['Price_per_unit']))
-consumables_dispensed_summary[idx['item_name']] = consumables_dispensed_summary[idx['item']].map(consumables_dict)
-consumables_dispensed_summary[idx['unit_cost']] = consumables_dispensed_summary[idx['item']].map(consumables_costs_by_item_code)
+cons_costs_by_item_code = unit_costs["consumables"]
+cons_costs_by_item_code = dict(zip(cons_costs_by_item_code['Item_Code'], cons_costs_by_item_code['Price_per_unit']))
+cons_dispensed_summary[idx['item_name']] = cons_dispensed_summary[idx['item']].map(cons_dict)
+cons_dispensed_summary[idx['unit_cost']] = cons_dispensed_summary[idx['item']].map(cons_costs_by_item_code)
 
-consumables_dispensed_summary.to_csv(figurespath / 'sample_output_v2.csv')
+# Calculate cost
+cols = cons_dispensed_summary.columns
+stat_cols = [
+    c for c in cols
+    if isinstance(c[0], int) and c[1] in {"lower", "central", "upper"}
+]
+cons_cost_summary = cons_dispensed_summary.copy()
+cons_cost_summary.loc[:, stat_cols] = (
+    cons_cost_summary.loc[:, stat_cols]
+    .mul(cons_cost_summary[idx['unit_cost']], axis=0)
+)
+
+#consumables_dispensed_summary.to_csv(figurespath / 'sample_output_v2.csv')
 
 # Extract supplementary data
 # 1. Count of HSIs
@@ -181,7 +152,9 @@ def get_hsi_summary(results_folder, key, var, do_scaling = True):
 
     def get_counts_of_hsi_events(_df: pd.Series):
         """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
-        _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
+        _df = drop_outside_period(_df).copy()
+        _df["year"] = pd.to_datetime(_df["date"]).dt.year
+        _df = _df.set_axis(_df['year']).drop(columns=['date'])
         flat_series = _df[(var)].apply(flatten_nested_dict)
 
         return flat_series.apply(pd.Series).stack().stack()
@@ -195,11 +168,30 @@ def get_hsi_summary(results_folder, key, var, do_scaling = True):
         do_scaling=do_scaling,
     ), central_measure='mean')
 
+    count.index = count.index.set_names(['year', 'TREATMENT_ID', ''])
     return count
 
 count_by_treatment_id = get_hsi_summary(results_folder, key = 'HSI_Event_non_blank_appt_footprint',
                                         var = "TREATMENT_ID", do_scaling = True)
 count_by_treatment_id = count_by_treatment_id.droplevel(2)
+
+# Merge count of treatment IDs with consumables cost
+cons_cost_summary = count_by_treatment_id.rename(
+    columns={0: 'cons_cost_actual', 1: 'cons_cost_perfect'},
+    level=0
+)
+count_by_treatment_id = count_by_treatment_id.rename(
+    columns={0: 'treatment_count_actual', 1: 'treatment_count_perfect'},
+    level=0
+)
+full_output = cons_cost_summary.merge(
+    count_by_treatment_id,
+    left_index=True,
+    right_index=True,
+    how='left',
+    validate='m:1'
+)
+
 count_by_appointment = get_hsi_summary(results_folder, key = 'HSI_Event_non_blank_appt_footprint',
                                         var = "Number_By_Appt_Type_Code_And_Level", do_scaling = True)
 
