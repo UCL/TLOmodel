@@ -2673,6 +2673,7 @@ class HealthSystemSummaryCounter:
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        self._no_blank_appt_treatment_ids_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
@@ -2705,6 +2706,8 @@ class HealthSystemSummaryCounter:
         # Count the non-blank appointment footprints
         if len(appt_footprint):
             self._no_blank_appt_treatment_ids[treatment_id] += 1
+            self._no_blank_appt_treatment_ids_by_level[level][treatment_id] += 1
+
             for appt_type, number in appt_footprint:
                 self._no_blank_appt_appts[appt_type] += number
                 self._no_blank_appt_by_level[level][appt_type] += number
@@ -2758,6 +2761,7 @@ class HealthSystemSummaryCounter:
             description="Same as for key 'HSI_Event' but limited to HSI_Event that have non-blank footprints",
             data={
             "TREATMENT_ID": self._no_blank_appt_treatment_ids,
+            "TREATMENT_ID_And_Level": self._no_blank_appt_treatment_ids_by_level,
             "Number_By_Appt_Type_Code": self._no_blank_appt_appts,
             "Number_By_Appt_Type_Code_And_Level": self._no_blank_appt_by_level,
             },
