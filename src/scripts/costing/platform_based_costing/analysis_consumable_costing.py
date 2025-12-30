@@ -32,7 +32,7 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
 # Create folders to store results
 resourcefilepath = Path("./resources")
-outputfilepath = Path('./outputs/sakshi.mohan@york.ac.uk')
+outputfilepath = Path('./outputs/') # sakshi.mohan@york.ac.uk
 figurespath = Path('./outputs/platform_based_costing/')
 path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables"
 if not os.path.exists(figurespath):
@@ -42,7 +42,7 @@ from tlo.analysis.utils import create_pickles_locally
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('consumables_costing-2025-12-09T212822Z.py', outputfilepath)[0] # consumables_costing-2025-12-02T185908Z
+results_folder = get_scenario_outputs('consumables_costing-2025-12-30T122124Z.py', outputfilepath)[0] # consumables_costing-2025-12-09T212822Z - this is the Azure scenario
 
 #log = pd.read_csv(results_folder1 / "0" / "0" / 'impact_of_consumables_availability__2025-11-25T120830.log', sep="\t")
 #create_pickles_locally(scenario_output_dir = "outputs/sakshi.mohan@york.ac.uk/consumables_costing-2025-12-09T212822Z") # from .log files
@@ -56,7 +56,8 @@ info = get_scenario_info(results_folder)
 # Declare default parameters for cost analysis
 # ------------------------------------------------------------------------------------------------------------------
 # Period relevant for costing
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2030, 12, 31))  # This is the period that is costed
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2030, 12, 31))
+# TODO update period after final simulation (Date(2025, 1, 1), Date(2030, 12, 31))
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
 number_of_years_costed = relevant_period_for_costing[1] - relevant_period_for_costing[0] + 1
@@ -134,8 +135,22 @@ cons_cost_summary.loc[:, stat_cols] = (
     cons_cost_summary.loc[:, stat_cols]
     .mul(cons_cost_summary[idx['unit_cost']], axis=0)
 )
+#cons_cost_summary = cons_cost_summary.groupby([idx['year'], idx['TREATMENT_ID']])[stat_cols].sum()
+# Get cost dataframes ready of merge
+cons_cost_summary = cons_cost_summary.rename(
+    columns={0: 'cons_cost_actual', 1: 'cons_cost_perfect'},
+    level=0
+)
+cons_dispensed_summary = cons_dispensed_summary.rename(
+    columns={0: 'cons_dispensed_actual', 1: 'cons_dispensed_perfect'},
+    level=0
+)
+cons_dispensed_summary = cons_dispensed_summary.drop([idx['item_name'], idx['unit_cost']], axis=1)
+cons_cost_summary = cons_cost_summary.merge(cons_dispensed_summary, on = [idx['year'], idx['TREATMENT_ID'], idx['item']],
+                                            how = 'left', validate = '1:1')
+cons_cost_summary.set_index([idx['year'], idx['TREATMENT_ID']], inplace = True)
 
-#consumables_dispensed_summary.to_csv(figurespath / 'sample_output_v2.csv')
+#cons_cost_summary.to_csv(figurespath / 'sample_output_v2.csv')
 
 # Extract supplementary data
 # 1. Count of HSIs
@@ -166,31 +181,83 @@ def get_hsi_summary(results_folder, key, var, do_scaling = True):
         key=key,
         custom_generate_series=get_counts_of_hsi_events,
         do_scaling=do_scaling,
-    ), central_measure='mean')
+    ), central_measure='median')
 
-    count.index = count.index.set_names(['year', 'TREATMENT_ID', ''])
+    count.index = count.index.set_names(['year', 'TREATMENT_ID', 'Facility_Level'])
     return count
 
+'''
 count_by_treatment_id = get_hsi_summary(results_folder, key = 'HSI_Event_non_blank_appt_footprint',
                                         var = "TREATMENT_ID", do_scaling = True)
 count_by_treatment_id = count_by_treatment_id.droplevel(2)
-
-# Merge count of treatment IDs with consumables cost
-cons_cost_summary = count_by_treatment_id.rename(
-    columns={0: 'cons_cost_actual', 1: 'cons_cost_perfect'},
-    level=0
-)
 count_by_treatment_id = count_by_treatment_id.rename(
     columns={0: 'treatment_count_actual', 1: 'treatment_count_perfect'},
     level=0
 )
+'''
+
+# Get Treatment_ID by level
+count_by_treatment_id_and_level = get_hsi_summary(results_folder, key = 'HSI_Event_non_blank_appt_footprint',
+                                        var = "TREATMENT_ID_And_Level", do_scaling = True)
+count_by_treatment_id_and_level = count_by_treatment_id_and_level.rename(
+    columns={0: 'treatment_count_actual', 1: 'treatment_count_perfect'},
+    level=0
+)
+# Normalise the count of treatments by level to get the proportion of treatments by level
+cols_to_normalise = count_by_treatment_id_and_level.columns
+proportion_by_level = count_by_treatment_id_and_level.copy()
+# group over year + treatment, summing across Facility_Level
+denominator = (
+    proportion_by_level[cols_to_normalise]
+    .groupby(level=['year', 'TREATMENT_ID'])
+    .transform('sum')
+) # This is the total number of treatments delivered each year across levels
+proportion_by_level[cols_to_normalise] = (
+    proportion_by_level[cols_to_normalise] / denominator
+)  # This is the proportion of treatments delivered each year at each level
+proportion_by_level = proportion_by_level.rename(
+    columns={'treatment_count_actual': 'treatment_proportion_actual' , 'treatment_count_perfect': 'treatment_proportion_perfect'},
+    level=0
+)
+proportion_by_level = proportion_by_level.reset_index().set_index([idx['year'], idx['TREATMENT_ID']])
+# Get cost of consumables for each level
 full_output = cons_cost_summary.merge(
-    count_by_treatment_id,
-    left_index=True,
-    right_index=True,
+    proportion_by_level,
+    on=['year', 'TREATMENT_ID'],
+    how='left',
+    validate='m:m'
+)
+full_output = full_output.merge(
+    count_by_treatment_id_and_level,
+    on=['year', 'TREATMENT_ID', 'Facility_Level'],
     how='left',
     validate='m:1'
 )
+
+full_output = (
+    full_output
+    .set_index([idx['item'], idx['Facility_Level']], append=True)
+    .reorder_levels(['year', 'TREATMENT_ID', 'item', 'Facility_Level'])
+    .sort_index()
+)
+# Get consumables cost and dispensed by Facility_Level
+for scenario in ['actual', 'perfect']:
+    for stat in ['lower', 'central', 'upper']:
+        cost_col = (f'cons_cost_{scenario}', stat)
+        dispensed_col = (f'cons_dispensed_{scenario}', stat)
+        prop_col = (f'treatment_proportion_{scenario}', stat)
+
+        full_output[cost_col] = (
+            full_output[cost_col] * full_output[prop_col]
+        )
+        full_output[dispensed_col] = (
+            full_output[dispensed_col] * full_output[prop_col]
+        )
+
+# Add the quantity of consumable and the count of treatments
+
+
+full_output.reset_index().to_csv(outputfilepath / 'cost_by_treatment_level_consumable.csv')
 
 count_by_appointment = get_hsi_summary(results_folder, key = 'HSI_Event_non_blank_appt_footprint',
                                         var = "Number_By_Appt_Type_Code_And_Level", do_scaling = True)
