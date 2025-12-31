@@ -23,7 +23,7 @@ class ConsumablesCosting(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 12, 31)
+        self.end_date = Date(2031, 1, 1)
         self.pop_size = 100_000
         self.scenarios = [0, 1] # add scenarios as necessary
         self.number_of_draws = len(self.scenarios)
