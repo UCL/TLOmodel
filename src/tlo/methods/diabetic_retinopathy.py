@@ -96,6 +96,24 @@ class DiabeticRetinopathy(Module):
             Types.REAL,
             "Relative risk multiplier for diabetic retinopathy when diabetes duration > 15 years"
         ),
+        "prob_antivegf_success_clinically_significant": Parameter(
+            Types.REAL,
+            "Probability that anti-VEGF treatment improves vision (transition from clinically_significant to "
+            "non_clinically_significant)"
+        ),
+        "prob_focal_laser_success_clinically_significant": Parameter(
+            Types.REAL,
+            "Probability that focal laser treatment improves vision (transition from clinically_significant to "
+            "non_clinically_significant)"
+        ),
+        "prob_laser_prc_success_proliferative": Parameter(
+            Types.REAL,
+            "Probability that pan-retinal laser coagulation successfully treats proliferative DR"
+        ),
+        "rr_progression_after_treatment": Parameter(
+            Types.REAL,
+            "Relative risk of progression to more severe stages after receiving treatment (applied multiplicatively)"
+        ),
     }
 
     PROPERTIES = {
@@ -344,7 +362,7 @@ class DiabeticRetinopathy(Module):
             LinearModelType.MULTIPLICATIVE,
             p['rate_mild_or_moderate_to_severe'],
             Predictor('had_treatment_during_this_stage', external=True)
-            .when(True, 0.0).otherwise(1.0),
+            .when(True, p['rr_progression_after_treatment']),
             Predictor('diabetes_duration_greater_than_15_years', external=True)
             .when(True, p['rr_diabetes_duration_greater_than_15'])
         )
@@ -353,7 +371,7 @@ class DiabeticRetinopathy(Module):
             LinearModelType.MULTIPLICATIVE,
             p['rate_severe_to_proliferative'],
             Predictor('had_treatment_during_this_stage', external=True)
-            .when(True, 0.0).otherwise(1.0),
+            .when(True, p['rr_progression_after_treatment']),
             Predictor('diabetes_duration_greater_than_15_years', external=True)
             .when(True, p['rr_diabetes_duration_greater_than_15'])
         )
@@ -405,6 +423,46 @@ class DiabeticRetinopathy(Module):
         """For treatment of individuals with Severe DR status. If treatment is successful, regress to moderate."""
         if prob_success > self.rng.random_sample():
             self.do_recovery([person_id])
+
+    def do_treatment_success_dmo(self, person_id: int, treatment_type: str) -> None:
+        """Apply treatment success for DMO (clinically_significant)"""
+        df = self.sim.population.props
+        p = self.parameters
+
+        if df.at[person_id, 'dmo_status'] != 'clinically_significant':
+            return
+
+        if treatment_type == 'antivegf':
+            success_prob = p['prob_antivegf_success_clinically_significant']
+        elif treatment_type == 'focal_laser':
+            success_prob = p['prob_focal_laser_success_clinically_significant']
+        else:
+            return
+
+        if self.rng.random_sample() < success_prob:
+            # Treatment successful, then improve DMO status
+            df.at[person_id, 'dmo_status'] = 'non_clinically_significant'
+            logger.debug(key='debug',
+                         data=f'Treatment successful for person {person_id}: DMO improved to non_clinically_significant')
+
+    def do_treatment_success_proliferative(self, person_id: int) -> None:
+        """Apply treatment success for proliferative DR"""
+        df = self.sim.population.props
+        p = self.parameters
+
+        if df.at[person_id, 'dr_status'] != 'proliferative':
+            return
+
+        success_prob = p['prob_laser_prc_success_proliferative']
+
+        if self.rng.random_sample() < success_prob:
+            # Treatment successful, then regress DR status
+            # Move from proliferative to severe
+            df.at[person_id, 'dr_status'] = 'severe'
+            df.at[person_id, 'dr_stage_at_which_treatment_given'] = 'proliferative'
+            df.at[person_id, 'dr_date_treatment'] = self.sim.date
+            df.at[person_id, 'dr_on_treatment'] = True
+            logger.debug(key='debug', data=f'PRC treatment successful for person {person_id}: DR regressed to severe')
 
     def update_dmo_status(self):
         """Update DMO status for people with diabetic retinopathy.
@@ -695,6 +753,9 @@ class HSI_Dr_Dmo_Focal_Laser(HSI_Event, IndividualScopeEventMixin):
             self.add_equipment({'Visual acuity chart', 'Opthalmic laser system',
                                 'Silt lamp laser delivery system', 'Laser macular contact lens'})
 
+            # Apply treatment success
+            self.module.do_treatment_success_dmo(person_id, 'focal_laser')
+
             # Schedule follow-up checkup after 3 months #todo add chance that person needs after 3 months
             follow_up_date = self.sim.date + pd.DateOffset(months=3)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -738,6 +799,8 @@ class HSI_Dr_Dmo_AntiVEGF(HSI_Event, IndividualScopeEventMixin):
         if is_cons_available:
             self.add_equipment({'Visual acuity chart', 'Silt lamp', 'Optical coherence tomography device',
                                 'Fundus camera', 'Tonometre'})
+
+            self.module.do_treatment_success_dmo(person_id, 'antivegf')
 
             df.at[person_id, 'dmo_date_treatment'] = self.sim.date
             df.at[person_id, 'dmo_on_treatment'] = True
@@ -807,6 +870,8 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
                 df.at[person_id, 'on_laser_pan_retinal_coagulation_treatment'] = True
                 df.at[person_id, 'dr_date_prc_treatment'] = self.sim.date
                 df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
+
+                self.module.do_treatment_success_proliferative(person_id)
 
                 # Schedule session 2 in 1 week
                 next_session_date = self.sim.date + pd.DateOffset(weeks=1)
