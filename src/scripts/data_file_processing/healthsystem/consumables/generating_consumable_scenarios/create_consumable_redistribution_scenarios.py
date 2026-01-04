@@ -10,6 +10,7 @@ import pandas as pd
 import time
 
 from typing import Literal, Optional, Dict, Tuple, Iterable
+import textwrap
 from functools import reduce
 import requests
 from collections import defaultdict
@@ -145,9 +146,6 @@ print(f"Adjusted {mask_inconsistent.sum():,} rows "
       f"exceeded mechanistic availability.")
 
 lmis.reset_index(inplace=True, drop = True)
-
-# TODO assume something else about location of these facilities with missing location - eg. centroid of district?
-# only 16 facilties have missing information
 
 # ----------------------------------------------------------------------------------------------------------------------
 # 1) Data exploration
@@ -1199,6 +1197,209 @@ def redistribute_pooling_lp(
     return out
 # pooled_df, pool_moves = redistribute_pooling_lp(lmis, tau_min=0.25, tau_max=3.0, return_move_log=True)
 
+# Functions to generate summary plots of the outcomes of redistribution
+def prep_violin_df(df, scenario_name, keep_facs_with_no_change = True):
+    out = df.copy()
+    out["delta_p"] = out["available_prop_redis"] - out["available_prop"]
+
+    if (keep_facs_with_no_change == True):
+        mask = (
+            (out["Facility_Level"].isin(["1a", "1b"])) &
+            (out["amc"] > 0)
+        )
+    else:
+        mask = (
+            (out["OB_prime"] > out["OB"]) &
+            (out["Facility_Level"].isin(["1a", "1b"])) &
+            (out["amc"] > 0)
+        )
+
+    return (
+        out.loc[mask, ["district", "delta_p"]]
+           .assign(scenario=scenario_name)
+    )
+
+def _add_custom_legend(fig=None, legend_location="upper right"):
+    iqr_patch = mpatches.Rectangle(
+        (0, 0), 1, 1,
+        facecolor="grey",
+        edgecolor="black",
+        linewidth=1,
+        label="Interquartile range (IQR)"
+    )
+    median_patch = mlines.Line2D(
+        [], [], color="#b2182b", marker="o", linestyle="None",
+        markersize=5, label="Median"
+    )
+    mean_patch = mlines.Line2D(
+        [], [], color="#b2182b", marker="D", linestyle="None",
+        markersize=6, label="Mean"
+    )
+
+    if fig is None:
+        plt.legend(handles=[iqr_patch, median_patch, mean_patch],
+                   loc=legend_location, fontsize=8, frameon=True)
+    else:
+        fig.legend(
+            handles=[iqr_patch, median_patch, mean_patch],
+            loc=legend_location,
+            ncol=3,
+            fontsize=8,
+            frameon=True
+        )
+
+def do_violin_plot_change_in_p(
+    violin_df: pd.DataFrame,
+    figname: str,
+    by_district: bool = False,
+    district_col: str = "district",
+    ncol: int = 4,
+    legend_location = "upper right",
+):
+    """
+    Create violin + box + mean/median overlay plots of change in availability.
+
+    If by_district=False:
+        Single national-level plot.
+
+    If by_district=True:
+        One combined faceted figure with one panel per district.
+    """
+
+    # ---------- National-level plot ----------
+    if not by_district:
+        mean_df = violin_df.groupby("scenario", as_index=False)["delta_p"].mean()
+        median_df = violin_df.groupby("scenario", as_index=False)["delta_p"].median()
+
+        plt.figure(figsize=(10, 5))
+
+        sns.violinplot(
+            data=violin_df,
+            x="scenario",
+            y="delta_p",
+            cut=0,
+            scale="width",
+            inner=None,
+            linewidth=0.8,
+            color="#4C72B0",
+            alpha=0.6
+        )
+
+        sns.boxplot(
+            data=violin_df,
+            x="scenario",
+            y="delta_p",
+            width=0.03,
+            showcaps=True,
+            showfliers=False,
+            boxprops={"facecolor": "grey", "edgecolor": "black", "linewidth": 1},
+            whiskerprops={"linewidth": 1},
+            medianprops={"linewidth": 0}
+        )
+
+        sns.scatterplot(
+            data=mean_df,
+            x="scenario",
+            y="delta_p",
+            color="#b2182b",
+            marker="D",
+            s=60,
+            zorder=10,
+            label="Mean"
+        )
+
+        sns.scatterplot(
+            data=median_df,
+            x="scenario",
+            y="delta_p",
+            color="#b2182b",
+            marker="o",
+            s=45,
+            zorder=11,
+            label="Median"
+        )
+
+        plt.axhline(0, color="black", linewidth=0.8, linestyle="--")
+        plt.ylabel("Change in probability of availability (Δp)")
+        plt.xlabel("")
+
+        _add_custom_legend(legend_location=legend_location)
+        plt.tight_layout()
+        plt.savefig(outputfilepath / figname, dpi=600)
+        plt.close()
+        return
+
+    # ---------- District-faceted plot ----------
+    g = sns.catplot(
+        data=violin_df,
+        x="scenario",
+        y="delta_p",
+        col=district_col,
+        col_wrap=ncol,
+        kind="violin",
+        cut=0,
+        scale="width",
+        inner=None,
+        linewidth=0.6,
+        color="#4C72B0",
+        alpha=0.6,
+        height=3,
+        aspect=1
+    )
+
+    # Overlay boxplots, means, medians per facet
+    for ax, (district, df_d) in zip(g.axes.flat, violin_df.groupby(district_col)):
+        mean_df = df_d.groupby("scenario", as_index=False)["delta_p"].mean()
+        median_df = df_d.groupby("scenario", as_index=False)["delta_p"].median()
+
+        sns.boxplot(
+            data=df_d,
+            x="scenario",
+            y="delta_p",
+            width=0.03,
+            showcaps=True,
+            showfliers=False,
+            boxprops={"facecolor": "grey", "edgecolor": "black", "linewidth": 0.8},
+            whiskerprops={"linewidth": 0.8},
+            medianprops={"linewidth": 0},
+            ax=ax
+        )
+
+        sns.scatterplot(
+            data=mean_df,
+            x="scenario",
+            y="delta_p",
+            color="#b2182b",
+            marker="D",
+            s=35,
+            zorder=10,
+            ax=ax
+        )
+
+        sns.scatterplot(
+            data=median_df,
+            x="scenario",
+            y="delta_p",
+            color="#b2182b",
+            marker="o",
+            s=30,
+            zorder=11,
+            ax=ax
+        )
+
+        ax.axhline(0, color="black", linewidth=0.6, linestyle="--")
+        ax.set_xlabel("")
+        ax.set_ylabel("Δp")
+        ax.tick_params(axis="x", labelrotation=45, labelsize=8)
+        ax.tick_params(axis="y", labelsize=8)
+        ax.set_title(district, fontsize=9)
+
+    _add_custom_legend(fig=g.fig, legend_location = legend_location)
+    g.fig.tight_layout()
+    g.fig.savefig(outputfilepath / figname, dpi=600)
+    plt.close()
+
+
 # IMPLEMENT
 # 1) Build a time matrix
 fac_coords = lmis[['fac_name', 'district', 'lat','long']]
@@ -1243,6 +1444,11 @@ fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outpu
                                                  value_label= f"% of facilities with Opening Balance ≥ 3 × AMC",
                                                  amc_threshold = 3, compare = "ge",
                                                  filename = "mth_item_stock_adequacy_3amc.png")
+fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
+                                                 y_var = 'item_code', value_var = 'fac_name',
+                                                 value_label= f"% of facilities with Opening Balance ≥ 1.5 × AMC",
+                                                 amc_threshold = 1.5, compare = "ge",
+                                                 filename = "mth_item_stock_adequacy_1.5amc.png")
 fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
                                                  y_var = 'item_code', value_var = 'fac_name',
                                                  value_label= f"% of facilities with Opening Balance <= 1 × AMC",
@@ -1292,7 +1498,7 @@ print("Now running Pooled Redistribution at District level")
 start = time.time()
 pooled_district_df, cluster_district_moves = redistribute_pooling_lp(
     df=lmis,  # the LMIS dataframe
-    tau_min=0, tau_max=3.0,
+    tau_min=0.25, tau_max=3.0,
     tau_donor_keep = 1.5,
     pooling_level="district",
     cluster_map=None,
@@ -1310,7 +1516,7 @@ tlo_pooled_district = (
         .sort_values(["item_code","district","Facility_Level","month"])
     )
 end = time.time()
-print(f"Completed in {end - start:.3f} seconds")
+print(f"Completed in {end - start:.3f} seconds") # 1.1 hour
 
 #  b) Run optimisation at cluster (size = 3) level
 print("Now running pooled redistribution at Cluster (Size = 3) level")
@@ -1325,7 +1531,9 @@ pooled_cluster_df, cluster_moves = redistribute_pooling_lp(
     floor_to_baseline=True
 )
 print(pooled_cluster_df.drop(columns = ['LMIS Facility List', 'lat', 'long', 'fac_owner']).groupby('Facility_Level')[['available_prop_redis', 'available_prop']].mean())
-pooled_cluster_df.to_csv(outputfilepath/ 'clustering_n3_df.csv', index=False)
+pooled_cluster_df[['district', 'item_code',	'fac_name', 'month', 'amc', 'available_prop', 'Facility_Level',
+                    'OB', 'OB_prime', 'available_prop_redis', 'received_from_pool']].to_csv(
+                    outputfilepath/ 'clustering_n3_df.csv', index=False)
 
 tlo_pooled_cluster = (
         pooled_cluster_df
@@ -1335,7 +1543,7 @@ tlo_pooled_cluster = (
     )
 
 end = time.time()
-print(f"Completed in {end - start:.3f} seconds")
+print(f"Completed in {end - start:.3f} seconds") # 18 hours
 
 # c) Implement pairwise redistribution
 print("Now running pairwise redistribution with maximum radius 60 minutes")
@@ -1345,10 +1553,10 @@ large_radius_df, large_radius_moves = redistribute_radius_lp(
     df=lmis,
     time_matrix=T_car,
     radius_minutes=60,      # facilities within 1 hour by car
-    tau_keep=1.5,           # donor must keep 1 × AMC
+    tau_keep=1.5,           # donor must keep 1.5 × AMC
     tau_tar=1.0,            # receivers target 1× AMC
     K_in=2,           # at most 1 inbound transfers per item
-    K_out=10,          # at most 10 outbound transfers
+    K_out=10,          # at most 10 outbound transfers # TODO could increase this
     Qmin_proportion=0.25,          # min lot = one week of demand
     eligible_levels=("1a", "1b"),  # only 1a/1b can receive
 )
@@ -1374,7 +1582,7 @@ small_radius_df, small_radius_moves = redistribute_radius_lp(
     radius_minutes=30,      # facilities within 1 hour by car
     tau_keep=1.5,           # donor must keep 1 × AMC
     tau_tar=1.0,            # receivers target 1 × AMC
-    K_in=2,           # at most 1 inbound transfers per item
+    K_in=2,           # at most 2 inbound transfers per item
     K_out=10,          # at most 10 outbound transfers
     Qmin_proportion=0.25,          # min lot = one week of demand
     eligible_levels=("1a", "1b"),  # only 1a/1b can receive
@@ -1392,6 +1600,46 @@ tlo_small_radius = (
 end = time.time()
 print(f"Completed in {end - start:.3f} seconds")
 
+# Summarise the outcome of the redistribution in violin plots
+violin_df_all_facs = pd.concat([
+    prep_violin_df(pooled_district_df, "District pooling", keep_facs_with_no_change = True),
+    prep_violin_df(pooled_cluster_df,  "Cluster pooling", keep_facs_with_no_change = True),
+    prep_violin_df(large_radius_df,    "Pairwise (large radius)", keep_facs_with_no_change = True),
+    prep_violin_df(small_radius_df,    "Pairwise (small radius)", keep_facs_with_no_change = True)
+], ignore_index=True)
+violin_df_only_facs_with_change = pd.concat([
+    prep_violin_df(pooled_district_df, "District pooling", keep_facs_with_no_change = False),
+    prep_violin_df(pooled_cluster_df,  "Cluster pooling", keep_facs_with_no_change = False),
+    prep_violin_df(large_radius_df,    "Pairwise (large radius)", keep_facs_with_no_change = False),
+    prep_violin_df(small_radius_df,    "Pairwise (small radius)", keep_facs_with_no_change = False)
+], ignore_index=True)
+
+do_violin_plot_change_in_p(
+    violin_df = violin_df_all_facs,
+    figname="violin_redistribution_national_all_facs.png",
+    legend_location= "upper right"
+)
+do_violin_plot_change_in_p(
+    violin_df = violin_df_only_facs_with_change,
+    figname="violin_redistribution_national_only_facs_with_change.png",
+    legend_location = "lower right"
+)
+
+do_violin_plot_change_in_p(
+    violin_df = violin_df_all_facs,
+    figname="violin_by_district_all_facs",
+    by_district=True,
+    ncol=4
+)
+
+do_violin_plot_change_in_p(
+    violin_df = violin_df_only_facs_with_change,
+    figname="violin_redistribution_national_only_facs_with_change",
+    by_district=True,
+    ncol=4
+)
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 # 4) Compile update probabilities and merge with Resourcefile
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1405,6 +1653,8 @@ tlo_redis = reduce(
     ),
     [tlo_pooled_district, tlo_pooled_cluster, tlo_large_radius, tlo_small_radius]
 )
+
+tlo_redis.to_csv(outputfilepath/ 'tlo_redis.csv', index=False)
 
 # Edit new dataframe to match mfl formatting
 list_of_new_scenario_variables = ['available_prop_scenario16', 'available_prop_scenario17',
@@ -1474,7 +1724,7 @@ tlo_redis = pd.concat([tlo_redis, all_0], axis=0, ignore_index=True)
 tlo_redis = tlo_redis.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
                     left_on=['district_std', 'Facility_Level'],
                     right_on=['District', 'Facility_Level'], how='left', indicator=True, validate = 'm:1')
-tlo_redis = tlo_redis[tlo_redis.Facility_ID.notna()][['Facility_ID', 'month', 'item_code'] + list_of_new_scenario_variables]
+tlo_redis = tlo_redis[tlo_redis.Facility_ID.notna()].rename(columns = {'district_std': 'district'})
 assert sorted(set(mfl.loc[mfl.Facility_Level != '5','Facility_ID'].unique())) == sorted(set(pd.unique(tlo_redis.Facility_ID)))
 
 # Load original availability dataframe
@@ -1488,15 +1738,103 @@ program_item_mapping = pd.read_csv(path_for_new_resourcefiles  / 'ResourceFile_C
 program_item_mapping = program_item_mapping.rename(columns ={'Item_Code': 'item_code'})[program_item_mapping.item_category.notna()]
 fac_levels = {'0', '1a', '1b', '2', '3', '4'}
 tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
-                    on = ['Facility_ID'], how='left')
+                    on = ['Facility_ID'], how='left').rename(columns = {'District': 'district'})
 tlo_availability_df = tlo_availability_df.merge(program_item_mapping,
                     on = ['item_code'], how='left')
-tlo_availability_df = tlo_availability_df[~tlo_availability_df[['District', 'Facility_Level', 'month', 'item_code']].duplicated()]
+#tlo_availability_df = tlo_availability_df[~tlo_availability_df[['District', 'Facility_Level', 'month', 'item_code']].duplicated()]
+
+# Because some of the availbility data in the original availability comes from data sources other than OpenLMIS, there are
+# more unique item codes in tlo_availability_df than in tlo_redis. For these items, assume that the proportion of 'uplift'
+# is the same as the average 'uplift' experienced across the consumables in tlo_redis disaggregated by district,
+# facility level, and month.
+
+# First fix any unexpected changes in availability probability
+# Merge the old and new dataframe
+redis_levels = ['1a','1b']
+tlo_redis = tlo_redis[tlo_redis.Facility_Level.isin(redis_levels)]
+
+tlo_redis = tlo_redis.merge(
+    tlo_availability_df[["district", "Facility_Level", "item_code", "month", "available_prop"]],
+    on=["district", "Facility_Level", "item_code", "month"],
+    how="left",
+    validate="one_to_one"
+)
+
+for redis_scenario_col in list_of_new_scenario_variables:
+    pre = (
+        tlo_redis[redis_scenario_col] < tlo_redis["available_prop"]
+    ).mean()
+    print(f"Pre-fix {redis_scenario_col}: {pre:.3%}")
+
+    # Enforce no-harm
+    tlo_redis[redis_scenario_col] = np.maximum(
+        tlo_redis[redis_scenario_col],
+        tlo_redis["available_prop"]
+    )
+
+    post = (
+        tlo_redis[redis_scenario_col] < tlo_redis["available_prop"]
+    ).mean()
+    print(f"Post-fix {redis_scenario_col}: {post:.3%}")
+
+# Next create an uplift dataframe
+modelled_items = tlo_redis["item_code"].unique()
+dfs_missing = []
+
+for scenario_col in list_of_new_scenario_variables:
+
+    # ---- 1) Compute uplift where baseline > 0 ----
+    uplift_df = (
+        tlo_redis.assign(
+            uplift=lambda x: np.where(
+                x["available_prop"] > 0,
+                x[scenario_col] / x["available_prop"],
+                np.nan
+            )
+        )
+        .groupby(["district", "Facility_Level", "month"], as_index=False)["uplift"]
+        .mean()
+    )
+
+    # ---- 2) Select missing items ----
+    missing_mask = ~tlo_availability_df["item_code"].isin(modelled_items)
+
+    df_missing = (
+        tlo_availability_df[tlo_availability_df.Facility_Level.isin(redis_levels)].loc[missing_mask]
+        .merge(
+            uplift_df,
+            on=["district", "Facility_Level", "month"],
+            how="left"
+        )
+        .assign(
+            **{
+                scenario_col: lambda x: np.minimum(
+                    1.0,
+                    x["available_prop"] * x["uplift"]
+                )
+            }
+        )
+        .drop(columns=["uplift"])
+    )
+
+    dfs_missing.append(df_missing)
+
+tlo_redis = pd.concat(
+    [tlo_redis] + dfs_missing,
+    ignore_index=True
+)
+
+for scenario_col in list_of_new_scenario_variables:
+    assert ((tlo_redis[scenario_col]<
+        tlo_redis["available_prop"]).sum()) == 0
+
+
+tlo_redis = tlo_redis[['Facility_ID', 'month', 'item_code'] + list_of_new_scenario_variables]
 
 # Interpolate missing values in tlo_redis for all levels except 0
 # ----------------------------------------------------------------------------------------------------------------------
 # Generate the dataframe that has the desired size and shape
-fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
+fac_ids = set(mfl.loc[mfl.Facility_Level.isin(redis_levels)].Facility_ID)
 item_codes = set(tlo_availability_df.item_code.unique())
 months = range(1, 13)
 
@@ -1614,27 +1952,19 @@ assert not pd.isnull(full_set_interpolated).any().any()
 
 full_set_interpolated = full_set_interpolated.reset_index()
 
-# Merge with original dataset
-tlo_availability_df = tlo_availability_df.merge(full_set_interpolated, on = ['Facility_ID', 'month', 'item_code'],
-                                                how = 'left', validate = '1:1')
-for var in list_of_new_scenario_variables:
-    unchanged_levels = tlo_availability_df.Facility_Level.isin(['0', '2', '3', '4'])
-    tlo_availability_df.loc[unchanged_levels, var] = tlo_availability_df.loc[unchanged_levels, 'available_prop']
-
-tlo_availability_df.groupby('Facility_Level')[['available_prop'] + list_of_new_scenario_variables].mean()
-
-# --- Check that the exported file has the properties required of it by the model code. --- #
-# check_format_of_consumables_file(df=full_df_with_scenario, fac_ids=fac_ids)
-# TODO Add check
-
-# Save updated consumable availability resource file with scenario data
-df_for_plots = tlo_availability_df.copy()
-tlo_availability_df = tlo_availability_df.drop(columns = ['District', 'Facility_Level',
-       'item_category'])
-tlo_availability_df.to_csv(
-    path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
-    index=False
+# Add to this dataset original availability for all the other levels of care
+base_other_levels = tlo_availability_df[
+    ~tlo_availability_df["Facility_Level"].isin(redis_levels)
+].copy()
+for col in list_of_new_scenario_variables:
+    base_other_levels[col] = base_other_levels["available_prop"]
+base_other_levels = base_other_levels[['Facility_ID', 'month', 'item_code'] + list_of_new_scenario_variables]
+tlo_redis_final = pd.concat(
+    [full_set_interpolated, base_other_levels],
+    ignore_index=True,
 )
+
+tlo_redis_final.to_csv(outputfilepath / 'ResourceFile_consumable_availability_after_redistribution.csv', index = False)
 
 # Plot final availability
 def plot_availability_heatmap(
