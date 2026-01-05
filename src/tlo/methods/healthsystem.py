@@ -2141,45 +2141,12 @@ class HealthSystem(Module):
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
 
-
-                # Mode 0: All HSI Event run, with no squeeze
-                # Mode 1: All HSI Events run provided all required officers have non-zero capabilities
-                ok_to_run = True
-
-                if self.mode_appt_constraints == 1:
-                    if event.expected_time_requests:
-                        ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
-                                        event.expected_time_requests)
-
-
-                if ok_to_run:
-
-                    # Compute the bed days that are allocated to this HSI and provide this information to the HSI
-                    if sum(event.BEDDAYS_FOOTPRINT.values()):
-                        event._received_info_about_bed_days = \
-                            self.bed_days.issue_bed_days_according_to_availability(
-                                facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
-                                footprint=event.BEDDAYS_FOOTPRINT
-                            )
-
-                    # Check that a facility has been assigned to this HSI
-                    assert event.facility_info is not None, \
-                        f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
-
-                    # Run the HSI event (allowing it to return an updated appt_footprint)
-                    actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
-
-                    # Check if the HSI event returned updated appt_footprint
-                    if actual_appt_footprint is not None:
-                        # The returned footprint is different to the expected footprint: so must update load factors
-
-                        # check its formatting:
-                        assert self.appt_footprint_is_valid(actual_appt_footprint)
-
-                        # Update load factors:
-                        updated_call = self.get_appt_footprint_as_time_request(
-                            facility_info=event.facility_info,
-                            appt_footprint=actual_appt_footprint
+                # Compute the bed days that are allocated to this HSI and provide this information to the HSI
+                if sum(event.BEDDAYS_FOOTPRINT.values()):
+                    event._received_info_about_bed_days = \
+                        self.bed_days.issue_bed_days_according_to_availability(
+                            facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
+                            footprint=event.BEDDAYS_FOOTPRINT
                         )
 
                 # Run the HSI event (allowing it to return an updated appt_footprint)
