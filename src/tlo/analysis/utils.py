@@ -1467,15 +1467,15 @@ def flatten_nested_dict(my_dict, sep='_'):
     """Flatten a nested dictionary into a single level dictionary."""
     return pd.pandas.io.json._normalize.nested_to_record(my_dict, sep=sep)
 
-def get_counts_by_sex_and_age_group_divided_by_popsize(df: pd.DataFrame, property: str, targets: Optional[Tuple[Any]] = None) -> dict:
+def get_counts_by_sex_and_age_group(df: pd.DataFrame, property: str, targets: Optional[Tuple[Any]] = None) -> dict:
     """Returns dict giving counts (by age-group and sex) of alive individuals with truthy values for that property,
         divided by the total number of persons currently alive."""
 
     if targets is None:
-        counts_of_prevalent = df.loc[df.is_alive & df[property]].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        counts_of_disease = df.loc[df.is_alive & df[property]].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
     elif isinstance(targets, tuple):
-        counts_of_prevalent = df.loc[df.is_alive & df[property].isin(targets)].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        counts_of_disease = df.loc[df.is_alive & df[property].isin(targets)].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
     elif isinstance(targets, str):
-        counts_of_prevalent = df.loc[df.is_alive & (df[property] == targets)].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        counts_of_disease = df.loc[df.is_alive & (df[property] == targets)].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
 
-    return (counts_of_prevalent / df.is_alive.sum()).to_dict(orient='index')
+    return (counts_of_disease).to_dict(orient='index')

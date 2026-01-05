@@ -10,7 +10,7 @@ from typing import Optional
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, hiv
@@ -56,13 +56,14 @@ class Tb(Module):
         "Epi",
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden", "Hiv"}
+    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden", "Hiv", "DiseaseNumbers"}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -1046,10 +1047,10 @@ class Tb(Module):
 
         return health_values.loc[df.is_alive]
 
-    def report_prevalence(self):
+    def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of active TB for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'tb_inf', 'active')
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'tb_inf', 'active')
         return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def calculate_untreated_proportion(self, population, strain):

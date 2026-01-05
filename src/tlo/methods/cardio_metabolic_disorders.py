@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -63,7 +63,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv', 'DiseaseNumbers'}
 
     ADDITIONAL_DEPENDENCIES = {'Depression'}
 
@@ -72,7 +72,8 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -849,13 +850,13 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
 
         return dw
 
-    def report_prevalence(self):
+    def report_disease_numbers(self):
         """Report age- and sex-specific prevalence of diseases to the HealthBurden module"""
         df = self.sim.population.props
         prevalence_dict = {}
 
         for condition in self.conditions:
-            prevalence_dict[condition] = get_counts_by_sex_and_age_group_divided_by_popsize(df, f'nc_{condition}')
+            prevalence_dict[condition] = get_counts_by_sex_and_age_group(df, f'nc_{condition}')
 
         return prevalence_dict
 

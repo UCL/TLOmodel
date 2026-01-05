@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, get_counts_by_sex_and_age_group_divided_by_popsize
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -35,6 +35,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
      and initialises parameters and properties associated with COPD plus functions and events related to COPD."""
 
     INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem'}
+    OPTIONAL_INIT_DEPENDENCIES = {'DiseaseNumbers'}
     ADDITIONAL_DEPENDENCIES = set()
 
     METADATA = {
@@ -42,6 +43,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     CAUSES_OF_DEATH = {
@@ -218,10 +220,10 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         return df.loc[df.is_alive, 'ch_lungfunction'].map(self.models.disability_weight_given_lungfunction)
 
-    def report_prevalence(self):
+    def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of COPD for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'ch_lungfunction', (4, 5, 6))
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ch_lungfunction', (4, 5, 6))
         return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def define_symptoms(self):

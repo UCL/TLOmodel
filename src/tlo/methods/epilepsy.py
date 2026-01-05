@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -36,7 +36,8 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -292,10 +293,10 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props  # shortcut to population properties dataframe
         return df.loc[df.is_alive, 'ep_disability']
 
-    def report_prevalence(self):
+    def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of epilepsy for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'ep_seiz_stat', (1, 2, 3))
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ep_seiz_stat', (1, 2, 3))
         return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def transition_seizure_stat(self):

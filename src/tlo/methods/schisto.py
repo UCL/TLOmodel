@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, get_counts_by_sex_and_age_group
+
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -46,13 +47,14 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthSystem', 'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthSystem', 'HealthBurden', 'DiseaseNumbers'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     CAUSES_OF_DEATH = {}
@@ -317,7 +319,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             disability_weights_for_each_person_with_symptoms, fill_value=0.0
         )
 
-    def report_prevalence(self):
+    def report_disease_numbers(self):
         # This returns age- and sex-specific prevalence of schisto for all individuals
         df = self.sim.population.props
 

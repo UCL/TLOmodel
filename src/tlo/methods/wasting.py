@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -37,11 +38,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography', 'SymptomManager', 'NewbornOutcomes', 'HealthBurden'}
 
+    OPTIONAL_INIT_DEPENDENCIES = {"DiseaseNumbers"}
+
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -758,7 +763,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                               df.un_am_nutritional_oedema] = self.daly_wts['mod_wasting_with_oedema']
         return total_daly_values
 
-    def report_prevalence(self):
+    def report_disease_numbers(self):
         """
         Reports prevalence of wasting categories for all alive children under 5.
         Returns prevalence proportions for moderate and severe wasting.
@@ -773,15 +778,26 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         if total_under5 == 0:
             return {'prev_moderate': 0.0, 'prev_severe': 0.0}
 
-        # Count by wasting category
-        mod_wasted = (alive_under5['un_WHZ_category'] == '-3<=WHZ<-2').sum()
-        sev_wasted = (alive_under5['un_WHZ_category'] == 'WHZ<-3').sum()
+        # Get counts by sex and age group for each wasting category
+        mod_counts = get_counts_by_sex_and_age_group(
+            alive_under5,
+            'un_WHZ_category',
+            targets='-3<=WHZ<-2'
+        )
+        sev_counts = get_counts_by_sex_and_age_group(
+            alive_under5,
+            'un_WHZ_category',
+            targets='WHZ<-3'
+        )
+
+        # Sum across all age groups and sexes
+        mod_wasted = sum(sum(age_group.values()) for age_group in mod_counts.values())
+        sev_wasted = sum(sum(age_group.values()) for age_group in sev_counts.values())
 
         return {
             'prev_moderate': mod_wasted / total_under5,
             'prev_severe': sev_wasted / total_under5
         }
-
     def wasting_clinical_symptoms(self, person_id) -> None:
         """
         Assigns clinical symptoms to the new acute malnutrition case

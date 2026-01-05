@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -47,14 +47,15 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'DiseaseNumbers'}
 
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS,
     }
 
     # Declare Causes of Death
@@ -607,11 +608,11 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
 
         return disability_series_for_alive_persons
 
-    def report_prevalence(self):
-        # This reports age- and sex-specific prevalence of oesophageal cancer for all individuals
+    def report_disease_number(self):
+        # This reports age- and sex-specific numbers of oesophageal cancer for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'oc_status', ("low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"))
-        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'oc_status', ("low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"))
+        return {'prevalent_by_age_group_sex': number_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,

@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor

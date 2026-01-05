@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -45,13 +45,14 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv', 'DiseaseNumbers'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     gbd_causes_of_cancer_represented_in_this_module = [
@@ -611,10 +612,10 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
 
         return disability_series_for_alive_persons
 
-    def report_prevalence(self):
+    def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of other adult cancers for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'oac_status', ("site_confined", "local_ln", "metastatic"))
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'oac_status', ("site_confined", "local_ln", "metastatic"))
         return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def do_at_generic_first_appt(

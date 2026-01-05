@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, get_counts_by_sex_and_age_group_divided_by_popsize
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, get_counts_by_sex_and_age_group
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import (
@@ -59,9 +59,6 @@ class HealthBurden(Module):
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
             Types.LIST, 'List of the strings of causes of disability defined in the GBD data'),
-        'logging_frequency_prevalence': Parameter(Types.STRING,
-                                                  'Set to the frequency at which we want to make calculations of the prevalence logger.'
-                                                  'Can be day, month or year.')
     }
 
     PROPERTIES = {}
@@ -74,7 +71,6 @@ class HealthBurden(Module):
         #                       ghe2019_daly-methods.pdf?sfvrsn=31b25009_7
         p['gbd_causes_of_disability'] = set(pd.read_csv(
             resourcefilepath / 'gbd' / 'ResourceFile_CausesOfDALYS_GBD2019.csv', header=None)[0].values)
-        p['logging_frequency_prevalence'] = 'month'
 
 
     def initialise_population(self, population):
@@ -117,11 +113,6 @@ class HealthBurden(Module):
                                                                                'HealthBurden module must have a ' \
                                                                                'callable function "report_daly_values"'
 
-            assert getattr(self.sim.modules[module_name], 'report_prevalence', None) and \
-                   callable(self.sim.modules[module_name].report_prevalence), 'A module that declares use of ' \
-                                                                              'HealthBurden module must have a ' \
-                                                                              'callable function "report_prevalence"'
-
         # 3) Process the declarations of causes of disability and DALYS made by the disease modules
         self.process_causes_of_disability()
         self.process_causes_of_dalys()
@@ -133,19 +124,6 @@ class HealthBurden(Module):
         last_day_of_the_year = Date(sim.date.year, 12, 31)
         sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
 
-        # 6) Schedule the Prevalence Logger Event (first event to occur at the beginning of the simulation)
-        if self.recognised_modules_names:
-
-            if self.parameters['logging_frequency_prevalence'] == 'day':
-                frequency = pd.DateOffset(days=1)
-            elif self.parameters['logging_frequency_prevalence'] == 'month':
-                frequency = pd.DateOffset(months=1)
-            elif self.parameters['logging_frequency_prevalence'] == 'year':
-                frequency = pd.DateOffset(years=1)
-            else:
-                raise ValueError(f'Argument for frequency of recording prevalencne is not valid: '
-                                 f'{self.parameters["logging_frequency_prevalence"]}')
-            sim.schedule_event(GetCurrentDiseaseStatisticsAndWriteToLog(self, frequency=frequency), sim.date)
 
     def process_causes_of_disability(self):
         """
@@ -686,67 +664,3 @@ class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         self.module.write_to_log(year=self.sim.date.year)
-
-
-class GetCurrentDiseaseStatisticsAndWriteToLog(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event runs every month and asks each disease module to report the prevalence of each disease
-    during the previous month.
-    """
-
-    def __init__(self, module, frequency: pd.DateOffset):
-        super().__init__(module, frequency=frequency)
-
-    def apply(self, population):
-
-        # dict for collecting results from each module (keys will be a tuple (disease_module_name, stat)) where stat
-        # is the the firs-level key of the dict passed by the disease module.
-        data = {}
-
-        # Calculate the population size and add it to the dict
-        df = population.props
-        data[('HealthBurden', 'population_total')] = sum(df.is_alive)
-        data[('HealthBurden', 'population_by_age_and_sex')] = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'is_alive')
-
-        # Collect results from all registered modules
-        for disease_module_name in self.module.recognised_modules_names:
-            prevalence_from_disease_module: Dict = self.sim.modules[disease_module_name].report_prevalence()
-            assert isinstance(prevalence_from_disease_module, dict)
-            for k, v in prevalence_from_disease_module.items():
-                data[(disease_module_name, k)] = v
-
-        multi_index_series = pd.Series(data,
-                                       index=pd.MultiIndex.from_tuples(data.keys(), names=['DiseaseModule', 'Stat']))
-        self._write_to_log(multi_index_series)
-
-
-    def _write_to_log(self, prevalence_of_diseases: pd.Series):
-        """Write to the log the prevalence of conditions.
-        N.B. This is called at the end of the simulation as well as at the end of each month, so we need to check that
-        the year is not being written to the log more than once."""
-        logger.info(
-            key='prevalence_of_diseases',
-            description='Prevalence of each disease. ALRI: individuals who have ri_current_infection_status = True'
-                        'Bladder_Cancer: individuals who have bc_status != none. '
-                        'Breast Cancer: individuals who have brc_stus != none'
-                        'chronic_ischemic_hd, chronic_kidney_disease, chronic_lower_back_pain, diabetes, hypertension (all in CMD): all individuals with nc_{condition} as True'
-                        'COPD: all individuals with ch_lungfuction > 3, which is defined as mild COPD'
-                        'MMR (Demography): sum of direct deaths (cause_of_death == Maternal Disorders), indirect, non-HIV deaths, and  indirect, non-HIV deaths * 0.3 https://www.who.int/publications/i/item/9789240068759, all in LAST MONTH'
-                        'NMR (Demography): sum of all individuals who died in the last logging period who were < 29 days old in LAST MONTH'
-                        'depression: individuals who had a depressive episode in the last logging period'
-                        'diarrhoea: individuals who are gi_has_diarrhoea = True'
-                        'epilepsy: individuals whose ep_seiz_stat != 0'
-                        'HIV: individals whose hv_inf = True'
-                        'instrapartum stillbirths (Labour): number of intrapartum stillbirths IN LAST MONTH'
-                        'malaria: individuals who have clinical or severe infections'
-                        'mealsea: individuals who have me_has_measles = True'
-                        'mockitis: inviduals who have mi_is_infected = True'
-                        'oesphageal cancer: individuals who have oc_status != none'
-                        'other adult cancer: individuals who have oac_status != none'
-                        'antenatal stillbirths (Preganancy Supervisor): number of stillbirths that has happened IN LAST MONTH'
-                        'prostate cancer: individuals who have pc_status != none'
-                        'RTI: individuals who have rt_inj_severity != none'
-                        'schisto: individuals who have Low-infection or High-infection, any parasite'
-                        'TB: individuals who have tb_inf = active',
-            data=flatten_multi_index_series_into_dict_for_logging(prevalence_of_diseases)
-        )

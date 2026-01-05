@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 
 import numpy as np
 import pandas as pd
-
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -40,14 +40,15 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         'Demography', 'Contraception', 'HealthSystem', 'Lifestyle', 'SymptomManager'
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv', 'DiseaseNumbers'}
 
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -595,7 +596,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
 
         return av_daly_wt_last_month
 
-    def report_prevalence(self):
+    def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of depression for all individuals
         df = self.sim.population.props
         any_depr_in_the_last_month = df[

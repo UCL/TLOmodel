@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -74,14 +74,15 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
 
     ADDITIONAL_DEPENDENCIES = {'Alri', 'Epi', 'Stunting'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'DiseaseNumbers'}
 
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -669,10 +670,10 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         average_daly_weight_in_last_month = pd.Series(values, idx) / days_last_month
         return average_daly_weight_in_last_month.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
 
-    def report_prevalence(self):
+    def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of diarrhoea for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'gi_has_diarrhoea')
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'gi_has_diarrhoea')
         return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def look_up_consumables(self):
