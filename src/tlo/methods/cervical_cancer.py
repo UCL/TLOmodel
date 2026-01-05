@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -748,19 +749,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This reports age- and sex-specific prevalence of wasting for all individuals
         df = self.sim.population.props
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'ce_hpv_cc_status', ( "hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"))
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
-        # Select alive individuals with cervical cancer
-        cervical_cancer_df = df[(df['is_alive']) & (df['ce_hpv_cc_status'] != 'none')]
-
-        alive_df = df[df['is_alive']]
-
-        prevalence_counts = (
-            cervical_cancer_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-        return {'Cervical Cancer': prevalence_by_age_group_sex}
     def do_at_generic_first_appt(
         self,
         person_id: int,

@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -582,18 +583,9 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This reports age- and sex-specific prevalence of breast cancer for all individuals
         df = self.sim.population.props
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'brc_status', ("stage1", "stage2", "stage3", "stage4"))
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
-        brc_df = df[(df['is_alive']) & (df['brc_status'] != 'none')]
-
-        alive_df = df[df['is_alive']]
-
-        prevalence_counts = (
-            brc_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-        return {'Breast Cancer': prevalence_by_age_group_sex}
     def do_at_generic_first_appt(
         self,
         person_id: int,

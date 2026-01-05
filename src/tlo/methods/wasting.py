@@ -766,24 +766,21 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         p = self.parameters
 
-        # Select alive children under 5
-        alive_under5 = df[df.is_alive & (df.age_exact_years < p['max_age_child_wasting'])]
+        # Select (alive) children under 5
+        alive_under5 = df.loc[df.is_alive & (df.age_exact_years < p['max_age_child_wasting'])]
+        total_under5 = len(alive_under5)
 
-        if len(alive_under5) == 0:
-            return {'Wasting': {}}
+        if total_under5 == 0:
+            return {'prev_moderate': 0.0, 'prev_severe': 0.0}
 
         # Count by wasting category
         mod_wasted = (alive_under5['un_WHZ_category'] == '-3<=WHZ<-2').sum()
         sev_wasted = (alive_under5['un_WHZ_category'] == 'WHZ<-3').sum()
 
-        total_under5 = len(alive_under5)
-
-        prevalence_dict = {
-            'moderate': mod_wasted / total_under5,
-            'severe': sev_wasted / total_under5
+        return {
+            'prev_moderate': mod_wasted / total_under5,
+            'prev_severe': sev_wasted / total_under5
         }
-
-        return {'Wasting': prevalence_dict}
 
     def wasting_clinical_symptoms(self, person_id) -> None:
         """

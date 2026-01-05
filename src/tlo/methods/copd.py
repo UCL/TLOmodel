@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -221,19 +221,8 @@ class Copd(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This reports age- and sex-specific prevalence of COPD for all individuals
         df = self.sim.population.props
-
-        # Select alive individuals with COPD (lung function score > 3)
-        copd_df = df[(df['is_alive']) & (df['ch_lungfunction'] > 3)]
-
-        alive_df = df[df['is_alive']]
-
-        prevalence_counts = (
-            copd_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-        return {'COPD': prevalence_by_age_group_sex}
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'ch_lungfunction', (4, 5, 6))
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def define_symptoms(self):
         """Define and register Symptoms"""

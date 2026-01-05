@@ -49,6 +49,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+def get_counts_by_sex_and_age_group(df, param):
+    pass
+
+
 class Hiv(Module, GenericFirstAppointmentsMixin):
     """
     The HIV Disease Module
@@ -1316,18 +1320,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This reports age- and sex-specific prevalence of HIV for all individuals
         df = self.sim.population.props
-
-        hiv_df = df[(df['hv_inf']) & (df['is_alive'])]
-
-        alive_df = df[df['is_alive']]
-
-        prevalence_counts = (
-            hiv_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-        return {'HIV': prevalence_by_age_group_sex}
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'hv_inf')
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def mtct_during_breastfeeding(self, mother_id, child_id):
         """

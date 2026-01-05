@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -241,6 +242,8 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         'probability_of_severe_dehydration_if_some_dehydration':
             Parameter(Types.REAL, 'probability that someone with diarrhoea and some dehydration develops severe '
                                   'dehydration'),
+        'prob_remove_dehydration_no_treatment':
+            Parameter(Types.REAL, 'probability that someone with diarrhoea stops without treatment'),
 
         # Parameters governing the duration of the episode
         'prob_prolonged_diarr_rotavirus':
@@ -441,6 +444,9 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
             Parameter(Types.INT, 'number of days reduced duration with zinc'),
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
+        'prob_clear_bacterial_infection_no_treatment':
+            Parameter(Types.REAL,
+                      'probability clear bacterial infection no treatment.'),
 
         # Parameters describing efficacy of the monovalent rotavirus vaccine (R1)
         'rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo':
@@ -449,6 +455,21 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         'rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo':
             Parameter(Types.REAL,
                       'relative risk of severe dehydration with rotavirus vaccine, for those aged 1 year and older.'),
+        'relative_prob_severe_dehydration_no_vaccine':
+            Parameter(Types.REAL,
+                      'relative probability of severe dehydration without rotavirus vaccine.'),
+
+
+        # Parameters describing thresholds for severity of diarrhoea
+        'persistent_diarrhoea_threshold_days':
+            Parameter(Types.REAL,
+                      'Days of symptoms after which classification is persistent diarrhoea.'),
+
+        # Parameters module design
+        'main_polling_frequency':
+            Parameter(Types.INT,
+              'Main polling frequency for event that runs acquisition of pathogens that cause Diarrhoea.'),
+
     }
 
     PROPERTIES = {
@@ -472,9 +493,10 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
                                                'some',  # <-- this level is not used currently.
                                                'severe'
                                                ]),
-        'gi_duration_longer_than_13days': Property(Types.BOOL,
+        'persistent_diarrhoea_status': Property(Types.BOOL,
                                                    'Whether the duration of the current episode would last longer than '
-                                                   '13 days if untreated. (False if does not have current episode)'),
+                                                   'days set as threshold if untreated. '
+                                                   '(False if does not have current episode)'),
         'gi_number_of_episodes': Property(Types.INT,
                                           "Number of episodes of diarrhoea caused by a pathogen"),
 
@@ -519,7 +541,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
 
         # Read parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            read_csv_files(resourcefilepath / 'ResourceFile_Diarrhoea', files='Parameter_values')
+            read_csv_files(resourcefilepath / 'ResourceFile_Diarrhoea', files='parameter_values')
         )
 
         # Check that every value has been read-in successfully
@@ -541,7 +563,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, 'gi_pathogen'] = np.nan
         df.loc[df.is_alive, 'gi_type'] = np.nan
         df.loc[df.is_alive, 'gi_dehydration'] = np.nan
-        df.loc[df.is_alive, 'gi_duration_longer_than_13days'] = False
+        df.loc[df.is_alive, 'persistent_diarrhoea_status'] = False
         df.loc[df.is_alive, 'gi_number_of_episodes'] = 0
 
         # ---- Internal values ----
@@ -605,7 +627,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, 'gi_pathogen'] = np.nan
         df.at[child_id, 'gi_type'] = np.nan
         df.at[child_id, 'gi_dehydration'] = np.nan
-        df.at[child_id, 'gi_duration_longer_than_13days'] = False
+        df.at[child_id, 'persistent_diarrhoea_status'] = False
         df.at[child_id, 'gi_number_of_episodes'] = 0
 
         # ---- Internal values ----
@@ -650,17 +672,8 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This reports age- and sex-specific prevalence of diarrhoea for all individuals
         df = self.sim.population.props
-        diarrhoea_df = df[(df['gi_has_diarrhoea']) & (df['is_alive'])]
-
-        alive_df = df[df['is_alive']]
-
-        prevalence_counts = (
-            diarrhoea_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-        return {'Diarrhoea': prevalence_by_age_group_sex}
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'gi_has_diarrhoea')
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""
@@ -731,7 +744,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         )
 
         # STEP ONE: Aim to alleviate dehydration:
-        prob_remove_dehydration = 0.0
+        prob_remove_dehydration = p['prob_remove_dehydration_no_treatment']
         if is_in_patient:
             if hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
                 # In-patient receiving IV fluids (WHO Plan C)
@@ -755,7 +768,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         ):
             prob_clear_bacterial_infection = self.parameters['prob_antibiotic_cures_dysentery']
         else:
-            prob_clear_bacterial_infection = 0.0
+            prob_clear_bacterial_infection = p['prob_clear_bacterial_infection_no_treatment']
 
         # Determine type after treatment
         type_after_treatment = 'watery' if self.rng.rand() < prob_clear_bacterial_infection else person.gi_type
@@ -765,7 +778,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
             if self.models.does_treatment_prevent_death(
                 pathogen=person.gi_pathogen,
                 type=(person.gi_type, type_after_treatment),  # <-- type may have changed
-                duration_longer_than_13days=person.gi_duration_longer_than_13days,
+                duration_longer_than_13days=person.persistent_diarrhoea_status,
                 dehydration=(person.gi_dehydration, dehydration_after_treatment),  # <-- dehydration may have changed
                 age_exact_years=person.age_exact_years,
                 ri_current_infection_status=person.ri_current_infection_status,
@@ -851,7 +864,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
                 'gi_pathogen',
                 'gi_type',
                 'gi_dehydration',
-                'gi_duration_longer_than_13days',
+                'persistent_diarrhoea_status',
                 'gi_date_of_onset',
                 'gi_scheduled_date_recovery',
                 'gi_scheduled_date_death',
@@ -882,7 +895,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
             'gi_type',
             'gi_dehydration']
                          ]).all().all()
-        assert not df.loc[not_in_current_episode, 'gi_duration_longer_than_13days'].any()
+        assert not df.loc[not_in_current_episode, 'persistent_diarrhoea_status'].any()
         assert pd.isnull(df.loc[not_in_current_episode, [
             'gi_date_of_onset',
             'gi_scheduled_date_recovery',
@@ -1124,7 +1137,7 @@ class Models:
                 self.p['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] if age_years < 1 \
                 else self.p['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo']
         else:
-            relative_prob_severe_dehydration_due_to_vaccine = 1.0
+            relative_prob_severe_dehydration_due_to_vaccine = self.p['relative_prob_severe_dehydration_no_vaccine']
 
         if self.rng.rand() < self.p[f'prob_dehydration_by_{pathogen}']:
             if self.rng.rand() < (
@@ -1279,7 +1292,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+        super().__init__(module, frequency=DateOffset(months= module.parameters['main_polling_frequency']))
         # NB. The frequency of the occurrences of this event can be edited safely.
         self.fraction_of_a_year_until_next_polling_event = self.compute_fraction_of_year_between_polling_event()
 
@@ -1374,7 +1387,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             'gi_dehydration': m.models.get_dehydration(pathogen=self.pathogen,
                                                        va_rota_all_doses=person.va_rota_all_doses,
                                                        age_years=person.age_years),
-            'gi_duration_longer_than_13days': duration_in_days >= 13,
+            'persistent_diarrhoea_status': duration_in_days >= p['persistent_diarrhoea_threshold_days'],
             'gi_date_of_onset': self.sim.date,
             'gi_date_end_of_last_episode': date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure']),
             'gi_scheduled_date_recovery': pd.NaT,   # <-- determined below
@@ -1386,7 +1399,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         if m.models.will_die(
             pathogen=props_new['gi_pathogen'],
             type=props_new['gi_type'],
-            duration_longer_than_13days=props_new['gi_duration_longer_than_13days'],
+            duration_longer_than_13days=props_new['persistent_diarrhoea_status'],
             dehydration=props_new['gi_dehydration'],
             age_exact_years=person['age_exact_years'],
             ri_current_infection_status=person['ri_current_infection_status'],
@@ -1421,7 +1434,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 'pathogen': props_new['gi_pathogen'],
                 'type': props_new['gi_type'],
                 'dehydration': props_new['gi_dehydration'],
-                'duration_longer_than_13days': props_new['gi_duration_longer_than_13days'],
+                'duration_longer_than_13days': props_new['persistent_diarrhoea_status'],
                 'date_of_outcome': date_of_outcome,
                 'will_die': pd.isnull(props_new['gi_scheduled_date_recovery'])
             },

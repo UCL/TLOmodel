@@ -151,12 +151,9 @@ class Skeleton(Module):
         """
         raise NotImplementedError
 
-    def report_prevalence(self):
+    def report_prevalence(self) -> dict[str, [float|dict]]:
         """
         This reports on the prevalence of a disease/condition or the monthly rate of certain events.
-        If multiple conditions in a module are defined, a pd.DataFrame must be returned with a column
-        corresponding to each cause (but if only one cause in module is defined, the pd.Series does not
-        need to be given a specific name).
         """
         raise NotImplementedError
 

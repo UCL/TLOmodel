@@ -1,6 +1,7 @@
 """
 General utility functions for TLO analysis
 """
+import collections
 import fileinput
 import gzip
 import json
@@ -11,7 +12,7 @@ from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union, Any
 
 import git
 import matplotlib.colors as mcolors
@@ -1460,3 +1461,21 @@ def mix_scenarios(*dicts) -> Dict:
                 d[mod].update({param: value})
 
     return d
+
+
+def flatten_nested_dict(my_dict, sep='_'):
+    """Flatten a nested dictionary into a single level dictionary."""
+    return pd.pandas.io.json._normalize.nested_to_record(my_dict, sep=sep)
+
+def get_counts_by_sex_and_age_group_divided_by_popsize(df: pd.DataFrame, property: str, targets: Optional[Tuple[Any]] = None) -> dict:
+    """Returns dict giving counts (by age-group and sex) of alive individuals with truthy values for that property,
+        divided by the total number of persons currently alive."""
+
+    if targets is None:
+        counts_of_prevalent = df.loc[df.is_alive & df[property]].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+    elif isinstance(targets, tuple):
+        counts_of_prevalent = df.loc[df.is_alive & df[property].isin(targets)].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+    elif isinstance(targets, str):
+        counts_of_prevalent = df.loc[df.is_alive & (df[property] == targets)].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+
+    return (counts_of_prevalent / df.is_alive.sum()).to_dict(orient='index')

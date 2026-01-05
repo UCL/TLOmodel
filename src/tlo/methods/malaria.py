@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, List, Literal, Optional, Union
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group_divided_by_popsize
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, Predictor
 from tlo.methods import Metadata
@@ -743,20 +744,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         # This reports age- and sex-specific prevalence of malaria for all individuals
         df = self.sim.population.props
-
-        malaria_df = df[
-            (df['is_alive']) &
-            ((df['ma_inf_type'] == 'clinical') | (df['ma_inf_type'] == 'severe'))
-            ]
-        alive_df = df[df['is_alive']]
-
-        prevalence_counts = (
-            malaria_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
-
-        return {'Malaria': prevalence_by_age_group_sex}
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group_divided_by_popsize(df, 'ma_inf_type', ('clinical', 'severe'))
+        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
 
     def check_if_fever_is_caused_by_malaria(
         self,
