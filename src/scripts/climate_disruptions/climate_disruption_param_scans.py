@@ -36,6 +36,8 @@ full_grid = make_cartesian_parameter_grid(
             "climate_ssp": ["ssp245"],
             "climate_model_ensemble_model": ["mean"],
             "services_affected_precip": ["all"], # none nullifies all other climate impacts
+            "year_effective_climate_disruptions": [2025],
+            "prop_supply_side_disruptions": [0.5],
             "tclose_overwrite": [1000],
         }
     }

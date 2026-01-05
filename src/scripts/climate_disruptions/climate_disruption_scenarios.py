@@ -32,9 +32,11 @@ full_grid = make_cartesian_parameter_grid(
             "scale_to_effective_capabilities": [True],
             "policy_name": ["Naive"],
             "climate_ssp": ["ssp126", "ssp245", "ssp585"],
+            "year_effective_climate_disruptions": [2025],
             "climate_model_ensemble_model": ["lowest", "mean", "highest"],
             "services_affected_precip": ["all"],
             "tclose_overwrite": [1000],
+            "prop_supply_side_disruptions": [0.5],
         }
     }
 )
