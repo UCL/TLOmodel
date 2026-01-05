@@ -18,11 +18,11 @@ full_grid = make_cartesian_parameter_grid(
     {
         "HealthSystem": {
             "scale_factor_delay_in_seeking_care_weather": [float(x) for x in [0, 1, 2, 7, 14, 28, 60]],
-            "rescaling_prob_seeking_after_disruption": np.arange(0.01, 1.51, 0.5),
-            "rescaling_prob_disruption": np.arange(0.0, 2.01, 0.5),
-            "scale_factor_severity_disruption_and_delay": [float(x) for x in np.linspace(0.11, 1.0, 4)],
+            "rescaling_prob_seeking_after_disruption": np.arange(0.01, 2.51, 0.25),
+            "rescaling_prob_disruption": np.arange(0.0, 2.01, 0.25),
+            "scale_factor_severity_disruption_and_delay": [float(x) for x in np.linspace(0.11, 1.0, 10)],
             "mode_appt_constraints": [1],
-            "mode_appt_constraints_postSwitch": [2],
+            "mode_appt_constraints_postSwitch": [1],
             "cons_availability": ["default"],
             "cons_availability_postSwitch": ["default"],
             "year_cons_availability_switch": [YEAR_OF_CHANGE],
