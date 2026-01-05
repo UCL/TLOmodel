@@ -2553,7 +2553,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # First, check for climate disruption
         if (
-            year >= self.module.parameters["year_effective_climate_disruptions"] == 2025
+            year >= self.module.parameters["year_effective_climate_disruptions"]
             and self.module.parameters["services_affected_precip"] != "none"
             and self.module.parameters["services_affected_precip"] is not None
         ):
@@ -2580,14 +2580,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
                 )  # to account for some structural differences
                 if np.random.binomial(1, prob_disruption) == 1:
-                    print("disrupted")
                     climate_disrupted = True
                     # determine whether "supply side" or "demand side" disruption. If demand, then the required footprint
                     # added to the running footprint total to be subtracted from the daily capabilities
                     if np.random.binomial(1, self.module.parameters["prop_supply_side_disruptions"]) and self.module.parameters["mode_appt_constraints"] == 2:
                         footprint = item.hsi_event.expected_time_requests
-                        self.running_total_footprint.add(footprint)
-                        print("supply")
+                        self.running_total_footprint.update(footprint)
                     # Regardless of supply or demand side, determine if the appointment will be rescheduled
                     if self.sim.modules[
                         "HealthSeekingBehaviour"
