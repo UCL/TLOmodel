@@ -378,6 +378,11 @@ class HealthSystem(Module):
             Types.REAL,
             "Scale factor that changes the delay in reseeking healthcare to the severity of disruption (as measured by probability of disruption)",
         ),
+        "prop_supply_side_disruptions": Parameter(
+            Types.REAL,
+            "Probability that a climate disruption is supply-side (consumes capabilities in mode 2) "
+            "vs demand-side (frees up capabilities in mode 2)."
+        ),
     }
 
     PROPERTIES = {
@@ -2520,6 +2525,160 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         return due_today
 
+    def _check_climate_disruption(self, item: HSIEventQueueItem, hold_over: List[HSIEventQueueItem]) -> bool:
+        """
+        Check if an HSI event should be disrupted due to climate/weather conditions.
+
+        Parameters
+        ----------
+        item : HSIEventQueueItem
+            The HSI event queue item to check
+        hold_over : List[HSIEventQueueItem]
+            List to add rescheduled events to
+
+        Returns
+        -------
+        bool
+            True if event was climate disrupted (and should not proceed), False otherwise
+        """
+        year = self.sim.date.year
+        month = self.sim.date.month
+
+        climate_disrupted = False
+
+        # First, check for climate disruption
+        if (
+            year >= 2025
+            and self.module.parameters["services_affected_precip"] != "none"
+            and self.module.parameters["services_affected_precip"] is not None
+        ):
+            fac_level = item.hsi_event.facility_info.level
+            facility_used = self.sim.population.props.at[item.hsi_event.target, f"level_{fac_level}"]
+            if (
+                facility_used
+                in self.module.parameters["projected_precip_disruptions"]["RealFacility_ID"].values
+            ):
+                prob_disruption = self.module.parameters["projected_precip_disruptions"].loc[
+                    (self.module.parameters["projected_precip_disruptions"]["RealFacility_ID"] == facility_used)
+                    & (self.module.parameters["projected_precip_disruptions"]["year"] == year)
+                    & (self.module.parameters["projected_precip_disruptions"]["month"] == month)
+                    & (
+                        self.module.parameters["projected_precip_disruptions"]["service"]
+                        == self.module.parameters["services_affected_precip"]
+                    ),
+                    "disruption",
+                ]
+                base_scale = self.module.parameters["scale_factor_delay_in_seeking_care_weather"]
+                scale_factor_delay = max(1, base_scale + np.random.uniform(-2, 2))
+                prob_disruption = pd.DataFrame(prob_disruption)
+                prob_disruption = min(
+                    float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
+                )  # to account for some structural differences
+                if np.random.binomial(1, prob_disruption) == 1:
+                    climate_disrupted = True
+                    # determine whether "supply side" or "demand side" disruption. If demand, then the required footprint
+                    # added to the running footprint total to be subtracted from the daily capabilities
+                    if self.sim.modules[
+                        "HealthSeekingBehaviour"
+                    ].force_any_symptom_to_lead_to_healthcareseeking:
+                        self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
+                            priority=item.priority,
+                            topen=self.sim.date
+                                  + DateOffset(
+                                days=(
+                                    int(
+                                        max(scale_factor_delay * item.priority + 1, 1)
+                                        * prob_disruption
+                                        / self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                    )
+                                )
+                            ),
+                            tclose=self.sim.date
+                                   + DateOffset(
+                                days=(
+                                    int(
+                                        max(scale_factor_delay * item.priority + 1, 1)
+                                        * prob_disruption
+                                        / self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                    )
+                                )
+                            )
+                                   + DateOffset((item.topen - item.tclose).days),
+                            hsi_event=item.hsi_event,
+                        )
+                        self.module.call_and_record_weather_delayed_hsi_event(
+                            hsi_event=item.hsi_event, priority=item.priority
+                        )
+
+                    else:
+                        patient = self.sim.population.props.loc[[item.hsi_event.target]]
+                        if patient.age_years.iloc[0] < 15:
+                            subgroup_name = "children"
+                            care_seeking_odds_ratios = self.sim.modules[
+                                "HealthSeekingBehaviour"
+                            ].odds_ratio_health_seeking_in_children
+                            hsb_model = self.sim.modules["HealthSeekingBehaviour"].hsb_linear_models["children"]
+                        else:
+                            subgroup_name = "adults"
+                            care_seeking_odds_ratios = self.sim.modules[
+                                "HealthSeekingBehaviour"
+                            ].odds_ratio_health_seeking_in_adults
+                            hsb_model = self.sim.modules["HealthSeekingBehaviour"].hsb_linear_models["adults"]
+
+                        will_seek_care_prob = min(
+                            self.module.parameters["rescaling_prob_seeking_after_disruption"]
+                            * hsb_model.predict(  # don't supply rng, so get a probability
+                                df=patient,
+                                subgroup=subgroup_name,
+                                care_seeking_odds_ratios=care_seeking_odds_ratios,
+                            ).iloc[0],
+                            1,
+                        )
+
+                        will_seek_care = 0
+                        if np.random.random() < will_seek_care_prob:
+                            will_seek_care = 1
+                        if will_seek_care:
+                            self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
+                                priority=item.priority,
+                                topen=self.sim.date
+                                      + DateOffset(
+                                    days=(
+                                        int(
+                                            max(scale_factor_delay * item.priority + 1, 1)
+                                            * prob_disruption
+                                            / self.module.parameters[
+                                                "scale_factor_severity_disruption_and_delay"
+                                            ]
+                                        )
+                                    )
+                                ),  # makes it proportional to urgency. Most urgent are 0 and 1 (ped/adult)
+                                tclose=self.sim.date
+                                       + DateOffset(
+                                    days=(
+                                        int(
+                                            max(scale_factor_delay * item.priority + 1, 1)
+                                            * prob_disruption
+                                            / self.module.parameters[
+                                                "scale_factor_severity_disruption_and_delay"
+                                            ]
+                                        )
+                                    )
+                                )
+                                       + DateOffset((item.topen - item.tclose).days),
+                                hsi_event=item.hsi_event,
+                            )
+                            self.module.call_and_record_weather_delayed_hsi_event(
+                                hsi_event=item.hsi_event, priority=item.priority
+                            )
+
+                        else:
+                            self.module.call_and_record_weather_cancelled_hsi_event(
+                                hsi_event=item.hsi_event, priority=item.priority
+                            )
+
+        return climate_disrupted
+
     def process_events_mode_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
             year = self.sim.date.year
@@ -2537,135 +2696,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions = []
 
             for item in list_of_individual_hsi_event_tuples_due_today:
-                climate_disrupted = False
-                # First, check for climate disruption
-                if (
-                    year >= 2025
-                    and self.module.parameters["services_affected_precip"] != "none"
-                    and self.module.parameters["services_affected_precip"] is not None
-                ):
-                    fac_level = item.hsi_event.facility_info.level
-                    facility_used = self.sim.population.props.at[item.hsi_event.target, f"level_{fac_level}"]
-                    if (
-                        facility_used
-                        in self.module.parameters["projected_precip_disruptions"]["RealFacility_ID"].values
-                    ):
-                        prob_disruption = self.module.parameters["projected_precip_disruptions"].loc[
-                            (self.module.parameters["projected_precip_disruptions"]["RealFacility_ID"] == facility_used)
-                            & (self.module.parameters["projected_precip_disruptions"]["year"] == year)
-                            & (self.module.parameters["projected_precip_disruptions"]["month"] == month)
-                            & (
-                                self.module.parameters["projected_precip_disruptions"]["service"]
-                                == self.module.parameters["services_affected_precip"]
-                            ),
-                            "disruption",
-                        ]
-                        base_scale = self.module.parameters["scale_factor_delay_in_seeking_care_weather"]
-                        scale_factor_delay = max(1, base_scale + np.random.uniform(-2, 2))
-                        prob_disruption = pd.DataFrame(prob_disruption)
-                        prob_disruption = min(
-                            float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
-                        )  # to account for some structural differences
-                        if np.random.binomial(1, prob_disruption) == 1:
-                            climate_disrupted = True
-                            if self.sim.modules[
-                                "HealthSeekingBehaviour"
-                            ].force_any_symptom_to_lead_to_healthcareseeking:
-                                self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
-                                    priority=item.priority,
-                                    topen=self.sim.date
-                                          + DateOffset(
-                                        days=(
-                                            int(
-                                                max(scale_factor_delay * item.priority + 1, 1)
-                                                * prob_disruption
-                                                / self.module.parameters["scale_factor_severity_disruption_and_delay"]
-                                            )
-                                        )
-                                    ),
-                                    tclose=self.sim.date
-                                           + DateOffset(
-                                        days=(
-                                            int(
-                                                max(scale_factor_delay * item.priority + 1, 1)
-                                                * prob_disruption
-                                                / self.module.parameters["scale_factor_severity_disruption_and_delay"]
-                                            )
-                                        )
-                                    )
-                                           + DateOffset((item.topen - item.tclose).days),
-                                    hsi_event=item.hsi_event,
-                                )
-                                self.module.call_and_record_weather_delayed_hsi_event(
-                                    hsi_event=item.hsi_event, priority=item.priority
-                                )
-
-                            else:
-                                patient = self.sim.population.props.loc[[item.hsi_event.target]]
-                                if patient.age_years.iloc[0] < 15:
-                                    subgroup_name = "children"
-                                    care_seeking_odds_ratios = self.sim.modules[
-                                        "HealthSeekingBehaviour"
-                                    ].odds_ratio_health_seeking_in_children
-                                    hsb_model = self.sim.modules["HealthSeekingBehaviour"].hsb_linear_models["children"]
-                                else:
-                                    subgroup_name = "adults"
-                                    care_seeking_odds_ratios = self.sim.modules[
-                                        "HealthSeekingBehaviour"
-                                    ].odds_ratio_health_seeking_in_adults
-                                    hsb_model = self.sim.modules["HealthSeekingBehaviour"].hsb_linear_models["adults"]
-
-                                will_seek_care_prob = min(
-                                    self.module.parameters["rescaling_prob_seeking_after_disruption"]
-                                    * hsb_model.predict(  # don't supply rng, so get a probability
-                                        df=patient,
-                                        subgroup=subgroup_name,
-                                        care_seeking_odds_ratios=care_seeking_odds_ratios,
-                                    ).iloc[0],
-                                    1,
-                                )
-
-                                will_seek_care = 0
-                                if np.random.random() < will_seek_care_prob:
-                                    will_seek_care = 1
-                                if will_seek_care:
-                                    self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
-                                        priority=item.priority,
-                                        topen=self.sim.date
-                                              + DateOffset(
-                                            days=(
-                                                int(
-                                                    max(scale_factor_delay * item.priority + 1, 1)
-                                                    * prob_disruption
-                                                    / self.module.parameters[
-                                                        "scale_factor_severity_disruption_and_delay"
-                                                    ]
-                                                )
-                                            )
-                                        ),  # makes it proportional to urgency. Most urgent are 0 and 1 (ped/adult)
-                                        tclose=self.sim.date
-                                               + DateOffset(
-                                            days=(
-                                                int(
-                                                    max(scale_factor_delay * item.priority + 1, 1)
-                                                    * prob_disruption
-                                                    / self.module.parameters[
-                                                        "scale_factor_severity_disruption_and_delay"
-                                                    ]
-                                                )
-                                            )
-                                        )
-                                               + DateOffset((item.topen - item.tclose).days),
-                                        hsi_event=item.hsi_event,
-                                    )
-                                    self.module.call_and_record_weather_delayed_hsi_event(
-                                        hsi_event=item.hsi_event, priority=item.priority
-                                    )
-
-                                else:
-                                    self.module.call_and_record_weather_cancelled_hsi_event(
-                                        hsi_event=item.hsi_event, priority=item.priority
-                                    )
+                climate_disrupted = self._check_climate_disruption(item, hold_over)
 
                 # If not climate disrupted, check equipment
                 if not climate_disrupted:
@@ -2725,9 +2756,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 if self.sim.date > next_event_tuple.tclose:
                     # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                     self.module.call_and_record_never_ran_hsi_event(
-                          hsi_event=event,
-                          priority=next_event_tuple.priority
-                         )
+                        hsi_event=event,
+                        priority=next_event_tuple.priority
+                    )
 
                 elif event.target not in alive_persons:
                     # if the person who is the target is no longer alive,
@@ -2748,126 +2779,131 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # The event is now due to run today and the person is confirmed to be still alive.
                     # Run event immediately.
 
-                    # Retrieve officers&facility required for HSI
-                    original_call = next_event_tuple.hsi_event.expected_time_requests
-                    _priority = next_event_tuple.priority
-                    # In this version of mode_appt_constraints = 2, do not have access to squeeze
-                    # based on queue information, and we assume no squeeze ever takes place.
-                    squeeze_factor = 0.
+                    climate_disrupted = self._check_climate_disruption(next_event_tuple, hold_over)
 
-                    # Check if any of the officers required have run out.
-                    out_of_resources = False
-                    for officer, call in original_call.items():
-                        # If any of the officers are not available, then out of resources
-                        if officer not in set_capabilities_still_available:
-                            out_of_resources = True
-                    # If officers still available, run event. Note: in current logic, a little
-                    # overtime is allowed to run last event of the day. This seems more realistic
-                    # than medical staff leaving earlier than
-                    # planned if seeing another patient would take them into overtime.
+                    # If not climate disrupted, check resources and run event
+                    if not climate_disrupted:
 
-                    if out_of_resources:
+                        # Retrieve officers&facility required for HSI
+                        original_call = next_event_tuple.hsi_event.expected_time_requests
+                        _priority = next_event_tuple.priority
+                        # In this version of mode_appt_constraints = 2, do not have access to squeeze
+                        # based on queue information, and we assume no squeeze ever takes place.
+                        squeeze_factor = 0.
 
-                        # Do not run,
-                        # Call did_not_run for the hsi_event
-                        rtn_from_did_not_run = event.did_not_run()
+                        # Check if any of the officers required have run out.
+                        out_of_resources = False
+                        for officer, call in original_call.items():
+                            # If any of the officers are not available, then out of resources
+                            if officer not in set_capabilities_still_available:
+                                out_of_resources = True
+                        # If officers still available, run event. Note: in current logic, a little
+                        # overtime is allowed to run last event of the day. This seems more realistic
+                        # than medical staff leaving earlier than
+                        # planned if seeing another patient would take them into overtime.
 
-                        # If received no response from the call to did_not_run, or a True signal, then
-                        # add to the hold-over queue.
-                        # Otherwise (disease module returns "FALSE") the event is not rescheduled and
-                        # will not run.
+                        if out_of_resources:
 
-                        if rtn_from_did_not_run is not False:
-                            # reschedule event
-                            # Add the event to the queue:
-                            hp.heappush(hold_over, next_event_tuple)
+                            # Do not run,
+                            # Call did_not_run for the hsi_event
+                            rtn_from_did_not_run = event.did_not_run()
 
-                        # Log that the event did not run
-                        self.module.record_hsi_event(
-                            hsi_event=event,
-                            actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                            squeeze_factor=squeeze_factor,
-                            did_run=False,
-                            priority=_priority
-                        )
+                            # If received no response from the call to did_not_run, or a True signal, then
+                            # add to the hold-over queue.
+                            # Otherwise (disease module returns "FALSE") the event is not rescheduled and
+                            # will not run.
 
-                    # Have enough capabilities left to run event
-                    else:
-                        # Notes-to-self: Shouldn't this be done after checking the footprint?
-                        # Compute the bed days that are allocated to this HSI and provide this
-                        # information to the HSI
-                        if sum(event.BEDDAYS_FOOTPRINT.values()):
-                            event._received_info_about_bed_days = \
-                                self.module.bed_days.issue_bed_days_according_to_availability(
-                                    facility_id=self.module.bed_days.get_facility_id_for_beds(
-                                                                       persons_id=event.target),
-                                    footprint=event.BEDDAYS_FOOTPRINT
-                                )
+                            if rtn_from_did_not_run is not False:
+                                # reschedule event
+                                # Add the event to the queue:
+                                hp.heappush(hold_over, next_event_tuple)
 
-                        # Check that a facility has been assigned to this HSI
-                        assert event.facility_info is not None, \
-                            f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
-
-                        # Check if equipment declared is available. If not, call `never_ran` and do not run the
-                        # event. (`continue` returns flow to beginning of the `while` loop)
-                        if not event.is_all_declared_equipment_available:
-                            self.module.call_and_record_never_ran_hsi_event(
+                            # Log that the event did not run
+                            self.module.record_hsi_event(
                                 hsi_event=event,
-                                priority=next_event_tuple.priority
+                                actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                                squeeze_factor=squeeze_factor,
+                                did_run=False,
+                                priority=_priority
                             )
-                            continue
 
-                        # Expected appt footprint before running event
-                        _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
-                        # Run event & get actual footprint
-                        actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
-
-                        # Check if the HSI event returned updated_appt_footprint, and if so adjust original_call
-                        if actual_appt_footprint is not None:
-
-                            # check its formatting:
-                            assert self.module.appt_footprint_is_valid(actual_appt_footprint)
-
-                            # Update call that will be used to compute capabilities used
-                            updated_call = self.module.get_appt_footprint_as_time_request(
-                                facility_info=event.facility_info,
-                                appt_footprint=actual_appt_footprint
-                            )
+                        # Have enough capabilities left to run event
                         else:
-                            actual_appt_footprint = _appt_footprint_before_running
-                            updated_call = original_call
-
-                        # Recalculate call on officers based on squeeze factor.
-                        for k in updated_call.keys():
-                            updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
-
-                        # Subtract this from capabilities used so-far today
-                        capabilities_monitor.subtract(updated_call)
-
-                        # If any of the officers have run out of time by performing this hsi,
-                        # remove them from list of available officers.
-                        for officer, call in updated_call.items():
-                            if capabilities_monitor[officer] <= 0:
-                                if officer in set_capabilities_still_available:
-                                    set_capabilities_still_available.remove(officer)
-                                else:
-                                    logger.warning(
-                                        key="message",
-                                        data=(f"{event.TREATMENT_ID} actual_footprint requires different"
-                                              f"officers than expected_footprint.")
+                            # Notes-to-self: Shouldn't this be done after checking the footprint?
+                            # Compute the bed days that are allocated to this HSI and provide this
+                            # information to the HSI
+                            if sum(event.BEDDAYS_FOOTPRINT.values()):
+                                event._received_info_about_bed_days = \
+                                    self.module.bed_days.issue_bed_days_according_to_availability(
+                                        facility_id=self.module.bed_days.get_facility_id_for_beds(
+                                            persons_id=event.target),
+                                        footprint=event.BEDDAYS_FOOTPRINT
                                     )
 
-                        # Update today's footprint based on actual call and squeeze factor
-                        self.module.running_total_footprint.update(updated_call)
+                            # Check that a facility has been assigned to this HSI
+                            assert event.facility_info is not None, \
+                                f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
 
-                        # Write to the log
-                        self.module.record_hsi_event(
-                            hsi_event=event,
-                            actual_appt_footprint=actual_appt_footprint,
-                            squeeze_factor=squeeze_factor,
-                            did_run=True,
-                            priority=_priority
-                        )
+                            # Check if equipment declared is available. If not, call `never_ran` and do not run the
+                            # event. (`continue` returns flow to beginning of the `while` loop)
+                            if not event.is_all_declared_equipment_available:
+                                self.module.call_and_record_never_ran_hsi_event(
+                                    hsi_event=event,
+                                    priority=next_event_tuple.priority
+                                )
+                                continue
+
+                            # Expected appt footprint before running event
+                            _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
+                            # Run event & get actual footprint
+                            actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
+
+                            # Check if the HSI event returned updated_appt_footprint, and if so adjust original_call
+                            if actual_appt_footprint is not None:
+
+                                # check its formatting:
+                                assert self.module.appt_footprint_is_valid(actual_appt_footprint)
+
+                                # Update call that will be used to compute capabilities used
+                                updated_call = self.module.get_appt_footprint_as_time_request(
+                                    facility_info=event.facility_info,
+                                    appt_footprint=actual_appt_footprint
+                                )
+                            else:
+                                actual_appt_footprint = _appt_footprint_before_running
+                                updated_call = original_call
+
+                            # Recalculate call on officers based on squeeze factor.
+                            for k in updated_call.keys():
+                                updated_call[k] = updated_call[k] / (squeeze_factor + 1.)
+
+                            # Subtract this from capabilities used so-far today
+                            capabilities_monitor.subtract(updated_call)
+
+                            # If any of the officers have run out of time by performing this hsi,
+                            # remove them from list of available officers.
+                            for officer, call in updated_call.items():
+                                if capabilities_monitor[officer] <= 0:
+                                    if officer in set_capabilities_still_available:
+                                        set_capabilities_still_available.remove(officer)
+                                    else:
+                                        logger.warning(
+                                            key="message",
+                                            data=(f"{event.TREATMENT_ID} actual_footprint requires different"
+                                                  f"officers than expected_footprint.")
+                                        )
+
+                            # Update today's footprint based on actual call and squeeze factor
+                            self.module.running_total_footprint.update(updated_call)
+
+                            # Write to the log
+                            self.module.record_hsi_event(
+                                hsi_event=event,
+                                actual_appt_footprint=actual_appt_footprint,
+                                squeeze_factor=squeeze_factor,
+                                did_run=True,
+                                priority=_priority
+                            )
 
             # Don't have any capabilities at all left for today, no
             # point in going through the queue to check what's left to do today.
@@ -2899,9 +2935,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             elif self.sim.date > next_event_tuple.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 self.module.call_and_record_never_ran_hsi_event(
-                      hsi_event=event,
-                      priority=next_event_tuple.priority
-                     )
+                    hsi_event=event,
+                    priority=next_event_tuple.priority
+                )
 
             elif event.target not in alive_persons:
                 # if the person who is the target is no longer alive,
@@ -2935,17 +2971,16 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 # Log that the event did not run
                 self.module.record_hsi_event(
-                   hsi_event=event,
-                   actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                   squeeze_factor=0,
-                   did_run=False,
-                   priority=next_event_tuple.priority
-                   )
+                    hsi_event=event,
+                    actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                    squeeze_factor=0,
+                    did_run=False,
+                    priority=next_event_tuple.priority
+                )
 
         # add events from the list_of_events_not_due_today back into the queue
         while len(list_of_events_not_due_today) > 0:
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(list_of_events_not_due_today))
-
 
     def apply(self, population):
 
