@@ -415,6 +415,7 @@ class HealthSystem(Module):
         response_to_disruption: Optional[str] = "delay",
         scale_factor_delay_in_seeking_care_weather: Optional[float] = 4,
         scale_factor_severity_disruption_and_delay: Optional[float] = None,
+        prop_supply_side_disruptions: Optional[float] = 0.5,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -466,6 +467,7 @@ class HealthSystem(Module):
         :param rescaling_prob_seeking_after_disruption: Rescaling of probability of seeking care after a disruption has occurred.
         :param rescaling_prob_disruption: To account for structural/behavioural assumptions in the TLO and limitations of DHIS2 dataset.
         :param scale_factor_severity_disruption_and_delay: Scale on the delay in reseeking healthcare based on the "severity" of disruption.
+        :param prop_supply_side_disruptions: Probability that the climate-mediate disruptions to healtchare are from the supply-side.
         """
 
         super().__init__(name)
