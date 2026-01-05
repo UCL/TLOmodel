@@ -355,6 +355,7 @@ class HealthSystem(Module):
             "Which model from the model ensemble for each climate ssp is under consideration."
             "Options are lowest, mean, and highest, based on total precipitation between 2025 and 2070.",
         ),
+        "year_effective_climate_disruptions": Parameter(Types.INT, "Mimimum year from which there can be climate disruptions. Minimum is 2025"),
         "scale_factor_delay_in_seeking_care_weather": Parameter(
             Types.REAL,
             "If faced with a climate disruption, and it is determined the individual will "
@@ -411,6 +412,7 @@ class HealthSystem(Module):
         projected_precip_disruptions: Optional[List[str]] = None,
         climate_ssp: Optional[str] = "ssp245",
         climate_model_ensemble_model: Optional[str] = "mean",
+        year_effective_climate_disruptions: Optional[int] = 2025,
         services_affected_precip: Optional[str] = "none",
         response_to_disruption: Optional[str] = "delay",
         scale_factor_delay_in_seeking_care_weather: Optional[float] = 4,
@@ -460,6 +462,7 @@ class HealthSystem(Module):
                 Options are ssp126, ssp245, and ssp585, in terms of increasing severity.
         :param climate_model_ensemble_model: Which model from the model ensemble for each climate ssp is under consideratin.
                 Options are 'lowest', 'mean', and 'highest', based on total precipitation between 2025 and 2070.
+        :param year_effective_climate_disruptions: Minimum year from which climate disruptions occur. Minimum is 2025.
         :param services_affected_precip: Which modelled services can be affected by weather. Options are 'all', 'none'.
         :param response_to_disruption: How an appointment that is determined to be affected by weather will be handled. Options are 'delay', 'cancel'.
         :param scale_delay_in_seeking_care_weather_urgent: The scale factor on number of days delay in reseeking healthcare after an urgent appointmnet has been delayed by weather. Unit is day.
@@ -2550,7 +2553,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # First, check for climate disruption
         if (
-            year >= 2025
+            year >= self.module.parameters["year_effective_climate_disruptions"] == 2025
             and self.module.parameters["services_affected_precip"] != "none"
             and self.module.parameters["services_affected_precip"] is not None
         ):
@@ -2577,9 +2580,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
                 )  # to account for some structural differences
                 if np.random.binomial(1, prob_disruption) == 1:
+                    print("disrupted")
                     climate_disrupted = True
                     # determine whether "supply side" or "demand side" disruption. If demand, then the required footprint
                     # added to the running footprint total to be subtracted from the daily capabilities
+                    if np.random.binomial(1, self.module.parameters["prop_supply_side_disruptions"]) and self.module.parameters["mode_appt_constraints"] == 2:
+                        footprint = item.hsi_event.expected_time_requests
+                        self.running_total_footprint.add(footprint)
+                        print("supply")
+                    # Regardless of supply or demand side, determine if the appointment will be rescheduled
                     if self.sim.modules[
                         "HealthSeekingBehaviour"
                     ].force_any_symptom_to_lead_to_healthcareseeking:
