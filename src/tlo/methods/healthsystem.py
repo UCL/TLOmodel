@@ -816,10 +816,6 @@ class HealthSystem(Module):
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
 
-        ## Initialise the stores for squeeze factors
-        self._get_squeeze_factors_store = {
-            clinic: np.zeros(self._get_squeeze_factors_store_grow) for clinic in self._clinic_names
-        }
 
 
     def initialise_population(self, population):
@@ -2167,12 +2163,12 @@ class HealthSystem(Module):
         # Record equipment usage for the year, for each facility
         self._record_general_equipment_usage_for_year()
 
-    def run_individual_level_events_in_mode_1(
-        self, _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]
-    ) -> List:
+    def run_individual_level_events_in_mode_0_or_1(self,
+                                                   _list_of_individual_hsi_event_tuples:
+                                                   List[HSIEventQueueItem]) -> List:
         """Run a list of individual level events. Returns: list of events that did not run (maybe an empty list)."""
         _to_be_held_over = list()
-        assert self.mode_appt_constraints == 1
+        assert self.mode_appt_constraints in (0, 1)
 
         if _list_of_individual_hsi_event_tuples:
             # Examine total call on health officers time from the HSI events in the list:
@@ -2180,7 +2176,8 @@ class HealthSystem(Module):
             # For all events in the list, expand the appt-footprint of the event to give the demands on each
             # officer-type in each facility_id.
             footprints_of_all_individual_level_hsi_event = [
-                event_tuple.hsi_event.expected_time_requests for event_tuple in _list_of_individual_hsi_event_tuples
+                event_tuple.hsi_event.expected_time_requests
+                for event_tuple in _list_of_individual_hsi_event_tuples
             ]
 
             # Compute total appointment footprint across all events
@@ -2191,51 +2188,22 @@ class HealthSystem(Module):
 
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
-                clinic = event.clinic_eligibility
                 event = event.hsi_event
 
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
 
-                # Mode 0: All HSI Event run, with no squeeze
-                # Mode 1: All HSI Events run provided all required officers have non-zero capabilities
-                ok_to_run = True
-
-                if self.mode_appt_constraints == 1:
-                    if event.expected_time_requests:
-                        ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
-                                        event.expected_time_requests)
-
-
-                if ok_to_run:
-
-                    # Compute the bed days that are allocated to this HSI and provide this information to the HSI
-                    if sum(event.BEDDAYS_FOOTPRINT.values()):
-                        event._received_info_about_bed_days = \
-                            self.bed_days.issue_bed_days_according_to_availability(
-                                facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
-                                footprint=event.BEDDAYS_FOOTPRINT
-                            )
-
-                    # Check that a facility has been assigned to this HSI
-                    assert event.facility_info is not None, \
-                        f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
-
-                    # Run the HSI event (allowing it to return an updated appt_footprint)
-                    actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
-
-                    # Check if the HSI event returned updated appt_footprint
-                    if actual_appt_footprint is not None:
-                        # The returned footprint is different to the expected footprint: so must update load factors
-
-                        # check its formatting:
-                        assert self.appt_footprint_is_valid(actual_appt_footprint)
-
-                        # Update load factors:
-                        updated_call = self.get_appt_footprint_as_time_request(
-                            facility_info=event.facility_info,
-                            appt_footprint=actual_appt_footprint
+                # Compute the bed days that are allocated to this HSI and provide this information to the HSI
+                if sum(event.BEDDAYS_FOOTPRINT.values()):
+                    event._received_info_about_bed_days = \
+                        self.bed_days.issue_bed_days_according_to_availability(
+                            facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
+                            footprint=event.BEDDAYS_FOOTPRINT
                         )
+
+                # Check that a facility has been assigned to this HSI
+                assert event.facility_info is not None, \
+                    f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
 
                 # Run the HSI event (allowing it to return an updated appt_footprint)
                 actual_appt_footprint = event.run(squeeze_factor=0.0)
@@ -2860,7 +2828,6 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._treatment_ids,
                 "Number_By_Appt_Type_Code": self._appts,
                 "Number_By_Appt_Type_Code_And_Level": self._appts_by_level,
-                "squeeze_factor": {k: sum(v) / len(v) for k, v in self._squeeze_factor_by_hsi_event_name.items()},
             },
         )
         logger_summary.info(
