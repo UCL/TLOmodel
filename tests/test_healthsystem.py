@@ -856,16 +856,18 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     )
 
     #  - Average fraction of HCW time used (year by year)
-    assert (
-        summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year)["average_Frac_Time_Used_Overall"]
-        .round(4)
-        .to_dict()
-        == detailed_capacity.set_index(pd.to_datetime(detailed_capacity.date).dt.year)["Frac_Time_Used_Overall"]
-        .groupby(level=0)
-        .mean()
-        .round(4)
-        .to_dict()
-    )
+    summary_capacity_indexed = summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year)
+    for clinic in sim.modules["HealthSystem"]._clinic_names:
+        summary_clinic_capacity = summary_capacity_indexed["average_Frac_Time_Used_Overall"].apply(lambda x: x.get(clinic, None))
+        assert (
+            summary_clinic_capacity.round(4).to_dict()
+            == detailed_capacity[detailed_capacity['Clinic'] == clinic].set_index(pd.to_datetime(detailed_capacity.date).dt.year)["Frac_Time_Used_Overall"]
+            .groupby(level=0)
+            .mean()
+            .round(4)
+            .to_dict()
+        )
+
 
     #  - Consumables (total over entire period of log that are available / not available)  # add _Item_
     assert (

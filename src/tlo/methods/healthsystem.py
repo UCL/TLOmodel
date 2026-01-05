@@ -1858,7 +1858,7 @@ class HealthSystem(Module):
 
 
     def record_hsi_event(
-        self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True, priority=None, clinic=None
+        self, hsi_event, actual_appt_footprint=None, squeeze_factor=0.0, did_run=True, priority=None, clinic=None
     ):
         """
         Record the processing of an HSI event.
@@ -2828,6 +2828,9 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._treatment_ids,
                 "Number_By_Appt_Type_Code": self._appts,
                 "Number_By_Appt_Type_Code_And_Level": self._appts_by_level,
+                'squeeze_factor': {
+                                    k: sum(v) / len(v) for k, v in self._squeeze_factor_by_hsi_event_name.items()
+                                }
             },
         )
         logger_summary.info(
@@ -2857,7 +2860,7 @@ class HealthSystemSummaryCounter:
             description="The fraction of all the healthcare worker time that is used each day, averaged over this "
             "calendar year.",
             data={
-                "average_Frac_Time_Used_Overall": np.mean(self._frac_time_used_overall),
+                "average_Frac_Time_Used_Overall": {clinic: np.mean(values) for clinic, values in self._frac_time_used_overall.items()},
                 # <-- leaving space here for additional summary measures that may be needed in the future.
             },
         )
