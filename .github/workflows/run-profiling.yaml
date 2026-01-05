@@ -132,7 +132,7 @@ jobs:
 
       ## Upload the output as an artifact so we can push it to the profiling repository
       - name: Save results as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ needs.set-variables.outputs.artifact-name }}
           path: ${{ needs.set-variables.outputs.profiling-output-dir }}
