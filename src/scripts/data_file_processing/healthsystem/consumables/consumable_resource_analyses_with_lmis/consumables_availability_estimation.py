@@ -44,9 +44,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from typing import Optional, List
+import re
 
 from tlo.methods.consumables import check_format_of_consumables_file
-from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios import generate_alternative_availability_scenarios, generate_descriptive_consumable_availability_plots
+from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios.generate_consumable_availability_scenarios_for_impact_analysis import generate_alternative_availability_scenarios, generate_descriptive_consumable_availability_plots
+from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios.create_consumable_redistribution_scenarios import generate_redistribution_scenarios
 
 # Set local shared folder source
 path_to_share = Path(  # <-- point to the shared folder
@@ -324,6 +326,15 @@ def update_level1b_availability(
     )
 
     return availability_df
+
+# Function to count scenarios at any stage of generating the cons availability RF
+def get_max_scenario_number(df: pd.DataFrame) -> int:
+    scenario_nums = [
+        int(m.group(1))
+        for c in df.columns
+        if (m := re.match(r"available_prop_scenario(\d+)$", c))
+    ]
+    return max(scenario_nums) if scenario_nums else 0
 
 # Function to compute average availability by facility level
 def compute_avg_availability_by_var(df: pd.DataFrame = None, # TLO availability dataframe with each row representing one Facility_ID, item, month,
@@ -1165,11 +1176,22 @@ assert not pd.isnull(full_set_interpolated).any().any()
 
 full_set_interpolated = full_set_interpolated.reset_index()
 #full_set_interpolated = full_set_interpolated.reset_index().merge(item_code_category_mapping, on = 'item_code', how = 'left', validate = 'm:1')
+full_set_interpolated.to_csv(
+    path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
+    index=False
+) # Save as .csv - this file is then read to apply the following functions - generate_alternative_availability_scenarios
+# & generate_redistribution_scenarios
 
 # 5. ADD ALTERNATIVE AVAILABILITY SCENARIOS
 ########################################################################################################################
 # Add alternative availability scenarios to represent improved or reduce consumable availability
 full_set_interpolated_with_scenarios = generate_alternative_availability_scenarios(full_set_interpolated)
+max_scenario = get_max_scenario_number(full_set_interpolated_with_scenarios) # Get current scenario count
+full_set_interpolated_with_scenarios = generate_redistribution_scenarios(full_set_interpolated_with_scenarios,
+                                                                         scenario_count = max_scenario,
+                                                                         outputfilepath = Path("./outputs/consumables_impact_analysis"))
+available_cols = [c for c in full_set_interpolated_with_scenarios.columns if c.startswith("available_prop")]
+full_set_interpolated_with_scenarios = full_set_interpolated_with_scenarios[['Facility_ID', 'month', 'item_code'] + available_cols]
 
 full_set_interpolated_with_scenarios_level1b_fixed = update_level1b_availability(
     availability_df=full_set_interpolated_with_scenarios,
@@ -1179,8 +1201,13 @@ full_set_interpolated_with_scenarios_level1b_fixed = update_level1b_availability
     weighting = 'district_1b_to_2_ratio',
 )
 
+# Verify that the shape of this dataframe is identical to the original availability dataframe
+assert sorted(set(full_set_interpolated_with_scenarios_level1b_fixed.Facility_ID)) == sorted(set(pd.unique(full_set_interpolated.Facility_ID)))
+assert sorted(set(full_set_interpolated_with_scenarios_level1b_fixed.month)) == sorted(set(pd.unique(full_set_interpolated.month)))
+assert sorted(set(full_set_interpolated_with_scenarios_level1b_fixed.item_code)) == sorted(set(pd.unique(full_set_interpolated.item_code)))
+assert len(full_set_interpolated_with_scenarios_level1b_fixed) == len(full_set_interpolated.item_code)
+
 # Compare availability averages by Facility_Level before and after the 1b fix
-available_cols = [c for c in full_set_interpolated_with_scenarios.columns if c.startswith("available_prop")]
 level1b_fix_plots_path = outputfilepath / 'comparison_plots'
 figurespath_scenarios = outputfilepath / 'consumable_scenarios'
 if not os.path.exists(level1b_fix_plots_path):
@@ -1288,7 +1315,10 @@ scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': '
                 'available_prop_scenario9': 'Best facility \n (including DHO)','available_prop_scenario10': 'HIV supply \n chain', 'available_prop_scenario11': 'EPI supply \n chain',
                 'available_prop_scenario12': 'HIV moved to \n Govt supply chain \n (Avg by Level)', 'available_prop_scenario13': 'HIV moved to \n Govt supply chain  \n (Avg by Facility_ID)',
                 'available_prop_scenario14': 'HIV moved to \n Govt supply chain  \n (Avg by Facility_ID times 1.25)',
-                'available_prop_scenario15': 'HIV moved to \n Govt supply chain  \n (Avg by Facility_ID times 0.75)'}
+                'available_prop_scenario15': 'HIV moved to \n Govt supply chain  \n (Avg by Facility_ID times 0.75)',
+                'available_prop_scenario16': 'Redistribution: District pooling', 'available_prop_scenario17':  'Redistribution: Cluster pooling',
+                'available_prop_scenario18':  'Redistribution: Pairwise (large radius)', 'available_prop_scenario19':  'Redistribution: Pairwise (small radius)',
+}
 
 # Generate descriptive plots of consumable availability
 program_item_mapping = pd.read_csv(path_for_new_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv')[['Item_Code', 'item_category']]
@@ -1297,7 +1327,7 @@ generate_descriptive_consumable_availability_plots(tlo_availability_df = full_se
                                                        figurespath = figurespath_scenarios,
                                                        mfl = mfl,
                                                        program_item_mapping = program_item_mapping,
-                                                       chosen_availability_columns  = None,
+                                                       chosen_availability_columns  = chosen_availability_columns,
                                                        scenario_names_dict = scenario_names_dict,)
 
 
