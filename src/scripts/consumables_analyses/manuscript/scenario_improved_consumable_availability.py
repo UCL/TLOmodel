@@ -12,7 +12,7 @@ or locally using:
 ```
 tlo scenario-run src/scripts/consumables_analyses/manuscript/scenario_improved_consumable_availability.py
 
-# Pending actions
+# TODO Pending actions
 # check if 7 days of persistence
 # Scale-up in 2026
 # Relaxing health worker capacity constraint
@@ -28,6 +28,29 @@ from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScen
 from tlo.scenario import BaseScenario
 
 class ConsumablesCosting(BaseScenario):
+    # -----------------------------
+    # 1) DEFINE SCENARIOS EXPLICITLY
+    # -----------------------------
+    CONSUMABLE_SCENARIOS = [
+        'default',
+        'scenario1', 'scenario2', 'scenario3',  # Predictive factors
+        'scenario6', 'scenario7', 'scenario8',  # Benchmark facilities
+        'scenario16', 'scenario17', 'scenario18', 'scenario19',  # Redistribution
+        'all'  # Perfect
+    ]
+
+    SYSTEM_MODES = [
+        {
+            "mode_appt_constraints": 2,
+            "max_healthsystem_function": [False, False],
+            "max_healthcare_seeking": [False, False],
+        },
+        {
+            "mode_appt_constraints": 1,
+            "max_healthsystem_function": [False, True],
+            "max_healthcare_seeking": [False, True],
+        },
+    ]
 
     def __init__(self):
         super().__init__()
@@ -36,8 +59,18 @@ class ConsumablesCosting(BaseScenario):
         self.end_date = Date(2031, 1, 1) # TODO change to 2041
         # Run until 2040 even though analysis maybe focused on years until 2030
         self.pop_size = 5_000 # TODO change to 100_000
-        self.scenarios = list(range(0,13)) # add scenarios as necessary
-        self.number_of_draws = len(self.scenarios)
+
+
+        # Build cartesian product of scenarios
+        self.SCENARIOS = [
+            (cons, sys)
+            for cons in self.CONSUMABLE_SCENARIOS
+            for sys in self.SYSTEM_MODES
+        ]
+
+        self.number_of_draws = len(self.SCENARIOS)
+        self.scenarios = list(range(self.number_of_draws))
+
         self.runs_per_draw = 1 #TODO change to 5
 
     def log_configuration(self):
@@ -60,23 +93,17 @@ class ConsumablesCosting(BaseScenario):
         )
 
     def draw_parameters(self, draw_number, rng):
+        cons_scenario, sys = self.SCENARIOS[draw_number]
+
         return {
             'HealthSystem': {
                 'cons_availability': 'default',
                 'year_cons_availability_switch': 2026,
-                'cons_availability_postSwitch': ['default', # Actual
-                                                 'scenario1', 'scenario2', 'scenario3', # Predictive factors scenarios
-                                                 'scenario6', 'scenario7', 'scenario8', # Benchmark facility scenarios
-                                                 # TODO add redistribution scenarios
-                                                 'all', # Perfect
-                                                 'default',
-                                                 'scenario1', 'scenario2', 'scenario3',
-                                                 'scenario6', 'scenario7', 'scenario8',
-                                                 'all'][draw_number],
+                'cons_availability_postSwitch': cons_scenario,
                 'mode_appt_constraints':1,
-                'mode_appt_constraints_postSwitch':[x for x in (1, 2) for _ in range(8)][draw_number], # once without HR constraints and once with HR constraints
+                'mode_appt_constraints_postSwitch':sys["mode_appt_constraints"], # once without HR constraints and once with HR constraints
                 'year_mode_switch':2026,
-                'policy_name': 'HSSP-III',
+                'policy_name': 'EHP_III',
                 'use_funded_or_actual_staffing': 'actual',
                 'scale_to_effective_capabilities':True,  # <-- Transition into Mode2 with the effective capabilities in HRH 'revealed' in Mode 1
                 'yearly_HR_scaling_mode': 'historical_scaling', # allow historical HRH scaling to occur 2018-2024
@@ -84,8 +111,8 @@ class ConsumablesCosting(BaseScenario):
                 'beds_availability':'all',
                 },
             "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-                "max_healthsystem_function": [x for x in ([False, False], [False, True]) for _ in range(8)][draw_number],
-                "max_healthcare_seeking": [x for x in ([False, False], [False, True]) for _ in range(8)][draw_number],
+                "max_healthsystem_function": sys["max_healthsystem_function"],
+                "max_healthcare_seeking": sys["max_healthcare_seeking"],
                 "year_of_switch": 2026,
             }
         }
