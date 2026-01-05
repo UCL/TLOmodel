@@ -1801,6 +1801,66 @@ class HealthSystem(Module):
         return appt_footprint_times
 
 
+    def get_total_minutes_of_this_officer_in_this_district(self, current_capabilities, _officer):
+        """Returns the minutes of current capabilities for the officer identified (this officer type in this
+        facility_id)."""
+        return current_capabilities.get(_officer)
+
+    def get_total_minutes_of_this_officer_in_all_district(self, current_capabilities, _officer):
+        """Returns the minutes of current capabilities for the officer identified in all districts (this officer
+        type in this all facilities of the same level in all districts)."""
+
+        def split_officer_compound_string(cs) -> Tuple[int, str]:
+            """Returns (facility_id, officer_type) for the officer identified in the string of the form:
+             'FacilityID_{facility_id}_Officer_{officer_type}'."""
+            _, _facility_id, _, _officer_type = cs.split('_', 3)  # (NB. Some 'officer_type' include "_")
+            return int(_facility_id), _officer_type
+
+        def _match(_this_officer, facility_ids: List[int], officer_type: str):
+            """Returns True if the officer identified is of the identified officer_type and is in one of the
+            facility_ids."""
+            this_facility_id, this_officer_type = split_officer_compound_string(_this_officer)
+            return (this_officer_type == officer_type) and (this_facility_id in facility_ids)
+
+        facility_id, officer_type = split_officer_compound_string(_officer)
+        facility_level = self._facility_by_facility_id[int(facility_id)].level
+        facilities_of_same_level_in_all_district = [
+            _fac.id for _fac in self._facilities_for_each_district[facility_level].values()
+        ]
+
+        officers_in_the_same_level_in_all_districts = [
+            _officer for _officer in current_capabilities.keys() if
+            _match(_officer, facility_ids=facilities_of_same_level_in_all_district, officer_type=officer_type)
+        ]
+
+        return sum(current_capabilities.get(_o) for _o in officers_in_the_same_level_in_all_districts)
+
+
+    def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests)-> bool:
+        """Check if all officers required by the appt footprint are available to perform the HSI"""
+
+        ok_to_run = True
+
+        for officer in expected_time_requests.keys():
+            if self.compute_squeeze_factor_to_district_level:
+                availability = self.get_total_minutes_of_this_officer_in_this_district(self.capabilities_today, officer)
+            else:
+                availability = self.get_total_minutes_of_this_officer_in_all_district(self.capabilities_today, officer)
+
+            # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
+            if availability is None:
+                logger.warning(
+                    key="message",
+                    data=(f"Requested officer {officer} is not contemplated by health system. ")
+                )
+                availability = 0.0
+
+            if availability == 0.0:
+                ok_to_run = False
+
+        return ok_to_run
+
+
     def record_hsi_event(
         self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True, priority=None, clinic=None
     ):
@@ -2137,12 +2197,44 @@ class HealthSystem(Module):
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
 
-                # Compute the bed days that are allocated to this HSI and provide this information to the HSI
-                if sum(event.BEDDAYS_FOOTPRINT.values()):
-                    event._received_info_about_bed_days = \
-                        self.bed_days.issue_bed_days_according_to_availability(
-                            facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
-                            footprint=event.BEDDAYS_FOOTPRINT
+                # Mode 0: All HSI Event run, with no squeeze
+                # Mode 1: All HSI Events run provided all required officers have non-zero capabilities
+                ok_to_run = True
+
+                if self.mode_appt_constraints == 1:
+                    if event.expected_time_requests:
+                        ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
+                                        event.expected_time_requests)
+
+
+                if ok_to_run:
+
+                    # Compute the bed days that are allocated to this HSI and provide this information to the HSI
+                    if sum(event.BEDDAYS_FOOTPRINT.values()):
+                        event._received_info_about_bed_days = \
+                            self.bed_days.issue_bed_days_according_to_availability(
+                                facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
+                                footprint=event.BEDDAYS_FOOTPRINT
+                            )
+
+                    # Check that a facility has been assigned to this HSI
+                    assert event.facility_info is not None, \
+                        f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
+
+                    # Run the HSI event (allowing it to return an updated appt_footprint)
+                    actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
+
+                    # Check if the HSI event returned updated appt_footprint
+                    if actual_appt_footprint is not None:
+                        # The returned footprint is different to the expected footprint: so must update load factors
+
+                        # check its formatting:
+                        assert self.appt_footprint_is_valid(actual_appt_footprint)
+
+                        # Update load factors:
+                        updated_call = self.get_appt_footprint_as_time_request(
+                            facility_info=event.facility_info,
+                            appt_footprint=actual_appt_footprint
                         )
 
                 # Run the HSI event (allowing it to return an updated appt_footprint)
