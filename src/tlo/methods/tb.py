@@ -1050,8 +1050,8 @@ class Tb(Module):
     def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of active TB for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'tb_inf', 'active')
-        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'tb_inf', 'active')
+        return {'number_by_age_group_sex': number_by_age_group_sex}
 
     def calculate_untreated_proportion(self, population, strain):
         """

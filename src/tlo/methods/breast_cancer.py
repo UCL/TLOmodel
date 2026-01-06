@@ -584,8 +584,9 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
     def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of breast cancer for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'brc_status', ("stage1", "stage2", "stage3", "stage4"))
-        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
+        number_by_age_group_sex = (
+            get_counts_by_sex_and_age_group(df, 'brc_status', ("stage1", "stage2", "stage3", "stage4")))
+        return {'number_by_age_group_sex': number_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,

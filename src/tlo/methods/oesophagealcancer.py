@@ -611,7 +611,10 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
     def report_disease_number(self):
         # This reports age- and sex-specific numbers of oesophageal cancer for all individuals
         df = self.sim.population.props
-        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'oc_status', ("low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"))
+        number_by_age_group_sex = (
+            get_counts_by_sex_and_age_group(df, 'oc_status', ("low_grade_dysplasia",
+                                                              "high_grade_dysplasia", "stage1", "stage2",
+                                                              "stage3", "stage4")))
         return {'prevalent_by_age_group_sex': number_by_age_group_sex}
 
     def do_at_generic_first_appt(

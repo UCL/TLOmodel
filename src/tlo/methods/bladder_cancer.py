@@ -640,8 +640,8 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
     def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of bladder cancer for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'bc_status', ("tis_t1", "t2p", "metastatic"))
-        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'bc_status', ("tis_t1", "t2p", "metastatic"))
+        return {'number_by_age_group_sex': number_by_age_group_sex}
 
 
 
