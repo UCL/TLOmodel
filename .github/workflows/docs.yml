@@ -23,7 +23,7 @@ concurrency:
   # master branch will be allowed to have pending jobs
   # https://stackoverflow.com/a/70972844
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
-  
+
 jobs:
 
   build-docs:
@@ -34,11 +34,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           lfs: true
-      - name: Cache tox
-        uses: actions/cache@v5
-        with:
-          path: .tox
-          key: tox-${{hashFiles('requirements/*.txt', 'tox.ini')}}
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
