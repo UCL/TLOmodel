@@ -1023,8 +1023,8 @@ class Alri(Module, GenericFirstAppointmentsMixin):
     def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of ALRI for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ri_current_infection_status')
-        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ri_current_infection_status')
+        return {'number_by_age_group_sex': number_by_age_group_sex}
 
     def over_ride_availability_of_certain_consumables(self):
         """Over-ride the availability of certain consumables, according the parameter values provided."""

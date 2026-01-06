@@ -612,9 +612,9 @@ class Depression(Module, GenericFirstAppointmentsMixin):
             any_depr_in_the_last_month.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
         )
 
-        prevalence_by_age_group_sex = (prevalence_counts / df['is_alive'].sum()).to_dict(orient='index')
+        number_by_age_group_sex = (prevalence_counts / df['is_alive'].sum()).to_dict(orient='index')
 
-        return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
+        return {'number_by_age_group_sex': number_by_age_group_sex}
 
     def _check_for_suspected_depression(
         self, symptoms: List[str], treatment_id: str, has_even_been_diagnosed: bool

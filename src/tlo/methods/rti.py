@@ -2561,8 +2561,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     def report_disease_numbers(self):
         # This returns dataframe that reports on the prevalence of RTIs for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'rt_road_traffic_inc')
-        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'rt_road_traffic_inc')
+        return {'number_by_age_group_sex': number_by_age_group_sex}
 
     def rti_assign_injuries(self, number):
         """

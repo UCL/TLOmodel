@@ -192,7 +192,8 @@ def __check_no_illegal_switches(sim):
         if 'contraception_change' in logs['tlo.methods.contraception']:
             con = logs['tlo.methods.contraception']['contraception_change']
             assert not (con.switch_from == 'female_sterilization').any()  # no switching from female_sterilization
-            assert not (con.loc[con['age_years'] < sterilization_age_limit, 'switch_to'] == 'female_sterilization').any()  # no switching to
+            assert not (con.loc[con['age_years'] < sterilization_age_limit, 'switch_to']
+                        == 'female_sterilization').any()  # no switching to
             # No female_sterilization if age less than sterilization_age_limit (usually 30 years)
 
 

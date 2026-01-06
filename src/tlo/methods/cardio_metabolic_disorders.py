@@ -853,12 +853,12 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
     def report_disease_numbers(self):
         """Report age- and sex-specific prevalence of diseases to the HealthBurden module"""
         df = self.sim.population.props
-        prevalence_dict = {}
+        number_by_age_group_sex_dict = {}
 
         for condition in self.conditions:
-            prevalence_dict[condition] = get_counts_by_sex_and_age_group(df, f'nc_{condition}')
+            number_by_age_group_sex_dict[condition] = get_counts_by_sex_and_age_group(df, f'nc_{condition}')
 
-        return prevalence_dict
+        return number_by_age_group_sex_dict
 
     def on_hsi_alert(self, person_id, treatment_id):
         """

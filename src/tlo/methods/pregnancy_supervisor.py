@@ -920,35 +920,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         return daly_series
 
-    def report_prevalence(self):
-        """
-        Reports prevalence of pregnancy complications for all alive pregnant individuals.
-        """
-        df = self.sim.population.props
-
-        # Select alive individuals with pregnancy complications
-        complications_df = df.loc[
-            (df['is_alive']) &
-            (df['is_pregnant']) &
-            (
-                (df['ps_ectopic_pregnancy'] != 'none') |
-                (df['ps_anaemia_in_pregnancy'] != 'none') |
-                (df['ps_htn_disorders'] != 'none') |
-                (df['ps_gest_diab'] != 'none') |
-                (df['ps_placental_abruption'] == True) |
-                (df['ps_antepartum_haemorrhage'] != 'none') |
-                (df['ps_premature_rupture_of_membranes'] == True) |
-                (df['ps_chorioamnionitis'] == True)
-            )
-            ]
-
-        prevalence_counts = (
-            complications_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-
-        prevalence_by_age_group_sex = (prevalence_counts / df.is_alive.sum()).to_dict(orient='index')
-
-        return {'prevalence_by_age_group_sex': prevalence_by_age_group_sex}
+    def report_disease_numbers(self):
+        return {}
 
     def pregnancy_supervisor_property_reset(self, id_or_index):
         """

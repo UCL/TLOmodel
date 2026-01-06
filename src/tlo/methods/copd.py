@@ -226,8 +226,8 @@ class Copd(Module, GenericFirstAppointmentsMixin):
     def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of COPD for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ch_lungfunction', (4, 5, 6))
-        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ch_lungfunction', (4, 5, 6))
+        return {'number_by_age_group_sex': number_by_age_group_sex}
 
     def define_symptoms(self):
         """Define and register Symptoms"""

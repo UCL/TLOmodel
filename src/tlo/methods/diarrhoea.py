@@ -673,8 +673,8 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
     def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of diarrhoea for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'gi_has_diarrhoea')
-        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'gi_has_diarrhoea')
+        return {'number_by_age_group_sex': number_by_age_group_sex}
 
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""

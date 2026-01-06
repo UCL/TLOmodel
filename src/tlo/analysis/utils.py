@@ -1471,10 +1471,13 @@ def get_counts_by_sex_and_age_group(df: pd.DataFrame, property: str, targets: Op
         divided by the total number of persons currently alive."""
 
     if targets is None:
-        counts_of_disease = df.loc[df.is_alive & df[property]].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        counts_of_disease \
+            = df.loc[df.is_alive & df[property]].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
     elif isinstance(targets, tuple):
-        counts_of_disease = df.loc[df.is_alive & df[property].isin(targets)].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        counts_of_disease\
+            =df.loc[df.is_alive & df[property].isin(targets)].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
     elif isinstance(targets, str):
-        counts_of_disease = df.loc[df.is_alive & (df[property] == targets)].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        counts_of_disease \
+            = df.loc[df.is_alive & (df[property] == targets)].groupby(['age_range', 'sex']).size().unstack(fill_value=0)
 
     return (counts_of_disease).to_dict(orient='index')

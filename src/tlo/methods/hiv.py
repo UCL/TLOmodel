@@ -50,8 +50,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def get_counts_by_sex_and_age_group(df, param):
-    pass
 
 
 class Hiv(Module, GenericFirstAppointmentsMixin):
@@ -1322,8 +1320,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
     def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of HIV for all individuals
         df = self.sim.population.props
-        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'hv_inf')
-        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'hv_inf')
+        return {'number_by_age_group_sex': number_by_age_group_sex}
 
     def mtct_during_breastfeeding(self, mother_id, child_id):
         """

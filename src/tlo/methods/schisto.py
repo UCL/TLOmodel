@@ -328,12 +328,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         is_infected = df[self.cols_of_infection_status].isin(['Low-infection', 'High-infection']).any(axis=1)
         infected_df = df[df['is_alive'] & is_infected]
 
-        prevalent_counts = (
+        number_by_age_group_sex = (
             infected_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
         )
-
-        prevalence_by_age_group_sex = (prevalent_counts / df.is_alive.sum()).to_dict(orient='index')
-        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
+        return {'number_by_age_group_sex': number_by_age_group_sex}
 
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]], mda=False) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is
