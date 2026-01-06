@@ -145,7 +145,7 @@ def test_basic_mechanics_with_dummy_disease(tmpdir, seed):
         demography.Demography(),
         healthburden.HealthBurden(),
         dummydisease := DummyDisease(),
-        diseasenumbers.DiseaseNumbers(),
+        DiseaseNumbers(),
         enhanced_lifestyle.Lifestyle(),
         sort_modules=False,
         check_all_dependencies=False
