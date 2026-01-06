@@ -38,11 +38,11 @@ class HIV_Progam_Elements(BaseScenario):
         super().__init__()
         self.seed = 10
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2025, 1, 1)  # todo 2051
-        self.pop_size = 5_000
+        self.end_date = Date(2051, 1, 1)
+        self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
@@ -78,31 +78,31 @@ class HIV_Progam_Elements(BaseScenario):
         return {
             "Status Quo": scenario_definitions.status_quo(),
 
-            # "Reduce HIV testing": scenario_definitions.reduce_HIV_test(),
-            #
-            # "Remove Viral Load Testing": scenario_definitions.remove_VL(),
-            #
-            # "Target Viral Load Testing": scenario_definitions.target_VL(),
-            #
-            # "Replace Viral Load Testing": scenario_definitions.replace_VL_with_TDF(),
-            #
-            # "Remove PrEP for FSW": scenario_definitions.remove_prep_fsw(),
-            #
-            # "Remove PrEP for AGYW": scenario_definitions.remove_prep_agyw(),
-            #
-            # "Switch to injectable PrEP": scenario_definitions.switch_to_injectable_prep(),
-            #
-            # "Remove TPT for PLHIV": scenario_definitions.remove_TPT(),
-            #
-            # "Targeted TPT": scenario_definitions.target_TPT(),
-            #
-            # "Remove VMMC": scenario_definitions.remove_vmmc(),
-            #
-            # "Target All Elements": scenario_definitions.target_all(),
-            #
-            # "Reduce All Elements": scenario_definitions.remove_all(),
-            #
-            # "Program Scale-up": scenario_definitions.scaleup(),
+            "Reduce HIV testing": scenario_definitions.reduce_HIV_test(),
+
+            "Remove Viral Load Testing": scenario_definitions.remove_VL(),
+
+            "Target Viral Load Testing": scenario_definitions.target_VL(),
+
+            "Replace Viral Load Testing": scenario_definitions.replace_VL_with_TDF(),
+
+            "Remove PrEP for FSW": scenario_definitions.remove_prep_fsw(),
+
+            "Remove PrEP for AGYW": scenario_definitions.remove_prep_agyw(),
+
+            "Switch to injectable PrEP": scenario_definitions.switch_to_injectable_prep(),
+
+            "Remove TPT for PLHIV": scenario_definitions.remove_TPT(),
+
+            "Targeted TPT": scenario_definitions.target_TPT(),
+
+            "Remove VMMC": scenario_definitions.remove_vmmc(),
+
+            "Target All Elements": scenario_definitions.target_all(),
+
+            "Reduce All Elements": scenario_definitions.remove_all(),
+
+            "Program Scale-up": scenario_definitions.scaleup(),
         }
 
 
