@@ -34,8 +34,8 @@ resourcefilepath = './resources'
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 1_000
+end_date = Date(2025, 1, 1)
+popsize = 10_000
 
 # scenario = 1
 
@@ -86,7 +86,7 @@ sim.register(
 )
 
 # set the scenario
-sim.modules["Hiv"].parameters["type_of_scaleup"] = 'switch_to_injectable_prep'
+sim.modules["Hiv"].parameters["type_of_scaleup"] = 'none'
 # sim.modules["Hiv"].parameters["scaleup_start_year"] = 2011
 # sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)

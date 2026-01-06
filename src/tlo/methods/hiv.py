@@ -1331,7 +1331,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_prep_for_agyw"] = 0
 
         if p['type_of_scaleup'] == 'switch_to_injectable_prep':
-            p["ratio_oral_to_injectable_prep"] = [0.0, 1.0]
+            p["prob_injectable_prep_vs_oral"] = 1.0
 
         if p['type_of_scaleup'] == 'remove_IPT':
             # this is currently only for high-risk districts
