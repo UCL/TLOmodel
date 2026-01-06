@@ -3125,7 +3125,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if child_num_false_positive:
             child_prop_false_positive = child_num_false_positive / new_tb_tx_child
         else:
-            child_prop_false_positive = 0
+            child_prop_false_positive = 0.0
 
         logger.info(
             key="tb_false_positive",

@@ -2940,13 +2940,13 @@ class HSI_Hiv_SelfTest(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
-        # Log the appt footprint
-        details = {
-            'appt_type': self.TREATMENT_ID,
-            'footprint': self.EXPECTED_APPT_FOOTPRINT,
-            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-        }
-        logger.info(key='hiv_appts', data=details)
+        # # Log the appt footprint
+        # details = {
+        #     'appt_type': self.TREATMENT_ID,
+        #     'footprint': self.EXPECTED_APPT_FOOTPRINT,
+        #     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        # }
+        # logger.info(key='hiv_appts', data=details)
 
 
 class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
@@ -3114,13 +3114,13 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                 )
 
         # Log the appt footprint
-        if not self.suppress_footprint:
-            details = {
-                'appt_type': self.TREATMENT_ID,
-                'footprint': ACTUAL_APPT_FOOTPRINT,
-                'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-            }
-            logger.info(key='hiv_appts', data=details)
+        # if not self.suppress_footprint:
+        #     details = {
+        #         'appt_type': self.TREATMENT_ID,
+        #         'footprint': ACTUAL_APPT_FOOTPRINT,
+        #         'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        #     }
+        #     logger.info(key='hiv_appts', data=details)
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
@@ -3200,13 +3200,13 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                         priority=0,
                     )
 
-        # Log the appt footprint
-        details = {
-            'appt_type': self.TREATMENT_ID,
-            'footprint': self.EXPECTED_APPT_FOOTPRINT,
-            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-        }
-        logger.info(key='hiv_appts', data=details)
+        # # Log the appt footprint
+        # details = {
+        #     'appt_type': self.TREATMENT_ID,
+        #     'footprint': self.EXPECTED_APPT_FOOTPRINT,
+        #     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        # }
+        # logger.info(key='hiv_appts', data=details)
 
 
 class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
@@ -3278,13 +3278,13 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                 )
 
-        # Log the appt footprint
-        details = {
-            'appt_type': self.TREATMENT_ID,
-            'footprint': self.EXPECTED_APPT_FOOTPRINT,
-            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-        }
-        logger.info(key='hiv_appts', data=details)
+        # # Log the appt footprint
+        # details = {
+        #     'appt_type': self.TREATMENT_ID,
+        #     'footprint': self.EXPECTED_APPT_FOOTPRINT,
+        #     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        # }
+        # logger.info(key='hiv_appts', data=details)
 
     def never_ran(self, *args, **kwargs):
         """This is called if this HSI was never run.
@@ -3379,12 +3379,12 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                     )
 
         # Log the appt footprint
-        details = {
-            'appt_type': self.TREATMENT_ID,
-            'footprint': self.EXPECTED_APPT_FOOTPRINT,
-            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-        }
-        logger.info(key='hiv_appts', data=details)
+        # details = {
+        #     'appt_type': self.TREATMENT_ID,
+        #     'footprint': self.EXPECTED_APPT_FOOTPRINT,
+        #     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        # }
+        # logger.info(key='hiv_appts', data=details)
 
     def never_ran(self):
         """This is called if this HSI was never run.
@@ -3529,12 +3529,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             )
 
         # Log the appt footprint
-        details = {
-            'appt_type': self.TREATMENT_ID,
-            'footprint': self.EXPECTED_APPT_FOOTPRINT,
-            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-        }
-        logger.info(key='hiv_appts', data=details)
+        # details = {
+        #     'appt_type': self.TREATMENT_ID,
+        #     'footprint': self.EXPECTED_APPT_FOOTPRINT,
+        #     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        # }
+        # logger.info(key='hiv_appts', data=details)
 
     def do_at_initiation(self, person_id):
         """Things to do when this the first appointment ART"""
@@ -3874,12 +3874,12 @@ class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         footprint = self.EXPECTED_APPT_FOOTPRINT
         footprint["InpatientDays"] = self.beddays
 
-        details = {
-            'appt_type': self.TREATMENT_ID,
-            'footprint': footprint,
-            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-        }
-        logger.info(key='hiv_appts', data=details)
+        # details = {
+        #     'appt_type': self.TREATMENT_ID,
+        #     'footprint': footprint,
+        #     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+        # }
+        # logger.info(key='hiv_appts', data=details)
 
 
 # ---------------------------------------------------------------------------
@@ -4016,12 +4016,12 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             },
         )
 
-        # store some outputs in dict for calibration
-        self.module.hiv_outputs["date"] += [self.sim.date.year]
-        self.module.hiv_outputs["hiv_prev_adult_1549"] += [adult_prev_1549]
-        self.module.hiv_outputs["hiv_adult_inc_1549"] += [adult_inc_1549]
-        self.module.hiv_outputs["hiv_prev_child"] += [child_prev]
-        self.module.hiv_outputs["population"] += [total_population]
+        # # store some outputs in dict for calibration
+        # self.module.hiv_outputs["date"] += [self.sim.date.year]
+        # self.module.hiv_outputs["hiv_prev_adult_1549"] += [adult_prev_1549]
+        # self.module.hiv_outputs["hiv_adult_inc_1549"] += [adult_inc_1549]
+        # self.module.hiv_outputs["hiv_prev_child"] += [child_prev]
+        # self.module.hiv_outputs["population"] += [total_population]
 
         # ------------------------------------ PREVALENCE BY AGE and SEX  ------------------------------------
 

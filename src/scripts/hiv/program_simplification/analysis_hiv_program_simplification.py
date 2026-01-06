@@ -39,7 +39,7 @@ class HIV_Progam_Elements(BaseScenario):
         self.seed = 10
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2025, 1, 1)  # todo 2051
-        self.pop_size = 10_000
+        self.pop_size = 5_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 1
@@ -62,7 +62,8 @@ class HIV_Progam_Elements(BaseScenario):
 
     def modules(self):
         return (
-            fullmodel(use_simplified_births=True)
+            fullmodel(use_simplified_births=True,
+                      module_kwargs={"HealthSystem": {"equip_availability": 'all'}})
         )
 
     def draw_parameters(self, draw_number, rng):
