@@ -41,7 +41,7 @@ class DummyDisease(Module):
 
     INIT_DEPENDENCIES = {'Demography'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'DiseaseNumbers'}
 
     CAUSES_OF_DISABILITY = {
         'Dummy': Cause(label='Dummy')
@@ -50,7 +50,8 @@ class DummyDisease(Module):
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     PROPERTIES = {
@@ -61,6 +62,7 @@ class DummyDisease(Module):
     def __init__(self, name=None):
         super().__init__(name)
         self.stored_prevalence = {}
+        self.stored_number_infected = {}
 
     def read_parameters(self, data_folder):
         """Read in parameters and do the registration of this module and its symptoms"""
@@ -80,16 +82,9 @@ class DummyDisease(Module):
 
         self.store_and_record_current_prevalence()
 
-
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
         df.at[child_id, 'dm_is_infected'] = False
-
-    def report_prevalence(self):
-        df = self.sim.population.props
-        infected_total = df.loc[df.is_alive, 'dm_is_infected'].sum()
-        proportion_infected = infected_total / sum(df.is_alive)
-        return {'DummyDisease_proportion_infected': proportion_infected}
 
     def report_daly_values(self):
         df = self.sim.population.props
@@ -102,6 +97,9 @@ class DummyDisease(Module):
         infected_total = df.loc[df.is_alive, 'dm_is_infected'].sum()
         proportion_infected = infected_total / df.is_alive.sum()
         self.stored_prevalence[self.sim.date] = proportion_infected
+        self.stored_number_infected[self.sim.date] = infected_total
+
+
 
 class DummyDiseaseEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -116,7 +114,9 @@ class DummyDiseaseEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # randomly select some individuals to be infected
         df = population.props
-        df.loc[df.is_alive, 'dm_is_infected'] = self.module.rng.random_sample(size=df.is_alive.sum()) < self.module.parameters['average_prevalence']
+        df.loc[df.is_alive, 'dm_is_infected'] = self.module.rng.random_sample(size=df.is_alive.sum()) < \
+                                                self.module.parameters['average_prevalence']
+
 
 class DummyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -130,8 +130,10 @@ class DummyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.store_and_record_current_prevalence()
 
 
-
 def test_basic_mechanics_with_dummy_disease(tmpdir, seed):
+    """Test that DummyDisease works with both HealthBurden and DiseaseNumbers modules"""
+    from tlo.methods.diseasenumbers import DiseaseNumbers
+
     start_date = Date(2010, 1, 1)
     end_date = Date(2011, 1, 1)
 
@@ -142,43 +144,47 @@ def test_basic_mechanics_with_dummy_disease(tmpdir, seed):
     sim.register(
         demography.Demography(),
         healthburden.HealthBurden(),
-        dummydisease:= DummyDisease(),
+        dummydisease := DummyDisease(),
+        diseasenumbers.DiseaseNumbers(),
         enhanced_lifestyle.Lifestyle(),
         sort_modules=False,
         check_all_dependencies=False
     )
 
     sim.make_initial_population(n=popsize)
-    sim.modules['HealthBurden'].parameters['logging_frequency_prevalence'] = 'month'
+    sim.modules['DiseaseNumbers'].parameters['logging_frequency'] = 'month'
     sim.simulate(end_date=end_date)
     output = parse_log_file(sim.log_filepath)
 
-    # Get results from the 'prevalence' summary logger
-    healthburden_logger = unflatten_flattened_multi_index_in_logging(output['tlo.methods.healthburden']['prevalence_of_diseases'].set_index('date'))
-    prev_in_healthburden_logger = healthburden_logger[('DummyDisease', 'DummyDisease_proportion_infected')]
+    # Get results from the DiseaseNumbers logger
+    diseasenumbers_logger = unflatten_flattened_multi_index_in_logging(
+        output['tlo.methods.diseasenumbers']['disease_numbers'].set_index('date'))
+    prev_in_diseasenumbers_logger = diseasenumbers_logger[('DummyDisease', 'proportion_infected')]
 
     # Get results from the actual module
     prevalence_from_actual_module = pd.Series(dummydisease.stored_prevalence)
 
-    # Confirm they give the same result
-    pd.testing.assert_series_equal(prev_in_healthburden_logger, prevalence_from_actual_module, check_names=False)
+    # Confirm they all give the same result
+    pd.testing.assert_series_equal(prev_in_diseasenumbers_logger, prevalence_from_actual_module, check_names=False)
 
 
 def test_run_with_real_diseases(tmpdir, seed):
     """Check that everything runs when using the full model and daily logging cadence."""
+    from tlo.methods.diseasenumbers import DiseaseNumbers
 
     sim = Simulation(start_date=start_date,
                      seed=seed,
                      resourcefilepath=resourcefilepath,
                      log_config={'filename': 'test_log', 'directory': outputpath}
                      )
-    sim.register(*fullmodel(use_simplified_births=False))
+    sim.register(*fullmodel(use_simplified_births=False), DiseaseNumbers())
     sim.make_initial_population(n=popsize)
-    sim.modules['HealthBurden'].parameters['logging_frequency_prevalence'] = 'day'
+    sim.modules['DiseaseNumbers'].parameters['logging_frequency'] = 'day'
     sim.simulate(end_date=end_date)
     output = parse_log_file(sim.log_filepath)
 
-    healthburden_logger = unflatten_flattened_multi_index_in_logging(
-        output['tlo.methods.healthburden']['prevalence_of_diseases'].set_index('date'))
+    # Also check DiseaseNumbers logger
+    diseasenumbers_logger = unflatten_flattened_multi_index_in_logging(
+        output['tlo.methods.diseasenumbers']['disease_numbers'].set_index('date'))
 
-    assert isinstance(healthburden_logger, pd.DataFrame)
+    assert isinstance(diseasenumbers_logger, pd.DataFrame)
