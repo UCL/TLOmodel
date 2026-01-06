@@ -221,7 +221,7 @@ if __name__ == "__main__":
         # maximum value of 100 - if we exceed this number of publications will need
         # to switch to making multiple requests with different start indices
         response = requests.get(
-            endpoint_url, params={"format": "bibtex", "limit": "100"}
+            endpoint_url, params={"format": "bibtex", "limit": "100", "sort": "dateAdded", "direction": "desc"}
         )
         if response.ok:
             with open(args.bib_file, "w") as bib_file:
@@ -239,6 +239,7 @@ if __name__ == "__main__":
             section_names=[
                 "Overview of the model",
                 "Analyses using the model",
+                "Other analyses",
                 "Healthcare seeking behaviour",
                 "Healthcare provision",
                 "Data Collection - Protocol and Analyses",

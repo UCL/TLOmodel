@@ -112,6 +112,12 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         'baseline_risk': Parameter(Types.REAL,
                                    'number of worms applied as a baseline risk across districts to prevent '
                                    'fadeout, number is scaled by scaling_factor_baseline_risk'),
+        'background_gamma': Parameter(Types.REAL,
+                                      'controls how fast the cushion shrinks as national prevalence falls; '
+                                      'larger values (e.g. 2.5–3.0) make it disappear sooner'),
+        'background_rel': Parameter(Types.REAL,
+                                    'a small proportional cushion (1% at baseline) applied to the human '
+                                    'reservoir; keeps early declines smooth without creating an artificial floor'),
         'daly_weight_mild_schistosomiasis': Parameter(Types.REAL, 'daly weight assigned to mild '
                                                                   'schistosomiasis, both species'),
         'daly_weight_moderate_s_mansoni': Parameter(Types.REAL, 'daly weight assigned to moderate '
@@ -379,6 +385,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             'mda_frequency_months',
             'scaling_factor_baseline_risk',
             'baseline_risk',
+            'background_gamma',
+            'background_rel',
             'daly_weight_mild_schistosomiasis',
             'daly_weight_moderate_s_mansoni',
             'daly_weight_heavy_s_mansoni',
@@ -841,10 +849,12 @@ class SchistoSpecies:
                                                        'Worm burden threshold for heavy intensity infection in PSAC'),
             'PZQ_efficacy': Parameter(Types.REAL,
                                       'Efficacy of praziquantel in reducing worm burden'),
-            'baseline_mean_worm_burden': Parameter(Types.REAL,
-                                             'Baseline mean worm burden of species across all districts in 2010'),
+            'baseline_prevalence': Parameter(Types.REAL,
+                                             'Baseline prevalence of species across all districts in 2010'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
+            'prevalence_2010': Parameter(Types.DATA_FRAME,
+                                         'Prevalence per district in 2010'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,
                                           'Proportion of population in each district susceptible to schisto infection'),
             'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
@@ -902,13 +912,14 @@ class SchistoSpecies:
                             'low_intensity_threshold',
                             'heavy_intensity_threshold_PSAC',
                             'PZQ_efficacy',
-                            'baseline_mean_worm_burden',
+                            'baseline_prevalence',
                             ):
             parameters[_param_name] = float(param_list[f'{_param_name}_{self.name}'])
 
         # Baseline reservoir size and other district-related params (R0, proportion susceptible)
         schisto_initial_reservoir = workbook[f'LatestData_{self.name}'].set_index("District")
-        parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
+        parameters['mean_worm_burden2010'] = schisto_initial_reservoir['mean_worm_burden2022']
+        parameters['prevalence_2010'] = schisto_initial_reservoir['mean_prevalence2010']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
         parameters['prop_susceptible'] = schisto_initial_reservoir['prop_susceptible']
 
@@ -1065,10 +1076,6 @@ class SchistoSpecies:
             reservoir = int(len(in_the_district) * params['mean_worm_burden2010'][district])
 
             # Determine a 'contact rate' for each person
-            # contact_rates = pd.Series(1, index=in_the_district, dtype=float)
-
-            # multiply by susceptibility (0 or 1)
-            # contact_and_susceptibility = contact_rates * df.loc[in_the_district, prop('susceptibility')]
             contact_and_susceptibility = df.loc[in_the_district, prop('susceptibility')]
 
             for age_group in ['PSAC', 'SAC', 'Adults']:
@@ -1220,23 +1227,23 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         # sum all contributions to district reservoir of infection
         reservoir = age_worm_burden.groupby(['district_of_residence'], observed=False).sum()
 
-        # --------------------- estimate background risk of infection ---------------------
-        current_mean_worm_burden = df[prop('aggregate_worm_burden')].mean()
+        # --------------------- reservoir-stage background (prevalence-based, fading) ---------------------
+        prevalence_now = (df.loc[where, prop('aggregate_worm_burden')] > 0).mean()  # prevalence (Bool True/# entries)
 
-        baseline_mean_worm_burden = params['baseline_mean_worm_burden']  # baseline MWB for species in 2010
+        # Clamp to safe bounds
+        baseline_prevalence = max(params['baseline_prevalence'] , 1e-6)  # fixed reference prevalence
+        prevalence_now = min(max(prevalence_now, 0.0), 1.0)
 
-        # this returns positive value if current_prevalence lower than baseline_prevalence and
-        # increases baseline_risk value
-        # if current_prevalence > baseline_prevalence, value returned is 0 and no additional risk applied
-        background_risk = max(0, global_params['baseline_risk'] * (
-            1 + global_params['scaling_factor_baseline_risk'] * (current_mean_worm_burden - baseline_mean_worm_burden)))
+        # Scale in [0,1]: 1 at baseline; → 0 as national prevalence → 0
+        scale = min(1.0, (prevalence_now / baseline_prevalence) ** global_params['background_gamma'])
 
-        reservoir += background_risk  # add the background reservoir to every district
+        # Apply proportional background; disappears as scale→0 (no hard floor)
+        reservoir *= (1.0 + global_params['background_rel'] * scale)
 
         # --------------------- harbouring new worms ---------------------
 
         # the harbouring rates are randomly assigned to each individual
-        # using a gamma distribution to reflect clustering of worms in heavy-risk people
+        # using a gamma distribution to reflect clustering of worms in high-risk people
         # this is not age-specific
         contact_rates = age_group.map(beta_by_age_group).astype(float)
         # multiply by susceptibility

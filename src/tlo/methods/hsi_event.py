@@ -52,8 +52,11 @@ class HSIEventQueueItem(NamedTuple):
 
     Ensure priority is above topen in order for held-over events with low priority not
     to jump ahead higher priority ones which were opened later.
+
+
     """
 
+    clinic_eligibility: str
     priority: int
     topen: Date
     rand_queue_counter: (
@@ -171,11 +174,21 @@ class HSI_Event:
         Do things following the event's `apply` and `post_apply_hook` functions running.
          * Impose the bed-days footprint
          * Record the equipment that has been added before and during the course of the HSI Event.
+         * Include in the equipment used those items associated with in-patient admissions if bed-days are used.
         """
 
         self.healthcare_system.bed_days.impose_beddays_footprint(
             person_id=self.target, footprint=self.bed_days_allocated_to_this_event
         )
+
+        if sum(self.BEDDAYS_FOOTPRINT.values()) > 0:
+            # Add to the internal record of equipment used anything to do with in-patients.
+            # Note that adding this here means that these items are not used, but the bed-days can still be available
+            # even if these items are not all available.
+            # (Note that the list of equipment is the same as retrieved from
+            # `self.healthcare_system.equipment.from_pkg_names('In-patient')` but the result has been cached on the
+            # healthsystem module to save time as it is used a lot (every HSI that has any bed-days).
+            self._EQUIPMENT |= self.healthcare_system.in_patient_equipment_package
 
         if self.facility_info is not None:
             # If there is a facility_info (e.g., healthsystem not running in disabled mode), then record equipment used
@@ -325,7 +338,7 @@ class HSI_Event:
         self.facility_info = health_system.get_facility_info(self)
 
         # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
-        # Types.
+        # Types
         # (HSI that require a bed for one or more days always need such appointments, but this may have been
         # missed in the declaration of the `EXPECTED_APPT_FOOTPRINT` in the HSI.)
         # NB. The in-patient day Appointment time is automatically applied on subsequent days.
@@ -343,28 +356,6 @@ class HSI_Event:
                 appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
             )
         )
-
-
-        # Do checks
-        self._check_if_appt_footprint_can_run()
-
-    def _check_if_appt_footprint_can_run(self) -> bool:
-        """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
-        this does not demand officers that are _never_ available), and issue warning if not.
-        """
-        if self.healthcare_system._officers_with_availability.issuperset(
-            self.expected_time_requests.keys()
-        ):
-            return True
-        else:
-            logger.debug(
-                key="message",
-                data=(
-                    f"The expected footprint of {self.TREATMENT_ID} is not possible with the configuration of "
-                    f"officers."
-                ),
-            )
-            return False
 
     @staticmethod
     def _return_item_codes_in_dict(

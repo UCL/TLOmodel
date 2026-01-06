@@ -1813,7 +1813,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         )
                 if test_result is not None:
                     # Add used equipment
-                    self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
+                    self.add_equipment({'Sputum Collection box', 'Ordinary Microscope', 'Centrifuge'})
 
             elif test == "xpert":
 

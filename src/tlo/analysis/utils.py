@@ -895,6 +895,7 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
 
     'BladderCancer*': 'orchid',
     'BreastCancer*': 'mediumvioletred',
+    'CervicalCancer*': 'mediumturquoise',
     'OesophagealCancer*': 'deeppink',
     'ProstateCancer*': 'hotpink',
     'OtherAdultCancer*': 'palevioletred',
@@ -944,6 +945,7 @@ CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
 
     'Lower respiratory infections': 'darkorange',
     'Childhood Diarrhoea': 'tan',
+    'Childhood Undernutrition': 'tomato',
 
     'AIDS': 'deepskyblue',
     'Malaria': 'lightsteelblue',
@@ -957,6 +959,8 @@ CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Stroke': 'burlywood',
 
     'Cancer (Bladder)': 'deeppink',
+    'Cancer (Cervix)': 'mediumturquoise',
+
     'Cancer (Breast)': 'darkmagenta',
     'Cancer (Oesophagus)': 'mediumvioletred',
     'Cancer (Other)': 'crimson',
