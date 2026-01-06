@@ -1,13 +1,14 @@
+import json
+import random
 from typing import Dict
+
+import numpy as np
 
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
-import json
-import numpy as np
-import random
 
 YEAR_OF_CHANGE = 2025
 

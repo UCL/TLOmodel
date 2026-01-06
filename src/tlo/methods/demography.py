@@ -10,11 +10,11 @@ from collections import defaultdict
 from pathlib import Path
 from types import MappingProxyType
 from typing import Optional, Union
-from scipy.spatial import cKDTree
 
+import geopandas as gpd
 import numpy as np
 import pandas as pd
-import geopandas as gpd
+from scipy.spatial import cKDTree
 
 from tlo import (
     DAYS_IN_MONTH,
