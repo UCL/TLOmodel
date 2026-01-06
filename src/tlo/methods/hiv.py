@@ -503,9 +503,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "whether injectable prep is allowed"
         ),
-        "ratio_oral_to_injectable_prep": Parameter(
-            Types.LIST,
-            "ratio of oral to injectable prep, given if injectable_prep_allowed=True"
+        "prob_injectable_prep_vs_oral": Parameter(
+            Types.REAL,
+            "probability of injectable prep vs oral prep, given if injectable_prep_allowed=True"
         ),
         "linked_to_care_after_selftest": Parameter(
             Types.REAL,
@@ -2330,8 +2330,11 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 for person in give_prep:
                     if (self.module.parameters['injectable_prep_allowed'] &
                         (self.sim.date.year >= 2025)):
-                        type_of_prep = self.module.rng.choice(["oral", "injectable"],
-                                                              p=p['ratio_oral_to_injectable_prep'])
+
+                        prob_injectable = self.module.parameters['prob_injectable_prep_vs_oral']
+
+                        type_of_prep = self.module.rng.choice(['injectable', 'oral'],
+                                                              p=[prob_injectable, 1 - prob_injectable])
                     else:
                         type_of_prep = 'oral'
 
@@ -2364,8 +2367,11 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 for person in eligible_fsw_idx:
                     if (self.module.parameters['injectable_prep_allowed'] &
                         (self.sim.date.year >= 2025)):
-                        type_of_prep = self.module.rng.choice(["oral", "injectable"],
-                                                              p=p['ratio_oral_to_injectable_prep'])
+
+                        prob_injectable = self.module.parameters['prob_injectable_prep_vs_oral']
+
+                        type_of_prep = self.module.rng.choice(['injectable', 'oral'],
+                                                              p=[prob_injectable, 1 - prob_injectable])
                     else:
                         type_of_prep = 'oral'
 
@@ -3072,8 +3078,11 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                                                              ):
                             if (self.module.parameters['injectable_prep_allowed'] &
                                 (self.sim.date.year >= 2025)):
-                                type_of_prep = self.module.rng.choice(["oral", "injectable"],
-                                                                      p=self.module.parameters['ratio_oral_to_injectable_prep'])
+
+                                prob_injectable = self.module.parameters['prob_injectable_prep_vs_oral']
+
+                                type_of_prep = self.module.rng.choice(['injectable', 'oral'],
+                                                                      p=[prob_injectable, 1-prob_injectable])
                             else:
                                 type_of_prep = 'oral'
 
