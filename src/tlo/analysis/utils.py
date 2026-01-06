@@ -1,7 +1,6 @@
 """
 General utility functions for TLO analysis
 """
-import collections
 import fileinput
 import gzip
 import json

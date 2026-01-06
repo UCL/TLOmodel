@@ -4,25 +4,18 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import (
-    DAYS_IN_YEAR,
     Date,
     DateOffset,
     Module,
-    Parameter,
     Property,
     Simulation,
     Types,
-    logging,
 )
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography, enhanced_lifestyle, healthburden
 from tlo.methods.causes import Cause
-from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.hsi_event import HSI_Event
-from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
-from tlo.methods.symptommanager import Symptom
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 outputpath = Path("./outputs/")
