@@ -28,12 +28,12 @@ start = time.time()
 
 from tlo.methods.consumables import check_format_of_consumables_file
 
-# Set local Dropbox source
-path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    '/Users/sm2511/Dropbox/Thanzi la Onse'
+# Set local shared folder source
+path_to_share = Path(  # <-- point to the shared folder
+    '/Users/sm2511/CloudStorage/OneDrive-SharedLibraries-ImperialCollegeLondon/TLOModel - WP - Documents/'
 )
 
-path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
+path_to_files_in_the_tlo_shared_drive = path_to_share / "07 - Data/Consumables data/"
 
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -159,7 +159,7 @@ def generate_summary_heatmap(_df,
             raise ValueError(f"Unsupported summary function: {summary_func}")
 
         heatmap_df = _df.groupby([x_var, y_var])[value_var].apply(agg_func).reset_index()
-    heatmap_df = heatmap_df.pivot(x_var, y_var, value_var)
+    heatmap_df = heatmap_df.pivot(index=y_var, columns=x_var, values=value_var)
 
     # Calculate the aggregate row and column
     #aggregate_col = heatmap_df.apply(agg_func, axis=0)
@@ -204,12 +204,12 @@ for y in range(2,len(years_dict)+1): # the format of the 2018 dataset received w
     for m in range(1, number_of_months):
         print("processing month ", months_dict[m])
         if ((m == 1) & (y == 2)):
-            lmis = pd.read_excel(path_to_files_in_the_tlo_dropbox / f'OpenLMIS/{years_dict[y]}/{months_dict[m]}.xlsx')
+            lmis = pd.read_excel(path_to_files_in_the_tlo_shared_drive / f'OpenLMIS/{years_dict[y]}/{months_dict[m]}.xlsx')
             lmis['month'] = months_dict[m]
             lmis['year'] = years_dict[y]
             rename_lmis_columns(lmis)
         else:
-            monthly_lmis = pd.read_excel(path_to_files_in_the_tlo_dropbox / f'OpenLMIS/{years_dict[y]}/{months_dict[m]}.xlsx')
+            monthly_lmis = pd.read_excel(path_to_files_in_the_tlo_shared_drive / f'OpenLMIS/{years_dict[y]}/{months_dict[m]}.xlsx')
             monthly_lmis['month'] = months_dict[m]
             monthly_lmis['year'] = years_dict[y]
             rename_lmis_columns(monthly_lmis)
@@ -220,7 +220,7 @@ rename_lmis_columns(lmis)
 # append 2018 data
 col_list = ['year', 'month', 'district', 'fac_owner', 'fac_name', 'program', 'item', 'closing_bal', 'dispensed', 'stkout_days',
             'average_monthly_consumption', 'qty_received', 'fac_type']
-lmis_2018 = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/ResourceFile_LMIS_2018.csv', low_memory=False)
+lmis_2018 = pd.read_csv(path_to_files_in_the_tlo_shared_drive / 'OpenLMIS/2018/ResourceFile_LMIS_2018.csv', low_memory=False)
 rename_lmis_columns(lmis_2018)
 
 if sample_run == 1:
