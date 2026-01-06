@@ -242,7 +242,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # Schedule the logging event, annual, by district, age-group
         sim.schedule_event(SchistoLoggingEvent(self), sim.date + pd.DateOffset(years=1))
-        sim.schedule_event(SchistoPersonDaysLoggingEvent(self), sim.date)
+        # sim.schedule_event(SchistoPersonDaysLoggingEvent(self), sim.date)
 
         # over-ride availability of PZQ for MDA, MDA cons is optional in HSI so will always run
         # self.sim.modules['HealthSystem'].override_availability_of_consumables(
