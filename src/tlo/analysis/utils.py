@@ -12,7 +12,7 @@ from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union, Any
+from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union
 
 import git
 import matplotlib.colors as mcolors

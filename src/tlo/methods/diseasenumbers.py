@@ -10,8 +10,10 @@ from typing import Dict, Optional
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, \
-    get_counts_by_sex_and_age_group
+from tlo.analysis.utils import (
+    flatten_multi_index_series_into_dict_for_logging,
+    get_counts_by_sex_and_age_group,
+)
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata
 

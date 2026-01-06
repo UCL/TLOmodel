@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, get_counts_by_sex_and_age_group
+from tlo.analysis.utils import (
+    flatten_multi_index_series_into_dict_for_logging,
+    get_counts_by_sex_and_age_group,
+)
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
