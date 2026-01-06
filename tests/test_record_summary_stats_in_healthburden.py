@@ -3,14 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import (
-    Date,
-    DateOffset,
-    Module,
-    Property,
-    Simulation,
-    Types,
-)
+from tlo import Date, DateOffset, Module, Property, Simulation, Types
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography, enhanced_lifestyle, healthburden
