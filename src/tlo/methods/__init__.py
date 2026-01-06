@@ -7,4 +7,3 @@ class Metadata(Enum):
     USES_HEALTHSYSTEM = auto()    # The 'HealthSystem' recognises modules with this label.
     USES_HEALTHBURDEN = auto()    # The 'HealthBurden' module recognises modules with this label.
     REPORTS_DISEASE_NUMBERS = auto() # The 'DiseaseNumbers' module recognises modules with this label.
-    REPORTS_DISEASE_NUMBERS = auto() # The 'DiseaseNumbers' module recognises modules with this label.
