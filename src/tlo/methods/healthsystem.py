@@ -2175,18 +2175,28 @@ class HealthSystem(Module):
 
             # For all events in the list, expand the appt-footprint of the event to give the demands on each
             # officer-type in each facility_id.
-            footprints_of_all_individual_level_hsi_event = [
-                event_tuple.hsi_event.expected_time_requests
-                for event_tuple in _list_of_individual_hsi_event_tuples
-            ]
+            footprints_of_all_individual_level_hsi_event = defaultdict(list)
+            ## _list_of_individual_hsi_event_tuples is a flat list, whereas we will now
+            ## store the footprint by clinic; as we loop over the list of events to be run, we
+            ## will retrieve the updated footprint using get_appt_footprint_as_time_request.
+            ## We want to ensure that we update the footprint of the ``correct'' event. We will
+            ## therefore also store the number of the event in the original flat list in a
+            ## dictionary keyed by clinics.
+            event_num_of_all_individual_level_hsi_event = defaultdict(list)
+            for eve_num, event_tuple in enumerate(_list_of_individual_hsi_event_tuples):
+                event_clinic = event_tuple.clinic_eligibility
+                footprints_of_all_individual_level_hsi_event[event_clinic].append(event_tuple.hsi_event.expected_time_requests)
+                event_num_of_all_individual_level_hsi_event[event_clinic].append(eve_num)
 
-            # Compute total appointment footprint across all events
-            for footprint in footprints_of_all_individual_level_hsi_event:
-                # Counter.update method when called with dict-like argument adds counts
-                # from argument to Counter object called from
-                self.running_total_footprint.update(footprint)
+            # For each clinic, compute total appointment footprint across all events
+            for clinic, footprint in footprints_of_all_individual_level_hsi_event.items():
+                for hsi_footprint in footprint:
+                    # Counter.update method when called with dict-like argument adds counts
+                    # from argument to Counter object called from
+                    self.running_total_footprint[clinic].update(hsi_footprint)
 
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
+                event_clinic = event.clinic_eligibility
                 _priority = event.priority
                 event = event.hsi_event
 
@@ -2220,10 +2230,11 @@ class HealthSystem(Module):
                         facility_info=event.facility_info,
                         appt_footprint=actual_appt_footprint
                     )
-                    original_call = footprints_of_all_individual_level_hsi_event[ev_num]
-                    footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
-                    self.running_total_footprint -= original_call
-                    self.running_total_footprint += updated_call
+                    ev_num_in_clinics_footprint = event_num_of_all_individual_level_hsi_event[event_clinic].index(ev_num)
+                    original_call = footprints_of_all_individual_level_hsi_event[event_clinic][ev_num_in_clinics_footprint]
+                    footprints_of_all_individual_level_hsi_event[event_clinic][ev_num_in_clinics_footprint] = updated_call
+                    self.running_total_footprint[event_clinic] -= original_call
+                    self.running_total_footprint[event_clinic] += updated_call
 
                 else:
                     # no actual footprint is returned so take the expected initial declaration as the actual,
