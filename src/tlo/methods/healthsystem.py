@@ -667,7 +667,7 @@ class HealthSystem(Module):
         if self.parameters["data_source_for_cons_availability_estimates"] == 'original':
             filename_for_cons_availability_estimates = "ResourceFile_Consumables_availability_small_original.csv"
         elif self.parameters["data_source_for_cons_availability_estimates"] == 'updated':
-            filename_for_cons_availability_estimates = "ResourceFile_Consumables_availability_small_updated.csv"
+            filename_for_cons_availability_estimates = "ResourceFile_Consumables_availability_small.csv"
         else:
             raise ValueError("data_source_for_cons_availability_estimates should be either 'original' or 'updated'")
 
