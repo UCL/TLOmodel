@@ -116,6 +116,78 @@ class DiseaseNumbers(Module):
         through a logging period when the WriteToLog event has not run)."""
         self.write_to_log()
 
+    def _validate_stat_value(self, module_name: str, key: str, value):
+        """
+        Validate that a statistic value is in an acceptable format for logging.
+
+        Acceptable formats:
+        - Scalar values (int, float, str, bool)
+        - pd.Series with a MultiIndex (for age/sex stratified data)
+        - dict with scalar values or nested dicts with scalar values
+
+        Returns the validated value, or None if invalid (with a warning logged).
+        """
+        # Scalar values are fine
+        if isinstance(value, (int, float, str, bool, type(None))):
+            return value
+
+        # numpy scalar types
+        if hasattr(value, 'item') and callable(value.item):
+            try:
+                return value.item()
+            except (ValueError, AttributeError):
+                pass
+
+        # pd.Series with MultiIndex is acceptable (will be flattened later)
+        if isinstance(value, pd.Series):
+            if isinstance(value.index, pd.MultiIndex):
+                return value
+            else:
+                # Single-level index Series - convert to dict
+                return value.to_dict()
+
+        # Dict is acceptable if all values are scalars or nested dicts with scalars
+        if isinstance(value, dict):
+            validated_dict = {}
+            for k, v in value.items():
+                if isinstance(v, (int, float, str, bool, type(None))):
+                    validated_dict[k] = v
+                elif hasattr(v, 'item') and callable(v.item):
+                    # numpy scalar
+                    try:
+                        validated_dict[k] = v.item()
+                    except (ValueError, AttributeError):
+                        validated_dict[k] = v
+                elif isinstance(v, dict):
+                    # Nested dict - validate recursively
+                    nested_valid = self._validate_stat_value(module_name, f"{key}.{k}", v)
+                    if nested_valid is not None:
+                        validated_dict[k] = nested_valid
+                else:
+                    logger.warning(
+                        key='warning',
+                        data=f'Module {module_name} returned invalid nested value type '
+                             f'{type(v).__name__} for key {key}.{k}'
+                    )
+            return validated_dict
+
+        # DataFrame is NOT acceptable - this is likely the source of the error
+        if isinstance(value, pd.DataFrame):
+            logger.warning(
+                key='warning',
+                data=f'Module {module_name} returned a DataFrame for key "{key}". '
+                     f'DataFrames are not supported. Please return a dict or pd.Series instead.'
+            )
+            return None
+
+        # Unknown type - warn and skip
+        logger.warning(
+            key='warning',
+            data=f'Module {module_name} returned unsupported type {type(value).__name__} '
+                 f'for key "{key}". Expected scalar, dict, or pd.Series with MultiIndex.'
+        )
+        return None
+
     def write_to_log(self):
         """Write disease numbers to the log.
         N.B. This is called at the end of the simulation as well as at regular intervals, so we need to check that
@@ -151,13 +223,17 @@ class DiseaseNumbers(Module):
                 if not isinstance(stats, dict):
                     logger.warning(
                         key='warning',
-                        data=f'Module {module.name} returned non-dict numbers'
+                        data=f'Module {module.name} returned non-dict from report_disease_numbers(). '
+                             f'Got {type(stats).__name__} instead.'
                     )
                     continue
 
                 # Add module name as prefix to all numbers
                 for key, value in stats.items():
-                    all_numbers[(module.name, key)] = value
+                    # Validate that the value is in an acceptable format
+                    validated_value = self._validate_stat_value(module.name, key, value)
+                    if validated_value is not None:
+                        all_numbers[(module.name, key)] = validated_value
 
             except Exception as e:
                 logger.warning(
