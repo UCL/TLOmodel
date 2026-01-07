@@ -201,6 +201,12 @@ class HealthSystem(Module):
             Types.DATA_FRAME,
             "Look-up table for the designations of consumables (whether diagnostic, medicine, or other",
         ),
+        "data_source_for_cons_availability_estimates": Parameter(
+            Types.STRING, "Source of data on consumable availability. Options are: `original` or `updated`."
+                          "The original source was used in the calibration and presented in the overview paper. The "
+                          "updated source introduced in PR #1743 and better reflects the average availability of "
+                          "consumables in the merged 1b/2 facility level."
+        ),
         "availability_estimates": Parameter(
             Types.DATA_FRAME, "Estimated availability of consumables in the LMIS dataset."
         ),
@@ -656,9 +662,19 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / "consumables" / "ResourceFile_Consumables_Item_Designations.csv",
             dtype={"Item_Code": int, "is_diagnostic": bool, "is_medicine": bool, "is_other": bool},
         ).set_index("Item_Code")
+
+        # Choose to read-in the updated availabilty estimates or the legacy availability estimates
+        if self.parameters["data_source_for_cons_availability_estimates"] == 'original':
+            filename_for_cons_availability_estimates = "ResourceFile_Consumables_availability_small_original.csv"
+        elif self.parameters["data_source_for_cons_availability_estimates"] == 'updated':
+            filename_for_cons_availability_estimates = "ResourceFile_Consumables_availability_small_updated.csv"
+        else:
+            raise ValueError("data_source_for_cons_availability_estimates should be either 'original' or 'updated'")
+
         self.parameters["availability_estimates"] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / "consumables" / "ResourceFile_Consumables_availability_small.csv"
+            path_to_resourcefiles_for_healthsystem / "consumables" / filename_for_cons_availability_estimates
         )
+
 
         # Data on the number of beds available of each type by facility_id
         self.parameters["BedCapacity"] = pd.read_csv(
