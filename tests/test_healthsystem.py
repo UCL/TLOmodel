@@ -869,6 +869,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
         )
 
 
+
     #  - Consumables (total over entire period of log that are available / not available)  # add _Item_
     assert (
         summary_consumables["Item_Available"].apply(pd.Series).sum().to_dict()
