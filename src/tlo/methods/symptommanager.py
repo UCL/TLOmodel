@@ -312,7 +312,13 @@ class SymptomManager(Module):
 
     def initialise_simulation(self, sim):
         """Schedule SpuriousSymptomsOnset/Resolve if the parameter 'spurious_symptoms' is True"""
-        if self.spurious_symptoms:
+        
+        # If running the sim to collect data for emulator training, skip this
+        standard_run = True
+        if 'IndividualHistoryTracker' in sim.modules and sim.modules['IndividualHistoryTracker'].parameters['generate_emulation_data']:
+            standard_run = False
+            
+        if self.spurious_symptoms and standard_run:
             # Create and schedule the Onset Event
             sim.schedule_event(
                 SymptomManager_SpuriousSymptomOnset(module=self),

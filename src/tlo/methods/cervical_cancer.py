@@ -241,6 +241,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "main_polling_frequency_months": Parameter(
             Types.REAL, "Main polling event frequency in months"
+        ),
+        "generate_emulator_data": Parameter(
+            Types.BOOL, "Adapt this module in order to efficiently produce emulation data"
         )
     }
 
@@ -391,19 +394,22 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_cured_date_cc"] = pd.NaT
         df.loc[df.is_alive, "ce_date_last_screened"] = pd.NaT
 
-        # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------
-        women_over_15_nhiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & ~df["hv_inf"]]
+        # Initialise all cases through polling event
+        if self.parameters["generate_emulator_data"] is False:
+        
+            # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------
+            women_over_15_nhiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & ~df["hv_inf"]]
 
-        df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
-            ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-            size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
-        )
+            df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+                ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
+                size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
+            )
 
-        women_15plus_hiv_idx = df.index[(df["age_years"] >= 15) & (df["sex"] == 'F') & df["hv_inf"]]
+            women_15plus_hiv_idx = df.index[(df["age_years"] >= 15) & (df["sex"] == 'F') & df["hv_inf"]]
 
-        df.loc[women_15plus_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
-            ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-            size=len(women_15plus_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
+            df.loc[women_15plus_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+                ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
+                size=len(women_15plus_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
         )
 
         # -------------------- symptoms, diagnosis, treatment  -----------
@@ -507,26 +513,29 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
         lm = self.linear_models_for_progression_of_hpv_cc_status
 
-        lm['hpv'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_hpv'],
-            Predictor('va_hpv')
-            .when(1, p['rr_hpv_vaccinated'])
-            .when(2, p['rr_hpv_vaccinated']),
-            Predictor('age_years', conditions_are_mutually_exclusive=True)
-            .when('.between(0,15)', 0.0)
-            .when('>50', p['rr_hpv_age50plus']),
-            Predictor('sex').when('M', 0.0),
-            Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
-            Predictor().when(
-                'hv_inf & '
-                '(hv_art == "on_not_vl_suppressed")',
-                (p['rr_progress_cc_hiv'])),
-            Predictor().when(
-                'hv_inf & '
-                '(hv_art == "not")',
-                (p['rr_progress_cc_hiv'])),
-        )
+        if self.parameters["generate_emulator_data"]:
+            lm['hpv'] = 1.0 if ('age_years' >= 15 and 'sex' == 'F' and 'ce_hpv_cc_status' == 'none') else 0.0
+        else:
+            lm['hpv'] = LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                p['r_hpv'],
+                Predictor('va_hpv')
+                .when(1, p['rr_hpv_vaccinated'])
+                .when(2, p['rr_hpv_vaccinated']),
+                Predictor('age_years', conditions_are_mutually_exclusive=True)
+                .when('.between(0,15)', 0.0)
+                .when('>50', p['rr_hpv_age50plus']),
+                Predictor('sex').when('M', 0.0),
+                Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
+                Predictor().when(
+                    'hv_inf & '
+                    '(hv_art == "on_not_vl_suppressed")',
+                    (p['rr_progress_cc_hiv'])),
+                Predictor().when(
+                    'hv_inf & '
+                    '(hv_art == "not")',
+                    (p['rr_progress_cc_hiv'])),
+            )
 
         lm['cin1'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,

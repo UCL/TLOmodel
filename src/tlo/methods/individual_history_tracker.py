@@ -42,6 +42,9 @@ class IndividualHistoryTracker(Module):
         "events_to_ignore": Parameter(
             Types.LIST, "Events to be ignored when collecting chains"
         ),
+        "generate_emulation_data": Parameter(
+            Types.BOOL, "Specify whether we are tracking individual histories with the specific goal of generating data for emulation training"
+        )
     }
     
     PROPERTIES = {

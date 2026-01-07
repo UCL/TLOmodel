@@ -325,8 +325,14 @@ class Demography(Module):
         sim.schedule_event(DemographyLoggingEvent(self), sim.date)
 
         # Create (and store pointer to) the OtherDeathPoll and schedule first occurrence immediately
-        self.other_death_poll = OtherDeathPoll(self)
-        sim.schedule_event(self.other_death_poll, sim.date)
+        # However if running the sim to collect data for emulator training, skip this
+        standard_run = True
+        if 'IndividualHistoryTracker' in sim.modules and sim.modules['IndividualHistoryTracker'].parameters['generate_emulation_data']:
+            standard_run = False
+        
+        if standard_run:
+            self.other_death_poll = OtherDeathPoll(self)
+            sim.schedule_event(self.other_death_poll, sim.date)
 
         # Log the initial population scaling-factor (to the logger of this module and that of `tlo.methods.population`)
         for _logger in (logger, logger_scale_factor):
