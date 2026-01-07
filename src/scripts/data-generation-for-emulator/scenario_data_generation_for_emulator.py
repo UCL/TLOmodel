@@ -23,6 +23,44 @@ from tlo.methods import individual_history_tracker
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
+full_grid = make_cartesian_parameter_grid(
+    {
+        "module_of_interest": {
+            #1) # Should iterate over all parameters labelled as "free", as span them
+            # over prior
+            #2) Should combine with Service configuration, i.e. include N random combinations of services being included/excluded
+            #3) Should combine with different levels of relevant consumable availability
+            
+        
+            """
+            "scale_factor_delay_in_seeking_care_weather": [float(28)],
+            "rescaling_prob_seeking_after_disruption": [float(1)],
+            "rescaling_prob_disruption": [float(1)],
+            "scale_factor_severity_disruption_and_delay": [float(1)],
+            "mode_appt_constraints": [1],
+            "mode_appt_constraints_postSwitch": [2],
+            "cons_availability": ["default"],
+            "cons_availability_postSwitch": ["default"],
+            "year_cons_availability_switch": [YEAR_OF_CHANGE],
+            "beds_availability": ["default"],
+            "equip_availability": ["default"],
+            "equip_availability_postSwitch": ["default"],
+            "year_equip_availability_switch": [YEAR_OF_CHANGE],
+            "use_funded_or_actual_staffing": ["actual"],
+            "scale_to_effective_capabilities": [True],
+            "policy_name": ["Naive"],
+            "climate_ssp": ["ssp126", "ssp245", "ssp585"],
+            "year_effective_climate_disruptions": [2025],
+            "climate_model_ensemble_model": ["lowest", "mean", "highest"],
+            "services_affected_precip": ["all"],
+            "tclose_overwrite": [1000],
+            "prop_supply_side_disruptions": [0.5],
+            """
+        }
+    }
+)
+
+
 
 class TrackIndividualHistories(BaseScenario):
     def __init__(self):
