@@ -531,14 +531,13 @@ def test_outputs_to_log(tmpdir):
 
 def test_check_format_of_consumables_file():
     """Run the check on the file used by default for the Consumables data"""
+    path_to_file = resourcefilepath / 'healthsystem' / 'consumables'
     check_format_of_consumables_file(
-        pd.read_csv(
-            resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small.csv'),
+        pd.read_csv(path_to_file / 'ResourceFile_Consumables_availability_small.csv'),
         fac_ids=fac_ids
     )
     check_format_of_consumables_file(
-        pd.read_csv(
-            resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small_original.csv'),
+        pd.read_csv(path_to_file / 'ResourceFile_Consumables_availability_small_original.csv'),
         fac_ids=fac_ids
     )
 
