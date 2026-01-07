@@ -321,17 +321,30 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         )
 
     def report_disease_numbers(self):
-        # This returns age- and sex-specific prevalence of schisto for all individuals
+        """Returns disease numbers by sex, age, species, and infection status."""
         df = self.sim.population.props
+        alive_df = df[df['is_alive']]
 
-        # Identify individuals currently infected
-        is_infected = df[self.cols_of_infection_status].isin(['Low-infection', 'High-infection']).any(axis=1)
-        infected_df = df[df['is_alive'] & is_infected]
+        results = {}
 
-        number_by_age_group_sex = (
-            infected_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-        return {'number_by_age_group_sex': number_by_age_group_sex}
+        for species_name, spec in self.species.items():
+            infection_col = spec.infection_status_property
+
+            # Filter to only infected individuals for this species
+            infected_mask = alive_df[infection_col].isin(['Low-infection', 'High-infection'])
+            infected_df = alive_df[infected_mask]
+
+            if len(infected_df) > 0:
+                # Group by age_range, sex, and infection_status
+                counts = (
+                    infected_df.groupby(['age_range', 'sex', infection_col])
+                    .size()
+                )
+                # Flatten multi-index series into nested dict for logging
+                results[f'number_with_{species_name}_by_age_sex_status'] = (
+                    flatten_multi_index_series_into_dict_for_logging(counts)
+                )
+        return results
 
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]], mda=False) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is

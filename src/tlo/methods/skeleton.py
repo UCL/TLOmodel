@@ -152,7 +152,7 @@ class Skeleton(Module):
         """
         raise NotImplementedError
 
-    def report_prevalence(self) -> dict[str, [float|dict]]:
+    def report_disease_numbers(self) -> dict[str, [float|dict]]:
         """
         This reports on the prevalence of a disease/condition or the monthly rate of certain events.
         """

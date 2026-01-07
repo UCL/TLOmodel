@@ -296,8 +296,8 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
     def report_disease_numbers(self):
         # This reports age- and sex-specific prevalence of epilepsy for all individuals
         df = self.sim.population.props
-        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ep_seiz_stat', (1, 2, 3))
-        return {'number_by_age_group_sex': number_by_age_group_sex}
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ep_seiz_stat', (2, 3))
+        return {'number_with_current_seizures': number_by_age_group_sex}
 
     def transition_seizure_stat(self):
         """

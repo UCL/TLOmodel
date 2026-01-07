@@ -608,13 +608,10 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                 (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
             )
         ]
-        prevalence_counts = (
+        number_depressed = (
             any_depr_in_the_last_month.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
         )
-
-        number_by_age_group_sex = (prevalence_counts / df['is_alive'].sum()).to_dict(orient='index')
-
-        return {'number_by_age_group_sex': number_by_age_group_sex}
+        return {'number_depressive_episode_past_month': number_depressed}
 
     def _check_for_suspected_depression(
         self, symptoms: List[str], treatment_id: str, has_even_been_diagnosed: bool

@@ -1321,7 +1321,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # This reports age- and sex-specific prevalence of HIV for all individuals
         df = self.sim.population.props
         number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'hv_inf')
-        return {'number_by_age_group_sex': number_by_age_group_sex}
+        return {'number_living_with_hiv': number_by_age_group_sex}
 
     def mtct_during_breastfeeding(self, mother_id, child_id):
         """

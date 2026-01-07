@@ -754,7 +754,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             get_counts_by_sex_and_age_group(df, 'ce_hpv_cc_status',
                                             ( "hpv", "cin1", "cin2", "cin3", "stage1",
                                               "stage2a", "stage2b", "stage3", "stage4")))
-        return {'number_by_age_group_sex': number_by_age_group_sex}
+        return {'number_cervical_cancer_by_status': number_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,

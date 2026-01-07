@@ -746,7 +746,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         # This reports age- and sex-specific prevalence of malaria for all individuals
         df = self.sim.population.props
         number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ma_inf_type', ('clinical', 'severe'))
-        return {'number_by_age_group_sex': number_by_age_group_sex}
+        return {'number_with_malaria_inf_by_type': number_by_age_group_sex}
 
     def check_if_fever_is_caused_by_malaria(
         self,

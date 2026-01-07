@@ -773,7 +773,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         total_under5 = len(alive_under5)
 
         if total_under5 == 0:
-            return {'prev_moderate': 0.0, 'prev_severe': 0.0}
+            return {'number_moderate': 0.0, 'number_severe': 0.0}
 
         # Get counts by sex and age group for each wasting category
         mod_counts = get_counts_by_sex_and_age_group(
@@ -788,13 +788,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         )
 
         # Sum across all age groups and sexes
-        mod_wasted = sum(sum(age_group.values()) for age_group in mod_counts.values())
-        sev_wasted = sum(sum(age_group.values()) for age_group in sev_counts.values())
-        number_by_age_group_sex_dict['mod_wasted'] = mod_wasted
-        number_by_age_group_sex_dict['sev_wasted'] = sev_wasted
 
+        number_by_age_group_sex_dict['mod_wasted'] = mod_counts
+        number_by_age_group_sex_dict['sev_wasted'] = sev_counts
         return {
-            'number_by_age_group_sex': number_by_age_group_sex_dict,
+            'number_under_5_with_wasting_by_category': number_by_age_group_sex_dict,
         }
     def wasting_clinical_symptoms(self, person_id) -> None:
         """

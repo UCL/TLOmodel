@@ -242,7 +242,7 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         # This reports age- and sex-specific prevalence of measles for all individuals
         df = self.sim.population.props
         number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'me_has_measles')
-        return {'number_by_age_group_sex': number_by_age_group_sex}
+        return {'number_with_measles': number_by_age_group_sex}
 
     def process_parameters(self):
         """Process the parameters (following being read-in) prior to the simulation starting.
