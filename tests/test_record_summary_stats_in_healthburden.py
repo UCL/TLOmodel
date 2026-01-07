@@ -21,7 +21,7 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 outputpath = Path("./outputs/")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 12)
+end_date = Date(2011, 12, 31)
 
 popsize = 1_000
 
@@ -34,7 +34,7 @@ class DummyDisease(Module):
 
     INIT_DEPENDENCIES = {'Demography'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'DiseaseNumbers'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
     CAUSES_OF_DISABILITY = {
         'Dummy': Cause(label='Dummy')
@@ -97,9 +97,7 @@ class DummyDisease(Module):
         df = self.sim.population.props
         infected_total = df.loc[df.is_alive, 'dm_is_infected'].sum()
         proportion_infected = infected_total / df.is_alive.sum()
-        # Store the values so we can compare later
-        self.stored_prevalence[self.sim.date] = proportion_infected
-        self.stored_number_infected[self.sim.date] = infected_total
+
         return {
             'number_infected': infected_total,
             'proportion_infected': proportion_infected,
@@ -138,9 +136,6 @@ class DummyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 def test_basic_mechanics_with_dummy_disease(tmpdir, seed):
     """Test that DummyDisease works with both HealthBurden and DiseaseNumbers modules"""
     from tlo.methods.diseasenumbers import DiseaseNumbers
-
-    start_date = Date(2010, 1, 1)
-    end_date = Date(2011, 1, 1)
 
     sim = Simulation(start_date=start_date,
                      seed=0,
