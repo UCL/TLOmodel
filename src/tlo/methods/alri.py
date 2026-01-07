@@ -78,7 +78,6 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
         Metadata.REPORTS_DISEASE_NUMBERS
-
     }
 
     pathogens = {
