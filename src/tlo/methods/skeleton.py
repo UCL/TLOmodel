@@ -154,7 +154,7 @@ class Skeleton(Module):
 
     def report_summary_stats(self) -> dict[str, [float|dict]]:
         """
-        This reports on the prevalence of a disease/condition or the monthly rate of certain events.
+        This reports on the summary statistics of a disease/condition currently (e.g. current prevalence).
         """
         raise NotImplementedError
 
