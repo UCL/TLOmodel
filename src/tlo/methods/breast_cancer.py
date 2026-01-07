@@ -586,7 +586,7 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         number_by_age_group_sex = (
             get_counts_by_sex_and_age_group(df, 'brc_status', ("stage1", "stage2", "stage3", "stage4")))
-        return {'number_breast_cancer_by_status': number_by_age_group_sex}
+        return {'number_at_any_stage': number_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,

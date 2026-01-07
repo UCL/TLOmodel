@@ -920,9 +920,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         return daly_series
 
-    def report_summary_stats(self):
-        return {}
-
     def pregnancy_supervisor_property_reset(self, id_or_index):
         """
         This function is called when all properties housed in the PregnancySupervisorModule should be reset. For example

@@ -788,7 +788,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         )
 
         # Sum across all age groups and sexes
-
         number_by_age_group_sex_dict['mod_wasted'] = mod_counts
         number_by_age_group_sex_dict['sev_wasted'] = sev_counts
         return {

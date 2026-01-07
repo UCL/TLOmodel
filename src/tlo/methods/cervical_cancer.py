@@ -748,13 +748,15 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         return disability_series_for_alive_persons
 
     def report_summary_stats(self):
-        # This reports age- and sex-specific prevalence of wasting for all individuals
         df = self.sim.population.props
         number_by_age_group_sex = (
-            get_counts_by_sex_and_age_group(df, 'ce_hpv_cc_status',
-                                            ( "hpv", "cin1", "cin2", "cin3", "stage1",
-                                              "stage2a", "stage2b", "stage3", "stage4")))
-        return {'number_cervical_cancer_by_status': number_by_age_group_sex}
+            get_counts_by_sex_and_age_group(df,
+                                            'ce_hpv_cc_status',
+                                            ("cin1", "cin2", "cin3",
+                                             "stage1","stage2a", "stage2b", "stage3", "stage4")
+                                            )
+        )
+        return {'number_at_any_stage': number_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,

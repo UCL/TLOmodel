@@ -89,6 +89,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS,
     }
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
@@ -1134,7 +1135,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
         return daly_series
 
-    def report_prevalence(self):
+    def report_summary_stats(self):
         """
         This function reports the prevalence of intrapartum stillbirth for this module generated in the previous month
         """

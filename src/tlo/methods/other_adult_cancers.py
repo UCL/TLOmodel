@@ -617,7 +617,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         number_by_age_group_sex = (
             get_counts_by_sex_and_age_group(df, 'oac_status', ("site_confined", "local_ln", "metastatic")))
-        return {'number_with_oac_by_status': number_by_age_group_sex}
+        return {'number_at_any_stage': number_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,

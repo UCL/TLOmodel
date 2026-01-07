@@ -50,8 +50,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-
-
 class Hiv(Module, GenericFirstAppointmentsMixin):
     """
     The HIV Disease Module

@@ -428,9 +428,6 @@ class PostnatalSupervisor(Module):
 
         return daly_series
 
-    def report_summary_stats(self):
-        return {}
-
     def apply_linear_model(self, lm, df):
         """
         Helper function will apply the linear model (lm) on the dataframe (df) to get a probability of some event

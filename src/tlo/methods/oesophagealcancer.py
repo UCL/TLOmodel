@@ -615,7 +615,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             get_counts_by_sex_and_age_group(df, 'oc_status', ("low_grade_dysplasia",
                                                               "high_grade_dysplasia", "stage1", "stage2",
                                                               "stage3", "stage4")))
-        return {'number_with_oc_by_status': number_by_age_group_sex}
+        return {'number_at_any_stage': number_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,

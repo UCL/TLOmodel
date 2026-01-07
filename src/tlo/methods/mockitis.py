@@ -298,7 +298,7 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
     def report_summary_stats(self):
         df = self.sim.population.props
         prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'mi_is_infected')
-        return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}
+        return {'infected': prevalence_by_age_group_sex}
 
     def do_at_generic_first_appt_emergency(
         self,

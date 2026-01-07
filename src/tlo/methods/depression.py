@@ -609,9 +609,9 @@ class Depression(Module, GenericFirstAppointmentsMixin):
             )
         ]
         number_depressed = (
-            any_depr_in_the_last_month.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
-        )
-        return {'number_depressive_episode_past_month': number_depressed}
+            any_depr_in_the_last_month.groupby(['sex', 'age_range']).size().unstack(fill_value=0)
+        ).to_dict(orient='index')
+        return {'number_with_depressive_episode_in_past_month': number_depressed}
 
     def _check_for_suspected_depression(
         self, symptoms: List[str], treatment_id: str, has_even_been_diagnosed: bool

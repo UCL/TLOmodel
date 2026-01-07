@@ -57,7 +57,7 @@ class HealthBurden(Module):
         'Age_Limit_For_YLL': Parameter(
             Types.REAL, 'The age up to which deaths are recorded as having induced a lost of life years'),
         'gbd_causes_of_disability': Parameter(
-            Types.LIST, 'List of the strings of causes of disability defined in the GBD data'),
+            Types.LIST, 'List of the strings of causes of disability defined in the GBD data')
     }
 
     PROPERTIES = {}
@@ -70,7 +70,6 @@ class HealthBurden(Module):
         #                       ghe2019_daly-methods.pdf?sfvrsn=31b25009_7
         p['gbd_causes_of_disability'] = set(pd.read_csv(
             resourcefilepath / 'gbd' / 'ResourceFile_CausesOfDALYS_GBD2019.csv', header=None)[0].values)
-
 
     def initialise_population(self, population):
         pass
@@ -122,7 +121,6 @@ class HealthBurden(Module):
         # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
         last_day_of_the_year = Date(sim.date.year, 12, 31)
         sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
-
 
     def process_causes_of_disability(self):
         """
@@ -408,19 +406,6 @@ class HealthBurden(Module):
 
         return period
 
-    def _log_df_line_by_line(self, key, description, df, force_cols=None) -> None:
-        """Log each line of a dataframe to `logger.info`. Each row of the dataframe is one logged entry.
-            `force_cols` is the names of the colums that must be included in each logging line (As the parsing of the
-            log requires the name of the format of each row to be uniform.)."""
-        df[sorted(set(force_cols) - set(df.columns))] = 0.0  # Force the addition of any missing causes
-        df = df[sorted(df.columns)]  # sort the columns so that they are always in same order
-        for _, row in df.iterrows():
-            logger.info(
-                key=key,
-                data=row.to_dict(),
-                description=description,
-            )
-
     def write_to_log(self, year: int):
         """Write to the log the YLL, YLD and DALYS for a specific year.
         N.B. This is called at the end of the simulation as well as at the end of each year, so we need to check that
@@ -439,11 +424,24 @@ class HealthBurden(Module):
                      .reset_index() \
                      .assign(year=year)
 
+        def log_df_line_by_line(key, description, df, force_cols=None) -> None:
+            """Log each line of a dataframe to `logger.info`. Each row of the dataframe is one logged entry.
+            `force_cols` is the names of the colums that must be included in each logging line (As the parsing of the
+            log requires the name of the format of each row to be uniform.)."""
+            df[sorted(set(force_cols) - set(df.columns))] = 0.0  # Force the addition of any missing causes
+            df = df[sorted(df.columns)]  # sort the columns so that they are always in same order
+            for _, row in df.iterrows():
+                logger.info(
+                    key=key,
+                    data=row.to_dict(),
+                    description=description,
+                )
+
         # Check that the format of the internal storage is as expected.
         self.check_multi_index()
 
         # 1) Log the Years Lived With Disability (YLD) (by the 'causes of disability' declared by disease modules).
-        self._log_df_line_by_line(
+        log_df_line_by_line(
             key='yld_by_causes_of_disability',
             description='Years lived with disability by the declared cause_of_disability, '
                         'broken down by year, sex, age-group',
@@ -452,7 +450,7 @@ class HealthBurden(Module):
         )
 
         # 2) Log the Years of Live Lost (YLL) (by the 'causes of death' declared by disease modules).
-        self._log_df_line_by_line(
+        log_df_line_by_line(
             key='yll_by_causes_of_death',
             description='Years of life lost by the declared cause_of_death, '
                         'broken down by year, sex, age-group. '
@@ -461,7 +459,7 @@ class HealthBurden(Module):
             df=(yll := summarise_results_for_this_year(self.years_life_lost)),
             force_cols=self._causes_of_yll,
         )
-        self._log_df_line_by_line(
+        log_df_line_by_line(
             key='yll_by_causes_of_death_stacked',
             description='Years of life lost by the declared cause_of_death, '
                         'broken down by year, sex, age-group. '
@@ -471,7 +469,7 @@ class HealthBurden(Module):
             df=(yll_stacked_by_time := summarise_results_for_this_year(self.years_life_lost_stacked_time)),
             force_cols=self._causes_of_yll,
         )
-        self._log_df_line_by_line(
+        log_df_line_by_line(
             key='yll_by_causes_of_death_stacked_by_age_and_time',
             description='Years of life lost by the declared cause_of_death, '
                         'broken down by year, sex, age-group. '
@@ -483,7 +481,7 @@ class HealthBurden(Module):
         )
 
         # 3) Log total DALYS recorded (YLD + LYL) (by the labels declared)
-        self._log_df_line_by_line(
+        log_df_line_by_line(
             key='dalys',
             description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                         ', broken down by year, sex, age-group. '
@@ -492,7 +490,7 @@ class HealthBurden(Module):
             df=self.get_dalys(yld=yld, yll=yll),
             force_cols=self._causes_of_dalys,
         )
-        self._log_df_line_by_line(
+        log_df_line_by_line(
             key='dalys_stacked',
             description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                         ', broken down by year, sex, age-group. '
@@ -502,7 +500,7 @@ class HealthBurden(Module):
             df=self.get_dalys(yld=yld, yll=yll_stacked_by_time),
             force_cols=self._causes_of_dalys,
         )
-        self._log_df_line_by_line(
+        log_df_line_by_line(
             key='dalys_stacked_by_age_and_time',
             description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                         ', broken down by year, sex, age-group. '
@@ -521,7 +519,7 @@ class HealthBurden(Module):
             self.years_life_lost_stacked_age_and_time, level=2
         )
 
-        self._log_df_line_by_line(
+        log_df_line_by_line(
             key='dalys_by_wealth_stacked_by_age_and_time',
             description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                         ', broken down by year and wealth category.'
@@ -532,7 +530,6 @@ class HealthBurden(Module):
         )
 
         self._years_written_to_log += [year]
-
 
     def check_multi_index(self):
         """Check that the multi-index of the dataframes are as expected"""

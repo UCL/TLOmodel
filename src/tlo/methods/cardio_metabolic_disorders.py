@@ -856,7 +856,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         number_by_age_group_sex_dict = {}
 
         for condition in self.conditions:
-            number_by_age_group_sex_dict[f'number_{condition}'] = get_counts_by_sex_and_age_group(df, f'nc_{condition}')
+            number_by_age_group_sex_dict[f'number with {condition}'] = get_counts_by_sex_and_age_group(df, f'nc_{condition}')
         return number_by_age_group_sex_dict
 
     def on_hsi_alert(self, person_id, treatment_id):

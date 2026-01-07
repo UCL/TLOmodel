@@ -641,8 +641,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         # This reports age- and sex-specific prevalence of bladder cancer for all individuals
         df = self.sim.population.props
         number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'bc_status', ("tis_t1", "t2p", "metastatic"))
-        return {'number_bladder_cancer_by_status': number_by_age_group_sex}
-
+        return {'number_at_any_stage': number_by_age_group_sex}
 
 
     def do_at_generic_first_appt(
