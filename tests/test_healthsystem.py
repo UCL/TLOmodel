@@ -859,9 +859,10 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     summary_capacity_indexed = summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year)
     for clinic in sim.modules["HealthSystem"]._clinic_names:
         summary_clinic_capacity = summary_capacity_indexed["average_Frac_Time_Used_Overall"].apply(lambda x: x.get(clinic, None))
+        detailed_clinic_capacity = detailed_capacity[detailed_capacity['Clinic'] == clinic]
         assert (
             summary_clinic_capacity.round(4).to_dict()
-            == detailed_capacity[detailed_capacity['Clinic'] == clinic].set_index(pd.to_datetime(detailed_capacity.date).dt.year)["Frac_Time_Used_Overall"]
+            == detailed_clinic_capacity.set_index(pd.to_datetime(detailed_clinic_capacity.date).dt.year)["Frac_Time_Used_Overall"]
             .groupby(level=0)
             .mean()
             .round(4)
