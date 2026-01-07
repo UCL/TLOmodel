@@ -744,6 +744,29 @@ class Alri(Module, GenericFirstAppointmentsMixin):
             Parameter(Types.REAL,
                       'The probability for scheduling a follow-up appointment following treatment failure'
                       ),
+
+        # Module configuration parameters -----
+        'main_polling_frequency':
+            Parameter(Types.INT,
+                      'Frequency of main polling event in months'
+                      ),
+        'child_age_threshold':
+            Parameter(Types.INT,
+                      'Maximum age in years for child classification'
+                      ),
+        'inpatient_bed_days':
+            Parameter(Types.INT,
+                      'Number of bed days required for inpatient care of ALRI'
+                      ),
+        'treatment_window_days':
+            Parameter(Types.INT,
+                      'Buffer window days that ALRI treatment event can be scheduled'
+                      ),
+        'follow_up_appointment_days':
+            Parameter(Types.INT,
+                      'Days after which follow-up appointment is scheduled'
+                      ),
+
     }
 
     PROPERTIES = {
@@ -828,7 +851,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         * Define symptoms
         """
         self.load_parameters_from_dataframe(
-            read_csv_files(resourcefilepath / 'ResourceFile_Alri', files='Parameter_values')
+            read_csv_files(resourcefilepath / 'ResourceFile_Alri', files='parameter_values')
         )
 
         self.check_params_read_in_ok()
@@ -1372,7 +1395,8 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         # Action taken when a child (under 5 years old) presents at a
         # generic appointment (emergency or non-emergency) with symptoms
         # of `cough` or `difficult_breathing`.
-        if individual_properties["age_years"] <= 5 and (
+        p = self.parameters
+        if individual_properties["age_years"] <= p['child_age_threshold'] and (
             ("cough" in symptoms) or ("difficult_breathing" in symptoms)
         ):
             self.record_sought_care_for_alri()
@@ -1384,7 +1408,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
             schedule_hsi_event(
                 event,
                 topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(days=1),
+                tclose=self.sim.date + pd.DateOffset(days=p['treatment_window_days']),
                 priority=1,
             )
 
@@ -1901,7 +1925,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
     age-groups. This is a small effect when the frequency of the polling event is high."""
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=2))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['main_polling_frequency']))
 
     @property
     def fraction_of_year_between_polling_event(self):
@@ -1919,7 +1943,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Compute the incidence rate for each person getting Alri and then convert into a probability
         # getting all children that do not currently have an Alri episode (never had or last episode resolved)
         mask_could_get_new_alri_event = (
-            df.is_alive & (df.age_years < 5) & ~df.ri_current_infection_status &
+            df.is_alive & (df.age_years < m.parameters['child_age_threshold']) & ~df.ri_current_infection_status &
             ((df.ri_end_of_current_episode < self.sim.date) | pd.isnull(df.ri_end_of_current_episode))
         )
 
@@ -2273,7 +2297,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             f'{self._treatment_id_stub}_Inpatient{"_Followup" if self.is_followup_following_treatment_failure else ""}'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
+        bed_days = self.module.parameters['inpatient_bed_days']
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': bed_days})
 
     def _refer_to_next_level_up(self):
         """Schedule this event to occur again today at the next level-up (if there is a next level-up)."""
@@ -2290,6 +2315,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         _next_level_up = _next_in_sequence(self._facility_levels, self.ACCEPTED_FACILITY_LEVEL)
 
         if _next_level_up is not None:
+            p = self.module.parameters
+
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Alri_Treatment(
                     module=self.module,
@@ -2298,7 +2325,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     facility_level=_next_level_up
                 ),
                 topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(days=1),
+                tclose=self.sim.date + pd.DateOffset(days=p['treatment_window_days']),
                 priority=0)
 
     def _refer_to_become_inpatient(self):
@@ -2318,8 +2345,10 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             priority=0)
 
     def _schedule_follow_up_following_treatment_failure(self):
-        """Schedule a copy of this event to occur in 5 days time as a 'follow-up' appointment at this level
+        """Schedule a copy of this event to occur as a 'follow-up' appointment at this level
         (if above "0") and as an in-patient."""
+
+        p = self.module.parameters
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             HSI_Alri_Treatment(
                 module=self.module,
@@ -2328,7 +2357,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 facility_level=self.ACCEPTED_FACILITY_LEVEL if self.ACCEPTED_FACILITY_LEVEL != "0" else "1a",
                 is_followup_following_treatment_failure=True,
             ),
-            topen=self.sim.date + pd.DateOffset(days=5),
+            topen=self.sim.date + pd.DateOffset(days=p['follow_up_appointment_days']),
             tclose=None,
             priority=0)
 
