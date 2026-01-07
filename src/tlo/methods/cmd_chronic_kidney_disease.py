@@ -124,7 +124,10 @@ class CMDChronicKidneyDisease(Module):
             Types.REAL,
             "Probability of death for those who have been on dialysis for at least 10 year"
         ),
-
+        "prob_transplant_death_by_graft_failure": Parameter(
+            Types.REAL,
+            "Probability of death immediately after a kidney transplant"
+        ),
     }
 
     PROPERTIES = {
@@ -873,6 +876,8 @@ class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
+
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -916,7 +921,25 @@ class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
         else:
             df.at[person_id, 'ckd_date_transplant'] = self.sim.date  #todo Upile look at this logic, related to DALYs
             # Schedule deaths
-            self.schedule_dialysis_death_event(person_id)
+            #self.schedule_dialysis_death_event(person_id)
+            should_die_of_graft_failure = False
+            rand_val = self.module.rng.random()
+            should_die_of_graft_failure = rand_val < p['prob_transplant_death_by_graft_failure']
+            if should_die_of_graft_failure:
+                self.sim.modules['Demography'].do_death(
+                individual_id=person_id,
+                cause="chronic_kidney_disease",
+                originating_module=self.module
+                 )
+
+             else:
+                 next_scheduled_HSI = cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_Dialysis_Refill \
+                     if self.module.rng.random_sample() < 0.5 else HSI_Kidney_Transplant_Evaluation
+                 hs.schedule_hsi_event(
+                     hsi_event=next_scheduled_HSI(module=self.module, person_id=person_id),
+                     topen=self.sim.date,
+                     priority=0
+                 )
 
 
 class HSI_AntiRejectionDrug_Refill(HSI_Event, IndividualScopeEventMixin):
