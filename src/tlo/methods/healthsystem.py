@@ -2574,11 +2574,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     "disruption",
                 ]
                 base_scale = self.module.parameters["scale_factor_delay_in_seeking_care_weather"]
-                scale_factor_delay = max(1, base_scale + np.random.uniform(-2, 2))
+                scale_factor_delay = max(1, base_scale)
                 prob_disruption = pd.DataFrame(prob_disruption)
                 prob_disruption = min(
                     float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
-                )  # to account for some structural differences
+                )  # use data on defecit of HSIs from ANC paper as prior, then scale
                 if np.random.binomial(1, prob_disruption) == 1:
                     climate_disrupted = True
                     # determine whether "supply side" or "demand side" disruption. If demand, then the required footprint
@@ -2598,7 +2598,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                     int(
                                         max(scale_factor_delay * item.priority + 1, 1)
                                         * prob_disruption
-                                        / self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                        * self.module.parameters["scale_factor_severity_disruption_and_delay"]
                                     )
                                 )
                             ),
