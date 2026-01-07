@@ -1129,7 +1129,7 @@ class HealthSystem(Module):
         assert (df_updated.columns == df_original.columns).all()
         assert (df_updated.dtypes == df_original.dtypes).all()
 
-        # check values the same for everything apart from the facility level '2' facilities
+        # check values the same for everything apart from the facility level 'LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2'
         facilities_with_any_differences = set(
             df_updated.loc[
                 ~(
@@ -1137,10 +1137,10 @@ class HealthSystem(Module):
                 ).all(axis=1),
                 'Facility_ID']
         )
-        level2_facilities = set(
-            mfl.loc[mfl['Facility_Level'] == '2', 'Facility_ID']
+        updated_facilities = set(
+            mfl.loc[mfl['Facility_Level'] == LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2, 'Facility_ID']
         )
-        assert facilities_with_any_differences.issubset(level2_facilities)
+        assert facilities_with_any_differences.issubset(updated_facilities)
 
         return df_updated
 
