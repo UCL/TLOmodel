@@ -599,9 +599,7 @@ class HealthSystem(Module):
         )
 
         self._clinic_mapping = pd.read_csv(filepath)
-        self._clinic_names = self._clinic_configuration.columns.difference(
-            ["Facility_ID", "Officer_Type_Code"]
-        )
+        self._clinic_names = self._clinic_configuration.columns.difference(["Facility_ID", "Officer_Type_Code"])
         # Ensure that a valid clinic configuration has been specified
         self.validate_clinic_configuration(self._clinic_configuration)
 
@@ -824,8 +822,6 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
-
-
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -1103,9 +1099,7 @@ class HealthSystem(Module):
         'GenericClinic' is returned. Note that we assume that a treatment ID is mapped to at most one clinic, returning
         the first match.
         """
-        eligible_treatment_ids = self._clinic_mapping.loc[
-            self._clinic_mapping["Treatment"] == treatment_id, "Clinic"
-        ]
+        eligible_treatment_ids = self._clinic_mapping.loc[self._clinic_mapping["Treatment"] == treatment_id, "Clinic"]
         clinic = eligible_treatment_ids.iloc[0] if not eligible_treatment_ids.empty else "GenericClinic"
         return clinic
 
@@ -1805,7 +1799,6 @@ class HealthSystem(Module):
 
         return appt_footprint_times
 
-
     def get_total_minutes_of_this_officer_in_this_district(self, current_capabilities, _officer):
         """Returns the minutes of current capabilities for the officer identified (this officer type in this
         facility_id)."""
@@ -1817,8 +1810,8 @@ class HealthSystem(Module):
 
         def split_officer_compound_string(cs) -> Tuple[int, str]:
             """Returns (facility_id, officer_type) for the officer identified in the string of the form:
-             'FacilityID_{facility_id}_Officer_{officer_type}'."""
-            _, _facility_id, _, _officer_type = cs.split('_', 3)  # (NB. Some 'officer_type' include "_")
+            'FacilityID_{facility_id}_Officer_{officer_type}'."""
+            _, _facility_id, _, _officer_type = cs.split("_", 3)  # (NB. Some 'officer_type' include "_")
             return int(_facility_id), _officer_type
 
         def _match(_this_officer, facility_ids: List[int], officer_type: str):
@@ -1834,29 +1827,32 @@ class HealthSystem(Module):
         ]
 
         officers_in_the_same_level_in_all_districts = [
-            _officer for _officer in current_capabilities.keys() if
-            _match(_officer, facility_ids=facilities_of_same_level_in_all_district, officer_type=officer_type)
+            _officer
+            for _officer in current_capabilities.keys()
+            if _match(_officer, facility_ids=facilities_of_same_level_in_all_district, officer_type=officer_type)
         ]
 
         return sum(current_capabilities.get(_o) for _o in officers_in_the_same_level_in_all_districts)
 
-
-    def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests, clinic)-> bool:
+    def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests, clinic) -> bool:
         """Check if all officers required by the appt footprint are available to perform the HSI"""
 
         ok_to_run = True
 
         for officer in expected_time_requests.keys():
             if self.compute_squeeze_factor_to_district_level:
-                availability = self.get_total_minutes_of_this_officer_in_this_district(self.capabilities_today[clinic], officer)
+                availability = self.get_total_minutes_of_this_officer_in_this_district(
+                    self.capabilities_today[clinic], officer
+                )
             else:
-                availability = self.get_total_minutes_of_this_officer_in_all_district(self.capabilities_today[clinic], officer)
+                availability = self.get_total_minutes_of_this_officer_in_all_district(
+                    self.capabilities_today[clinic], officer
+                )
 
             # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
             if availability is None:
                 logger.warning(
-                    key="message",
-                    data=(f"Requested officer {officer} is not contemplated by health system. ")
+                    key="message", data=(f"Requested officer {officer} is not contemplated by health system. ")
                 )
                 availability = 0.0
 
@@ -1864,7 +1860,6 @@ class HealthSystem(Module):
                 ok_to_run = False
 
         return ok_to_run
-
 
     def record_hsi_event(
         self, hsi_event, actual_appt_footprint=None, squeeze_factor=0.0, did_run=True, priority=None, clinic=None
@@ -2046,7 +2041,7 @@ class HealthSystem(Module):
         self._summary_counter.record_hs_status(
             fraction_time_used_across_all_facilities_in_this_clinic=fraction_time_used_overall,
             fraction_time_used_by_facID_and_officer_in_this_clinic=fraction_time_used_by_facID_and_officer.to_dict(),
-            clinic=clinic_name
+            clinic=clinic_name,
         )
 
     def remove_beddays_footprint(self, person_id):
@@ -2172,9 +2167,9 @@ class HealthSystem(Module):
         # Record equipment usage for the year, for each facility
         self._record_general_equipment_usage_for_year()
 
-    def run_individual_level_events_in_mode_0_or_1(self,
-                                                   _list_of_individual_hsi_event_tuples:
-                                                   List[HSIEventQueueItem]) -> List:
+    def run_individual_level_events_in_mode_0_or_1(
+        self, _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]
+    ) -> List:
         """Run a list of individual level events. Returns: list of events that did not run (maybe an empty list)."""
         _to_be_held_over = list()
         assert self.mode_appt_constraints in (0, 1)
@@ -2194,7 +2189,9 @@ class HealthSystem(Module):
             event_num_of_all_individual_level_hsi_event = defaultdict(list)
             for eve_num, event_tuple in enumerate(_list_of_individual_hsi_event_tuples):
                 event_clinic = event_tuple.clinic_eligibility
-                footprints_of_all_individual_level_hsi_event[event_clinic].append(event_tuple.hsi_event.expected_time_requests)
+                footprints_of_all_individual_level_hsi_event[event_clinic].append(
+                    event_tuple.hsi_event.expected_time_requests
+                )
                 event_num_of_all_individual_level_hsi_event[event_clinic].append(eve_num)
 
             # For each clinic, compute total appointment footprint across all events
@@ -2218,22 +2215,21 @@ class HealthSystem(Module):
                 if self.mode_appt_constraints == 1:
                     if event.expected_time_requests:
                         ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
-                                        event.expected_time_requests, event_clinic)
-
+                            event.expected_time_requests, event_clinic
+                        )
 
                 if ok_to_run:
-
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
                     if sum(event.BEDDAYS_FOOTPRINT.values()):
-                        event._received_info_about_bed_days = \
-                            self.bed_days.issue_bed_days_according_to_availability(
-                                facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
-                                footprint=event.BEDDAYS_FOOTPRINT
-                            )
+                        event._received_info_about_bed_days = self.bed_days.issue_bed_days_according_to_availability(
+                            facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
+                            footprint=event.BEDDAYS_FOOTPRINT,
+                        )
 
                     # Check that a facility has been assigned to this HSI
-                    assert event.facility_info is not None, \
+                    assert event.facility_info is not None, (
                         f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
+                    )
 
                     # Run the HSI event (allowing it to return an updated appt_footprint)
                     actual_appt_footprint = event.run(squeeze_factor=0.0)
@@ -2247,12 +2243,17 @@ class HealthSystem(Module):
 
                         # Update load factors:
                         updated_call = self.get_appt_footprint_as_time_request(
-                            facility_info=event.facility_info,
-                            appt_footprint=actual_appt_footprint
+                            facility_info=event.facility_info, appt_footprint=actual_appt_footprint
                         )
-                        ev_num_in_clinics_footprint = event_num_of_all_individual_level_hsi_event[event_clinic].index(ev_num)
-                        original_call = footprints_of_all_individual_level_hsi_event[event_clinic][ev_num_in_clinics_footprint]
-                        footprints_of_all_individual_level_hsi_event[event_clinic][ev_num_in_clinics_footprint] = updated_call
+                        ev_num_in_clinics_footprint = event_num_of_all_individual_level_hsi_event[event_clinic].index(
+                            ev_num
+                        )
+                        original_call = footprints_of_all_individual_level_hsi_event[event_clinic][
+                            ev_num_in_clinics_footprint
+                        ]
+                        footprints_of_all_individual_level_hsi_event[event_clinic][ev_num_in_clinics_footprint] = (
+                            updated_call
+                        )
                         self.running_total_footprint[event_clinic] -= original_call
                         self.running_total_footprint[event_clinic] += updated_call
 
@@ -2261,15 +2262,10 @@ class HealthSystem(Module):
                         # as recorded before the HSI event run
                         actual_appt_footprint = _appt_footprint_before_running
 
-
                     # Write to the log
                     self.record_hsi_event(
-                        hsi_event=event,
-                        actual_appt_footprint=actual_appt_footprint,
-                        did_run=True,
-                        priority=_priority
+                        hsi_event=event, actual_appt_footprint=actual_appt_footprint, did_run=True, priority=_priority
                     )
-
 
         return _to_be_held_over
 
@@ -2731,7 +2727,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
         for k in self.module.running_total_footprint.keys():
-           self.module.running_total_footprint[k] = inpatient_footprints
+            self.module.running_total_footprint[k] = inpatient_footprints
 
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
@@ -2790,7 +2786,7 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ("0", "1a", "1b", "2", "3", "4")}
 
-        self._frac_time_used_overall = defaultdict(list) # Running record of the usage of the healthcare system
+        self._frac_time_used_overall = defaultdict(list)  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_facID_and_officer = defaultdict(Counter)
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
@@ -2836,7 +2832,7 @@ class HealthSystemSummaryCounter:
         self,
         fraction_time_used_across_all_facilities_in_this_clinic: float,
         fraction_time_used_by_facID_and_officer_in_this_clinic: Dict[str, float],
-        clinic:  Optional[str] = None,
+        clinic: Optional[str] = None,
     ) -> None:
         """Record a current status metric of the HealthSystem."""
 
@@ -2861,9 +2857,7 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._treatment_ids,
                 "Number_By_Appt_Type_Code": self._appts,
                 "Number_By_Appt_Type_Code_And_Level": self._appts_by_level,
-                'squeeze_factor': {
-                                    k: sum(v) / len(v) for k, v in self._squeeze_factor_by_hsi_event_name.items()
-                                }
+                "squeeze_factor": {k: sum(v) / len(v) for k, v in self._squeeze_factor_by_hsi_event_name.items()},
             },
         )
         logger_summary.info(
@@ -2893,7 +2887,9 @@ class HealthSystemSummaryCounter:
             description="The fraction of all the healthcare worker time that is used each day, averaged over this "
             "calendar year.",
             data={
-                "average_Frac_Time_Used_Overall": {clinic: np.mean(values) for clinic, values in self._frac_time_used_overall.items()},
+                "average_Frac_Time_Used_Overall": {
+                    clinic: np.mean(values) for clinic, values in self._frac_time_used_overall.items()
+                },
                 # <-- leaving space here for additional summary measures that may be needed in the future.
             },
         )
