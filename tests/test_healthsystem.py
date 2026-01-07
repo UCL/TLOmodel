@@ -305,9 +305,10 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
             "directory": tmpdir,
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
-                "tlo.methods.healthsystem.summary": logging.INFO
-            }
-        }, resourcefilepath=resourcefilepath
+                "tlo.methods.healthsystem.summary": logging.INFO,
+            },
+        },
+        resourcefilepath=resourcefilepath,
     )
 
     # Register the core modules
@@ -347,10 +348,9 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
 
     # read the results
     output = parse_log_file(sim.log_filepath, level=logging.INFO)
-    pd.set_option('display.max_columns', None)
-    summary = output['tlo.methods.healthsystem.summary']
-    capacity_by_officer_and_level = summary['Capacity_By_OfficerType_And_FacilityLevel']
-
+    pd.set_option("display.max_columns", None)
+    summary = output["tlo.methods.healthsystem.summary"]
+    capacity_by_officer_and_level = summary["Capacity_By_OfficerType_And_FacilityLevel"]
 
     # Filter rows for the two years
     row_2010 = capacity_by_officer_and_level.loc[capacity_by_officer_and_level["date"] == "2010-12-31"].squeeze()
@@ -373,7 +373,6 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
             results[col] = ratio > 100
 
     assert all(results.values())
-
 
 
 @pytest.mark.slow
@@ -858,18 +857,20 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     #  - Average fraction of HCW time used (year by year)
     summary_capacity_indexed = summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year)
     for clinic in sim.modules["HealthSystem"]._clinic_names:
-        summary_clinic_capacity = summary_capacity_indexed["average_Frac_Time_Used_Overall"].apply(lambda x: x.get(clinic, None))
-        detailed_clinic_capacity = detailed_capacity[detailed_capacity['Clinic'] == clinic]
+        summary_clinic_capacity = summary_capacity_indexed["average_Frac_Time_Used_Overall"].apply(
+            lambda x: x.get(clinic, None)
+        )
+        detailed_clinic_capacity = detailed_capacity[detailed_capacity["Clinic"] == clinic]
         assert (
             summary_clinic_capacity.round(4).to_dict()
-            == detailed_clinic_capacity.set_index(pd.to_datetime(detailed_clinic_capacity.date).dt.year)["Frac_Time_Used_Overall"]
+            == detailed_clinic_capacity.set_index(pd.to_datetime(detailed_clinic_capacity.date).dt.year)[
+                "Frac_Time_Used_Overall"
+            ]
             .groupby(level=0)
             .mean()
             .round(4)
             .to_dict()
         )
-
-
 
     #  - Consumables (total over entire period of log that are available / not available)  # add _Item_
     assert (
