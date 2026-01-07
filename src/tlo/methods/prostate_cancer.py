@@ -46,7 +46,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'DiseaseNumbers'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,

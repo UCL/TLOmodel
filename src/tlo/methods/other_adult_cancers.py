@@ -45,7 +45,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv', 'DiseaseNumbers'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,

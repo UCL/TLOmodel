@@ -38,7 +38,6 @@ class Copd(Module, GenericFirstAppointmentsMixin):
      and initialises parameters and properties associated with COPD plus functions and events related to COPD."""
 
     INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem'}
-    OPTIONAL_INIT_DEPENDENCIES = {'DiseaseNumbers'}
     ADDITIONAL_DEPENDENCIES = set()
 
     METADATA = {

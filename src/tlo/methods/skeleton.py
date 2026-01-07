@@ -44,7 +44,7 @@ class Skeleton(Module):
 
     # Declares optiona;l modules that need to be registered in simulation and
     # initialised before this module if present
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'DiseaseNumbers'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
     # Declares any modules that need to be registered in simulation in addition to those
     # in INIT_DEPENDENCIES to allow running simulation

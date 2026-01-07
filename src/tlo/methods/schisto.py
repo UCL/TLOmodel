@@ -48,7 +48,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthSystem', 'HealthBurden', 'DiseaseNumbers'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthSystem', 'HealthBurden'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,

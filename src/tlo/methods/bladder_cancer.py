@@ -47,7 +47,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Schisto', 'DiseaseNumbers'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Schisto'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,

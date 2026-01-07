@@ -39,7 +39,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager', 'Hiv',
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'HealthSeekingBehaviour', 'DiseaseNumbers'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'HealthSeekingBehaviour'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,

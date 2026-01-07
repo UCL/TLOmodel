@@ -40,7 +40,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         'Demography', 'Contraception', 'HealthSystem', 'Lifestyle', 'SymptomManager'
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv', 'DiseaseNumbers'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'Hiv'}
 
     # Declare Metadata
     METADATA = {

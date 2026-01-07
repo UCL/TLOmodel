@@ -69,7 +69,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         'Wasting',
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'DiseaseNumbers'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
     # Declare Metadata
     METADATA = {
