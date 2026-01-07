@@ -2879,7 +2879,7 @@ class HealthSystemSummaryCounter:
         # Log mean of 'fraction time used by facID and officer' from daily entries from the previous
         # year.
         logger_summary.info(
-            key="Capacity_By_FacID_and_Officer",
+            key="Capacity_By_OfficerType_And_FacilityLevel",
             description="The fraction of healthcare worker time that is used each day, averaged over this "
             "calendar year, for each officer type at each facility.",
             data=flatten_multi_index_series_into_dict_for_logging(self.frac_time_used_by_facID_and_officer()),
