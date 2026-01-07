@@ -3,9 +3,9 @@ Record Summary Statistics Module
 
 This module collects and logs the number of individuals in each age group for each disease
 """
-
+from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 import pandas as pd
 
@@ -174,12 +174,14 @@ class RecordSummaryStats(Module):
         # Get population dataframe
         df = self.sim.population.props
 
-        # Dictionary to collect all numbers
-        all_stats = {}
+        # Dictionary to collect all stats, of the form {module: {stat: content}}
+        all_stats = defaultdict(dict)
 
         # Add basic population numbers
-        all_stats[('Population', 'total')] = sum(df.is_alive)
-        all_stats[('Population', 'by_age_and_sex')] = get_counts_by_sex_and_age_group(df, 'is_alive')
+        all_stats['Population'] = {
+            'total': sum(df.is_alive),
+            'by_age_and_sex': get_counts_by_sex_and_age_group(df, 'is_alive')
+        }
 
         # Collect numbers from each registered disease module
         for module in self._registered_modules:
@@ -191,7 +193,7 @@ class RecordSummaryStats(Module):
                     # Validate that the value is in an acceptable format
                     validated_value = self._validate_stat_value(module.name, key, value)
                     if validated_value is not None:
-                        all_stats[(module.name, key)] = validated_value
+                        all_stats[module.name].update({key: validated_value})
 
             except Exception as e:
                 logger.warning(
@@ -199,20 +201,13 @@ class RecordSummaryStats(Module):
                     data=f'Error collecting numbers from {module.name}: {str(e)}'
                 )
 
-        # Convert to multi-index series and log
-        multi_index_series = pd.Series(
-            all_stats,
-            index=pd.MultiIndex.from_tuples(
-                all_stats.keys(),
-                names=['Module', 'Statistic']
+        # Write to log: each module is assigned it's own key
+        for module_name, stats_from_module in all_stats.items():
+            logger.info(
+                key=module_name,
+                description=f'Summary statistics from module {module_name}',
+                data=stats_from_module
             )
-        )
-
-        logger.info(
-            key='disease_numbers',
-            description='Disease prevalence and incidence numbers from all registered modules',
-            data=flatten_multi_index_series_into_dict_for_logging(multi_index_series)
-        )
 
 
 class DiseasenumbersLoggingEvent(RegularEvent, PopulationScopeEventMixin):

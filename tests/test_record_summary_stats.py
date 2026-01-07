@@ -3,14 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import (
-    Date,
-    DateOffset,
-    Module,
-    Property,
-    Simulation,
-    Types,
-)
+from tlo import Date, DateOffset, Module, Property, Simulation, Types
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography, enhanced_lifestyle, healthburden
@@ -157,15 +150,14 @@ def test_basic_mechanics_with_dummy_disease(tmpdir, seed):
     output = parse_log_file(sim.log_filepath)
 
     # Get results from the DiseaseNumbers logger
-    diseasenumbers_logger = unflatten_flattened_multi_index_in_logging(
-        output['tlo.methods.record_summary_stats']['disease_numbers'].set_index('date'))
-    prev_in_diseasenumbers_logger = diseasenumbers_logger[('DummyDisease', 'proportion_infected')]
+    summary_stats_logger = output['tlo.methods.record_summary_stats']['DummyDisease'].set_index('date')
+    prev_in_diseasenumbers_in_summary_stats_logger = summary_stats_logger['proportion_infected']
 
     # Get results from the actual module
     prevalence_from_actual_module = pd.Series(dummydisease.stored_prevalence)
 
     # Confirm they all give the same result
-    pd.testing.assert_series_equal(prev_in_diseasenumbers_logger, prevalence_from_actual_module, check_names=False)
+    pd.testing.assert_series_equal(prev_in_diseasenumbers_in_summary_stats_logger, prevalence_from_actual_module, check_names=False)
 
 
 def test_run_with_real_diseases(tmpdir, seed):
@@ -184,7 +176,6 @@ def test_run_with_real_diseases(tmpdir, seed):
     output = parse_log_file(sim.log_filepath)
 
     # Also check DiseaseNumbers logger
-    diseasenumbers_logger = unflatten_flattened_multi_index_in_logging(
-        output['tlo.methods.record_summary_stats']['disease_numbers'].set_index('date'))
-
-    assert isinstance(diseasenumbers_logger, pd.DataFrame)
+    for module in sim.modules['RecordSummaryStats']._registered_modules:
+        stats_from_this_module_in_logger = output['tlo.methods.record_summary_stats'][module.name].set_index('date')
+        assert isinstance(stats_from_this_module_in_logger, pd.DataFrame)
