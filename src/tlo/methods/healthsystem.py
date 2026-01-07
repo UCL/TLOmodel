@@ -52,7 +52,8 @@ AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2 = ["1b"]  # <-- Implies th
 #                                                                     those of '2' and have more overall capacity, so
 #                                                                     probably account for the majority of the
 #                                                                     interactions.
-
+# Note that, as of PR #1743, this should not be changed, as the availability of consumables at level 1b is now
+# encoded to reflect a (weighted) average of the availability of levels '1b' and '2'.
 
 def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFrame:
     """Return a modified version of the imported capabilities DataFrame to reflect that the capabilities of level 1b
