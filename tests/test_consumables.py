@@ -536,6 +536,11 @@ def test_check_format_of_consumables_file():
             resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small.csv'),
         fac_ids=fac_ids
     )
+    check_format_of_consumables_file(
+        pd.read_csv(
+            resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small_original.csv'),
+        fac_ids=fac_ids
+    )
 
 
 @pytest.mark.slow
