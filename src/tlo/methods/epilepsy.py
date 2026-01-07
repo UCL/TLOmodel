@@ -293,7 +293,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props  # shortcut to population properties dataframe
         return df.loc[df.is_alive, 'ep_disability']
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         # This reports age- and sex-specific prevalence of epilepsy for all individuals
         df = self.sim.population.props
         number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ep_seiz_stat', (2, 3))

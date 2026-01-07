@@ -2555,7 +2555,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         disability_series_for_alive_persons = df.loc[df.is_alive, "rt_disability"]
         return disability_series_for_alive_persons
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         # This returns dataframe that reports on the prevalence of RTIs for all individuals
         df = self.sim.population.props
         number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'rt_road_traffic_inc')

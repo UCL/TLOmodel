@@ -92,7 +92,7 @@ class DummyDisease(Module):
         self.stored_prevalence[self.sim.date] = proportion_infected
         self.stored_number_infected[self.sim.date] = infected_total
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         """Return disease statistics for DiseaseNumbers module."""
         df = self.sim.population.props
         infected_total = df.loc[df.is_alive, 'dm_is_infected'].sum()

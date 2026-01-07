@@ -69,12 +69,12 @@ class RecordSummaryStats(Module):
             )
             return
 
-        # Check that all registered disease modules have the report_disease_numbers() function
+        # Check that all registered disease modules have the report_summary_stats() function
         for module in self._registered_modules:
-            assert getattr(module, 'report_disease_numbers', None) and \
-                   callable(module.report_disease_numbers), \
+            assert getattr(module, 'report_summary_stats', None) and \
+                   callable(module.report_summary_stats), \
                 f'Module {module.name} declares REPORTS_DISEASE_NUMBERS but does not have ' \
-                'a callable function "report_disease_numbers"'
+                'a callable function "report_summary_stats"'
 
         # 2) Schedule the logging event based on configured frequency
         freq_map = {
@@ -184,7 +184,7 @@ class RecordSummaryStats(Module):
         # Collect numbers from each registered disease module
         for module in self._registered_modules:
             try:
-                stats: Dict = module.report_disease_numbers()
+                stats: Dict = module.report_summary_stats()
 
                 # Add module name as prefix to all numbers
                 for key, value in stats.items():

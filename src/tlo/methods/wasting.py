@@ -760,7 +760,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                               df.un_am_nutritional_oedema] = self.daly_wts['mod_wasting_with_oedema']
         return total_daly_values
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         """
         Reports prevalence of wasting categories for all alive children under 5.
         Returns prevalence proportions for moderate and severe wasting.

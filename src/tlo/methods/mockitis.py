@@ -295,7 +295,7 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
 
         return health_values  # returns the series
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         df = self.sim.population.props
         prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'mi_is_infected')
         return {'prevalent_by_age_group_sex': prevalence_by_age_group_sex}

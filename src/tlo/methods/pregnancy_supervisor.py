@@ -920,7 +920,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
         return daly_series
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         return {}
 
     def pregnancy_supervisor_property_reset(self, id_or_index):

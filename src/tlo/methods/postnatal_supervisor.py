@@ -428,7 +428,7 @@ class PostnatalSupervisor(Module):
 
         return daly_series
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         return {}
 
     def apply_linear_model(self, lm, df):

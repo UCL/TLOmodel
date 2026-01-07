@@ -850,7 +850,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
 
         return dw
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         """Report age- and sex-specific prevalence of diseases to the HealthBurden module"""
         df = self.sim.population.props
         number_by_age_group_sex_dict = {}

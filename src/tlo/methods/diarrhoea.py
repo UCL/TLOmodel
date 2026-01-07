@@ -670,7 +670,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         average_daly_weight_in_last_month = pd.Series(values, idx) / days_last_month
         return average_daly_weight_in_last_month.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         # This reports age- and sex-specific prevalence of diarrhoea for all individuals
         df = self.sim.population.props
         number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'gi_has_diarrhoea')

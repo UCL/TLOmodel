@@ -596,7 +596,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
 
         return av_daly_wt_last_month
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         # This reports age- and sex-specific prevalence of depression for all individuals
         df = self.sim.population.props
         any_depr_in_the_last_month = df[

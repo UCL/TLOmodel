@@ -608,7 +608,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
 
         return disability_series_for_alive_persons
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         # This reports age- and sex-specific numbers of oesophageal cancer for all individuals
         df = self.sim.population.props
         number_by_age_group_sex = (

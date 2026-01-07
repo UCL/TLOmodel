@@ -238,7 +238,7 @@ class Measles(Module, GenericFirstAppointmentsMixin):
 
         return health_values
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         # This reports age- and sex-specific prevalence of measles for all individuals
         df = self.sim.population.props
         number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'me_has_measles')

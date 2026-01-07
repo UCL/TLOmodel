@@ -320,7 +320,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             disability_weights_for_each_person_with_symptoms, fill_value=0.0
         )
 
-    def report_disease_numbers(self):
+    def report_summary_stats(self):
         """Returns disease numbers by sex, age, species, and infection status."""
         df = self.sim.population.props
         alive_df = df[df['is_alive']]
