@@ -69,7 +69,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         'Wasting',
     }
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'DiseaseNumbers'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
     # Declare Metadata
     METADATA = {
@@ -1024,7 +1024,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         # This reports age- and sex-specific prevalence of ALRI for all individuals
         df = self.sim.population.props
         number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ri_current_infection_status')
-        return {'number_by_age_group_sex': number_by_age_group_sex}
+        return {'number_with_current_ri': number_by_age_group_sex}
 
     def over_ride_availability_of_certain_consumables(self):
         """Over-ride the availability of certain consumables, according the parameter values provided."""

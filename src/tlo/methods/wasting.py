@@ -38,9 +38,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     INIT_DEPENDENCIES = {'Demography', 'SymptomManager', 'NewbornOutcomes', 'HealthBurden'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {"DiseaseNumbers"}
-
-
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,

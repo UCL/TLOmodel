@@ -74,7 +74,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
 
     ADDITIONAL_DEPENDENCIES = {'Alri', 'Epi', 'Stunting'}
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'DiseaseNumbers'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
     # Declare Metadata
     METADATA = {

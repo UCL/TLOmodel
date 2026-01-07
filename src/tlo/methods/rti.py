@@ -47,8 +47,6 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     INIT_DEPENDENCIES = {"SymptomManager",
                          "HealthBurden"}
 
-    OPTIONAL_INIT_DEPENDENCIES = {"DiseaseNumbers"}
-
 
     ADDITIONAL_DEPENDENCIES = {
         'Demography',
