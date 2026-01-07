@@ -21,8 +21,25 @@ from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods import individual_history_tracker
 from tlo.methods.fullmodel import fullmodel
-from tlo.scenario import BaseScenario
+from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
 
+
+module_of_interest ='CervicalCancer'
+N_service_scenarios = 10
+
+def sample_service_availability:
+        module_name = module_of_interest
+        treatments = get_filtered_treatment_ids(depth=2)
+        treatments_in_module = [item for item in treatments if module_name in item]
+        
+        service_availability = {}
+        for i in [0,N_service_scenarios]:
+            selected_treatments = [x for x in treatments_in_module if random.random() < 0.5]
+            service_availability = {i:selected_treatments}
+            
+        return service_availability
+
+# TO DO: need to create custom make_cartesian_parameter_grid that combines parameter combos with treatments and consumables
 full_grid = make_cartesian_parameter_grid(
     {
         "module_of_interest": {
