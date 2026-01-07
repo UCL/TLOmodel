@@ -135,7 +135,7 @@ class DummyDiseaseLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 def test_basic_mechanics_with_dummy_disease(tmpdir, seed):
     """Test that DummyDisease works with both HealthBurden and DiseaseNumbers modules"""
-    from tlo.methods.diseasenumbers import DiseaseNumbers
+    from tlo.methods.record_summary_stats import RecordSummaryStats
 
     sim = Simulation(start_date=start_date,
                      seed=0,
@@ -145,20 +145,20 @@ def test_basic_mechanics_with_dummy_disease(tmpdir, seed):
         demography.Demography(),
         healthburden.HealthBurden(),
         dummydisease := DummyDisease(),
-        DiseaseNumbers(),
+        RecordSummaryStats(),
         enhanced_lifestyle.Lifestyle(),
         sort_modules=False,
         check_all_dependencies=False
     )
 
     sim.make_initial_population(n=popsize)
-    sim.modules['DiseaseNumbers'].parameters['logging_frequency'] = 'month'
+    sim.modules['RecordSummaryStats'].parameters['logging_frequency'] = 'month'
     sim.simulate(end_date=end_date)
     output = parse_log_file(sim.log_filepath)
 
     # Get results from the DiseaseNumbers logger
     diseasenumbers_logger = unflatten_flattened_multi_index_in_logging(
-        output['tlo.methods.diseasenumbers']['disease_numbers'].set_index('date'))
+        output['tlo.methods.record_summary_stats']['disease_numbers'].set_index('date'))
     prev_in_diseasenumbers_logger = diseasenumbers_logger[('DummyDisease', 'proportion_infected')]
 
     # Get results from the actual module
@@ -170,21 +170,21 @@ def test_basic_mechanics_with_dummy_disease(tmpdir, seed):
 
 def test_run_with_real_diseases(tmpdir, seed):
     """Check that everything runs when using the full model and daily logging cadence."""
-    from tlo.methods.diseasenumbers import DiseaseNumbers
+    from tlo.methods.record_summary_stats import RecordSummaryStats
 
     sim = Simulation(start_date=start_date,
                      seed=seed,
                      resourcefilepath=resourcefilepath,
                      log_config={'filename': 'test_log', 'directory': outputpath}
                      )
-    sim.register(*fullmodel(use_simplified_births=False), DiseaseNumbers())
+    sim.register(*fullmodel(use_simplified_births=False), RecordSummaryStats())
     sim.make_initial_population(n=popsize)
-    sim.modules['DiseaseNumbers'].parameters['logging_frequency'] = 'day'
+    sim.modules['RecordSummaryStats'].parameters['logging_frequency'] = 'day'
     sim.simulate(end_date=end_date)
     output = parse_log_file(sim.log_filepath)
 
     # Also check DiseaseNumbers logger
     diseasenumbers_logger = unflatten_flattened_multi_index_in_logging(
-        output['tlo.methods.diseasenumbers']['disease_numbers'].set_index('date'))
+        output['tlo.methods.record_summary_stats']['disease_numbers'].set_index('date'))
 
     assert isinstance(diseasenumbers_logger, pd.DataFrame)

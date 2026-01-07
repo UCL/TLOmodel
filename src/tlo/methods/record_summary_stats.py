@@ -1,11 +1,11 @@
 """
-Disease numbers Module
+Record Summary Statistics Module
 
 This module collects and logs the number of individuals in each age group for each disease
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 
 import pandas as pd
 
@@ -21,27 +21,18 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class DiseaseNumbers(Module):
+class RecordSummaryStats(Module):
     """
-    Module to collect the number of individuals with each disease.
-    The dict can contain:
-    - Simple counts: {'statistic_name': value}
-    - Age/sex stratified: {'statistic_name': pd.Series with multi-index (sex, age_range)}
+    Module to collect summary statistics from each disease module.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
-
-        # Instance variables
-        self.registered_modules = []
-        self._months_written_to_log = []
+        self._registered_modules = []
 
     INIT_DEPENDENCIES = {'Demography'}
 
-    METADATA = {
-        Metadata.USES_HEALTHSYSTEM,
-    }
+    METADATA = {}
 
     PARAMETERS = {
         'logging_frequency': Parameter(
@@ -54,28 +45,24 @@ class DiseaseNumbers(Module):
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameters for the module."""
-        # Set default logging frequency
-        self.parameters['logging_frequency'] = 'month'
+        self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath / 'ResourceFile_RecordSummaryStats.csv'))
 
     def initialise_population(self, population):
-        """Nothing needed here."""
         pass
 
     def initialise_simulation(self, sim):
         """Do before simulation starts:
         1) Collect modules that will report disease numbers
-        2) Schedule the logging event based on configured frequency
+        2) Schedule the logging event based on the configured frequency (if any models will do reporting)
         """
 
         # 1) Collect modules that will report disease numbers
-        self.registered_modules = [
+        self._registered_modules = [
             module for module in self.sim.modules.values()
-            if (Metadata.REPORTS_DISEASE_NUMBERS in module.METADATA and
-                hasattr(module, 'report_disease_numbers') and
-                callable(module.report_disease_numbers))
+            if Metadata.REPORTS_DISEASE_NUMBERS in module.METADATA
         ]
 
-        if not self.registered_modules:
+        if not self._registered_modules:
             logger.warning(
                 key='warning',
                 data='DiseasenumbersLogger registered but no disease modules report numbers'
@@ -83,7 +70,7 @@ class DiseaseNumbers(Module):
             return
 
         # Check that all registered disease modules have the report_disease_numbers() function
-        for module in self.registered_modules:
+        for module in self._registered_modules:
             assert getattr(module, 'report_disease_numbers', None) and \
                    callable(module.report_disease_numbers), \
                 f'Module {module.name} declares REPORTS_DISEASE_NUMBERS but does not have ' \
@@ -95,11 +82,10 @@ class DiseaseNumbers(Module):
             'month': DateOffset(months=1),
             'year': DateOffset(years=1),
         }
-
-        frequency = freq_map.get(
-            self.parameters['logging_frequency'],
-            DateOffset(months=1)  # default to monthly
-        )
+        if self.parameters["logging_frequency"] in freq_map:
+            frequency = freq_map[self.parameters['logging_frequency']]
+        else:
+            raise ValueError(f"Invalid logging frequency: {self.parameters['logging_frequency']}")
 
         # Schedule first event at start of simulation
         sim.schedule_event(
@@ -108,15 +94,9 @@ class DiseaseNumbers(Module):
         )
 
     def on_birth(self, mother_id, child_id):
-        """Nothing needed here."""
         pass
 
-    def on_simulation_end(self):
-        """Write to the log anything that has not already been logged (i.e., if simulation terminating mid-way
-        through a logging period when the WriteToLog event has not run)."""
-        self.write_to_log()
-
-    def _validate_stat_value(self, module_name: str, key: str, value):
+    def _validate_stat_value(self, module_name: str, key: str, value: Any):
         """
         Validate that a statistic value is in an acceptable format for logging.
 
@@ -127,6 +107,7 @@ class DiseaseNumbers(Module):
 
         Returns the validated value, or None if invalid (with a warning logged).
         """
+
         # Scalar values are fine
         if isinstance(value, (int, float, str, bool, type(None))):
             return value
@@ -188,52 +169,29 @@ class DiseaseNumbers(Module):
         )
         return None
 
-    def write_to_log(self):
-        """Write disease numbers to the log.
-        N.B. This is called at the end of the simulation as well as at regular intervals, so we need to check that
-        the current period is not being written to the log more than once."""
-
-        # Create a unique identifier for this logging period
-        if self.parameters['logging_frequency'] == 'day':
-            period_id = (self.sim.date.year, self.sim.date.month, self.sim.date.day)
-        elif self.parameters['logging_frequency'] == 'month':
-            period_id = (self.sim.date.year, self.sim.date.month)
-        else:  # year
-            period_id = (self.sim.date.year,)
-
-        if period_id in self._months_written_to_log:
-            return  # Skip if this period has already been logged
-
+    def collect_stats_and_write_to_log(self):
+        """Write disease numbers to the log."""
         # Get population dataframe
         df = self.sim.population.props
 
         # Dictionary to collect all numbers
-        all_numbers = {}
+        all_stats = {}
 
         # Add basic population numbers
-        all_numbers[('Population', 'total')] = sum(df.is_alive)
-        all_numbers[('Population', 'by_age_and_sex')] = \
-            get_counts_by_sex_and_age_group(df, 'is_alive')
+        all_stats[('Population', 'total')] = sum(df.is_alive)
+        all_stats[('Population', 'by_age_and_sex')] = get_counts_by_sex_and_age_group(df, 'is_alive')
 
         # Collect numbers from each registered disease module
-        for module in self.registered_modules:
+        for module in self._registered_modules:
             try:
-                stats = module.report_disease_numbers()
-
-                if not isinstance(stats, dict):
-                    logger.warning(
-                        key='warning',
-                        data=f'Module {module.name} returned non-dict from report_disease_numbers(). '
-                             f'Got {type(stats).__name__} instead.'
-                    )
-                    continue
+                stats: Dict = module.report_disease_numbers()
 
                 # Add module name as prefix to all numbers
                 for key, value in stats.items():
                     # Validate that the value is in an acceptable format
                     validated_value = self._validate_stat_value(module.name, key, value)
                     if validated_value is not None:
-                        all_numbers[(module.name, key)] = validated_value
+                        all_stats[(module.name, key)] = validated_value
 
             except Exception as e:
                 logger.warning(
@@ -243,9 +201,9 @@ class DiseaseNumbers(Module):
 
         # Convert to multi-index series and log
         multi_index_series = pd.Series(
-            all_numbers,
+            all_stats,
             index=pd.MultiIndex.from_tuples(
-                all_numbers.keys(),
+                all_stats.keys(),
                 names=['Module', 'Statistic']
             )
         )
@@ -255,9 +213,6 @@ class DiseaseNumbers(Module):
             description='Disease prevalence and incidence numbers from all registered modules',
             data=flatten_multi_index_series_into_dict_for_logging(multi_index_series)
         )
-
-        # Mark this period as logged
-        self._months_written_to_log.append(period_id)
 
 
 class DiseasenumbersLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -271,9 +226,6 @@ class DiseasenumbersLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         """Collect numbers from all registered modules and log them."""
-        # Do nothing if no disease modules are registered
-        if not self.module.registered_modules:
-            return
 
-        # Call the write_to_log method to handle the logging
-        self.module.write_to_log()
+        # Call the method to collect the statistics and do the logging
+        self.module.collect_stats_and_write_to_log()
