@@ -39,14 +39,17 @@ import datetime
 import os
 from collections import defaultdict
 from pathlib import Path
+from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from typing import Optional, List
 
+from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios import (
+    generate_alternative_availability_scenarios,
+    generate_descriptive_consumable_availability_plots,
+)
 from tlo.methods.consumables import check_format_of_consumables_file
-from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios import generate_alternative_availability_scenarios, generate_descriptive_consumable_availability_plots
 
 # Set local shared folder source
 path_to_share = Path(  # <-- point to the shared folder

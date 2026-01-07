@@ -45,9 +45,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-#from plotnine import aes, element_text, geom_bar, ggplot, labs, theme, ylim  # for ggplots from R
 
 from tlo.methods.consumables import check_format_of_consumables_file
+
+#from plotnine import aes, element_text, geom_bar, ggplot, labs, theme, ylim  # for ggplots from R
+
 
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
