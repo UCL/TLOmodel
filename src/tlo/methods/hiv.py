@@ -1246,7 +1246,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.item_codes_for_consumables_required['First line ART regimen: older child'] = \
             hs.get_item_code_from_item_name("First line ART regimen: older child")
         self.item_codes_for_consumables_required['First line ART regimen: older child: cotrimoxazole'] = \
-            hs.get_item_code_from_item_name("Cotrimoxazole 120mg_1000_CMST")
+            hs.get_item_code_from_item_name("Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml")
 
         # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
         # ABC/3TC/DTG 120/60/10mg, 2 tablets per day
@@ -1254,7 +1254,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.item_codes_for_consumables_required['First line ART regimen: young child'] = \
             hs.get_item_code_from_item_name("First line ART regimen: young child")
         self.item_codes_for_consumables_required['First line ART regimen: young child: cotrimoxazole'] = \
-            hs.get_item_code_from_item_name("Cotrimoxazole 120mg_1000_CMST")
+            hs.get_item_code_from_item_name("Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml")
 
         # 7) Define the DxTests
         # HIV Rapid Diagnostic Test:
