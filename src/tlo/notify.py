@@ -66,6 +66,15 @@ class Notifier:
         e.g. if you are running multiple tests or simulations in the same process.
         """
         self.listeners.clear()
+        
+    def has_listeners(self, notification_key):
+        """
+        Check if there are any listeners registered for a specific notification.
+
+        :param notification_key: The identifier to check.
+        :return: True if there are listeners, False otherwise.
+        """
+        return notification_key in self.listeners and len(self.listeners[notification_key]) > 0
 
 
 # Create a global notifier instance

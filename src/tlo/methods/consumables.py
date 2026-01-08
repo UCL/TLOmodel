@@ -287,7 +287,7 @@ class Consumables:
                                                              override_probability=override_probability)
 
         # Log the request and the outcome:
-        if to_log or 'IndividualHistoryTracker' in self.sim.modules:
+        if to_log or notifier.has_listeners('consumables.on-request_consumables'):
             items_available = {k: v for k, v in _all_item_codes.items() if available[k]}
             items_not_available = {k: v for k, v in _all_item_codes.items() if not available[k]}
 
@@ -311,7 +311,7 @@ class Consumables:
                     items_used=items_used,
                 )
             
-            notifier.dispatch("consumables.on_request-consumables", data={'target' : target, 'event_name' : event_name, 'Item_Available': str(items_available),'Item_NotAvailable': str(items_not_available), 'Item_Used': str(items_used)})
+            notifier.dispatch("consumables.on-request_consumables", data={'target' : target, 'event_name' : event_name, 'Item_Available': str(items_available),'Item_NotAvailable': str(items_not_available), 'Item_Used': str(items_used)})
 
         # Return the result of the check on availability
         return available
