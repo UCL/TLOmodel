@@ -45,7 +45,7 @@ class IndividualHistoryTracker(Module):
     }
     
     PROPERTIES = {
-        "track_history": Property(Types.BOOL, "Whether the individual should be tracked by the individual history tracker or not")
+        "iht_track_history": Property(Types.BOOL, "Whether the individual should be tracked by the individual history tracker or not")
     }
 
     def initialise_simulation(self, sim):
@@ -76,10 +76,10 @@ class IndividualHistoryTracker(Module):
             
         # Initialise all individuals as being tracked by default
         pop = self.sim.population.props
-        pop.loc[pop.is_alive, "track_history"] = True
+        pop.loc[pop.is_alive, "iht_track_history"] = True
 
     def on_birth(self, mother, child):
-        self.sim.population.props.at[child, "track_history"] = True
+        self.sim.population.props.at[child, "iht_track_history"] = True
         return
         
     def copy_of_pop_dataframe(self):
@@ -225,7 +225,7 @@ class IndividualHistoryTracker(Module):
             row_after = self.copy_of_pop_dataframe_row(data['target'])
 
             # If individual qualified for the 'tracked' category either before OR after the event occurred, the event will be logged:
-            if self.row_before['track_history'] or row_after['track_history']:
+            if self.row_before['iht_track_history'] or row_after['iht_track_history']:
             
                 # Create and store event for this individual, regardless of whether any property change occurred
                 link_info = {'event_name' : data['event_name']}
@@ -380,7 +380,7 @@ class IndividualHistoryTracker(Module):
         assert df_before.index.equals(df_after.index), "Indices are not identical!"
         assert df_before.columns.equals(df_after.columns), "Columns of df_before and df_after do not match!"
 
-        mask_of_tracked_individuals = df_before['track_history'] | df_after['track_history']
+        mask_of_tracked_individuals = df_before['iht_track_history'] | df_after['iht_track_history']
         set_of_tracked_individuals = set(mask_of_tracked_individuals.index[mask_of_tracked_individuals])
         
         # Only keep those individuals in dataframes
