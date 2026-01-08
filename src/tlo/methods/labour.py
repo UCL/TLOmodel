@@ -2651,7 +2651,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             logger.debug(key='message', data=f'person {individual_id} has experienced an intrapartum still birth')
 
             random_draw = self.module.rng.random_sample()
-            self.intrapartum_stillbirth_since_last_reset += 1
+            self.module.intrapartum_stillbirth_since_last_reset += 1
             # If this woman will experience a stillbirth and she was not pregnant with twins OR she was pregnant with
             # twins but both twins have died during labour we reset/set the appropriate variables
             if not df.at[individual_id, 'ps_multiple_pregnancy'] or \
