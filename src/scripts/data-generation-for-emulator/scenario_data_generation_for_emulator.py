@@ -27,68 +27,35 @@ from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
 module_of_interest ='CervicalCancer'
 N_param_combo = 10
 
-def sample_param_combo:
+def sample_param_combo():
 
         # For each N_param_combo, which will constitute a draw, the plan is to create a param combination, that will include "service_availability" to be passed to the HealthSystem and param rescaling to be passed to the module
         # keys: draw number, value = dictionary where key: parameter name, value: new parameter value
-        parameter_combinations = {}
+        parameter_draws = {}
         
         # First collect all module-specific treatments
         treatments = get_filtered_treatment_ids(depth=2)
         treatments_in_module = [item for item in treatments if module_of_interest in item]
         
-        
+        # For all param combos/draws, create a dictionary of parameter combinations
         for draw in [0,N_param_combo]:
             
             # Create a service availability scenario for this draw. Module treatments are included with a 50/50 probability
+            # TO DO: better handle on random seed here
             selected_treatments = [x for x in treatments_in_module if random.random() < 0.5]
-            parameter_combinations[draw] = {'service_availability': selected_treatments}
+            parameter_draws[draw] = {'service_availability': selected_treatments}
             
             # Sample module parameter combination
-            # 1. Retreive module parameters
+            parameters = pd.read_csv('resources/ResourceFile_Cervical_Cancer/parameter_values.csv')
+            print(parameters)
+            exit(-1)
             
             # 2. Eliminate those labelled 'scenario'
             # 3. For every other parameter, sample a rescaling between 0 and 1
             # parameter_combinations[draw] = {'parameter': 'new_parameter_value'}
-        return service_availability
+        return parameter_draws
 
 # TO DO: need to create custom make_cartesian_parameter_grid that combines parameter combos with treatments and consumables
-full_grid = make_cartesian_parameter_grid(
-    {
-        "module_of_interest": {
-            #1) # Should iterate over all parameters labelled as "free", as span them
-            # over prior
-            #2) Should combine with Service configuration, i.e. include N random combinations of services being included/excluded
-            #3) Should combine with different levels of relevant consumable availability
-            
-        
-            """
-            "scale_factor_delay_in_seeking_care_weather": [float(28)],
-            "rescaling_prob_seeking_after_disruption": [float(1)],
-            "rescaling_prob_disruption": [float(1)],
-            "scale_factor_severity_disruption_and_delay": [float(1)],
-            "mode_appt_constraints": [1],
-            "mode_appt_constraints_postSwitch": [2],
-            "cons_availability": ["default"],
-            "cons_availability_postSwitch": ["default"],
-            "year_cons_availability_switch": [YEAR_OF_CHANGE],
-            "beds_availability": ["default"],
-            "equip_availability": ["default"],
-            "equip_availability_postSwitch": ["default"],
-            "year_equip_availability_switch": [YEAR_OF_CHANGE],
-            "use_funded_or_actual_staffing": ["actual"],
-            "scale_to_effective_capabilities": [True],
-            "policy_name": ["Naive"],
-            "climate_ssp": ["ssp126", "ssp245", "ssp585"],
-            "year_effective_climate_disruptions": [2025],
-            "climate_model_ensemble_model": ["lowest", "mean", "highest"],
-            "services_affected_precip": ["all"],
-            "tclose_overwrite": [1000],
-            "prop_supply_side_disruptions": [0.5],
-            """
-        }
-    }
-)
 
 
 
@@ -155,5 +122,5 @@ class TrackIndividualHistories(BaseScenario):
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
-
+    sample_param_combo()
     scenario_run([__file__])
