@@ -311,7 +311,7 @@ class Consumables:
                     items_used=items_used,
                 )
             
-            notifier.dispatch("consumables.on-request_consumables", data={'target' : target, 'event_name' : event_name, 'Item_Available': str(items_available),'Item_NotAvailable': str(items_not_available), 'Item_Used': str(items_used)})
+            notifier.dispatch("consumables.on-request_consumables", data={'target' : target, 'module' : module, 'event_name' : event_name, 'Item_Available': str(items_available),'Item_NotAvailable': str(items_not_available), 'Item_Used': str(items_used)})
 
         # Return the result of the check on availability
         return available
