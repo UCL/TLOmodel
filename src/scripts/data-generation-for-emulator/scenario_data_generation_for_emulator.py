@@ -18,11 +18,11 @@ from typing import Dict
 import pandas as pd
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
+from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios, get_filtered_treatment_ids
 from tlo.methods import individual_history_tracker
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
-
+import random
 
 module_of_interest ='CervicalCancer'
 N_param_combo = 10
@@ -36,6 +36,11 @@ def sample_param_combo():
         # First collect all module-specific treatments
         treatments = get_filtered_treatment_ids(depth=2)
         treatments_in_module = [item for item in treatments if module_of_interest in item]
+            
+        # Retreive module parameters which are not scenario or design decisions
+        p = pd.read_csv('resources/ResourceFile_Cervical_Cancer/parameter_values.csv')
+        p = p.drop(p[p['param_label'] == 'scenario'].index)
+        p = p.drop(p[p['prior_note'] == 'design decision'].index)
         
         # For all param combos/draws, create a dictionary of parameter combinations
         for draw in [0,N_param_combo]:
@@ -44,10 +49,16 @@ def sample_param_combo():
             # TO DO: better handle on random seed here
             selected_treatments = [x for x in treatments_in_module if random.random() < 0.5]
             parameter_draws[draw] = {'service_availability': selected_treatments}
-            
-            # Sample module parameter combination
-            parameters = pd.read_csv('resources/ResourceFile_Cervical_Cancer/parameter_values.csv')
-            print(parameters)
+
+            for idx, row in p.iterrows():
+                val = row['value']
+                r = random.random()
+
+                if isinstance(val, pd.Series):
+                    row['value'] = np.array(val) * r
+                else:
+                    row['value'] = val * r
+            print(parameter_draws)
             exit(-1)
             
             # 2. Eliminate those labelled 'scenario'
