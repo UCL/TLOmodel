@@ -25,18 +25,31 @@ from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
 
 
 module_of_interest ='CervicalCancer'
-N_service_scenarios = 10
+N_param_combo = 10
 
-def sample_service_availability:
-        module_name = module_of_interest
-        treatments = get_filtered_treatment_ids(depth=2)
-        treatments_in_module = [item for item in treatments if module_name in item]
+def sample_param_combo:
+
+        # For each N_param_combo, which will constitute a draw, the plan is to create a param combination, that will include "service_availability" to be passed to the HealthSystem and param rescaling to be passed to the module
+        # keys: draw number, value = dictionary where key: parameter name, value: new parameter value
+        parameter_combinations = {}
         
-        service_availability = {}
-        for i in [0,N_service_scenarios]:
-            selected_treatments = [x for x in treatments_in_module if random.random() < 0.5]
-            service_availability = {i:selected_treatments}
+        # First collect all module-specific treatments
+        treatments = get_filtered_treatment_ids(depth=2)
+        treatments_in_module = [item for item in treatments if module_of_interest in item]
+        
+        
+        for draw in [0,N_param_combo]:
             
+            # Create a service availability scenario for this draw. Module treatments are included with a 50/50 probability
+            selected_treatments = [x for x in treatments_in_module if random.random() < 0.5]
+            parameter_combinations[draw] = {'service_availability': selected_treatments}
+            
+            # Sample module parameter combination
+            # 1. Retreive module parameters
+            
+            # 2. Eliminate those labelled 'scenario'
+            # 3. For every other parameter, sample a rescaling between 0 and 1
+            # parameter_combinations[draw] = {'parameter': 'new_parameter_value'}
         return service_availability
 
 # TO DO: need to create custom make_cartesian_parameter_grid that combines parameter combos with treatments and consumables
