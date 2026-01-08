@@ -5,7 +5,7 @@ This module collects and logs the number of individuals in each age group for ea
 """
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
