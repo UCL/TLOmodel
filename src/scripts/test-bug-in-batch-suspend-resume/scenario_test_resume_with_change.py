@@ -32,7 +32,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         self.pop_size = 20_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 3
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -62,16 +62,17 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         """
         
-        self.YEAR_OF_CHANGE = 2012
+        self.YEAR_OF_CHANGE = 2019
 
         return {
    
             # =========== STATUS QUO ============
+
             "Baseline":
                 mix_scenarios(
                     self._baseline(),
                 ),
-
+            
             "Mode 2 no rescaling":
                 mix_scenarios(
                     self._baseline(),
@@ -81,30 +82,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
- 
-             "Mode 2 with rescaling":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
-                        "scale_to_effective_capabilities": True,
-                      },
-                    }
-                ),
- 
-            "Mode 2 with rescaling and funded plus":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
-                        "scale_to_effective_capabilities": True,
-                        "use_funded_or_actual_staffing_postSwitch": "funded_plus",
-                      },
-                    }
-                ),
- 
+                
             "Mode 1 perfect consumables":
                 mix_scenarios(
                     self._baseline(),
@@ -114,8 +92,43 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
-
         }
+        """
+         "Mode 2 with rescaling":
+            mix_scenarios(
+                self._baseline(),
+                {
+                 "HealthSystem": {
+                    "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
+                    "scale_to_effective_capabilities": True,
+                  },
+                }
+            ),
+
+        "Mode 2 with rescaling and funded plus":
+            mix_scenarios(
+                self._baseline(),
+                {
+                 "HealthSystem": {
+                    "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
+                    "scale_to_effective_capabilities": True,
+                    "use_funded_or_actual_staffing_postSwitch": "funded_plus",
+                  },
+                }
+            ),
+
+        "Mode 1 perfect consumables":
+            mix_scenarios(
+                self._baseline(),
+                {
+                 "HealthSystem": {
+                    "cons_availability_postSwitch":"perfect",
+                  },
+                }
+            ),
+        """
+
+
 
     def _baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
