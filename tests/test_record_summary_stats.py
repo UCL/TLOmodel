@@ -146,6 +146,7 @@ def test_basic_mechanics_with_dummy_disease(tmpdir, seed):
 
     sim.make_initial_population(n=popsize)
     sim.modules['RecordSummaryStats'].parameters['logging_frequency'] = 'month'
+    sim.modules['RecordSummaryStats'].parameters['do_checks'] = True
     sim.simulate(end_date=end_date)
     output = parse_log_file(sim.log_filepath)
 
@@ -174,6 +175,7 @@ def test_run_with_real_diseases(tmpdir, seed):
     sim.register(*fullmodel(use_simplified_births=False), RecordSummaryStats())
     sim.make_initial_population(n=popsize)
     sim.modules['RecordSummaryStats'].parameters['logging_frequency'] = 'day'
+    sim.modules['RecordSummaryStats'].parameters['do_checks'] = True
     sim.simulate(end_date=end_date)
     output = parse_log_file(sim.log_filepath)
 

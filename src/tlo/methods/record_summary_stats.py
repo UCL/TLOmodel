@@ -7,6 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Types, logging
@@ -36,6 +37,10 @@ class RecordSummaryStats(Module):
             Types.STRING,
             'Frequency at which to collect numbers: "day", "month", or "year"'
         ),
+        'do_checks': Parameter(
+            Types.BOOL,
+            'Whether to check that the collected statistics are valid'
+        )
     }
 
     PROPERTIES = {}
@@ -43,6 +48,9 @@ class RecordSummaryStats(Module):
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameters for the module."""
         self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath / 'ResourceFile_RecordSummaryStats.csv'))
+
+        if not isinstance(self.parameters['do_checks'], bool):
+            raise ValueError(f"Invalid value for do_checks - it must be a bool: {self.parameters['do_checks']}")
 
     def initialise_population(self, population):
         pass
@@ -93,78 +101,60 @@ class RecordSummaryStats(Module):
     def on_birth(self, mother_id, child_id):
         pass
 
-    def _validate_stat_value(self, module_name: str, key: str, value: Any):
+    def _check_stats(self, d: Dict) -> None:
         """
         Validate that a statistic value is in an acceptable format for logging.
 
-        Acceptable formats:
-        - Scalar values (int, float, str, bool)
-        - pd.Series with a MultiIndex (for age/sex stratified data)
-        - dict with scalar values or nested dicts with scalar values
+        This should be a dict of the form {statistic: value}, where statistic is a string
+        and value can be a numerical value (including numpy types) or a dict (or nested dict).
 
-        Returns the validated value, or None if invalid (with a warning logged).
+        Returns nothing, but raises Error if any problem
         """
 
-        # Scalar values are fine
-        if isinstance(value, (int, float, str, bool, type(None))):
-            return value
+        # Check that input is a dict
+        if not isinstance(d, dict):
+            raise TypeError(f"Expected dict, got {type(d).__name__}")
 
-        # numpy scalar types
-        if hasattr(value, 'item') and callable(value.item):
-            try:
-                return value.item()
-            except (ValueError, AttributeError):
-                pass
+        # Check that all keys are strings
+        for key in d.keys():
+            if not isinstance(key, str):
+                raise TypeError(f"All keys must be strings, found key of type {type(key).__name__}")
 
-        # pd.Series with MultiIndex is acceptable (will be flattened later)
-        if isinstance(value, pd.Series):
-            if isinstance(value.index, pd.MultiIndex):
-                return value
-            else:
-                # Single-level index Series - convert to dict
-                return value.to_dict()
+        # Check that all values are valid types (recursively for nested dicts)
+        def _check_value(value, path=""):
+            # Acceptable scalar types
+            if isinstance(value, (int, float, str, bool)):
+                return
 
-        # Dict is acceptable if all values are scalars or nested dicts with scalars
-        if isinstance(value, dict):
-            validated_dict = {}
-            for k, v in value.items():
-                if isinstance(v, (int, float, str, bool, type(None))):
-                    validated_dict[k] = v
-                elif hasattr(v, 'item') and callable(v.item):
-                    # numpy scalar
-                    try:
-                        validated_dict[k] = v.item()
-                    except (ValueError, AttributeError):
-                        validated_dict[k] = v
-                elif isinstance(v, dict):
-                    # Nested dict - validate recursively
-                    nested_valid = self._validate_stat_value(module_name, f"{key}.{k}", v)
-                    if nested_valid is not None:
-                        validated_dict[k] = nested_valid
-                else:
-                    logger.warning(
-                        key='warning',
-                        data=f'Module {module_name} returned invalid nested value type '
-                             f'{type(v).__name__} for key {key}.{k}'
-                    )
-            return validated_dict
+            # Numpy scalar types
+            if isinstance(value, np.generic):
+                return
 
-        # DataFrame is NOT acceptable - this is likely the source of the error
-        if isinstance(value, pd.DataFrame):
-            logger.warning(
-                key='warning',
-                data=f'Module {module_name} returned a DataFrame for key "{key}". '
-                     f'DataFrames are not supported. Please return a dict or pd.Series instead.'
+            # Check if it has an item() method (numpy scalars)
+            if hasattr(value, 'item') and callable(value.item):
+                try:
+                    value.item()
+                    return
+                except (ValueError, AttributeError):
+                    pass
+
+            # Dict types - recursively validate
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    if not isinstance(k, str):
+                        raise TypeError(f"All dict keys must be strings at path '{path}', found {type(k).__name__}")
+                    _check_value(v, path=f"{path}.{k}" if path else k)
+                return
+
+            # If we get here, the type is not acceptable
+            raise TypeError(
+                f"Invalid value type {type(value).__name__} at path '{path}'. "
+                f"Expected int, float, str, bool, numpy scalar, or dict."
             )
-            return None
 
-        # Unknown type - warn and skip
-        logger.warning(
-            key='warning',
-            data=f'Module {module_name} returned unsupported type {type(value).__name__} '
-                 f'for key "{key}". Expected scalar, dict, or pd.Series with MultiIndex.'
-        )
-        return None
+        # Validate all values in the dict
+        for key, value in d.items():
+            _check_value(value, path=key)
 
     def collect_stats_and_write_to_log(self):
         """Write disease numbers to the log."""
@@ -185,12 +175,10 @@ class RecordSummaryStats(Module):
             try:
                 stats: Dict = module.report_summary_stats()
 
-                # Add module name as prefix to all numbers
-                for key, value in stats.items():
-                    # Validate that the value is in an acceptable format
-                    validated_value = self._validate_stat_value(module.name, key, value)
-                    if validated_value is not None:
-                        all_stats[module.name].update({key: validated_value})
+                if self.parameters['do_checks']:
+                    self._check_stats(stats)
+
+                all_stats[module.name].update(stats)
 
             except Exception as e:
                 logger.warning(
