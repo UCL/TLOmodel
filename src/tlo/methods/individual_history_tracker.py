@@ -34,6 +34,8 @@ class IndividualHistoryTracker(Module):
         self.entire_mni_before = {}
         self.consumable_access = {}
 
+    INIT_DEPENDENCIES = {"Demography"}
+
     PARAMETERS = {
         # Options within module
         "modules_of_interest": Parameter(
