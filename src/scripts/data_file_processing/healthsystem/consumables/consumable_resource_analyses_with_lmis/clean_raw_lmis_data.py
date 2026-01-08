@@ -699,6 +699,8 @@ def update_availability_for_substitutable_consumables(_df, groupby_list):
     columns_to_preserve = []
 
     # Define aggregation function to be applied to collapse data by item
+    _df[columns_to_sum] = _df[columns_to_sum].apply(pd.to_numeric, errors='coerce')
+    _df[columns_to_multiply] = _df[columns_to_multiply].apply(pd.to_numeric, errors='coerce')
     def custom_agg_stkout(x):
         if x.name in columns_to_multiply:
             return x.prod(skipna=True) if np.any(
@@ -760,6 +762,8 @@ def collapse_stockout_data(_df, groupby_list, var):
     columns_to_sum = ['closing_bal', 'average_monthly_consumption', 'dispensed', 'qty_received']
     columns_to_preserve = ['data_source']
 
+    _df[columns_to_sum] = _df[columns_to_sum].apply(pd.to_numeric, errors='coerce')
+    _df[columns_to_multiply] = _df[columns_to_multiply].apply(pd.to_numeric, errors='coerce')
     # Define aggregation function to be applied to collapse data by item
     def custom_agg_stkout(x):
         if x.name in columns_to_multiply:
@@ -836,22 +840,202 @@ tlo_cons_availability.to_pickle(figurespath / "tlo_cons_availability.pkl")
 #tlo_cons_availability = pd.read_pickle(figurespath / "tlo_cons_availability.pkl")
 tlo_cons_availability['year_month'] = tlo_cons_availability['year'].astype(str) + "_" +  tlo_cons_availability['month'].astype(str) # concatenate month and year for plots
 
-availability_summary = tlo_cons_availability.groupby(['year', 'month', 'district', 'fac_level', 'module_name', 'consumable_name_tlo']).agg({
+availability_summary = tlo_cons_availability.groupby(['year', 'month', 'district', 'fac_level', 'module_name', 'item_code', 'consumable_name_tlo']).agg({
     'available_prob': 'mean',  # Mean of available_prop
     'closing_bal': 'sum',      # Sum of closing_bal
     'average_monthly_consumption': 'sum'  # Sum of average_monthly_consumption
 }).reset_index()
+
 availability_summary.to_csv(figurespath / 'availability_summary.csv')
+
+# Prepare data in the format required by the model
+def format_for_tlo_model(availability_df, resourcefilepath):
+    mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+    districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
+    fac_levels = {'0', '1a', '1b', '2', '3', '4'}
+
+    #
+
+    sf = availability_df[['item_code', 'year', 'month', 'district', 'fac_level', 'available_prob']].dropna()
+    sf.loc[sf.month == 'Aggregate', 'month'] = 'January'  # Assign arbitrary month to data only available at aggregate level
+    sf.loc[sf.district == 'Aggregate', 'district'] = 'Balaka'
+        # Assign arbitrary district to data only available at # aggregate level
+    sf.item_code = sf.item_code.astype(int)
+
+    # Do some mapping to make the Districts line-up with the definition of Districts in the model
+    rename_and_collapse_to_model_districts = {
+        'Nkhota Kota': 'Nkhotakota',
+        'Mzimba South': 'Mzimba',
+        'Mzimba North': 'Mzimba',
+        'Nkhata bay': 'Nkhata Bay',
+    }
+
+    sf['district_std'] = sf['district'].replace(rename_and_collapse_to_model_districts)
+    # Take averages (now that 'Mzimba' is mapped-to by both 'Mzimba South' and 'Mzimba North'.)
+    sf = sf.groupby(by=['district_std', 'fac_level', 'year', 'month', 'item_code'])['available_prob'].mean().reset_index()
+
+    # Fill in missing data:
+    # 1) Cities to get same results as their respective regions
+    copy_source_to_destination = {
+        'Mzimba': 'Mzuzu City',
+        'Lilongwe': 'Lilongwe City',
+        'Zomba': 'Zomba City',
+        'Blantyre': 'Blantyre City'
+    }
+
+    for source, destination in copy_source_to_destination.items():
+        new_rows = sf.loc[sf.district_std == source].copy()
+        new_rows.district_std = destination
+        sf = pd.concat([sf, new_rows], axis=0, ignore_index=True)
+
+    # 2) Fill in Likoma (for which no data) with the means
+    means = sf.loc[sf.fac_level.isin(['1a', '1b', '2'])].groupby(by=['fac_level', 'year', 'month', 'item_code'])[
+        'available_prob'].mean().reset_index()
+    new_rows = means.copy()
+    new_rows['district_std'] = 'Likoma'
+    sf = pd.concat([sf, new_rows], axis=0, ignore_index=True)
+
+    assert sorted(set(districts)) == sorted(set(pd.unique(sf.district_std)))
+
+    # 3) copy the results for 'Mwanza/1b' to be equal to 'Mwanza/1a'.
+    mwanza_1a = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_level == '1a')]
+    mwanza_1b = mwanza_1a.copy().assign(fac_level='1b')
+    sf = pd.concat([sf, mwanza_1b], axis=0, ignore_index=True)
+
+    # 4) Copy all the results to create a level 0 with an availability equal to half that in the respective 1a
+    all_1a = sf.loc[sf.fac_level == '1a']
+    all_0 = sf.loc[sf.fac_level == '1a'].copy().assign(fac_level='0')
+    all_0.available_prob *= 0.5
+    sf = pd.concat([sf, all_0], axis=0, ignore_index=True)
+
+    # Now, merge-in facility_id
+    sf_merge = sf.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
+                        left_on=['district_std', 'fac_level'],
+                        right_on=['District', 'Facility_Level'], how='left', indicator=True)
+
+    # 5) Assign the Facility_IDs for those facilities that are regional/national level;
+    # For facilities of level 3, find which region they correspond to:
+    districts_with_regional_level_fac = pd.unique(sf_merge.loc[sf_merge.fac_level == '3'].district_std)
+    district_to_region_mapping = dict()
+    for _district in districts_with_regional_level_fac:
+        _region = mfl.loc[mfl.District == _district].Region.values[0]
+        _fac_id = mfl.loc[(mfl.Facility_Level == '3') & (mfl.Region == _region)].Facility_ID.values[0]
+        sf_merge.loc[(sf_merge.fac_level == '3') & (sf_merge.district_std == _district), 'Facility_ID'] = _fac_id
+
+    # National Level
+    fac_id_of_fac_level4 = mfl.loc[mfl.Facility_Level == '4'].Facility_ID.values[0]
+    sf_merge.loc[sf_merge.fac_level == '4', 'Facility_ID'] = fac_id_of_fac_level4
+
+    # Now, take averages because more than one set of records is forming the estimates for the level 3 facilities
+    sf_final = sf_merge.groupby(by=['Facility_ID', 'year', 'month', 'item_code'])['available_prob'].mean().reset_index()
+    sf_final.Facility_ID = sf_final.Facility_ID.astype(int)
+
+    return sf_final
+
+availability_summary = format_for_tlo_model(availability_summary, resourcefilepath)
 
 # %%
 # 6. FILL GAPS USING HHFA SURVEY DATA OR ASSUMPTIONS ##
 #######################################################
-# TODO as done in the consumable_availability_estimation.py script, missing values need to be substituted for which assumptions or HHFA data
+# TODO as done in the consumable_availability_estimation.py script, missing values need to be substituted for
+#  which assumptions or HHFA data, if the multi-year data is used to generate consumable availability
 
 # TO create the following figures
 # Bar chart of number of months during which each consumable was reported before and after cleaning names
 # List of new consumables which are reported from 2020 onwards
 # Monthly availability plots for each year of data (heat map - program on the x-axis, month on the y-axis - one for each year)
+
+# %%
+# Construct dataset that conforms to the principles expected by the simulation: i.e. that there is an entry for every
+# facility_id and for every month for every item_code.
+mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+
+# Generate the dataframe that has the desired size and shape
+fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
+item_codes = set(availability_summary.item_code.unique())
+months = range(1, 13)
+years = sorted(availability_summary.year.unique())   # <-- NEW
+
+full_set = pd.Series(
+    index=pd.MultiIndex.from_product(
+        [fac_ids, years, months, item_codes],
+        names=['Facility_ID', 'year', 'month', 'item_code']
+    ),
+    data=np.nan,
+    name='available_prob'
+)
+
+# Insert observed data
+full_set = full_set.combine_first(
+    availability_summary.set_index(['Facility_ID', 'year', 'month', 'item_code'])['available_prob']
+)
+
+# Fill in the blanks with rules for interpolation.
+facilities_by_level = defaultdict(set)
+for ix, row in mfl.iterrows():
+    facilities_by_level[row['Facility_Level']].add(row['Facility_ID'])
+
+
+def get_other_facilities_of_same_level(_fac_id):
+    """Return a set of facility_id for other facilities that are of the same level as that provided."""
+    for v in facilities_by_level.values():
+        if _fac_id in v:
+            return v - {_fac_id}
+
+
+def interpolate_missing_with_mean(_ser):
+    """Return a series in which any values that are null are replaced with the mean of the non-missing."""
+    if pd.isnull(_ser).all():
+        raise ValueError
+    return _ser.fillna(_ser.mean())
+
+
+# Create new dataset that include the interpolations (The operation is not done "in place", because the logic is based
+# on what results are missing before the interpolations in other facilities).
+full_set_interpolated = full_set * np.nan
+
+for fac in fac_ids:
+    for item in item_codes:
+        for yr in years:
+
+            print(f"Now doing: fac={fac}, year={yr}, item={item}")
+
+            # Records for this facility–year–item across months
+            _monthly_records = full_set.loc[
+                (fac, yr, slice(None), item)
+            ].copy()
+
+            if pd.notnull(_monthly_records).any():
+                # Interpolate across months within the same year
+                _monthly_records = interpolate_missing_with_mean(_monthly_records)
+
+            else:
+                # Look at other facilities of the same level IN THE SAME YEAR
+                facilities = list(get_other_facilities_of_same_level(fac))
+
+                if facilities:
+                    other_fac_records = full_set.loc[
+                        (facilities, yr, slice(None), item)
+                    ]
+
+                    recorded_elsewhere = pd.notnull(other_fac_records).any()
+
+                    if recorded_elsewhere:
+                        # Mean by month across facilities (same year)
+                        _monthly_records = interpolate_missing_with_mean(
+                            other_fac_records.groupby(level='month').mean()
+                        )
+                    else:
+                        _monthly_records = _monthly_records.fillna(0.0)
+                else:
+                    _monthly_records = _monthly_records.fillna(0.0)
+
+            full_set_interpolated.loc[
+                (fac, yr, slice(None), item)
+            ] = _monthly_records.values
+
+# Check that there are not missing values
+assert not pd.isnull(full_set_interpolated).any().any()
 
 # %%
 # 7. DATA VISUALISATION ##
@@ -861,9 +1045,36 @@ availability_summary.to_csv(figurespath / 'availability_summary.csv')
 # List of new consumables which are reported from 2020 onwards
 # Monthly availability plots for each year of data (heat map - program on the x-axis, month on the y-axis - one for each year)
 
+tlo_cons_availability = full_set_interpolated.reset_index()
+
+tlo_cons_availability.to_csv(
+    outputfilepath / "consumable_availability_over_time.csv",
+    index=False
+)
+
+# Merge in level and item_category again
+# Import item_category
+def merge_program_and_fac_level(availability_df, resourcefilepath):
+    program_item_mapping = pd.read_csv(resourcefilepath /"healthsystem" / "consumables"/ 'ResourceFile_Consumables_Item_Designations.csv')[['Item_Code', 'item_category', 'is_diagnostic', 'is_medicine', 'is_vital', 'is_drug_or_vaccine']]
+    program_item_mapping = program_item_mapping.rename(columns ={'Item_Code': 'item_code'})[program_item_mapping.item_category.notna()]
+
+    # 1.1.1 Attach district,  facility level and item_category to this dataset
+    #----------------------------------------------------------------
+    # Get TLO Facility_ID for each district and facility level
+    mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+    availability_df = availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
+                        on = ['Facility_ID'], how='left')
+
+    availability_df = availability_df.merge(program_item_mapping,
+                        on = ['item_code'], how='left')
+
+    return availability_df
+
+tlo_cons_availability = merge_program_and_fac_level(tlo_cons_availability, resourcefilepath)
+
 # Average heatmaps by level (how has availability change across years)
 generate_summary_heatmap(_df = tlo_cons_availability,
-                         x_var = 'fac_level',
+                         x_var = 'Facility_Level',
                          y_var = 'year',
                          value_var = 'available_prob',
                          value_label = 'Average Pr(availability)',
@@ -871,7 +1082,7 @@ generate_summary_heatmap(_df = tlo_cons_availability,
 
 # Average heatmaps by MODULE (how has availability change across years)
 generate_summary_heatmap(_df = tlo_cons_availability,
-                         x_var = 'module_name',
+                         x_var = 'item_category',
                          y_var = 'year',
                          value_var = 'available_prob',
                          value_label = 'Average Pr(availability)',
@@ -879,68 +1090,29 @@ generate_summary_heatmap(_df = tlo_cons_availability,
 
 # Average heatmaps by district (how has availability change across years)
 generate_summary_heatmap(_df = tlo_cons_availability,
-                         x_var = 'district',
+                         x_var = 'District',
                          y_var = 'year',
                          value_var = 'available_prob',
                          value_label = 'Average Pr(availability)',
                          summary_func='mean')
 
-time_taken = time.time() - start # Record the number of seconds taken to complete this exercise
-print(f'Time: {time.time() - start}')
-
-# TODO INTERPOLATE FOR ALL MISSING DATA - see consumable_availability_estimation.py
-
 # Clean program names
 #----------------------------------------------------
-tlo_cons_availability = pd.read_pickle(figurespath / "6 Aug/tlo_cons_availability.pkl")
-# ---Generate new category variable for analysis --- #
-tlo_cons_availability['category'] = tlo_cons_availability['module_name'].str.lower()
-cond_RH = (tlo_cons_availability['category'].str.contains('care_of_women_during_pregnancy')) | \
-          (tlo_cons_availability['category'].str.contains('labour'))
-cond_newborn = (tlo_cons_availability['category'].str.contains('newborn'))
-cond_childhood = (tlo_cons_availability['category'] == 'acute lower respiratory infections') | \
-                 (tlo_cons_availability['category'] == 'measles') | \
-                 (tlo_cons_availability['category'] == 'diarrhoea')
-cond_rti = tlo_cons_availability['category'] == 'road traffic injuries'
-cond_cancer = tlo_cons_availability['category'].str.contains('cancer')
-cond_ncds = (tlo_cons_availability['category'] == 'epilepsy') | \
-            (tlo_cons_availability['category'] == 'depression')
-tlo_cons_availability.loc[cond_RH, 'category'] = 'reproductive_health'
-tlo_cons_availability.loc[cond_cancer, 'category'] = 'cancer'
-tlo_cons_availability.loc[cond_newborn, 'category'] = 'neonatal_health'
-tlo_cons_availability.loc[cond_childhood, 'category'] = 'other_childhood_illnesses'
-tlo_cons_availability.loc[cond_rti, 'category'] = 'road_traffic_injuries'
-tlo_cons_availability.loc[cond_ncds, 'category'] = 'ncds'
-
-cond_condom = tlo_cons_availability['item_code'] == 2
-tlo_cons_availability.loc[cond_condom, 'category'] = 'contraception'
-
-# Create a general consumables category
-general_cons_list = [300, 33, 57, 58, 141, 5, 6, 10, 21, 23, 127, 24, 80, 93, 144, 149, 154, 40, 67, 73, 76,
-                     82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247]
-cond_general = tlo_cons_availability['item_code'].isin(general_cons_list)
-tlo_cons_availability.loc[cond_general, 'category'] = 'general'
-
-# TODO try the analysis below with LMIS data instead
-
-# Add item designations and frequency of use
-item_designations = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_Consumables_Item_Designations.csv')
-item_designations = item_designations.rename(columns = {'Item_Code': 'item_code'})
-regression_df = pd.merge(tlo_cons_availability, item_designations, on = 'item_code', how = 'left', validate = "m:1")
-
+# Add frequency of use
 frequency_of_use = pd.read_csv(outputfilepath / 'openlmis_data/3_Table_Of_Frequency_Consumables_Requested.csv')
 frequency_of_use = frequency_of_use.rename(columns = {'Item_Code': 'item_code'})
 frequency_of_use = frequency_of_use[~frequency_of_use.item_code.duplicated(keep='first')]
-regression_df = pd.merge(regression_df, frequency_of_use, on = 'item_code', how = 'left', validate = "m:1")
-regression_df.loc[regression_df.rel_freq.notna(), 'priority_category'] = 'prioritised_consumables'
-regression_df.loc[regression_df.rel_freq.isna(), 'priority_category'] = 'other'
+tlo_cons_availability = pd.merge(tlo_cons_availability, frequency_of_use, on = 'item_code', how = 'left', validate = "m:1")
+tlo_cons_availability.loc[tlo_cons_availability.rel_freq.notna(), 'priority_category'] = 'prioritised_consumables'
+tlo_cons_availability.loc[tlo_cons_availability.rel_freq.isna(), 'priority_category'] = 'other'
 
+# TODO Check the following code
 frequency_of_use_perfect_availability = pd.read_csv(outputfilepath / 'openlmis_data/Table_Of_Frequency_Consumables_Requested_perfect_availability.csv')
 frequency_of_use_perfect_availability = frequency_of_use_perfect_availability.rename(columns = {'Item_Code': 'item_code', 'rel_freq': 'rel_freq_perfect'})
 frequency_of_use_perfect_availability = frequency_of_use_perfect_availability[~frequency_of_use_perfect_availability.item_code.duplicated(keep='first')]
-regression_df = pd.merge(regression_df, frequency_of_use_perfect_availability, on = 'item_code', how = 'left', validate = "m:1")
-regression_df.loc[regression_df['rel_freq_perfect'].isna(), 'rel_freq_perfect'] = 0
-regression_df['available_prob_weighted'] = (regression_df['available_prob'] * regression_df['rel_freq_perfect'])/regression_df['rel_freq_perfect'].sum()
+tlo_cons_availability = pd.merge(tlo_cons_availability, frequency_of_use_perfect_availability, on = 'item_code', how = 'left', validate = "m:1")
+tlo_cons_availability.loc[tlo_cons_availability['rel_freq_perfect'].isna(), 'rel_freq_perfect'] = 0
+tlo_cons_availability['available_prob_weighted'] = (tlo_cons_availability['available_prob'] * tlo_cons_availability['rel_freq_perfect'])/tlo_cons_availability['rel_freq_perfect'].sum()
 
 # Summary visualisations
 #----------------------------------------------------
@@ -987,58 +1159,60 @@ def visualise_time_trend(_df, group, stat, var = 'available_prob', figname_suffi
     plt.close()
 
 # Plot mean values
-visualise_time_trend(regression_df, 'category', 'mean', figname_suffix ='_FullData')
-visualise_time_trend(regression_df, 'fac_level', 'mean', figname_suffix ='_FullData')
-visualise_time_trend(regression_df, 'is_vital', 'mean', figname_suffix ='_FullData')
-visualise_time_trend(regression_df, 'priority_category', 'mean', figname_suffix ='_FullData')
+visualise_time_trend(tlo_cons_availability, 'item_category', 'mean', figname_suffix ='_FullData')
+visualise_time_trend(tlo_cons_availability, 'Facility_Level', 'mean', figname_suffix ='_FullData')
+visualise_time_trend(tlo_cons_availability, 'is_vital', 'mean', figname_suffix ='_FullData')
+visualise_time_trend(tlo_cons_availability, 'priority_category', 'mean', figname_suffix ='_FullData')
 
 # Plot median values
-visualise_time_trend(regression_df[['item_code', 'category', 'fac_name', 'available_prob', 'year']].groupby(['category','item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'category', 'median', figname_suffix ='_MonthlyDataCollapsed')
-visualise_time_trend(regression_df[['item_code', 'fac_level',  'fac_name', 'available_prob', 'year']].groupby(['fac_level', 'item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'fac_level', 'median', figname_suffix ='_MonthlyDataCollapsed')
-visualise_time_trend(regression_df[['item_code', 'is_vital',  'fac_name', 'available_prob', 'year']].groupby(['is_vital', 'item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'is_vital', 'median', figname_suffix ='_MonthlyDataCollapsed')
-visualise_time_trend(regression_df[['item_code', 'priority_category', 'fac_name', 'available_prob', 'year']].groupby(['priority_category','item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'priority_category', 'median', figname_suffix ='_MonthlyDataCollapsed')
+visualise_time_trend(tlo_cons_availability[['item_code', 'item_category', 'Facility_ID', 'available_prob', 'year']].groupby(['item_category','item_code', 'Facility_ID', 'year'])['available_prob'].mean().reset_index(), 'item_category', 'median', figname_suffix ='_MonthlyDataCollapsed')
+visualise_time_trend(tlo_cons_availability[['item_code', 'Facility_Level',  'Facility_ID', 'available_prob', 'year']].groupby(['Facility_Level', 'item_code', 'Facility_ID', 'year'])['available_prob'].mean().reset_index(), 'Facility_Level', 'median', figname_suffix ='_MonthlyDataCollapsed')
+visualise_time_trend(tlo_cons_availability[['item_code', 'is_vital',  'Facility_ID', 'available_prob', 'year']].groupby(['is_vital', 'item_code', 'Facility_ID', 'year'])['available_prob'].mean().reset_index(), 'is_vital', 'median', figname_suffix ='_MonthlyDataCollapsed')
+visualise_time_trend(tlo_cons_availability[['item_code', 'priority_category', 'Facility_ID', 'available_prob', 'year']].groupby(['priority_category','item_code', 'Facility_ID', 'year'])['available_prob'].mean().reset_index(), 'priority_category', 'median', figname_suffix ='_MonthlyDataCollapsed')
 
 # Plots by subsets
-hiv_subset = regression_df[(regression_df.category.isin(['hiv'])) & (regression_df.priority_category == 'prioritised_consumables')]
-tb_subset = regression_df[(regression_df.category.isin(['tb']))  & (regression_df.priority_category == 'prioritised_consumables')]
-malaria_subset = regression_df[(regression_df.category.isin(['malaria']))  & (regression_df.priority_category == 'prioritised_consumables')]
-visualise_time_trend(hiv_subset[['item_code', 'fac_level', 'fac_name', 'available_prob', 'year']].groupby(['fac_level','item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'fac_level', 'median', var = 'available_prob', figname_suffix = '_MonthlyDataCollapsed_HIV', subgroup = 'HIV - Prioritised consumables')
-visualise_time_trend(tb_subset[['item_code', 'fac_level', 'fac_name', 'available_prob', 'year']].groupby(['fac_level','item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'fac_level', 'median', var = 'available_prob', figname_suffix = '_MonthlyDataCollapsed_TB', subgroup = 'TB - Prioritised consumables')
-visualise_time_trend(malaria_subset[['item_code', 'fac_level', 'fac_name', 'available_prob', 'year']].groupby(['fac_level','item_code', 'fac_name', 'year'])['available_prob'].mean().reset_index(), 'fac_level', 'median', var = 'available_prob', figname_suffix = '_MonthlyDataCollapsed_Malaria', subgroup = 'Malaria - Prioritised consumables')
-visualise_time_trend(hiv_subset, 'fac_level', 'mean', var = 'available_prob', figname_suffix = '_FullData_HIV', subgroup = 'HIV - Prioritised consumables')
-visualise_time_trend(tb_subset, 'fac_level', 'mean', var = 'available_prob', figname_suffix = '_FullData_TB', subgroup = 'TB - Prioritised consumables')
-visualise_time_trend(malaria_subset, 'fac_level', 'mean', var = 'available_prob', figname_suffix = '_FullData_Malaria', subgroup = 'Malaria - Prioritised consumables')
+hiv_subset = tlo_cons_availability[(tlo_cons_availability.item_category.isin(['hiv'])) & (tlo_cons_availability.priority_category == 'prioritised_consumables')]
+tb_subset = tlo_cons_availability[(tlo_cons_availability.item_category.isin(['tb']))  & (tlo_cons_availability.priority_category == 'prioritised_consumables')]
+malaria_subset = tlo_cons_availability[(tlo_cons_availability.item_category.isin(['malaria']))  & (tlo_cons_availability.priority_category == 'prioritised_consumables')]
+visualise_time_trend(hiv_subset[['item_code', 'Facility_Level', 'Facility_ID', 'available_prob', 'year']].groupby(['Facility_Level','item_code', 'Facility_ID', 'year'])['available_prob'].mean().reset_index(), 'Facility_Level', 'median', var = 'available_prob', figname_suffix = '_MonthlyDataCollapsed_HIV', subgroup = 'HIV - Prioritised consumables')
+visualise_time_trend(tb_subset[['item_code', 'Facility_Level', 'Facility_ID', 'available_prob', 'year']].groupby(['Facility_Level','item_code', 'Facility_ID', 'year'])['available_prob'].mean().reset_index(), 'Facility_Level', 'median', var = 'available_prob', figname_suffix = '_MonthlyDataCollapsed_TB', subgroup = 'TB - Prioritised consumables')
+visualise_time_trend(malaria_subset[['item_code', 'Facility_Level', 'Facility_ID', 'available_prob', 'year']].groupby(['Facility_Level','item_code', 'Facility_ID', 'year'])['available_prob'].mean().reset_index(), 'Facility_Level', 'median', var = 'available_prob', figname_suffix = '_MonthlyDataCollapsed_Malaria', subgroup = 'Malaria - Prioritised consumables')
+visualise_time_trend(hiv_subset, 'Facility_Level', 'mean', var = 'available_prob', figname_suffix = '_FullData_HIV', subgroup = 'HIV - Prioritised consumables')
+visualise_time_trend(tb_subset, 'Facility_Level', 'mean', var = 'available_prob', figname_suffix = '_FullData_TB', subgroup = 'TB - Prioritised consumables')
+visualise_time_trend(malaria_subset, 'Facility_Level', 'mean', var = 'available_prob', figname_suffix = '_FullData_Malaria', subgroup = 'Malaria - Prioritised consumables')
 
 # Regression analysis
 #----------------------------------------------------
 # Theoretical Fully specified linear regression model
 # available_prob ~ year + month + HIV/TB/Malaria + fac_level + district + *eml* + *drug_or_consumable* + fac_level*year + district*year + eml*year + drug_or_consumable*year + HIV/TB/Malaria*year
 # Prepare data for regression analysis
-all_cols = ['available_prob', 'year', 'category', 'is_vital', 'fac_level', 'district', 'item_code', 'month', 'fac_name']
+all_cols = ['available_prob', 'year', 'item_category', 'is_vital', 'is_diagnostic', 'is_drug_or_vaccine', 'Facility_Level', 'District', 'item_code', 'month', 'Facility_ID']
 regression_cols = [col for col in all_cols if col != 'available_prob']
-regression_subset_df = regression_df[regression_df.priority_category == 'prioritised_consumables'][all_cols]
-regression_subset_df.to_csv(outputfilepath / 'openlmis_data/regression_subset_df.csv', index = False) # This data is then analysed on R
-regression_subset_df = regression_subset_df.groupby(regression_cols)['available_prob'].mean().reset_index()
-regression_subset_df = regression_subset_df.dropna()
+tlo_cons_availability = tlo_cons_availability[tlo_cons_availability.priority_category == 'prioritised_consumables'][all_cols]
+tlo_cons_availability.to_csv(outputfilepath / 'openlmis_data/regression_subset_df.csv', index = False) # This data is then analysed on R
+tlo_cons_availability = tlo_cons_availability.groupby(regression_cols)['available_prob'].mean().reset_index()
+tlo_cons_availability = tlo_cons_availability.dropna()
 
-"""
+
 # Linear model
 #-------------
 import statsmodels.formula.api as smf
-_df = regression_df
-model = smf.ols('available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + fac_level + district', data=_df).fit()
-# Print the summary of the regression
-print(model.summary())
+model1 = smf.ols('available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + Facility_Level + District', data=tlo_cons_availability).fit()
+print(model1.summary())
 # store model results in an excel file
-summary_df = pd.DataFrame(model.summary().tables[1])
+summary_df = pd.DataFrame(model1.summary().tables[1])
 writer = pd.ExcelWriter((figurespath / 'model_results.xlsx'), engine='xlsxwriter')
 # Store linear model results
 summary_df.to_excel(writer, sheet_name='linear_model', index=False)
-writer.save()
+writer._save()
 
-model = smf.ols('available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + fac_level + fac_level*year + district', data=_df).fit()
+model2 = smf.ols('available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + Facility_Level + Facility_Level*year + District', data=tlo_cons_availability).fit()
+print(model2.summary())
 
+model3 = smf.ols('available_prob ~ year', data=tlo_cons_availability).fit()
+print(model3.summary())
 
+"""
 # Mixed-effects model
 #---------------------
 # Mixed effects regression model (random effects for item)
