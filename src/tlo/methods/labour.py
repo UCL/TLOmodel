@@ -67,10 +67,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         self.possible_intrapartum_complications = list()
         self.possible_postpartum_complications = list()
 
-        # Dictionary that records stillbirths
-        self.stillbirth_dates = {
-             'stillbirth_date': pd.NaT
-         }
+        # Counter for number of still_births (is reset in calls to report_summary_stats)
+        self.intrapartum_stillbirth_since_last_reset = 0
 
         # Finally define a dictionary which will hold the required consumables for each intervention
         self.item_codes_lab_consumables = dict()
@@ -1139,22 +1137,18 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         """
         This function reports the prevalence of intrapartum stillbirth for this module generated in the previous month
         """
-        # Filter out non-dictionary values and entries where 'stillbirth_date' is None
-        stillbirths_happened = {
-            key: value for key, value in self.stillbirth_dates.items()
-            if isinstance(value, dict) and value.get('stillbirth_date') is not None
+
+        # Get the number of intrapartum still births since last call to this function
+        result_to_return = {
+            'number of intrapartum stillbirth since last report':
+                self.intrapartum_stillbirth_since_last_reset
         }
 
-        # Filter entries with valid 'stillbirth_date' that occurred in the last month
-        one_month_ago = self.sim.date - pd.DateOffset(months=1)
-        filtered_stillbirths = {
-            key: value for key, value in stillbirths_happened.items()
-            if isinstance(value.get('stillbirth_date'), pd.Timestamp) and value.get('stillbirth_date') >= one_month_ago
-        }
+        # Reset the counter
+        self.intrapartum_stillbirth_since_last_reset = 0
 
-        intrapartum_stillbirth_for_month = len(filtered_stillbirths)
-
-        return {'Intrapartum stillbirth': intrapartum_stillbirth_for_month}
+        # Return the result
+        return result_to_return
 
     # ===================================== HELPER AND TESTING FUNCTIONS ==============================================
     def set_date_of_labour(self, individual_id):
@@ -2657,7 +2651,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             logger.debug(key='message', data=f'person {individual_id} has experienced an intrapartum still birth')
 
             random_draw = self.module.rng.random_sample()
-            self.module.stillbirth_dates['stillbirth_date'] =  self.sim.date
+            self.intrapartum_stillbirth_since_last_reset += 1
             # If this woman will experience a stillbirth and she was not pregnant with twins OR she was pregnant with
             # twins but both twins have died during labour we reset/set the appropriate variables
             if not df.at[individual_id, 'ps_multiple_pregnancy'] or \
