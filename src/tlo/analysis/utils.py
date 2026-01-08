@@ -1469,7 +1469,8 @@ def flatten_nested_dict(my_dict, sep='_'):
 
 def get_counts_by_sex_and_age_group(df: pd.DataFrame, property: str, targets: Optional[Tuple[Any]|str] = None) -> dict:
     """Returns dict giving counts (by sex and age-group) of alive individuals with truthy
-    values for that property (if no `target` is provided) or with a value included in `targets` (if a `target` is provided).
+    values for that property (if no `target` is provided) or with a value included in `targets` (if a `target` is
+    provided).
 
     Returns: {sex: {age_group: count}}
     """
@@ -1480,7 +1481,9 @@ def get_counts_by_sex_and_age_group(df: pd.DataFrame, property: str, targets: Op
         ].groupby(['sex', 'age_range']).size().unstack(fill_value=0)
 
     elif isinstance(targets, tuple):
-        counts = df.loc[df.is_alive & df[property].isin(targets)].groupby(['sex', 'age_range']).size().unstack(fill_value=0)
+        counts = df.loc[
+            df.is_alive & df[property].isin(targets)
+        ].groupby(['sex', 'age_range']).size().unstack(fill_value=0)
 
     elif isinstance(targets, str):
         counts = df.loc[

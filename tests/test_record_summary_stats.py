@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Property, Simulation, Types
-from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
+from tlo.analysis.utils import parse_log_file
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography, enhanced_lifestyle, healthburden
 from tlo.methods.causes import Cause
@@ -157,7 +157,9 @@ def test_basic_mechanics_with_dummy_disease(tmpdir, seed):
     prevalence_from_actual_module = pd.Series(dummydisease.stored_prevalence)
 
     # Confirm they all give the same result
-    pd.testing.assert_series_equal(prev_in_diseasenumbers_in_summary_stats_logger, prevalence_from_actual_module, check_names=False)
+    pd.testing.assert_series_equal(prev_in_diseasenumbers_in_summary_stats_logger,
+                                   prevalence_from_actual_module,
+                                   check_names=False)
 
 
 def test_run_with_real_diseases(tmpdir, seed):
