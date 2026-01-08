@@ -92,7 +92,8 @@ def test_individual_history_tracker(tmpdir, seed):
     mask = individual_histories["event_name"].isin(["Birth", "StartOfSimulation"])
     assert individual_histories.loc[mask, "Info"].apply(len).eq(num_properties).all()
 
-    # Assert that all HSI events that occurred were also collected in the event chains. Do not include Inpatient_Care HSIs, as these
+    # Assert that all HSI events that occurred were also collected in the event chains.
+    # Do not include Inpatient_Care HSIs, as these
     # are not currently treated as being individual-specific
     Num_of_HSIs_in_individual_histories = individual_histories["event_name"].str.contains('HSI', na=False).sum()
     Num_of_HSIs_in_hs_log = len(output['tlo.methods.healthsystem']['HSI_Event'].loc[

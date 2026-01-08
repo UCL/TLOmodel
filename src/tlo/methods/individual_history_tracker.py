@@ -57,7 +57,7 @@ class IndividualHistoryTracker(Module):
         notifier.add_listener("event.post-run", self.on_event_post_run)
         notifier.add_listener("hsi_event.pre-run", self.on_event_pre_run)
         notifier.add_listener("hsi_event.post-run", self.on_event_post_run)
-        notifier.add_listener("consumables.on-request_consumables", self.on_consumable_request)
+        notifier.add_listener("consumables.post-request_consumables", self.on_consumable_request)
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         self.load_parameters_from_dataframe(
