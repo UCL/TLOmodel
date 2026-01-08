@@ -251,7 +251,6 @@ class Consumables:
                              essential_item_codes: dict,
                              optional_item_codes: Optional[dict] = None,
                              to_log: bool = True,
-                             to_broadcast: bool = True,
                              treatment_id: Optional[str] = None,
                              target: Optional[int] = None,
                              event_name: Optional[str] = None,
@@ -288,7 +287,7 @@ class Consumables:
                                                              override_probability=override_probability)
 
         # Log the request and the outcome:
-        if to_log or to_broadcast:
+        if to_log or 'IndividualHistoryTracker' in self.sim.modules:
             items_available = {k: v for k, v in _all_item_codes.items() if available[k]}
             items_not_available = {k: v for k, v in _all_item_codes.items() if not available[k]}
 
