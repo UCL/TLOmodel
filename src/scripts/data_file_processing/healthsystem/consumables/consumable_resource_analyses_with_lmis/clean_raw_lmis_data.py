@@ -1140,12 +1140,11 @@ def visualise_time_trend(_df, group, stat, var = 'available_prob', figname_suffi
 
     # Adding labels and title
     ax.set_xlabel('Year')
-    ax.set_ylabel(f'{stat} probability that consumable is available')
-    ax.set_title(f'Trends of consumable availability ({subgroup})')
-
+    ax.set_ylabel(f'{stat} monthly probability of consumable availability')
+    #ax.set_title(f'Trends of consumable availability ({subgroup})')
 
     ax.set_ylim(0, 1.15) # Setting y-axis limits
-    ax.legend(title='Category', loc='center left', bbox_to_anchor=(1, 0.5)) # Adding a legend
+    ax.legend(title=f'{group}', loc='center left', bbox_to_anchor=(1, 0.5)) # Adding a legend
     # Exclude certain years from x-axis
     desired_years = [year for year in overall_trend.index if year not in [2019, 2020]]
     ax.set_xticks(desired_years)
@@ -1188,16 +1187,16 @@ visualise_time_trend(malaria_subset, 'Facility_Level', 'mean', var = 'available_
 # Prepare data for regression analysis
 all_cols = ['available_prob', 'year', 'item_category', 'is_vital', 'is_diagnostic', 'is_drug_or_vaccine', 'Facility_Level', 'District', 'item_code', 'month', 'Facility_ID']
 regression_cols = [col for col in all_cols if col != 'available_prob']
-tlo_cons_availability = tlo_cons_availability[tlo_cons_availability.priority_category == 'prioritised_consumables'][all_cols]
-tlo_cons_availability.to_csv(outputfilepath / 'openlmis_data/regression_subset_df.csv', index = False) # This data is then analysed on R
-tlo_cons_availability = tlo_cons_availability.groupby(regression_cols)['available_prob'].mean().reset_index()
-tlo_cons_availability = tlo_cons_availability.dropna()
+regression_df = tlo_cons_availability[tlo_cons_availability.priority_category == 'prioritised_consumables'][all_cols]
+regression_df.to_csv(outputfilepath / 'openlmis_data/regression_subset_df.csv', index = False) # This data is then analysed on R
+regression_df = regression_df.groupby(regression_cols)['available_prob'].mean().reset_index()
+regression_df = regression_df.dropna()
 
 
 # Linear model
 #-------------
 import statsmodels.formula.api as smf
-model1 = smf.ols('available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + Facility_Level + District', data=tlo_cons_availability).fit()
+model1 = smf.ols('available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + Facility_Level + District', data=regression_df).fit()
 print(model1.summary())
 # store model results in an excel file
 summary_df = pd.DataFrame(model1.summary().tables[1])
@@ -1206,10 +1205,10 @@ writer = pd.ExcelWriter((figurespath / 'model_results.xlsx'), engine='xlsxwriter
 summary_df.to_excel(writer, sheet_name='linear_model', index=False)
 writer._save()
 
-model2 = smf.ols('available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + Facility_Level + Facility_Level*year + District', data=tlo_cons_availability).fit()
+model2 = smf.ols('available_prob ~ year + is_vital + is_drug_or_vaccine + is_diagnostic + Facility_Level + Facility_Level*year + District', data=regression_df).fit()
 print(model2.summary())
 
-model3 = smf.ols('available_prob ~ year', data=tlo_cons_availability).fit()
+model3 = smf.ols('available_prob ~ year', data=regression_df).fit()
 print(model3.summary())
 
 """
