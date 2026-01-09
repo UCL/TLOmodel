@@ -72,8 +72,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     self._baseline(),
                 ),
             
-        }
-        """
             "Mode 2 no rescaling":
                 mix_scenarios(
                     self._baseline(),
@@ -118,7 +116,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 ),
 
         }
-        """
 
     def _baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
