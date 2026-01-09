@@ -33,6 +33,7 @@ class IndividualHistoryTracker(Module):
         self.mni_row_before = {}
         self.entire_mni_before = {}
         self.consumable_access = {}
+        self.cons_call_number = 0
 
     INIT_DEPENDENCIES = {"Demography"}
 
@@ -154,11 +155,8 @@ class IndividualHistoryTracker(Module):
             return
             
         # Copy this info for individual
-        chain_links = {}
-        chain_links[data['target']] = {k: v for k, v in data.items() if k != 'target'}
-        
-        self.consumable_access = chain_links
-        
+        self.consumable_access[data['target']] = {('ConsCall' + str(self.cons_call_number) + '_' + k): v for k, v in data.items() if k != 'target'}
+        self.cons_call_number += 1
         return
 
     def on_event_pre_run(self, data):
@@ -177,6 +175,7 @@ class IndividualHistoryTracker(Module):
         # Initialise these variables
         self.df_before = []
         self.consumable_access = {}
+        self.cons_call_number = 0
         self.row_before = pd.Series()
         self.mni_instances_before = False
         self.mni_row_before = {}
@@ -320,6 +319,7 @@ class IndividualHistoryTracker(Module):
         self.mni_row_before = {}
         self.entire_mni_before = {}
         self.consumable_access = {}
+        self.cons_call_number = 0
 
     def mni_values_differ(self, v1, v2):
 
