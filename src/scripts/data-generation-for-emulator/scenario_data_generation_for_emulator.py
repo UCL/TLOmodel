@@ -1,17 +1,12 @@
 """This Scenario file generates individual histories for the purpose of generating datasets for emulator training
 
-Run on the batch system using:
-```
-tlo batch-submit
-    src/scripts/analysis_data_generation/scenario_data_generation_for_emulator.py
-```
-
-or locally using:
-```
-    tlo scenario-run src/scripts/analysis_data_generation/scenario_data_generation_for_emulator.py
-```
+Still to fix:
+- In principle might want to vary parameters that are stored as arrays, issue is that they are not JSON serialisable.
+- For now ignoring all 'universal' parameters
 
 """
+
+
 from pathlib import Path
 from typing import Dict
 
@@ -23,9 +18,81 @@ from tlo.methods import individual_history_tracker
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
 import random
+import re
+import ast
+import numpy as np
 
+random.seed(10)
 module_of_interest ='CervicalCancer'
 N_param_combo = 10
+
+def detect_and_convert(value):
+    # try float
+    try:
+        return float(value)
+    except:
+        pass
+    
+    # try literal list (e.g. "[1,2,3]")
+    try:
+        return ast.literal_eval(value)
+    except:
+        pass
+    
+    # try semicolon list (e.g. "1;2;3")
+    if ";" in value:
+        try:
+            return [float(x) for x in value.split(";")]
+        except:
+            pass
+    
+    # fallback: return as string
+    return value
+
+
+def parse_value(value):
+    # If already not string, return as-is (e.g. native float)
+    if not isinstance(value, str):
+        return value
+    
+    v = value.strip()
+    
+    # 1. FLOAT DETECTION
+    try:
+        return float(v)
+    except:
+        pass
+    
+    # 2. CLEAN-UP STEP FOR LIST-LIKE VALUES
+    # detect bracketed patterns: [ ... ]
+    if v.startswith("[") and v.endswith("]"):
+        inner = v[1:-1]
+        
+        # sloppy sanitize:
+        # - collapse whitespace
+        # - ensure commas are normalized
+        inner = re.sub(r"\s+", " ", inner)         # collapse multi-spaces
+        inner = re.sub(r"\s*,\s*", ",", inner)     # normalize comma spacing
+        
+        # try literal_eval first (after cleanup)
+        try:
+            out = ast.literal_eval(f"[{inner}]")
+            if isinstance(out, list):
+                # ensure floats inside
+                return [float(x) for x in out]
+        except:
+            pass
+        
+        # fallback manual parse (sloppy)
+        try:
+            parts = inner.split(",")
+            return [float(p) for p in parts if p.strip() != ""]
+        except:
+            pass
+    
+    # 3. FALLBACK TO STRING
+    return value
+
 
 def sample_param_combo():
 
@@ -38,36 +105,37 @@ def sample_param_combo():
         treatments_in_module = [item for item in treatments if module_of_interest in item]
             
         # Retreive module parameters which are not scenario or design decisions
+        # Ideally unique criterion to filter these
         p = pd.read_csv('resources/ResourceFile_Cervical_Cancer/parameter_values.csv')
+        # Drop scenario variables
         p = p.drop(p[p['param_label'] == 'scenario'].index)
+        # Drop universal variables, already known
+        p = p.drop(p[p['param_label'] == 'universal'].index)
+        # Drop design decision
         p = p.drop(p[p['prior_note'] == 'design decision'].index)
+        # Parse values
+        p['value'] = p['value'].apply(parse_value)
         
         # For all param combos/draws, create a dictionary of parameter combinations
-        for draw in [0,N_param_combo]:
+        for draw in range(N_param_combo):
             
             # Create a service availability scenario for this draw. Module treatments are included with a 50/50 probability
             # TO DO: better handle on random seed here
             selected_treatments = [x for x in treatments_in_module if random.random() < 0.5]
-            parameter_draws[draw] = {'service_availability': selected_treatments}
+            parameter_draws[draw] = {'HealthSystem': {'Service_Availability': selected_treatments}}
 
+            parameter_draws[draw].setdefault(module_of_interest, {})
             for idx, row in p.iterrows():
                 val = row['value']
                 r = random.random()
 
-                if isinstance(val, pd.Series):
-                    row['value'] = np.array(val) * r
+                if isinstance(val, (pd.Series, list, tuple, np.ndarray)):
+                    new_val = np.array(val, dtype=float) * r
                 else:
-                    row['value'] = val * r
-            print(parameter_draws)
-            exit(-1)
-            
-            # 2. Eliminate those labelled 'scenario'
-            # 3. For every other parameter, sample a rescaling between 0 and 1
-            # parameter_combinations[draw] = {'parameter': 'new_parameter_value'}
+                    new_val = val * r
+                    parameter_draws[draw][module_of_interest][row['parameter_name']] = new_val
+
         return parameter_draws
-
-# TO DO: need to create custom make_cartesian_parameter_grid that combines parameter combos with treatments and consumables
-
 
 
 class TrackIndividualHistories(BaseScenario):
@@ -110,15 +178,14 @@ class TrackIndividualHistories(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
 
-        return {
-            "Baseline":
-                mix_scenarios(
-                    self._baseline(),
-                    {
-                    }
-                ),
-
-        }
+        parameter_draws = sample_param_combo()
+        scenarios = {}
+        for i in range(N_param_combo):
+            scenarios[str(i)] = mix_scenarios(
+                                    self._baseline(),
+                                    parameter_draws[i]
+                                )
+        return scenarios
 
     def _baseline(self) -> Dict:
         #Return the Dict with values for the parameter changes that define the baseline scenario.
