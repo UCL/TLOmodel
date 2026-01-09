@@ -33,7 +33,8 @@ class IndividualHistoryTracker(Module):
         self.mni_row_before = {}
         self.entire_mni_before = {}
         self.consumable_access = {}
-        self.cons_call_number = 0
+        self.cons_call_number_within_event = 0
+        self.event_ID_in_sim = 0
 
     INIT_DEPENDENCIES = {"Demography"}
 
@@ -64,6 +65,37 @@ class IndividualHistoryTracker(Module):
         self.load_parameters_from_dataframe(
             pd.read_csv(resourcefilepath/"ResourceFile_IndividualHistoryTracker/parameter_values.csv")
         )
+        
+    def df_to_eav(self, df, date, event_name):
+        """Function to convert entire population dataframe into custom EAV"""
+        eav = df.stack(dropna=False).reset_index()
+        eav.columns = ['entity', 'attribute', 'value']
+        eav['event_name'] = event_name
+        eav = eav[["entity", "event_name", "attribute", "value"]]
+        return eav
+
+
+    def convert_chain_links_into_eav(self, chain_links):
+        """Function to convert chain links into custom EAV"""
+        rows = []
+
+        for e, data in chain_links.items():
+            event_name_with_ID = data.get("event_name") + "_ID" + str(self.event_ID_in_sim)
+
+            for attr, val in data.items():
+                if attr == "event_name":
+                    continue
+                
+                rows.append({
+                    "entity": e,
+                    "event_name": event_name_with_ID,
+                    "attribute": attr,
+                    "value": val
+                })
+
+        eav = pd.DataFrame(rows)
+        
+        return eav
 
     def initialise_population(self, population):
         # Use parameter file values by default, if not overwritten
@@ -132,7 +164,7 @@ class IndividualHistoryTracker(Module):
         # at the start.
 
         # EDNAV structure to capture status of individuals at the start of the simulation
-        eav_plus_event = df_to_eav(self.sim.population.props, self.sim.date, 'StartOfSimulation')
+        eav_plus_event = self.df_to_eav(self.sim.population.props, self.sim.date, 'StartOfSimulation')
         self.log_eav_dataframe_to_individual_histories(eav_plus_event)
 
     def on_simulation_post_do_birth(self, data):
@@ -143,7 +175,7 @@ class IndividualHistoryTracker(Module):
         link_info.update(self.sim.population.props.loc[data['child_id']].to_dict())
         chain_links = {data['child_id']: link_info}
 
-        eav_plus_event = convert_chain_links_into_eav(chain_links)
+        eav_plus_event = self.convert_chain_links_into_eav(chain_links)
         self.log_eav_dataframe_to_individual_histories(eav_plus_event)
 
     def on_consumable_request(self,data):
@@ -155,8 +187,8 @@ class IndividualHistoryTracker(Module):
             return
             
         # Copy this info for individual
-        self.consumable_access[data['target']] = {('ConsCall' + str(self.cons_call_number) + '_' + k): v for k, v in data.items() if k != 'target'}
-        self.cons_call_number += 1
+        self.consumable_access[data['target']] = {('ConsCall' + str(self.cons_call_number_within_event) + '_' + k): v for k, v in data.items() if k != 'target'}
+        self.cons_call_number_within_event += 1
         return
 
     def on_event_pre_run(self, data):
@@ -164,6 +196,10 @@ class IndividualHistoryTracker(Module):
         This function checks whether this event should be logged as part of the event chains, a
         nd if so stored required information before the event has occurred.
         """
+
+        # Create a unique identifier for this event to ensure events with the same name running on the same day
+        # are not confused in the EAV log
+        self.event_ID_in_sim += 1
 
         # Only log event if
         # 1) the event belongs to modules of interest and
@@ -175,7 +211,7 @@ class IndividualHistoryTracker(Module):
         # Initialise these variables
         self.df_before = []
         self.consumable_access = {}
-        self.cons_call_number = 0
+        self.cons_call_number_within_event = 0
         self.row_before = pd.Series()
         self.mni_instances_before = False
         self.mni_row_before = {}
@@ -307,7 +343,7 @@ class IndividualHistoryTracker(Module):
         # Log chains
         if chain_links:
             # Convert chain_links into EAV-type dataframe
-            eav_plus_event = convert_chain_links_into_eav(chain_links)
+            eav_plus_event = self.convert_chain_links_into_eav(chain_links)
             # log it
             self.log_eav_dataframe_to_individual_histories(eav_plus_event)
 
@@ -319,7 +355,7 @@ class IndividualHistoryTracker(Module):
         self.mni_row_before = {}
         self.entire_mni_before = {}
         self.consumable_access = {}
-        self.cons_call_number = 0
+        self.cons_call_number_within_event = 0
 
     def mni_values_differ(self, v1, v2):
 
@@ -444,35 +480,6 @@ class IndividualHistoryTracker(Module):
         return chain_links
 
 
-def df_to_eav(df, date, event_name):
-    """Function to convert entire population dataframe into custom EAV"""
-    eav = df.stack(dropna=False).reset_index()
-    eav.columns = ['entity', 'attribute', 'value']
-    eav['event_name'] = event_name
-    eav = eav[["entity", "event_name", "attribute", "value"]]
-    return eav
 
-
-def convert_chain_links_into_eav(chain_links):
-    """Function to convert chain links into custom EAV"""
-    rows = []
-
-    for e, data in chain_links.items():
-        event_name = data.get("event_name")
-
-        for attr, val in data.items():
-            if attr == "event_name":
-                continue
-            
-            rows.append({
-                "entity": e,
-                "event_name": event_name,
-                "attribute": attr,
-                "value": val
-            })
-
-    eav = pd.DataFrame(rows)
-    
-    return eav
 
     
