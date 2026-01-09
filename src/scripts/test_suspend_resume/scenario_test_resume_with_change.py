@@ -28,7 +28,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=5)
+        self.end_date = self.start_date + pd.DateOffset(years=15)
         self.pop_size = 20_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -62,7 +62,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         """
         
-        self.YEAR_OF_CHANGE = 2012
+        self.YEAR_OF_CHANGE = 2019
 
         return {
    
