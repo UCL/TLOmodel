@@ -287,7 +287,7 @@ class Consumables:
                                                              override_probability=override_probability)
 
         # Log the request and the outcome:
-        if to_log or notifier.has_listeners('consumables.on-request_consumables'):
+        if to_log or notifier.has_listeners('consumables.post-request_consumables'):
             items_available = {k: v for k, v in _all_item_codes.items() if available[k]}
             items_not_available = {k: v for k, v in _all_item_codes.items() if not available[k]}
 
