@@ -2254,6 +2254,7 @@ class HealthSystem(Module):
                         footprints_of_all_individual_level_hsi_event[event_clinic][ev_num_in_clinics_footprint] = (
                             updated_call
                         )
+                        breakpoint()
                         self.running_total_footprint[event_clinic] -= original_call
                         self.running_total_footprint[event_clinic] += updated_call
 
@@ -2264,7 +2265,7 @@ class HealthSystem(Module):
 
                     # Write to the log
                     self.record_hsi_event(
-                        hsi_event=event, actual_appt_footprint=actual_appt_footprint, did_run=True, priority=_priority
+                        hsi_event=event, actual_appt_footprint=actual_appt_footprint, did_run=True, priority=_priority, clinic=event_clinic
                     )
 
         return _to_be_held_over
