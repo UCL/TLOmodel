@@ -34,7 +34,7 @@ class IndividualHistoryTracker(Module):
         self.entire_mni_before = {}
         self.consumable_access = {}
         self.cons_call_number_within_event = 0
-        self.event_ID_in_sim = 0
+        self.event_ID_in_sim = 1 # Initialise from 1 as the first event will be the start of the sim itself
 
     INIT_DEPENDENCIES = {"Demography"}
 
@@ -71,7 +71,8 @@ class IndividualHistoryTracker(Module):
         eav = df.stack(dropna=False).reset_index()
         eav.columns = ['entity', 'attribute', 'value']
         eav['event_name'] = event_name
-        eav = eav[["entity", "event_name", "attribute", "value"]]
+        eav['event_tag'] = 0 # First event
+        eav = eav[["entity", "event_name", "event_tag", "attribute", "value"]]
         return eav
 
 
@@ -80,15 +81,17 @@ class IndividualHistoryTracker(Module):
         rows = []
 
         for e, data in chain_links.items():
-            event_name_with_ID = data.get("event_name") + "_ID" + str(self.event_ID_in_sim)
-
+            event_name = data.get("event_name")
+            event_tag  = self.event_ID_in_sim # access running counter
+            
             for attr, val in data.items():
-                if attr == "event_name":
+                if attr == "event_name" or attr == "event_tag":
                     continue
                 
                 rows.append({
                     "entity": e,
-                    "event_name": event_name_with_ID,
+                    "event_name": event_name,
+                    "event_tag": event_tag,
                     "attribute": attr,
                     "value": val
                 })
@@ -152,7 +155,8 @@ class IndividualHistoryTracker(Module):
                                    "entity": row.entity,
                                    "attribute": row.attribute,
                                    "value": str(row.value),
-                                   "event_name": row.event_name
+                                   "event_name": row.event_name,
+                                   "event_tag": row.event_tag
                                },
                                description='Links forming chains of events for simulated individuals')
 
