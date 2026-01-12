@@ -2976,16 +2976,25 @@ def test_clinics_rescaling_factor(seed, tmpdir):
 
     # Run healthsystemscheduler
     sim.modules["HealthSystem"].healthsystemscheduler.apply(sim.population)
+
     # Record capabilities before rescaling
     genericclinic_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities['GenericClinic']['FacilityID_20_Officer_DCSA']
-    clinic1_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities['GenericClinic']['FacilityID_20_Officer_DCSA']
+    clinic1_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities['Clinic1']['FacilityID_20_Officer_DCSA']
 
     # Now trigger rescaling of capabilities
     sim.modules["HealthSystem"]._rescale_capabilities_to_capture_effective_capability()
 
     # Record capabilities after rescaling
     genericclinic_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities['GenericClinic']['FacilityID_20_Officer_DCSA']
-    clinic1_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities['GenericClinic']['FacilityID_20_Officer_DCSA']
-    # sim.modules["HealthSystem"]._summary_counter._frac_time_used_overall['GenericClinic']
-    # sim.modules["HealthSystem"]._summary_counter._sum_of_daily_frac_time_used_by_facID_and_officer['GenericClinic']['FacilityID_20_Officer_DCSA']
-    breakpoint()
+    clinic1_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities['Clinic1']['FacilityID_20_Officer_DCSA']
+
+    # Expect no change in GenericClinic capabilities and Clinic1 capabilities to be rescaled by 2
+    assert np.isclose(
+        genericclinic_capabilities_before,
+        genericclinic_capabilities_after,
+    ), "Expected no change in GenericClinic capabilities after rescaling"
+
+    assert np.isclose(
+        clinic1_capabilities_before * 2,
+        clinic1_capabilities_after,
+    ), "Expected Clinic1 capabilities to be rescaled by factor of 2"

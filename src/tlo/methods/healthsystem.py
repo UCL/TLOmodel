@@ -1989,6 +1989,7 @@ class HealthSystem(Module):
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
         `runnning_total_footprint`. This runs every day.
         """
+
         current_capabilities = self.capabilities_today[clinic_name]
         total_footprint = self.running_total_footprint[clinic_name]
 
@@ -2239,7 +2240,6 @@ class HealthSystem(Module):
                     # Check if the HSI event returned updated appt_footprint
                     if actual_appt_footprint is not None:
                         # The returned footprint is different to the expected footprint: so must update load factors
-
                         # check its formatting:
                         assert self.appt_footprint_is_valid(actual_appt_footprint)
 
@@ -2424,6 +2424,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             self.module.run_individual_level_events_in_mode_0_or_1(
                 list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment,
             )
+
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
         capabilities_monitor = {
@@ -2691,6 +2692,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(list_of_events_not_due_today))
 
     def apply(self, population):
+
         # Refresh information ready for new day:
         self.module.bed_days.on_start_of_day()
         self.module.consumables.on_start_of_day(self.sim.date)
@@ -2729,7 +2731,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
         # Important: Here we assign all inpatient bed-days to the GenericClinic
         self.module.running_total_footprint['GenericClinic'] = inpatient_footprints
-
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
 
