@@ -2828,3 +2828,164 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
         == {"Dummy": 1}
         # recorded in both the usual and the 'non-blank' logger
     )
+
+
+
+
+
+def test_clinics_rescaling_factor(seed, tmpdir):
+    """Test that rescaling factor for clinics is computed correctly.
+    """
+
+    # Create a dummy HSI event class
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id, appt_type, level, treatment_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = treatment_id
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+            self.ACCEPTED_FACILITY_LEVEL = level
+
+        def apply(self, person_id, squeeze_factor):
+            self.this_hsi_event_ran = True
+
+    def create_simulation(tmpdir: Path, tot_population) -> Simulation:
+        class DummyModuleGenericClinic(Module):
+            METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                pass
+
+        class DummyModuleClinic1(Module):
+            METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                pass
+
+        log_config = {
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+        }
+        start_date = Date(2010, 1, 1)
+        sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+
+        sim.register(
+            demography.Demography(),
+            healthsystem.HealthSystem(
+                capabilities_coefficient=1.0,
+                mode_appt_constraints=1,
+                ignore_priority=False,
+                randomise_queue=True,
+                policy_name="",
+                use_funded_or_actual_staffing="funded_plus",
+            ),
+            DummyModuleGenericClinic(),
+            DummyModuleClinic1(),
+        )
+        sim.make_initial_population(n=tot_population)
+
+        sim.modules["HealthSystem"]._clinic_configuration = pd.DataFrame(
+            [{"Facility_ID": 20.0, "Officer_Type_Code": "DCSA", "Clinic1": 0.6, "GenericClinic": 0.4}]
+        )
+        sim.modules["HealthSystem"]._clinic_mapping = pd.DataFrame(
+            [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
+        )
+        sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "GenericClinic"]
+        sim.modules["HealthSystem"].setup_daily_capabilities("funded_plus")
+
+        # Assign the entire population to the first district, so that all events are run in the same district
+        col = "district_of_residence"
+        s = sim.population.props[col]
+        ## Not specifying the dtype explicitly here made the col a string rather than a category
+        ## and that caused problems later on.
+        sim.population.props[col] = pd.Series(s.cat.categories[0], index=s.index, dtype=s.dtype)
+
+        sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
+
+        return sim
+
+    def schedule_hsi_events(notherclinic, nclinic1, sim):
+        for i in range(0, notherclinic):
+            hsi = DummyHSIEvent(
+                module=sim.modules["DummyModuleGenericClinic"],
+                person_id=i,
+                appt_type="ConWithDCSA",
+                level="0",
+                treatment_id="DummyHSIEventGenericClinic",
+            )
+            sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+            )
+
+        for i in range(notherclinic, notherclinic + nclinic1):
+            hsi = DummyHSIEvent(
+                module=sim.modules["DummyModuleClinic1"],
+                person_id=i,
+                appt_type="ConWithDCSA",
+                level="0",
+                treatment_id="DummyHSIEvent",
+            )
+            sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+            )
+
+        return sim
+
+    tot_population = 100
+    sim = create_simulation(tmpdir, tot_population)
+
+    # Schedule an identical appointment for all individuals, assigning clinic as follows:
+    # 10 HSIs have clinic_eligibility=GenericClinic and 90 clinic_eligibility=Clinic1
+    nevents_generic_clinic = 10
+    nevents_clinic1 = 90
+    sim = schedule_hsi_events(nevents_generic_clinic, nevents_clinic1, sim)
+
+
+    ## This hsi is only created to get the expected items; therefore the treatment_id is not important
+    hsi1 = DummyHSIEvent(
+        module=sim.modules["DummyModuleGenericClinic"],
+        person_id=0,  # Ensures call is on officers in first district
+        appt_type="ConWithDCSA",
+        level="0",
+        treatment_id="DummyHSIEventGenericClinic",
+    )
+    hsi1.initialise()
+
+    # Now adjust capabilities available.
+    # GenericClinic has exactly the capability than needed to run all the appointments;
+    # Clinic1  has less capability than needed to run all the appointments;
+    # This will ensure rescaling factor for GenericClinic < 1
+    # and that for Clinic1 > 1
+
+    sim.modules["HealthSystem"]._daily_capabilities["Clinic1"] = {}
+    for k, v in hsi1.expected_time_requests.items():
+        sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * nevents_generic_clinic
+        sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][k] = v * (nevents_clinic1 / 2)
+
+    # Run healthsystemscheduler
+    sim.modules["HealthSystem"].healthsystemscheduler.apply(sim.population)
+    # Record capabilities before rescaling
+    genericclinic_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities['GenericClinic']['FacilityID_20_Officer_DCSA']
+    clinic1_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities['GenericClinic']['FacilityID_20_Officer_DCSA']
+
+    # Now trigger rescaling of capabilities
+    sim.modules["HealthSystem"]._rescale_capabilities_to_capture_effective_capability()
+
+    # Record capabilities after rescaling
+    genericclinic_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities['GenericClinic']['FacilityID_20_Officer_DCSA']
+    clinic1_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities['GenericClinic']['FacilityID_20_Officer_DCSA']
+    # sim.modules["HealthSystem"]._summary_counter._frac_time_used_overall['GenericClinic']
+    # sim.modules["HealthSystem"]._summary_counter._sum_of_daily_frac_time_used_by_facID_and_officer['GenericClinic']['FacilityID_20_Officer_DCSA']
+    breakpoint()
