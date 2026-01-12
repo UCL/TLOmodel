@@ -898,7 +898,7 @@ class HealthSystem(Module):
 
         # Schedule a consumables availability switch
         # - check that future value will be allowable
-        if not self.parameters["cons_availability_postSwitch"] in self.consumables._options_for_availability:
+        if self.parameters["cons_availability_postSwitch"] not in self.consumables._options_for_availability:
             raise ValueError(
                 f"Value for `cons_availability_postSwitch` is not within defined options: "
                 f"{self.parameters['cons_availability_postSwitch']}"
