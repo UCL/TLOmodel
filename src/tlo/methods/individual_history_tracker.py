@@ -49,7 +49,8 @@ class IndividualHistoryTracker(Module):
     }
     
     PROPERTIES = {
-        "iht_track_history": Property(Types.BOOL, "Whether the individual should be tracked by the individual history tracker or not")
+        "iht_track_history": Property(Types.BOOL, "Whether the individual should be tracked by 
+        "the individual history tracker or not")
     }
 
     def initialise_simulation(self, sim):
@@ -191,7 +192,10 @@ class IndividualHistoryTracker(Module):
             return
             
         # Copy this info for individual
-        self.consumable_access[data['target']] = {('ConsCall' + str(self.cons_call_number_within_event) + '_' + k): v for k, v in data.items() if k != 'target'}
+        self.consumable_access[data['target']] = {
+            ('ConsCall' + str(self.cons_call_number_within_event) + '_' + k): v
+            for k, v in data.items() if k != 'target'}
+            
         self.cons_call_number_within_event += 1
         return
 
@@ -227,9 +231,9 @@ class IndividualHistoryTracker(Module):
         
             # Save pop dataframe row for comparison after event has occurred
             self.row_before = self.copy_of_pop_dataframe_row(data['target'])
-
+            pop = self.sim.population.props
             # Check if individual is already in mni dictionary, if so copy her original status
-            if 'PregnancySupervisor' in self.sim.modules and (self.sim.population.props.loc[data['target'],'sex'] == 'F'):
+            if 'PregnancySupervisor' in self.sim.modules and (pop.loc[data['target'],'sex'] == 'F'):
                 mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
                 if data['target'] in mni:
                     self.mni_instances_before = True
@@ -265,7 +269,8 @@ class IndividualHistoryTracker(Module):
             # Copy full new status for individual
             row_after = self.copy_of_pop_dataframe_row(data['target'])
 
-            # If individual qualified for the 'tracked' category either before OR after the event occurred, the event will be logged:
+            # If individual qualified for the 'tracked' category either before OR
+            # after the event occurred, the event will be logged:
             if self.row_before['iht_track_history'] or row_after['iht_track_history']:
             
                 # Create and store event for this individual, regardless of whether any property change occurred
@@ -321,7 +326,8 @@ class IndividualHistoryTracker(Module):
                 assert len(self.consumable_access) == 0 or len(self.consumable_access) == 1
                 if len(self.consumable_access) == 1:
                     chain_links[data['target']].update({k: v for k, v in
-                                                        self.consumable_access[data['target']].items() if k not in chains_links[data['target']]})
+                                                        self.consumable_access[data['target']].items()
+                                                        if k not in chain_links[data['target']]})
                     self.consumable_access = {}
 
 
