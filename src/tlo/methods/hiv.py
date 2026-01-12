@@ -32,6 +32,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography, tb
@@ -86,7 +87,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -1312,6 +1314,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ] = self.daly_wts["aids"]
 
         return dalys
+
+    def report_summary_stats(self):
+        # This reports age- and sex-specific prevalence of HIV for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'hv_inf')
+        return {'number_living_with_hiv': number_by_age_group_sex}
 
     def mtct_during_breastfeeding(self, mother_id, child_id):
         """
