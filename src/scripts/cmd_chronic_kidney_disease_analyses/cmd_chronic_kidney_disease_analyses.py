@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import compare_number_of_deaths, get_root_path
+from tlo.analysis.utils import compare_number_of_deaths, get_root_path, parse_log_file, make_age_grp_types
 from tlo.methods import (
     cardio_metabolic_disorders,
     cmd_chronic_kidney_disease,
@@ -41,57 +41,95 @@ log_config = {
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 1_000
+popsize = 5_000
 
-def run_sim():
-    # Establish the simulation object and set the seed
+
+def get_ckd_dalys(logfile):
+    output = parse_log_file(logfile)
+    dalys = output['tlo.methods.healthburden']['dalys_stacked']
+    # Keep only numeric DALY columns + age_range
+    numeric_cols = dalys.select_dtypes(include='number').columns
+    dalys = dalys[['age_range', *numeric_cols]]
+
+    # Sum over time
+    dalys = (
+        dalys
+        .groupby('age_range')
+        .sum()
+        .reindex(make_age_grp_types().categories)
+        .fillna(0.0)
+    )
+
+    return dalys
+
+
+def run_sim(allow_hsi: bool):
     sim = Simulation(start_date=start_date, log_config=log_config, resourcefilepath=resourcefilepath)
 
-    # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(cons_availability='all'),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(),
-                 cmd_chronic_kidney_disease.CMDChronicKidneyDisease(),
-                 depression.Depression(),
-                 hiv.Hiv(),
-                 epi.Epi(),
-                 tb.Tb(),
-                 )
+    sim.register(
+        demography.Demography(),
+        simplified_births.SimplifiedBirths(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(
+            disable=(allow_hsi is True),
+            disable_and_reject_all=(allow_hsi is False)
+        ),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(),
+        cardio_metabolic_disorders.CardioMetabolicDisorders(),
+        cmd_chronic_kidney_disease.CMDChronicKidneyDisease(),
+        depression.Depression(),
+        hiv.Hiv(),
+        epi.Epi(),
+        tb.Tb(),
+    )
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
     return sim.log_filepath
 
-# Create df from simulation
-logfile = run_sim()
+
+# With interventions
+logfile_with_healthsystem = run_sim(allow_hsi=True)
+dalys_with_hs = get_ckd_dalys(logfile_with_healthsystem)
+
+# Without interventions
+logfile_no_healthsystem = run_sim(allow_hsi=False)
+dalys_no_hs = get_ckd_dalys(logfile_no_healthsystem)
 
 CAUSE_NAME = 'Kidney Disease'
 
-# With health system
+# Extract CKD only (cause is a column)
+ckd_dalys_with_hs = dalys_with_hs[CAUSE_NAME].fillna(0.0)
+ckd_dalys_no_hs = dalys_no_hs[CAUSE_NAME].fillna(0.0)
+
+# With healthsystem
 comparison = compare_number_of_deaths(
-    logfile=logfile,
+    logfile=logfile_with_healthsystem,
     resourcefilepath=resourcefilepath
-).rename(columns={"model": "model_with_healthsystem"})
+).rename(columns={'model': 'model_with_healthsystem'})
 
-# Without health system
-no_hs = compare_number_of_deaths(
-    logfile=logfile,
+# Without healthsystem
+x = compare_number_of_deaths(
+    logfile=logfile_no_healthsystem,
     resourcefilepath=resourcefilepath
-)["model"]
-no_hs.name = "model_no_healthsystem"
+)['model']
+x.name = 'model_no_healthsystem'
 
-comparison = pd.concat([comparison, no_hs], axis=1)
+comparison = pd.concat([comparison, x], axis=1)
 
 comparison = comparison.loc[
     ("2010-2014", slice(None), slice(None), CAUSE_NAME)
 ].fillna(0.0)
 
+comparison.index = comparison.index.droplevel(
+    [name for name in comparison.index.names if name in ('period', 'cause')]
+)
+
+print("####################################### Result ###################")
+print((comparison["model_with_healthsystem"] - comparison["model_no_healthsystem"]).abs().sum())
 
 fig, axs = plt.subplots(nrows=2, sharex=True, figsize=(8, 6))
 
@@ -101,6 +139,21 @@ for ax, sex in zip(axs, ("M", "F")):
     ax.set_title(f"Sex: {sex}")
 
 axs[-1].set_xlabel("Age group")
+
+plt.tight_layout()
+plt.show()
+
+# Plot for DALYs
+fig, axs = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+
+ckd_dalys_with_hs.plot.bar(ax=axs[0])
+axs[0].set_title("CKD DALYs – With Health System")
+axs[0].set_xlabel("Age group")
+axs[0].set_ylabel("Total DALYs")
+
+ckd_dalys_no_hs.plot.bar(ax=axs[1])
+axs[1].set_title("CKD DALYs – No Health System")
+axs[1].set_xlabel("Age group")
 
 plt.tight_layout()
 plt.show()
