@@ -34,7 +34,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pd.set_option('display.max_colwidth', None)
 
     individual_individual_histories = extract_individual_histories(results_folder)
-
+    
 if __name__ == "__main__":
     rfp = Path('resources')
 
