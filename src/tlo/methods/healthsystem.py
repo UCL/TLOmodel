@@ -2203,7 +2203,6 @@ class HealthSystem(Module):
                     # from argument to Counter object called from
                     self.running_total_footprint[clinic].update(hsi_footprint)
 
-
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 event_clinic = event.clinic_eligibility
                 _priority = event.priority
@@ -2266,7 +2265,11 @@ class HealthSystem(Module):
 
                     # Write to the log
                     self.record_hsi_event(
-                        hsi_event=event, actual_appt_footprint=actual_appt_footprint, did_run=True, priority=_priority, clinic=event_clinic
+                        hsi_event=event,
+                        actual_appt_footprint=actual_appt_footprint,
+                        did_run=True,
+                        priority=_priority,
+                        clinic=event_clinic,
                     )
 
         return _to_be_held_over
@@ -2424,7 +2427,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             self.module.run_individual_level_events_in_mode_0_or_1(
                 list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment,
             )
-
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
         capabilities_monitor = {
@@ -2692,7 +2694,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(list_of_events_not_due_today))
 
     def apply(self, population):
-
         # Refresh information ready for new day:
         self.module.bed_days.on_start_of_day()
         self.module.consumables.on_start_of_day(self.sim.date)
@@ -2730,7 +2731,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
         # Important: Here we assign all inpatient bed-days to the GenericClinic
-        self.module.running_total_footprint['GenericClinic'] = inpatient_footprints
+        self.module.running_total_footprint["GenericClinic"] = inpatient_footprints
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
 

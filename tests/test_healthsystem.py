@@ -2830,12 +2830,8 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
     )
 
 
-
-
-
 def test_clinics_rescaling_factor(seed, tmpdir):
-    """Test that rescaling factor for clinics is computed correctly.
-    """
+    """Test that rescaling factor for clinics is computed correctly."""
 
     # Create a dummy HSI event class
     class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
@@ -2952,7 +2948,6 @@ def test_clinics_rescaling_factor(seed, tmpdir):
     nevents_clinic1 = 90
     sim = schedule_hsi_events(nevents_generic_clinic, nevents_clinic1, sim)
 
-
     ## This hsi is only created to get the expected items; therefore the treatment_id is not important
     hsi1 = DummyHSIEvent(
         module=sim.modules["DummyModuleGenericClinic"],
@@ -2978,15 +2973,23 @@ def test_clinics_rescaling_factor(seed, tmpdir):
     sim.modules["HealthSystem"].healthsystemscheduler.apply(sim.population)
 
     # Record capabilities before rescaling
-    genericclinic_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities['GenericClinic']['FacilityID_20_Officer_DCSA']
-    clinic1_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities['Clinic1']['FacilityID_20_Officer_DCSA']
+    genericclinic_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][
+        "FacilityID_20_Officer_DCSA"
+    ]
+    clinic1_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][
+        "FacilityID_20_Officer_DCSA"
+    ]
 
     # Now trigger rescaling of capabilities
     sim.modules["HealthSystem"]._rescale_capabilities_to_capture_effective_capability()
 
     # Record capabilities after rescaling
-    genericclinic_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities['GenericClinic']['FacilityID_20_Officer_DCSA']
-    clinic1_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities['Clinic1']['FacilityID_20_Officer_DCSA']
+    genericclinic_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][
+        "FacilityID_20_Officer_DCSA"
+    ]
+    clinic1_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][
+        "FacilityID_20_Officer_DCSA"
+    ]
 
     # Expect no change in GenericClinic capabilities and Clinic1 capabilities to be rescaled by 2
     assert np.isclose(
