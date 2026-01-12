@@ -3227,6 +3227,9 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
             # For each HSI event in the queue
             while health_system.HSI_EVENT_QUEUE:
                 event = hp.heappop(health_system.HSI_EVENT_QUEUE)
+                
+                # Get its clinic eligibility
+                clinic_eligibility = health_system.get_clinic_eligibility(event.hsi_event.TREATMENT_ID)
 
                 # Get its priority
                 enforced_priority = health_system.enforce_priority_policy(event.hsi_event)
@@ -3235,6 +3238,7 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                 if event.priority != enforced_priority:
                     # Wrap it up with the new priority - everything else is the same
                     event = HSIEventQueueItem(
+                        clinic_eligibility,
                         enforced_priority,
                         event.topen,
                         event.rand_queue_counter,
