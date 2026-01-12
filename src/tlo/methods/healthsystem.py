@@ -898,7 +898,10 @@ class HealthSystem(Module):
 
         # Schedule a consumables availability switch
         # - check that future value will be allowable
-        assert self.parameters["cons_availability_postSwitch"] in self.consumables._options_for_availability
+        assert (self.parameters["cons_availability_postSwitch"] in self.consumables._options_for_availability,
+                f"Value for `cons_availability_postSwitch` is not within defined options: "
+                f"{self.parameters['cons_availability_postSwitch']}")
+
         sim.schedule_event(
             HealthSystemChangeParameters(
                 self, parameters={"cons_availability": self.parameters["cons_availability_postSwitch"]}
