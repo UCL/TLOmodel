@@ -28,11 +28,11 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=7)
+        self.end_date = self.start_date + pd.DateOffset(years=10)
         self.pop_size = 20_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 3
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -62,7 +62,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         """
         
-        self.YEAR_OF_CHANGE = 2013
+        self.YEAR_OF_CHANGE = 2015
 
         return {
    
