@@ -897,6 +897,8 @@ class HealthSystem(Module):
         sim.schedule_event(HealthSystemChangeMode(self), Date(self.parameters["year_mode_switch"], 1, 1))
 
         # Schedule a consumables availability switch
+        # - check that future value will be allowable
+        assert self.parameters["cons_availability_postSwitch"] in self.consumables._options_for_availability
         sim.schedule_event(
             HealthSystemChangeParameters(
                 self, parameters={"cons_availability": self.parameters["cons_availability_postSwitch"]}
