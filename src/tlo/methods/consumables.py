@@ -314,7 +314,7 @@ class Consumables:
             data = {'target' : target,
                     'module' : module,
                     'event_name' : event_name,
-                    'Item_Available': str(items_available)
+                    'Item_Available': str(items_available),
                     'Item_NotAvailable': str(items_not_available),
                     'Item_Used': str(items_used)}
                     
