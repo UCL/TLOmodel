@@ -1,3 +1,5 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:80320e80c122d91ef4d0141ef15382e12104c5634f3120178d12e85fd9561a3a
-size 17
+Treatment,Clinic
+Alri_Pneumonia_Treatment_Outpatient,Clinic1
+Alri_Pneumonia_Treatment_Inpatient,Clinic1
+Alri_Pneumonia_Treatment_Inpatient_Followup,Clinic1
+Epi_Childhood_Bcg,Clinic1
