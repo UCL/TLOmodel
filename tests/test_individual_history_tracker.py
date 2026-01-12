@@ -6,21 +6,20 @@ import pytest
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file, reconstruct_individual_histories
 from tlo.methods import (
+    care_of_women_during_pregnancy,
     chronicsyndrome,
+    contraception,
     demography,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    contraception,
-    individual_history_tracker,
-    mockitis,
-    newborn_outcomes,
-    pregnancy_supervisor,
-    care_of_women_during_pregnancy,
-    labour,
-    postnatal_supervisor,
-    symptommanager,
     hiv,
+    individual_history_tracker,
+    labour,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    symptommanager,
 )
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
