@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union
 
 import git
 import matplotlib.colors as mcolors
@@ -1460,3 +1460,34 @@ def mix_scenarios(*dicts) -> Dict:
                 d[mod].update({param: value})
 
     return d
+
+
+def flatten_nested_dict(my_dict, sep='_'):
+    """Flatten a nested dictionary into a single level dictionary."""
+    return pd.pandas.io.json._normalize.nested_to_record(my_dict, sep=sep)
+
+
+def get_counts_by_sex_and_age_group(df: pd.DataFrame, property: str, targets: Optional[Tuple[Any]|str] = None) -> dict:
+    """Returns dict giving counts (by sex and age-group) of alive individuals with truthy
+    values for that property (if no `target` is provided) or with a value included in `targets` (if a `target` is
+    provided).
+
+    Returns: {sex: {age_group: count}}
+    """
+
+    if targets is None:
+        counts = df.loc[
+            df.is_alive & df[property]
+        ].groupby(['sex', 'age_range']).size().unstack(fill_value=0)
+
+    elif isinstance(targets, tuple):
+        counts = df.loc[
+            df.is_alive & df[property].isin(targets)
+        ].groupby(['sex', 'age_range']).size().unstack(fill_value=0)
+
+    elif isinstance(targets, str):
+        counts = df.loc[
+            df.is_alive & (df[property] == targets)
+        ].groupby(['sex', 'age_range']).size().unstack(fill_value=0)
+
+    return counts.to_dict(orient='index')
