@@ -3096,7 +3096,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                             )
         else:
             # Test was not possible, set blank footprint and schedule another test
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             # set cap for number of repeat tests
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.

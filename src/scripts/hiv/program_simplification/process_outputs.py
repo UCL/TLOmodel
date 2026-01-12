@@ -39,7 +39,7 @@ results_folder = get_scenario_outputs("hiv_program_simplification", outputspath)
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder, draw=0, run=0)
+log = load_pickled_dataframes(results_folder, draw=1, run=1)
 
 # get basic information about the results
 scenario_info = get_scenario_info(results_folder)
@@ -492,7 +492,6 @@ art_cov = compute_summary_statistics(extract_results(
     ).pipe(set_param_names_as_column_index_level_0), central_measure='median')
 
 
-# todo need this only for last year not summed over target period
 
 ax = lineplot_over_time_with_ci(
     df=art_cov,
@@ -1120,12 +1119,13 @@ def summarise_appointments(df: pd.DataFrame) -> pd.Series:
 appt_counts = extract_results(
     results_folder=results_folder,
     module="tlo.methods.healthsystem.summary",
-    key="HSI_Event",
+    key="HSI_Event_non_blank_appt_footprint",
     custom_generate_series=summarise_appointments,
     do_scaling=True  # to scale to national population
 ).pipe(set_param_names_as_column_index_level_0)
 
 appt_counts_by_draw = appt_counts.groupby(level="draw", axis=1).mean()
+appt_counts_by_draw.to_excel(results_folder / "appt_counts_by_draw.xlsx")
 
 
 
@@ -1147,6 +1147,11 @@ pc_diff_appt_counts_vs_statusquo = 100.0 * compute_summary_statistics(
         scaled=True)
     ), only_central=True
 )
+
+
+
+
+
 
 
 
