@@ -3229,7 +3229,7 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                 event = hp.heappop(health_system.HSI_EVENT_QUEUE)
                 
                 # Get its clinic eligibility
-                clinic_eligibility = self.sim.modules['HealthSystem'].get_clinic_eligibility(event.hsi_event.TREATMENT_ID)
+                clinic_eligibility = health_system.get_clinic_eligibility(event.hsi_event.TREATMENT_ID)
 
                 # Get its priority
                 enforced_priority = health_system.enforce_priority_policy(event.hsi_event)
