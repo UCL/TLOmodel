@@ -897,6 +897,13 @@ class HealthSystem(Module):
         sim.schedule_event(HealthSystemChangeMode(self), Date(self.parameters["year_mode_switch"], 1, 1))
 
         # Schedule a consumables availability switch
+        # - check that future value will be allowable
+        if self.parameters["cons_availability_postSwitch"] not in self.consumables._options_for_availability:
+            raise ValueError(
+                f"Value for `cons_availability_postSwitch` is not within defined options: "
+                f"{self.parameters['cons_availability_postSwitch']}"
+            )
+
         sim.schedule_event(
             HealthSystemChangeParameters(
                 self, parameters={"cons_availability": self.parameters["cons_availability_postSwitch"]}
