@@ -49,7 +49,7 @@ class IndividualHistoryTracker(Module):
     }
     
     PROPERTIES = {
-        "iht_track_history": Property(Types.BOOL, "Whether the individual should be tracked by 
+        "iht_track_history": Property(Types.BOOL, "Whether the individual should be tracked by"
         "the individual history tracker or not")
     }
 
