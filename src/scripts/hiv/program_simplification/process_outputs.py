@@ -5,9 +5,6 @@ import datetime
 from pathlib import Path
 
 # import lacroix
-import matplotlib.colors as colors
-import statsmodels.api as sm
-import os
 from typing import Iterable, Sequence, Optional, Tuple
 import numpy as np
 import pandas as pd
@@ -105,20 +102,6 @@ def find_difference_relative_to_comparison_series_dataframe(_df: pd.DataFrame, *
 # set3_palette = sns.color_palette("Mako", 11).as_hex()
 # colours = sns.color_palette("mako", n_colors=12)
 
-# colours = [
-#     "#3B4252",  # brighter slate
-#     "#5B708C",  # mid grey-blue
-#     "#4C89D9",  # vivid blue
-#     "#76A9E0",  # lighter sky
-#     "#4CCED9",  # aqua
-#     "#66D9C1",  # mint
-#     "#9CD48C",  # fresh green
-#     "#F2D98D",  # golden sand
-#     "#F29E74",  # warm coral
-#     "#E06B75",  # lively crimson
-#     "#C58CCB",  # pastel lilac
-#     "#A6A5FF",  # periwinkle (light but visible)
-# ]
 
 colours = [
     "#3B4252",  # brighter slate
@@ -126,6 +109,7 @@ colours = [
     "#4C89D9",  # vivid blue
     "#76A9E0",  # lighter sky
     "#4CCED9",  # aqua
+    "#3FA7A3",  # muted teal
     "#66D9C1",  # mint
     "#9CD48C",  # fresh green
     "#F2D98D",  # golden sand
@@ -139,81 +123,6 @@ colours = [
 
 
 scenario_colours = dict(zip(param_names, colours))
-
-
-
-# def plot_central_with_ci(
-#     df,
-#     variable: str,
-#     title: str = None,
-#     ylabel: str = None,
-#     figsize=(10, 6),
-#     colour_map: dict = None,
-#     percent_df=None,
-# ):
-#     import numpy as np
-#     import pandas as pd
-#     import matplotlib.pyplot as plt
-#
-#     # tolerate 'central' vs 'mean'/'median'
-#     def _pick_stat_name(wide):
-#         stats = wide.columns.get_level_values("stat").unique()
-#         for name in ("central", "mean", "median"):
-#             if name in stats:
-#                 return name
-#         raise ValueError(f"No suitable stat in columns; found {list(stats)}")
-#
-#     stat_name = _pick_stat_name(df)
-#
-#     central = df.xs(stat_name, axis=1, level="stat").loc[variable]
-#     lower   = df.xs("lower", axis=1, level="stat").loc[variable]
-#     upper   = df.xs("upper", axis=1, level="stat").loc[variable]
-#     yerr = [central - lower, upper - central]
-#
-#     colours = [colour_map.get(s, "grey") for s in central.index] if colour_map else None
-#
-#     # --- percentages: draws live in columns as well ---
-#     percent_vals = None
-#     if percent_df is not None:
-#         # If percent_df has same wide shape (draw, stat) in COLUMNS:
-#         if isinstance(percent_df, pd.DataFrame) and "stat" in (percent_df.columns.names or []):
-#             p_stat = _pick_stat_name(percent_df)
-#             p = percent_df.xs(p_stat, axis=1, level="stat")
-#             # If it’s per-variable (rows = variables), select the same variable row
-#             if variable in p.index:
-#                 p = p.loc[variable]
-#             else:
-#                 p = p.squeeze()  # already a single row/series
-#             # Align to central’s draw order
-#             percent_vals = p.reindex(central.index)
-#         else:
-#             # If it’s something else (e.g., Series indexed by draw), just align
-#             percent_vals = percent_df.reindex(central.index)
-#
-#     fig, ax = plt.subplots(figsize=figsize)
-#     bars = ax.bar(central.index, central.values, yerr=yerr, capsize=5, color=colours)
-#
-#     ax.set_ylabel(ylabel if ylabel else variable.replace("_", " ").title())
-#     ax.set_title(title if title else f"{variable.replace('_', ' ').title()} by Scenario")
-#     ax.set_xticks(range(len(central.index)))
-#     ax.set_xticklabels(central.index, rotation=45, ha="right")
-#     ax.grid(axis="y", linestyle="--", alpha=0.7)
-#     ax.axhline(0, color="grey", linewidth=1)
-#
-#     if percent_vals is not None:
-#         offset = 0.05 * (upper.max() - lower.min()) if len(upper) and len(lower) else 0.0
-#         for label, bar in zip(central.index, bars):
-#             pc = percent_vals.get(label, np.nan)
-#             if pd.notna(pc):
-#                 x = bar.get_x() + bar.get_width() / 2
-#                 ax.text(x, upper[label] + offset, f"{pc:.1f}%", ha='center', va='bottom', fontsize=9)
-#
-#     y_max = (upper + 0.1 * (upper.max() - lower.min())).max()
-#     y_min = (lower - 0.1 * (upper.max() - lower.min())).min()
-#     ax.set_ylim(y_min, y_max)
-#
-#     plt.tight_layout()
-#     plt.show()
 
 
 
@@ -327,6 +236,76 @@ def plot_with_ci(
 
 
 
+
+def lineplot_over_time_with_ci(
+    df,
+    param_names,
+    scenario_colours,
+    target_period,
+    title=None,
+    ax=None,
+    alpha=0.25,
+    linewidth=2,
+    ylim=(0, 1),
+):
+    """
+    Plot central ART coverage with confidence intervals for each scenario,
+    restricted to a target period.
+    """
+
+    start_date, end_date = target_period
+    df = df.loc[start_date:end_date]
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+    draws = df.columns.get_level_values(0).unique()
+    draws = [d for d in param_names if d in draws]
+
+    for draw in draws:
+        central = df[(draw, "central")]
+        lower   = df[(draw, "lower")]
+        upper   = df[(draw, "upper")]
+
+        colour = scenario_colours.get(draw, "grey")
+
+        ax.plot(
+            df.index,
+            central,
+            color=colour,
+            linewidth=linewidth,
+            label=draw,
+        )
+
+        ax.fill_between(
+            df.index,
+            lower,
+            upper,
+            color=colour,
+            alpha=alpha,
+            linewidth=0,
+        )
+
+    ax.set_xlabel("Year")
+    ax.set_ylabel("ART coverage")
+    if title is not None:
+        ax.set_title(title, loc="center")
+
+    ax.set_ylim(*ylim)
+    ax.legend(
+        frameon=False,
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+    )
+    ax.figure.subplots_adjust(right=0.78)
+
+    return ax
+
+
+
+
+# %% extract outputs
+
 # number HIV tests
 def get_num_tests(_df):
     """Return total number of adults tested across the TARGET_PERIOD.
@@ -403,7 +382,7 @@ py_fsw_prep = compute_summary_statistics(
 plot_with_ci(
     py_fsw_prep,
     variable="PY_PREP_ORAL_FSW",
-    title=f"Number of person-years on PrEP for FSW {target_period()}",
+    title=f"Number of person-years on Oral PrEP for FSW {target_period()}",
     ylabel="Person-years on PrEP",
     colour_map=scenario_colours
 )
@@ -426,11 +405,57 @@ py_agyw_prep = compute_summary_statistics(
 plot_with_ci(
     py_agyw_prep,
     variable="PY_PREP_ORAL_AGYW",
-    title=f"Number of person-years on PrEP for AGYW {target_period()}",
+    title=f"Number of person-years on Oral PrEP for AGYW {target_period()}",
     ylabel="Person-years on PrEP",
     colour_map=scenario_colours
 )
 
+
+# FSW PY on INJECTABLE PrEP
+get_inj_prep_fsw_py = make_column_summariser("PY_PREP_INJ_FSW")
+
+py_inj_fsw_prep = compute_summary_statistics(
+    extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="hiv_program_coverage",
+        custom_generate_series=get_inj_prep_fsw_py,
+        do_scaling=True
+    ), central_measure="mean", use_standard_error=True
+).pipe(set_param_names_as_column_index_level_0)
+
+
+plot_with_ci(
+    py_inj_fsw_prep,
+    variable="PY_PREP_INJ_FSW",
+    title=f"Number of person-years on Injectable PrEP for FSW {target_period()}",
+    ylabel="Person-years on PrEP",
+    colour_map=scenario_colours
+)
+
+
+
+# AGYW PY on Injectable PrEP
+get_inj_prep_agyw_py = make_column_summariser("PY_PREP_INJ_AGYW")
+
+py_inj_agyw_prep = compute_summary_statistics(
+    extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="hiv_program_coverage",
+        custom_generate_series=get_inj_prep_agyw_py,
+        do_scaling=True
+    ), central_measure="mean", use_standard_error=True
+).pipe(set_param_names_as_column_index_level_0)
+
+
+plot_with_ci(
+    py_inj_agyw_prep,
+    variable="PY_PREP_INJ_AGYW",
+    title=f"Number of person-years on Injectable PrEP for AGYW {target_period()}",
+    ylabel="Person-years on PrEP",
+    colour_map=scenario_colours
+)
 
 
 # num men circ
@@ -465,6 +490,19 @@ art_cov = compute_summary_statistics(extract_results(
         index='date',
         do_scaling=False
     ).pipe(set_param_names_as_column_index_level_0), central_measure='median')
+
+
+# todo need this only for last year not summed over target period
+
+ax = lineplot_over_time_with_ci(
+    df=art_cov,
+    param_names=param_names,
+    scenario_colours=scenario_colours,
+    target_period=TARGET_PERIOD,
+    ylim=(0.6, 1),
+    title='ART coverage in adults with HIV'
+)
+plt.show()
 
 
 art_cov_full = extract_results(
