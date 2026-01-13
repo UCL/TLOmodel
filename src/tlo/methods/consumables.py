@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+
 from tlo import logging
 from tlo.notify import notifier
 
