@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -51,7 +52,8 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -639,6 +641,13 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
+
+    def report_summary_stats(self):
+        # This reports age- and sex-specific prevalence of prostate cancer for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = (
+            get_counts_by_sex_and_age_group(df, 'pc_status', ("prostate_confined", "local_ln", "metastatic")))
+        return {'number_at_any_stage': number_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,
