@@ -901,13 +901,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         params = self.parameters
 
         # 1) Determine who is currently on ART
-        # todo this is updated for revised UNAIDS estimates
+        # this is updated for revised UNAIDS estimates
         worksheet = self.parameters["art_coverage"]
-        # art_data = worksheet.loc[
-        #     worksheet.year == 2010, ["year", "single_age", "sex", "prop_coverage"]
-        # ]
         art_data = worksheet.loc[
-            worksheet.year == 2009, ["year", "single_age", "sex", "prop_coverage_reduced"]  # todo changed
+            worksheet.year == 2009, ["year", "single_age", "sex", "prop_coverage_reduced"]
         ]
 
         # merge all susceptible individuals with their coverage probability based on sex and age
@@ -916,7 +913,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             left_on=["age_years", "sex"],
             right_on=["single_age", "sex"],
             how="left",
-        )["prop_coverage_reduced"]  # todo changed here also
+        )["prop_coverage_reduced"]
 
         # make a series with relative risks of art which depends on >10 years infected (5x higher)
         rr_art = pd.Series(1, index=df.index)
