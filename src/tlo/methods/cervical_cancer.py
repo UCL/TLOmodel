@@ -395,21 +395,21 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_date_last_screened"] = pd.NaT
 
         # Initialise all cases through polling event
-        if self.parameters["generate_emulator_data"] is False:
+        #if self.parameters["generate_emulator_data"] is False:
         
-            # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------
-            women_over_15_nhiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & ~df["hv_inf"]]
+        # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------
+        women_over_15_nhiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & ~df["hv_inf"]]
 
-            df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
-                ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-                size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
-            )
+        df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+            ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
+            size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
+        )
 
-            women_15plus_hiv_idx = df.index[(df["age_years"] >= 15) & (df["sex"] == 'F') & df["hv_inf"]]
+        women_15plus_hiv_idx = df.index[(df["age_years"] >= 15) & (df["sex"] == 'F') & df["hv_inf"]]
 
-            df.loc[women_15plus_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
-                ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-                size=len(women_15plus_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
+        df.loc[women_15plus_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+            ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
+            size=len(women_15plus_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
         )
 
         # -------------------- symptoms, diagnosis, treatment  -----------
@@ -513,29 +513,26 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
         lm = self.linear_models_for_progression_of_hpv_cc_status
 
-        if self.parameters["generate_emulator_data"]:
-            lm['hpv'] = 1.0 if ('age_years' >= 15 and 'sex' == 'F' and 'ce_hpv_cc_status' == 'none') else 0.0
-        else:
-            lm['hpv'] = LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                p['r_hpv'],
-                Predictor('va_hpv')
-                .when(1, p['rr_hpv_vaccinated'])
-                .when(2, p['rr_hpv_vaccinated']),
-                Predictor('age_years', conditions_are_mutually_exclusive=True)
-                .when('.between(0,15)', 0.0)
-                .when('>50', p['rr_hpv_age50plus']),
-                Predictor('sex').when('M', 0.0),
-                Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
-                Predictor().when(
-                    'hv_inf & '
-                    '(hv_art == "on_not_vl_suppressed")',
-                    (p['rr_progress_cc_hiv'])),
-                Predictor().when(
-                    'hv_inf & '
-                    '(hv_art == "not")',
-                    (p['rr_progress_cc_hiv'])),
-            )
+        lm['hpv'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_hpv'],
+            Predictor('va_hpv')
+            .when(1, p['rr_hpv_vaccinated'])
+            .when(2, p['rr_hpv_vaccinated']),
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(0,15)', 0.0)
+            .when('>50', p['rr_hpv_age50plus']),
+            Predictor('sex').when('M', 0.0),
+            Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_not_vl_suppressed")',
+                (p['rr_progress_cc_hiv'])),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "not")',
+                (p['rr_progress_cc_hiv'])),
+        )
 
         lm['cin1'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -822,7 +819,14 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         p = m.parameters
 
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (ce_hpv_cc_status) -------------------------------
-
+        print("HERE ====")
+        #if p['generate_emulator_data'] and self.sim.date == Date(2010,1,1):
+        #    print("FIND ELIGIBLE INDIVIDUALS")
+        #    eligible_individuals = (df.is_alive &#
+        #                           (df.sex == 'F')
+        #                           (df.age_years >= 15))
+        #    df.loc[eligible_individuals, 'ce_hpv_cc_status'] = 'cin1'
+        #else:
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.
         for stage, lm in reversed(list(self.module.linear_models_for_progression_of_hpv_cc_status.items())):

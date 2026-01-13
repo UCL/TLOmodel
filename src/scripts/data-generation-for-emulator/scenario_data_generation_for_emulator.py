@@ -6,7 +6,6 @@ Still to fix:
 
 """
 
-
 from pathlib import Path
 from typing import Dict
 
@@ -16,13 +15,12 @@ from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios, get_filtered_treatment_ids
 from tlo.methods import individual_history_tracker
 from tlo.methods.fullmodel import fullmodel
-from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
+from tlo.scenario import BaseScenario
 import random
 import re
 import ast
 import numpy as np
 
-random.seed(10)
 module_of_interest ='CervicalCancer'
 N_param_combo = 10
 
@@ -143,16 +141,16 @@ class TrackIndividualHistories(BaseScenario):
         super().__init__()
         self.seed = 42
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(months=5)
-        self.pop_size = 100
+        self.end_date = self.start_date + pd.DateOffset(years=1)
+        self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 2
         self.generate_event_chains = True
 
     def log_configuration(self):
         return {
-            'filename': 'data_generation_for_emulator',
+            'filename': 'track_individual_histories',
             'directory': Path('./outputs'),  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
@@ -178,13 +176,19 @@ class TrackIndividualHistories(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
 
-        parameter_draws = sample_param_combo()
+        parameter_draws_sampled = sample_param_combo()
+        
+        parameter_draws = {}
+        for i in range(10):
+            parameter_draws[i] = {'HealthSystem': parameter_draws_sampled[i]['HealthSystem'], module_of_interest: parameter_draws_sampled[i][module_of_interest]}
+        #exit(-1)
         scenarios = {}
-        for i in range(N_param_combo):
-            scenarios[str(i)] = mix_scenarios(
+        for i in range(10):
+            scenarios[i] = mix_scenarios(
                                     self._baseline(),
                                     parameter_draws[i]
-                                )
+                            )
+        print(scenarios)
         return scenarios
 
     def _baseline(self) -> Dict:
@@ -194,14 +198,11 @@ class TrackIndividualHistories(BaseScenario):
             {
                 "HealthSystem": {
                     "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
-                },
-                module_of_interest: {
-                    "generate_emulator_data": True
-                },
+                }
             },
         )
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
-    sample_param_combo()
+
     scenario_run([__file__])
