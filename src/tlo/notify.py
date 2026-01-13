@@ -66,7 +66,7 @@ class Notifier:
         e.g. if you are running multiple tests or simulations in the same process.
         """
         self.listeners.clear()
-        
+
     def has_listeners(self, notification_key):
         """
         Check if there are any listeners registered for a specific notification.
