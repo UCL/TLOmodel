@@ -1,12 +1,8 @@
 """This file is an edited and updated version of the file `schisto_analysis.py` and has been created to allow a check
 that the model is working as originally intended."""
 
-import pickle
 import warnings
 from pathlib import Path
-
-import matplotlib.pyplot as plt
-import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
