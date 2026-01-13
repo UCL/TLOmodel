@@ -1127,8 +1127,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # 1) Determine who is currently on ART
         # this is updated for revised UNAIDS estimates
         worksheet = self.parameters["art_coverage"]
+
         art_data = worksheet.loc[
-            worksheet.year == (params['baseline_year']-1), ["year", "single_age", "sex", "prop_coverage"]
+            worksheet.year == (params['baseline_year']-1), ["year", "single_age", "sex", "prop_coverage_reduced"]
         ]
 
         # merge all susceptible individuals with their coverage probability based on sex and age
