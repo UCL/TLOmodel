@@ -3584,7 +3584,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # Consider if TB preventive therapy should start
         self.consider_tb(person_id)
 
-        # Program simplification scenario: targeted IPT
+        # Program simplification scenario: targeted IPT - this will be in addition to routine TPT above
         if self.sim.modules['Hiv'].parameters['type_of_scaleup'] in ('target_IPT', 'target_all'):
             # Check if CardioMetabolicDisorders module is loaded
             diabetes = False

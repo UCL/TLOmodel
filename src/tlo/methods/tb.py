@@ -1130,8 +1130,6 @@ class Tb(Module):
         if df.loc[person_id, "tb_diagnosed"] or df.loc[person_id, "tb_diagnosed_mdr"]:
             pass
 
-        high_risk_districts = self.parameters["tb_high_risk_distr"]
-        district = df.at[person_id, "district_of_residence"]
         eligible = df.at[person_id, "tb_inf"] != "active"
 
         # select coverage rate by year:
@@ -1142,11 +1140,8 @@ class Tb(Module):
         ipt_year = ipt.loc[ipt.year == year]
         ipt_coverage_plhiv = ipt_year.coverage_plhiv
 
-        if (
-            (district in high_risk_districts.district_name.values)
-            & eligible
-            & (self.rng.rand() < ipt_coverage_plhiv.values)
-        ):
+        if eligible & (self.rng.rand() < ipt_coverage_plhiv.values):
+
             # Schedule the TB treatment event:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_Start_or_Continue_Ipt(self, person_id=person_id),
