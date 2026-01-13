@@ -337,7 +337,7 @@ def extract_results(results_folder: Path,
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
-
+    do_scaling = False
     # Collect results from each draw/run
     res = dict()
     for draw in range(info['number_of_draws']):

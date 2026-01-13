@@ -19,8 +19,8 @@ from tlo.analysis.life_expectancy import get_life_expectancy_estimates
 
 
 # Range of years considered
-min_year = 2010
-max_year = 2015
+min_year = 2014
+max_year = 2020
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
