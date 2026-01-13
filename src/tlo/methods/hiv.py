@@ -3454,29 +3454,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "hv_on_cotrimoxazole"] = True
 
         # Consider if TB preventive therapy should start
-        # this is only in high-risk districts
         self.consider_tb(person_id)
-
-        # Program simplification scenario: targeted IPT
-        if self.sim.modules['Hiv'].parameters['type_of_scaleup'] in ('target_IPT', 'target_all'):
-            # Check if CardioMetabolicDisorders module is loaded
-            diabetes = False
-            if "CardioMetabolicDisorders" in self.sim.modules:
-                diabetes = df.at[person_id, "nc_diabetes"] is True
-
-            # Now apply the IPT condition
-            if (
-                (df.at[person_id, "li_ex_alc"] is True) or
-                (df.at[person_id, "li_tob"] is True) or
-                df.at[person_id, "sy_aids_symptoms"] > 0 or
-                diabetes
-            ):
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    tb.HSI_Tb_Start_or_Continue_Ipt(self.sim.modules["Tb"], person_id=person_id),
-                    priority=1,
-                    topen=self.sim.date,
-                    tclose=None,
-                )
 
         return drugs_available
 
