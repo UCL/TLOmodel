@@ -66,6 +66,7 @@ def test_run(seed):
     check_dtypes(sim)
 
 
+
 @pytest.mark.slow
 def test_all_injuries_run(seed):
     """

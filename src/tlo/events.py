@@ -9,6 +9,8 @@ from tlo import DateOffset
 if TYPE_CHECKING:
     from tlo import Simulation
 
+from tlo.notify import notifier
+
 
 class Priority(Enum):
     """Enumeration for the Priority, which is used in sorting the events in the simulation queue."""
@@ -21,7 +23,6 @@ class Priority(Enum):
         if self.__class__ is other.__class__:
             return self.value < other.value
         return NotImplemented
-
 
 class Event:
     """Base event class, from which all others inherit.
@@ -63,8 +64,18 @@ class Event:
 
     def run(self):
         """Make the event happen."""
+
+        # Dispatch notification that event is about to run
+        notifier.dispatch("event.pre-run", data={"target": self.target,
+                                                 "module" : self.module.name,
+                                                 "event_name": self.__class__.__name__})
+
         self.apply(self.target)
         self.post_apply_hook()
+
+        # Dispatch notification that event has just ran
+        notifier.dispatch("event.post-run", data={"target": self.target,
+                                                  "event_name": self.__class__.__name__})
 
 
 class RegularEvent(Event):
