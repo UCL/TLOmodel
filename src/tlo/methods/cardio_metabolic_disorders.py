@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -71,7 +72,8 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -847,6 +849,16 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         dw['heart_attack'] = fraction_of_month_heart_attack * self.daly_wts['daly_heart_attack_avg']
 
         return dw
+
+    def report_summary_stats(self):
+        """Report age- and sex-specific prevalence of diseases to the HealthBurden module"""
+        df = self.sim.population.props
+        number_by_age_group_sex_dict = {}
+
+        for condition in self.conditions:
+            number_by_age_group_sex_dict[f'number with {condition}'] = \
+                get_counts_by_sex_and_age_group(df, f'nc_{condition}')
+        return number_by_age_group_sex_dict
 
     def on_hsi_alert(self, person_id, treatment_id):
         """

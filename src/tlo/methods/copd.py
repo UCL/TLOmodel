@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
+from tlo.analysis.utils import (
+    flatten_multi_index_series_into_dict_for_logging,
+    get_counts_by_sex_and_age_group,
+)
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -42,6 +45,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     CAUSES_OF_DEATH = {
@@ -217,6 +221,12 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         """Return disability weight for alive persons, based on the current status of ch_lungfunction."""
         df = self.sim.population.props
         return df.loc[df.is_alive, 'ch_lungfunction'].map(self.models.disability_weight_given_lungfunction)
+
+    def report_summary_stats(self):
+        # This reports age- and sex-specific prevalence of COPD for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ch_lungfunction', (4, 5, 6))
+        return {'number_with_poor_ch_lungfunction': number_by_age_group_sex}
 
     def define_symptoms(self):
         """Define and register Symptoms"""
