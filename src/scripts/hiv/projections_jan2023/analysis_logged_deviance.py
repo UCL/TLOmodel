@@ -34,10 +34,8 @@ resourcefilepath = './resources'
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 1_000
-
-# scenario = 1
+end_date = Date(2026, 1, 1)
+popsize = 5_000
 
 # set up the log config
 log_config = {
@@ -88,25 +86,7 @@ sim.register(
 # set the scenario
 sim.modules["Hiv"].parameters["type_of_scaleup"] = 'none'
 # sim.modules["Hiv"].parameters["scaleup_start_year"] = 2011
-# sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
-# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
-# sim.modules["Tb"].parameters["scenario_SI"] = "z"
 
-# sim.modules["Tb"].parameters["rr_tb_hiv"] = 5  # default 13
-# rr relapse if HIV+ 4.7
-# sim.modules["Tb"].parameters["rr_tb_aids"] = 26  # default 26
-
-# to cluster tests in positive people
-# sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 1.1  # default 1.5
-
-# to account for people starting-> defaulting, or not getting cons
-# this not used now if perfect referral testing->treatment
-# affects the prob of art start once diagnosed
-# sim.modules["Hiv"].parameters["treatment_initiation_adjustment"] = 1  # default 1.5
-
-# assume all defaulting is due to cons availability
-# sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 1.0
-# sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

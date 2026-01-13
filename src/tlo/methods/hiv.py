@@ -1200,10 +1200,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # get expected viral suppression rates by age and year
         prob_vs_adult = self.prob_viral_suppression(
-            self.sim.date.year, age_of_person=params["age_default_adult"], df=df
+            df=df, year=self.sim.date.year, age_of_person=params["age_default_adult"],
         )
         prob_vs_child = self.prob_viral_suppression(
-            self.sim.date.year, age_of_person=params["age_default_children"], df=df
+            df=df, year=self.sim.date.year, age_of_person=params["age_default_children"],
         )
 
         split_into_vl_and_notvl(adult_f_art_idx, prob_vs_adult)
@@ -1918,7 +1918,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         p = self.parameters
         prob_vs = self.parameters["prob_start_art_or_vs"]
-        current_year = year if year <= p["end_year_treatment_data"] else p["end_year_treatment_data"]
+        current_year = min(year, p["end_year_treatment_data"])
 
         age_of_person = age_of_person
         age_group = "adults" if age_of_person >= p['age_threshold_child_adult_distinction'] else "children"
@@ -2428,7 +2428,9 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 scaled_risk = rr_of_infection / mean_risk
 
                 # get probabilities for receiving prep from linear model
-                prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[eligible_idx])
+                prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[eligible_idx],
+                                                                   year=self.sim.date.year,
+                                                                   )
 
                 # number of AGYW expected to get PrEP = mean(prob_prep) * total AGYW
                 expected_n = int(round(prob_prep.mean() * len(eligible_idx)))
@@ -2982,13 +2984,15 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             m.stops_treatment(person_id)
 
             # todo decide whether long-term LTFU or return within 3 months
-            if m.rng.random_sample() < 0.95:
+            # todo i've changed this from 0.95 as art coverage was around 90%ish = too low
+            # change return to 1 month
+            if m.rng.random_sample() < 0.99:
 
                 # refer for another treatment again in 3 months
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=m,
                                                      facility_level_of_this_hsi="1a"),
-                    topen=self.sim.date + pd.DateOffset(months=3),
+                    topen=self.sim.date + pd.DateOffset(months=1),
                     tclose=None,
                     priority=0,
                 )
@@ -3583,7 +3587,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             if art_status_at_beginning_of_hsi != "not":
                 self.module.stops_treatment(person_id)
 
-            if (self.module.rng.random_sample() >=
+            # todo changed the sign from >=
+            if (self.module.rng.random_sample() <=
                 p['probability_of_seeking_further_art_appointment_if_drug_not_available']):
 
                 # add in referral straight back to tx
@@ -3751,6 +3756,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                         q = p["prob_receive_viral_load_test_result"] * p["sensitivity_viral_load_test"]
 
                         if self.module.rng.random_sample() < q:
+                            # todo numbers
                             delay_months = self.module.rng.randint(3, 7)
 
                             self.sim.schedule_event(
@@ -3772,7 +3778,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         """Helper function to determine the VL status that the person will have.
         Return what will be the status of "hv_art"
         """
-        prob_vs = self.module.prob_viral_suppression(year=self.sim.date.year, age_of_person=age_of_person, df=df)
+        prob_vs = self.module.prob_viral_suppression(df=df, year=self.sim.date.year, age_of_person=age_of_person)
 
         return (
             "on_VL_suppressed"

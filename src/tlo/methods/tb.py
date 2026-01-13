@@ -433,7 +433,7 @@ class Tb(Module):
             # HIV-negative
             # Drug-susceptible tuberculosis, not HIV infected
             self.daly_wts["daly_tb"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                0
+                0.0
             )
             # multi-drug resistant tuberculosis, not HIV infected
             self.daly_wts["daly_mdr_tb"] = self.sim.modules[
@@ -1017,7 +1017,7 @@ class Tb(Module):
 
         # to avoid errors when hiv module not running
         df_tmp = df.loc[df.is_alive]
-        health_values = pd.Series(0, index=df_tmp.index)
+        health_values = pd.Series(0.0, index=df_tmp.index, dtype=float)
 
         # hiv-negative
         health_values.loc[
