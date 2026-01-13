@@ -266,14 +266,12 @@ class HSI_Event:
 
         # Determine if the request should be logged (over-ride argument provided if HealthSystem is disabled).
         _to_log = to_log if not self.healthcare_system.disable else False
-        _to_broadcast = True if 'IndividualHistoryTracker' in self.module.sim.modules else False
 
         # Checking the availability and logging:
         rtn = self.healthcare_system.consumables._request_consumables(
             essential_item_codes=_item_codes,
             optional_item_codes=_optional_item_codes,
             to_log=_to_log,
-            to_broadcast = _to_broadcast,
             facility_info=self.facility_info,
             treatment_id=self.TREATMENT_ID,
             target=self.target,

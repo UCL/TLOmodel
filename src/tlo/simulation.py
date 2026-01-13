@@ -12,8 +12,6 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
-from tlo.notify import notifier
-
 try:
     import dill
 

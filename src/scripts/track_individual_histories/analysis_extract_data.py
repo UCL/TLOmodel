@@ -33,8 +33,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_colwidth', None)
 
-    individual_individual_histories = extract_individual_histories(results_folder)
-
+    individual_histories = extract_individual_histories(results_folder)
+    
+    individual_histories.to_csv("individual_histories.csv")
+    
 if __name__ == "__main__":
     rfp = Path('resources')
 
