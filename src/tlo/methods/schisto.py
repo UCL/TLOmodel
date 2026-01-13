@@ -7,7 +7,10 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
+from tlo.analysis.utils import (
+    flatten_multi_index_series_into_dict_for_logging,
+    get_counts_by_sex_and_age_group,
+)
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -43,7 +46,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     CAUSES_OF_DEATH = {}
@@ -379,6 +383,17 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         return pd.Series(index=df.index[df.is_alive], data=0.0).add(
             disability_weights_for_each_person_with_symptoms, fill_value=0.0
         )
+
+    def report_summary_stats(self):
+        """Returns disease numbers by sex, age, species, and infection status."""
+        return {
+            f'number_with_any_infection_with_{spec_name}': get_counts_by_sex_and_age_group(
+                self.sim.population.props,
+                property=spec_obj.infection_status_property,
+                targets=('Low-infection', 'High-infection')
+            )
+            for spec_name, spec_obj in self.species.items()
+        }
 
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]], mda=False) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is
