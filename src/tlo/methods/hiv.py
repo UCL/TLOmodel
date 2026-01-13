@@ -3477,7 +3477,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 "probability_of_seeking_further_art_appointment_if_drug_not_available"
             ]
 
-            if self.module.rng.random_sample() >= p:
+            if self.module.rng.random_sample() <= p:
 
                 # add in referral straight back to tx
                 # if defaulting, seek another treatment appointment in 6 months
