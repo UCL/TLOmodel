@@ -1335,9 +1335,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_hiv_test_for_newborn_infant"] = scaled_params["prob_hiv_test_for_newborn_infant"]
 
             # viral suppression rates
-            # adults already at 95% by 2020
+            # adults adjusted rates at 89% in 2025 -> 95% when VL monitoring incorporated
             # change all column values
-            # todo should this be the adjusted values
             p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
             self.adjust_viral_load_suppression_rates()  # then adjust these rates for VL testing effects
 
@@ -1653,7 +1652,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                           (prob_art.year == current_year) &
                           (prob_art.age == "adults"),
                           "prob_art_if_dx_updated"].values[0]
-        # todo edited above
+
         return return_prob
 
     def prob_viral_suppression(self, df, year, age_of_person):
@@ -2715,7 +2714,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             # Defaults to being off Treatment
             m.stops_treatment(person_id)
 
-            # todo decide whether long-term LTFU or return within 3 months
+            # decide whether long-term LTFU or return within 3 months
             if m.rng.random_sample() < 0.95:
 
                 # refer for another treatment again in 3 months
