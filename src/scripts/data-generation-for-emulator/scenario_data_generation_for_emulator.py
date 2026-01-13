@@ -194,7 +194,10 @@ class TrackIndividualHistories(BaseScenario):
             {
                 "HealthSystem": {
                     "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
-                }
+                },
+                module_of_interest: {
+                    "generate_emulator_data": True
+                },
             },
         )
 
