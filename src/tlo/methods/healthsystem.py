@@ -2271,6 +2271,28 @@ class HealthSystem(Module):
                         priority=_priority,
                         clinic=event_clinic,
                     )
+                                   # if not ok_to_run
+                else:
+                    # Do not run,
+                    # Call did_not_run for the hsi_event
+                    rtn_from_did_not_run = event.did_not_run()
+                    # If received no response from the call to did_not_run, or a True signal, then
+                    # add to the hold-over queue.
+                    # Otherwise (disease module returns "FALSE") the event is not rescheduled and will not run.
+
+                    if rtn_from_did_not_run is not False:
+                        # reschedule event
+                        hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
+
+                    # Log that the event did not run
+                    self.record_hsi_event(
+                        hsi_event=event,
+                        actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                        squeeze_factor=0.0,
+                        did_run=False,
+                        priority=_priority
+                    )
+
 
         return _to_be_held_over
 
