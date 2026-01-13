@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -43,7 +44,8 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -292,6 +294,11 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
             ] += daly_wt
 
         return health_values  # returns the series
+
+    def report_summary_stats(self):
+        df = self.sim.population.props
+        prevalence_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'mi_is_infected')
+        return {'infected': prevalence_by_age_group_sex}
 
     def do_at_generic_first_appt_emergency(
         self,

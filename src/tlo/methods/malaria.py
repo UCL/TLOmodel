@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, List, Literal, Optional, Union
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, Predictor
 from tlo.methods import Metadata
@@ -55,7 +56,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
-        Metadata.USES_SYMPTOMMANAGER
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -813,6 +815,12 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         health_values.name = 'Malaria'  # label the cause of this disability
 
         return health_values.loc[df.is_alive]  # returns the series
+
+    def report_summary_stats(self):
+        # This reports age- and sex-specific prevalence of malaria for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ma_inf_type', ('clinical', 'severe'))
+        return {'number_with_malaria_inf_by_type': number_by_age_group_sex}
 
     def check_if_fever_is_caused_by_malaria(
         self,
