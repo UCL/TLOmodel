@@ -487,6 +487,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.INT,
             "the year when the viral load testing starts (it will occur on 1st January of that year"
         ),
+        "tdf_test_replace_vl_test": Parameter(
+            Types.BOOL,
+            "whether urine TDF test should replace viral load monitoring during follow-up appts"
+        ),
+        "targeted_adherence_monitoring": Parameter(
+            Types.BOOL,
+            "whether viral load monitoring or TDF testing should be targeted to specific groups"
+        ),
         "p_tdf_positive_given_suppressed": Parameter(
             Types.REAL,
             "probability of a urine TDF test returning positive if person virally suppressed"
@@ -3400,14 +3408,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
-        # Log the appt footprint
-        # details = {
-        #     'appt_type': self.TREATMENT_ID,
-        #     'footprint': self.EXPECTED_APPT_FOOTPRINT,
-        #     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-        # }
-        # logger.info(key='hiv_appts', data=details)
-
     def do_at_initiation(self, person_id):
         """Things to do when this the first appointment ART"""
         df = self.sim.population.props
@@ -3454,6 +3454,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "hv_on_cotrimoxazole"] = True
 
         # Consider if TB preventive therapy should start
+        # this is only in high-risk districts
         self.consider_tb(person_id)
 
         # Program simplification scenario: targeted IPT
@@ -3585,15 +3586,14 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
 
         # 1) Choose test type
-        test_type = 'TDF' if p['type_of_scaleup'] == 'replace_VL_with_TDF' else 'VL'
+        test_type = 'TDF' if p['tdf_test_replace_vl_test'] else 'VL'
 
         # 2) Base probability from dispensing / VL interval
         test_prob = person['hv_arv_dispensing_interval'] / p['interval_for_viral_load_measurement_months']
-        # Clamp to [0,1]
-        if test_prob < 0.0: test_prob = 0.0
-        if test_prob > 1.0: test_prob = 1.0
+        # Clamp probability to [0,1]
+        test_prob = max(0.0, min(1.0, test_prob))
 
-        if p['type_of_scaleup'] in ('target_VL', 'target_all'):
+        if p['targeted_adherence_monitoring']:
             if person['age_years'] < 30 or person['is_pregnant']:
                 test_prob = test_prob
             else:
