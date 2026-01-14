@@ -2248,17 +2248,24 @@ class HealthSystem(Module):
                 _priority = event.priority
                 event = event.hsi_event
 
+
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
                 # Mode 0: All HSI Event run, with no squeeze
                 # Mode 1: All HSI Events run provided all required officers have non-zero capabilities
                 ok_to_run = True
 
+
                 if self.mode_appt_constraints == 1:
                     if event.expected_time_requests:
                         ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
                             event.expected_time_requests, event_clinic
                         )
+
+                # Check here that the treatment id is allowed at this point as service availability might have changed
+                # since the event was scheduled
+                if not self.is_treatment_id_allowed(event.TREATMENT_ID, self.service_availability):
+                    ok_to_run = False
 
                 if ok_to_run:
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
@@ -2532,6 +2539,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Check the clinic for event's treatment-id
                 event_clinic = next_event_tuple.clinic_eligibility
                 capabilities_still_available = set_capabilities_still_available[event_clinic]
+
+                # Check here that the treatment id is allowed as service availability might have changed
+                # since the event was scheduled
+                if not self.module.is_treatment_id_allowed(event.TREATMENT_ID, self.module.service_availability):
+                    self.module.call_and_record_never_ran_hsi_event(hsi_event=event, priority=next_event_tuple.priority)
 
                 if self.sim.date > next_event_tuple.tclose:
                     # The event has expired (after tclose) having never been run. Call the 'never_ran' function
@@ -3052,7 +3064,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             retained_events = []
             while len(self.module.HSI_EVENT_QUEUE) > 0:
                 next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
-                if next_event_tuple.hsi_event.TREATMENT_ID in self.module.service_availability:
+                if self.module.is_treatment_id_allowed(hsi_event.TREATMENT_ID, self.module.service_availability):
                     retained_events.append(next_event_tuple)
                 else:
                     self.module.call_and_record_never_ran_hsi_event(hsi_event=next_event_tuple.hsi_event, priority=next_event_tuple.priority)
