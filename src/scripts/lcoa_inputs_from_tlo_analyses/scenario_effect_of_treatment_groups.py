@@ -109,10 +109,13 @@ class EffectOfEachTreatmentGroup(BaseScenario):
         # Return 'Service_Availability' values, with scenarios for everything, nothing, and ones for which each
         # treatment is omitted
         service_availability = dict({"Everything": ["*"], "Nothing": []})
-        service_availability.update(
-           {f"No {group_name}": [x for x in treatments if x not in group_treatments]
-           for group_name, group_treatments in treatment_groups.items()}
-        )
+        # For each treatment group, create scenarios keeping only one treatment from that group
+        for group_name, group_treatments in treatment_groups.items():
+            for treatment in group_treatments:
+                scenario_name = f"Only {treatment}"
+                # Get all treatments except those in this group, then add back just this one treatment
+                available_treatments = [x for x in treatments if x not in group_treatments] + [treatment]
+                service_availability[scenario_name] = available_treatments
 
         return service_availability
 
