@@ -13,7 +13,6 @@ from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
-
 from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
 from tlo.analysis.utils import (  # get_filtered_treatment_ids,
     flatten_multi_index_series_into_dict_for_logging,
@@ -3074,15 +3073,16 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         assert isinstance(module, HealthSystem)
 
     def apply(self, population):
+        p =self.module.parameters
 
         if "cons_availability" in self._parameters_to_change:
-            self.module.consumables.availability = self.module.parameters["cons_availability_postSwitch"]
+            self.module.consumables.availability = p["cons_availability_postSwitch"]
 
         if "equip_availability" in self._parameters_to_change:
-            self.module.equipment.availability = self.module.parameters["equip_availability_postSwitch"]
+            self.module.equipment.availability = p["equip_availability_postSwitch"]
 
         if "use_funded_or_actual_staffing" in self._parameters_to_change:
-            self.module.use_funded_or_actual_staffing = self.module.parameters["use_funded_or_actual_staffing_postSwitch"]
+            self.module.use_funded_or_actual_staffing = p["use_funded_or_actual_staffing_postSwitch"]
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
