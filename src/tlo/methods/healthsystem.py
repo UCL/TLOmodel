@@ -254,7 +254,7 @@ class HealthSystem(Module):
             " to the module initialiser.",
         ),
         "year_service_availability_switch": Parameter(Types.INT, "Year in which service availability changes."),
-        "Service_availability_postSwitch": Parameter(
+        "service_availability_postSwitch": Parameter(
             Types.LIST,
             "List of services to be available after the switch in `year_service_availability_switch`"
         ),
@@ -901,7 +901,7 @@ class HealthSystem(Module):
         sim.schedule_event(
             HealthSystemChangeParameters(
                 self,
-                parameters={"service_availability": self.parameters["Service_availability_postSwitch"]}
+                parameters={"service_availability": self.parameters["service_availability_postSwitch"]},
             ),
             Date(self.parameters["year_service_availability_switch"], 1, 1),
         )
@@ -2264,6 +2264,7 @@ class HealthSystem(Module):
 
                 # Check here that the treatment id is allowed at this point as service availability might have changed
                 # since the event was scheduled
+                # TODO: Should we prevent this event from being rescheduled?
                 if not self.is_treatment_id_allowed(event.TREATMENT_ID, self.service_availability):
                     ok_to_run = False
 
