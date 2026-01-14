@@ -12,7 +12,7 @@ import time
 BASE_NCSS = "https://ds.nccs.nasa.gov/thredds/ncss/grid/AMES/NEX/GDDP-CMIP6"
 VERSION = "v2.0"
 
-OUTPUT_DIR = Path("nex_gddp_cmip6_malawi_ncss")
+OUTPUT_DIR = Path("/Users/rem76/Desktop/Climate_change_health/nex_gddp_cmip6_malawi_ncss")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Malawi bounding box
