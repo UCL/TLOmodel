@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -1176,7 +1177,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,  # Disease modules: Any disease module should carry this label.
         Metadata.USES_SYMPTOMMANAGER,  # The 'Symptom Manager' recognises modules with this label.
         Metadata.USES_HEALTHSYSTEM,  # The 'HealthSystem' recognises modules with this label.
-        Metadata.USES_HEALTHBURDEN  # The 'HealthBurden' module recognises modules with this label.
+        Metadata.USES_HEALTHBURDEN,  # The 'HealthBurden' module recognises modules with this label.
+        Metadata.REPORTS_DISEASE_NUMBERS # The 'ReportDiseaseNumbers' module recognises modules with this label.
     }
 
     # Declare Causes of Death
@@ -2552,6 +2554,12 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         disability_series_for_alive_persons = df.loc[df.is_alive, "rt_disability"]
         return disability_series_for_alive_persons
+
+    def report_summary_stats(self):
+        # This returns dataframe that reports on the prevalence of RTIs for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'rt_road_traffic_inc')
+        return {'number_within_last_month': number_by_age_group_sex}
 
     def rti_assign_injuries(self, number):
         """
