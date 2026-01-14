@@ -18,7 +18,7 @@ full_grid = make_cartesian_parameter_grid(
         "HealthSystem": {
             "scale_factor_delay_in_seeking_care_weather": [float(60)],
             "rescaling_prob_seeking_after_disruption": [float(2)],
-            "rescaling_prob_disruption": [float(2)],
+            "rescaling_prob_disruption": [float(10)],
             "scale_factor_severity_disruption_and_delay": [float(2)],
             "mode_appt_constraints": [1],
             "mode_appt_constraints_postSwitch": [2],
@@ -36,7 +36,7 @@ full_grid = make_cartesian_parameter_grid(
             "climate_model_ensemble_model": ["mean"],
             "year_effective_climate_disruptions": [2025],
             "prop_supply_side_disruptions": [0.5], # moot in mode 1
-            "services_affected_precip": ["none", "all"], # none nullifies all other climate impacts
+            "services_affected_precip": ["all"],#["none", "all"], # none nullifies all other climate impacts
             "tclose_overwrite": [1000],
         }
     }
@@ -48,8 +48,8 @@ class ClimateDisruptionScenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2041, 1, 12)
-        self.pop_size = 100_000
+        self.end_date = Date(2027, 1, 12)
+        self.pop_size = 10_000
         self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2025
         self._scenarios = self._get_scenarios()
