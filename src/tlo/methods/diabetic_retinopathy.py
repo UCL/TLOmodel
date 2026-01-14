@@ -11,7 +11,7 @@ from tlo.methods import Metadata, cardio_metabolic_disorders
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 from tlo.population import IndividualProperties
-from tlo.util import read_csv_files
+from tlo.util import read_csv_files, transition_states
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -114,6 +114,14 @@ class DiabeticRetinopathy(Module):
             Types.REAL,
             "Relative risk of progression to more severe stages after receiving treatment (applied multiplicatively)"
         ),
+        "vision_transition_matrix_no_dr": Parameter(
+            Types.LIST,
+            "Probability matrix for vision status transitions for people without sight-threatening DR"
+        ),
+        "vision_transition_matrix_sight_threatening": Parameter(
+            Types.LIST,
+            "Probability matrix for vision status transitions for people with sight-threatening DR"
+        ),
     }
 
     PROPERTIES = {
@@ -181,6 +189,16 @@ class DiabeticRetinopathy(Module):
             Types.DATE,
             "date of first receiving Laser Pan Retinal Coagulation treatment (pd.NaT if never started treatment)"
         ),
+        "vision_status": Property(
+            Types.CATEGORICAL,
+            "Visual acuity status of an individual",
+            categories=["normal", "moderate_vision_impairment", "severe_vision_impairment", "blindness"],
+            ordered=True
+        ),
+        "vision_loss_due_to_dr": Property(
+            Types.BOOL,
+            "Whether current vision impairment is due to diabetic retinopathy"
+        ),
     }
 
     def __init__(self):
@@ -232,6 +250,8 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "total_laser_pan_retinal_coagulation_sessions"] = 0
         df.loc[list(alive_diabetes_idx), "on_laser_pan_retinal_coagulation_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dr_date_prc_treatment"] = pd.NaT
+        df.loc[list(alive_diabetes_idx), "vision_status"] = "normal"
+        df.loc[list(alive_diabetes_idx), "vision_loss_due_to_dr"] = False
 
         # -------------------- dr_status -----------
         # Determine who has diabetic retinopathy at all stages:
@@ -323,6 +343,23 @@ class DiabeticRetinopathy(Module):
         self.make_the_linear_models()
         self.look_up_consumable_item_codes()
 
+        # Convert vision transition matrices
+        vision_states = sim.population.props.vision_status.cat.categories
+
+        for key in [
+            'vision_transition_matrix_no_dr',
+            'vision_transition_matrix_sight_threatening'
+        ]:
+            self.parameters[key] = pd.DataFrame(
+                self.parameters[key],
+                index=vision_states,
+                columns=vision_states
+            )
+
+            # Check that rows sum to 1
+            assert np.allclose(self.parameters[key].sum(axis=1), 1.0), \
+                f"{key} rows do not sum to 1"
+
     def report_daly_values(self) -> pd.Series:
         return pd.Series(index=self.sim.population.props.index, data=0.0)
 
@@ -408,22 +445,6 @@ class DiabeticRetinopathy(Module):
             get_item_codes("Mydriatic/Dilation Drops, 15ml"): 1
         }
 
-    def do_recovery(self, idx: Union[list, pd.Index]):
-        """Represent the recovery from diabetic retinopathy for the person_id given in `idx`.
-        Recovery causes the person to move from severe to moderate"""
-        df = self.sim.population.props
-
-        # Getting those with severe and updating to moderate
-        mask = df.loc[idx, 'dr_status'] == 'severe'
-        df.loc[idx[mask], 'dr_status'] = 'moderate'
-        df.loc[idx[mask], 'dr_date_treatment'] = self.sim.date
-        df.loc[idx[mask], 'dr_on_treatment'] = True
-
-    def do_treatment(self, person_id, prob_success):
-        """For treatment of individuals with Severe DR status. If treatment is successful, regress to moderate."""
-        if prob_success > self.rng.random_sample():
-            self.do_recovery([person_id])
-
     def do_treatment_success_dmo(self, person_id: int, treatment_type: str) -> None:
         """Apply treatment success for DMO (clinically_significant)"""
         df = self.sim.population.props
@@ -440,10 +461,25 @@ class DiabeticRetinopathy(Module):
             return
 
         if self.rng.random_sample() < success_prob:
-            # Treatment successful, then improve DMO status
-            df.at[person_id, 'dmo_status'] = 'non_clinically_significant'
-            logger.debug(key='debug',
-                         data=f'Treatment successful for person {person_id}: DMO improved to non_clinically_significant')
+            self.improve_vision(person_id)
+
+    def improve_vision(self, person_id: int) -> None:
+        """Improve vision status by one category after receiving DMO treatment"""
+        df = self.sim.population.props
+
+        if not df.at[person_id, 'vision_loss_due_to_dr']:
+            return
+
+        vision_categories = df.vision_status.cat.categories
+        current_vision = df.at[person_id, 'vision_status']
+        current_idx = list(vision_categories).index(current_vision)
+
+        if current_idx > 0:  # Not already at best
+            df.at[person_id, 'vision_status'] = vision_categories[current_idx - 1]
+
+            # If vision becomes normal, vision loss is no longer due to DR
+            if df.at[person_id, 'vision_status'] == 'normal':
+                df.at[person_id, 'vision_loss_due_to_dr'] = False
 
     def do_treatment_success_proliferative(self, person_id: int) -> None:
         """Apply treatment success for proliferative DR"""
@@ -457,12 +493,10 @@ class DiabeticRetinopathy(Module):
 
         if self.rng.random_sample() < success_prob:
             # Treatment successful, then regress DR status
-            # Move from proliferative to severe
-            df.at[person_id, 'dr_status'] = 'severe'
-            df.at[person_id, 'dr_stage_at_which_treatment_given'] = 'proliferative'
-            df.at[person_id, 'dr_date_treatment'] = self.sim.date
-            df.at[person_id, 'dr_on_treatment'] = True
-            logger.debug(key='debug', data=f'PRC treatment successful for person {person_id}: DR regressed to severe')
+            vs = df.at[person_id, 'vision_status']
+
+            if vs not in ['normal', 'blindness']:
+                self.improve_vision(person_id)
 
     def update_dmo_status(self):
         """Update DMO status for people with diabetic retinopathy.
@@ -502,6 +536,41 @@ class DiabeticRetinopathy(Module):
             f"Found {len(invalid_cases)} cases where people with no DR "
             f"have DMO status: {invalid_cases[['dr_status', 'dmo_status']].to_dict()}"
         )
+
+    def update_vision_status(self):
+        """Update vision status for people living with diabtes"""
+        df = self.sim.population.props
+        p = self.parameters
+        rng = self.rng
+
+        alive_diabetes = df.is_alive & df.nc_diabetes
+        if not alive_diabetes.any():
+            return
+
+        sight_threatening = (
+            df.dr_status.isin(['severe', 'proliferative']) |
+            (df.dmo_status == 'clinically_significant')
+        )
+
+        for idx, matrix in [
+            (alive_diabetes & ~sight_threatening, p['vision_transition_matrix_no_dr']),
+            (alive_diabetes & sight_threatening, p['vision_transition_matrix_sight_threatening']),
+        ]:
+            if not idx.any():
+                continue
+
+            current = df.loc[idx, 'vision_status']
+            proposed = transition_states(current, matrix, rng)
+
+            # Allow only same or worse vision (categorical ordering)
+            allowed = proposed >= current
+
+            # Update vision status
+            df.loc[idx & allowed, 'vision_status'] = proposed[allowed]
+
+        # Update cause only when vision impaired and DR present
+        impaired = df.vision_status != 'normal'
+        df.loc[impaired & (df.dr_status != 'none'), 'vision_loss_due_to_dr'] = True
 
 
 class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
@@ -580,6 +649,8 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[regress_to_none_idx, "dr_status"] = "none"
         # df.loc[regress_to_none_idx, "dmo_status"] = "none"
 
+        self.module.update_vision_status()
+
         # ------------------------SELECTING INDIVIDUALS FOR FOR DR OR DMO EYE EXAM/SCREENING---------------------
         df.selected_for_eye_screening = False
 
@@ -633,7 +704,7 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
-        p = self.parameters
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
@@ -918,6 +989,17 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # CURRENT STATUS COUNTS
         # Create dictionary for each subset, adding prefix to key name, and adding to make a flat dict for logging.
         out = {}
+
+        # Vision-related stats
+        vision_out = {
+            'total_normal_vision': (df.vision_status == 'normal').sum(),
+            'total_moderate_vision_impairment': (df.vision_status == 'moderate_vision_impairment').sum(),
+            'total_severe_vision_impairment': (df.vision_status == 'severe_vision_impairment').sum(),
+            'total_blindness': (df.vision_status == 'blindness').sum(),
+            'vision_loss_due_to_dr': df.vision_loss_due_to_dr.sum(),
+        }
+
+        out.update(vision_out)
 
         # Current counts, total
         out.update({
