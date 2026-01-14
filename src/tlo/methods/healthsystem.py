@@ -52,7 +52,8 @@ AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2 = ["1b"]  # <-- Implies th
 #                                                                     those of '2' and have more overall capacity, so
 #                                                                     probably account for the majority of the
 #                                                                     interactions.
-
+# Note that, as of PR #1743, this should not be changed, as the availability of consumables at level 1b is now
+# encoded to reflect a (weighted) average of the availability of levels '1b' and '2'.
 
 def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFrame:
     """Return a modified version of the imported capabilities DataFrame to reflect that the capabilities of level 1b
@@ -199,6 +200,12 @@ class HealthSystem(Module):
         "consumables_item_designations": Parameter(
             Types.DATA_FRAME,
             "Look-up table for the designations of consumables (whether diagnostic, medicine, or other",
+        ),
+        "data_source_for_cons_availability_estimates": Parameter(
+            Types.STRING, "Source of data on consumable availability. Options are: `original` or `updated`."
+                          "The original source was used in the calibration and presented in the overview paper. The "
+                          "updated source introduced in PR #1743 and better reflects the average availability of "
+                          "consumables in the merged 1b/2 facility level."
         ),
         "availability_estimates": Parameter(
             Types.DATA_FRAME, "Estimated availability of consumables in the LMIS dataset."
@@ -655,9 +662,19 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / "consumables" / "ResourceFile_Consumables_Item_Designations.csv",
             dtype={"Item_Code": int, "is_diagnostic": bool, "is_medicine": bool, "is_other": bool},
         ).set_index("Item_Code")
+
+        # Choose to read-in the updated availabilty estimates or the legacy availability estimates
+        if self.parameters["data_source_for_cons_availability_estimates"] == 'original':
+            filename_for_cons_availability_estimates = "ResourceFile_Consumables_availability_small_original.csv"
+        elif self.parameters["data_source_for_cons_availability_estimates"] == 'updated':
+            filename_for_cons_availability_estimates = "ResourceFile_Consumables_availability_small.csv"
+        else:
+            raise ValueError("data_source_for_cons_availability_estimates should be either 'original' or 'updated'")
+
         self.parameters["availability_estimates"] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / "consumables" / "ResourceFile_Consumables_availability_small.csv"
+            path_to_resourcefiles_for_healthsystem / "consumables" / filename_for_cons_availability_estimates
         )
+
 
         # Data on the number of beds available of each type by facility_id
         self.parameters["BedCapacity"] = pd.read_csv(
@@ -880,29 +897,28 @@ class HealthSystem(Module):
         sim.schedule_event(HealthSystemChangeMode(self), Date(self.parameters["year_mode_switch"], 1, 1))
 
         # Schedule a consumables availability switch
+        # - check that future value will be allowable
+        if self.parameters["cons_availability_postSwitch"] not in self.consumables._options_for_availability:
+            raise ValueError(
+                f"Value for `cons_availability_postSwitch` is not within defined options: "
+                f"{self.parameters['cons_availability_postSwitch']}"
+            )
+
+        # Schedule a consumables availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(
-                self, parameters={"cons_availability": self.parameters["cons_availability_postSwitch"]}
-            ),
+            HealthSystemChangeParameters(self, parameters_to_change=["cons_availability"]),
             Date(self.parameters["year_cons_availability_switch"], 1, 1),
         )
 
         # Schedule an equipment availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(
-                self, parameters={"equip_availability": self.parameters["equip_availability_postSwitch"]}
-            ),
+            HealthSystemChangeParameters(self, parameters_to_change=["equip_availability"]),
             Date(self.parameters["year_equip_availability_switch"], 1, 1),
         )
 
-        # Schedule an equipment availability switch
+        # Schedule an HRH availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(
-                self,
-                parameters={
-                    "use_funded_or_actual_staffing": self.parameters["use_funded_or_actual_staffing_postSwitch"]
-                },
-            ),
+            HealthSystemChangeParameters(self,parameters_to_change=["use_funded_or_actual_staffing"]),
             Date(self.parameters["year_use_funded_or_actual_staffing_switch"], 1, 1),
         )
 
@@ -1330,7 +1346,7 @@ class HealthSystem(Module):
         assert (df_updated.columns == df_original.columns).all()
         assert (df_updated.dtypes == df_original.dtypes).all()
 
-        # check values the same for everything apart from the facility level '2' facilities
+        # check values the same for everything apart from the facility level 'LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2'
         facilities_with_any_differences = set(
             df_updated.loc[
                 ~(
@@ -1339,8 +1355,10 @@ class HealthSystem(Module):
                 "Facility_ID",
             ]
         )
-        level2_facilities = set(mfl.loc[mfl["Facility_Level"] == "2", "Facility_ID"])
-        assert facilities_with_any_differences.issubset(level2_facilities)
+        updated_facilities = set(
+            mfl.loc[mfl['Facility_Level'] == LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2, 'Facility_ID']
+        )
+        assert facilities_with_any_differences.issubset(updated_facilities)
 
         return df_updated
 
@@ -3040,45 +3058,35 @@ class HealthSystemSummaryCounter:
 
 class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
     """Event that causes certain internal parameters of the HealthSystem to be changed; specifically:
-        * `mode_appt_constraints`
-        * `ignore_priority`
-        * `capabilities_coefficient`
         * `cons_availability`
-        * `beds_availability`
         * `equip_availability`
         * `use_funded_or_actual_staffing`
     Note that no checking is done here on the suitability of values of each parameter."""
 
-    def __init__(self, module: HealthSystem, parameters: Dict):
+    def __init__(self, module: HealthSystem, parameters_to_change: List):
         super().__init__(module)
-        self._parameters = parameters
         assert isinstance(module, HealthSystem)
 
-    def apply(self, population):
-        if "mode_appt_constraints" in self._parameters:
-            self.module.mode_appt_constraints = self._parameters["mode_appt_constraints"]
-
-        if "ignore_priority" in self._parameters:
-            self.module.ignore_priority = self._parameters["ignore_priority"]
-
-        if "capabilities_coefficient" in self._parameters:
-            self.module.capabilities_coefficient = self._parameters["capabilities_coefficient"]
-
-        if "cons_availability" in self._parameters:
-            self.module.consumables.availability = self._parameters["cons_availability"]
-
-        if "beds_availability" in self._parameters:
-            self.module.bed_days.switch_beddays_availability(
-                new_availability=self._parameters["beds_availability"],
-                effective_on_and_from=self.sim.date,
-                model_to_data_popsize_ratio=self.sim.modules["Demography"].initial_model_to_data_popsize_ratio,
+        self.supported_parameters = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing"]
+        if not all(param in self.supported_parameters for param in parameters_to_change):
+            raise ValueError(
+                f"parameters_to_change can only contain the following values: {self.supported_parameters}. "
+                f"Received: {parameters_to_change}"
             )
 
-        if "equip_availability" in self._parameters:
-            self.module.equipment.availability = self._parameters["equip_availability"]
+        self.parameters_to_change = parameters_to_change
 
-        if "use_funded_or_actual_staffing" in self._parameters:
-            self.module.use_funded_or_actual_staffing = self._parameters["use_funded_or_actual_staffing"]
+    def apply(self, population):
+        p = self.module.parameters
+
+        if "cons_availability" in self.parameters_to_change:
+            self.module.consumables.availability = p["cons_availability_postSwitch"]
+
+        if "equip_availability" in self.parameters_to_change:
+            self.module.equipment.availability = p["equip_availability_postSwitch"]
+
+        if "use_funded_or_actual_staffing" in self.parameters_to_change:
+            self.module.use_funded_or_actual_staffing = p["use_funded_or_actual_staffing_postSwitch"]
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
@@ -3209,6 +3217,9 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
             while health_system.HSI_EVENT_QUEUE:
                 event = hp.heappop(health_system.HSI_EVENT_QUEUE)
 
+                # Get its clinic eligibility
+                clinic_eligibility = health_system.get_clinic_eligibility(event.hsi_event.TREATMENT_ID)
+
                 # Get its priority
                 enforced_priority = health_system.enforce_priority_policy(event.hsi_event)
 
@@ -3216,6 +3227,7 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                 if event.priority != enforced_priority:
                     # Wrap it up with the new priority - everything else is the same
                     event = HSIEventQueueItem(
+                        clinic_eligibility,
                         enforced_priority,
                         event.topen,
                         event.rand_queue_counter,
