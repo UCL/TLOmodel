@@ -2974,6 +2974,7 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         sim.modules["HealthSystem"]._clinic_mapping = pd.DataFrame(
             [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
         )
+        sim.modules["HealthSystem"].service_availability = ["DummyHSIEvent", "DummyHSIEventGenericClinic"]
         sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "GenericClinic"]
         sim.modules["HealthSystem"].setup_daily_capabilities("funded_plus")
 
@@ -3072,6 +3073,8 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         genericclinic_capabilities_before,
         genericclinic_capabilities_after,
     ), "Expected no change in GenericClinic capabilities after rescaling"
+
+    breakpoint()
 
     assert np.isclose(
         clinic1_capabilities_before * 2,
