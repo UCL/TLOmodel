@@ -13,6 +13,7 @@ from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
+
 from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
 from tlo.analysis.utils import (  # get_filtered_treatment_ids,
     flatten_multi_index_series_into_dict_for_logging,
@@ -903,26 +904,21 @@ class HealthSystem(Module):
                 f"{self.parameters['cons_availability_postSwitch']}"
             )
 
+        # Schedule a consumables availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(
-                self, parameters_to_change=["cons_availability"]
-            ),
+            HealthSystemChangeParameters(self, parameters_to_change=["cons_availability"]),
             Date(self.parameters["year_cons_availability_switch"], 1, 1),
         )
 
         # Schedule an equipment availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(
-                self, parameters_to_change=["equip_availability"]
-            ),
+            HealthSystemChangeParameters(self, parameters_to_change=["equip_availability"]),
             Date(self.parameters["year_equip_availability_switch"], 1, 1),
         )
 
         # Schedule an HRH availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(
-                self,parameters_to_change=["use_funded_or_actual_staffing"]
-            ),
+            HealthSystemChangeParameters(self,parameters_to_change=["use_funded_or_actual_staffing"]),
             Date(self.parameters["year_use_funded_or_actual_staffing_switch"], 1, 1),
         )
 
@@ -3069,19 +3065,27 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
     def __init__(self, module: HealthSystem, parameters_to_change: List):
         super().__init__(module)
-        self._parameters_to_change = parameters_to_change
         assert isinstance(module, HealthSystem)
 
-    def apply(self, population):
-        p =self.module.parameters
+        self.supported_parameters = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing"]
+        if not all(param in self.supported_parameters for param in parameters_to_change):
+            raise ValueError(
+                f"parameters_to_change can only contain the following values: {self.supported_parameters}. "
+                f"Received: {parameters_to_change}"
+            )
 
-        if "cons_availability" in self._parameters_to_change:
+        self.parameters_to_change = parameters_to_change
+
+    def apply(self, population):
+        p = self.module.parameters
+
+        if "cons_availability" in self.parameters_to_change:
             self.module.consumables.availability = p["cons_availability_postSwitch"]
 
-        if "equip_availability" in self._parameters_to_change:
+        if "equip_availability" in self.parameters_to_change:
             self.module.equipment.availability = p["equip_availability_postSwitch"]
 
-        if "use_funded_or_actual_staffing" in self._parameters_to_change:
+        if "use_funded_or_actual_staffing" in self.parameters_to_change:
             self.module.use_funded_or_actual_staffing = p["use_funded_or_actual_staffing_postSwitch"]
 
 
@@ -3212,7 +3216,7 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
             # For each HSI event in the queue
             while health_system.HSI_EVENT_QUEUE:
                 event = hp.heappop(health_system.HSI_EVENT_QUEUE)
-                
+
                 # Get its clinic eligibility
                 clinic_eligibility = health_system.get_clinic_eligibility(event.hsi_event.TREATMENT_ID)
 
