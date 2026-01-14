@@ -180,8 +180,11 @@ class TrackIndividualHistories(BaseScenario):
         
         parameter_draws = {}
         for i in range(10):
-            parameter_draws[i] = {'HealthSystem': parameter_draws_sampled[i]['HealthSystem'], module_of_interest: parameter_draws_sampled[i][module_of_interest]}
-        #exit(-1)
+            parameter_draws[i] = {
+                                  'HealthSystem': parameter_draws_sampled[i]['HealthSystem'],
+                                  module_of_interest: parameter_draws_sampled[i][module_of_interest]
+                                 }
+
         scenarios = {}
         for i in range(10):
             scenarios[i] = mix_scenarios(

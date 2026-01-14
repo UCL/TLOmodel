@@ -4,7 +4,8 @@ from pathlib import Path
 import pandas as pd
 
 from tlo.analysis.utils import extract_individual_histories
-
+import subprocess
+import sys
 
 def print_filtered_df(df):
     """
@@ -27,12 +28,43 @@ def print_filtered_df(df):
     print(filtered)
 
 # Files to merge:
-# danalysis_extract_data.py
+# analysis_extract_data.py
+
+def check_repo_not_dirty():
+    file = Path(__file__).resolve()
+
+    # Check if the file is tracked by git
+    try:
+        subprocess.check_output(["git", "ls-files", "--error-unmatch", str(file)])
+    except subprocess.CalledProcessError:
+        print(f"ERROR: {file.name} is NOT committed (untracked). Commit before proceeding.")
+        sys.exit(1)
+
+    # Check that no uncommitted changes exist
+    diff = subprocess.run(["git", "diff", "--quiet", str(file)])
+    if diff.returncode != 0:
+        print(f"ERROR: {file.name} has uncommitted changes. Commit before proceeding.")
+        sys.exit(1)
+
+    return True
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
     
-    # 1. Load json file from output to find relevant information about draws
-
+    # 1. Check that analysis file has been committed, and store path + commit
+    proceed = check_repo_not_dirty()
+    
+    if proceed:
+        print("Repo is clean and can proceed")
+    
+    # 2. Load json file from output to retreive
+    # A) string: scenario_script_path
+    # B) string: commit from which scenario was
+    # C) dictionary: draw combinations
+    # A) and B) will be stored in wandb, C) will be attached to data itself
+    
+    #2.
+    
+    # In wandb
     
     # 2. Extract individual histories
     individual_histories = extract_individual_histories(results_folder)
