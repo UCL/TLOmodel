@@ -16,10 +16,10 @@ YEAR_OF_CHANGE = 2025
 full_grid = make_cartesian_parameter_grid(
     {
         "HealthSystem": {
-            "scale_factor_delay_in_seeking_care_weather": [float(28)],
-            "rescaling_prob_seeking_after_disruption": [float(1)],
-            "rescaling_prob_disruption": [float(1)],
-            "scale_factor_severity_disruption_and_delay": [float(1)],
+            "scale_factor_delay_in_seeking_care_weather": [float(60)],
+            "rescaling_prob_seeking_after_disruption": [float(2)],
+            "rescaling_prob_disruption": [float(2)],
+            "scale_factor_severity_disruption_and_delay": [float(2)],
             "mode_appt_constraints": [1],
             "mode_appt_constraints_postSwitch": [2],
             "cons_availability": ["default"],
@@ -35,7 +35,7 @@ full_grid = make_cartesian_parameter_grid(
             "climate_ssp": ["ssp245"],
             "climate_model_ensemble_model": ["mean"],
             "year_effective_climate_disruptions": [2025],
-            "prop_supply_side_disruptions": [0.5],
+            "prop_supply_side_disruptions": [0.5], # moot in mode 1
             "services_affected_precip": ["none", "all"], # none nullifies all other climate impacts
             "tclose_overwrite": [1000],
         }
