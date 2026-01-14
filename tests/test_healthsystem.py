@@ -1302,10 +1302,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     """Check that the event `HealthSystemChangeParameters` can change the internal parameters of the HealthSystem. And
     check that this is effectual in the case of consumables."""
 
-    # In order to ensure that parameter switch relies on values stored in module parameter, use parameters
-    # listed in hs_parameters to overwrite current parameter values
-
-    hs_parameters = {
+    test_parameters = {
         "cons_availability": "all",
         "cons_availability_postSwitch": "none",
         "equip_availability": "all",
@@ -1315,15 +1312,13 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     }
     parameters_to_change = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing"]
     
-    initial_parameters = {"cons_availability" : hs_parameters["cons_availability"],
-                      "equip_availability": hs_parameters["equip_availability"],
-                      "use_funded_or_actual_staffing": hs_parameters["use_funded_or_actual_staffing"]}
+    initial_parameters = {"cons_availability" : test_parameters["cons_availability"],
+                      "equip_availability": test_parameters["equip_availability"],
+                      "use_funded_or_actual_staffing": test_parameters["use_funded_or_actual_staffing"]}
     
-    new_parameters = {"cons_availability" : hs_parameters["cons_availability_postSwitch"],
-                      "equip_availability": hs_parameters["equip_availability_postSwitch"],
-                      "use_funded_or_actual_staffing": hs_parameters["use_funded_or_actual_staffing_postSwitch"]}
-
-    print("New parameters are", new_parameters )
+    new_parameters = {"cons_availability" : test_parameters["cons_availability_postSwitch"],
+                      "equip_availability": test_parameters["equip_availability_postSwitch"],
+                      "use_funded_or_actual_staffing": test_parameters["use_funded_or_actual_staffing_postSwitch"]}
 
     class CheckHealthSystemParameters(RegularEvent, PopulationScopeEventMixin):
         def __init__(self, module):
@@ -1401,9 +1396,9 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     sim.make_initial_population(n=100)
     # In order to ensure that parameter switch relies on values stored in module parameters,
     # rathen than instance variables, overwrite 'postSwitch' parameters here
-    for k,v in hs_parameters.items():
+    for k,v in test_parameters.items():
         if k not in initial_parameters:
-            sim.modules['HealthSystem'].parameters[k] = hs_parameters[k]
+            sim.modules['HealthSystem'].parameters[k] = test_parameters[k]
 
     sim.simulate(end_date=start_date + pd.DateOffset(days=7))
 
