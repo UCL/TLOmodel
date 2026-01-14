@@ -191,7 +191,6 @@ class TrackIndividualHistories(BaseScenario):
                                     self._baseline(),
                                     parameter_draws[i]
                             )
-        print(scenarios)
         return scenarios
 
     def _baseline(self) -> Dict:

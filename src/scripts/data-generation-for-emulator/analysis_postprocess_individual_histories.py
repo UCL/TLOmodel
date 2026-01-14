@@ -2,10 +2,33 @@ import argparse
 from pathlib import Path
 
 import pandas as pd
-
+import os
+import wandb
+import torch
 from tlo.analysis.utils import extract_individual_histories
 import subprocess
 import sys
+import json
+
+def log_on_wandb(dataset, metadata):
+
+    # Start a run, with a type to label it and a project it can call home
+    with wandb.init(project="dataset-example", job_type="generate-dataset") as run:
+
+        raw_data = wandb.Artifact(
+            "cervical-cancer",
+            type="dataset",
+            description="TLO-generated dataset for the cervical cancer module",
+            metadata=metadata)
+
+        # Store a new file in the artifact, and write something into its contents.
+        with raw_data.new_file(name + ".pt", mode="wb") as file:
+            x, y = data.tensors
+            torch.save((x, y), file)
+
+        # Save the artifact to W&B.
+        run.log_artifact(raw_data)
+
 
 def print_filtered_df(df):
     """
@@ -30,8 +53,7 @@ def print_filtered_df(df):
 # Files to merge:
 # analysis_extract_data.py
 
-def check_repo_not_dirty():
-    file = Path(__file__).resolve()
+def check_repo_not_dirty(file):
 
     # Check if the file is tracked by git
     try:
@@ -47,27 +69,79 @@ def check_repo_not_dirty():
         sys.exit(1)
 
     return True
+    
+def retrieve_scenario_json_file(output_path):
+    json_files = list(output_path.glob("*.json"))
+
+    if len(json_files) == 0:
+        print(f"ERROR: No JSON file found in '{output_path}'")
+        sys.exit(1)
+
+    if len(json_files) > 1:
+        print(f"ERROR: Multiple JSON files found in '{output_path}': {[f.name for f in json_files]}")
+        sys.exit(1)
+
+    # Load the unique JSON file
+    json_file = json_files[0]
+    with json_file.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    print(f"Loaded JSON file: {json_file.name}")
+    return data
+    
+def retrieve_analysis_script_commit_hash():
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True
+    )
+
+    return result.stdout.strip()
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
     
+    file = Path(__file__).resolve()
+    
     # 1. Check that analysis file has been committed, and store path + commit
-    proceed = check_repo_not_dirty()
+    #proceed = check_repo_not_dirty()
+    #if proceed:
+    #    print("Repo is clean and can proceed")
     
-    if proceed:
-        print("Repo is clean and can proceed")
+    # Get project root using git
+    git_root = Path(
+        subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
+    )
+    # Compute relative path
+    analysis_script_path = file.relative_to(git_root)
+    analysis_script_commit_hash = retrieve_analysis_script_commit_hash()
+    print(analysis_script_path)
+    print(analysis_script_commit_hash)
     
-    # 2. Load json file from output to retreive
-    # A) string: scenario_script_path
-    # B) string: commit from which scenario was
-    # C) dictionary: draw combinations
-    # A) and B) will be stored in wandb, C) will be attached to data itself
+    # 2. Load json file from output to retrieve:
+    # A) Scenario file path
+    # B) Commit from which scenario was
+    # C) Draw combinations
+    # Note: A) and B) will be stored in wandb, C) will be attached to data itself
+    scenario_json_data = retrieve_scenario_json_file(results_folder)
+    scenario_script_path = scenario_json_data['scenario_script_path']
+    scenario_script_commit_hash = scenario_json_data['commit']
+    print(scenario_script_path)
+    print(scenario_script_commit_hash)
+    print(scenario_json_data)
     
-    #2.
+    draws_parameters = scenario_json_data['draws']
+    print(draws_parameters)
+    exit(-1)
     
-    # In wandb
     
-    # 2. Extract individual histories
+    
+    
+    # 3. Extract individual histories
     individual_histories = extract_individual_histories(results_folder)
+
+    # 4. Store in wandb dataset's metadata
+    # https://docs.wandb.ai/models/tutorials/artifacts
+    
 
     # 3. Postprocess individual histories, such that for each disease episode, we extract the relevant information needed to train emulators, and ensure that the draw parameters are additionally stored
     # Retreive number of draws
