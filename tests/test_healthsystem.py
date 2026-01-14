@@ -6,6 +6,7 @@ from typing import Dict, Set, Tuple
 import numpy as np
 import pandas as pd
 import pytest
+
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.hsi_events import get_details_of_defined_hsi_events
 from tlo.analysis.utils import get_filtered_treatment_ids, parse_log_file
