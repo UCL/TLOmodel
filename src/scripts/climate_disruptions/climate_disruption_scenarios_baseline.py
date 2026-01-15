@@ -36,7 +36,7 @@ full_grid = make_cartesian_parameter_grid(
             "climate_model_ensemble_model": ["mean"],
             "year_effective_climate_disruptions": [2025],
             "prop_supply_side_disruptions": [0.5], # moot in mode 1
-            "services_affected_precip": ["all"],#["none", "all"], # none nullifies all other climate impacts
+            "services_affected_precip": ["all", "all"],#["none", "all"], # none nullifies all other climate impacts
             "tclose_overwrite": [1000],
         }
     }
