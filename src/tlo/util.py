@@ -571,3 +571,46 @@ def parse_csv_values_for_columns_with_mixed_datatypes(value: Any):
             except (ValueError, SyntaxError):
                 pass
             return value  # Return as a string if no other type fits
+
+def scale_up_population_dataframe(df: DataFrame, initial_pop: int, census_pop: int) -> DataFrame:
+    """
+    Scales up numeric values in a given DataFrame based on a ratio of census population to
+    initial population.
+
+    This function takes an input DataFrame, a specified initial population, and a census
+    population, and scales the numeric columns in the DataFrame by a factor determined
+    from the ratio of the census population to the initial population. It is designed to
+    work with numeric data and will raise an error if no numeric columns are found.
+
+    :param df: The input DataFrame containing numeric data to be scaled.
+    :param initial_pop: Initial population value. Must be a positive number.
+    :param census_pop: Census population value. Must be a positive number.
+    :return: A copy of the input DataFrame with numeric columns scaled proportionally
+        by the calculated scale factor.
+    :raises ValueError: If `initial_pop` or `census_pop` is not a positive number, or
+        if no numeric columns are found in the input DataFrame.
+    """
+    from tlo.analysis.utils import unflatten_flattened_multi_index_in_logging
+
+    # --- Input validation ---
+    if not isinstance(initial_pop, (int, float)) or initial_pop <= 0:
+        raise ValueError("initial_pop must be a positive number")
+    if not isinstance(census_pop, (int, float)) or census_pop <= 0:
+        raise ValueError("census_pop must be a positive number")
+
+    scaled_df = df.copy()
+
+    # --- Ensure date is index when available ---
+    if scaled_df.index.name != "date" and "date" in scaled_df.columns:
+        scaled_df = scaled_df.set_index("date")
+
+    # --- Compute scale factor ---
+    scale_factor = census_pop / initial_pop
+
+    # --- Scale numeric values only ---
+    numeric = scaled_df.select_dtypes(include="number")
+    if numeric.shape[1] == 0:
+        raise ValueError("No numeric columns found to scale.")
+
+    scaled_df.loc[:, numeric.columns] = numeric.mul(scale_factor)
+    return scaled_df
