@@ -635,13 +635,13 @@ def format_gbd(gbd_df: pd.DataFrame):
     return gbd_df
 
 
-def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None):
+def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None, level: int = logging.INFO):
     """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
      locally."""
 
     def turn_log_into_pickles(logfile):
         print(f"Opening {logfile}")
-        outputs = parse_log_file(logfile)
+        outputs = parse_log_file(logfile, level)
         for key, output in outputs.items():
             if key.startswith("tlo."):
                 print(f" - Writing {key}.pickle")
@@ -665,7 +665,8 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
                 logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
             else:
                 compressed_file_name = [
-                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)
+                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix) and
+                                                         x.endswith('.log.gz')
                 ][0]
                 logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
 
