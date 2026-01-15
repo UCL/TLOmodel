@@ -7,16 +7,9 @@ import argparse
 from pathlib import Path
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
-from matplotlib.colors import Normalize
-from scipy.optimize import curve_fit
-
 from tlo import Date
-from tlo.analysis.utils import extract_results, summarize
-from tlo.analysis.life_expectancy import get_life_expectancy_estimates
-
+from tlo.analysis.utils import extract_results
 
 # Range of years considered
 min_year = 2014
@@ -30,9 +23,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     """
 
     TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 1, 1))
-
-    # Definitions of general helper functions
-    make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
 
     def target_period() -> str:
         """Returns the target period as a string of the form YYYY-YYYY"""
