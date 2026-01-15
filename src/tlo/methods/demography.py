@@ -942,6 +942,20 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info(key='num_children', data=num_children.to_dict())
 
+        # Age and sex distribution by district
+        for district in df[df.is_alive]['district_of_residence'].unique():
+            district_df = df[df.is_alive & (df.district_of_residence == district)]
+            m_counts = district_df[district_df.sex == 'M'].groupby('age_range').size()
+            f_counts = district_df[district_df.sex == 'F'].groupby('age_range').size()
+            logger.info(
+                key='age_range_by_district',
+                data={
+                    'district': district,
+                    'male': m_counts.to_dict(),
+                    'female': f_counts.to_dict()
+                }
+            )
+
         # Output the person-years lived by single year of age in the past year
         py = self.module.calc_py_lived_in_last_year()
         logger.info(key='person_years', data=py.to_dict())
