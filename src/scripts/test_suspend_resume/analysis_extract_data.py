@@ -1,13 +1,11 @@
-"""Produce plots to show the health impact (deaths, dalys) each the healthcare system (overall health impact) when
-running under different MODES and POLICIES (scenario_impact_of_capabilities_expansion_scaling.py)"""
+"""Retrieve total DALYs per year"""
 
-# short tclose -> ideal case
-# long tclose -> status quo
 import argparse
 from pathlib import Path
 from typing import Tuple
 
 import pandas as pd
+
 from tlo import Date
 from tlo.analysis.utils import extract_results
 
