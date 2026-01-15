@@ -35,6 +35,7 @@ dependencies = [
     "azure-storage-file-share",
     # For saving and loading simulation state
     "dill",
+    "sdv",
 ]
 description = "Thanzi la Onse Epidemiology Model"
 dynamic = ["version"]
@@ -127,8 +128,8 @@ line-length = 120
 exclude = ['src/tlo/_version.py']
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W"]
-per-file-ignores = {"src/scripts/**" = ["E501", "W"]}
+select = ["E", "F", "I"]
+per-file-ignores = {"src/scripts/**" = ["E501"]}
 
 [tool.setuptools.packages.find]
 where = ["src"]
