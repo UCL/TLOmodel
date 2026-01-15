@@ -153,7 +153,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             "Probability that a person who 'should' be on medication will seek another appointment (the following "
             "day and try for each of the next 7 days) if refill appointment was not available.",
         ),
-                        " for a Cardio-metabolic disorder."),
+
         'prob_ckd_patient_gets_dialysis': Parameter(
             Types.REAL, "The probability that patient with ckd has disease progression ultimately needing dialysis"),
         'interval_between_polls':
@@ -1668,25 +1668,22 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         m = self.sim.modules['CardioMetabolicDisorders']
         p = self.module.parameters
 
-        # Don't advise those with CKD to lose weight, but do so for all other conditions if BMI is higher than normal
-        if self.condition != 'chronic_kidney_disease' and (df.at[person_id, 'li_bmi'] > 2):
-            if not df.at[person_id, 'nc_ever_weight_loss_treatment']:
-                self.add_equipment({'Weighing scale'})
+        # Don't advise those with CKD to lose weight, but do so for all other conditions if BMI is higher than threshold
         if (self.condition != 'chronic_kidney_disease' and
             (df.at[person_id, 'li_bmi'] > p['bmi_threshold_weight_loss_advice'])):
             self.add_equipment({'Weighing scale'})
 
+            if not df.at[person_id, 'nc_ever_weight_loss_treatment']:
                 self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-                # Schedule a post-weight loss event for individual to potentially lose weight in next 6-12 months:
-                self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(m, person_id),
-                                        random_date(self.sim.date + pd.DateOffset(months=6),
-                                                    self.sim.date + pd.DateOffset(months=12), m.rng))
-            self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-            # Schedule a post-weight loss event for individual to potentially lose weight in next 6-12 months:
-            self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(m, person_id),
-                                    random_date(self.sim.date + pd.DateOffset(months=p['weight_loss_min_wait_months']),
-                                                self.sim.date +
-                                                pd.DateOffset(months=p['weight_loss_max_wait_months']), m.rng))
+                # Schedule a post-weight loss event for individual to potentially lose weight:
+                self.sim.schedule_event(
+                    CardioMetabolicDisordersWeightLossEvent(m, person_id),
+                    random_date(
+                        self.sim.date + pd.DateOffset(months=p['weight_loss_min_wait_months']),
+                        self.sim.date + pd.DateOffset(months=p['weight_loss_max_wait_months']),
+                        m.rng
+                    )
+                )
 
         # If person is already on medication, do not do anything
         if person[f'nc_{self.condition}_on_medication']:
@@ -1750,8 +1747,6 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                     tclose=self.sim.date + pd.DateOffset(days=p['retry_appointment_deadline_days']),
                     priority=1
                 )
-
-
 class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person seeks a refill prescription of medication.
