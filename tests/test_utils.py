@@ -9,9 +9,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from scipy.stats import chisquare
-
 import tlo.util
+from scipy.stats import chisquare
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
@@ -19,7 +18,8 @@ from tlo.util import (
     DEFAULT_MOTHER_ID,
     convert_excel_files_to_csv,
     parse_csv_values_for_columns_with_mixed_datatypes,
-    read_csv_files, scale_up_population_dataframe,
+    read_csv_files,
+    scale_up_population_dataframe,
 )
 
 path_to_files = Path(os.path.dirname(__file__))
