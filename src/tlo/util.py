@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, DateOffset
 from pandas._typing import DtypeArg
-
 from tlo import Population, Property, Types
 
 # Default mother_id value, assigned to individuals initialised as adults at the start of the simulation.
@@ -590,7 +589,6 @@ def scale_up_population_dataframe(df: DataFrame, initial_pop: int, census_pop: i
     :raises ValueError: If `initial_pop` or `census_pop` is not a positive number, or
         if no numeric columns are found in the input DataFrame.
     """
-    from tlo.analysis.utils import unflatten_flattened_multi_index_in_logging
 
     # --- Input validation ---
     if not isinstance(initial_pop, (int, float)) or initial_pop <= 0:
