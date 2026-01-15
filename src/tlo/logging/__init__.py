@@ -7,10 +7,10 @@ from .core import (
     disable,
     getLogger,
     initialise,
-    reset,
+    restore_global_state,
+    set_logging_levels,
     set_output_file,
 )
-from .helpers import set_logging_levels
 
 __all__ = [
     "CRITICAL",
@@ -21,7 +21,7 @@ __all__ = [
     "disable",
     "getLogger",
     "initialise",
-    "reset",
+    "restore_global_state",
     "set_output_file",
     "set_logging_levels",
 ]
