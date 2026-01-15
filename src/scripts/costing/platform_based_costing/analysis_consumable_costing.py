@@ -32,7 +32,7 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
 # Create folders to store results
 resourcefilepath = Path("./resources")
-outputfilepath = Path('./outputs/') # sakshi.mohan@york.ac.uk
+outputfilepath = Path('./outputs/sakshi.mohan@york.ac.uk/') # sakshi.mohan@york.ac.uk
 figurespath = Path('./outputs/platform_based_costing/')
 path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables"
 if not os.path.exists(figurespath):
@@ -42,7 +42,7 @@ from tlo.analysis.utils import create_pickles_locally
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('consumables_costing-2025-12-30T122124Z.py', outputfilepath)[0] # consumables_costing-2025-12-09T212822Z - this is the Azure scenario
+results_folder = get_scenario_outputs('consumables_costing-2026-01-08T140906Z.py', outputfilepath)[0] # consumables_costing-2025-12-09T212822Z - this is the Azure scenario
 
 #log = pd.read_csv(results_folder1 / "0" / "0" / 'impact_of_consumables_availability__2025-11-25T120830.log', sep="\t")
 #create_pickles_locally(scenario_output_dir = "outputs/sakshi.mohan@york.ac.uk/consumables_costing-2025-12-09T212822Z") # from .log files
@@ -56,8 +56,7 @@ info = get_scenario_info(results_folder)
 # Declare default parameters for cost analysis
 # ------------------------------------------------------------------------------------------------------------------
 # Period relevant for costing
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2030, 12, 31))
-# TODO update period after final simulation (Date(2025, 1, 1), Date(2030, 12, 31))
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2030, 12, 31))
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
 number_of_years_costed = relevant_period_for_costing[1] - relevant_period_for_costing[0] + 1
@@ -91,7 +90,11 @@ def get_counts_of_items_requested(_df):
     )
 
     # Split tuple into columns
-    used[["item", "value"]] = pd.DataFrame(used["item_num"].tolist(), index=used.index)
+    tmp = used["item_num"].apply(
+        lambda x: x if isinstance(x, tuple) else (pd.NA, 0)
+    )
+
+    used[["item", "value"]] = pd.DataFrame(tmp.tolist(), index=used.index)
     used["value"] = pd.to_numeric(used["value"], errors="coerce").fillna(0)
 
     # Aggregate
@@ -301,4 +304,53 @@ with open("outputs/consumables_costing-2025-12-09T212822Z/1/0/tlo.methods.health
 
 with open("outputs/consumables_costing-2025-12-09T212822Z/1/0/tlo.methods.healthsystem.summary.pkl", "wb") as f:
     pickle.dump(parsed, f)
+
+import json
+import pickle
+from pathlib import Path
+from collections import defaultdict
+
+def log_to_pickle(logfile: Path, outpath: Path | None = None):
+    """
+    Convert a TLO JSON-lines logfile into a pickle while preserving
+    UUID → {header, records[]} structure exactly.
+    """
+
+    data = defaultdict(lambda: {"header": None, "records": []})
+
+    with open(logfile, "r", errors="ignore") as f:
+        for line in f:
+            line = line.strip()
+            if not line or not line.startswith("{"):
+                continue
+
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                # skip malformed lines safely
+                continue
+
+            uuid = obj.get("uuid")
+            if uuid is None:
+                continue
+
+            if obj.get("type") == "header":
+                data[uuid]["header"] = obj
+            else:
+                data[uuid]["records"].append(obj)
+
+    if outpath is None:
+        outpath = logfile.with_suffix(".pickle")
+
+    with open(outpath, "wb") as f:
+        pickle.dump(dict(data), f)
+
+    return outpath
+pickle_file = Path('outputs/sakshi.mohan@york.ac.uk/consumables_costing-2026-01-08T140906Z/0/4/tlo.methods.healthsystem.summary.pickle')
+logfile = Path('outputs/sakshi.mohan@york.ac.uk/consumables_costing-2026-01-08T140906Z/0/0/tlo.methods.healthsystem.summary.log')
+log_to_pickle(
+    logfile
+)
+
 '''
+
