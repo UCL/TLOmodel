@@ -1330,7 +1330,11 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
                                             _scenario_dict: Optional[dict[int, str]] = None,
                                             show_title: bool = True,
                                             _outputfilepath: Optional[Path] = None,
-                                            _add_figname_suffix: str = ''):
+                                            _add_figname_suffix: str = '',
+                                            _label_fontsize: float = 9.0,
+                                            _tick_fontsize: float = 10.0,
+                                            _legend_label_map: Optional[dict[str, str]] = None
+                                            ):
     """
         Create and save a stacked bar chart of costs by category, subcategory or subgroup.
 
@@ -1369,6 +1373,14 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
         _add_figname_suffix : str, default ''
             Optional string to append to the saved figure's filename
 
+        _label_fontsize : float, optional
+        fontsize of data labels
+
+        _tick_fontsize: float, optional
+        font size of axis ticks
+
+        _legend_label_map: dict, optional
+        Dictionary proving clean category names for publishable legends
         Returns:
         -------
         None
@@ -1507,10 +1519,11 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
                             xy=(x, rect.get_y() + height),  # Arrow start
                             xytext=(x + 0.3, rect.get_y() + height + threshold),  # Offset text
                             arrowprops=dict(arrowstyle="->", color='black', lw=0.8),
-                            fontsize='small', ha='left', va='center', color='black'
+                            fontsize=_label_fontsize, ha='left', va='center', color='black', fontweight='bold',
                         )
                     else:  # Large segment -> label inside
-                        ax.text(x, y, f'{round(height, 1)}', ha='center', va='center', fontsize='small', color='white')
+                        ax.text(x, y, f'{round(height, 1)}', ha='center', va='center', fontsize=_label_fontsize,
+                                fontweight='bold', color='white')
 
     # Set custom x-tick labels if _scenario_dict is provided
     if _scenario_dict:
@@ -1520,7 +1533,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
 
     # Wrap x-tick labels for readability
     wrapped_labels = [textwrap.fill(str(label), 20) for label in labels]
-    ax.set_xticklabels(wrapped_labels, rotation=45, ha='right', fontsize='small')
+    ax.set_xticklabels(wrapped_labels, rotation=45, ha='right', fontsize=_tick_fontsize)
 
     # Period included for plot title and name
     if _year == 'all':
@@ -1531,16 +1544,29 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
         period = (f"{min(_year)} - {max(_year)}")
 
     # Save plot
-    plt.xlabel('Scenario')
-    plt.ylabel('Cost (2023 USD), millions')
+    plt.xlabel('Scenario', fontsize = _tick_fontsize, fontweight = 'bold')
+    plt.ylabel('Cost (2023 USD), millions', fontsize = _tick_fontsize, fontweight = 'bold')
 
     # Arrange the legend in the same ascending order
     handles, labels = plt.gca().get_legend_handles_labels()
-    plt.legend(handles[::-1], labels[::-1], bbox_to_anchor=(1.05, 0.7), loc='center left', fontsize='small')
+    if _legend_label_map is not None:
+        labels = [
+            _legend_label_map.get(label, label)
+            for label in labels
+        ]
+
+    plt.legend(
+        handles[::-1],
+        labels[::-1],
+        bbox_to_anchor=(1.05, 0.7),
+        loc='center left',
+        fontsize=_tick_fontsize
+    )
 
     # Extend the y-axis by 25%
     max_y = ax.get_ylim()[1]
     ax.set_ylim(0, max_y * 1.25)
+    ax.tick_params(axis='y', labelsize=_tick_fontsize)
 
     # Save the plot with tight layout
     plt.tight_layout(pad=2.0)  # Ensure there is enough space for the legend

@@ -283,7 +283,7 @@ calibration_outputs_folder = Path(figurespath / 'calibration')
 if not os.path.exists(calibration_outputs_folder):
     os.makedirs(calibration_outputs_folder)
 
-def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10.5):
+def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 11, _label_fontsize = 11):
     # Filter the dataframe
     _df = _df[(_df.model_cost.notna()) & (_df.index.get_level_values(0).isin(_costs_included))]
 
@@ -323,8 +323,8 @@ def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10.5):
                  fmt='o', label='Model Cost', ecolor='gray', capsize=5, color='saddlebrown')
 
     # Plot annual_expenditure_2019 and max_annual_budget_2020-22 as dots
-    plt.plot(df_mean.index, df_mean['actual_expenditure_2019'], 'bo', label='Actual Expenditure 2019', markersize=9, alpha=0.5)
-    plt.plot(df_mean.index, df_mean['max_annual_budget_2020-22'], 'go', label='Max Annual Budget 2020-22', markersize=9, alpha=0.5)
+    plt.plot(df_mean.index, df_mean['actual_expenditure_2019'], 'bo', label='Actual Expenditure 2019', markersize=9, alpha=0.95)
+    plt.plot(df_mean.index, df_mean['max_annual_budget_2020-22'], 'go', label='Max Annual Budget 2020-22', markersize=9, alpha=0.95)
 
     # Draw a blue line between annual_expenditure_2019 and max_annual_budget_2020-22
     plt.vlines(df_mean.index, df_mean['actual_expenditure_2019'], df_mean['max_annual_budget_2020-22'], color='blue',
@@ -332,15 +332,30 @@ def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10.5):
 
     # Add labels to the model_cost dots (yellow color, slightly shifted right)
     for i, (x, y) in enumerate(zip(df_mean.index, df_mean['model_cost'])):
-        plt.text(i + 0.08, y, f'{y:.2f}', ha='left', va='bottom', fontsize=11,
-                 color='saddlebrown', fontweight='bold')  # label model_cost values
+        plt.text(
+            i + 0.08,
+            y,
+            f'{y:.2f}',
+            ha='left',
+            va='bottom',
+            fontsize=_label_fontsize,
+            color='white',
+            fontweight='bold',
+            bbox=dict(
+                boxstyle='round,pad=0.25',
+                facecolor='saddlebrown',
+                edgecolor='black',
+                linewidth=0.8,
+                alpha=0.7
+            )
+        )
 
     # Add labels and title
     cost_subcategory = [name for name in globals() if globals()[name] is _costs_included][0]
     cost_subcategory = cost_subcategory.replace('list_of_', '').replace('_for_calibration', '')
-    plt.xlabel('Cost Sub-Category')
-    plt.ylabel('Costs (USD), millions')
-    plt.title(f'Model Cost vs Annual Expenditure 2019 and Max(Annual Budget 2020-22)\n {cost_subcategory}')
+    plt.xlabel('Cost Sub-Category', fontsize = 12, fontweight='bold')
+    plt.ylabel('Costs (USD), millions', fontsize = 12, fontweight='bold')
+    #plt.title(f'Model Cost vs Annual Expenditure 2019 and Max(Annual Budget 2020-22)\n {cost_subcategory}')
 
     # Set a white background and black border
     plt.grid(False)
@@ -351,12 +366,13 @@ def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10.5):
         spine.set_linewidth(1.5)  # Adjust the border width if desired
 
     # Customize x-axis labels for readability
-    max_label_length = 20  # Define a maximum label length for wrapping
+    max_label_length = 25  # Define a maximum label length for wrapping
     wrapped_labels = [textwrap.fill(str(label), max_label_length) for label in df_mean.index]
     plt.xticks(ticks=range(len(wrapped_labels)), labels=wrapped_labels, rotation=45, ha='right', fontsize=_xtick_fontsize)
+    plt.yticks(fontsize=_xtick_fontsize)
 
     # Adding a legend
-    plt.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=10)
+    plt.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=12)
 
     # Tight layout and save the figure
     plt.tight_layout()
@@ -370,7 +386,7 @@ all_calibration_costs = all_consumable_costs + list_of_hr_costs_for_calibration 
 
 do_cost_calibration_plot(calibration_data,list_of_consumables_costs_for_calibration_without_hiv)
 do_cost_calibration_plot(calibration_data,list_of_consumables_costs_for_calibration_only_hiv)
-do_cost_calibration_plot(calibration_data,all_consumable_costs)
+do_cost_calibration_plot(calibration_data,all_consumable_costs, _label_fontsize = 10)
 do_cost_calibration_plot(calibration_data, list_of_hr_costs_for_calibration)
 do_cost_calibration_plot(calibration_data, list_of_equipment_costs_for_calibration)
 do_cost_calibration_plot(calibration_data, list_of_operating_costs_for_calibration)

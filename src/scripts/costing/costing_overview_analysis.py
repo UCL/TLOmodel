@@ -415,27 +415,59 @@ print(f"Second, cost changes do not scale linearly with changes in system capaci
 # Get figures for overview paper
 # -----------------------------------------------------------------------------------------------------------------------
 # Figure 2: Estimated costs by cost category
+cost_category_clean_names = {'human resources for health': 'Human Resources for Health',
+                             'medical consumables': 'Medical Consumables',
+                             'medical equipment': 'Medical Equipment',
+                             'facility operating cost': 'Facility Operating Cost'}
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'all', _disaggregate_by_subgroup = False,
                                         _year = list_of_relevant_years_for_costing,show_title = False,
-                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
+                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios,
+                                        _label_fontsize = 10, _tick_fontsize= 11,
+                                        _legend_label_map=cost_category_clean_names)
 
 revised_consumable_subcategories = {'cost_of_separately_managed_medical_supplies_dispensed':'cost_of_consumables_dispensed', 'cost_of_excess_separately_managed_medical_supplies_stocked': 'cost_of_excess_consumables_stocked', 'supply_chain':'supply_chain'}
 input_costs_new = input_costs.copy()
 input_costs_new['cost_subcategory'] = input_costs_new['cost_subcategory'].map(revised_consumable_subcategories).fillna(input_costs_new['cost_subcategory'])
 
 # Figure 3: Estimated costs by cost sub-category
+consumables_subcategory_clean_names = {'cost_of_consumables_dispensed': 'Cost of consumables dispensed',
+                                   'cost_of_excess_consumables_stocked': 'Cost of excess consumables stocked',
+                                   'supply_chain': 'Supply Chain'}
+hr_subcategory_clean_names = {'salary_for_cadres_used' : 'Remuneration',
+                              'preservice_training_and_recruitment_cost_for_attrited_workers': 'Pre-service training and recruitment',
+                              'inservice_training_cost_for_cadres_used': 'In-service training',
+                              'mentorship_and_supportive_cost_for_cadres_used': 'Monitoring and supervision'}
+equipment_subcategory_clean_names = {'replacement_cost_annual_total': 'Annuitised replacement cost',
+                                     'service_fee_annual_total': 'Service fee',
+                                     'spare_parts_annual_total': 'Spare Parts',
+                                     'major_corrective_maintenance_cost_annual_total': 'Major corrective maintenance'}
+fac_operations_subcategory_clean_names = {'utilities_and_maintenance': 'Utility bills',
+                                          'building_maintenance': 'Building maintenance',
+                                          'vehicle_maintenance': 'Vehicle maintenance',
+                                          'fuel_for_ambulance': 'Fuel for ambulance',
+                                          'food_for_inpatient_care': 'Food for inpatient care',}
+
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_new, _cost_category = 'medical consumables', _disaggregate_by_subgroup = False,
                                         _year = list_of_years_for_plot, show_title = False,
-                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
+                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios,
+                                        _label_fontsize = 11, _tick_fontsize= 12,
+                                        _legend_label_map=consumables_subcategory_clean_names
+                                        )
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'human resources for health', _disaggregate_by_subgroup = False,
                                         _year = list_of_years_for_plot, show_title = False,
-                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
+                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios,
+                                        _label_fontsize = 11, _tick_fontsize = 12,
+                                        _legend_label_map = hr_subcategory_clean_names)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical equipment', _disaggregate_by_subgroup = False,
                                         _year = list_of_years_for_plot, show_title = False,
-                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
+                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios,
+                                        _label_fontsize = 11, _tick_fontsize = 12,
+                                        _legend_label_map = equipment_subcategory_clean_names)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'facility operating cost', _disaggregate_by_subgroup = False,
                                         _year = list_of_years_for_plot, show_title = False,
-                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
+                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios,
+                                        _label_fontsize = 11, _tick_fontsize = 12,
+                                        _legend_label_map = fac_operations_subcategory_clean_names)
 
 
 # Figure 4: Estimated costs by year
