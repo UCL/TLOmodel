@@ -1846,15 +1846,13 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=hsi_event_instance,
                 topen=self.sim.date +  pd.DateOffset(
-                    days= (self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"] * 1)),
+                    days= (self.sim.modules["HealthSystem"].parameters["delay_in_seeking_care_weather"] * 1)),
                 tclose=self.sim.date + pd.DateOffset(
-                    days=(self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"] * 1 + 15)),
-                # number of days of climate disruption
+                    days=(self.sim.modules["HealthSystem"].parameters["delay_in_seeking_care_weather"] * 1 + 15)),
+                # just set as baseline no. days climate disruption
                 priority=1
             )
     def never_ran_weather_event(self):
-        print("RESCHEDULE")
-
         # If this HSI event never ran, then the persons ceases to be taking medication. However, they have
         # a probability of restarting treatment again.
         person_id = self.target
@@ -1870,9 +1868,9 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=hsi_event_instance,
                 topen=self.sim.date +  pd.DateOffset(
-                    days= (self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"])),
+                    days= (self.sim.modules["HealthSystem"].parameters["delay_in_seeking_care_weather"])),
                 tclose=self.sim.date + pd.DateOffset(
-                    days=(self.sim.modules["HealthSystem"].parameters["scale_factor_delay_in_seeking_care_weather"] + 15)), # keep gap as above
+                    days=(self.sim.modules["HealthSystem"].parameters["delay_in_seeking_care_weather"] + 15)), # keep gap as above
                 # number of days of climate disruption
                 priority=1
             )
