@@ -8,6 +8,7 @@ from tlo import DateOffset, Module, Parameter, Population, Property, Simulation,
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, cardio_metabolic_disorders
+from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 from tlo.population import IndividualProperties
@@ -121,6 +122,9 @@ class DiabeticRetinopathy(Module):
         "vision_transition_matrix_sight_threatening": Parameter(
             Types.LIST,
             "Probability matrix for vision status transitions for people with sight-threatening DR"
+        ),
+        "sensitivity_of_dilated_eye_exam_dr_dmo": Parameter(
+            Types.REAL, "sensitivity of dilated eye exam/test for DR and DMO"
         ),
     }
 
@@ -342,6 +346,16 @@ class DiabeticRetinopathy(Module):
         sim.schedule_event(DiabeticRetinopathyLoggingEvent(self), sim.date + DateOffset(months=1))
         self.make_the_linear_models()
         self.look_up_consumable_item_codes()
+
+        # ----- DX TESTS -----
+        # Create the diagnostic test representing dilated eye exam for DR and DMO
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            dilated_eye_exam_dr_dmo=DxTest(
+                property='dr_status',
+                sensitivity=self.parameters['sensitivity_of_dilated_eye_exam_dr_dmo'],
+                target_categories=["none", "mild_or_moderate", "severe", "proliferative"]
+            )
+        )
 
         # Convert vision transition matrices
         vision_states = sim.population.props.vision_status.cat.categories
@@ -719,7 +733,7 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.get_consumables(
             self.module.cons_item_codes['eye_screening']
         )
-
+        #todo should I create another test so that the second one is for dmo?
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='dilated_eye_exam_dr_dmo',
             hsi_event=self
