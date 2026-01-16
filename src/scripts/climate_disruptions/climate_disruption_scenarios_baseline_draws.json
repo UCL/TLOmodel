@@ -11,9 +11,9 @@
       "draw_number": 0,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 60.0,
-          "rescaling_prob_seeking_after_disruption": 2.0,
-          "rescaling_prob_disruption": 10.0,
+          "scale_factor_reseeking_healthcare_post_disruption": 2.0,
+          "scale_factor_prob_disruption": 10.0,
+          "delay_in_seeking_care_weather": 60.0,
           "scale_factor_severity_disruption_and_delay": 2.0,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
@@ -41,9 +41,9 @@
       "draw_number": 1,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 60.0,
-          "rescaling_prob_seeking_after_disruption": 2.0,
-          "rescaling_prob_disruption": 10.0,
+          "scale_factor_reseeking_healthcare_post_disruption": 2.0,
+          "scale_factor_prob_disruption": 10.0,
+          "delay_in_seeking_care_weather": 60.0,
           "scale_factor_severity_disruption_and_delay": 2.0,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
@@ -68,6 +68,6 @@
       "draw_name": "1"
     }
   ],
-  "commit": "3ae17d34140cf428cc5dae7da33e89d49131a506",
-  "github": "https://github.com/UCL/TLOmodel/tree/3ae17d34140cf428cc5dae7da33e89d49131a506"
+  "commit": "d39049b82266ce3ddf66f7d05963c32d83063bfb",
+  "github": "https://github.com/UCL/TLOmodel/tree/d39049b82266ce3ddf66f7d05963c32d83063bfb"
 }
