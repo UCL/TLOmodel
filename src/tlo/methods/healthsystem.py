@@ -540,7 +540,7 @@ class HealthSystem(Module):
         self._summary_counter = HealthSystemSummaryCounter()
 
         # Create counter for the running total of footprint of all the HSIs being run today
-        self.running_total_footprint: Counter = Counter()
+        self.running_total_footprint = defaultdict(Counter)
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -1262,7 +1262,7 @@ class HealthSystem(Module):
         for clinic, clinic_cl in self._daily_capabilities.items():
             for facID_and_officer in clinic_cl.keys():
                 rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
-                    facID_and_officer=facID_and_officer
+                    facID_and_officer=facID_and_officer, clinic=clinic
                 )
                 if rescaling_factor > 1 and rescaling_factor != float("inf"):
                     self._daily_capabilities[clinic][facID_and_officer] *= rescaling_factor
@@ -1933,7 +1933,7 @@ class HealthSystem(Module):
         `runnning_total_footprint`. This runs every day.
         """
         current_capabilities = self.capabilities_today[clinic_name]
-        total_footprint = self.running_total_footprint
+        total_footprint = self.running_total_footprint[clinic_name]
 
         # Combine the current_capabilities and total_footprint per-officer totals
         comparison = pd.DataFrame(index=current_capabilities.keys())
@@ -1982,8 +1982,9 @@ class HealthSystem(Module):
         )
 
         self._summary_counter.record_hs_status(
-            fraction_time_used_across_all_facilities=fraction_time_used_overall,
-            fraction_time_used_by_facID_and_officer=fraction_time_used_by_facID_and_officer.to_dict(),
+            fraction_time_used_across_all_facilities_in_this_clinic=fraction_time_used_overall,
+            fraction_time_used_by_facID_and_officer_in_this_clinic=fraction_time_used_by_facID_and_officer.to_dict(),
+            clinic=clinic_name
         )
 
     def remove_beddays_footprint(self, person_id):
@@ -2150,7 +2151,7 @@ class HealthSystem(Module):
             for footprint in footprints_of_all_individual_level_hsi_event:
                 # Counter.update method when called with dict-like argument adds counts
                 # from argument to Counter object called from
-                self.running_total_footprint.update(footprint)
+                self.running_total_footprint[clinic].update(footprint)
 
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
