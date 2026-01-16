@@ -82,7 +82,7 @@ for i, y in enumerate(lat_data):
         polygons.append(polygon)
 
 
-def calculate_threshold_exceedances(wbgt_data, threshold, time_mask):
+def calculate_threshold_exceedances(wbgt_data, threshold, time_mask, year):
     """
     Calculate number of days exceeding a WBGT threshold.
 
@@ -91,9 +91,11 @@ def calculate_threshold_exceedances(wbgt_data, threshold, time_mask):
     exceedance_days : 2D array (lat, lon) - number of days exceeding threshold
     total_days : int - total number of days in the analysis period
     """
-    wbgt_subset = wbgt_data[time_mask, :, :]
-    total_days = time_mask.sum()
+    year_mask = time_mask & (years == year)
+    wbgt_subset = wbgt_data[year_mask, :, :]
+    total_days = year_mask.sum()
     exceedance_days = np.sum(wbgt_subset > threshold, axis=0)
+    print(exceedance_days)
     return exceedance_days, total_days
 
 
