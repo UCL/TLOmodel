@@ -1,17 +1,20 @@
 {
   "scenario_script_path": "src/scripts/climate_disruptions/climate_disruption_scenarios_baseline.py",
   "scenario_seed": 0,
-  "arguments": [],
+  "arguments": [
+    "--suspend-date",
+    "2024-12-31"
+  ],
   "runs_per_draw": 10,
   "draws": [
     {
       "draw_number": 0,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 28.0,
-          "rescaling_prob_seeking_after_disruption": 1.0,
-          "rescaling_prob_disruption": 1.0,
-          "scale_factor_severity_disruption_and_delay": 1.0,
+          "scale_factor_delay_in_seeking_care_weather": 60.0,
+          "rescaling_prob_seeking_after_disruption": 2.0,
+          "rescaling_prob_disruption": 10.0,
+          "scale_factor_severity_disruption_and_delay": 2.0,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
           "cons_availability": "default",
@@ -26,7 +29,9 @@
           "policy_name": "Naive",
           "climate_ssp": "ssp245",
           "climate_model_ensemble_model": "mean",
-          "services_affected_precip": "none",
+          "year_effective_climate_disruptions": 2025,
+          "prop_supply_side_disruptions": 0.5,
+          "services_affected_precip": "all",
           "tclose_overwrite": 1000
         }
       },
@@ -36,10 +41,10 @@
       "draw_number": 1,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_delay_in_seeking_care_weather": 28.0,
-          "rescaling_prob_seeking_after_disruption": 1.0,
-          "rescaling_prob_disruption": 1.0,
-          "scale_factor_severity_disruption_and_delay": 1.0,
+          "scale_factor_delay_in_seeking_care_weather": 60.0,
+          "rescaling_prob_seeking_after_disruption": 2.0,
+          "rescaling_prob_disruption": 10.0,
+          "scale_factor_severity_disruption_and_delay": 2.0,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
           "cons_availability": "default",
@@ -54,6 +59,8 @@
           "policy_name": "Naive",
           "climate_ssp": "ssp245",
           "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+          "prop_supply_side_disruptions": 0.5,
           "services_affected_precip": "all",
           "tclose_overwrite": 1000
         }
@@ -61,6 +68,6 @@
       "draw_name": "1"
     }
   ],
-  "commit": "80139a5430c24f96412dc21f0ab10bbe4f4ccf10",
-  "github": "https://github.com/UCL/TLOmodel/tree/80139a5430c24f96412dc21f0ab10bbe4f4ccf10"
+  "commit": "3ae17d34140cf428cc5dae7da33e89d49131a506",
+  "github": "https://github.com/UCL/TLOmodel/tree/3ae17d34140cf428cc5dae7da33e89d49131a506"
 }
