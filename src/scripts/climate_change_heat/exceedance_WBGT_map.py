@@ -6,12 +6,13 @@ from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
 import geopandas as gpd
 import numpy as np
-from netCDF4 import Dataset, num2date
+from netCDF4 import Dataset
 from shapely.geometry import Polygon
 
+
 min_year = 2025
-max_year = 2040
-spacing_of_years = 5
+max_year = 2027
+spacing_of_years = 1
 PREFIX_ON_FILENAME = "1"
 scenario_names_all = [
     "Baseline",
@@ -25,16 +26,9 @@ scenario_names_all = [
     "SSP 5.85 Low",
     "SSP 5.85 Mean",
 ]
-scenario_names = ["SSP 2.45 Mean"]
+scenario_names = [ "SSP 2.45 Mean"]
 
 scenario_colours = ["#0081a7", "#00afb9", "#FEB95F", "#fed9b7", "#f07167"] * 4
-
-# WBGT thresholds (following Gohar et al.)
-WBGT_THRESHOLDS = {
-    'moderate': 28,  # Moderate work restriction
-    'high': 30,  # Heavy workload restriction
-    'severe': 32,  # Suspension of strenuous activity
-}
 
 ## Needed for mapping (using the first scenario's data for mapping)
 malawi_admin2 = gpd.read_file(
@@ -49,29 +43,34 @@ worldpop_gdf = gpd.read_file(
 )
 worldpop_gdf["Z_prop"] = pd.to_numeric(worldpop_gdf["Z_prop"], errors="coerce")
 
+# Get WBGT
+
 # Load netCDF data
-nc = Dataset(
-    '/Users/rem76/Desktop/Climate_change_health/nex_gddp_cmip6_malawi_wbgt/ACCESS-CM2/ssp245/wbgt_day_ACCESS-CM2_ssp245_malawi_2025_2040.nc',
-    'r')
+nc = Dataset('/Users/rem76/Desktop/Climate_change_health/nex_gddp_cmip6_malawi_wbgt/ACCESS-CM2/ssp245/wbgt_day_ACCESS-CM2_ssp245_malawi_2025_2040.nc', 'r')
 print(nc.variables.keys())
 
-wbgt_data = nc.variables['wbgt'][:]
+wbgt_data = nc.variables['wbgt'][:]  # adjust variable name if needed
 lat_data = nc.variables['lat'][:]
 lon_data = nc.variables['lon'][:]
 
 # Get time variable and convert to datetime
 time_var = nc.variables['time']
+from netCDF4 import num2date
 times = num2date(time_var[:], units=time_var.units, calendar=getattr(time_var, 'calendar', 'standard'))
 
-# Get month and year for each timestep
+# Get month for each timestep
 months = np.array([t.month for t in times])
-years = np.array([t.year for t in times])
 
-# Create grid polygons from netCDF coordinates (do this once)
+# Filter for Oct, Nov, Dec (months 10, 11, 12)
+ond_mask = (months >= 10) & (months <= 12)
+wbgt_mean = np.mean(wbgt_data[ond_mask, :, :], axis=0)
+# Create grid polygons from netCDF coordinates
 difference_lat = lat_data[1] - lat_data[0]
 difference_lon = lon_data[1] - lon_data[0]
 
 polygons = []
+wbgt_values = []
+
 for i, y in enumerate(lat_data):
     for j, x in enumerate(lon_data):
         bottom_left = (x, y)
@@ -80,34 +79,16 @@ for i, y in enumerate(lat_data):
         top_left = (x, y + difference_lat)
         polygon = Polygon([bottom_left, bottom_right, top_right, top_left])
         polygons.append(polygon)
+        wbgt_values.append(wbgt_mean[i, j])
 
+# Create GeoDataFrame with WBGT values
+grid = gpd.GeoDataFrame({
+    'geometry': polygons,
+    'wbgt': wbgt_values
+}, crs=malawi_admin2.crs)
 
-def calculate_threshold_exceedances(wbgt_data, threshold, time_mask):
-    """
-    Calculate number of days exceeding a WBGT threshold.
-
-    Returns:
-    --------
-    exceedance_days : 2D array (lat, lon) - number of days exceeding threshold
-    total_days : int - total number of days in the analysis period
-    """
-    wbgt_subset = wbgt_data[time_mask, :, :]
-    total_days = time_mask.sum()
-    exceedance_days = np.sum(wbgt_subset > threshold, axis=0)
-    return exceedance_days, total_days
-
-
-def create_exceedance_grid(exceedance_values, crs):
-    """Create a GeoDataFrame grid from exceedance values."""
-    grid_values = []
-    for i in range(len(lat_data)):
-        for j in range(len(lon_data)):
-            grid_values.append(exceedance_values[i, j])
-
-    return gpd.GeoDataFrame({
-        'geometry': polygons,
-        'value': grid_values
-    }, crs=crs)
+# Clip grid to Malawi boundaries
+grid_clipped = gpd.overlay(grid, malawi_admin2, how='intersection')
 
 
 #
@@ -118,7 +99,6 @@ climate_sensitivity_analysis = False
 parameter_sensitivity_analysis = True
 main_text = True
 mode_2 = False
-
 if climate_sensitivity_analysis:
     scenario_names = [
         "Baseline",
@@ -134,12 +114,11 @@ if climate_sensitivity_analysis:
     ]
     suffix = "climate_SA"
     scenarios_of_interest = range(len(scenario_names))
-
 if parameter_sensitivity_analysis:
     scenario_names = range(0, 9, 1)
     scenarios_of_interest = scenario_names
-    suffix = "parameter_SA"
 
+    suffix = "parameter_SA"
 if main_text:
     scenario_names = [
         "Baseline",
@@ -156,32 +135,34 @@ if mode_2:
     suffix = "mode_2"
     scenarios_of_interest = [0, 1]
 
-
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
-    """Produce threshold exceedance maps showing days exceeding WBGT thresholds.
-    - Left panel: Population distribution
-    - Right panels: Days/percentage exceeding each WBGT threshold for the target year
+    """Produce a standard set of plots describing the effect of each climate scenario.
+    - Generate time trend plots of deaths and DALYs by cause and district.
+    - Create a final summary plot showing total deaths and DALYs per district stacked by scenario.
     """
     TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
 
     def get_population_for_year(_df):
         """Returns the population per district in the year of interest"""
         _df["date"] = pd.to_datetime(_df["date"])
+
         filtered_df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
         numeric_df = filtered_df.drop(columns=["female", "male", "date", "total"], errors="ignore")
+
         district_sums = pd.Series(numeric_df["district_of_residence"].sum())
         return district_sums
 
     def get_over_65_for_year(_df):
         """Returns the population aged 65+ in the year of interest"""
         _df["date"] = pd.to_datetime(_df["date"])
+
         filtered_df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
+
         over_65_cols = ["65-69", "70-74", "75-79", "80-84", "85-89", "90-94", "95-99", "100+"]
         over_65_total = pd.Series(filtered_df[over_65_cols].sum().sum())
+
         return over_65_total
-
     target_year_sequence = range(min_year, max_year, spacing_of_years)
-
     # Store annual data for population
     all_years_data_population_mean = {}
     all_years_data_population_upper = {}
@@ -190,36 +171,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for target_year in target_year_sequence:
         TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year, 12, 31))
 
-        # Create time mask for this target year (OND season)
-        ond_mask = (months >= 10) & (months <= 12) & (years == target_year)
-
-        # Check if we have data for this year
-        if not ond_mask.any():
-            print(f"Warning: No data for year {target_year}, skipping...")
-            continue
-
         # Store district-level data for each scenario
         all_scenarios_population_by_district_mean = {}
         all_scenarios_population_by_district_upper = {}
         all_scenarios_population_by_district_lower = {}
-
         for draw in range(len(scenario_names_all)):
             if draw not in scenarios_of_interest:
                 continue
-            scenario_name = scenario_names[draw] if draw < len(scenario_names) else f"Scenario_{draw}"
-
+            scenario_name = scenario_names[draw]
             if total_population:
                 result_data_population = summarize(
-                    extract_results(
-                        results_folder,
-                        module="tlo.methods.demography",
-                        key="population",
-                        custom_generate_series=get_population_for_year,
-                        do_scaling=True,
-                    ),
-                    only_mean=True,
-                    collapse_columns=True,
-                )[draw]
+                        extract_results(
+                            results_folder,
+                            module="tlo.methods.demography",
+                            key="population",
+                            custom_generate_series=get_population_for_year,
+                            do_scaling=True,
+                        ),
+                        only_mean=True,
+                        collapse_columns=True,
+                    )[draw]
+
             else:
                 over_65_M = summarize(
                     extract_results(
@@ -231,7 +203,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     ),
                     only_mean=True,
                     collapse_columns=True,
-                )[draw]
+                    )[draw]
                 over_65_F = summarize(
                     extract_results(
                         results_folder,
@@ -242,101 +214,58 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     ),
                     only_mean=True,
                     collapse_columns=True,
-                )[draw]
+                    )[draw]
                 result_data_population = over_65_M + over_65_F
 
             all_scenarios_population_by_district_mean[draw] = result_data_population['mean']
             all_scenarios_population_by_district_lower[draw] = result_data_population['lower']
             all_scenarios_population_by_district_upper[draw] = result_data_population['upper']
 
-        # Calculate exceedances for each threshold for this target year
-        exceedance_data = {}
-        for threshold_name, threshold_value in WBGT_THRESHOLDS.items():
-            exceedance_days, total_days = calculate_threshold_exceedances(
-                wbgt_data, threshold_value, ond_mask, target_year
-            )
-            exceedance_pct = (exceedance_days / total_days) * 100 if total_days > 0 else np.zeros_like(exceedance_days)
-            exceedance_data[threshold_name] = {
-                'days': exceedance_days,
-                'pct': exceedance_pct,
-                'total_days': total_days,
-                'threshold': threshold_value
-            }
-
-        # Create maps: 1 population panel + 3 threshold panels
-        fig, axes = plt.subplots(1, 4, figsize=(20, 6))
+        # Create maps for each scenario
+        fig, axes = plt.subplots(1, 2, figsize=(10, 10))
         axes = axes.flatten()
 
-        # Panel 0: Population distribution
-        malawi_admin2["Population"] = malawi_admin2["ADM2_EN"].map(
-            all_scenarios_population_by_district_mean[scenarios_of_interest[0]]
-        )
-        axes[0].axis("off")
-        water_bodies.plot(ax=axes[0], facecolor="#7BDFF2", alpha=0.6, edgecolor="#999999", linewidth=0.5, hatch="xxx")
-        water_bodies.plot(ax=axes[0], facecolor="#7BDFF2", edgecolor="black", linewidth=1)
+        for i in range(2):
+            malawi_admin2["Population"] = malawi_admin2["ADM2_EN"].map(all_scenarios_population_by_district_mean[0])
+            # malawi_admin2.plot(
+            #     column="Population", ax=axes[i], legend=True, cmap="Blues", edgecolor="black")
+            axes[i].axis("off")
+            water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", alpha=0.6, edgecolor="#999999", linewidth=0.5, hatch="xxx")
+            water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", edgecolor="black", linewidth=1)
 
-        district_pop_lookup = malawi_admin2.set_index("ADM2_EN")["Population"]
+            # set a lookup table
+        district_pop_lookup = (
+                malawi_admin2
+                .set_index("ADM2_EN")["Population"]
+            )
         worldpop_gdf["district_population"] = worldpop_gdf["ADM2_EN"].map(district_pop_lookup)
         worldpop_gdf["grid_population"] = np.log(
-            worldpop_gdf["Z_prop"] * worldpop_gdf["district_population"]
-        )
+                worldpop_gdf["Z_prop"] * worldpop_gdf["district_population"]
+            )
 
         worldpop_gdf.plot(
-            column="grid_population",
-            ax=axes[0],
-            cmap="Greys",
-            legend=True,
-            legend_kwds={"label": "log(Population)", "shrink": 0.6},
-        )
-        malawi_admin2.boundary.plot(ax=axes[0], edgecolor='black', linewidth=0.5)
-        axes[0].set_title(f"Population Distribution\n{target_year}", fontsize=11)
-
-        # Panels 1-3: WBGT threshold exceedances for this target year
-        for idx, (threshold_name, data) in enumerate(exceedance_data.items()):
-            ax = axes[idx + 1]
-
-            # Create grid for this threshold's exceedance percentage
-            grid = create_exceedance_grid(data['pct'], malawi_admin2.crs)
-            grid_clipped = gpd.overlay(grid, malawi_admin2, how='intersection')
-
-            water_bodies.plot(ax=ax, facecolor="#7BDFF2", alpha=0.6, edgecolor="#999999", linewidth=0.5, hatch="xxx")
-            water_bodies.plot(ax=ax, facecolor="#7BDFF2", edgecolor="black", linewidth=1)
-
-            grid_clipped.plot(
-                column='value',
-                ax=ax,
-                cmap='YlOrRd',
-                edgecolor='grey',
-                linewidth=0.2,
+                column="grid_population",
+                ax=axes[0],
+                cmap="Greys",
                 legend=True,
-                legend_kwds={
-                    'label': f"% of OND days > {data['threshold']}°C",
-                    'shrink': 0.6
-                },
-                vmin=0,
-                vmax=100
+                legend_kwds={"label": "log(Population)", "shrink": 0.6},
             )
+        grid_clipped.boundary.plot(ax=axes[0], edgecolor='grey', linewidth=0.3)
 
-            malawi_admin2.boundary.plot(ax=ax, edgecolor='black', linewidth=0.5)
-            ax.set_title(
-                f"WBGT > {data['threshold']}°C ({threshold_name.capitalize()})\n"
-                f"OND {target_year} ({data['total_days']} days)",
-                fontsize=11
-            )
-
-        fig.suptitle(
-            f"Population and WBGT Threshold Exceedances - Malawi {target_year}",
-            fontsize=14, fontweight='bold'
-        )
+        # Plot clipped grid with WBGT values
+        grid_clipped.plot(column='wbgt', ax=axes[1], cmap='YlOrRd',
+                              edgecolor='grey', linewidth=0.2, legend=True,
+                              legend_kwds={'label': 'WBGT (°C)', 'shrink': 0.7})
         fig.tight_layout()
         plt.show()
-        fig.savefig(output_folder / f"wbgt_exceedance_{target_year}_{suffix}.png", dpi=300, bbox_inches="tight")
+        #fig.savefig(output_folder / f"exposed_population_{target_year}.png", dpi=300, bbox_inches="tight")
         plt.close(fig)
 
-        # Store data for this year
-        all_years_data_population_mean[target_year] = all_scenarios_population_by_district_mean
-        all_years_data_population_lower[target_year] = all_scenarios_population_by_district_lower
-        all_years_data_population_upper[target_year] = all_scenarios_population_by_district_upper
+    all_years_data_population_mean[target_year] = all_scenarios_population_by_district_mean
+
+    all_years_data_population_lower[target_year] = all_scenarios_population_by_district_lower
+
+    all_years_data_population_upper[target_year] = all_scenarios_population_by_district_upper
 
 
 if __name__ == "__main__":
