@@ -1,14 +1,13 @@
 import datetime
 import heapq as hp
 import itertools
-import math
 import re
 import warnings
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -2206,9 +2205,9 @@ class HealthSystem(Module):
                         updated_call = self.get_appt_footprint_as_time_request(
                             facility_info=event.facility_info, appt_footprint=actual_appt_footprint
                         )
-                        ev_num_in_clinics_footprint = event_num_of_all_individual_level_hsi_event[clinic].index(ev_num)
-                        original_call = footprints_of_all_individual_level_hsi_event[clinic][ev_num_in_clinics_footprint]
-                        footprints_of_all_individual_level_hsi_event[clinic][ev_num_in_clinics_footprint] = updated_call
+                        ev_num_in_clinics_fp = event_num_of_all_individual_level_hsi_event[clinic].index(ev_num)
+                        original_call = footprints_of_all_individual_level_hsi_event[clinic][ev_num_in_clinics_fp]
+                        footprints_of_all_individual_level_hsi_event[clinic][ev_num_in_clinics_fp] = updated_call
                         self.running_total_footprint[clinic] -= original_call
                         self.running_total_footprint[clinic] += updated_call
 
