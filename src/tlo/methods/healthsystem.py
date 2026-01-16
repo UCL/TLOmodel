@@ -1817,7 +1817,6 @@ class HealthSystem(Module):
         It will also record the actual appointment footprint.
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         :param actual_appt_footprint: The actual Appointment Footprint (if individual event)
-        :param squeeze_factor: Always zero
         """
 
         # HSI-Event
@@ -1825,7 +1824,6 @@ class HealthSystem(Module):
             event_details=hsi_event.as_namedtuple(actual_appt_footprint),
             person_id=hsi_event.target,
             facility_id=hsi_event.facility_info.id,
-            squeeze_factor=0.0, # For now assume this is always zero. Keep logging for log consistency
             did_run=did_run,
             priority=priority,
             clinic=clinic,
@@ -2111,13 +2109,13 @@ class HealthSystem(Module):
         # Record equipment usage for the year, for each facility
         self._record_general_equipment_usage_for_year()
 
-  def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests)-> bool:
+    def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests, clinic)-> bool:
         """Check if all officers required by the appt footprint are available to perform the HSI"""
 
         ok_to_run = True
 
         for officer in expected_time_requests.keys():
-            availability = current_capabilities.get(officer)
+            availability = self.capabilities_today[clinic][officer]
 
             # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
             if availability is None:
@@ -2166,7 +2164,7 @@ class HealthSystem(Module):
                 ok_to_run = True
                 if event.expected_time_requests:
                     ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
-                                    event.expected_time_requests)
+                                    event.expected_time_requests, clinic=clinic)
                 if ok_to_run:
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
                     if sum(event.BEDDAYS_FOOTPRINT.values()):
@@ -2792,17 +2790,18 @@ class HealthSystemSummaryCounter:
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
+        print("The size of treatment ids", type(self._treatment_ids))
 
         logger_summary.info(
             key="HSI_Event",
             description="Counts of the HSI_Events that have occurred in this calendar year by TREATMENT_ID, "
-            "and counts of the 'Appt_Type's that have occurred in this calendar year,"
-            "and the average squeeze_factor for HSIs that have occurred in this calendar year.",
+            "and counts of the 'Appt_Type's that have occurred in this calendar year."
+            "Squeeze factors are always assumed to be 0.",
             data={
                 "TREATMENT_ID": self._treatment_ids,
                 "Number_By_Appt_Type_Code": self._appts,
                 "Number_By_Appt_Type_Code_And_Level": self._appts_by_level,
-                "squeeze_factor": {k: sum(v) / len(v) for k, v in self._squeeze_factor_by_hsi_event_name.items()},
+                "squeeze_factor": {t_id: 0.0 for t_id, v in self._treatment_ids.items()},
             },
         )
         logger_summary.info(
