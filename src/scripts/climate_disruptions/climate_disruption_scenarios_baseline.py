@@ -16,9 +16,9 @@ YEAR_OF_CHANGE = 2025
 full_grid = make_cartesian_parameter_grid(
     {
         "HealthSystem": {
-            "scale_factor_delay_in_seeking_care_weather": [float(60)],
-            "rescaling_prob_seeking_after_disruption": [float(2)],
-            "rescaling_prob_disruption": [float(10)],
+            "scale_factor_reseeking_healthcare_post_disruption": [float(2)],
+            "scale_factor_prob_disruption": [float(10)],
+            "delay_in_seeking_care_weather": [float(60)],
             "scale_factor_severity_disruption_and_delay": [float(2)],
             "mode_appt_constraints": [1],
             "mode_appt_constraints_postSwitch": [2],

@@ -379,14 +379,7 @@ class HealthSystem(Module):
             "Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.",
         ),
         "clinic_configuration_name": Parameter(Types.STRING, "Name of configuration of clinics to use."),
-        'mode_appt_constraints_postSwitch': Parameter(
-            Types.INT, 'Mode considered after a mode switch in year_mode_switch.'),
-        'cons_availability_postSwitch': Parameter(
-            Types.STRING, 'Consumables availability after switch in `year_cons_availability_switch`. Acceptable values'
-                          'are the same as those for Parameter `cons_availability`.'),
-        'use_funded_or_actual_staffing_postSwitch': Parameter(
-            Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
-                          'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
+
         # Climate disruptions
         "projected_precip_disruptions": Parameter(
             Types.REAL, "Probabilities of precipitation-mediated " "disruptions to services by month, year, and clinic."
@@ -404,22 +397,26 @@ class HealthSystem(Module):
             "Options are lowest, mean, and highest, based on total precipitation between 2025 and 2070.",
         ),
         "year_effective_climate_disruptions": Parameter(Types.INT, "Mimimum year from which there can be climate disruptions. Minimum is 2025"),
-        "scale_factor_delay_in_seeking_care_weather": Parameter(
+        "delay_in_seeking_care_weather": Parameter(
             Types.REAL,
             "If faced with a climate disruption, and it is determined the individual will "
-            "reseek healthcare, the scale factor for number of days of delay in seeking healthcare."
+            "reseek healthcare, the number of days of delay in seeking healthcare."
             "Scale factor makes it proportional to the urgency.",
-        ),  # gamma in write yp
-        "rescaling_prob_seeking_after_disruption": Parameter(
+        ),
+        "scale_factor_reseeking_healthcare_post_disruption": Parameter(
             Types.REAL,
             "If faced with a climate disruption, and it is determined the individual will "
             "reseek healthcare, scaling of their original probability of seeking care.",
-        ),  # beta in write yp
-        "rescaling_prob_disruption": Parameter(
+        ),
+        "scale_factor_prob_disruption": Parameter(
             Types.REAL,
             "Due to uknown behaviours (from patient and health practiciion), broken chains of events, etc, which cause discrepencies  "
             "between the estimated disruptions and those modelled in TLO, rescale the original probability of disruption.",
-        ),  # alpha in write yp
+        ),
+        "scale_factor_appointment_urgency": Parameter(
+            Types.REAL,
+            "Scale factor in seeking healthcare for how urgent a HSI is."
+        ),
         "services_affected_precip": Parameter(
             Types.STRING, "Which modelled services can be affected by weather. Options are all, none"
         ),
@@ -462,8 +459,8 @@ class HealthSystem(Module):
         climate_model_ensemble_model: Optional[str] = "mean",
         year_effective_climate_disruptions: Optional[int] = 2025,
         services_affected_precip: Optional[str] = "none",
-        response_to_disruption: Optional[str] = "delay",
-        scale_factor_delay_in_seeking_care_weather: Optional[float] = 4,
+        scale_factor_appointment_urgency: Optional[str] = 1,
+        delay_in_seeking_care_weather: Optional[float] = 4,
         scale_factor_severity_disruption_and_delay: Optional[float] = None,
         prop_supply_side_disruptions: Optional[float] = 0.5,
     ):
@@ -513,10 +510,9 @@ class HealthSystem(Module):
         :param year_effective_climate_disruptions: Minimum year from which climate disruptions occur. Minimum is 2025.
         :param services_affected_precip: Which modelled services can be affected by weather. Options are 'all', 'none'.
         :param response_to_disruption: How an appointment that is determined to be affected by weather will be handled. Options are 'delay', 'cancel'.
-        :param scale_delay_in_seeking_care_weather_urgent: The scale factor on number of days delay in reseeking healthcare after an urgent appointmnet has been delayed by weather. Unit is day.
-        :param scale_delay_in_seeking_care_weather_non_urgent: The scale factor number of days delay in reseeking healthcare after an non-urgent appointmnet has been delayed by weather. Unit is day.
-        :param rescaling_prob_seeking_after_disruption: Rescaling of probability of seeking care after a disruption has occurred.
-        :param rescaling_prob_disruption: To account for structural/behavioural assumptions in the TLO and limitations of DHIS2 dataset.
+        :param delay_in_seeking_care_weather: The scale factor on number of days delay in reseeking healthcare after an urgent appointmnet has been delayed by weather. Unit is day.
+        :param scale_factor_reseeking_healthcare_post_disruption: Rescaling of probability of seeking care after a disruption has occurred.
+        :param scale_factor_prob_disruption: To account for structural/behavioural assumptions in the TLO and limitations of DHIS2 dataset.
         :param scale_factor_severity_disruption_and_delay: Scale on the delay in reseeking healthcare based on the "severity" of disruption.
         :param prop_supply_side_disruptions: Probability that the climate-mediate disruptions to healtchare are from the supply-side.
         """
@@ -2818,11 +2814,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     ),
                     "disruption",
                 ]
-                base_scale = self.module.parameters["scale_factor_delay_in_seeking_care_weather"]
-                scale_factor_delay = max(1, base_scale)
                 prob_disruption = pd.DataFrame(prob_disruption)
                 prob_disruption = min(
-                    float(prob_disruption.iloc[0]) * self.module.parameters["rescaling_prob_disruption"], 1
+                    float(prob_disruption.iloc[0]) * self.module.parameters["scale_factor_prob_disruption"], 1
                 )  # use data on defecit of HSIs from ANC paper as prior, then scale
                 if np.random.binomial(1, prob_disruption) == 1:
                     climate_disrupted = True
@@ -2841,9 +2835,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                   + DateOffset(
                                 days=(
                                     int(
-                                        max(scale_factor_delay * item.priority + 1, 1)
+                                        max( self.module.parameters["scale_factor_appointment_urgency"] * item.priority, 1)
                                         * prob_disruption
                                         * self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                        * self.module.parameters["delay_in_seeking_care_weather"]
                                     )
                                 )
                             ),
@@ -2851,9 +2846,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                    + DateOffset(
                                 days=(
                                     int(
-                                        max(scale_factor_delay * item.priority + 1, 1)
+                                        max( self.module.parameters["scale_factor_appointment_urgency"] * item.priority, 1)
                                         * prob_disruption
-                                        / self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                        * self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                        * self.module.parameters["delay_in_seeking_care_weather"]
                                     )
                                 )
                             )
@@ -2880,7 +2876,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             hsb_model = self.sim.modules["HealthSeekingBehaviour"].hsb_linear_models["adults"]
 
                         will_seek_care_prob = min(
-                            self.module.parameters["rescaling_prob_seeking_after_disruption"]
+                            self.module.parameters["scale_factor_reseeking_healthcare_post_disruption"]
                             * hsb_model.predict(  # don't supply rng, so get a probability
                                 df=patient,
                                 subgroup=subgroup_name,
@@ -2899,11 +2895,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                       + DateOffset(
                                     days=(
                                         int(
-                                            max(scale_factor_delay * item.priority + 1, 1)
+                                            max(self.module.parameters[
+                                                    "scale_factor_appointment_urgency"] * item.priority, 1)
                                             * prob_disruption
-                                            / self.module.parameters[
-                                                "scale_factor_severity_disruption_and_delay"
-                                            ]
+                                            * self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                            * self.module.parameters["delay_in_seeking_care_weather"]
                                         )
                                     )
                                 ),  # makes it proportional to urgency. Most urgent are 0 and 1 (ped/adult)
@@ -2911,11 +2907,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                        + DateOffset(
                                     days=(
                                         int(
-                                            max(scale_factor_delay * item.priority + 1, 1)
+                                            max(self.module.parameters[
+                                                    "scale_factor_appointment_urgency"] * item.priority, 1)
                                             * prob_disruption
-                                            / self.module.parameters[
-                                                "scale_factor_severity_disruption_and_delay"
-                                            ]
+                                            * self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                            * self.module.parameters["delay_in_seeking_care_weather"]
                                         )
                                     )
                                 )
