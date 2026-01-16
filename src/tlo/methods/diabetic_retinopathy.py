@@ -208,6 +208,7 @@ class DiabeticRetinopathy(Module):
     def __init__(self):
         super().__init__()
         self.cons_item_codes = None  # (Will store consumable item codes)
+        self.daly_wts = dict()
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """ Read all parameters and define symptoms (if any)"""
@@ -357,6 +358,21 @@ class DiabeticRetinopathy(Module):
             )
         )
 
+        # ----- DISABILITY-WEIGHTS -----
+        if "HealthBurden" in self.sim.modules:
+            # For those with moderate vision impairment due to Diabetes Mellitus
+            self.daly_wts["moderate_vision_impairment_due_to_dm"] = self.sim.modules["HealthBurden"].get_daly_weight(
+                sequlae_code=967
+            )
+            # For those with severe vision impairment due to Diabetes Mellitus
+            self.daly_wts["severe_vision_impairment_due_to_dm"] = self.sim.modules["HealthBurden"].get_daly_weight(
+                sequlae_code=969
+            )
+            # For those who are blind due to Diabetes Mellitus
+            self.daly_wts["blindness_due_to_dm"] = self.sim.modules["HealthBurden"].get_daly_weight(
+                sequlae_code=974
+            )
+
         # Convert vision transition matrices
         vision_states = sim.population.props.vision_status.cat.categories
 
@@ -375,7 +391,29 @@ class DiabeticRetinopathy(Module):
                 f"{key} rows do not sum to 1"
 
     def report_daly_values(self) -> pd.Series:
-        return pd.Series(index=self.sim.population.props.index, data=0.0)
+        df = self.sim.population.props  # shortcut to population properties dataframe for alive persons
+
+        disability_series_for_alive_persons = pd.Series(index=df.index[df.is_alive], data=0.0)
+
+        # Assign daly_wt to those with moderate vision impairment due to DM
+        disability_series_for_alive_persons.loc[
+            (df.vision_status == "moderate_vision_impairment") &
+            ((df.dr_status != "none") | (df.dmo_status != "none"))
+            ] = self.daly_wts['moderate_vision_impairment_due_to_dm']
+
+        # Assign daly_wt to those with severe vision impairment due to DM
+        disability_series_for_alive_persons.loc[
+            (df.vision_status == "severe_vision_impairment") &
+            ((df.dr_status != "none") | (df.dmo_status != "none"))
+            ] = self.daly_wts['severe_vision_impairment_due_to_dm']
+
+        # Assign daly_wt to those who are blind due to DM
+        disability_series_for_alive_persons.loc[
+            (df.vision_status == "blindness") &
+            ((df.dr_status != "none") | (df.dmo_status != "none"))
+            ] = self.daly_wts['blindness_due_to_dm']
+
+        return disability_series_for_alive_persons
 
     def on_birth(self, mother_id: int, child_id: int) -> None:
         """ Set properties of a child when they are born.
