@@ -360,9 +360,9 @@ class HealthSystem(Module):
         "mode_appt_constraints": Parameter(
             Types.INT,
             "Integer code in `{1, 2}` determining mode of constraints with regards to officer numbers "
-            "and time - 1: elastic constraints, all HSI events run with squeeze factor, provided "
+            "and time - 1: elastic constraints, all HSI events run, provided "
             "officers required to deliver the HSI have capabilities > 0"
-            "2: hard constraints, only HSI events with no squeeze factor run. N.B. This parameter"
+            "2: hard constraints, only HSI events for which capabilities are available run. N.B. This parameter"
             "is over-ridden if an argument is provided to the module initialiser.",
         ),
         "mode_appt_constraints_postSwitch": Parameter(
@@ -402,7 +402,6 @@ class HealthSystem(Module):
         use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
         disable_and_reject_all: bool = False,
-        compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
     ):
         """
@@ -410,9 +409,8 @@ class HealthSystem(Module):
         :param service_availability: A list of treatment IDs to allow.
         :param mode_appt_constraints: Integer code in ``{1, 2}`` determining mode of
             constraints with regards to officer numbers and time - 1: elastic constraints, all HSI
-            events run with squeeze factor provided officers required have nonzero capabilities,
-            2: hard constraints, only HSI events with
-            no squeeze factor run.
+            events run provided officers required have nonzero capabilities,
+            2: hard constraints, only HSI events for which capabilities are available run.
         :param cons_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
         let no consumable be ever be available; if 'all', then all consumables are always available. When using 'all'
         or 'none', requests for consumables are not logged.
@@ -436,8 +434,6 @@ class HealthSystem(Module):
             logging) and every HSI event runs.
         :param disable_and_reject_all: If ``True``, disable health system and no HSI
             events run
-        :param compute_squeeze_factor_to_district_level: Whether to compute squeeze_factors to the district level, or
-            the national level (which effectively pools the resources across all districts).
         :param hsi_event_count_log_period: Period over which to accumulate counts of HSI
             events that have run before logging and reseting counters. Should be on of
             strings ``'day'``, ``'month'``, ``'year'``. ``'simulation'`` to log at the
@@ -528,12 +524,6 @@ class HealthSystem(Module):
         assert equip_availability in (None, "default", "all", "none")
         self.arg_equip_availability = equip_availability
 
-        # `compute_squeeze_factor_to_district_level` is a Boolean indicating whether the computation of squeeze_factors
-        # should be specific to each district (when `True`), or if the computation of squeeze_factors should be on the
-        # basis that resources from all districts can be effectively "pooled" (when `False).
-        assert isinstance(compute_squeeze_factor_to_district_level, bool)
-        self.compute_squeeze_factor_to_district_level = compute_squeeze_factor_to_district_level
-
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
         self.dx_manager = DxManager(self)
 
@@ -551,12 +541,6 @@ class HealthSystem(Module):
 
         # Create counter for the running total of footprint of all the HSIs being run today
         self.running_total_footprint: Counter = Counter()
-
-        # A reusable store for holding squeeze factors in get_squeeze_factors()
-        self._get_squeeze_factors_store_grow = 500
-        ## We need this to be a dictionary indexed by clinic names, but we don't have the clinic names yet.
-        ## create an empty dictionary here, and then populate it properly later.
-        self._get_squeeze_factors_store = {}
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -848,12 +832,6 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
-
-        ## Initialise the stores for squeeze factors
-        self._get_squeeze_factors_store = {
-            clinic: np.zeros(self._get_squeeze_factors_store_grow) for clinic in self._clinic_names
-        }
-
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -1658,9 +1636,6 @@ class HealthSystem(Module):
 
         self.bed_days.check_beddays_footprint_format(hsi_event.BEDDAYS_FOOTPRINT)
 
-        # Check that this can accept the squeeze argument
-        assert _accepts_argument(hsi_event.run, "squeeze_factor")
-
         # Check that the event does not request an appointment at a facility
         # level which is not possible
         appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
@@ -1834,162 +1809,23 @@ class HealthSystem(Module):
 
         return appt_footprint_times
 
-    def get_squeeze_factors(
-        self,
-        footprints_per_event,
-        total_footprint,
-        current_capabilities,
-        compute_squeeze_factor_to_district_level: bool,
-    ):
-        for clinic, clinic_cl in current_capabilities.items():
-            self.get_clinic_squeeze_factors(
-                clinic, footprints_per_event, total_footprint, clinic_cl, compute_squeeze_factor_to_district_level
-            )
-
-        return self._get_squeeze_factors_store
-
-    def get_clinic_squeeze_factors(
-        self,
-        clinic,
-        footprints_per_event,
-        total_footprint,
-        current_capabilities,
-        compute_squeeze_factor_to_district_level: bool,
-    ):
-        """
-        This will compute the squeeze factors for each HSI event from the list of all
-        the calls on health system resources for the day.
-        The squeeze factor is defined as (call/available - 1). ie. the highest
-        fractional over-demand among any type of officer that is called-for in the
-        appt_footprint of an HSI event.
-        A value of 0.0 signifies that there is no squeezing (sufficient resources for
-        the EXPECTED_APPT_FOOTPRINT).
-
-        :param footprints_per_event: List, one entry per HSI event, containing the
-            minutes required from each health officer in each health facility as a
-            Counter (using the standard index)
-        :param total_footprint: Counter, containing the total minutes required from
-            each health officer in each health facility when non-zero, (using the
-            standard index)
-        :param current_capabilities: Series giving the amount of time available for
-            each health officer in each health facility (using the standard index)
-        :param compute_squeeze_factor_to_district_level: Boolean indicating whether
-            the computation of squeeze_factors should be specific to each district
-            (when `True`), or if the computation of squeeze_factors should be on
-            the basis that resources from all districts can be effectively "pooled"
-            (when `False).
-
-        :return: squeeze_factors: an array of the squeeze factors for each HSI event
-            (position in array matches that in the all_call_today list).
-        """
-
-        def get_total_minutes_of_this_officer_in_this_district(_officer):
-            """Returns the minutes of current capabilities for the officer identified (this officer type in this
-            facility_id)."""
-            return current_capabilities.get(_officer)
-
-        def get_total_minutes_of_this_officer_in_all_district(_officer):
-            """Returns the minutes of current capabilities for the officer identified in all districts (this officer
-            type in this all facilities of the same level in all districts)."""
-
-            def split_officer_compound_string(cs) -> Tuple[int, str]:
-                """Returns (facility_id, officer_type) for the officer identified in the string of the form:
-                'FacilityID_{facility_id}_Officer_{officer_type}'."""
-                _, _facility_id, _, _officer_type = cs.split("_", 3)  # (NB. Some 'officer_type' include "_")
-                return int(_facility_id), _officer_type
-
-            def _match(_this_officer, facility_ids: List[int], officer_type: str):
-                """Returns True if the officer identified is of the identified officer_type and is in one of the
-                facility_ids."""
-                this_facility_id, this_officer_type = split_officer_compound_string(_this_officer)
-                return (this_officer_type == officer_type) and (this_facility_id in facility_ids)
-
-            facility_id, officer_type = split_officer_compound_string(_officer)
-            facility_level = self._facility_by_facility_id[int(facility_id)].level
-            facilities_of_same_level_in_all_district = [
-                _fac.id for _fac in self._facilities_for_each_district[facility_level].values()
-            ]
-
-            officers_in_the_same_level_in_all_districts = [
-                _officer
-                for _officer in current_capabilities.keys()
-                if _match(_officer, facility_ids=facilities_of_same_level_in_all_district, officer_type=officer_type)
-            ]
-
-            return sum(current_capabilities.get(_o) for _o in officers_in_the_same_level_in_all_districts)
-
-        # 1) Compute the load factors for each officer type at each facility that is
-        # called-upon in this list of HSIs
-        load_factor = {}
-        for officer, call in total_footprint.items():
-            if compute_squeeze_factor_to_district_level:
-                availability = get_total_minutes_of_this_officer_in_this_district(officer)
-            else:
-                availability = get_total_minutes_of_this_officer_in_all_district(officer)
-
-            # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
-            if availability is None:
-                logger.warning(
-                    key="message", data=(f"Requested officer {officer} is not contemplated by health system. ")
-                )
-                availability = 0
-
-            if availability == 0:
-                load_factor[officer] = float("inf")
-            else:
-                load_factor[officer] = max(call / availability - 1, 0.0)
-
-        # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
-        # based on the load-factor of the officer with the largest time requirement for that
-        # event (or zero if event has an empty footprint)
-
-        # Instead of repeatedly creating lists for squeeze factors, we reuse a numpy array
-        # If the current store is too small, replace it
-        if len(footprints_per_event) > len(self._get_squeeze_factors_store[clinic]):
-            # The new array size is a multiple of `grow`
-            new_size = (
-                math.ceil(len(footprints_per_event) / self._get_squeeze_factors_store_grow)
-                * self._get_squeeze_factors_store_grow
-            )
-            self._get_squeeze_factors_store[clinic] = np.zeros(new_size)
-
-        for i, footprint in enumerate(footprints_per_event):
-            if footprint:
-                # If any of the required officers are not available at the facility, set overall squeeze to inf
-                require_missing_officer = False
-                for officer in footprint:
-                    if load_factor[officer] == float("inf"):
-                        require_missing_officer = True
-                        # No need to check the rest
-                        break
-
-                if require_missing_officer:
-                    self._get_squeeze_factors_store[clinic][i] = np.inf
-                else:
-                    self._get_squeeze_factors_store[clinic][i] = max(load_factor[footprint.most_common()[0][0]], 0.0)
-            else:
-                self._get_squeeze_factors_store[clinic][i] = 0.0
-
-        return self._get_squeeze_factors_store
-
     def record_hsi_event(
-        self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True, priority=None, clinic=None
+        self, hsi_event, actual_appt_footprint=None, did_run=True, priority=None, clinic=None
     ):
         """
         Record the processing of an HSI event.
         It will also record the actual appointment footprint.
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         :param actual_appt_footprint: The actual Appointment Footprint (if individual event)
-        :param squeeze_factor: The squeeze factor (if individual event)
+        :param squeeze_factor: Always zero
         """
 
         # HSI-Event
-        _squeeze_factor = squeeze_factor if squeeze_factor != np.inf else 100.0
         self.write_to_hsi_log(
             event_details=hsi_event.as_namedtuple(actual_appt_footprint),
             person_id=hsi_event.target,
             facility_id=hsi_event.facility_info.id,
-            squeeze_factor=_squeeze_factor,
+            squeeze_factor=0.0, # For now assume this is always zero. Keep logging for log consistency
             did_run=did_run,
             priority=priority,
             clinic=clinic,
@@ -2000,7 +1836,6 @@ class HealthSystem(Module):
         event_details: HSIEventDetails,
         person_id: int,
         facility_id: Optional[int],
-        squeeze_factor: float,
         did_run: bool,
         priority: int,
         clinic: str,
@@ -2013,7 +1848,7 @@ class HealthSystem(Module):
             "TREATMENT_ID": event_details.treatment_id,
             "Number_By_Appt_Type_Code": dict(event_details.appt_footprint),
             "Person_ID": person_id,
-            "Squeeze_Factor": squeeze_factor,
+            "Squeeze_Factor": 0.0,
             "priority": priority,
             "did_run": did_run,
             "Facility_Level": event_details.facility_level if event_details.facility_level is not None else -99,
@@ -2033,7 +1868,6 @@ class HealthSystem(Module):
             self._summary_counter.record_hsi_event(
                 treatment_id=event_details.treatment_id,
                 hsi_event_name=event_details.event_name,
-                squeeze_factor=squeeze_factor,
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
             )
@@ -2277,6 +2111,27 @@ class HealthSystem(Module):
         # Record equipment usage for the year, for each facility
         self._record_general_equipment_usage_for_year()
 
+  def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests)-> bool:
+        """Check if all officers required by the appt footprint are available to perform the HSI"""
+
+        ok_to_run = True
+
+        for officer in expected_time_requests.keys():
+            availability = current_capabilities.get(officer)
+
+            # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
+            if availability is None:
+                logger.warning(
+                    key="message",
+                    data=(f"Requested officer {officer} is not contemplated by health system. ")
+                )
+                availability = 0.0
+
+            if availability == 0.0:
+                ok_to_run = False
+
+        return ok_to_run
+
     def run_individual_level_events_in_mode_1(
         self, _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]
     ) -> List:
@@ -2299,29 +2154,19 @@ class HealthSystem(Module):
                 # from argument to Counter object called from
                 self.running_total_footprint.update(footprint)
 
-            # Estimate Squeeze-Factors for today
-            squeeze_factor_per_hsi_event = self.get_squeeze_factors(
-                footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                total_footprint=self.running_total_footprint,
-                current_capabilities=self.capabilities_today,
-                compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
-            )
-
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
                 clinic = event.clinic_eligibility
                 event = event.hsi_event
-                squeeze_factor = squeeze_factor_per_hsi_event[clinic][ev_num]  # todo use zip here!
 
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
 
-                # Mode 1: All HSI Events run with squeeze provided latter is not inf
+                # In this mode, all HSI Events run provided all required officers have non-zero capabilities
                 ok_to_run = True
-
-                if self.mode_appt_constraints == 1 and squeeze_factor == float("inf"):
-                    ok_to_run = False
-
+                if event.expected_time_requests:
+                    ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
+                                    event.expected_time_requests)
                 if ok_to_run:
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
                     if sum(event.BEDDAYS_FOOTPRINT.values()):
@@ -2336,7 +2181,7 @@ class HealthSystem(Module):
                     )
 
                     # Run the HSI event (allowing it to return an updated appt_footprint)
-                    actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
+                    actual_appt_footprint = event.run(squeeze_factor=0.0)
 
                     # Check if the HSI event returned updated appt_footprint
                     if actual_appt_footprint is not None:
@@ -2354,13 +2199,6 @@ class HealthSystem(Module):
                         self.running_total_footprint -= original_call
                         self.running_total_footprint += updated_call
 
-                        squeeze_factor_per_hsi_event = self.get_squeeze_factors(
-                            footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                            total_footprint=self.running_total_footprint,
-                            current_capabilities=self.capabilities_today,
-                            compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
-                        )
-
                     else:
                         # no actual footprint is returned so take the expected initial declaration as the actual,
                         # as recorded before the HSI event run
@@ -2370,7 +2208,6 @@ class HealthSystem(Module):
                     self.record_hsi_event(
                         hsi_event=event,
                         actual_appt_footprint=actual_appt_footprint,
-                        squeeze_factor=squeeze_factor,
                         did_run=True,
                         priority=_priority,
                     )
@@ -2393,7 +2230,6 @@ class HealthSystem(Module):
                     self.record_hsi_event(
                         hsi_event=event,
                         actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                        squeeze_factor=squeeze_factor,
                         did_run=False,
                         priority=_priority,
                     )
@@ -2621,9 +2457,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # Retrieve officers&facility required for HSI
                     original_call = next_event_tuple.hsi_event.expected_time_requests
                     _priority = next_event_tuple.priority
-                    # In this version of mode_appt_constraints = 2, do not have access to squeeze
-                    # based on queue information, and we assume no squeeze ever takes place.
-                    squeeze_factor = 0.0
 
                     # Check if any of the officers required have run out.
                     out_of_resources = False
@@ -2655,7 +2488,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         self.module.record_hsi_event(
                             hsi_event=event,
                             actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                            squeeze_factor=squeeze_factor,
                             did_run=False,
                             priority=_priority,
                             clinic=event_clinic,
@@ -2692,7 +2524,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # Expected appt footprint before running event
                         _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
                         # Run event & get actual footprint
-                        actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
+                        actual_appt_footprint = event.run(squeeze_factor=0.0)
 
                         # Check if the HSI event returned updated_appt_footprint, and if so adjust original_call
                         if actual_appt_footprint is not None:
@@ -2706,10 +2538,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         else:
                             actual_appt_footprint = _appt_footprint_before_running
                             updated_call = original_call
-
-                        # Recalculate call on officers based on squeeze factor.
-                        for k in updated_call.keys():
-                            updated_call[k] = updated_call[k] / (squeeze_factor + 1.0)
 
                         # Subtract this from capabilities used so-far today
                         capabilities_monitor[event_clinic].subtract(updated_call)
@@ -2729,14 +2557,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         ),
                                     )
 
-                        # Update today's footprint based on actual call and squeeze factor
+                        # Update today's footprint based on actual call
                         self.module.running_total_footprint.update(updated_call)
 
                         # Write to the log
                         self.module.record_hsi_event(
                             hsi_event=event,
                             actual_appt_footprint=actual_appt_footprint,
-                            squeeze_factor=squeeze_factor,
                             did_run=True,
                             priority=_priority,
                             clinic=event_clinic,
@@ -2807,7 +2634,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 self.module.record_hsi_event(
                     hsi_event=event,
                     actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                    squeeze_factor=0,
                     did_run=False,
                     priority=next_event_tuple.priority,
                     clinic=next_event_tuple.clinic_eligibility,
@@ -2847,7 +2673,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     ),
                     person_id=-1,
                     facility_id=_fac_id,
-                    squeeze_factor=0.0,
                     priority=-1,
                     clinic=str(None),
                     did_run=True,
@@ -2919,20 +2744,14 @@ class HealthSystemSummaryCounter:
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_facID_and_officer = Counter()
-        self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
-        #                                                           treatment_id. Key is of the form:
-        #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
 
     def record_hsi_event(
-        self, treatment_id: str, hsi_event_name: str, squeeze_factor: float, appt_footprint: Counter, level: str
+        self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str
     ) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
 
         # Count the treatment_id:
         self._treatment_ids[treatment_id] += 1
-
-        # Add the squeeze-factor to the list
-        self._squeeze_factor_by_hsi_event_name[f"{treatment_id}:{hsi_event_name}"].append(squeeze_factor)
 
         # Count each type of appointment:
         for appt_type, number in appt_footprint:
