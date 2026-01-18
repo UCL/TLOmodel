@@ -1152,7 +1152,7 @@ def test_summary_logger_for_hsi_event_squeeze_factors(seed, tmpdir):
         .dropna()
         .to_dict()
         == detailed_hsi_event.assign(
-            treatment_id_hsi_name=lambda df: df["TREATMENT_ID"] + ":" + df["Event_Name"],
+            treatment_id_hsi_name=lambda df: df["TREATMENT_ID"],
             year=lambda df: df.date.dt.year,
         )
         .groupby(by=["treatment_id_hsi_name", "year"])["Squeeze_Factor"]
