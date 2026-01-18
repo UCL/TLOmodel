@@ -2806,7 +2806,9 @@ class HealthSystemSummaryCounter:
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
-        print("The size of treatment ids", type(self._treatment_ids))
+        print("what is looks like", {t_id: 0.0 for t_id, v in self._treatment_ids.items()})
+        print(self._treatment_ids)
+
 
         logger_summary.info(
             key="HSI_Event",

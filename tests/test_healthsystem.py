@@ -837,7 +837,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     )
     detailed_treatment_id_mean_squeeze_factors = (
         detailed_hsi_event.assign(
-            treatment_id_hsi_name=lambda df: df["TREATMENT_ID"] + ":" + df["Event_Name"],
+            treatment_id_hsi_name=lambda df: df["TREATMENT_ID"],
             year=lambda df: df.date.dt.year,
         )
         .groupby(by=["treatment_id_hsi_name", "year"])["Squeeze_Factor"]
@@ -853,16 +853,22 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     )
 
     #  - Average fraction of HCW time used (year by year)
-    assert (
-        summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year)["average_Frac_Time_Used_Overall"]
-        .round(4)
-        .to_dict()
-        == detailed_capacity.set_index(pd.to_datetime(detailed_capacity.date).dt.year)["Frac_Time_Used_Overall"]
-        .groupby(level=0)
-        .mean()
-        .round(4)
-        .to_dict()
-    )
+    summary_capacity_indexed = summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year)
+    for clinic in sim.modules["HealthSystem"]._clinic_names:
+        summary_clinic_capacity = summary_capacity_indexed["average_Frac_Time_Used_Overall"].apply(
+            lambda x: x.get(clinic, None)
+        )
+        detailed_clinic_capacity = detailed_capacity[detailed_capacity["Clinic"] == clinic]
+        assert (
+            summary_clinic_capacity.round(4).to_dict()
+            == detailed_clinic_capacity.set_index(pd.to_datetime(detailed_clinic_capacity.date).dt.year)[
+                "Frac_Time_Used_Overall"
+            ]
+            .groupby(level=0)
+            .mean()
+            .round(4)
+            .to_dict()
+        )
 
     #  - Consumables (total over entire period of log that are available / not available)  # add _Item_
     assert (
