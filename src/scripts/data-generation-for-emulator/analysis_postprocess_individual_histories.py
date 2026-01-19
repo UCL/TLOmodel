@@ -99,7 +99,9 @@ def retrieve_analysis_script_commit_hash():
     return result.stdout.strip()
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
-    
+  
+    individual_histories = extract_individual_histories(results_folder)
+    exit(-1)
     file = Path(__file__).resolve()
     
     # 1. Check that analysis file has been committed, and store path + commit
@@ -114,6 +116,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Compute relative path
     analysis_script_path = file.relative_to(git_root)
     analysis_script_commit_hash = retrieve_analysis_script_commit_hash()
+    
     print(analysis_script_path)
     print(analysis_script_commit_hash)
     
@@ -125,19 +128,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     scenario_json_data = retrieve_scenario_json_file(results_folder)
     scenario_script_path = scenario_json_data['scenario_script_path']
     scenario_script_commit_hash = scenario_json_data['commit']
+    
     print(scenario_script_path)
     print(scenario_script_commit_hash)
     print(scenario_json_data)
     
     draws_parameters = scenario_json_data['draws']
     print(draws_parameters)
-    exit(-1)
-    
-    
-    
     
     # 3. Extract individual histories
     individual_histories = extract_individual_histories(results_folder)
+    
+    # 4 Postprocess them, i.e. only extract outcomes of interest and 
 
     # 4. Store in wandb dataset's metadata
     # https://docs.wandb.ai/models/tutorials/artifacts

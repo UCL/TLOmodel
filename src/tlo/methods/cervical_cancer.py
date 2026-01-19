@@ -820,23 +820,23 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (ce_hpv_cc_status) -------------------------------
         print("HERE ====")
-        #if p['generate_emulator_data'] and self.sim.date == Date(2010,1,1):
-        #    print("FIND ELIGIBLE INDIVIDUALS")
-        #    eligible_individuals = (df.is_alive &#
-        #                           (df.sex == 'F')
-        #                           (df.age_years >= 15))
-        #    df.loc[eligible_individuals, 'ce_hpv_cc_status'] = 'cin1'
-        #else:
-        # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
-        #  reducing progression risk during the stage at which is received.
-        for stage, lm in reversed(list(self.module.linear_models_for_progression_of_hpv_cc_status.items())):
-            # Note (1): terms in the LinearModels make the progression only applicable in the "origin" class.
-            # Note (2): stages are iterated in reverse order to prevent a person progressing through all stages in one
-            # time-step
-            gets_new_stage = lm.predict(df.loc[df.is_alive], rng)
-            idx_gets_new_stage = gets_new_stage[gets_new_stage].index
+        if p['generate_emulator_data'] and self.sim.date == Date(2010,1,1):
+            print("FIND ELIGIBLE INDIVIDUALS")
+            eligible_individuals = (df.is_alive &#
+                                   (df.sex == 'F')
+                                   (df.age_years >= 15))
+            df.loc[eligible_individuals, 'ce_hpv_cc_status'] = 'cin1'
+        else:
+            # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
+            #  reducing progression risk during the stage at which is received.
+            for stage, lm in reversed(list(self.module.linear_models_for_progression_of_hpv_cc_status.items())):
+                # Note (1): terms in the LinearModels make the progression only applicable in the "origin" class.
+                # Note (2): stages are iterated in reverse order to prevent a person progressing through all stages in one
+                # time-step
+                gets_new_stage = lm.predict(df.loc[df.is_alive], rng)
+                idx_gets_new_stage = gets_new_stage[gets_new_stage].index
 
-            df.loc[idx_gets_new_stage, 'ce_hpv_cc_status'] = stage
+                df.loc[idx_gets_new_stage, 'ce_hpv_cc_status'] = stage
 
         # Apply the reversion probability to change some 'cin1' to 'none'
         has_cin1 = (        # Identify rows where the status is 'cin1'

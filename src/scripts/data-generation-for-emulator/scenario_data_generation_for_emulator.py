@@ -175,7 +175,8 @@ class TrackIndividualHistories(BaseScenario):
             return
 
     def _get_scenarios(self) -> Dict[str, Dict]:
-
+        
+        """
         parameter_draws_sampled = sample_param_combo()
         
         parameter_draws = {}
@@ -191,6 +192,14 @@ class TrackIndividualHistories(BaseScenario):
                                     self._baseline(),
                                     parameter_draws[i]
                             )
+        """
+        scenarios = {
+                      'Baseline' : mix_scenarios(
+                                    self._baseline(),
+                                    #parameter_draws[i]
+                                    )
+        
+                    }
         return scenarios
 
     def _baseline(self) -> Dict:
