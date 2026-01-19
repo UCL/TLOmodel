@@ -11,7 +11,7 @@ from shapely.geometry import Polygon
 
 min_year = 2025
 max_year = 2040
-spacing_of_years = 5
+spacing_of_years = 1
 PREFIX_ON_FILENAME = "1"
 scenario_names_all = [
     "Baseline",
@@ -31,6 +31,7 @@ scenario_colours = ["#0081a7", "#00afb9", "#FEB95F", "#fed9b7", "#f07167"] * 4
 
 # WBGT thresholds (following Gohar et al.)
 WBGT_THRESHOLDS = {
+    'baseline': 15,
     'moderate': 28,  # Moderate work restriction
     'high': 30,  # Heavy workload restriction
     'severe': 32,  # Suspension of strenuous activity
@@ -193,12 +194,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year, 12, 31))
 
         # Create time mask for this target year (OND season)
-        ond_mask = (months >= 10) & (months <= 12) & (years == target_year)
+        ond_mask = (months >= 10) & (months <= 12)
 
-        # Check if we have data for this year
-        if not ond_mask.any():
-            print(f"Warning: No data for year {target_year}, skipping...")
-            continue
 
         # Store district-level data for each scenario
         all_scenarios_population_by_district_mean = {}
@@ -265,8 +262,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 'threshold': threshold_value
             }
 
-        # Create maps: 1 population panel + 3 threshold panels
-        fig, axes = plt.subplots(1, 4, figsize=(20, 6))
+        # Create maps: 1 population panel + 4 threshold panels
+        fig, axes = plt.subplots(1, 5, figsize=(20, 6))
         axes = axes.flatten()
 
         # Panel 0: Population distribution
