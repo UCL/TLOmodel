@@ -1,7 +1,10 @@
 {
   "scenario_script_path": "src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py",
   "scenario_seed": 0,
-  "arguments": [],
+  "arguments": [
+    "--suspend-date",
+    "2015-06-01"
+  ],
   "runs_per_draw": 1,
   "draws": [
     {
@@ -24,6 +27,6 @@
       "draw_name": "0"
     }
   ],
-  "commit": "100b757434b6e6bd5265c55329b0c0f11f1a37db",
-  "github": "https://github.com/UCL/TLOmodel/tree/100b757434b6e6bd5265c55329b0c0f11f1a37db"
+  "commit": "44f9a431a027b68d7d705859a8b9ad67ce7c3c87",
+  "github": "https://github.com/UCL/TLOmodel/tree/44f9a431a027b68d7d705859a8b9ad67ce7c3c87"
 }
