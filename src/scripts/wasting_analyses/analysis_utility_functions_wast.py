@@ -85,7 +85,7 @@ def return_sum_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 def compute_scen_sum_and_averted(
-    interv: str, interv_df: pd.DataFrame, sq_sum_df_name: str, limit_to_zero: bool, sq_dict: dict = None
+    interv: str, interv_df: pd.DataFrame, sq_sum_df_name: str, limit_to_zero: bool = False, sq_dict: dict = None
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Sum `interv_df` across years into a single-row DataFrame labeled "start_year—end_year", then compute averted outcome
@@ -333,11 +333,11 @@ def extract_death_data_frames_and_outcomes(
 
     under5_scen_sum_deaths_df, under5_averted_deaths_mean_ci_df = compute_scen_sum_and_averted(
         interv, interv_under5_deaths_df,
-        'under5_scen_sum_deaths_df', True, sq_deaths
+        'under5_scen_sum_deaths_df', False, sq_deaths
     )
     under5_scen_sum_SAM_deaths_df, under5_averted_SAM_deaths_mean_ci_df = compute_scen_sum_and_averted(
         interv, interv_under5_SAM_deaths_df,
-        'under5_scen_sum_SAM_deaths_df', True, sq_deaths
+        'under5_scen_sum_SAM_deaths_df', False, sq_deaths
     )
     under5_scen_sum_ALRI_deaths_df, under5_averted_ALRI_deaths_mean_ci_df = compute_scen_sum_and_averted(
         interv, interv_under5_ALRI_deaths_df,
@@ -533,11 +533,11 @@ def extract_daly_data_frames_and_outcomes(
 
     under5_scen_sum_dalys_df, under5_averted_dalys_mean_ci_df = compute_scen_sum_and_averted(
         interv, interv_under5_dalys_df, 'under5_scen_sum_dalys_df',
-        True, sq_dalys
+        False, sq_dalys
     )
     under5_scen_sum_SAM_dalys_df, under5_averted_SAM_dalys_mean_ci_df = compute_scen_sum_and_averted(
         interv, interv_under5_SAM_dalys_df, 'under5_scen_sum_SAM_dalys_df',
-        True, sq_dalys
+        False, sq_dalys
     )
     under5_scen_sum_ALRI_dalys_df, under5_averted_ALRI_dalys_mean_ci_df = compute_scen_sum_and_averted(
         interv, interv_under5_ALRI_dalys_df, 'under5_scen_sum_ALRI_dalys_df',
@@ -1197,7 +1197,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
             SQ_results_timestamp = interv_timestamps_dict["SQ"]
 
             def plot_and_table_cost_effectiveness(
-                in_averted_DALYs: dict, in_data_impl_cost_name: str, in_sharing_GM_CS: float, in_FS_multiplier: float
+                in_averted_DALYs: dict, in_data_impl_cost_name: str, in_sharing_GM_CS: float, in_FS_multiplier: float,
+                in_medical_calc_done: bool
             ) -> None:
                 ce_suffix = f"{in_data_impl_cost_name}_GM-CS-sharing{in_sharing_GM_CS}_FSmultiplier{in_FS_multiplier}"
                 print("###################")
@@ -1295,7 +1296,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     # 1. Medical consumable costs - discounted by 3%
                     output_costs_medical_file_path = \
                         cost_outcome_folder_path / f"output_costs_medical_outcomes_{SQ_results_timestamp}.pkl"
-                    if output_costs_medical_file_path.exists() and not force_calculation[4]:
+                    if output_costs_medical_file_path.exists() and (in_medical_calc_done or not force_calculation[4]):
                         print("\nloading output costs medical from file ...")
                         output_costs_medical_df = pd.read_pickle(output_costs_medical_file_path)
                     else:
@@ -1364,7 +1365,6 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 scenarios_without_SQ = [scen for scen in all_costs_df['scenario'] if scen != "SQ"]
 
                 fig_ce, ax_ce = plt.subplots(figsize=(10, 8))
-                space = 0.012 * all_costs_df.loc[all_costs_df['scenario'] == "FS", "total_cost"].values[0]
                 for scen in scenarios_without_SQ:
                     ax_ce.errorbar(
                         in_averted_DALYs[scen][0],
@@ -1381,8 +1381,9 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 ax_ce.plot(0, 0, marker="o", color=get_scen_colour('SQ'))
                 # define domination for scenarios and position of label in plot
                 if in_data_impl_cost_name == 'Pearson_etal2018':
+                    space = 0.012 * all_costs_df.loc[all_costs_df["scenario"] == "FS", "total_cost"].values[0]
                     domination = {
-                        "SQ": "dominated",
+                        "SQ": "",
                         "GM": "dominated",
                         "CS": "",
                         "FS": "dominated",
@@ -1398,8 +1399,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         "FS": "left",
                         "GM_FS": "center",
                         "CS_FS": "left",
-                        "GM_CS_FS": "center",
-                        "GM_CS": "left",
+                        "GM_CS_FS": "left",
+                        "GM_CS": "center",
                     }  # ['right', 'left', 'center']
                     va_scen = {
                         "SQ": "top",
@@ -1408,35 +1409,25 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         "FS": "bottom",
                         "GM_FS": "bottom",
                         "CS_FS": "top",
-                        "GM_CS_FS": "bottom",
+                        "GM_CS_FS": "top",
                         "GM_CS": "bottom",
                     }  # ['bottom', 'top', 'bottom']
 
                 elif in_data_impl_cost_name == 'Margolies_etal2021':
-                    if in_FS_multiplier > 0.3:
-                        if in_sharing_GM_CS < 0.2 and in_FS_multiplier < 0.7:
-                            domination = {
-                                "SQ": "",
-                                "GM": "dominated",
-                                "CS": "extendedly dominated",
-                                "FS": "extendedly dominated",
-                                "GM_FS": "dominated",
-                                "CS_FS": "",
-                                "GM_CS_FS": "",
-                                "GM_CS": "dominated",
-                            }
-                        else: # in_sharing_GM_CS >= 0.2 or in_FS_multiplier >= 0.7:
-                            domination = {
-                                "SQ": "",
-                                "GM": "dominated",
-                                "CS": "extendedly dominated",
-                                "FS": "extendedly dominated",
-                                "GM_FS": "dominated",
-                                "CS_FS": "",
-                                "GM_CS_FS": "",
-                                "GM_CS": "extendedly dominated",
-                            }
-                    else: # in_FS_multiplier <= 0.3:
+                    space = 0.024 * all_costs_df.loc[all_costs_df["scenario"] == "FS", "total_cost"].values[0]
+                    # domination
+                    if in_FS_multiplier > 0.7 or (in_FS_multiplier > 0.4 and in_sharing_GM_CS > 0.25):
+                        domination = {
+                            "SQ": "",
+                            "GM": "dominated",
+                            "CS": "extendedly dominated",
+                            "FS": "",
+                            "GM_FS": "dominated",
+                            "CS_FS": "",
+                            "GM_CS_FS": "",
+                            "GM_CS": "extendedly dominated",
+                        }
+                    else:
                         domination = {
                             "SQ": "",
                             "GM": "dominated",
@@ -1447,26 +1438,49 @@ def plot_sum_outcome_and_CIs_intervention_period(
                             "GM_CS_FS": "",
                             "GM_CS": "dominated",
                         }
-                    ha_scen = {
-                        "SQ": "left",
-                        "GM": "center",
-                        "CS": "right",
-                        "FS": "right",
-                        "GM_FS": "right",
-                        "CS_FS": "left",
-                        "GM_CS_FS": "center",
-                        "GM_CS": "right",
-                    }  # ['right', 'left', 'center']
-                    va_scen = {
-                        "SQ": "top",
-                        "GM": "bottom",
-                        "CS": "top",
-                        "FS": "bottom",
-                        "GM_FS": "bottom",
-                        "CS_FS": "top",
-                        "GM_CS_FS": "bottom",
-                        "GM_CS": "bottom",
-                    }  # ['bottom', 'top', 'bottom']
+                    # positions of the labels
+                    if in_FS_multiplier > 0.4:
+                        ha_scen = {
+                            "SQ": "left",
+                            "GM": "center",
+                            "CS": "right",
+                            "FS": "right",
+                            "GM_FS": "right",
+                            "CS_FS": "left",
+                            "GM_CS_FS": "center",
+                            "GM_CS": "right",
+                        }  # ['right', 'left', 'center']
+                        va_scen = {
+                            "SQ": "top",
+                            "GM": "bottom",
+                            "CS": "top",
+                            "FS": "bottom",
+                            "GM_FS": "bottom",
+                            "CS_FS": "top",
+                            "GM_CS_FS": "bottom",
+                            "GM_CS": "bottom",
+                        }  # ['bottom', 'top', 'bottom']
+                    else:
+                        ha_scen = {
+                            "SQ": "left",
+                            "GM": "center",
+                            "CS": "right",
+                            "FS": "left",
+                            "GM_FS": "right",
+                            "CS_FS": "right",
+                            "GM_CS_FS": "center",
+                            "GM_CS": "center",
+                        }  # ['right', 'left', 'center']
+                        va_scen = {
+                            "SQ": "top",
+                            "GM": "bottom",
+                            "CS": "top",
+                            "FS": "top",
+                            "GM_FS": "bottom",
+                            "CS_FS": "top",
+                            "GM_CS_FS": "bottom",
+                            "GM_CS": "bottom",
+                        }  # ['bottom', 'top', 'bottom']
                 # print("\nICER:")
 
                 # Identify scenarios on Frontier
@@ -1494,7 +1508,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 for scen in all_costs_df['scenario']:
                     ax_ce.text(
                         in_averted_DALYs[scen][0] if scen != 'SQ' else 0,
-                        (cost_map.get(scen, float("nan")) + (space * 0.9)) if va_scen[scen] == "bottom"
+                        (cost_map.get(scen, float("nan")) + (space * 0.8)) if va_scen[scen] == "bottom"
                         else (cost_map.get(scen, float("nan")) - space),
                         ICER_domination[scen],
                         fontsize=12, ha=ha_scen[scen], va=va_scen[scen], color=get_scen_colour(scen),
@@ -1642,12 +1656,15 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     # sensitivity to FS intervention multiplier
                     FS_multiplier = [1, 0.5, 0.18, 0.09]
                     # Individual CE planes
+                    # medical consumables are given by model, hence do not change within the sensitivity analyses
+                    medical_calc_done = False
                     for unit_cost in data_impl_cost_name:
                         for GM_CS__multiplier in sharing_GM_CS:
                             for FS__multiplier in FS_multiplier:
                                 plot_and_table_cost_effectiveness(
-                                    averted_dict, unit_cost, GM_CS__multiplier, FS__multiplier
+                                    averted_dict, unit_cost, GM_CS__multiplier, FS__multiplier, medical_calc_done
                                 )
+                                medical_calc_done = True
 
                     ########################################
                     # Sensitivity plot - create grid of CE figures for all unit_cost / GM_CS / FS combinations
@@ -1673,11 +1690,11 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                     # iterate rows and columns in desired order:
                     # rows: for each unit_cost in data_impl_cost_name -> for each GM_CS in sharing_GM_CS
-                    for r_idx, unit_cost in enumerate(data_impl_cost_name):
-                        for g_idx, gm_cs in enumerate(sharing_GM_CS):
-                            row_idx = r_idx * len(sharing_GM_CS) + g_idx
-                            for c_idx, fs_mult in enumerate(FS_multiplier):
-                                ax = axes[row_idx, c_idx]
+                    for r1_idx, unit_cost in enumerate(data_impl_cost_name):
+                        for r2_idx, gm_cs in enumerate(sharing_GM_CS):
+                            row_idx = r1_idx * len(sharing_GM_CS) + r2_idx
+                            for col_idx, fs_mult in enumerate(FS_multiplier):
+                                ax = axes[row_idx, col_idx]
                                 ce_suffix = f"{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
                                 timestamps_and_ce_suffix = f"{timestamps_suffix}__{ce_suffix}"
                                 img_path = outputs_path / (
@@ -1700,6 +1717,12 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                     ax.set_yticks([])
                                     ax.set_axis_off()
 
+                    # Create a unit cost mapping dictionary
+                    unit_cost_mapping = {
+                        "Pearson_etal2018": r'\$0.53 (1st y), \$0.37 (subsequent ys)',
+                        "Margolies_etal2021": r'\$9.17 (each year)',
+                    }
+
                     # add row labels on the left (unit_cost + gm_cs) using figure text to avoid expanding axes margins
                     for r in range(n_rows):
                         unit_idx = r // len(sharing_GM_CS)
@@ -1712,8 +1735,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                                      loc="center", x=0.43, pad=2, fontsize=8)
                         # row labels: place in left margin of the row; use transform to align with axes coordinates
                         row_label = (
-                            f"$\\bf{{unit\\ cost:}}$ {data_impl_cost_name[unit_idx]};\n"
-                            f"$\\bf{{GM\\ &\\ CS\\ shared\\ implem. cost\\ prop.:}}$ {sharing_GM_CS[gm_idx]}"
+                            f"$\\bf{{unit\\ cost:}}$ {unit_cost_mapping[data_impl_cost_name[unit_idx]]};\n"
+                            f"$\\bf{{GM\\ &\\ CS\\ shared\\ implem. costs\\ prop.:}}$ {sharing_GM_CS[gm_idx]}"
                         )
                         axes[r, 0].text(-0.02, 0.5, row_label, transform=axes[r, 0].transAxes,
                                         rotation=90, ha="right", va="center", fontsize=8)
@@ -1941,9 +1964,9 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
             index="item_level", columns="month", values="available_prop"
         )
     # Map item codes to names
-    item_level_labels_to_map = {"208_1a": "CSB++*\nfacility level 1", "1227_1a": "RUTF\nfacility level 1",
-                               "1227_1b": "RUTF\nfacility level 2",
-                               "1220_1b": "F-75 therapeutic milk\nfacility level 2"}
+    item_level_labels_to_map = {"208_1a": "CSB++*\nprimary level", "1227_1a": "RUTF\nprimary level",
+                               "1227_1b": "RUTF\nsecondary level",
+                               "1220_1b": "F-75 therapeutic milk\nsecondary level"}
     heatmap_data_requested_fac_level = heatmap_data_requested_fac_level_raw.copy()
     heatmap_data_requested_fac_level.index = \
         heatmap_data_requested_fac_level.index.map(item_level_labels_to_map)
@@ -2056,9 +2079,9 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     print("Heathmap B3...")
     # Calculate availability for treatments
     treatment_item_level_map = {
-        "SFP\nfacility level 1": ['208_1a'],
-        "OTP\nfacility level 1": ['1227_1a'],
-        "ITC\nfacility level 2": ['1227_1b', '1220_1b']
+        "SFP\nprimary level": ['208_1a'],
+        "OTP\nprimary level": ['1227_1a'],
+        "ITC\nsecondary level": ['1227_1b', '1220_1b']
     }
     treatment_availability_requested_fac_level = {}
     for treatment, items_level in treatment_item_level_map.items():
