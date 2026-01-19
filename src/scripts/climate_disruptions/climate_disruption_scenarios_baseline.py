@@ -37,7 +37,7 @@ full_grid = make_cartesian_parameter_grid(
             "climate_model_ensemble_model": ["mean"],
             "year_effective_climate_disruptions": [2025],
             "prop_supply_side_disruptions": [0.5], # moot in mode 1
-            "services_affected_precip": ["none"],#, "all"], # none nullifies all other climate impacts
+            "services_affected_precip": ["none", "none"],#, "all"], # none nullifies all other climate impacts
             "tclose_overwrite": [1000],
         }
     }
@@ -55,7 +55,7 @@ class ClimateDisruptionScenario(BaseScenario):
         self.YEAR_OF_CHANGE = 2025
         self._scenarios = self._get_scenarios()
         self._parameter_grid = full_grid
-        self.number_of_draws = len(self._parameter_grid)
+        self.number_of_draws = 1
 
         with open("selected_parameter_combinations_baseline.json", "w") as f:
             json.dump(self._parameter_grid, f, indent=2)
@@ -81,7 +81,7 @@ class ClimateDisruptionScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        return self._parameter_grid#[draw_number]
+        return self._parameter_grid[1]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
