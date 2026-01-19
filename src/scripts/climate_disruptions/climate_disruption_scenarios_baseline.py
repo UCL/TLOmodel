@@ -61,7 +61,7 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "climate_suspend_resume_test",
+            "filename": "climate_suspend_resume_base",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
