@@ -3,7 +3,7 @@
   "scenario_seed": 0,
   "arguments": [
     "--resume-simulation",
-    "${AZ_BATCH_NODE_MOUNTS_DIR}/mnt/rm916@ic.ac.uk/climate_scenario_runs_baseline-2026-01-16T111546Z/0"
+    "${AZ_BATCH_NODE_MOUNTS_DIR}/mnt/rm916@ic.ac.uk/rm916@ic.ac.uk/climate_scenario_runs_baseline-2026-01-16T111546Z/0"
   ],
   "runs_per_draw": 10,
   "draws": [
@@ -12,8 +12,9 @@
       "parameters": {
         "HealthSystem": {
           "scale_factor_reseeking_healthcare_post_disruption": 2.0,
-          "scale_factor_prob_disruption": 10.0,
+          "scale_factor_prob_disruption": 2.0,
           "delay_in_seeking_care_weather": 60.0,
+          "scale_factor_appointment_urgency": 2.0,
           "scale_factor_severity_disruption_and_delay": 2.0,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
@@ -25,13 +26,13 @@
           "equip_availability_postSwitch": "default",
           "year_equip_availability_switch": 2025,
           "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
+          "scale_to_effective_capabilities": false,
           "policy_name": "Naive",
           "climate_ssp": "ssp245",
           "climate_model_ensemble_model": "mean",
           "year_effective_climate_disruptions": 2025,
           "prop_supply_side_disruptions": 0.5,
-          "services_affected_precip": "all",
+          "services_affected_precip": "none",
           "tclose_overwrite": 1000
         }
       },
@@ -42,8 +43,9 @@
       "parameters": {
         "HealthSystem": {
           "scale_factor_reseeking_healthcare_post_disruption": 2.0,
-          "scale_factor_prob_disruption": 10.0,
+          "scale_factor_prob_disruption": 2.0,
           "delay_in_seeking_care_weather": 60.0,
+          "scale_factor_appointment_urgency": 2.0,
           "scale_factor_severity_disruption_and_delay": 2.0,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 2,
@@ -55,7 +57,7 @@
           "equip_availability_postSwitch": "default",
           "year_equip_availability_switch": 2025,
           "use_funded_or_actual_staffing": "actual",
-          "scale_to_effective_capabilities": true,
+          "scale_to_effective_capabilities": false,
           "policy_name": "Naive",
           "climate_ssp": "ssp245",
           "climate_model_ensemble_model": "mean",
@@ -68,6 +70,6 @@
       "draw_name": "1"
     }
   ],
-  "commit": "8aa37a36fb4d2354a2d108642fa90197159e2288",
-  "github": "https://github.com/UCL/TLOmodel/tree/8aa37a36fb4d2354a2d108642fa90197159e2288"
+  "commit": "47404078cc88643f835f1129e87234e646c0c694",
+  "github": "https://github.com/UCL/TLOmodel/tree/47404078cc88643f835f1129e87234e646c0c694"
 }
