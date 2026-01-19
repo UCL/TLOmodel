@@ -2995,9 +2995,11 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
                          .when('.between(70,79)', self.rr_injrti_age7079),
                          Predictor('li_ex_alc').when(True, self.rr_injrti_excessalcohol)
                          )
+
         pred = eq.predict(df.loc[rt_current_non_ind])
         random_draw_in_rti = self.module.rng.random_sample(size=len(rt_current_non_ind))
         selected_for_rti = rt_current_non_ind[pred > random_draw_in_rti]
+
         # Update to say they have been involved in a rti
         df.loc[selected_for_rti, 'rt_road_traffic_inc'] = True
         # Set the date that people were injured to now
@@ -5025,6 +5027,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self.treated_code = 'none'
 
     def apply(self, person_id, squeeze_factor):
+
         self._number_of_times_this_event_has_run += 1
         df = self.sim.population.props
         rng = self.module.rng
@@ -5075,10 +5078,12 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # injury is being treated in this surgery
         # find untreated injury codes that are treated with major surgery
         relevant_codes = np.intersect1d(injuries_to_be_treated, surgically_treated_codes)
+
         # check that the person sent here has an appropriate code(s)
         assert len(relevant_codes) > 0
         # choose a code at random
         self.treated_code = rng.choice(relevant_codes)
+
         if request_outcome:
             # check the people sent here hasn't died due to rti, have had their injuries diagnosed and been through
             # RTI_Med
@@ -5165,7 +5170,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
             # ------------------------------------- Perm disability from amputation ------------------------------------
             codes = ['782', '782a', '782b', '782c', '783', '882', '883', '884']
+
             if self.treated_code in codes:
+
                 # Track whether they are permanently disabled
                 df.at[person_id, 'rt_perm_disability'] = True
                 # Find the column and code where the permanent injury is stored
