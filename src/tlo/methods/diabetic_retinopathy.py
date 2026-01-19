@@ -397,19 +397,16 @@ class DiabeticRetinopathy(Module):
             # Force numeric
             mat = mat.astype(float)
 
-            # Normalize each column to sum exactly to 1
-            col_sums = mat.sum(axis=0)
-            mat = mat.divide(col_sums, axis=1)
+            # Normalize each row to sum exactly to 1
+            # col_sums = mat.sum(axis=0)
+            # mat = mat.divide(col_sums, axis=1)
+            row_sums = mat.sum(axis=1)
+            mat = mat.divide(row_sums, axis=0)
 
             # Safety check
-            assert np.allclose(mat.sum(axis=0), 1.0), \
-                f"{key} columns do not sum to 1 after normalization"
+            assert np.allclose(mat.sum(axis=1), 1.0)
 
             self.parameters[key] = mat
-
-            # Check that rows sum to 1
-            # assert np.allclose(self.parameters[key].sum(axis=1), 1.0), \
-            #     f"{key} rows do not sum to 1"
 
     def report_daly_values(self) -> pd.Series:
         df = self.sim.population.props  # shortcut to population properties dataframe for alive persons
@@ -418,20 +415,17 @@ class DiabeticRetinopathy(Module):
 
         # Assign daly_wt to those with moderate vision impairment due to DM
         disability_series_for_alive_persons.loc[
-            (df.vision_status == "moderate_vision_impairment") &
-            ((df.dr_status != "none") | (df.dmo_status != "none"))
+            (df.vision_status == "moderate_vision_impairment") & df.vision_loss_due_to_dr
             ] = self.daly_wts['moderate_vision_impairment_due_to_dm']
 
         # Assign daly_wt to those with severe vision impairment due to DM
         disability_series_for_alive_persons.loc[
-            (df.vision_status == "severe_vision_impairment") &
-            ((df.dr_status != "none") | (df.dmo_status != "none"))
+            (df.vision_status == "severe_vision_impairment") & df.vision_loss_due_to_dr
             ] = self.daly_wts['severe_vision_impairment_due_to_dm']
 
         # Assign daly_wt to those who are blind due to DM
         disability_series_for_alive_persons.loc[
-            (df.vision_status == "blindness") &
-            ((df.dr_status != "none") | (df.dmo_status != "none"))
+            (df.vision_status == "blindness") & df.vision_loss_due_to_dr
             ] = self.daly_wts['blindness_due_to_dm']
 
         return disability_series_for_alive_persons
@@ -625,7 +619,7 @@ class DiabeticRetinopathy(Module):
             (df.dmo_status == 'clinically_significant')
         )
 
-        for idx, matrix in [
+        for idx, base_matrix in [
             (alive_diabetes & ~sight_threatening, p['vision_transition_matrix_no_dr']),
             (alive_diabetes & sight_threatening, p['vision_transition_matrix_sight_threatening']),
         ]:
@@ -634,25 +628,51 @@ class DiabeticRetinopathy(Module):
 
             current = df.loc[idx, 'vision_status']
 
+            # Ensure matrix is row-stochastic at runtime
+            matrix = base_matrix.astype(float).copy()
+
             col_sums = matrix.sum(axis=0)
 
-            bad = col_sums[~np.isclose(col_sums, 1.0)]
-            if not bad.empty:
+            # Hard failure if any column has zero probability mass
+            if (col_sums == 0).any():
+                bad = col_sums[col_sums == 0]
                 raise ValueError(
-                    f"Invalid transition probabilities:\n{bad}"
+                    f"Transition matrix has zero-probability columns:\n{bad}"
                 )
 
+            # Renormalise rows
+            matrix = matrix.divide(col_sums, axis=1)
+
+            # Final safety check
+            if not np.allclose(matrix.sum(axis=0), 1.0):
+                raise ValueError(
+                    "Transition matrix columns do not sum to 1 after renormalisation"
+                )
+
+            # Propose new vision states
             proposed = transition_states(current, matrix, rng)
 
-            # Allow only same or worse vision (categorical ordering)
+            # on_treatment = df.loc[idx, 'dr_on_treatment']
+            #
+            # # For treated individuals, they shouldn't worsen
+            # proposed.loc[on_treatment] = np.minimum(
+            #     proposed.loc[on_treatment],
+            #     current.loc[on_treatment]
+            # )
+
+            # Allow only same or worse vision (ordinal categories)
             allowed = proposed >= current
 
-            # Update vision status
+            # Apply updates
             df.loc[idx & allowed, 'vision_status'] = proposed[allowed]
 
-        # Update cause only when vision impaired and DR present
-        impaired = df.vision_status != 'normal'
-        df.loc[impaired & (df.dr_status != 'none'), 'vision_loss_due_to_dr'] = True
+        # Update cause only when vision impaired and diabetes-related eye disease
+        impaired = df.vision_status.isin([
+            'moderate_vision_impairment',
+            'severe_vision_impairment',
+            'blindness'])
+
+        df.loc[impaired & df.nc_diabetes, 'vision_loss_due_to_dr'] = True
 
 
 class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
@@ -793,7 +813,7 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         # if person already on treatment or not yet diagnosed, do nothing
-        if person["dr_on_treatment"] or not person["dr_diagnosed"]:
+        if person["dr_on_treatment"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         assert pd.isnull(df.at[person_id, 'dr_date_treatment'])
@@ -811,6 +831,7 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
             # record date of diagnosis
             df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
             df.at[person_id, 'dr_date_treatment'] = self.sim.date
+            df.at[person_id, 'dr_diagnosed'] = True
             df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
             # If consumables are available, add equipment used
             self.add_equipment({'Visual acuity chart', 'Direct ophthalmoscope',
