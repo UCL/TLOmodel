@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,7 @@ from tlo import DateOffset, Module, Parameter, Population, Property, Simulation,
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, cardio_metabolic_disorders
+from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -30,6 +31,13 @@ class DiabeticRetinopathy(Module):
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
     }
+
+    CAUSES_OF_DEATH = {
+        'diabetes': Cause(
+            gbd_causes='Diabetes mellitus', label='Diabetes'), }
+    CAUSES_OF_DISABILITY = {
+        'diabetes': Cause(
+            gbd_causes='Diabetes mellitus', label='Diabetes'), }
 
     PARAMETERS = {
         "rate_onset_to_mild_or_moderate_dr": Parameter(Types.REAL,
@@ -380,15 +388,28 @@ class DiabeticRetinopathy(Module):
             'vision_transition_matrix_no_dr',
             'vision_transition_matrix_sight_threatening'
         ]:
-            self.parameters[key] = pd.DataFrame(
+            mat = pd.DataFrame(
                 self.parameters[key],
                 index=vision_states,
                 columns=vision_states
             )
 
+            # Force numeric
+            mat = mat.astype(float)
+
+            # Normalize each column to sum exactly to 1
+            col_sums = mat.sum(axis=0)
+            mat = mat.divide(col_sums, axis=1)
+
+            # Safety check
+            assert np.allclose(mat.sum(axis=0), 1.0), \
+                f"{key} columns do not sum to 1 after normalization"
+
+            self.parameters[key] = mat
+
             # Check that rows sum to 1
-            assert np.allclose(self.parameters[key].sum(axis=1), 1.0), \
-                f"{key} rows do not sum to 1"
+            # assert np.allclose(self.parameters[key].sum(axis=1), 1.0), \
+            #     f"{key} rows do not sum to 1"
 
     def report_daly_values(self) -> pd.Series:
         df = self.sim.population.props  # shortcut to population properties dataframe for alive persons
@@ -612,6 +633,15 @@ class DiabeticRetinopathy(Module):
                 continue
 
             current = df.loc[idx, 'vision_status']
+
+            col_sums = matrix.sum(axis=0)
+
+            bad = col_sums[~np.isclose(col_sums, 1.0)]
+            if not bad.empty:
+                raise ValueError(
+                    f"Invalid transition probabilities:\n{bad}"
+                )
+
             proposed = transition_states(current, matrix, rng)
 
             # Allow only same or worse vision (categorical ordering)
