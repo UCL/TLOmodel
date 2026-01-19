@@ -20,11 +20,12 @@ n_samples = 200
 
 # Latin Hypercube
 param_ranges = {
-    "scale_factor_delay_in_seeking_care_weather": [0, 60],
-    "rescaling_prob_seeking_after_disruption": [0.01, 2.5],
-    "rescaling_prob_disruption": [0.0, 2.0],
-    "scale_factor_severity_disruption_and_delay": [0.11, 1.0],
-    "prop_supply_side_disruptions": [0.0, 1.0],
+    "scale_factor_prob_disruption": [0.0, 2.0],
+    "delay_in_seeking_care_weather": [0, 60],
+    "scale_factor_reseeking_healthcare_post_disruption": [0.0, 2.0],
+    "scale_factor_appointment_urgency": [0.0, 2.0],
+    "scale_factor_severity_disruption_and_delay": [0, 2.0],
+    #"prop_supply_side_disruptions": [0.0, 1.0],
 }
 
 sampler = qmc.LatinHypercube(d=len(param_ranges), seed=0)
@@ -55,6 +56,9 @@ lhs_df["climate_model_ensemble_model"] = "mean"
 lhs_df["services_affected_precip"] = "all"
 lhs_df["year_effective_climate_disruptions"] = 2025
 lhs_df["tclose_overwrite"] = 1000
+# for mode 1
+lhs_df["prop_supply_side_disruptions"] = 0 # does not matter for mode 1
+
 
 parameter_grid = lhs_df.to_dict(orient="records")
 
