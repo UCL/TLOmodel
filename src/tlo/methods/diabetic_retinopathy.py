@@ -1100,6 +1100,10 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'total_severe_vision_impairment': (df.vision_status == 'severe_vision_impairment').sum(),
             'total_blindness': (df.vision_status == 'blindness').sum(),
             'vision_loss_due_to_dr': df.vision_loss_due_to_dr.sum(),
+            'total_diagnosed': df.dr_diagnosed.sum(),
+            'total_on_treatment': df.dr_on_treatment.sum(),
+            'treatment_success_rate': df[df.dr_on_treatment & (df.vision_status == 'normal')].shape[0] /
+                                      max(1, df.dr_on_treatment.sum())
         }
 
         out.update(vision_out)
