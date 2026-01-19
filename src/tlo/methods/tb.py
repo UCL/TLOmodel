@@ -10,6 +10,7 @@ from typing import Optional
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, hiv
@@ -62,6 +63,7 @@ class Tb(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -222,6 +224,19 @@ class Tb(Module):
         "rr_death_diabetes": Parameter(
             Types.REAL, "additional risk of death if person has diabetes (treated/untreated)"
         ),
+        # timing
+        "death_timing_hiv_positive_min_months": Parameter(
+            Types.INT, "Minimum months to death for HIV positive patients"
+        ),
+        "death_timing_hiv_positive_max_months": Parameter(
+            Types.INT, "Maximum months to death for HIV positive patients"
+        ),
+        "death_timing_hiv_negative_min_months": Parameter(
+            Types.INT, "Minimum months to death for HIV negative patients"
+        ),
+        "death_timing_hiv_negative_max_months": Parameter(
+            Types.INT, "Maximum months to death for HIV negative patients"
+        ),
         # ------------------ progression to active disease ------------------ #
         "rr_tb_bcg": Parameter(
             Types.REAL,
@@ -309,6 +324,18 @@ class Tb(Module):
         "spec_xray_smear_positive": Parameter(
             Types.REAL, "specificity of x-ray diagnosis in smear positive TB cases"
         ),
+        "sensitivity_sputum_test_smear_negative": Parameter(
+            Types.REAL, "Sensitivity of sputum test for smear negative cases"
+        ),
+        "specificity_sputum_test_smear_negative": Parameter(
+            Types.REAL, "Specificity of sputum test for smear negative cases"
+        ),
+        "sensitivity_culture_test": Parameter(
+            Types.REAL, "Sensitivity of culture test"
+        ),
+        "specificity_culture_test": Parameter(
+            Types.REAL, "Specificity of culture test"
+        ),
         # ------------------ treatment success rates ------------------ #
         "prob_tx_success_ds": Parameter(
             Types.REAL, "Probability of treatment success for new and relapse TB cases"
@@ -363,17 +390,116 @@ class Tb(Module):
             Types.STRING,
             "name of second test to be used for TB diagnosis"
         ),
-        "tb_healthseekingbehaviour_cap": Parameter(
-            Types.INT,
-            "number of repeat visits assumed for healthcare services",
-        ),
+        "number_high_risk_contacts":
+            Parameter(
+                Types.INT,
+                "number of high risk contacts given ipt"
+            ),
         "data_end": Parameter(
             Types.INT,
             "last year for which data are available",
         ),
+        "max_duration_ipt_continued_treatment_months": Parameter(
+            Types.INT,
+            "last year for which data are available",
+        ),
+        "prob_treatment_availability": Parameter(
+            Types.REAL,
+            "The average probability tb treatment available",
+        ),
         "length_of_inpatient_stay_if_terminal": Parameter(
             Types.LIST,
-            "length of inpatient stay for end-of-life TB patients",
+            "length of inpatient stay for end-of-life TB patients. Minimum to maximum range.",
+        ),
+        "tb_healthseekingbehaviour_cap": Parameter(
+            Types.INT,
+            "number of repeat visits assumed for healthcare services",
+        ),
+        "odds_ratio_health_seeking_adults_fatigue": Parameter(
+            Types.REAL, "Odds ratio for health seeking in adults with fatigue"
+        ),
+        "odds_ratio_health_seeking_children_fatigue": Parameter(
+            Types.REAL, "Odds ratio for health seeking in children with fatigue"
+        ),
+        "odds_ratio_health_seeking_adults_night_sweats": Parameter(
+            Types.REAL, "Odds ratio for health seeking in adults with night sweats"
+        ),
+        "odds_ratio_health_seeking_children_night_sweats": Parameter(
+            Types.REAL, "Odds ratio for health seeking in children with night sweats"
+        ),
+        # ------------------ age thresholds ------------------ #
+        "age_threshold_adult_years": Parameter(
+            Types.INT, "Age threshold for adult classification"
+        ),
+        "age_threshold_ipt_dispensation": Parameter(
+            Types.INT, "Age threshold for IPT dispensation regimine"
+        ),
+        "age_threshold_infant_years": Parameter(
+            Types.INT, "Age threshold for infant/under-5 classification"
+        ),
+        # ------------------ scheduling intervals ------------------ #
+        "screening_scheduling_window_months": Parameter(
+            Types.INT, "Window for screening scheduling if selected for general screening in months"
+        ),
+        "ipt_scheduling_window_child_of_tb_mother_days": Parameter(
+            Types.INT, "Scheduling window for IPT in days for child of a mother with tb"
+        ),
+        "min_days_symptomatic_required_for_screening": Parameter(
+            Types.INT, "Minimum days required to be symptomatic for screening"
+        ),
+        "tb_min_days_between_tests": Parameter(
+            Types.INT, "Min days between TB tests"
+        ),
+        "hv_min_days_between_tests": Parameter(
+            Types.INT, "Min days between HIV tests"
+        ),
+        "xray_scheduling_weeks_level2": Parameter(
+            Types.INT, "Scheduling interval for level2 X-rays in weeks if consumables not available in level 1b"
+        ),
+        "TbActiveCasePoll_frequency_years": Parameter(
+            Types.INT, "Frequency of TbActiveCasePoll in years"
+        ),
+        "TbActiveEvent_frequency_days": Parameter(
+            Types.INT, "Frequency of TbActiveEvent in days"
+        ),
+        "TbSelfCureEvent_frequency_months":Parameter(
+            Types.INT, "Frequency of TbSelfCureEvent in years"
+        ),
+        "TbRegularEvents_frequency_months": Parameter(
+            Types.INT, "Frequency of TbRegularEvents in months"
+        ),
+        "relapse_early_late_cutoff_years": Parameter(
+            Types.INT, "Cut off between early and late relapse in years for which risk of relapse changes"
+        ),
+        "ipt_reevaluate_continuation_frequency_months": Parameter(
+            Types.INT, "Frequency to re-evaluate continuation of IPT in months"
+        ),
+        "active_disease_duration_months": Parameter(
+            Types.INT, "Duration for active disease monitoring in months"
+        ),
+        "follow_up_interval_months": Parameter(
+            Types.INT, "Follow-up interval in months"
+        ),
+        "treatment_retry_weeks": Parameter(
+            Types.INT, "Interval for treatment retry in weeks"
+        ),
+        "ipt_scheduling_delay_days_min": Parameter(
+            Types.INT, "Delay for ipt treatment HSI in days min"
+        ),
+        "ipt_scheduling_delay_days_max": Parameter(
+            Types.INT, "Delay for appointments in days max"
+        ),
+        "xpert_appointment_delay_days": Parameter(
+            Types.INT, "Delay for appointments in days"
+        ),
+        "mdr_level2_appt_delay_days": Parameter(
+            Types.INT, "Delay for MDR level 2 appointments in days"
+        ),
+        "screening_appointment_window_days": Parameter(
+            Types.INT, "Appointment window for TB screening in days"
+        ),
+        "ipt_appointment_window_days": Parameter(
+            Types.INT, "Appointment window for IPT in days"
         ),
         # ------------------ scale-up parameters for scenario analysis ------------------ #
         "type_of_scaleup": Parameter(
@@ -453,16 +579,16 @@ class Tb(Module):
         self.sim.modules["SymptomManager"].register_symptom(
             Symptom(
                 name="fatigue",
-                odds_ratio_health_seeking_in_adults=5.0,
-                odds_ratio_health_seeking_in_children=5.0,
+                odds_ratio_health_seeking_in_adults=p["odds_ratio_health_seeking_adults_fatigue"],
+                odds_ratio_health_seeking_in_children=p["odds_ratio_health_seeking_children_fatigue"],
             )
         )
 
         self.sim.modules["SymptomManager"].register_symptom(
             Symptom(
                 name="night_sweats",
-                odds_ratio_health_seeking_in_adults=5.0,
-                odds_ratio_health_seeking_in_children=5.0,
+                odds_ratio_health_seeking_in_adults=p["odds_ratio_health_seeking_adults_night_sweats"],
+                odds_ratio_health_seeking_in_children=p["odds_ratio_health_seeking_children_night_sweats"],
             )
         )
 
@@ -573,7 +699,7 @@ class Tb(Module):
             Predictor("nc_diabetes").when(True, p['rr_relapse_diabetes']),
         ] if "CardioMetabolicDisorders" in self.sim.modules else []
 
-        self.lm["risk_relapse_2yrs"] = LinearModel(
+        self.lm["risk_relapse_early"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["monthly_prob_relapse_tx_complete"],
             *(predictors + conditional_predictors))
@@ -649,7 +775,11 @@ class Tb(Module):
         for person in screen_idx:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_ScreeningAndRefer(person_id=person, module=self),
-                topen=random_date(self.sim.date, self.sim.date + DateOffset(months=1), self.rng),
+                topen=random_date(
+                    self.sim.date,
+                    self.sim.date + DateOffset(months=p["screening_scheduling_window_months"]),
+                    self.rng
+                ),
                 tclose=None,
                 priority=0,
             )
@@ -702,8 +832,8 @@ class Tb(Module):
             tb_sputum_test_smear_negative=DxTest(
                 property='tb_inf',
                 target_categories=["active"],
-                sensitivity=0.0,
-                specificity=1.0,
+                sensitivity=p["sensitivity_sputum_test_smear_negative"],
+                specificity=p["specificity_sputum_test_smear_negative"],
                 item_codes=self.item_codes_for_consumables_required['sputum_test'],
                 optional_item_codes=[self.item_codes_for_consumables_required['sputum_container'],
                                      self.item_codes_for_consumables_required['slides'],
@@ -788,8 +918,8 @@ class Tb(Module):
             tb_culture_test=DxTest(
                 property="tb_inf",
                 target_categories=["active"],
-                sensitivity=1.0,
-                specificity=1.0,
+                sensitivity=p["sensitivity_culture_test"],
+                specificity=p["specificity_culture_test"],
                 item_codes=self.item_codes_for_consumables_required['culture_test']
             )
         )
@@ -899,7 +1029,10 @@ class Tb(Module):
         sim.schedule_event(TbActiveEvent(self), sim.date)
         sim.schedule_event(TbRegularEvents(self), sim.date)
         sim.schedule_event(TbSelfCureEvent(self), sim.date)
-        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(
+            TbActiveCasePoll(self),
+            sim.date + DateOffset(years=self.parameters["TbActiveCasePoll_frequency_years"])
+        )
 
         # 2) log at the end of the year
         # Optional: Schedule the scale-up of programs
@@ -930,9 +1063,9 @@ class Tb(Module):
             )
 
         if p['type_of_scaleup'] == 'target':
-            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+            scaled_params = scaled_params_workbook.set_index('parameter_name')['value'].to_dict()
         else:
-            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+            scaled_params = scaled_params_workbook.set_index('parameter_name')['prior_max'].to_dict()
 
         # scale-up TB program
         # use NTP treatment rates
@@ -1001,7 +1134,7 @@ class Tb(Module):
                 event,
                 priority=1,
                 topen=now,
-                tclose=now + DateOffset(days=28),
+                tclose=now + DateOffset(days=self.parameters["ipt_scheduling_window_child_of_tb_mother_days"]),
             )
 
     def report_daly_values(self):
@@ -1044,6 +1177,12 @@ class Tb(Module):
             ] = self.daly_wts["daly_mdr_tb_hiv"]
 
         return health_values.loc[df.is_alive]
+
+    def report_summary_stats(self):
+        # This reports age- and sex-specific prevalence of active TB for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'tb_inf', 'active')
+        return {'number_with_active_tb': number_by_age_group_sex}
 
     def calculate_untreated_proportion(self, population, strain):
         """
@@ -1165,16 +1304,18 @@ class Tb(Module):
         df = population.props
         rng = self.rng
         now = self.sim.date
+        p = self.parameters
 
         # need a monthly relapse for every person in df
         # should return risk=0 for everyone not eligible for relapse
 
         # risk of relapse if <2 years post treatment start, includes risk if HIV+
-        risk_of_relapse_early = self.lm["risk_relapse_2yrs"].predict(
+        risk_of_relapse_early = self.lm["risk_relapse_early"].predict(
             df.loc[df.is_alive
                    & df.tb_ever_treated
                    & (df.tb_inf == "latent")
-                   & (now < (df.tb_date_treated + pd.DateOffset(years=2)))]
+                   & (now < (df.tb_date_treated +
+                             pd.DateOffset(years=p["relapse_early_late_cutoff_years"])))]
         )
 
         will_relapse = (
@@ -1187,7 +1328,8 @@ class Tb(Module):
             df.loc[df.is_alive
                    & df.tb_ever_treated
                    & (df.tb_inf == "latent")
-                   & (now >= (df.tb_date_treated + pd.DateOffset(years=2)))]
+                   & (now >= (df.tb_date_treated +
+                              pd.DateOffset(years=p["relapse_early_late_cutoff_years"])))]
         )
 
         will_relapse_later = (
@@ -1270,21 +1412,21 @@ class Tb(Module):
         # children aged 0-4 ds-tb
         ds_tx_failure0_4_idx = df.loc[
             (df.index.isin(end_ds_tx_idx))
-            & (df.age_years < 5)
+            & (df.age_years < p["age_threshold_infant_years"])
             & (random_var < (1 - p["prob_tx_success_0_4"]))
             ].index
 
         # children aged 5-14 ds-tb
         ds_tx_failure5_14_idx = df.loc[
             (df.index.isin(end_ds_tx_idx))
-            & (df.age_years.between(5, 14))
+            & (df.age_years.between(p["age_threshold_infant_years"], p["age_threshold_adult_years"], inclusive= "left"))
             & (random_var < (1 - p["prob_tx_success_5_14"]))
             ].index
 
         # adults ds-tb
         ds_tx_failure_adult_idx = df.loc[
             (df.index.isin(end_ds_tx_idx))
-            & (df.age_years >= 15)
+            & (df.age_years >= p["age_threshold_adult_years"])
             & (random_var < (1 - p["prob_tx_success_ds"]))
             ].index
 
@@ -1411,7 +1553,7 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(years=1))
+        super().__init__(module, frequency=DateOffset(years=module.parameters['TbActiveCasePoll_frequency_years']))
 
     def apply(self, population):
         p = self.module.parameters
@@ -1451,7 +1593,7 @@ class TbRegularEvents(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['TbRegularEvents_frequency_months']))
 
     def apply(self, population):
         # schedule some background rates of tb testing (non-symptom-driven)
@@ -1488,8 +1630,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-
-        self.repeat = 1
+        self.repeat = module.parameters['TbActiveEvent_frequency_days']
         super().__init__(module, frequency=DateOffset(days=self.repeat))
 
     def apply(self, population):
@@ -1550,7 +1691,10 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
             # if Hiv not registered, give HIV+ person same time to death as HIV-
             for person_id in active_and_hiv:
                 date_of_tb_death = self.sim.date + pd.DateOffset(
-                    months=int(rng.uniform(low=1, high=5))
+                    months=int(rng.uniform(
+                        low=p["death_timing_hiv_positive_min_months"],
+                        high=p["death_timing_hiv_positive_max_months"]
+                    ))
                 )
                 self.sim.schedule_event(
                     event=TbDecideDeathEvent(
@@ -1567,7 +1711,10 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in active_no_hiv:
             date_of_tb_death = self.sim.date + pd.DateOffset(
-                months=int(rng.uniform(low=1, high=6))
+                months=int(rng.uniform(
+                    low=p["death_timing_hiv_negative_min_months"],
+                    high=p["death_timing_hiv_negative_max_months"]
+                ))
             )
             self.sim.schedule_event(
                 event=TbDecideDeathEvent(
@@ -1591,7 +1738,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # multiply testing rate by average treatment availability to match treatment coverage
-        current_active_testing_rate = current_active_testing_rate * (1 / 0.6)
+        current_active_testing_rate = current_active_testing_rate * (1 / p['prob_treatment_availability'])
 
         random_draw = rng.random_sample(size=len(df))
 
@@ -1606,7 +1753,8 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         for person in screen_active_idx:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
-                topen=self.sim.date + DateOffset(days=14),
+                topen=self.sim.date +
+                      DateOffset(days=p["min_days_symptomatic_required_for_screening"]),
                 tclose=None,
                 priority=0,
             )
@@ -1621,7 +1769,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         # note frequency must remain at 12 months or edit code below for duration active disease
-        super().__init__(module, frequency=DateOffset(months=12))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['TbSelfCureEvent_frequency_months']))
 
     def apply(self, population):
         p = self.module.parameters
@@ -1732,7 +1880,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # if person has tested within last 14 days, do nothing
-        if person["tb_date_tested"] >= (self.sim.date - DateOffset(days=7)):
+        if person["tb_date_tested"] >= (
+            self.sim.date - DateOffset(days=p["tb_min_days_between_tests"])
+        ):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         logger.debug(
@@ -1759,7 +1909,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # refer for HIV testing: all ages
         # do not run if already HIV diagnosed or had test in last week
-        if not person["hv_diagnosed"] or (person["hv_last_test_date"] >= (now - DateOffset(days=7))):
+        if not person["hv_diagnosed"] or (
+            person["hv_last_test_date"] >= (now - DateOffset(days=p["hv_min_days_between_tests"]))
+        ):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=hiv.HSI_Hiv_TestAndRefer(
                     person_id=person_id,
@@ -1775,7 +1927,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # child under 5 -> chest x-ray, but access is limited
         # if xray not available, HSI_Tb_Xray_level1b will refer
-        if person["age_years"] < 5:
+        if person["age_years"] < p['age_threshold_infant_years']:
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                 {"Under5OPD": 1}
             )
@@ -1827,7 +1979,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         )
                 if test_result is not None:
                     # Add used equipment
-                    self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
+                    self.add_equipment({'Sputum Collection box', 'Ordinary Microscope', 'Centrifuge'})
 
             elif test == "xpert":
 
@@ -1837,7 +1989,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         hsi_event=HSI_Tb_ScreeningAndRefer(
                             person_id=person_id, module=self.module, facility_level="1b"
                         ),
-                        topen=self.sim.date + DateOffset(days=1),
+                        topen=self.sim.date + DateOffset(days=p["xpert_appointment_delay_days"]),
                         tclose=None,
                         priority=0,
                     )
@@ -1919,7 +2071,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             )
 
             # ------------------------- give IPT to contacts ------------------------- #
-            # if diagnosed, trigger ipt outreach event for up to 5 contacts of case
+            # if diagnosed, trigger ipt outreach event for up to "number_high_risk_contacts"  of case
             # only high-risk districts are eligible
             year = now.year if now.year < 2020 else 2019
 
@@ -1945,7 +2097,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     rr_of_tb = self.module.lm["active_tb"].predict(df.loc[ipt_eligible])
 
                     # choose top 5 highest risk contacts
-                    ipt_sample = rr_of_tb.sort_values(ascending=False).head(5).index
+                    ipt_sample = rr_of_tb.sort_values(ascending=False).head(p['number_high_risk_contacts']).index
 
                     for person_id in ipt_sample:
                         logger.debug(
@@ -2159,6 +2311,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
+        p = self.module.parameters
 
         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
@@ -2187,7 +2340,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
-                topen=self.sim.date + pd.DateOffset(weeks=1),
+                topen=self.sim.date + pd.DateOffset(weeks=p["xray_scheduling_weeks_level2"]),
                 tclose=None,
                 priority=0,
             )
@@ -2322,6 +2475,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if available, change person's properties
         """
         df = self.sim.population.props
+        p = self.module.parameters
         now = self.sim.date
         person = df.loc[person_id]
         self.number_of_occurrences += 1  # The current appointment is included in the count.
@@ -2345,7 +2499,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 hsi_event=HSI_Tb_StartTreatment(
                     person_id=person_id, module=self.module, facility_level="2"
                 ),
-                topen=self.sim.date + DateOffset(days=1),
+                topen=self.sim.date + DateOffset(days=p["mdr_level2_appt_delay_days"]),
                 tclose=None,
                 priority=0,
             )
@@ -2370,7 +2524,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_FollowUp(person_id=person_id, module=self.module),
-                topen=self.sim.date + DateOffset(months=1),
+                topen=self.sim.date + DateOffset(months=p["follow_up_interval_months"]),
                 tclose=None,
                 priority=0,
             )
@@ -2386,7 +2540,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     self,
-                    topen=self.sim.date + DateOffset(weeks=1),
+                    topen=self.sim.date + DateOffset(weeks=p["treatment_retry_weeks"]),
                     tclose=None,
                     priority=0,
                 )
@@ -2399,6 +2553,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         :return: drug_available [BOOL]
         """
         df = self.sim.population.props
+        p = self.module.parameters
         person = df.loc[person_id]
 
         treatment_regimen = None  # default return value
@@ -2414,7 +2569,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         elif not person["tb_ever_treated"]:
 
-            if person["age_years"] >= 15:
+            if person["age_years"] >= p['age_threshold_adult_years']:
                 # treatment for ds-tb: adult
                 treatment_regimen = "tb_tx_adult"
             else:
@@ -2426,7 +2581,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # possible treatment failure or subsequent reinfection
         else:
 
-            if person["age_years"] >= 15:
+            if person["age_years"] >= p['age_threshold_adult_years']:
                 # treatment for reinfection ds-tb: adult
                 treatment_regimen = "tb_retx_adult"
 
@@ -2552,7 +2707,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         # for all ds cases and known mdr cases:
         # schedule next clinical follow-up appt if still within treatment length
         elif months_since_tx < treatment_length:
-            follow_up_date = self.sim.date + DateOffset(months=1)
+            follow_up_date = self.sim.date + DateOffset(months=p["follow_up_interval_months"])
             logger.debug(
                 key="message",
                 data=f"HSI_Tb_FollowUp: scheduling next follow-up "
@@ -2597,6 +2752,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         self.number_of_occurrences += 1
 
         df = self.sim.population.props  # shortcut to the dataframe
+        p = self.module.parameters
         now = self.sim.date
 
         person = df.loc[person_id]
@@ -2611,7 +2767,9 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
 
         # refer for HIV testing: all ages
         # do not run if already HIV diagnosed or had test in last week
-        if not person["hv_diagnosed"] or (person["hv_last_test_date"] >= (now - DateOffset(days=7))):
+        if not person["hv_diagnosed"] or (
+            person["hv_last_test_date"] >= (now - DateOffset(days=p["hv_min_days_between_tests"]))
+        ):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=hiv.HSI_Hiv_TestAndRefer(
                     person_id=person_id,
@@ -2629,7 +2787,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_ScreeningAndRefer(person_id=person_id, module=self.module),
                 topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(days=14),
+                tclose=self.sim.date + pd.DateOffset(days=p["screening_appointment_window_days"]),
                 priority=0,
             )
 
@@ -2637,7 +2795,9 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
             # Check/log use of consumables, and give IPT if available
 
             # if child and HIV+ or child under 2 yrs
-            if ((person["age_years"] <= 15) and person["hv_inf"]) or (person["age_years"] <= 2):
+            if (
+                (person["age_years"] <= p["age_threshold_adult_years"]) and person["hv_inf"]
+            ) or (person["age_years"] <= p["age_threshold_ipt_dispensation"]):
 
                 # 6 months dispensation, once daily
                 drugs_available = self.get_consumables(
@@ -2659,7 +2819,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                 # schedule decision to continue or end IPT after 6 months
                 self.sim.schedule_event(
                     Tb_DecisionToContinueIPT(self.module, person_id),
-                    self.sim.date + DateOffset(months=6),
+                    self.sim.date + DateOffset(months=p["ipt_reevaluate_continuation_frequency_months"]),
                 )
 
             else:
@@ -2670,8 +2830,8 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                 ):
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         self,
-                        topen=self.sim.date + pd.DateOffset(days=1),
-                        tclose=self.sim.date + pd.DateOffset(days=14),
+                        topen=self.sim.date + pd.DateOffset(days=p["ipt_scheduling_delay_days_min"]),
+                        tclose=self.sim.date + pd.DateOffset(days=p["ipt_scheduling_delay_days_max"]),
                         priority=0,
                     )
 
@@ -2685,14 +2845,20 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
     already within 2 weeks
     """
 
-    def __init__(self, module, person_id, beddays=8):
+    def __init__(self, module, person_id, beddays=None):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
+        p =self.module.parameters
         self.TREATMENT_ID = "Tb_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = "2"
 
+        if beddays is None:
+            beddays_avg = round((p['length_of_inpatient_stay_if_terminal'][0] +
+                                 p['length_of_inpatient_stay_if_terminal'][1]) /
+                                len(p['length_of_inpatient_stay_if_terminal']),1)
+            beddays = beddays_avg
         self.beddays = beddays
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": self.beddays})
 
@@ -2722,6 +2888,7 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        p = self.module.parameters
         person = df.loc[person_id]
         m = self.module
 
@@ -2735,13 +2902,14 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
         if (
             person["hv_diagnosed"]
             and (not person["tb_diagnosed"])
-            and (person["tb_date_ipt"] < (self.sim.date - pd.DateOffset(days=36 * 30.5)))
+            and (person["tb_date_ipt"] < (self.sim.date -
+                                          pd.DateOffset(days=p['max_duration_ipt_continued_treatment_months'] * 30.5)))
             and (m.rng.random_sample() < m.parameters["prob_retained_ipt_6_months"])
         ):
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=m),
                 topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(days=14),
+                tclose=self.sim.date + pd.DateOffset(days=p["ipt_appointment_window_days"]),
                 priority=0,
             )
 

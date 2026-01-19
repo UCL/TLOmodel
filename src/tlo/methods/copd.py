@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
+from tlo.analysis.utils import (
+    flatten_multi_index_series_into_dict_for_logging,
+    get_counts_by_sex_and_age_group,
+)
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -14,7 +17,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
+from tlo.util import random_date, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import ConsumablesChecker, HSIEventScheduler
@@ -42,6 +45,7 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     CAUSES_OF_DEATH = {
@@ -119,7 +123,41 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         ),
         'prob_tob_lung_func_gr59': Parameter(
             Types.LIST, 'probability of lung function categories in individuals aged 60+ who smoke tobacco'
-        )
+        ),
+
+        # Age-related parameters
+        'min_age_first_appt': Parameter(
+            Types.INT, 'Minimum age for non-emergency COPD appointments'
+        ),
+        'min_age_lung_function_assessment': Parameter(
+            Types.INT, 'Minimum age for lung function assessment and progression'
+        ),
+        'age_group_1_max': Parameter(
+            Types.INT, 'Maximum age for age group 1 (young adults)'
+        ),
+        'age_group_2_max': Parameter(
+            Types.INT, 'Maximum age for age group 2 (middle-aged adults)'
+        ),
+        'age_group_3_min': Parameter(
+            Types.INT, 'Minimum age for age group 3 (older adults)'
+        ),
+
+        # Time-related parameters
+        'main_polling_frequency_months': Parameter(
+            Types.INT, 'Frequency of COPD polling events in months'
+        ),
+        'exacerbation_symptom_duration_days': Parameter(
+            Types.INT, 'Duration of breathlessness symptoms during exacerbation in days'
+        ),
+        'death_delay_days': Parameter(
+            Types.INT, 'Days between severe exacerbation and potential death'
+        ),
+
+        # Healthcare system parameters
+        'beddays_severe_exacerbation': Parameter(
+            Types.INT, 'Number of general bed days required for severe exacerbation'
+        ),
+
     }
 
     PROPERTIES = {
@@ -143,7 +181,10 @@ class Copd(Module, GenericFirstAppointmentsMixin):
 
     def read_parameters(self, resourcefilepath: Optional[Path]=None):
         """ Read all parameters and define symptoms (if any)"""
-        self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath / 'ResourceFile_Copd.csv'))
+        self.load_parameters_from_dataframe(
+            read_csv_files(resourcefilepath / "ResourceFile_COPD",
+                           files="parameter_values")
+        )
         self.define_symptoms()
 
     def pre_initialise_population(self):
@@ -180,6 +221,12 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         """Return disability weight for alive persons, based on the current status of ch_lungfunction."""
         df = self.sim.population.props
         return df.loc[df.is_alive, 'ch_lungfunction'].map(self.models.disability_weight_given_lungfunction)
+
+    def report_summary_stats(self):
+        # This reports age- and sex-specific prevalence of COPD for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ch_lungfunction', (4, 5, 6))
+        return {'number_with_poor_ch_lungfunction': number_by_age_group_sex}
 
     def define_symptoms(self):
         """Define and register Symptoms"""
@@ -229,6 +276,16 @@ class Copd(Module, GenericFirstAppointmentsMixin):
                 {self.item_codes["bronchodilater_inhaler"]: 1}
             ):
                 individual_properties["ch_has_inhaler"] = True
+
+            # Schedule moderate COPD treatment for moderate cases (to handle equipment)
+            if "breathless_moderate" in symptoms:
+                event = HSI_Copd_TreatmentOnModerateExacerbation(
+                    module=self, person_id=person_id
+                )
+                schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
+
             if "breathless_severe" in symptoms:
                 event = HSI_Copd_TreatmentOnSevereExacerbation(
                     module=self, person_id=person_id
@@ -247,8 +304,9 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         **kwargs,
     ) -> None:
         # Non-emergency appointments are only forwarded if
-        # the patient is over 5 years old
-        if individual_properties["age_years"] > 5:
+        # the patient is over the minimum age threshold
+        p = self.parameters
+        if individual_properties["age_years"] > p["min_age_first_appt"]:
             return self._common_first_appt(
                 person_id=person_id,
                 individual_properties=individual_properties,
@@ -353,40 +411,44 @@ class CopdModels:
     def init_lung_function(self, df: pd.DataFrame) -> pd.Series:
         """Returns the values for ch_lungfunction for an initial population described in `df`
         """
-        # store lung function categories
+        # store lung function categories and parameters shorthand
         cats = ch_lungfunction_cats
+        p = self.params
 
         # lung function categories for non-smokers
-        idx_15_39_not_tob = df.index[(df.age_years.between(15, 39)) & ~df.li_tob]
+        idx_15_39_not_tob = df.index[(df.age_years.between(p['min_age_lung_function_assessment'],
+                                                           p['age_group_1_max'])) & ~df.li_tob]
         cats_15_39_not_tob = dict(
-            zip(idx_15_39_not_tob, self.rng.choice(cats, p=self.params['prob_not_tob_lung_func_15_39'],
+            zip(idx_15_39_not_tob, self.rng.choice(cats, p=p['prob_not_tob_lung_func_15_39'],
                                                    size=len(idx_15_39_not_tob))))
 
-        idx_40_59_not_tob = df.index[(df.age_years.between(40, 59)) & ~df.li_tob]
+        idx_40_59_not_tob = df.index[(df.age_years.between(p['age_group_1_max'] + 1,
+                                                           p['age_group_2_max'])) & ~df.li_tob]
         cats_40_59_not_tob = dict(
-            zip(idx_40_59_not_tob, self.rng.choice(cats, p=self.params['prob_not_tob_lung_func_40_59'],
+            zip(idx_40_59_not_tob, self.rng.choice(cats, p=p['prob_not_tob_lung_func_40_59'],
                                                    size=len(idx_40_59_not_tob))))
 
-        idx_gr59_not_tob = df.index[(df.age_years >= 60) & ~df.li_tob]
+        idx_gr59_not_tob = df.index[(df.age_years >= p['age_group_3_min']) & ~df.li_tob]
         cats_gr59_not_tob = dict(
-            zip(idx_gr59_not_tob, self.rng.choice(cats, p=self.params['prob_not_tob_lung_func_gr59'],
+            zip(idx_gr59_not_tob, self.rng.choice(cats, p=p['prob_not_tob_lung_func_gr59'],
                                                   size=len(idx_gr59_not_tob))))
 
         # lung function categories for smokers
-        idx_15_39_tob = df.index[(df.age_years.between(15, 39)) & df.li_tob]
-        cats_15_39_tob = dict(zip(idx_15_39_tob, self.rng.choice(cats, p=self.params['prob_tob_lung_func_15_39'],
+        idx_15_39_tob = df.index[(df.age_years.between(p['min_age_lung_function_assessment'],
+                                                       p['age_group_1_max'])) & df.li_tob]
+        cats_15_39_tob = dict(zip(idx_15_39_tob, self.rng.choice(cats, p=p['prob_tob_lung_func_15_39'],
                                                                  size=len(idx_15_39_tob))))
 
-        idx_40_59_tob = df.index[(df.age_years.between(40, 59)) & df.li_tob]
-        cats_40_59_tob = dict(zip(idx_40_59_tob, self.rng.choice(cats, p=self.params['prob_tob_lung_func_40_59'],
+        idx_40_59_tob = df.index[(df.age_years.between(p['age_group_1_max'] + 1, p['age_group_2_max'])) & df.li_tob]
+        cats_40_59_tob = dict(zip(idx_40_59_tob, self.rng.choice(cats, p=p['prob_tob_lung_func_40_59'],
                                                                  size=len(idx_40_59_tob))))
 
-        idx_gr59_tob = df.index[(df.age_years >= 60) & df.li_tob]
-        cats_gr59_tob = dict(zip(idx_gr59_tob, self.rng.choice(cats, p=self.params['prob_tob_lung_func_gr59'],
+        idx_gr59_tob = df.index[(df.age_years >= p['age_group_3_min']) & df.li_tob]
+        cats_gr59_tob = dict(zip(idx_gr59_tob, self.rng.choice(cats, p=p['prob_tob_lung_func_gr59'],
                                                                size=len(idx_gr59_tob))))
 
-        # For under-15s, assign the category that would be given at birth
-        idx_notover15 = df.index[df.age_years < 15]
+        # For those under the minimum assessment age, assign the category that would be given at birth
+        idx_notover15 = df.index[df.age_years < p['min_age_lung_function_assessment']]
         cats_for_under15s = {idx: self.at_birth_lungfunction(idx) for idx in idx_notover15}
 
         return pd.Series(index=df.index, data={**cats_for_under15s, **cats_15_39_not_tob, **cats_40_59_not_tob,
@@ -442,21 +504,23 @@ class CopdModels:
         :param df: pandas dataframe """
         return self.__Prob_Will_Die_SevereExacerbation__.predict(df, self.rng)
 
-
-def eligible_to_progress_to_next_lung_function(df: pd.DataFrame) -> pd.Series:
-    """ Returns a pd.Series with the same index as `df` and with value `True` where individuals are eligible to progress
-     to the next level of ch_lungfunction (i.e., alive, aged 15+, and not in the highest category already).
-    :param df: an individual population dataframe """
-    return (
-        df.is_alive & (df.age_years >= 15) & (df['ch_lungfunction'] != ch_lungfunction_cats[-1])
-    )
+    def eligible_to_progress_to_next_lung_function(self, df: pd.DataFrame) -> pd.Series:
+        """ Returns a pd.Series with the same index as `df` and with value `True` where individuals are
+        eligible to progress to the next level of ch_lungfunction (i.e., alive, aged above minimum assessment age,
+        and not in the highest category already).
+        :param df: an individual population dataframe """
+        p = self.params
+        return (
+            df.is_alive & (df.age_years >= p['min_age_lung_function_assessment']) &
+            (df['ch_lungfunction'] != ch_lungfunction_cats[-1])
+        )
 
 
 class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
     """An event that controls the COPD infection process and logs current states. It repeats every 3 months."""
 
     def __init__(self, module):
-        super().__init__(module, frequency=pd.DateOffset(months=3))
+        super().__init__(module, frequency=pd.DateOffset(months=module.parameters['main_polling_frequency_months']))
 
     def apply(self, population):
         """
@@ -483,8 +547,9 @@ class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.do_logging()
 
     def gen_random_date_in_next_three_months(self):
-        """Returns a datetime for a day that is chosen randomly to be within the next 3 months."""
-        return random_date(self.sim.date, self.sim.date + pd.DateOffset(months=3), self.module.rng)
+        """Returns a datetime for a day that is chosen randomly to be within the next polling period."""
+        return random_date(self.sim.date, self.sim.date + pd.DateOffset(
+            months=self.module.parameters['main_polling_frequency_months']), self.module.rng)
 
     @staticmethod
     def increment_category(ser: pd.Series) -> pd.Series:
@@ -496,7 +561,7 @@ class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
     def progress_to_next_lung_function(self, df):
         """ make individuals progress to a next higher lung function """
         idx_will_progress_to_next_category = self.module.models.will_progres_to_next_cat_of_lungfunction(
-            df.loc[eligible_to_progress_to_next_lung_function(df)])
+            df.loc[self.module.models.eligible_to_progress_to_next_lung_function(df)])
         df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'] = self.increment_category(
             df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'])
 
@@ -516,20 +581,21 @@ class CopdExacerbationEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Onset symptom (that will auto-resolve in two days)
+        # Onset symptom (that will auto-resolve after the specified duration)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=person_id,
             symptom_string='breathless_severe' if self.severe else 'breathless_moderate',
             add_or_remove='+',
             disease_module=self.module,
-            duration_in_days=2,
+            duration_in_days=self.module.parameters['exacerbation_symptom_duration_days'],
         )
 
         if self.severe:
             # Work out if the person will die of this exacerbation (if not treated). If they die, they die the next day.
             if self.module.models.will_die_given_severe_exacerbation(df.iloc[[person_id]]):
                 df.at[person_id, "ch_will_die_this_episode"] = True
-                self.sim.schedule_event(CopdDeath(self.module, person_id), self.sim.date + pd.DateOffset(days=1))
+                self.sim.schedule_event(CopdDeath(self.module, person_id), self.sim.date +
+                                        pd.DateOffset(days=self.module.parameters['death_delay_days']))
 
 
 class CopdDeath(Event, IndividualScopeEventMixin):
@@ -541,8 +607,9 @@ class CopdDeath(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        df = self.sim.population.props
-        person = df.loc[person_id, ['is_alive', 'age_years', 'ch_will_die_this_episode', 'ch_lungfunction']]
+        person = self.sim.population.props.loc[
+            person_id, ['is_alive', 'age_years', 'ch_will_die_this_episode', 'ch_lungfunction']
+        ]
         # Check if an individual should still die and, if so, cause the death
         if person.is_alive and person.ch_will_die_this_episode:
             self.sim.modules['Demography'].do_death(
@@ -550,6 +617,30 @@ class CopdDeath(Event, IndividualScopeEventMixin):
                 cause=f'COPD_cat{person.ch_lungfunction}',
                 originating_module=self.module,
             )
+
+
+class HSI_Copd_TreatmentOnModerateExacerbation(HSI_Event, IndividualScopeEventMixin):
+    """HSI event for issuing treatment to individuals with moderate COPD exacerbation.
+    This represents community-based care for non-severe breathlessness."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = "Copd_Treatment"
+        self.ACCEPTED_FACILITY_LEVEL = "1a"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+
+    def apply(self, person_id, squeeze_factor):
+        """Treatment for moderate COPD exacerbation - community-based care."""
+
+        # Equipment for moderate COPD cases
+        self.add_equipment({
+            'Incentive spirometers',
+            'Analyser, Blood Gas'
+        })
+
+        # Give bronchodilator treatment if available
+        self.get_consumables({self.module.item_codes['bronchodilater_inhaler']: 1})
 
 
 class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):
@@ -566,7 +657,8 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
         self.TREATMENT_ID = "Copd_Treatment"
         self.ACCEPTED_FACILITY_LEVEL = self.all_facility_levels[self.facility_levels_index]
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
+        self.BEDDAYS_FOOTPRINT = (
+            self.make_beddays_footprint({'general_bed': module.parameters['beddays_severe_exacerbation']}))
 
     def apply(self, person_id, squeeze_factor):
         """What to do when someone presents for care with an exacerbation.
@@ -590,7 +682,19 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
                 oxygen=self.get_consumables({self.module.item_codes['oxygen']: 23_040}),
                 aminophylline=self.get_consumables({self.module.item_codes['aminophylline']: 600})
             )
-            self.add_equipment({'Oxygen cylinder, with regulator', 'Nasal Prongs', 'Drip stand', 'Infusion pump'})
+
+            # Equipment for severe COPD exacerbations
+            self.add_equipment({
+                'Oxygen cylinder, with regulator',
+                'Nasal Prongs',
+                'Drip stand',
+                'Infusion pump',
+                'Incentive spirometers',
+                'Analyser, Blood Gas',
+                'Ambu bag, adult with mask',
+                'Postural Drainage Couch',
+                'Resuscitator'
+            })
 
             if prob_treatment_success:
                 df.at[person_id, 'ch_will_die_this_episode'] = False

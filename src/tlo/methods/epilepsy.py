@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -35,7 +36,8 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -60,8 +62,12 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         'init_prop_antiepileptic_seiz_stat_3': Parameter(
             Types.REAL, 'initial proportions on antiepileptic by if seizure status = 3'
         ),
-        'base_3m_prob_epilepsy': Parameter(Types.REAL, 'base probability of epilepsy per 3 month period if age < 20'),
-        'rr_epilepsy_age_ge20': Parameter(Types.REAL, 'relative rate of epilepsy if age over 20'),
+        'base_3m_prob_epilepsy': Parameter(
+            Types.REAL, 'base probability of epilepsy per 3 month period if age below threshold'
+        ),
+        'rr_epilepsy_above_threshold_age': Parameter(
+            Types.REAL, 'relative rate of epilepsy if age above threshold age'
+        ),
         'prop_inc_epilepsy_seiz_freq': Parameter(
             Types.REAL, 'proportion of incident epilepsy cases with frequent seizures'
         ),
@@ -108,6 +114,42 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         'max_num_of_failed_attempts_before_defaulting': Parameter(
             Types.INT, 'maximum number of time an HSI can be repeated if the relevant essential consumables are not '
                        'available.'
+        ),
+        'main_polling_event_frequency_months': Parameter(
+            Types.INT, 'frequency in months for the main polling event that checks epilepsy status changes'
+        ),
+        'main_polling_event_initial_delay_months': Parameter(
+            Types.INT, 'delay in months for the initial main polling event'
+        ),
+        'age_threshold_epilepsy_transition': Parameter(
+            Types.REAL, 'age threshold in years at which probability of developing epilepsy changes'
+        ),
+        'incidence_calculation_annualization_factor': Parameter(
+            Types.REAL, 'factor to annualize incidence calculations (quarters to year conversion)'
+        ),
+        'incidence_calculation_per_population_factor': Parameter(
+            Types.REAL, 'factor for case incidence calculation per population'
+        ),
+        'death_calculation_per_population_factor': Parameter(
+            Types.REAL, 'factor for death incidence calculation per population'
+        ),
+        'pediatric_age_threshold': Parameter(
+            Types.REAL, 'age threshold in years below which patients are considered pediatric'
+        ),
+        'medicine_follow_up_frequency_months': Parameter(
+            Types.REAL, 'frequency in months for follow-up appointments when on anti-epileptic medication'
+        ),
+        'unavailable_medicine_retry_months': Parameter(
+            Types.REAL, 'frequency in months to retry when medicine is unavailable'
+        ),
+        'unavailable_appt_retry_months': Parameter(
+            Types.REAL, 'frequency in months to retry when appt is unavailable'
+        ),
+        'severe_follow_up_frequency_months': Parameter(
+            Types.REAL, 'frequency in months for follow-up appointments for severe epilepsy cases'
+        ),
+        'standard_follow_up_frequency_months': Parameter(
+            Types.REAL, 'frequency in months for follow-up appointments for standard epilepsy cases'
         ),
     }
 
@@ -217,11 +259,12 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         Here we add our three-monthly event to poll the population for epilepsy starting
         or stopping.
         """
+        p = self.parameters
         epilepsy_poll = EpilepsyEvent(self)
-        sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=3))
+        sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=p['main_polling_event_frequency_months']))
 
         event = EpilepsyLoggingEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=0))
+        sim.schedule_event(event, sim.date + DateOffset(months=p['main_polling_event_initial_delay_months']))
 
         # Get item_codes for the consumables used in the HSI
         hs = self.sim.modules['HealthSystem']
@@ -249,6 +292,12 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
     def report_daly_values(self):
         df = self.sim.population.props  # shortcut to population properties dataframe
         return df.loc[df.is_alive, 'ep_disability']
+
+    def report_summary_stats(self):
+        # This reports age- and sex-specific prevalence of epilepsy for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ep_seiz_stat', (2, 3))
+        return {'number_with_current_seizures': number_by_age_group_sex}
 
     def transition_seizure_stat(self):
         """
@@ -442,11 +491,11 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(months=3))
         p = module.parameters
+        super().__init__(module, frequency=DateOffset(months=int(p['main_polling_event_frequency_months'])))
 
         self.base_3m_prob_epilepsy = p['base_3m_prob_epilepsy']
-        self.rr_epilepsy_age_ge20 = p['rr_epilepsy_age_ge20']
+        self.rr_epilepsy_above_threshold_age = p['rr_epilepsy_above_threshold_age']
         self.prop_inc_epilepsy_seiz_freq = p['prop_inc_epilepsy_seiz_freq']
         self.base_prob_3m_stop_antiepileptic = p['base_prob_3m_stop_antiepileptic']
         self.rr_stop_antiepileptic_seiz_infreq_or_freq = p['rr_stop_antiepileptic_seiz_infreq_or_freq']
@@ -463,6 +512,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         ep = self.module
+        p = self.module.parameters
         df = population.props
 
         # set ep_epi_death back to False after death
@@ -472,13 +522,14 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         # update ep_seiz_stat for people ep_seiz_stat = 0
         # Find who does not have epilepsy
         alive_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat == '0')]
-        # Find who does not have epilepsy and is 20 & over
-        ge20_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat == '0') & (df.age_years >= 20)]
+        # Find who does not have epilepsy and is at/above age threshold
+        ge_age_threshold_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat == '0') &
+                                                    (df.age_years >= p['age_threshold_epilepsy_transition'])]
         # Create a pandas series of the length of people who are alive, this is the basic probability of people
         # developing epilepsy
         eff_prob_epilepsy = pd.Series(self.base_3m_prob_epilepsy, index=alive_seiz_stat_0_idx)
-        # Find the indexes of people who are aged 20 and above and increase their risk of developing epilepsy
-        eff_prob_epilepsy.loc[ge20_seiz_stat_0_idx] *= self.rr_epilepsy_age_ge20
+        # Find the indexes of people who are at/above age threshold and increase their risk of developing epilepsy
+        eff_prob_epilepsy.loc[ge_age_threshold_seiz_stat_0_idx] *= self.rr_epilepsy_above_threshold_age
         # Create a list of random numbers, one per person, to determine who will develop epilepsy
         random_draw_01 = self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx))
         # If a person's number is less than their likelihood of developing epilepsy, then they will now have epilepsy
@@ -499,7 +550,8 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         n_incident_epilepsy = epi_now.sum()
         n_alive = df.is_alive.sum()
 
-        incidence_epilepsy = (n_incident_epilepsy * 4 * 100000) / n_alive if n_alive > 0 else 0
+        incidence_epilepsy = (n_incident_epilepsy * p['incidence_calculation_annualization_factor'] *
+                              p['incidence_calculation_per_population_factor']) / n_alive if n_alive > 0 else 0
 
         logger.info(
             key='inc_epilepsy',
@@ -570,6 +622,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         """Get some summary statistics and log them"""
         df = population.props
+        p = self.module.parameters
 
         status_groups = df[
             ["ep_seiz_stat", "is_alive", "ep_antiep"]
@@ -587,7 +640,8 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         status_groups['prop_seiz_stat_on_anti_ep'] = status_groups['ep_antiep'] / status_groups.is_alive
         status_groups['prop_seiz_stat_on_anti_ep'] = status_groups['prop_seiz_stat_on_anti_ep'].fillna(0)
         epi_death_rate = \
-            (n_epi_death * 4 * 1000) / n_seiz_stat_2_3 if n_seiz_stat_2_3 > 0 else 0.0
+            (n_epi_death * p['incidence_calculation_annualization_factor'] *
+             p['death_calculation_per_population_factor']) / n_seiz_stat_2_3 if n_seiz_stat_2_3 > 0 else 0.0
 
         cum_deaths = (~df.is_alive).sum()
 
@@ -636,6 +690,22 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
+
+        # Add equipment for severe epilepsy cases
+        if df.at[person_id, 'ep_seiz_stat'] == '3':  # Frequent seizures
+            # Assessment and mobility equipment for severe epilepsy
+            self.add_equipment({'Wheelchair'})
+
+            # Pediatric equipment for children with severe epilepsy
+            if df.at[person_id, 'age_years'] < p['pediatric_age_threshold']:
+                self.add_equipment({
+                    'Paediatric Corner sit',
+                    'Paediatric CP Chair',
+                    'Paediatric mat',
+                    'Paediatric rollator',
+                    'Paediatric Standing frame'
+                })
 
         # Check what drugs are available
         best_available_medicine = self.module.get_best_available_medicine(self)
@@ -653,13 +723,13 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
             # Update this person's properties to show that they are currently on medication
             df.at[person_id, 'ep_antiep'] = True
 
-            # Schedule a follow-up for 3 months:
+            # Schedule a follow-up:
             hs.schedule_hsi_event(
                 hsi_event=HSI_Epilepsy_Follow_Up(
                     module=self.module,
                     person_id=person_id,
                 ),
-                topen=self.sim.date + DateOffset(months=3),
+                topen=self.sim.date + DateOffset(months=int(p['medicine_follow_up_frequency_months'])),
                 tclose=None,
                 priority=0
             )
@@ -668,12 +738,13 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
             self._counter_of_failed_attempts_due_to_unavailable_medicines
             < self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING
         ):
-            # If no medicine is available, run this HSI again next month
+            # If no medicine is available, run this HSI again after retry period
             self._counter_of_failed_attempts_due_to_unavailable_medicines += 1
-            self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
-                                                                       topen=self.sim.date + pd.DateOffset(months=1),
-                                                                       tclose=None,
-                                                                       priority=0)
+            self.module.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=self,
+                topen=self.sim.date + pd.DateOffset(months=int(p['unavailable_medicine_retry_months'])),
+                tclose=None,
+                priority=0)
 
 
 class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
@@ -695,6 +766,7 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -703,16 +775,62 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'ep_antiep']:
             return hs.get_blank_appt_footprint()
 
+        # Add equipment for severe epilepsy cases at follow-up visits
+        if df.at[person_id, 'ep_seiz_stat'] == '3':  # Frequent seizures
+            # Equipment for severe epilepsy rehabilitation and support
+            self.add_equipment({
+                'Adaptive communication switches (Infrared switches)',
+                'Speech therapy kit',
+                'Bobath bed',
+                'Box and Block Test',
+                'Built Up (adapted) Utensils',
+                'Goniometer',
+                'Grasp Dynamometer',
+                'Hand function kits',
+                'Hot Pack Therapy Units',
+                'Interferential therapy machine',
+                'Muscle stimulator',
+                'TENs Unit',
+                'Transcutaneous electrical neuromuscular stimulation',
+                'Exercise Mats',
+                'Gym mat',
+                'Parallel Bars',
+                'Pulley System',
+                'Suspension Slings',
+                'Rehabilitation wall bars',
+                'Rollators',
+                'Walking Frame',
+                'Walking Cane',
+                'Overhead pulley',
+                'Training stairs',
+                'Stress Ball',
+                'Wheelchair',
+                'Ordinary balls',
+                'Medicinal Balls (Sets of 0.5kgs, 1kg, 2kgs, 3kgs, 4kgs, 5kgs)',
+                'Exercise ball'
+            })
+
+            # Pediatric equipment for children with severe epilepsy
+            if df.at[person_id, 'age_years'] < p['pediatric_age_threshold']:
+                self.add_equipment({
+                    'Paediatric Corner sit',
+                    'Paediatric CP Chair',
+                    'Paediatric mat',
+                    'Paediatric rollator',
+                    'Paediatric Standing frame'
+                })
+
         # Request the medicine
         best_available_medicine = self.module.get_best_available_medicine(self)
         if best_available_medicine is not None:
 
+            # Schedule a reoccurrence of this follow-up based on seizure severity
             # Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == '3',
             # else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == '2'
             if df.at[person_id, 'ep_seiz_stat'] == '3':
-                fu_mnths = 3
+                fu_mnths = p['severe_follow_up_frequency_months']
             else:
-                fu_mnths = 12
+                fu_mnths = p['standard_follow_up_frequency_months']
 
             # The medicine is available, so request it
             dose = {'phenobarbitone_3_mnths': 9131, 'phenobarbitone_12_mnths': 36_525,  # 100mg per day - 3/12 months
@@ -720,7 +838,7 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
                     'phenytoin_3_mnths': 27_393,  'phenytoin_12_mnths': 109_575}  # 300mg per day - 3/12 months
 
             self.get_consumables({self.module.item_codes[best_available_medicine]:
-                                  dose[f'{best_available_medicine}_{fu_mnths}_mnths']})
+                                  dose[f'{best_available_medicine}_{int(fu_mnths)}_mnths']})
 
             # Reset counter of "failed attempts" and put the appointment for the next occurrence to the usual
             self._counter_of_failed_attempts_due_to_unavailable_medicines = 0
@@ -729,7 +847,7 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
             # Schedule follow-up
             hs.schedule_hsi_event(
                 hsi_event=self,
-                topen=self.sim.date + DateOffset(months=fu_mnths),
+                topen=self.sim.date + DateOffset(months=int(fu_mnths)),
                 tclose=None,
                 priority=0
             )
@@ -745,7 +863,7 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
 
             hs.schedule_hsi_event(
                 hsi_event=self,
-                topen=self.sim.date + DateOffset(months=1),
+                topen=self.sim.date + DateOffset(months=int(p['unavailable_appt_retry_months'])),
                 tclose=None,
                 priority=0
             )

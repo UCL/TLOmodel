@@ -67,6 +67,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         self.possible_intrapartum_complications = list()
         self.possible_postpartum_complications = list()
 
+        # Counter for number of still_births (is reset in calls to report_summary_stats)
+        self.intrapartum_stillbirth_since_last_reset = 0
+
         # Finally define a dictionary which will hold the required consumables for each intervention
         self.item_codes_lab_consumables = dict()
 
@@ -84,6 +87,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS,
     }
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
@@ -573,6 +577,53 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         'pnc_sens_analysis_min': Parameter(
             Types.BOOL, 'Signals that min coverage of SBA is being forced for sensitivity analysis'),
 
+        # AGE LIMITS FOR REPRODUCTIVE HEALTH
+        'min_reproductive_age': Parameter(
+            Types.INT, 'Minimum age for women to be considered of reproductive age'),
+        'max_reproductive_age': Parameter(
+            Types.INT, 'Maximum age for women to be considered of reproductive age'),
+
+        # BIRTH WEIGHT THRESHOLDS (in grams)
+        'birth_weight_threshold_macrosomia': Parameter(
+            Types.INT, 'Birth weight threshold for macrosomia classification (grams)'),
+        'birth_weight_threshold_normal': Parameter(
+            Types.INT, 'Birth weight threshold for normal vs low birth weight classification (grams)'),
+        'birth_weight_threshold_low': Parameter(
+            Types.INT, 'Birth weight threshold for low vs very low birth weight classification (grams)'),
+        'birth_weight_threshold_very_low': Parameter(
+            Types.INT, 'Birth weight threshold for very low vs extremely low birth weight classification (grams)'),
+
+        # EVENT SCHEDULING DELAYS (in days)
+        'hsi_event_standard_delay_window': Parameter(
+            Types.INT, 'Standard delay window in days for scheduling HSI events'),
+        'delivery_event_delay_window': Parameter(
+            Types.INT, 'Delay window in days for scheduling delivery events'),
+        'death_stillbirth_event_delay': Parameter(
+            Types.INT, 'Delay in days for scheduling death and stillbirth events'),
+        'birth_event_delay': Parameter(
+            Types.INT, 'Delay in days for scheduling birth event'),
+
+        # PREGNANCY DURATION CHECK
+        'max_estimated_pregnancy_duration_days': Parameter(
+            Types.INT, 'Maximum estimated pregnancy duration in days for validation checks'),
+
+        # BEDDAYS FOOTPRINT
+        'beddays_regular_delivery': Parameter(
+            Types.INT, 'Beddays required for regular maternity delivery'),
+        'beddays_extended_delivery': Parameter(
+            Types.INT, 'Beddays required for extended maternity delivery'),
+
+        # DIAGNOSTIC AND ANALYSIS PARAMETERS
+        'anemia_diagnostic_sensitivity': Parameter(
+            Types.REAL, 'Sensitivity for anemia diagnostic test'),
+        'prob_timings_pnc_<48_scenario': Parameter(
+            Types.LIST, 'probabilities that a woman who will receive a PNC check will receive care '
+                        '< 48hrs post birth scenario set to 1'),
+        'prob_timings_pnc_newborns_<48_scenario': Parameter(
+            Types.LIST, 'probabilities that a woman who will receive a PNC check newborn will receive care '
+                        '< 48hrs post birth scenario set to 1'),
+        'home_delivery_sens_analysis_prob': Parameter(
+            Types.REAL, 'Probability for home delivery in sensitivity analysis'),
     }
 
     PROPERTIES = {
@@ -664,17 +715,22 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         parity_equation = LinearModel.custom(labour_lm.predict_parity, parameters=params)
 
         # We assign parity to all women of reproductive age at baseline
-        df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] = \
-            parity_equation.predict(df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)])
+        reproductive_mask = (df.is_alive & (df.sex == 'F') &
+                            (df.age_years > params['min_reproductive_age']))
+        df.loc[reproductive_mask, 'la_parity'] = \
+            parity_equation.predict(df.loc[reproductive_mask])
 
-        if not (df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] >= 0).all().all():
+        if not (df.loc[reproductive_mask, 'la_parity'] >= 0).all().all():
             logger.info(key='error', data='Parity was calculated incorrectly at initialisation')
 
         #  ----------------------- ASSIGNING PREVIOUS CS DELIVERY AT BASELINE -----------------------------------------
         # This equation determines the proportion of women at baseline who have previously delivered via caesarean
         # section
         reproductive_age_women = \
-            df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50) & (df.la_parity > 0)
+            (df.is_alive & (df.sex == 'F') &
+             (df.age_years > params['min_reproductive_age']) &
+             (df.age_years < params['max_reproductive_age']) &
+             (df.la_parity > 0))
 
         previous_cs = pd.Series(
             self.rng.random_sample(len(reproductive_age_women.loc[reproductive_age_women])) <
@@ -867,14 +923,15 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
         self.get_and_store_labour_item_codes()
+        params = self.current_parameters
 
         # We set the LoggingEvent to run on the last day of each year to produce statistics for that year
         sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Schedule analysis event
-        if self.sim.date.year <= self.current_parameters['analysis_year']:
+        if self.sim.date.year <= params['analysis_year']:
             sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self),
-                               Date(self.current_parameters['analysis_year'], 1, 1))
+                               Date(params['analysis_year'], 1, 1))
 
         # This list contains all the women who are currently in labour and is used for checks/testing
         self.women_in_labour = []
@@ -895,13 +952,12 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             full_blood_count_hb_pn=DxTest(
                 property='pn_anaemia_following_pregnancy',
                 target_categories=['mild', 'moderate', 'severe'],
-                sensitivity=1.0),
+                sensitivity=params['anemia_diagnostic_sensitivity']),
         )
 
         # ======================================= LINEAR MODEL EQUATIONS ==============================================
         # Here we define the equations that will be used throughout this module using the linear
         # model and stored them as a parameter
-        params = self.current_parameters
         self.la_linear_models = {
 
             # This equation predicts the parity of each woman at baseline (who is of reproductive age)
@@ -1077,6 +1133,23 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
         return daly_series
 
+    def report_summary_stats(self):
+        """
+        This function reports the prevalence of intrapartum stillbirth for this module generated in the previous month
+        """
+
+        # Get the number of intrapartum still births since last call to this function
+        result_to_return = {
+            'number of intrapartum stillbirth since last report':
+                self.intrapartum_stillbirth_since_last_reset
+        }
+
+        # Reset the counter
+        self.intrapartum_stillbirth_since_last_reset = 0
+
+        # Return the result
+        return result_to_return
+
     # ===================================== HELPER AND TESTING FUNCTIONS ==============================================
     def set_date_of_labour(self, individual_id):
         """
@@ -1119,7 +1192,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # Here we check that no one is scheduled to go into labour before 37 gestational age (35 weeks foetal age,
         # ensuring all preterm labour comes from the pregnancy supervisor module
         days_until_labour = df.at[individual_id, 'la_due_date_current_pregnancy'] - self.sim.date
-        if not days_until_labour >= pd.Timedelta(245, unit='d'):
+        params = self.current_parameters
+        if not days_until_labour >= pd.Timedelta(params['max_estimated_pregnancy_duration_days'], unit='d'):
             logger.info(key='error', data=f'Labour scheduled for woman {individual_id} beyond the maximum estimated '
                                           f'possible length of pregnancy')
 
@@ -1583,11 +1657,12 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         mother = df.loc[individual_id]
 
+        params = self.current_parameters
         if (
             individual_id not in self.women_in_labour or
             mother.sex != 'F' or
-            mother.age_years < 14 or
-            mother.age_years > 51 or
+            mother.age_years < params['min_reproductive_age'] or
+            mother.age_years > (params['max_reproductive_age'] + 1) or
             not mother.la_currently_in_labour or
             mother.ps_gestational_age_in_weeks < 22 or
             pd.isnull(mother.la_due_date_current_pregnancy)
@@ -1605,11 +1680,12 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         mother = df.loc[individual_id]
 
+        params = self.current_parameters
         if (
             individual_id not in mni or
             mother.sex != 'F' or
-            mother.age_years < 14 or
-            mother.age_years > 51 or
+            mother.age_years < params['min_reproductive_age'] or
+            mother.age_years > (params['max_reproductive_age'] + 1) or
             not mother.la_is_postpartum or
             (not mni[individual_id]['passed_through_week_one'] and individual_id not in self.women_in_labour)
         ):
@@ -2068,7 +2144,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             q_param=[params['prob_hcw_avail_blood_tran'], params[f'mean_hcw_competence_{deliv_location}']],
             cons=self.item_codes_lab_consumables['blood_transfusion'],
             opt_cons=self.item_codes_lab_consumables['blood_test_equipment'],
-            equipment={'Drip stand', 'Infusion pump'})
+            equipment=hsi_event.healthcare_system.equipment.from_pkg_names('Blood Transfusion'))
 
         if blood_transfusion_delivered:
             mni[person_id]['received_blood_transfusion'] = True
@@ -2239,7 +2315,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                     event,
                     priority=0,
                     topen=self.sim.date,
-                    tclose=self.sim.date + pd.DateOffset(days=1),
+                    tclose=self.sim.date + pd.DateOffset(
+                        days=self.current_parameters['hsi_event_standard_delay_window']),
                 )
 
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
@@ -2351,18 +2428,18 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                 0.9, loc=params['mean_birth_weights'][mean_birth_weight_list_location], scale=standard_deviation)
 
             # Make the appropriate changes to the mni dictionary (both are stored as property of the newborn on birth)
-            if birth_weight >= 4000:
+            if birth_weight >= params['birth_weight_threshold_macrosomia']:
                 mni[individual_id]['birth_weight'] = 'macrosomia'
-            elif birth_weight >= 2500:
+            elif birth_weight >= params['birth_weight_threshold_normal']:
                 if self.module.rng.random_sample() < params['residual_prob_of_macrosomia']:
                     mni[individual_id]['birth_weight'] = 'macrosomia'
                 else:
                     mni[individual_id]['birth_weight'] = 'normal_birth_weight'
-            elif 1500 <= birth_weight < 2500:
+            elif params['birth_weight_threshold_low'] <= birth_weight < params['birth_weight_threshold_normal']:
                 mni[individual_id]['birth_weight'] = 'low_birth_weight'
-            elif 1000 <= birth_weight < 1500:
+            elif params['birth_weight_threshold_very_low'] <= birth_weight < params['birth_weight_threshold_low']:
                 mni[individual_id]['birth_weight'] = 'very_low_birth_weight'
-            elif birth_weight < 1000:
+            elif birth_weight < params['birth_weight_threshold_very_low']:
                 mni[individual_id]['birth_weight'] = 'extremely_low_birth_weight'
 
             if birth_weight < small_for_gestational_age_cutoff:
@@ -2424,7 +2501,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                     self.module, person_id=individual_id, facility_level_of_this_hsi='1a')
                 self.sim.modules['HealthSystem'].schedule_hsi_event(health_centre_delivery, priority=0,
                                                                     topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=2))
+                                                                    tclose=self.sim.date +
+                                                                    DateOffset(days=params['delivery_event_delay_window']))
 
             elif mni[individual_id]['delivery_setting'] == 'hospital':
                 facility_level = self.module.rng.choice(['1b', '2'])
@@ -2432,20 +2510,21 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                     self.module, person_id=individual_id, facility_level_of_this_hsi=facility_level)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hospital_delivery, priority=0,
                                                                     topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=2))
+                                                                    tclose=self.sim.date +
+                                                                    DateOffset(days=params['delivery_event_delay_window']))
 
             # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ============================
             # We schedule all women to move through both the death and birth event.
 
             # The death event is scheduled to happen after a woman has received care OR delivered at home to allow for
             # any treatment effects to mitigate risk of poor outcomes
-            self.sim.schedule_event(LabourDeathAndStillBirthEvent(self.module, individual_id), self.sim.date +
-                                    DateOffset(days=4))
+            self.sim.schedule_event(LabourDeathAndStillBirthEvent(self.module, individual_id), self.module.sim.date +
+                                    DateOffset(days=params['death_stillbirth_event_delay']))
 
             # After the death event women move to the Birth Event where, for surviving women and foetus, birth occurs
             # in the simulation
-            self.sim.schedule_event(BirthAndPostnatalOutcomesEvent(self.module, individual_id), self.sim.date +
-                                    DateOffset(days=5))
+            self.sim.schedule_event(BirthAndPostnatalOutcomesEvent(self.module, individual_id), self.module.sim.date +
+                                    DateOffset(days=params['birth_event_delay']))
 
 
 class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
@@ -2516,7 +2595,8 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                         priority=0,
                                                                         topen=self.sim.date,
-                                                                        tclose=self.sim.date + DateOffset(days=1))
+                                                                        tclose=self.sim.date +
+                                                                        DateOffset(days=params['hsi_event_standard_delay_window']))
                 else:
                     mni[individual_id]['didnt_seek_care'] = True
 
@@ -2571,7 +2651,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             logger.debug(key='message', data=f'person {individual_id} has experienced an intrapartum still birth')
 
             random_draw = self.module.rng.random_sample()
-
+            self.module.intrapartum_stillbirth_since_last_reset += 1
             # If this woman will experience a stillbirth and she was not pregnant with twins OR she was pregnant with
             # twins but both twins have died during labour we reset/set the appropriate variables
             if not df.at[individual_id, 'ps_multiple_pregnancy'] or \
@@ -2768,7 +2848,8 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.TREATMENT_ID = 'DeliveryCare_Basic'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'NormalDelivery': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 2})
+        params = module.current_parameters
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': params['beddays_regular_delivery']})
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -2811,7 +2892,13 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # Add used equipment
         self.add_equipment({'Delivery set', 'Weighing scale', 'Stethoscope, foetal, monaural, Pinard, plastic',
                             'Resuscitaire', 'Sphygmomanometer', 'Tray, emergency', 'Suction machine',
-                            'Thermometer', 'Drip stand', 'Infusion pump'})
+                            'Thermometer', 'Drip stand', 'Infusion pump', 'Board for Cord Knotting',
+                            'Cot, baby (bassinet), hospital-type', 'Delivery Beds with Stirrups', 'Fetoscope',
+                            'Mucous Extractor for neonates', 'Amnio hook', 'Incubator, infant'})
+
+        if self.ACCEPTED_FACILITY_LEVEL == '2':
+            self.add_equipment({'Cardiotocography'})
+
         # ===================================== PROPHYLACTIC CARE ===================================================
         # The following function manages the consumables and administration of prophylactic interventions in labour
         # (clean delivery practice, antibiotics for PROM, steroids for preterm labour)
@@ -2883,7 +2970,8 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             neo_resus_delivered = pregnancy_helper_functions.check_int_deliverable(
                 self.module, int_name='neo_resus', hsi_event=self,
                 q_param=[params['prob_hcw_avail_neo_resus'], params[f'mean_hcw_competence_{deliv_location}']],
-                cons=self.module.item_codes_lab_consumables['resuscitation'])
+                cons=self.module.item_codes_lab_consumables['resuscitation'],
+                equipment={'Ambu bag, infant with mask', 'Resuscitator, manual, infant'})
 
             if neo_resus_delivered:
                 mni[person_id]['neo_will_receive_resus_if_needed'] = True
@@ -3210,7 +3298,8 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
         self.TREATMENT_ID = 'PostnatalCare_Maternal_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 5})
+        params = module.current_parameters
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': params['beddays_extended_delivery']})
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare now running to capture '
@@ -3256,7 +3345,10 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
                 target = params['pnc_availability_odds']
                 params['odds_will_attend_pnc'] = 1
 
-                women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+                repro_mask = (df.is_alive & (df.sex == 'F') &
+                              (df.age_years > params['min_reproductive_age']) &
+                              (df.age_years < params['max_reproductive_age']))
+                women = df.loc[repro_mask]
                 mode_of_delivery = pd.Series(False, index=women.index)
                 delivery_setting = pd.Series(False, index=women.index)
 
@@ -3265,9 +3357,12 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
                 if 'delivery_setting' in mni_df.columns:
                     delivery_setting = pd.Series(mni_df['delivery_setting'], index=women.index)
 
+                repro_mask_pred = (df.is_alive & (df.sex == 'F') &
+                                   (df.age_years > params['min_reproductive_age']) &
+                                   (df.age_years < params['max_reproductive_age']))
                 mean = self.module.la_linear_models['postnatal_check'].predict(
-                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
-                    year=self.sim.date.year,
+                    df.loc[repro_mask_pred],
+                    year=self.module.sim.date.year,
                     mode_of_delivery=mode_of_delivery,
                     delivery_setting=delivery_setting).mean()
 
@@ -3278,10 +3373,10 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
 
                 # Then override the parameters which control neonatal care seeking
                 cov_prob = params['pnc_availability_odds'] / (params['pnc_availability_odds'] + 1)
-                params['prob_timings_pnc'] = [1.0, 0]
+                params['prob_timings_pnc'] = params['prob_timings_pnc_<48_scenario']
 
                 nb_params['prob_pnc_check_newborn'] = cov_prob
-                nb_params['prob_timings_pnc_newborns'] = [1.0, 0]
+                nb_params['prob_timings_pnc_newborns'] = params['prob_timings_pnc_newborns_<48_scenario']
 
             if params['alternative_pnc_quality']:
                 params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
@@ -3303,7 +3398,7 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
                 pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
 
             if params['sba_sens_analysis_max']:
-                params['odds_deliver_at_home'] = 0.0
+                params['odds_deliver_at_home'] = params['home_delivery_sens_analysis_prob']
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -3316,16 +3411,15 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
-        repro_women = df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
+        params = self.module.current_parameters
+        repro_women = (df.is_alive & (df.sex == 'F') &
+                     (df.age_years > params['min_reproductive_age']) &
+                     (df.age_years < params['max_reproductive_age']))
 
-        hysterectomy = df.is_alive & (df.sex == 'F') & df.la_has_had_hysterectomy & (df.age_years > 14) & (df.age_years
-                                                                                                           < 50)
-        labour = df.is_alive & (df.sex == 'F') & df.la_currently_in_labour & (df.age_years > 14) & (df.age_years
-                                                                                                    < 50)
-        postnatal = df.is_alive & (df.sex == 'F') & df.la_is_postpartum & (df.age_years > 14) & (df.age_years
-                                                                                                 < 50)
-        inpatient = df.is_alive & (df.sex == 'F') & df.hs_is_inpatient & (df.age_years > 14) & (df.age_years
-                                                                                                < 50)
+        hysterectomy = repro_women & df.la_has_had_hysterectomy
+        labour = repro_women & df.la_currently_in_labour
+        postnatal = repro_women & df.la_is_postpartum
+        inpatient = repro_women & df.hs_is_inpatient
 
         prop_hyst = (len(hysterectomy.loc[hysterectomy]) / len(repro_women.loc[repro_women])) * 100
         prop_in_labour = (len(labour.loc[labour]) / len(repro_women.loc[repro_women])) * 100
