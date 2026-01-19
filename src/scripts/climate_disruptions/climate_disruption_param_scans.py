@@ -75,7 +75,6 @@ class ClimateDisruptionScenario(BaseScenario):
         self.pop_size = 100_000
         self.runs_per_draw = 5
         self.YEAR_OF_CHANGE = YEAR_OF_CHANGE
-        self._scenarios = self._get_scenarios()
         self._parameter_grid = parameter_grid
         self.number_of_draws = len(self._parameter_grid)
 
@@ -86,11 +85,9 @@ class ClimateDisruptionScenario(BaseScenario):
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
-                "tlo.methods.demography.detail": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.population": logging.INFO,
-                "tlo.methods.enhanced_lifestyle": logging.INFO,
             },
         }
 
@@ -102,34 +99,6 @@ class ClimateDisruptionScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return self._parameter_grid[draw_number]
 
-    def _get_scenarios(self) -> Dict[str, Dict]:
-        return {
-            "All": self._scenario_all_climate(),
-        }
-
-    def _scenario_all_climate(self) -> Dict:
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {
-                "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-                    "max_healthsystem_function": [False, False],
-                    "max_healthcare_seeking": [False, False],
-                    "year_of_switch": self.YEAR_OF_CHANGE,
-                },
-                "Malaria": {
-                    "type_of_scaleup": "max",
-                    "scaleup_start_year": self.YEAR_OF_CHANGE,
-                },
-                "Tb": {
-                    "type_of_scaleup": "max",
-                    "scaleup_start_year": self.YEAR_OF_CHANGE,
-                },
-                "Hiv": {
-                    "type_of_scaleup": "max",
-                    "scaleup_start_year": self.YEAR_OF_CHANGE,
-                },
-            },
-        )
 
 
 if __name__ == "__main__":

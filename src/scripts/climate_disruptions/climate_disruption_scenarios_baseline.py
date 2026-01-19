@@ -22,7 +22,7 @@ full_grid = make_cartesian_parameter_grid(
             "scale_factor_appointment_urgency": [float(2)],
             "scale_factor_severity_disruption_and_delay": [float(2)],
             "mode_appt_constraints": [1],
-            "mode_appt_constraints_postSwitch": [2],
+            "mode_appt_constraints_postSwitch": [1],
             "cons_availability": ["default"],
             "cons_availability_postSwitch": ["default"],
             "year_cons_availability_switch": [YEAR_OF_CHANGE],
@@ -37,7 +37,7 @@ full_grid = make_cartesian_parameter_grid(
             "climate_model_ensemble_model": ["mean"],
             "year_effective_climate_disruptions": [2025],
             "prop_supply_side_disruptions": [0.5], # moot in mode 1
-            "services_affected_precip": ["none", "none"],#, "all"], # none nullifies all other climate impacts
+            "services_affected_precip": ["none", "all"], # none nullifies all other climate impacts
             "tclose_overwrite": [1000],
         }
     }
@@ -49,9 +49,9 @@ class ClimateDisruptionScenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2027, 1, 12)
-        self.pop_size = 1000
-        self.runs_per_draw = 10
+        self.end_date = Date(2041, 1, 12)
+        self.pop_size = 100_000
+        self.runs_per_draw = 5
         self.YEAR_OF_CHANGE = 2025
         self._parameter_grid = full_grid
         self.number_of_draws = 1
@@ -76,7 +76,7 @@ class ClimateDisruptionScenario(BaseScenario):
         return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
-        return self._parameter_grid[1]
+        return self._parameter_grid
 
 if __name__ == "__main__":
     from tlo.cli import scenario_run

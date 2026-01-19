@@ -9,38 +9,36 @@
   "draws": [
     {
       "draw_number": 0,
-      "parameters": [
-        {
-          "HealthSystem": {
-            "scale_factor_reseeking_healthcare_post_disruption": 2.0,
-            "scale_factor_prob_disruption": 2.0,
-            "delay_in_seeking_care_weather": 60.0,
-            "scale_factor_appointment_urgency": 2.0,
-            "scale_factor_severity_disruption_and_delay": 2.0,
-            "mode_appt_constraints": 1,
-            "mode_appt_constraints_postSwitch": 2,
-            "cons_availability": "default",
-            "cons_availability_postSwitch": "default",
-            "year_cons_availability_switch": 2025,
-            "beds_availability": "default",
-            "equip_availability": "default",
-            "equip_availability_postSwitch": "default",
-            "year_equip_availability_switch": 2025,
-            "use_funded_or_actual_staffing": "actual",
-            "scale_to_effective_capabilities": false,
-            "policy_name": "Naive",
-            "climate_ssp": "ssp245",
-            "climate_model_ensemble_model": "mean",
-            "year_effective_climate_disruptions": 2025,
-            "prop_supply_side_disruptions": 0.5,
-            "services_affected_precip": "none",
-            "tclose_overwrite": 1000
-          }
+      "parameters": {
+        "HealthSystem": {
+          "scale_factor_reseeking_healthcare_post_disruption": 2.0,
+          "scale_factor_prob_disruption": 2.0,
+          "delay_in_seeking_care_weather": 60.0,
+          "scale_factor_appointment_urgency": 2.0,
+          "scale_factor_severity_disruption_and_delay": 2.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 2,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+          "prop_supply_side_disruptions": 0.5,
+          "services_affected_precip": "none",
+          "tclose_overwrite": 1000
         }
-      ],
+      },
       "draw_name": "0"
     }
   ],
-  "commit": "2a8a2111ec4502f009fbea20c3ff0678489e683a",
-  "github": "https://github.com/UCL/TLOmodel/tree/2a8a2111ec4502f009fbea20c3ff0678489e683a"
+  "commit": "65452683a99d40dada3e5a894846f07813864332",
+  "github": "https://github.com/UCL/TLOmodel/tree/65452683a99d40dada3e5a894846f07813864332"
 }
