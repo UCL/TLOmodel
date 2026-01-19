@@ -286,7 +286,8 @@ def upper_convex_frontier_from_dict(points_by_draw, include_collinear=False, tol
     for d, c, v in dedup:
         p = (c, v, d)
         while len(hull) >= 2:
-            o = hull[-2]; a = hull[-1] # These the the two previous points on the hull
+            o = hull[-2]
+            a = hull[-1] # These the the two previous points on the hull
             z = cross((o[0], o[1]), (a[0], a[1]), (c, v))
             # For the UPPER hull we keep clockwise turns (z < 0).
             # If z > 0 (concave) or (we don't include collinear and it is collinear), pop.
@@ -1522,7 +1523,7 @@ for rates in alternative_discount_rates:
     for key in roi_at_0_implementation_cost_for_figure.index
     ]
 
-    name_of_plot = f'ROI assuming zero above service-level costs'
+    name_of_plot = 'ROI assuming zero above service-level costs'
     fig, ax = do_standard_bar_plot_with_ci(
         (roi_at_0_implementation_cost_for_figure),
         annotations=[
@@ -1549,7 +1550,7 @@ for rates in alternative_discount_rates:
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
     plt.close(fig)
 
-    name_of_plot = f'ROI assuming non-zero above service-level costs'
+    name_of_plot = 'ROI assuming non-zero above service-level costs'
     fig, ax = do_standard_bar_plot_with_ci(
         (roi_at_upper_limit_implementation_cost_for_figure),
         annotations=[

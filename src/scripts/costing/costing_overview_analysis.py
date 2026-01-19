@@ -717,9 +717,9 @@ for figure_column in ['Actual', 'Improved consumable availability']:
                 cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
     # Customize the plot
-    plt.title(f'')
+    plt.title('')
     plt.xlabel('Facility Level')
-    plt.ylabel(f'Disease/Public Health Programme')
+    plt.ylabel('Disease/Public Health Programme')
     plt.xticks(rotation=90)
     plt.yticks(rotation=0)
 
