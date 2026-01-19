@@ -5,7 +5,7 @@
     "--suspend-date",
     "2015-06-01"
   ],
-  "runs_per_draw": 1,
+  "runs_per_draw": 10,
   "draws": [
     {
       "draw_number": 0,
@@ -27,6 +27,6 @@
       "draw_name": "0"
     }
   ],
-  "commit": "44f9a431a027b68d7d705859a8b9ad67ce7c3c87",
-  "github": "https://github.com/UCL/TLOmodel/tree/44f9a431a027b68d7d705859a8b9ad67ce7c3c87"
+  "commit": "bad1c5ec6ce12c9afc102b1171d072b6a8c588e5",
+  "github": "https://github.com/UCL/TLOmodel/tree/bad1c5ec6ce12c9afc102b1171d072b6a8c588e5"
 }
