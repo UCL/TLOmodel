@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, List, Literal, Optional, Union
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, Predictor
 from tlo.methods import Metadata
@@ -55,7 +56,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
-        Metadata.USES_SYMPTOMMANAGER
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -75,11 +77,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         'irs_district': Parameter(
             Types.REAL, 'data frame of IRS usage rates by district'
         ),
-        'sev_symp_prob': Parameter(
-            Types.REAL, 'probabilities of each symptom for severe malaria cases'
-        ),
         'sensitivity_rdt': Parameter(Types.REAL, 'Sensitivity of rdt'),
-        'cfr': Parameter(Types.REAL, 'case-fatality rate for severe malaria'),
+        'cfr_severe_malaria': Parameter(Types.REAL, 'case-fatality rate for severe malaria'),
         'dur_asym': Parameter(Types.REAL, 'duration (days) of asymptomatic malaria'),
         'dur_clin': Parameter(
             Types.REAL, 'duration (days) of clinical symptoms of malaria'
@@ -93,9 +92,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         'p_sev_anaemia_preg': Parameter(
             Types.REAL,
             'probability of severe anaemia in pregnant women with clinical malaria',
-        ),
-        'itn_proj': Parameter(
-            Types.REAL, 'coverage of ITN for projections 2020 onwards'
         ),
         'mortality_adjust': Parameter(
             Types.REAL, 'adjustment of case-fatality rate to match WHO/MAP'
@@ -116,7 +112,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'probability that a malaria case will have a scheduled rdt'
         ),
         'itn': Parameter(
-            Types.REAL, 'projected future itn coverage'
+            Types.REAL, 'projected future itn coverage after data end'
         ),
         'rdt_testing_rates': Parameter(
             Types.REAL,
@@ -186,6 +182,77 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         "scaleup_parameters": Parameter(
             Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
+        ),
+        'temp_max_itn_coverage': Parameter(
+            Types.REAL, 'Temp maximum ITN coverage allowed; To reduce the lookup table file size,'
+                        ' the malaria team has cut off the entries at this point as coverage of bednets '
+                        'above this value was highly unlikely '
+        ),
+        'max_age_incidence_data': Parameter(
+            Types.INT, 'maximum age for which incidence data is available'
+        ),
+        'max_year_rdt_data': Parameter(
+            Types.INT, 'maximum year for RDT testing data'
+        ),
+        'symptom_onset_delay_days': Parameter(
+            Types.INT, 'delay in days from infection to symptom onset'
+        ),
+        'death_delay_min_days': Parameter(
+            Types.INT, 'minimum delay in days from symptom onset to death'
+        ),
+        'death_delay_max_days': Parameter(
+            Types.INT, 'maximum delay in days from symptom onset to death'
+        ),
+        'rdt_followup_days': Parameter(
+            Types.INT, 'days for RDT followup'
+        ),
+        'clinical_treatment_duration_days': Parameter(
+            Types.INT, 'duration in days for clinical malaria treatment'
+        ),
+        'severe_clinical_treatment_duration_days': Parameter(
+            Types.INT, 'duration in days for severe malaria treatment'
+        ),
+        'self_cure_duration_days': Parameter(
+            Types.INT, 'days for self-cure of untreated malaria'
+        ),
+        'rdt_scheduling_retry_days': Parameter(
+            Types.INT, 'Days to retry RDT scheduling if not received'
+        ),
+        'rdt_scheduling_delay_days': Parameter(
+            Types.INT, 'Days to delay RDT scheduling'
+        ),
+        'rdt_scheduling_min_delay_days': Parameter(
+            Types.INT, 'minimum delay in days for RDT scheduling'
+        ),
+        'rdt_scheduling_max_delay_days': Parameter(
+            Types.INT, 'maximum delay in days for RDT scheduling'
+        ),
+        'polling_frequency_months': Parameter(
+            Types.INT, 'frequency in months for polling events'
+        ),
+        'MalariaParasiteClearanceEvent_frequency_days': Parameter(
+            Types.REAL, 'frequency in days for parasite clearance events'
+        ),
+        'MalariaUpdateEvent_frequency_days': Parameter(
+            Types.INT, 'frequency in days for MalariaUpdateEvent'
+        ),
+        'MalariaPollingEventDistrict_frequency_months': Parameter(
+            Types.INT, 'frequency in months for MalariaPollingEventDistrict'
+        ),
+        'MalariaIPTp_frequency_months': Parameter(
+            Types.REAL, 'frequency in days for MalariaIPTp'
+        ),
+        'MalariaPollingEventDistrict_delay_days': Parameter(
+            Types.INT, 'delay in days for MalariaPollingEventDistrict'
+        ),
+        'MalariaUpdateEvent_delay_days': Parameter(
+            Types.INT, 'delay in days for MalariaUpdateEvent'
+        ),
+        'MalariaParasiteClearanceEvent_delay_months': Parameter(
+            Types.INT, 'delay in months for MalariaParasiteClearanceEvent'
+        ),
+        'MalariaIPTp_delay_days': Parameter(
+            Types.REAL, 'delay in days for MalariaIPTp'
         )
     }
 
@@ -237,8 +304,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p['itn_district'] = workbook['MAP_ITNrates']
         p['irs_district'] = workbook['MAP_IRSrates']
 
-        p['sev_symp_prob'] = workbook['severe_symptoms']
-        p['rdt_testing_rates'] = workbook['WHO_TestData2023']
+        # TEMP FIX: Filter out param_label column from WHO_TestData2023 for consistency in df updating
+        p['rdt_testing_rates'] = workbook['WHO_TestData2023'].drop(columns=['param_label'], errors='ignore')
         p['highrisk_districts'] = workbook['highrisk_districts']
 
         inf_inc_sheet = pd.read_csv(resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
@@ -248,27 +315,28 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         # load parameters for scale-up projections
         p['scaleup_parameters'] = workbook["scaleup_parameters"]
 
-        # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
+        # check itn projected values are <=temp_max_itn_coverage and rounded to 1dp for matching to incidence tables
         p['itn'] = round(p['itn'], 1)
-        assert (p['itn'] <= 0.7)
+        assert (p['itn'] <= p['temp_max_itn_coverage'])
 
         # ===============================================================================
         # single dataframe for itn and irs district/year data; set index for fast lookup
         # ===============================================================================
         itn_curr = p['itn_district']
-        itn_curr.rename(columns={'itn_rates': 'itn_rate'}, inplace=True)
+        itn_curr.rename(columns={'value': 'itn_rate'}, inplace=True)
         itn_curr['itn_rate'] = itn_curr['itn_rate'].round(decimals=1)
-        # maximum itn is 0.7; see comment https://github.com/UCL/TLOmodel/pull/165#issuecomment-699625290
-        itn_curr.loc[itn_curr.itn_rate > 0.7, 'itn_rate'] = 0.7
-        itn_curr = itn_curr.set_index(['District', 'Year'])
+        # temp_max_itn_coverage is currently set to 0.7; see comment https://github.com/UCL/TLOmodel/pull/165#issuecomment-699625290
+        itn_curr.loc[itn_curr.itn_rate > p['temp_max_itn_coverage'], 'itn_rate'] = p['temp_max_itn_coverage']
+        # Keep only required columns before setting index
+        itn_curr = itn_curr[['District', 'Year', 'itn_rate']].set_index(['District', 'Year'])
 
         irs_curr = p['irs_district']
-        irs_curr.rename(columns={'irs_rates': 'irs_rate'}, inplace=True)
-        irs_curr.drop(['Region'], axis=1, inplace=True)
+        irs_curr.rename(columns={'value': 'irs_rate'}, inplace=True)
         irs_curr['irs_rate'] = irs_curr['irs_rate'].round(decimals=1)
         irs_curr.loc[irs_curr.irs_rate > p['irs_rates_boundary'], 'irs_rate'] = p['irs_rates_upper']
         irs_curr.loc[irs_curr.irs_rate <= p['irs_rates_boundary'], 'irs_rate'] = p['irs_rates_lower']
-        irs_curr = irs_curr.set_index(['District', 'Year'])
+        # Keep only required columns before setting index
+        irs_curr = irs_curr[['District', 'Year', 'irs_rate']].set_index(['District', 'Year'])
 
         itn_irs = pd.concat([itn_curr, irs_curr], axis=1)
 
@@ -444,8 +512,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
             return selected
 
-        # we don't have incidence data for over 80s
-        alive = df.is_alive & (df.age_years < 80)
+        # we don't have incidence data for over max_age_incidence_data
+        alive = df.is_alive & (df.age_years < p['max_age_incidence_data'])
 
         alive_over_one = alive & (df.age_exact_years >= 1)
         df.loc[alive & df.age_exact_years.between(0, 0.5), 'ma_age_edited'] = 0.0
@@ -492,8 +560,10 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         assert (df.loc[all_new_infections, 'ma_date_infected'] >= self.sim.date).all()
 
         # assign date of symptom onset
-        df.loc[new_clinical, 'ma_date_symptoms'] = df.loc[new_clinical, 'ma_date_infected'] + DateOffset(days=7)
-        df.loc[new_severe, 'ma_date_symptoms'] = df.loc[new_severe, 'ma_date_infected'] + DateOffset(days=7)
+        df.loc[new_clinical, 'ma_date_symptoms'] = (df.loc[new_clinical, 'ma_date_infected'] +
+                                                    DateOffset(days=p['symptom_onset_delay_days']))
+        df.loc[new_severe, 'ma_date_symptoms'] = (df.loc[new_severe, 'ma_date_infected'] +
+                                                    DateOffset(days=p['symptom_onset_delay_days']))
 
         # ----------------------------------- CLINICAL MALARIA SYMPTOMS -----------------------------------
 
@@ -508,14 +578,15 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
         # the cfr applies to all severe malaria
         random_draw = rng.random_sample(size=len(new_severe))
-        death = df.index[new_severe][random_draw < (p['cfr'] * p['mortality_adjust'])]
+        death = df.index[new_severe][random_draw < (p['cfr_severe_malaria'] * p['mortality_adjust'])]
 
         for person in death:
             logger.debug(key='message',
                          data=f'MalariaEvent: scheduling malaria death for person {person}')
 
-            # death occurs 1-7 days after symptom onset
-            date_death = df.at[person, 'ma_date_symptoms'] + DateOffset(days=rng.randint(low=1, high=7))
+            # death occurs death_delay_min_days to death_delay_max_days after symptom onset
+            death_delay_days = rng.randint(low=p['death_delay_min_days'], high=p['death_delay_max_days'])
+            date_death = df.at[person, 'ma_date_symptoms'] + DateOffset(days=death_delay_days)
 
             death_event = MalariaDeathEvent(
                 self, person_id=person, cause='Malaria'
@@ -536,7 +607,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
         # extract annual testing rates from NMCP reports
         # this is the # rdts issued divided by population size
-        year = self.sim.date.year if self.sim.date.year <= 2024 else 2024
+        year = self.sim.date.year if self.sim.date.year <= p['max_year_rdt_data'] else p['max_year_rdt_data']
 
         test_rates = (
             p['rdt_testing_rates'].set_index('Year')['Rate_rdt_testing'].dropna()
@@ -559,7 +630,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
                 hsi_event=HSI_Malaria_rdt_community(person_id=person_id, module=self),
                 priority=1,
                 topen=date_test,
-                tclose=date_test + pd.DateOffset(days=7),
+                tclose=date_test + pd.DateOffset(days=p['rdt_followup_days']),
             )
 
     def initialise_simulation(self, sim):
@@ -570,14 +641,19 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         """
 
         # 1) ----------------------------------- REGULAR EVENTS -----------------------------------
+        params = self.parameters
+        sim.schedule_event(MalariaPollingEventDistrict(self), sim.date +
+                           DateOffset(days=params['MalariaPollingEventDistrict_delay_days']))
 
-        sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(MalariaUpdateEvent(self), sim.date +
+                           DateOffset(days=params['MalariaUpdateEvent_delay_days']))
 
-        sim.schedule_event(MalariaUpdateEvent(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date +
+                           DateOffset(months=params['MalariaParasiteClearanceEvent_delay_months']))
 
         if 'CareOfWomenDuringPregnancy' not in self.sim.modules:
-            sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
+            sim.schedule_event(MalariaIPTp(self), sim.date +
+                               DateOffset(days=params['MalariaIPTp_delay_days']))
 
         # add logger events
         sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -648,9 +724,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         scaled_params_workbook = p["scaleup_parameters"]
 
         if p['type_of_scaleup'] == 'target':
-            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+            scaled_params = scaled_params_workbook.set_index('parameter_name')['value'].to_dict()
         else:
-            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+            scaled_params = scaled_params_workbook.set_index('parameter_name')['prior_max'].to_dict()
 
         # scale-up malaria program
         # increase testing
@@ -739,6 +815,12 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         health_values.name = 'Malaria'  # label the cause of this disability
 
         return health_values.loc[df.is_alive]  # returns the series
+
+    def report_summary_stats(self):
+        # This reports age- and sex-specific prevalence of malaria for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'ma_inf_type', ('clinical', 'severe'))
+        return {'number_with_malaria_inf_by_type': number_by_age_group_sex}
 
     def check_if_fever_is_caused_by_malaria(
         self,
@@ -876,7 +958,8 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(
+            months=module.parameters['MalariaPollingEventDistrict_frequency_months']))
 
     def apply(self, population):
         logger.debug(key='message', data='MalariaEvent: tracking the disease progression of the population')
@@ -909,7 +992,7 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=module.parameters['MalariaIPTp_frequency_months']))
 
     def apply(self, population):
         df = population.props
@@ -1036,6 +1119,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
+        params = self.module.parameters
         hs = self.sim.modules['HealthSystem']
 
         # Ignore this event if the person is no longer alive or already on treatment
@@ -1103,7 +1187,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
             # repeat appt for rdt and move to level 1b regardless of current facility level
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Malaria_rdt(person_id=person_id, module=self.module, facility_level='1b'),
-                topen=self.sim.date + pd.DateOffset(days=1),
+                topen=self.sim.date + pd.DateOffset(days=params['rdt_scheduling_retry_days']),
                 tclose=None,
                 priority=0,
             )
@@ -1164,7 +1248,7 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
                 hsi_event=HSI_Malaria_rdt(person_id=person_id, module=self.module, facility_level='1a'),
                 priority=1,
                 topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(days=1),
+                tclose=self.sim.date + pd.DateOffset(days=self.module.parameters['rdt_scheduling_delay_days']),
             )
 
 
@@ -1406,7 +1490,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------
 class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(days=1))
+        super().__init__(module, frequency=DateOffset(days=module.parameters['MalariaUpdateEvent_frequency_days']))
 
     def apply(self, population):
         """
@@ -1487,29 +1571,29 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Malaria_rdt(self.module, person_id=idx, facility_level='1a'),
                 priority=1,
-                topen=random_date(now + DateOffset(days=1),
-                                  now + DateOffset(days=4),
+                topen=random_date(now + DateOffset(days=p['rdt_scheduling_min_delay_days']),
+                                  now + DateOffset(days=p['rdt_scheduling_max_delay_days']),
                                   self.module.rng),
                 tclose=None
             )
 
         # TREATED
-        # select people with clinical malaria and treatment for at least 5 days
+        # select people with clinical malaria and treatment for at least clinical_treatment_duration_days
         # if treated, will clear symptoms and parasitaemia
         # this will also clear parasitaemia for asymptomatic cases picked up by routine rdt
         random_draw = self.module.rng.random_sample(size=len(df))
 
         clinical_and_treated = df.index[
             df.is_alive
-            & (df.ma_date_tx < (self.sim.date - DateOffset(days=5)))
+            & (df.ma_date_tx < (self.sim.date - DateOffset(days=p['clinical_treatment_duration_days'])))
             & (df.ma_inf_type == 'clinical')
             & (random_draw < p['prob_of_treatment_success'])
         ]
 
-        # select people with severe malaria and treatment for at least 7 days
+        # select people with severe malaria and treatment for at least severe_clinical_treatment_duration_days
         severe_and_treated = df.index[
             df.is_alive
-            & (df.ma_date_tx < (self.sim.date - DateOffset(days=7)))
+            & (df.ma_date_tx < (self.sim.date - DateOffset(days=p['severe_clinical_treatment_duration_days'])))
             & (df.ma_inf_type == 'severe')
             & (random_draw < p['prob_of_treatment_success'])
         ]
@@ -1527,12 +1611,12 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[infections_to_clear, 'ma_inf_type'] = 'none'
 
         # UNTREATED or TREATMENT FAILURE
-        # if not treated or treatment failed, self-cure occurs after 6 days of symptoms
+        # if not treated or treatment failed, self-cure occurs after self_cure_duration_days of symptoms
         # but parasites remain in blood
         clinical_not_treated = df.index[
             df.is_alive
             & (df.ma_inf_type == 'clinical')
-            & (df.ma_date_symptoms < (self.sim.date - DateOffset(days=6)))
+            & (df.ma_date_symptoms < (self.sim.date - DateOffset(days=p['self_cure_duration_days'])))
         ]
 
         self.sim.modules['SymptomManager'].clear_symptoms(
@@ -1545,7 +1629,8 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
 class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(days=30.5))
+        super().__init__(module, frequency=DateOffset(
+            days=module.parameters['MalariaParasiteClearanceEvent_frequency_days']))
 
     def apply(self, population):
         logger.debug(key='message', data='MalariaParasiteClearanceEvent: parasite clearance for malaria cases')

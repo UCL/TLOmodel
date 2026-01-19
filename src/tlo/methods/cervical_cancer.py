@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -44,7 +45,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -750,6 +752,17 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             ] = self.daly_wts['stage4_palliative_care']
 
         return disability_series_for_alive_persons
+
+    def report_summary_stats(self):
+        df = self.sim.population.props
+        number_by_age_group_sex = (
+            get_counts_by_sex_and_age_group(df,
+                                            'ce_hpv_cc_status',
+                                            ("cin1", "cin2", "cin3",
+                                             "stage1","stage2a", "stage2b", "stage3", "stage4")
+                                            )
+        )
+        return {'number_at_any_stage': number_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,
