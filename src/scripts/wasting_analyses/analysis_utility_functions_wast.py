@@ -5,8 +5,9 @@ heatmaps_cons_wast.py.
 """
 
 import logging
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -33,6 +34,18 @@ scenario_label_map = {
     "CS_FS": "Care-Seeking and\nFood Supplements",
     "GM_CS_FS": "Growth Monitoring and\nCare-Seeking and\nFood Supplements",
 }
+
+def round_standard(val, decimals=0):
+    # Convert to string first to avoid floating point precision issues
+    d = Decimal(str(val))
+    if decimals == 0:
+        res = d.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+        return int(res)
+    else:
+        # Creates a precision like Decimal('0.1') or Decimal('0.01')
+        precision = Decimal('10') ** -decimals
+        res = d.quantize(precision, rounding=ROUND_HALF_UP)
+    return float(res)
 
 def get_scenario_label(scen_abbr: str) -> str:
     """Return display label for a scenario code; fall back to code if unknown."""
@@ -1357,7 +1370,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     all_costs_df.to_pickle(output_all_costs_file_path)
 
                 # Cost-effectiveness threshold (CET) = willingness to pay
-                CET = 75.9
+                CET = 76
 
                 # PLOT cost-effectiveness plane
                 # #####
@@ -1379,19 +1392,86 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     )
                 # add SQ point
                 ax_ce.plot(0, 0, marker="o", color=get_scen_colour('SQ'))
-                # define domination for scenarios and position of label in plot
+
+                # Create frontier and icer_domination labels for the points for all scenarios
+                # -----
+                # 1. Initialize
+                final_frontier = []
+                domination = {}
+                icer_domination = {}
+
+                # 2. Create a mapping dictionary for costs
+                map_cost = all_costs_df.set_index("scenario")["total_cost"].to_dict()
+
+                # 3. Sort by total_cost
+                all_costs_df_sorted = all_costs_df.sort_values("total_cost").reset_index(drop=True)
+
+                # Helper function to calculate ICER
+                def get_icer(s1, s2):
+                    cost1 = map_cost[s1]
+                    cost2 = map_cost[s2]
+                    daly1 = in_averted_DALYs[s1][0] if s1 != 'SQ' else 0
+                    daly2 = in_averted_DALYs[s2][0] if s2 != 'SQ' else 0
+                    # Handle division by zero if DALYs are identical
+                    if (daly2 - daly1) == 0:
+                        return float("inf")
+                    return (cost2 - cost1) / (daly2 - daly1)
+
+                # 3. First pass: Identify simple Domination
+                temp_frontier = []
+                max_dalys = -float("inf")
+
+                for i, row in all_costs_df_sorted.iterrows():
+                    s = row["scenario"]
+                    current_dalys = in_averted_DALYs[s][0] if s != 'SQ' else 0
+                    if current_dalys > max_dalys:
+                        temp_frontier.append(s)
+                        max_dalys = current_dalys
+                        domination[s] = ""
+                    else:
+                        domination[s] = "dominated"
+                        icer_domination[s] = "dominated"
+
+                # 4. Second pass: Identify Extended Domination and calculate ICERs
+                for s_next in temp_frontier:
+                    while len(final_frontier) >= 2:
+                        s_prev = final_frontier[-2]
+                        s_curr = final_frontier[-1]
+
+                        icer1 = get_icer(s_prev, s_curr)
+                        icer2 = get_icer(s_curr, s_next)
+
+                        if icer1 > icer2:
+                            # s_curr is extendedly dominated
+                            domination[s_curr] = "extendedly dominated"
+                            icer_domination[s_curr] = "extendedly dominated"
+                            final_frontier.pop()
+                        else:
+                            break
+                    final_frontier.append(s_next)
+
+                # 5. Populate ICER_domination for the final frontier with conditional rounding
+                for i in range(len(final_frontier)):
+                    current_scen = final_frontier[i]
+                    if i == 0:
+                        icer_domination[current_scen] = ""
+                    else:
+                        prev_scen = final_frontier[i - 1]
+                        val = get_icer(prev_scen, current_scen)
+
+                        # Check if the ICER is within +/- 1 unit of the CET
+                        if abs(val - CET) < 1:
+                            # Round to 1 decimal place if very close to CET
+                            rounded = round_standard(val, decimals=1)
+                            icer_domination[current_scen] = f"\\${rounded:.1f}"
+                        else:
+                            # Round to 0 decimal places otherwise
+                            rounded = round_standard(val, decimals=0)
+                            icer_domination[current_scen] = f"\\${rounded:.0f}"
+
+                # 6. Define position of label in plot
                 if in_data_impl_cost_name == 'Pearson_etal2018':
-                    space = 0.012 * all_costs_df.loc[all_costs_df["scenario"] == "FS", "total_cost"].values[0]
-                    domination = {
-                        "SQ": "",
-                        "GM": "dominated",
-                        "CS": "",
-                        "FS": "dominated",
-                        "GM_FS": "dominated",
-                        "CS_FS": "",
-                        "GM_CS_FS": "",
-                        "GM_CS": "extendedly dominated",
-                    }
+                    space = 0.012 * map_cost['FS']
                     ha_scen = {
                         "SQ": "left",
                         "GM": "center",
@@ -1414,30 +1494,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     }  # ['bottom', 'top', 'bottom']
 
                 elif in_data_impl_cost_name == 'Margolies_etal2021':
-                    space = 0.024 * all_costs_df.loc[all_costs_df["scenario"] == "FS", "total_cost"].values[0]
-                    # domination
-                    if in_FS_multiplier > 0.7 or (in_FS_multiplier > 0.4 and in_sharing_GM_CS > 0.25):
-                        domination = {
-                            "SQ": "",
-                            "GM": "dominated",
-                            "CS": "extendedly dominated",
-                            "FS": "",
-                            "GM_FS": "dominated",
-                            "CS_FS": "",
-                            "GM_CS_FS": "",
-                            "GM_CS": "extendedly dominated",
-                        }
-                    else:
-                        domination = {
-                            "SQ": "",
-                            "GM": "dominated",
-                            "CS": "extendedly dominated",
-                            "FS": "",
-                            "GM_FS": "dominated",
-                            "CS_FS": "",
-                            "GM_CS_FS": "",
-                            "GM_CS": "dominated",
-                        }
+                    space = 0.024 * map_cost['FS']
                     # positions of the labels
                     if in_FS_multiplier > 0.4:
                         ha_scen = {
@@ -1481,42 +1538,20 @@ def plot_sum_outcome_and_CIs_intervention_period(
                             "GM_CS_FS": "bottom",
                             "GM_CS": "bottom",
                         }  # ['bottom', 'top', 'bottom']
-                # print("\nICER:")
 
-                # Identify scenarios on Frontier
-                scen_frontier = [scen for scen, dom in domination.items() if dom == ""]
-                # Order them by total costs
-                cost_map = all_costs_df.set_index('scenario')['total_cost'].to_dict()
-                scen_frontier_ordered = sorted(scen_frontier, key=lambda s: cost_map.get(s, float('inf')))
-                print(f"\nscen_frontier_ordered: {scen_frontier_ordered}")
-                ICER = {}
-                for i, scen in enumerate(scen_frontier_ordered):
-                    if i == 0:
-                        ICER[scen] = ""
-                        continue
-                    prev = scen_frontier_ordered[i - 1]
-                    cost_curr = cost_map.get(scen, float("nan"))
-                    cost_prev = cost_map.get(prev, float("nan"))
-                    daly_curr = in_averted_DALYs[scen][0]
-                    daly_prev = in_averted_DALYs[prev][0] if prev != 'SQ' else 0
-                    ICER[scen] = f"${round((cost_curr - cost_prev) / (daly_curr - daly_prev), 1)}"
-                print(f"\nICER: {ICER}")
-                ICER_domination = {}
-                for scen in all_costs_df['scenario']:
-                    ICER_domination[scen] = ICER[scen] if domination[scen] == "" else domination[scen]
-                print(f"\nICER_domination: {ICER_domination}")
+                # 7. Add the labels to scenario points
                 for scen in all_costs_df['scenario']:
                     ax_ce.text(
                         in_averted_DALYs[scen][0] if scen != 'SQ' else 0,
-                        (cost_map.get(scen, float("nan")) + (space * 0.8)) if va_scen[scen] == "bottom"
-                        else (cost_map.get(scen, float("nan")) - space),
-                        ICER_domination[scen],
+                        (map_cost[scen] + (space * 0.8)) if va_scen[scen] == "bottom"
+                        else (map_cost[scen] - space),
+                        icer_domination[scen],
                         fontsize=12, ha=ha_scen[scen], va=va_scen[scen], color=get_scen_colour(scen),
                     )
 
                 # Add cost-effectiveness frontier (dotted line connecting non-dominated scenarios)
-                frontier_x = [in_averted_DALYs[scen][0] if scen != 'SQ' else 0 for scen in scen_frontier_ordered]
-                frontier_y = [cost_map.get(scen, float("nan")) for scen in scen_frontier_ordered]
+                frontier_x = [in_averted_DALYs[scen][0] if scen != 'SQ' else 0 for scen in final_frontier]
+                frontier_y = [map_cost[scen] for scen in final_frontier]
                 ax_ce.plot(
                     frontier_x,
                     frontier_y,
@@ -1539,16 +1574,16 @@ def plot_sum_outcome_and_CIs_intervention_period(
                 #     pad=12,
                 # )
 
-                # Add dashed black line for 1 DALY averted per CET
-                y_vals = np.array(ax_ce.get_ylim())
-                x_vals = y_vals / CET
-                # x_vals = np.array(ax_ce.get_xlim())
-                # y_vals = x_vals * CET
-                ax_ce.plot(x_vals, y_vals, color="black", linestyle="--")
-                ax_ce.text(
-                    x_vals[-1] + 10, y_vals[-1] + 1e6, f"ICER = ${CET}/DALY",
-                    color="black", fontsize=9, ha="left", va="top",
-                )
+                # # Add dashed black line for 1 DALY averted per CET
+                # y_vals = np.array(ax_ce.get_ylim())
+                # x_vals = y_vals / CET
+                # # x_vals = np.array(ax_ce.get_xlim())
+                # # y_vals = x_vals * CET
+                # ax_ce.plot(x_vals, y_vals, color="black", linestyle="--")
+                # ax_ce.text(
+                #     x_vals[-1] + 10, y_vals[-1] + 1e6, f"ICER = ${CET}/DALY",
+                #     color="black", fontsize=9, ha="left", va="top",
+                # )
 
                 # Add a legend box with scenario and CEF labels
                 # order legend labels by y (total_cost)
@@ -1639,7 +1674,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     {
                         "Scenario": list(averted_outcome.keys()),
                         f"Averted {outcome_type}": [
-                            f"{int(round(vals[0])):,} ({int(round(vals[1])):,}; {int(round(vals[2])):,})"
+                            f"{round_standard(vals[0]):,} ({round_standard(vals[1]):,}; {round_standard(vals[2]):,})"
                             for vals in averted_outcome.values()
                         ],
                     }
