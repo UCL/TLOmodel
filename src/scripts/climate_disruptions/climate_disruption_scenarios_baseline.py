@@ -31,7 +31,7 @@ full_grid = make_cartesian_parameter_grid(
             "equip_availability_postSwitch": ["default"],
             "year_equip_availability_switch": [YEAR_OF_CHANGE],
             "use_funded_or_actual_staffing": ["actual"],
-            "scale_to_effective_capabilities": [True],
+            "scale_to_effective_capabilities": [False],
             "policy_name": ["Naive"],
             "climate_ssp": ["ssp245"],
             "climate_model_ensemble_model": ["mean"],
