@@ -16,21 +16,21 @@ import pandas as pd
 import seaborn as sns
 
 from scripts.costing.cost_estimation import (
+    clean_consumable_name,
+    clean_equipment_name,
     create_summary_treemap_by_cost_subgroup,
     do_line_plot_of_cost,
     do_stacked_bar_plot_of_cost_by_category,
     estimate_input_cost_of_scenarios,
-    clean_consumable_name,
-    clean_equipment_name,
 )
 from tlo import Date
 from tlo.analysis.utils import (
+    compute_summary_statistics,
     extract_params,
+    extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    compute_summary_statistics,
-    extract_results
 )
 
 # Define a timestamp for script outputs

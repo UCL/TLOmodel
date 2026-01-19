@@ -18,6 +18,7 @@ from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
 
+
 class FullSystemCosting(BaseScenario):
 
     def __init__(self):

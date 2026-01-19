@@ -7,14 +7,14 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from tlo import Date
 
 from scripts.costing.cost_estimation import (
     do_stacked_bar_plot_of_cost_by_category,
     estimate_input_cost_of_scenarios,
     load_unit_cost_assumptions,
 )
-from tlo.analysis.utils import extract_results, get_scenario_outputs, compute_summary_statistics
+from tlo import Date
+from tlo.analysis.utils import compute_summary_statistics, extract_results, get_scenario_outputs
 from tlo.methods.healthsystem import get_item_code_from_item_name
 
 # Define a timestamp for script outputs

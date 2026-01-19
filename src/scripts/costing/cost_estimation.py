@@ -1,6 +1,7 @@
 import ast
 import itertools
 import math
+import re
 import textwrap
 from collections import defaultdict
 from itertools import cycle
@@ -12,7 +13,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import squarify
-import re
 
 from tlo import Date
 from tlo.analysis.utils import (

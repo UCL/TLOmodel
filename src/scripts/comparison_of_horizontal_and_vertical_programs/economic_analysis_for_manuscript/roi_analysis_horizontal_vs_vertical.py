@@ -9,7 +9,7 @@ import datetime
 import os
 import textwrap
 from pathlib import Path
-from typing import Optional, Literal
+from typing import Literal, Optional
 
 import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
