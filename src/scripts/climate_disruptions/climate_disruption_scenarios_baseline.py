@@ -33,7 +33,10 @@ full_grid = make_cartesian_parameter_grid(
             "prop_supply_side_disruptions": [0.5], # moot in mode 1
             "services_affected_precip": ["none", "all"], # none nullifies all other climate impacts
             "tclose_overwrite": [1000],
-        }
+        },
+        "SymptomManager": {
+            "spurious_symptoms": True,
+        },
     }
 )
 
