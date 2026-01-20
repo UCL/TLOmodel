@@ -46,7 +46,7 @@ class ClimateDisruptionScenario(BaseScenario):
         self.end_date = Date(2041, 1, 1)
         self.pop_size = 100_000
         self.runs_per_draw = 5
-        #self._parameter_grid = full_grid[0]
+        self._parameter_grid = full_grid[0]
         self.number_of_draws = 1
 
         #with open("selected_parameter_combinations_baseline.json", "w") as f:
@@ -54,7 +54,7 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "climate_test_memory_issue",
+            "filename": "test_memory_issue_w_param_grid",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
