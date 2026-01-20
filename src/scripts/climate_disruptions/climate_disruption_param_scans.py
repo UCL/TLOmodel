@@ -92,9 +92,7 @@ class ClimateDisruptionScenario(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel() + [
-            ImprovedHealthSystemAndCareSeekingScenarioSwitcher()
-        ]
+        return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
         return self._parameter_grid[draw_number]
