@@ -22,7 +22,7 @@ class LongRun(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)  # The simulation will stop before reaching this date.
-        self.pop_size = 10_000
+        self.pop_size = 100_000
         self.number_of_draws = 1
         self.runs_per_draw = 10
 
@@ -33,7 +33,7 @@ class LongRun(BaseScenario):
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
+                #'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
