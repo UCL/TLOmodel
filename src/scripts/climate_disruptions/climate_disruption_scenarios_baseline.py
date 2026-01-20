@@ -61,11 +61,12 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "climate_suspend_resume_base",
+            "filename": "climate_test_memory_issue",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
                 "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.population": logging.INFO,
@@ -76,7 +77,7 @@ class ClimateDisruptionScenario(BaseScenario):
         return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
-        return self._parameter_grid
+        return get_parameters_for_status_quo() #self._parameter_grid
 
 if __name__ == "__main__":
     from tlo.cli import scenario_run
