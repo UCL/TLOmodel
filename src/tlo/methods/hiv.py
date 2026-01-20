@@ -3434,7 +3434,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
     def never_ran(self, *args, **kwargs):
         """This is called if this HSI was never run.
         Default the person to being off PrEP"""
-        # todo check this property is correct not injectable
+
         self.sim.population.props.at[self.target, "hv_is_on_prep_oral"] = False
 
 
