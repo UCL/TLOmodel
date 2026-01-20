@@ -1,13 +1,7 @@
-import json
-import random
-from typing import Dict
-
-import numpy as np
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
+from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
 
 YEAR_OF_CHANGE = 2025
@@ -65,7 +59,7 @@ class ClimateDisruptionScenario(BaseScenario):
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
-                "tlo.methods.demography.detail": logging.WARNING,
+                #"tlo.methods.demography.detail": logging.WARNING,
                 "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.population": logging.INFO,
