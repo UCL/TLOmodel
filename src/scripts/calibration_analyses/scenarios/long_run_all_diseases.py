@@ -33,7 +33,7 @@ class LongRun(BaseScenario):
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
-                #'tlo.methods.demography.detail': logging.WARNING,
+                'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
