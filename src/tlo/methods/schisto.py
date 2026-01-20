@@ -26,15 +26,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# Definition of the age-groups used in the module, as a tuple of two integers (a,b) such that the given age group
-#  is in range a <= group <= b. i.e.,
-#     2 <= PSAC <= 4
-#     5 <= SAC <= 14
-#     15 <= Adults
-#     0 <= All
-_AGE_GROUPS = {'Infant': (0, 1), 'PSAC': (2, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
-
-
 class Schisto(Module, GenericFirstAppointmentsMixin):
     """Schistosomiasis module.
     Two species of worm that cause Schistosomiasis are modelled independently. Worms are acquired by persons via the
@@ -85,16 +76,34 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                          'infection with improved WASH'),
         'calibration_scenario': Parameter(Types.REAL,
                                           'Scenario used to reset parameters to run calibration sims'),
+        'urine_filtration_sensitivity_noneWB': Parameter(Types.REAL,
+                                                         'Sensitivity of urine filtration test for non-infected cases'),
         'urine_filtration_sensitivity_lowWB': Parameter(Types.REAL,
                                                         'Sensitivity of UF in detecting low WB'),
         'urine_filtration_sensitivity_moderateWB': Parameter(Types.REAL,
                                                              'Sensitivity of UF in detecting moderate WB'),
         'urine_filtration_sensitivity_heavyWB': Parameter(Types.REAL,
                                                          'Sensitivity of UF in detecting heavy WB'),
+        'urine_filtration_specificity_noneWB': Parameter(Types.REAL,
+                                                         'Specificity of urine filtration test'),
+        'urine_filtration_specificity_lowWB': Parameter(Types.REAL,
+                                                        'Specificity of UF in detecting low WB'),
+        'urine_filtration_specificity_moderateWB': Parameter(Types.REAL,
+                                                             'Specificity of UF in detecting moderate WB'),
+        'urine_filtration_specificity_heavyWB': Parameter(Types.REAL,
+                                                          'Specificity of UF in detecting heavy WB'),
+        'kato_katz_sensitivity_lowWB': Parameter(Types.REAL,
+                                                 'Sensitivity of Kato-Katz test for non-infected cases'),
         'kato_katz_sensitivity_moderateWB': Parameter(Types.REAL,
                                                       'Sensitivity of KK in detecting moderate WB'),
         'kato_katz_sensitivity_heavyWB': Parameter(Types.REAL,
-                                                  'Sensitivity of KK in detecting heavy WB'),
+                                                   'Sensitivity of KK in detecting heavy WB'),
+        'kato_katz_specificity_lowWB': Parameter(Types.REAL,
+                                                 'Sensitivity of Kato-Katz test for non-infected cases'),
+        'kato_katz_specificity_moderateWB': Parameter(Types.REAL,
+                                                      'Specificity of KK in detecting moderate WB'),
+        'kato_katz_specificity_heavyWB': Parameter(Types.REAL,
+                                                      'Specificity of KK in detecting moderate WB'),
         'scaleup_WASH': Parameter(Types.STRING,
                                   'Whether to scale-up WASH during simulation, pause fixes values at 2024 '
                                   'levels with no further improvement, continue allows historical trends to continue, '
@@ -134,12 +143,57 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                              'in historic rounds'),
+        'odds_ratio_health_seeking_children_schisto_low': Parameter(
+            Types.REAL, 'Odds ratio for health seeking in children with schisto low symptoms'),
+        'odds_ratio_health_seeking_adults_schisto_low': Parameter(
+            Types.REAL, 'Odds ratio for health seeking in adults with schisto low symptoms'),
+        'single_district_calibration_number': Parameter(Types.INT,
+                                                       'District number for single district calibration runs'),
+        'single_district_calibration_name': Parameter(Types.STRING,
+                                                        'District name for single district calibration runs'),
+        'single_district_calibration_region': Parameter(Types.STRING,
+                                                        'District region for single district calibration runs'),
+        'mda_schedule_month': Parameter(Types.INT,
+                                       'Month for scheduling MDA events'),
+        'mda_schedule_day': Parameter(Types.INT,
+                                     'Day for scheduling MDA events'),
+        'minimum_baseline_prevalence': Parameter(Types.REAL,
+                                                'Minimum baseline prevalence to prevent division by zero'),
+        'prevalence_lower_bound': Parameter(Types.REAL,
+                                           'Lower bound for prevalence clamping'),
+        'prevalence_upper_bound': Parameter(Types.REAL,
+                                           'Upper bound for prevalence clamping'),
+        'infant_min_age': Parameter(Types.INT, 'Minimum age for Infant group'),
+        'infant_max_age': Parameter(Types.INT, 'Maximum age for Infant group'),
+        'psac_min_age': Parameter(Types.INT, 'Minimum age for PSAC group'),
+        'psac_max_age': Parameter(Types.INT, 'Maximum age for PSAC group'),
+        'sac_min_age': Parameter(Types.INT, 'Minimum age for SAC group'),
+        'sac_max_age': Parameter(Types.INT, 'Maximum age for SAC group'),
+        'adults_min_age': Parameter(Types.INT, 'Minimum age for Adults group'),
+        'adults_max_age': Parameter(Types.INT, 'Maximum age for Adults group'),
+        'mda_execute': Parameter(Types.BOOL, 'Whether to execute MDA events'),
+        'single_district': Parameter(Types.BOOL, 'Whether to run simulation for a single district only'),
+        'main_polling_frequency': Parameter(Types.INT, 'Polling freq main schisto event in months'),
+        'worm_maturation_period_months': Parameter(Types.INT,
+            'Time in months for juvenile worms to mature into adult worms'),
+        'worm_death_check_frequency_years': Parameter(Types.INT,
+            'Frequency in years to check for worm deaths'),
+        'mda_appointment_window_months': Parameter(Types.INT,
+            'Time window in months for MDA appointment scheduling'),
+        'wash_scaleup_frequency_years': Parameter(Types.INT,
+            'Frequency in years to check and apply WASH scale-up'),
+        'recent_sanitation_window_years': Parameter(Types.INT,
+            'Time window in years to consider sanitation acquisition as recent'),
+        'avg_weight_psac_kg': Parameter(Types.REAL,
+            'Average weight in kg for PSAC age group for drug dosing'),
+        'avg_weight_sac_kg': Parameter(Types.REAL,
+            'Average weight in kg for SAC age group for drug dosing'),
+        'avg_weight_adult_kg': Parameter(Types.REAL,
+            'Average weight in kg for adults for drug dosing'),
     }
 
-    def __init__(self, name=None, mda_execute=True, single_district=False):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.mda_execute = mda_execute
-        self.single_district = single_district
 
         # Create pointer that will be to dict of disability weights
         self.disability_weights = None
@@ -163,12 +217,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # create future mda strategy
         self.prognosed_mda = None
 
-        # Age-group mapper
-        s = pd.Series(index=range(1 + 120), data='object')
-        for name, (low_limit, heavy_limit) in _AGE_GROUPS.items():
-            if name != 'All':
-                s.loc[(s.index >= low_limit) & (s.index <= heavy_limit)] = name
-        self.age_group_mapper = s.to_dict()
+        # Age-group mapper will be created in read_parameters after parameters are loaded
+        self.age_group_mapper = None
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameters and register symptoms."""
@@ -179,6 +229,14 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # Load parameters
         workbook = read_csv_files(Path(resourcefilepath) / 'ResourceFile_Schisto', files=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
+
+        # Create age-group mapper now that parameters are loaded
+        s = pd.Series(index=range(1 + int(self.parameters['adults_max_age'])), data='object')
+        age_groups = self._get_age_groups()
+        for name, (low_limit, heavy_limit) in age_groups.items():
+            if name != 'All':
+                s.loc[(s.index >= low_limit) & (s.index <= heavy_limit)] = name
+        self.age_group_mapper = s.to_dict()
 
         # check WASH scaleup specified correctly
         assert self.parameters['scaleup_WASH'] in ['pause', 'continue', 'scaleup']
@@ -213,24 +271,26 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         """Set the property values for the initial population."""
 
         df = population.props
+        p = self.parameters
         df.loc[df.is_alive, f'{self.module_prefix}_MDA_treatment_counter'] = 0
 
         # reset all to one district if doing calibration or test runs
-        # choose Zomba (district 19) as it has ~10% prev of both species
-        if self.single_district:
-            df['district_num_of_residence'] = pd.Categorical([19] * len(df),
+        # choose district based on parameter (in Malawi, default Zomba district 19) as it has ~10% prev of both species
+        if p['single_district']:
+            district_num = int(p['single_district_calibration_number'])
+            df['district_num_of_residence'] = pd.Categorical([district_num] * len(df),
                                                              categories=df['district_num_of_residence'].cat.categories)
 
-            df['district_of_residence'] = pd.Categorical(['Zomba'] * len(df),
+            df['district_of_residence'] = pd.Categorical([p['single_district_calibration_name']] * len(df),
                                                          categories=df['district_of_residence'].cat.categories)
-            df['region_of_residence'] = pd.Categorical(['Southern'] * len(df),
+            df['region_of_residence'] = pd.Categorical([p['single_district_calibration_region']] * len(df),
                                                        categories=df['region_of_residence'].cat.categories)
         for _spec in self.species.values():
             _spec.initialise_population(population)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start."""
-
+        p = self.parameters
         # Look-up DALY weights
         if 'HealthBurden' in self.sim.modules:
             self.disability_weights = self._get_disability_weight()
@@ -243,8 +303,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         self._get_consumables_for_dx()
 
         # schedule regular events
-        sim.schedule_event(SchistoMatureJuvenileWormsEvent(self), sim.date + pd.DateOffset(months=1))
-        sim.schedule_event(SchistoWormDeathEvent(self), sim.date + pd.DateOffset(years=1))
+        sim.schedule_event(SchistoMatureJuvenileWormsEvent(self),
+                          sim.date + pd.DateOffset(months=p['worm_maturation_period_months']))
+        sim.schedule_event(SchistoWormDeathEvent(self),
+                          sim.date + pd.DateOffset(years=p['worm_death_check_frequency_years']))
 
         # Initialise the simulation for each species
         for _spec in self.species.values():
@@ -262,14 +324,15 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         #     {286: 1.0})
 
         # Schedule MDA events
-        if self.mda_execute:
+        if p['mda_execute']:
             # update future mda strategy from default values
             self.prognosed_mda = self._create_mda_strategy()
 
             self._schedule_mda_events()
 
         # schedule WASH scale-up
-        sim.schedule_event(SchistoWashScaleUp(self), sim.date + pd.DateOffset(years=1))
+        sim.schedule_event(SchistoWashScaleUp(self),
+                          sim.date + pd.DateOffset(years=p['wash_scaleup_frequency_years']))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -371,7 +434,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         parameters = dict()
 
         # HSI and treatment params:
-        param_list = workbook['Parameters'].set_index("Parameter")['Value']
+        param_list = workbook['parameter_values'].set_index("parameter_name")['value']
 
         def try_cast_to_float(val):
             try:
@@ -391,8 +454,13 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             'urine_filtration_sensitivity_lowWB',
             'urine_filtration_sensitivity_moderateWB',
             'urine_filtration_sensitivity_heavyWB',
+            'urine_filtration_specificity_lowWB',
+            'urine_filtration_specificity_moderateWB',
+            'urine_filtration_specificity_heavyWB',
             'kato_katz_sensitivity_moderateWB',
+            'kato_katz_specificity_moderateWB',
             'kato_katz_sensitivity_heavyWB',
+            'kato_katz_specificity_heavyWB',
             'scaleup_WASH',  # Needs to be included
             'scaleup_WASH_start_year',
             'mda_coverage',
@@ -407,6 +475,39 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             'daly_weight_heavy_s_mansoni',
             'daly_weight_moderate_s_haematobium',
             'daly_weight_heavy_s_haematobium',
+            'odds_ratio_health_seeking_children_schisto_low',
+            'odds_ratio_health_seeking_adults_schisto_low',
+            'kato_katz_sensitivity_lowWB',
+            'kato_katz_specificity_lowWB',
+            'urine_filtration_sensitivity_noneWB',
+            'urine_filtration_specificity_noneWB',
+            'single_district_calibration_number',
+            'single_district_calibration_name',
+            'single_district_calibration_region',
+            'mda_schedule_month',
+            'mda_schedule_day',
+            'minimum_baseline_prevalence',
+            'prevalence_lower_bound',
+            'prevalence_upper_bound',
+            'infant_min_age',
+            'infant_max_age',
+            'psac_min_age',
+            'psac_max_age',
+            'sac_min_age',
+            'sac_max_age',
+            'adults_min_age',
+            'adults_max_age',
+            'mda_execute',
+            'single_district',
+            'main_polling_frequency',
+            'worm_maturation_period_months',
+            'worm_death_check_frequency_years',
+            'mda_appointment_window_months',
+            'wash_scaleup_frequency_years',
+            'recent_sanitation_window_years',
+            'avg_weight_psac_kg',
+            'avg_weight_sac_kg',
+            'avg_weight_adult_kg'
         ):
             value = param_list[_param_name]
             parameters[_param_name] = try_cast_to_float(value)
@@ -418,10 +519,22 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         historical_mda.columns = historical_mda.columns.str.replace('EpiCov_', '')
 
         parameters['MDA_coverage_historical'] = historical_mda.astype(float)
-        # clip upper limit of MDA coverage at 99%
-        parameters['MDA_coverage_historical'] = parameters['MDA_coverage_historical'].clip(upper=0.99)
+        # clip upper limit of MDA coverage at the specified limit
+        parameters['MDA_coverage_historical'] = parameters['MDA_coverage_historical'].clip(
+            upper=0.99)
 
         return parameters
+
+    def _get_age_groups(self) -> dict:
+        """Create age groups dictionary from parameters."""
+        p = self.parameters
+        return {
+            'Infant': (int(p['infant_min_age']), int(p['infant_max_age'])),
+            'PSAC': (int(p['psac_min_age']), int(p['psac_max_age'])),
+            'SAC': (int(p['sac_min_age']), int(p['sac_max_age'])),
+            'Adults': (int(p['adults_min_age']), int(p['adults_max_age'])),
+            'All': (int(p['infant_min_age']), int(p['adults_max_age']))
+        }
 
     def _create_mda_strategy(self) -> pd.DataFrame:
         """ this uses the parameters set in the module to create a pd.DataFrame that contains the MDA strategy for
@@ -480,10 +593,11 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         unless otherwise specified."""
 
         # Declare symptoms that this module will cause and which are not included in the generic symptoms:
+        p = self.parameters
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='schisto_low',
-                    odds_ratio_health_seeking_in_children=0.01,
-                    odds_ratio_health_seeking_in_adults=0.01)  # no health-seeking
+                    odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_children_schisto_low'],
+                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_adults_schisto_low'])
         )
 
         self.sim.modules['SymptomManager'].register_symptom(
@@ -524,17 +638,16 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
     def calculate_praziquantel_dosage(self, person_id):
         age = self.sim.population.props.at[person_id, "age_years"]
 
+        # Dosing based on age group
         # 40mg per kg, as single dose (MSTG)
         # in children <4 years, 20mg/kg
-        # assume child 0-5, maximum weight 17.5kg (WHO- average between girls/boys)
-        if age < 5:
-            dose = 20 * 17.5
-        # child aged 5-15, 40mg/kg, use mid-point age 10: 50th percentile weight=30kg
-        elif age >= 5 and age < 15:
-            dose = 40 * 30
-        # adult, 40mg/kg, average weight 62kg
-        else:
-            dose = 40 * 62
+        p = self.parameters
+        if age <= p['psac_max_age']:
+            dose = 20 * p['avg_weight_psac_kg']
+        elif age >= p['sac_min_age'] and age <= p['sac_max_age']:
+            dose = 40 * p['avg_weight_sac_kg']
+        else:  # adults
+            dose = 40 * p['avg_weight_adult_kg']
 
         return int(dose)
 
@@ -560,8 +673,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             KK_schisto_test_lowWB=DxTest(
                 property='ss_sm_infection_status',
                 target_categories=["Non-infected", "Low-infection"],
-                sensitivity=0.0,
-                specificity=0.0,
+                sensitivity=p['kato_katz_sensitivity_lowWB'],
+                specificity=p['kato_katz_specificity_lowWB'],
                 item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['malachite_stain'],
@@ -575,7 +688,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 property='ss_sm_infection_status',
                 target_categories=["Moderate-infection"],
                 sensitivity=p["kato_katz_sensitivity_moderateWB"],
-                specificity=1.0,
+                specificity=p['kato_katz_specificity_moderateWB'],
                 item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['malachite_stain'],
@@ -588,7 +701,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 property='ss_sm_infection_status',
                 target_categories=["Heavy-infection"],
                 sensitivity=p["kato_katz_sensitivity_heavyWB"],
-                specificity=1.0,
+                specificity=p['kato_katz_specificity_heavyWB'],
                 item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['malachite_stain'],
@@ -601,8 +714,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             UF_schisto_test_noWB=DxTest(
                 property='ss_sh_infection_status',
                 target_categories=["Non-infected"],
-                sensitivity=0.0,
-                specificity=0.0,
+                sensitivity=p['urine_filtration_sensitivity_noneWB'],
+                specificity=p['urine_filtration_specificity_noneWB'],
                 item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['filter_paper'],
@@ -615,7 +728,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 property='ss_sh_infection_status',
                 target_categories=["Low-infection"],
                 sensitivity=p["urine_filtration_sensitivity_lowWB"],
-                specificity=1.0,
+                specificity=p['urine_filtration_specificity_lowWB'],
                 item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['filter_paper'],
@@ -629,7 +742,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 property='ss_sh_infection_status',
                 target_categories=["Moderate-infection"],
                 sensitivity=p["urine_filtration_sensitivity_moderateWB"],
-                specificity=1.0,
+                specificity=p['urine_filtration_specificity_moderateWB'],
                 item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['filter_paper'],
@@ -642,7 +755,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 property='ss_sh_infection_status',
                 target_categories=["Heavy-infection"],
                 sensitivity=p["urine_filtration_sensitivity_heavyWB"],
-                specificity=1.0,
+                specificity=p['urine_filtration_specificity_heavyWB'],
                 item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['filter_paper'],
@@ -661,7 +774,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                 district=district,
                                 coverage=cov.to_dict(),
                                 months_between_repeats=None),
-                Date(year=year, month=7, day=1)
+                Date(year=year,
+                     month=int(self.parameters['mda_schedule_month']),
+                     day=int(self.parameters['mda_schedule_day']))
             )
 
         # Schedule the first occurrence of a future MDA in each district. It will occur after the last historical MDA.
@@ -676,7 +791,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                 district=district,
                                 coverage=cov.to_dict(),
                                 months_between_repeats=frequency_in_months if frequency_in_months > 0 else None),
-                Date(year=year_first_simulated_mda, month=7, day=1)
+                Date(year=year_first_simulated_mda,
+                     month=int(self.parameters['mda_schedule_month']),
+                     day=int(self.parameters['mda_schedule_day']))
             )
 
     def get_infection_status(self, age, aggregate_worm_burden, species_prefix):
@@ -687,10 +804,12 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         else:
             params = self.sim.modules['Schisto'].species['haematobium'].params
 
+        p = self.parameters
+
         status = pd.Series("Non-infected", index=age.index, dtype="object")
 
-        heavy_group = ((age < 5) & (aggregate_worm_burden >= params["heavy_intensity_threshold_PSAC"])) | (
-            aggregate_worm_burden >= params["heavy_intensity_threshold"])
+        heavy_group = ((age <= p["psac_max_age"]) & (aggregate_worm_burden >=
+            params["heavy_intensity_threshold_PSAC"])) | (aggregate_worm_burden >= params["heavy_intensity_threshold"])
         moderate_group = ~heavy_group & (aggregate_worm_burden >= params["low_intensity_threshold"])
         low_group = (aggregate_worm_burden < params["low_intensity_threshold"]) & (aggregate_worm_burden > 0)
 
@@ -818,7 +937,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # Find the number of individuals with currently susceptible to species and no sanitation
         # susceptible_no_sanitation = df.query(f"{species_column} == 1 and li_unimproved_sanitation").index
-        recent_sanitation = df['li_date_acquire_improved_sanitation'] >= (self.sim.date - pd.DateOffset(years=1))
+        recent_sanitation = df['li_date_acquire_improved_sanitation'] >= (
+            self.sim.date - pd.DateOffset(years=p['recent_sanitation_window_years']))
 
         # Restrict to those who are susceptible, had no sanitation before, and recently acquired sanitation
         condition = (df[species_column] == 1) & df['li_unimproved_sanitation'] & recent_sanitation
@@ -916,7 +1036,7 @@ class SchistoSpecies:
         parameters = dict()
 
         # Natural history params
-        param_list = workbook['Parameters'].set_index("Parameter")['Value']
+        param_list = workbook['parameter_values'].set_index("parameter_name")['value']
         for _param_name in ('R0',
                             'beta_PSAC',
                             'beta_SAC',
@@ -974,11 +1094,12 @@ class SchistoSpecies:
         * Schedule the WormBurdenEvent for this species. (A recurring instance of this event will be scheduled for
         each species independently.)"""
 
+        p = self.schisto_module.parameters
         sim.schedule_event(
             SchistoInfectionWormBurdenEvent(
                 module=self.schisto_module,
                 species=self),
-            sim.date + DateOffset(months=1)
+            sim.date + DateOffset(months=p['main_polling_frequency'])
         )
 
     def on_birth(self, mother_id, child_id):
@@ -1093,8 +1214,9 @@ class SchistoSpecies:
             # Determine a 'contact rate' for each person
             contact_and_susceptibility = df.loc[in_the_district, prop('susceptibility')]
 
+            age_groups = self.schisto_module._get_age_groups()
             for age_group in ['PSAC', 'SAC', 'Adults']:
-                age_range = _AGE_GROUPS[age_group]
+                age_range = age_groups[age_group]
                 in_the_district_and_age_group = \
                     df.index[(df['district_of_residence'] == district) &
                              (df['age_years'].between(age_range[0], age_range[1]))]
@@ -1194,12 +1316,14 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module: Module, species: SchistoSpecies):
-        super().__init__(module, frequency=DateOffset(months=1))
+        p = module.parameters
+        super().__init__(module, frequency=DateOffset(months=p['main_polling_frequency']))
         self.species = species
 
     def apply(self, population):
         df = population.props
         params = self.species.params
+        p = self.module.parameters
         global_params = self.module.parameters
         rng = self.module.rng
         # prop calls the property starting with the prefix species property, i.e. ss_sm or ss_sh
@@ -1214,7 +1338,9 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         R0 = params['R0']
 
         where = df.is_alive
-        age_group = pd.cut(df.loc[where, 'age_years'], [0, 4, 14, 120], labels=['PSAC', 'SAC', 'Adults'],
+        age_group = pd.cut(df.loc[where, 'age_years'],
+                           [0, p['psac_max_age'], p['sac_max_age'], p['adults_max_age']],
+                           labels=['PSAC', 'SAC', 'Adults'],
                            include_lowest=True)
         age_group = age_group.astype('category')  # Convert to a categorical type for memory efficiency
         age_group.name = 'age_group'
@@ -1246,8 +1372,10 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         prevalence_now = (df.loc[where, prop('aggregate_worm_burden')] > 0).mean()  # prevalence (Bool True/# entries)
 
         # Clamp to safe bounds
-        baseline_prevalence = max(params['baseline_prevalence'] , 1e-6)  # fixed reference prevalence
-        prevalence_now = min(max(prevalence_now, 0.0), 1.0)
+        baseline_prevalence = max(params['baseline_prevalence'],
+                                global_params['minimum_baseline_prevalence'])  # fixed reference prevalence
+        prevalence_now = min(max(prevalence_now, global_params['prevalence_lower_bound']),
+                           global_params['prevalence_upper_bound'])
 
         # Scale in [0,1]: 1 at baseline; → 0 as national prevalence → 0
         scale = min(1.0, (prevalence_now / baseline_prevalence) ** global_params['background_gamma'])
@@ -1298,8 +1426,9 @@ class SchistoMatureJuvenileWormsEvent(RegularEvent, PopulationScopeEventMixin):
      * Matures the juvenile worms into adult worms
      """
     def __init__(self, module):
+        p = module.parameters
         super().__init__(
-            module, frequency=DateOffset(months=1)
+            module, frequency=DateOffset(months=p['worm_maturation_period_months'])
         )
 
     def apply(self, population):
@@ -1315,7 +1444,9 @@ class SchistoMatureJuvenileWormsEvent(RegularEvent, PopulationScopeEventMixin):
             this is called separately for each species
             """
             # all new juvenile infections will have same infection date
-            if (df[juvenile_infection_date] <= self.sim.date - pd.DateOffset(months=1)).any():
+            p = self.module.parameters
+            if (df[juvenile_infection_date] <= self.sim.date -
+                    pd.DateOffset(months=p['worm_maturation_period_months'])).any():
                 df[species_column_aggregate] += df[species_column_juvenile]
 
                 # Set 'juvenile' column to zeros
@@ -1342,8 +1473,9 @@ class SchistoWormDeathEvent(RegularEvent, PopulationScopeEventMixin):
      """
 
     def __init__(self, module):
+        p = module.parameters
         super().__init__(
-            module, frequency=DateOffset(years=1)
+            module, frequency=DateOffset(years=p['worm_death_check_frequency_years'])
         )
 
     def apply(self, population):
@@ -1420,7 +1552,7 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
                     age_group_included=age_included,
                 ),
                 topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(months=1),
+                tclose=self.sim.date + pd.DateOffset(months=self.module.parameters['mda_appointment_window_months']),
                 priority=2
                 # A long time-window of operation and a low priority is used for this MDA Appointment, to represent
                 # that the MDA would not take a priority over other appointments.
@@ -1439,7 +1571,8 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
         df = self.sim.population.props
         rng = self.module.rng
 
-        age_range = _AGE_GROUPS[age_group]  # returns a tuple (a,b) a <= age_group <= b
+        age_groups = self.module._get_age_groups()
+        age_range = age_groups[age_group]  # returns a tuple (a,b) a <= age_group <= b
 
         eligible = df.index[
             df['is_alive']
@@ -1466,8 +1599,9 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
+        p = module.parameters
         super().__init__(
-            module, frequency=DateOffset(years=1)
+            module, frequency=DateOffset(years=p['wash_scaleup_frequency_years'])
         )
 
     def apply(self, population):
@@ -1665,12 +1799,13 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         # if MDA includes SAC/PSAC, return average dose for SAC for all beneficiaries
         # using total_dosage = sum(self.module.calculate_praziquantel_dosage(pid) for pid in beneficiaries_still_alive)
         # is very slow
+        p = self.module.parameters
         if 'Adults' in self.age_group_included:
-            # adult, 40mg/kg, average weight 62kg
-            total_dosage = 40 * 62 * len(beneficiaries_still_alive)
+            # adult dosing
+            total_dosage = 40 * p['avg_weight_adult_kg'] * len(beneficiaries_still_alive)
         else:
-            # child aged 5-15, 40mg/kg, use mid-point age 10: 50th percentile weight=30kg
-            total_dosage = 40 * 30 * len(beneficiaries_still_alive)
+            # child (SAC/PSAC) dosing
+            total_dosage = 40 * p['avg_weight_sac_kg'] * len(beneficiaries_still_alive)
 
         # Let the key consumable be "optional" in order that provision of the treatment is NOT conditional on the drugs
         # being available.This is because we expect that special planning would be undertaken in order to ensure the
