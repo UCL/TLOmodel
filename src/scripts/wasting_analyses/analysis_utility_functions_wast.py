@@ -1787,70 +1787,57 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     plt.close(fig)
 
                     ########################################
-                    # Total cost sensitivity table
+                    # Total cost mapping table
                     ########################################
-                    print("\ncreating sensitivity CE table ...")
-                    print("\n    per 5 years...")
+                    print("\ncreating cost mapping tables ...")
+                    print("\n    per 5 years & per 1 year & per 1 year per intervention")
                     # includes total_cost ranges (min—max) for the same grid used in the CE sensitivity plot
-                    table_rows = []
+                    table_5_rows = []
+                    table_1_rows = []
+                    table_1_per_interv_rows = []
                     row_labels = []
-                    for unit_cost in data_impl_cost_name:
+                    for unit_cost_ref_name in data_impl_cost_name:
+                        unit_cost = unit_cost_mapping[unit_cost_ref_name]
                         for gm_cs in sharing_GM_CS:
                             row_label = f"{unit_cost}; GM & CS: {gm_cs}"
                             row_labels.append(row_label)
-                            row_cells = []
+                            row_5_cells = []
+                            row_1_cells = []
+                            row_1_per_interv_cells = []
                             for fs_mult in FS_multiplier:
-                                ce_suffix = f"{unit_cost}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
+                                ce_suffix = f"{unit_cost_ref_name}_GM-CS-sharing{gm_cs}_FSmultiplier{fs_mult}"
                                 all_costs_path = outputs_path / "outcomes_data" / f"all_costs_{SQ_results_timestamp}_{ce_suffix}.pkl"
-                                if all_costs_path.exists():
-                                    try:
-                                        all_costs_df_local = pd.read_pickle(all_costs_path)
-                                        if "total_cost" in all_costs_df_local.columns:
-                                            # Exclude SQ scenario here as well
-                                            if "scenario" in all_costs_df_local.columns:
-                                                df_nonSQ_local = all_costs_df_local[all_costs_df_local["scenario"] != "SQ"]
-                                            else:
-                                                df_nonSQ_local = all_costs_df_local.drop(index="SQ", errors="ignore")
-                                            if df_nonSQ_local.empty:
-                                                cell = ""
-                                            else:
-                                                lo = df_nonSQ_local["total_cost"].min()
-                                                hi = df_nonSQ_local["total_cost"].max()
-                                            cell = f"{lo:,.0f}—{hi:,.0f}"
-                                        else:
-                                            cell = ""
-                                    except Exception:
-                                        cell = ""
-                                else:
-                                    cell = ""
-                                row_cells.append(cell)
-                            table_rows.append(row_cells)
+                                all_costs_df_local = pd.read_pickle(all_costs_path)
+                                # Exclude SQ scenario
+                                df_nonSQ_local = all_costs_df_local[all_costs_df_local["scenario"] != "SQ"]
+                                lo = df_nonSQ_local["total_cost"].min()
+                                hi = df_nonSQ_local["total_cost"].max()
+                                cell_5 = f"{lo:,.0f}—{hi:,.0f}"
+                                cell_1 = f"{lo/5:,.0f}—{hi/5:,.0f}"
+                                row_5_cells.append(cell_5)
+                                row_1_cells.append(cell_1)
+                                # df_nonSQlocal["total_cost_per1y_perInterv"]
+                            table_5_rows.append(row_5_cells)
+                            table_1_rows.append(row_1_cells)
 
                     # Columns labelled by FS multiplier values
                     col_labels = [str(x) for x in FS_multiplier]
-                    total_cost_range_table = pd.DataFrame(table_rows, index=row_labels, columns=col_labels)
+                    total_cost_range_table_5 = pd.DataFrame(table_5_rows, index=row_labels, columns=col_labels)
+                    total_cost_range_table_1 = pd.DataFrame(table_1_rows, index=row_labels, columns=col_labels)
 
-                    # Save CSV summary (per 5 years)
-                    out_table_path_without_csv = outputs_path / f"total_cost_sensitivity_table__{scenarios_tocompare_prefix}__{timestamps_suffix}"
-                    total_cost_range_table.to_csv(Path(str(out_table_path_without_csv) + "_per5years.csv"), index=True)
+                    # Save CSVs summary
+                    # per 5 years
+                    out_table_5_path_without_csv = \
+                        outputs_path / f"total_cost_mapping_table__{scenarios_tocompare_prefix}__{timestamps_suffix}"
+                    total_cost_range_table_5.to_csv(Path(str(out_table_5_path_without_csv) + "_per5years.csv"),
+                                                    index=True)
+                    # per 1 year
+                    out_table_1_path_without_csv = \
+                        outputs_path / f"total_cost_mapping_table__{scenarios_tocompare_prefix}__{timestamps_suffix}"
+                    total_cost_range_table_1.to_csv(Path(str(out_table_1_path_without_csv) + "_per1year.csv"),
+                                                    index=True)
+                    # per 1 year per interv
 
-                    # Create and save per-1-year table by dividing min and max values by 5
-                    print("\n    per 1 year...")
-                    def _divide_range_cell(cell: str) -> str:
-                        if not cell:
-                            return ""
-                        try:
-                            lo_str, hi_str = cell.split("—")
-                            lo = float(lo_str.replace(",", ""))
-                            hi = float(hi_str.replace(",", ""))
-                            lo1 = lo / 5.0
-                            hi1 = hi / 5.0
-                            return f"{lo1:,.0f}—{hi1:,.0f}"
-                        except Exception:
-                            return ""
-
-                    total_cost_range_table_per1 = total_cost_range_table.applymap(_divide_range_cell)
-                    total_cost_range_table_per1.to_csv(Path(str(out_table_path_without_csv) + "_per1year.csv"), index=True)
                 else: # cause != "any cause":
                     table_effectiveness(averted_dict, f"{outcome_type}_{cause}")
             # if outcome_type == "deaths":
