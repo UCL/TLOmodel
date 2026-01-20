@@ -1790,9 +1790,12 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     # Total cost mapping table
                     ########################################
                     print("\ncreating cost mapping tables ...")
-                    print("\n    per 5 years & per 1 year & per 1 year per intervention")
+                    print("\n    per intervention period & per 1 year & per 1 year per intervention")
+                    # Define the number of years within the intervention period
+                    interv_period_lenght = 5
+
                     # includes total_cost ranges (min—max) for the same grid used in the CE sensitivity plot
-                    table_5_rows = []
+                    table_interv_period_rows = []
                     table_1_rows = []
                     table_1_per_interv_rows = []
                     row_labels = []
@@ -1801,7 +1804,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         for gm_cs in sharing_GM_CS:
                             row_label = f"{unit_cost}; GM & CS: {gm_cs}"
                             row_labels.append(row_label)
-                            row_5_cells = []
+                            row_interv_period_cells = []
                             row_1_cells = []
                             row_1_per_interv_cells = []
                             for fs_mult in FS_multiplier:
@@ -1809,34 +1812,49 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                 all_costs_path = outputs_path / "outcomes_data" / f"all_costs_{SQ_results_timestamp}_{ce_suffix}.pkl"
                                 all_costs_df_local = pd.read_pickle(all_costs_path)
                                 # Exclude SQ scenario
-                                df_nonSQ_local = all_costs_df_local[all_costs_df_local["scenario"] != "SQ"]
+                                df_nonSQ_local = all_costs_df_local[all_costs_df_local["scenario"] != "SQ"].copy()
                                 lo = df_nonSQ_local["total_cost"].min()
                                 hi = df_nonSQ_local["total_cost"].max()
-                                cell_5 = f"{lo:,.0f}—{hi:,.0f}"
-                                cell_1 = f"{lo/5:,.0f}—{hi/5:,.0f}"
-                                row_5_cells.append(cell_5)
+                                cell_interv_period = f"{lo:,.0f}; {hi:,.0f}"
+                                cell_1 = f"{lo/interv_period_lenght:,.0f}; {hi/interv_period_lenght:,.0f}"
+                                # Create new column total cost per 1 year per intervention
+                                df_nonSQ_local["total_cost_per1y_perInterv"] = df_nonSQ_local.apply(
+                                    lambda row: (row["total_cost"] / interv_period_lenght)
+                                    / (row["scenario"].count("_") + 1),
+                                    axis=1,
+                                )
+                                lo_per1y_per_interv = df_nonSQ_local["total_cost_per1y_perInterv"].min()
+                                hi_per1y_per_interv = df_nonSQ_local["total_cost_per1y_perInterv"].max()
+                                cell_1_per_interv = f"{lo_per1y_per_interv:,.0f}; {hi_per1y_per_interv:,.0f}"
+                                row_interv_period_cells.append(cell_interv_period)
                                 row_1_cells.append(cell_1)
-                                # df_nonSQlocal["total_cost_per1y_perInterv"]
-                            table_5_rows.append(row_5_cells)
+                                row_1_per_interv_cells.append(cell_1_per_interv)
+                            table_interv_period_rows.append(row_interv_period_cells)
                             table_1_rows.append(row_1_cells)
+                            table_1_per_interv_rows.append(row_1_per_interv_cells)
 
                     # Columns labelled by FS multiplier values
                     col_labels = [str(x) for x in FS_multiplier]
-                    total_cost_range_table_5 = pd.DataFrame(table_5_rows, index=row_labels, columns=col_labels)
+                    total_cost_range_table_interv_period = pd.DataFrame(table_interv_period_rows, index=row_labels, columns=col_labels)
                     total_cost_range_table_1 = pd.DataFrame(table_1_rows, index=row_labels, columns=col_labels)
+                    total_cost_range_table_1_per_interv = pd.DataFrame(table_1_per_interv_rows, index=row_labels, columns=col_labels)
 
-                    # Save CSVs summary
-                    # per 5 years
-                    out_table_5_path_without_csv = \
+                    # Save summary as CSVs
+                    out_tables_path_without_per_suffix = \
                         outputs_path / f"total_cost_mapping_table__{scenarios_tocompare_prefix}__{timestamps_suffix}"
-                    total_cost_range_table_5.to_csv(Path(str(out_table_5_path_without_csv) + "_per5years.csv"),
+
+                    #    per intervention period
+                    total_cost_range_table_interv_period.to_csv(Path(str(out_tables_path_without_per_suffix) +
+                                                                     f"_per{interv_period_lenght}years.csv"),
+                                                                index=True)
+                    #    per 1 year
+                    total_cost_range_table_1.to_csv(Path(str(out_tables_path_without_per_suffix) +
+                                                         "_per1year.csv"),
                                                     index=True)
-                    # per 1 year
-                    out_table_1_path_without_csv = \
-                        outputs_path / f"total_cost_mapping_table__{scenarios_tocompare_prefix}__{timestamps_suffix}"
-                    total_cost_range_table_1.to_csv(Path(str(out_table_1_path_without_csv) + "_per1year.csv"),
-                                                    index=True)
-                    # per 1 year per interv
+                    #    per 1 year per interv
+                    total_cost_range_table_1_per_interv.to_csv(Path(str(out_tables_path_without_per_suffix) +
+                                                                    "_per1year_perInterv.csv"),
+                                                               index=True)
 
                 else: # cause != "any cause":
                     table_effectiveness(averted_dict, f"{outcome_type}_{cause}")
