@@ -463,7 +463,7 @@ class Tb(Module):
         "TbActiveEvent_frequency_days": Parameter(
             Types.INT, "Frequency of TbActiveEvent in days"
         ),
-        "TbSelfCureEvent_frequency_months":Parameter(
+        "TbSelfCureEvent_frequency_months": Parameter(
             Types.INT, "Frequency of TbSelfCureEvent in years"
         ),
         "TbRegularEvents_frequency_months": Parameter(
@@ -1414,7 +1414,7 @@ class Tb(Module):
         # children aged 5-14 ds-tb
         ds_tx_failure5_14_idx = df.loc[
             (df.index.isin(end_ds_tx_idx))
-            & (df.age_years.between(p["age_threshold_infant_years"], p["age_threshold_adult_years"], inclusive= "left"))
+            & (df.age_years.between(p["age_threshold_infant_years"], p["age_threshold_adult_years"], inclusive="left"))
             & (random_var < (1 - p["prob_tx_success_5_14"]))
             ].index
 
@@ -1748,8 +1748,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         for person in screen_active_idx:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
-                topen=self.sim.date +
-                      DateOffset(days=p["min_days_symptomatic_required_for_screening"]),
+                topen=self.sim.date + DateOffset(days=p["min_days_symptomatic_required_for_screening"]),
                 tclose=None,
                 priority=0,
             )
@@ -2841,7 +2840,7 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
-        p =self.module.parameters
+        p = self.module.parameters
         self.TREATMENT_ID = "Tb_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = "2"
@@ -2849,7 +2848,7 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         if beddays is None:
             beddays_avg = round((p['length_of_inpatient_stay_if_terminal'][0] +
                                  p['length_of_inpatient_stay_if_terminal'][1]) /
-                                len(p['length_of_inpatient_stay_if_terminal']),1)
+                                len(p['length_of_inpatient_stay_if_terminal']), 1)
             beddays = beddays_avg
         self.beddays = beddays
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": self.beddays})

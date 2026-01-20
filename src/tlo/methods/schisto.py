@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class Schisto(Module, GenericFirstAppointmentsMixin):
     """Schistosomiasis module.
     Two species of worm that cause Schistosomiasis are modelled independently. Worms are acquired by persons via the
@@ -66,130 +67,260 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
     PARAMETERS = {
         # these values do not vary between species
-        'delay_till_hsi_a_repeated': Parameter(Types.REAL,
-                                               'Time till seeking healthcare again after not being sent to '
-                                               'schisto test: start'),
-        'delay_till_hsi_b_repeated': Parameter(Types.REAL,
-                                               'Time till seeking healthcare again after not being sent to '
-                                               'schisto test: end'),
-        'rr_WASH': Parameter(Types.REAL, 'proportional reduction in population susceptible to schistosoma '
-                                         'infection with improved WASH'),
-        'calibration_scenario': Parameter(Types.REAL,
-                                          'Scenario used to reset parameters to run calibration sims'),
-        'urine_filtration_sensitivity_noneWB': Parameter(Types.REAL,
-                                                         'Sensitivity of urine filtration test for non-infected cases'),
-        'urine_filtration_sensitivity_lowWB': Parameter(Types.REAL,
-                                                        'Sensitivity of UF in detecting low WB'),
-        'urine_filtration_sensitivity_moderateWB': Parameter(Types.REAL,
-                                                             'Sensitivity of UF in detecting moderate WB'),
-        'urine_filtration_sensitivity_heavyWB': Parameter(Types.REAL,
-                                                         'Sensitivity of UF in detecting heavy WB'),
-        'urine_filtration_specificity_noneWB': Parameter(Types.REAL,
-                                                         'Specificity of urine filtration test'),
-        'urine_filtration_specificity_lowWB': Parameter(Types.REAL,
-                                                        'Specificity of UF in detecting low WB'),
-        'urine_filtration_specificity_moderateWB': Parameter(Types.REAL,
-                                                             'Specificity of UF in detecting moderate WB'),
-        'urine_filtration_specificity_heavyWB': Parameter(Types.REAL,
-                                                          'Specificity of UF in detecting heavy WB'),
-        'kato_katz_sensitivity_lowWB': Parameter(Types.REAL,
-                                                 'Sensitivity of Kato-Katz test for non-infected cases'),
-        'kato_katz_sensitivity_moderateWB': Parameter(Types.REAL,
-                                                      'Sensitivity of KK in detecting moderate WB'),
-        'kato_katz_sensitivity_heavyWB': Parameter(Types.REAL,
-                                                   'Sensitivity of KK in detecting heavy WB'),
-        'kato_katz_specificity_lowWB': Parameter(Types.REAL,
-                                                 'Sensitivity of Kato-Katz test for non-infected cases'),
-        'kato_katz_specificity_moderateWB': Parameter(Types.REAL,
-                                                      'Specificity of KK in detecting moderate WB'),
-        'kato_katz_specificity_heavyWB': Parameter(Types.REAL,
-                                                      'Specificity of KK in detecting moderate WB'),
-        'scaleup_WASH': Parameter(Types.STRING,
-                                  'Whether to scale-up WASH during simulation, pause fixes values at 2024 '
-                                  'levels with no further improvement, continue allows historical trends to continue, '
-                                  'scaleup switches everyone to having access to WASH'),
-        'scaleup_WASH_start_year': Parameter(Types.INT,
-                                             'Start date to scale-up WASH, years after sim start date'),
-        'mda_coverage': Parameter(Types.REAL,
-                                  'Coverage of future MDA activities, consistent across all'
-                                  'target groups'),
-        'mda_target_group': Parameter(Types.STRING,
-                                      'Target group for future MDA activities, '
-                                      'one of [PSAC_SAC, SAC, ALL]'),
-        'mda_frequency_months': Parameter(Types.REAL,
-                                          'Number of months between MDA activities'),
-        'scaling_factor_baseline_risk': Parameter(Types.REAL,
-                                                  'scaling factor controls how the background risk of '
-                                                  'infection is adjusted based on the deviation of current prevalence '
-                                                  'from baseline prevalence'),
-        'baseline_risk': Parameter(Types.REAL,
-                                   'number of worms applied as a baseline risk across districts to prevent '
-                                   'fadeout, number is scaled by scaling_factor_baseline_risk'),
-        'background_gamma': Parameter(Types.REAL,
-                                      'controls how fast the cushion shrinks as national prevalence falls; '
-                                      'larger values (e.g. 2.5–3.0) make it disappear sooner'),
-        'background_rel': Parameter(Types.REAL,
-                                    'a small proportional cushion (1% at baseline) applied to the human '
-                                    'reservoir; keeps early declines smooth without creating an artificial floor'),
-        'daly_weight_mild_schistosomiasis': Parameter(Types.REAL, 'daly weight assigned to mild '
-                                                                  'schistosomiasis, both species'),
-        'daly_weight_moderate_s_mansoni': Parameter(Types.REAL, 'daly weight assigned to moderate '
-                                                                'S. mansoni'),
-        'daly_weight_heavy_s_mansoni': Parameter(Types.REAL, 'daly weight assigned to heavy S. mansoni'),
-        'daly_weight_moderate_s_haematobium': Parameter(Types.REAL, 'daly weight assigned to moderate '
-                                                                    'S. haematobium'),
-        'daly_weight_heavy_s_haematobium': Parameter(Types.REAL, 'daly weight assigned to heavy '
-                                                                 'S. haematobium'),
-        'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
-                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
-                                             'in historic rounds'),
-        'odds_ratio_health_seeking_children_schisto_low': Parameter(
-            Types.REAL, 'Odds ratio for health seeking in children with schisto low symptoms'),
-        'odds_ratio_health_seeking_adults_schisto_low': Parameter(
-            Types.REAL, 'Odds ratio for health seeking in adults with schisto low symptoms'),
-        'single_district_calibration_number': Parameter(Types.INT,
-                                                       'District number for single district calibration runs'),
-        'single_district_calibration_name': Parameter(Types.STRING,
-                                                        'District name for single district calibration runs'),
-        'single_district_calibration_region': Parameter(Types.STRING,
-                                                        'District region for single district calibration runs'),
-        'mda_schedule_month': Parameter(Types.INT,
-                                       'Month for scheduling MDA events'),
-        'mda_schedule_day': Parameter(Types.INT,
-                                     'Day for scheduling MDA events'),
-        'minimum_baseline_prevalence': Parameter(Types.REAL,
-                                                'Minimum baseline prevalence to prevent division by zero'),
-        'prevalence_lower_bound': Parameter(Types.REAL,
-                                           'Lower bound for prevalence clamping'),
-        'prevalence_upper_bound': Parameter(Types.REAL,
-                                           'Upper bound for prevalence clamping'),
-        'infant_min_age': Parameter(Types.INT, 'Minimum age for Infant group'),
-        'infant_max_age': Parameter(Types.INT, 'Maximum age for Infant group'),
-        'psac_min_age': Parameter(Types.INT, 'Minimum age for PSAC group'),
-        'psac_max_age': Parameter(Types.INT, 'Maximum age for PSAC group'),
-        'sac_min_age': Parameter(Types.INT, 'Minimum age for SAC group'),
-        'sac_max_age': Parameter(Types.INT, 'Maximum age for SAC group'),
-        'adults_min_age': Parameter(Types.INT, 'Minimum age for Adults group'),
-        'adults_max_age': Parameter(Types.INT, 'Maximum age for Adults group'),
-        'mda_execute': Parameter(Types.BOOL, 'Whether to execute MDA events'),
-        'single_district': Parameter(Types.BOOL, 'Whether to run simulation for a single district only'),
-        'main_polling_frequency': Parameter(Types.INT, 'Polling freq main schisto event in months'),
-        'worm_maturation_period_months': Parameter(Types.INT,
-            'Time in months for juvenile worms to mature into adult worms'),
-        'worm_death_check_frequency_years': Parameter(Types.INT,
-            'Frequency in years to check for worm deaths'),
-        'mda_appointment_window_months': Parameter(Types.INT,
-            'Time window in months for MDA appointment scheduling'),
-        'wash_scaleup_frequency_years': Parameter(Types.INT,
-            'Frequency in years to check and apply WASH scale-up'),
-        'recent_sanitation_window_years': Parameter(Types.INT,
-            'Time window in years to consider sanitation acquisition as recent'),
-        'avg_weight_psac_kg': Parameter(Types.REAL,
-            'Average weight in kg for PSAC age group for drug dosing'),
-        'avg_weight_sac_kg': Parameter(Types.REAL,
-            'Average weight in kg for SAC age group for drug dosing'),
-        'avg_weight_adult_kg': Parameter(Types.REAL,
-            'Average weight in kg for adults for drug dosing'),
+        "delay_till_hsi_a_repeated": Parameter(
+            Types.REAL,
+            "Time till seeking healthcare again after not being sent to schisto test: start",
+        ),
+        "delay_till_hsi_b_repeated": Parameter(
+            Types.REAL,
+            "Time till seeking healthcare again after not being sent to schisto test: end",
+        ),
+        "rr_WASH": Parameter(
+            Types.REAL,
+            "Proportional reduction in population susceptible to schistosoma infection with improved WASH",
+        ),
+        "calibration_scenario": Parameter(
+            Types.REAL,
+            "Scenario used to reset parameters to run calibration sims",
+        ),
+        "urine_filtration_sensitivity_noneWB": Parameter(
+            Types.REAL,
+            "Sensitivity of urine filtration test for non-infected cases",
+        ),
+        "urine_filtration_sensitivity_lowWB": Parameter(
+            Types.REAL,
+            "Sensitivity of UF in detecting low WB",
+        ),
+        "urine_filtration_sensitivity_moderateWB": Parameter(
+            Types.REAL,
+            "Sensitivity of UF in detecting moderate WB",
+        ),
+        "urine_filtration_sensitivity_heavyWB": Parameter(
+            Types.REAL,
+            "Sensitivity of UF in detecting heavy WB",
+        ),
+        "urine_filtration_specificity_noneWB": Parameter(
+            Types.REAL,
+            "Specificity of urine filtration test",
+        ),
+        "urine_filtration_specificity_lowWB": Parameter(
+            Types.REAL,
+            "Specificity of UF in detecting low WB",
+        ),
+        "urine_filtration_specificity_moderateWB": Parameter(
+            Types.REAL,
+            "Specificity of UF in detecting moderate WB",
+        ),
+        "urine_filtration_specificity_heavyWB": Parameter(
+            Types.REAL,
+            "Specificity of UF in detecting heavy WB",
+        ),
+        "kato_katz_sensitivity_lowWB": Parameter(
+            Types.REAL,
+            "Sensitivity of Kato-Katz test for non-infected cases",
+        ),
+        "kato_katz_sensitivity_moderateWB": Parameter(
+            Types.REAL,
+            "Sensitivity of KK in detecting moderate WB",
+        ),
+        "kato_katz_sensitivity_heavyWB": Parameter(
+            Types.REAL,
+            "Sensitivity of KK in detecting heavy WB",
+        ),
+        "kato_katz_specificity_lowWB": Parameter(
+            Types.REAL,
+            "Sensitivity of Kato-Katz test for non-infected cases",
+        ),
+        "kato_katz_specificity_moderateWB": Parameter(
+            Types.REAL,
+            "Specificity of KK in detecting moderate WB",
+        ),
+        "kato_katz_specificity_heavyWB": Parameter(
+            Types.REAL,
+            "Specificity of KK in detecting moderate WB",
+        ),
+        "scaleup_WASH": Parameter(
+            Types.STRING,
+            "Whether to scale-up WASH during simulation, pause fixes values at 2024 levels with no further "
+            "improvement, continue allows historical trends to continue, scaleup switches everyone to having "
+            "access to WASH",
+        ),
+        "scaleup_WASH_start_year": Parameter(
+            Types.INT,
+            "Start date to scale-up WASH, years after sim start date",
+        ),
+        "mda_coverage": Parameter(
+            Types.REAL,
+            "Coverage of future MDA activities, consistent across all target groups",
+        ),
+        "mda_target_group": Parameter(
+            Types.STRING,
+            "Target group for future MDA activities, one of [PSAC_SAC, SAC, ALL]",
+        ),
+        "mda_frequency_months": Parameter(
+            Types.REAL,
+            "Number of months between MDA activities",
+        ),
+        "scaling_factor_baseline_risk": Parameter(
+            Types.REAL,
+            "Scaling factor controls how the background risk of infection is adjusted based on the deviation "
+            "of current prevalence from baseline prevalence",
+        ),
+        "baseline_risk": Parameter(
+            Types.REAL,
+            "Number of worms applied as a baseline risk across districts to prevent fadeout, number is scaled "
+            "by scaling_factor_baseline_risk",
+        ),
+        "background_gamma": Parameter(
+            Types.REAL,
+            "Controls how fast the cushion shrinks as national prevalence falls; larger values (e.g. 2.5–3.0) "
+            "make it disappear sooner",
+        ),
+        "background_rel": Parameter(
+            Types.REAL,
+            "A small proportional cushion (1% at baseline) applied to the human reservoir; keeps early declines "
+            "smooth without creating an artificial floor",
+        ),
+        "daly_weight_mild_schistosomiasis": Parameter(
+            Types.REAL,
+            "DALY weight assigned to mild schistosomiasis, both species",
+        ),
+        "daly_weight_moderate_s_mansoni": Parameter(
+            Types.REAL,
+            "DALY weight assigned to moderate S. mansoni",
+        ),
+        "daly_weight_heavy_s_mansoni": Parameter(
+            Types.REAL,
+            "DALY weight assigned to heavy S. mansoni",
+        ),
+        "daly_weight_moderate_s_haematobium": Parameter(
+            Types.REAL,
+            "DALY weight assigned to moderate S. haematobium",
+        ),
+        "daly_weight_heavy_s_haematobium": Parameter(
+            Types.REAL,
+            "DALY weight assigned to heavy S. haematobium",
+        ),
+        "MDA_coverage_historical": Parameter(
+            Types.DATA_FRAME,
+            "Probability of getting PZQ in the MDA for PSAC, SAC and Adults in historic rounds",
+        ),
+        "odds_ratio_health_seeking_children_schisto_low": Parameter(
+            Types.REAL,
+            "Odds ratio for health seeking in children with schisto low symptoms",
+        ),
+        "odds_ratio_health_seeking_adults_schisto_low": Parameter(
+            Types.REAL,
+            "Odds ratio for health seeking in adults with schisto low symptoms",
+        ),
+        "single_district_calibration_number": Parameter(
+            Types.INT,
+            "District number for single district calibration runs",
+        ),
+        "single_district_calibration_name": Parameter(
+            Types.STRING,
+            "District name for single district calibration runs",
+        ),
+        "single_district_calibration_region": Parameter(
+            Types.STRING,
+            "District region for single district calibration runs",
+        ),
+        "mda_schedule_month": Parameter(
+            Types.INT,
+            "Month for scheduling MDA events",
+        ),
+        "mda_schedule_day": Parameter(
+            Types.INT,
+            "Day for scheduling MDA events",
+        ),
+        "minimum_baseline_prevalence": Parameter(
+            Types.REAL,
+            "Minimum baseline prevalence to prevent division by zero",
+        ),
+        "prevalence_lower_bound": Parameter(
+            Types.REAL,
+            "Lower bound for prevalence clamping",
+        ),
+        "prevalence_upper_bound": Parameter(
+            Types.REAL,
+            "Upper bound for prevalence clamping",
+        ),
+        "infant_min_age": Parameter(
+            Types.INT,
+            "Minimum age for Infant group",
+        ),
+        "infant_max_age": Parameter(
+            Types.INT,
+            "Maximum age for Infant group",
+        ),
+        "psac_min_age": Parameter(
+            Types.INT,
+            "Minimum age for PSAC group",
+        ),
+        "psac_max_age": Parameter(
+            Types.INT,
+            "Maximum age for PSAC group",
+        ),
+        "sac_min_age": Parameter(
+            Types.INT,
+            "Minimum age for SAC group",
+        ),
+        "sac_max_age": Parameter(
+            Types.INT,
+            "Maximum age for SAC group",
+        ),
+        "adults_min_age": Parameter(
+            Types.INT,
+            "Minimum age for Adults group",
+        ),
+        "adults_max_age": Parameter(
+            Types.INT,
+            "Maximum age for Adults group",
+        ),
+        "mda_execute": Parameter(
+            Types.BOOL,
+            "Whether to execute MDA events",
+        ),
+        "single_district": Parameter(
+            Types.BOOL,
+            "Whether to run simulation for a single district only",
+        ),
+        "main_polling_frequency": Parameter(
+            Types.INT,
+            "Polling freq main schisto event in months",
+        ),
+        "worm_maturation_period_months": Parameter(
+            Types.INT,
+            "Time in months for juvenile worms to mature into adult worms",
+        ),
+        "worm_death_check_frequency_years": Parameter(
+            Types.INT,
+            "Frequency in years to check for worm deaths",
+        ),
+        "mda_appointment_window_months": Parameter(
+            Types.INT,
+            "Time window in months for MDA appointment scheduling",
+        ),
+        "wash_scaleup_frequency_years": Parameter(
+            Types.INT,
+            "Frequency in years to check and apply WASH scale-up",
+        ),
+        "recent_sanitation_window_years": Parameter(
+            Types.INT,
+            "Time window in years to consider sanitation acquisition as recent",
+        ),
+        "avg_weight_psac_kg": Parameter(
+            Types.REAL,
+            "Average weight in kg for PSAC age group for drug dosing",
+        ),
+        "avg_weight_sac_kg": Parameter(
+            Types.REAL,
+            "Average weight in kg for SAC age group for drug dosing",
+        ),
+        "avg_weight_adult_kg": Parameter(
+            Types.REAL,
+            "Average weight in kg for adults for drug dosing",
+        ),
     }
 
     def __init__(self, name=None):
@@ -303,10 +434,12 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         self._get_consumables_for_dx()
 
         # schedule regular events
-        sim.schedule_event(SchistoMatureJuvenileWormsEvent(self),
-                          sim.date + pd.DateOffset(months=p['worm_maturation_period_months']))
-        sim.schedule_event(SchistoWormDeathEvent(self),
-                          sim.date + pd.DateOffset(years=p['worm_death_check_frequency_years']))
+        sim.schedule_event(
+            SchistoMatureJuvenileWormsEvent(self),
+            sim.date + pd.DateOffset(months=p['worm_maturation_period_months']))
+        sim.schedule_event(
+            SchistoWormDeathEvent(self),
+            sim.date + pd.DateOffset(years=p['worm_death_check_frequency_years']))
 
         # Initialise the simulation for each species
         for _spec in self.species.values():
@@ -331,8 +464,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             self._schedule_mda_events()
 
         # schedule WASH scale-up
-        sim.schedule_event(SchistoWashScaleUp(self),
-                          sim.date + pd.DateOffset(years=p['wash_scaleup_frequency_years']))
+        sim.schedule_event(
+            SchistoWashScaleUp(self),
+            sim.date + pd.DateOffset(years=p['wash_scaleup_frequency_years'])
+        )
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -808,8 +943,11 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         status = pd.Series("Non-infected", index=age.index, dtype="object")
 
-        heavy_group = ((age <= p["psac_max_age"]) & (aggregate_worm_burden >=
-            params["heavy_intensity_threshold_PSAC"])) | (aggregate_worm_burden >= params["heavy_intensity_threshold"])
+        heavy_group = (
+            ((age <= p["psac_max_age"]) & (aggregate_worm_burden >= params["heavy_intensity_threshold_PSAC"]))
+            | (aggregate_worm_burden >= params["heavy_intensity_threshold"])
+        )
+
         moderate_group = ~heavy_group & (aggregate_worm_burden >= params["low_intensity_threshold"])
         low_group = (aggregate_worm_burden < params["low_intensity_threshold"]) & (aggregate_worm_burden > 0)
 
@@ -888,8 +1026,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # Update infection status column
         # this can sometimes return an object due to mixed types, eg string and None
-        df[f"{species_prefix}_infection_status"] = pd.Categorical(correct_status,
-                                                              dtype=df[f"{species_prefix}_infection_status"].dtype)
+        df[f"{species_prefix}_infection_status"] = pd.Categorical(
+            correct_status, dtype=df[f"{species_prefix}_infection_status"].dtype)
 
     def do_at_generic_first_appt(
         self,
@@ -970,29 +1108,51 @@ class SchistoSpecies:
     def get_parameters(self):
         """The species-specific parameters for this species."""
         params = {
-            'R0': Parameter(Types.REAL, 'R0 of species'),
-            'beta_PSAC': Parameter(Types.REAL, 'Contact/exposure rate of PSAC'),
-            'beta_SAC': Parameter(Types.REAL, 'Contact/exposure rate of SAC'),
-            'beta_Adults': Parameter(Types.REAL, 'Contact/exposure rate of Adults'),
-            'worms_fecundity': Parameter(Types.REAL, 'Fecundity parameter, driving density-dependent reproduction'),
-            'worm_lifespan': Parameter(Types.REAL, 'Lifespan of the worm in human host given in years'),
-            'heavy_intensity_threshold': Parameter(Types.REAL,
-                                                  'Threshold of worm burden indicating heavy intensity infection'),
-            'low_intensity_threshold': Parameter(Types.REAL,
-                                                 'Threshold of worm burden indicating low intensity infection'),
-            'heavy_intensity_threshold_PSAC': Parameter(Types.REAL,
-                                                       'Worm burden threshold for heavy intensity infection in PSAC'),
-            'PZQ_efficacy': Parameter(Types.REAL,
-                                      'Efficacy of praziquantel in reducing worm burden'),
-            'baseline_prevalence': Parameter(Types.REAL,
-                                             'Baseline prevalence of species across all districts in 2010'),
-            'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
-                                              'Mean worm burden per infected person per district in 2010'),
-            'prevalence_2010': Parameter(Types.DATA_FRAME,
-                                         'Prevalence per district in 2010'),
-            'prop_susceptible': Parameter(Types.DATA_FRAME,
-                                          'Proportion of population in each district susceptible to schisto infection'),
-            'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
+            'R0': Parameter(
+                Types.REAL,
+                'R0 of species'),
+            'beta_PSAC': Parameter(
+                Types.REAL,
+                'Contact/exposure rate of PSAC'),
+            'beta_SAC': Parameter(
+                Types.REAL,
+                'Contact/exposure rate of SAC'),
+            'beta_Adults': Parameter(
+                Types.REAL,
+                'Contact/exposure rate of Adults'),
+            'worms_fecundity': Parameter(
+                Types.REAL,
+                'Fecundity parameter, driving density-dependent reproduction'),
+            'worm_lifespan': Parameter(
+                Types.REAL,
+                'Lifespan of the worm in human host given in years'),
+            'heavy_intensity_threshold': Parameter(
+                Types.REAL,
+                'Threshold of worm burden indicating heavy intensity infection'),
+            'low_intensity_threshold': Parameter(
+                Types.REAL,
+                'Threshold of worm burden indicating low intensity infection'),
+            'heavy_intensity_threshold_PSAC': Parameter(
+                Types.REAL,
+                'Worm burden threshold for heavy intensity infection in PSAC'),
+            'PZQ_efficacy': Parameter(
+                Types.REAL,
+                'Efficacy of praziquantel in reducing worm burden'),
+            'baseline_prevalence': Parameter(
+                Types.REAL,
+                'Baseline prevalence of species across all districts in 2010'),
+            'mean_worm_burden2010': Parameter(
+                Types.DATA_FRAME,
+                'Mean worm burden per infected person per district in 2010'),
+            'prevalence_2010': Parameter(
+                Types.DATA_FRAME,
+                'Prevalence per district in 2010'),
+            'prop_susceptible': Parameter(
+                Types.DATA_FRAME,
+                'Proportion of population in each district susceptible to schisto infection'),
+            'gamma_alpha': Parameter(
+                Types.DATA_FRAME,
+                'Parameter alpha for Gamma distribution for harbouring rates'),
         }
         return {self._prefix_species_parameter(k): v for k, v in params.items()}
 
@@ -1000,18 +1160,24 @@ class SchistoSpecies:
         """The species-specific properties for this species."""
         properties = {
             'infection_status': Property(
-                Types.CATEGORICAL, 'Current status of schistosomiasis infection for this species',
+                Types.CATEGORICAL,
+                'Current status of schistosomiasis infection for this species',
                 categories=['Non-infected', 'Low-infection', 'Moderate-infection', 'Heavy-infection']),
             'aggregate_worm_burden': Property(
-                Types.INT, 'Number of mature worms of this species in the individual'),
+                Types.INT,
+                'Number of mature worms of this species in the individual'),
             'juvenile_worm_burden': Property(
-                Types.INT, 'Number of juvenile worms of this species in the individual'),
+                Types.INT,
+                'Number of juvenile worms of this species in the individual'),
             'juvenile_worm_infection_date': Property(
-                Types.DATE, 'Date at which infection with juvenile worms occurred'),
+                Types.DATE,
+                'Date at which infection with juvenile worms occurred'),
             'susceptibility': Property(
-                Types.INT, 'Binary value 0,1 denoting whether person is susceptible or not'),
+                Types.INT,
+                'Binary value 0,1 denoting whether person is susceptible or not'),
             'harbouring_rate': Property(
-                Types.REAL, 'Rate of harbouring new worms of this species (Poisson), drawn from gamma distribution'),
+                Types.REAL,
+                'Rate of harbouring new worms of this species (Poisson), drawn from gamma distribution'),
         }
         return {self.prefix_species_property(k): v for k, v in properties.items()}
 
@@ -1375,7 +1541,7 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         baseline_prevalence = max(params['baseline_prevalence'],
                                 global_params['minimum_baseline_prevalence'])  # fixed reference prevalence
         prevalence_now = min(max(prevalence_now, global_params['prevalence_lower_bound']),
-                           global_params['prevalence_upper_bound'])
+                                global_params['prevalence_upper_bound'])
 
         # Scale in [0,1]: 1 at baseline; → 0 as national prevalence → 0
         scale = min(1.0, (prevalence_now / baseline_prevalence) ** global_params['background_gamma'])
@@ -1505,7 +1671,7 @@ class SchistoWormDeathEvent(RegularEvent, PopulationScopeEventMixin):
         update_symptoms_after_worm_death(df, 'ss_sm_aggregate_worm_burden',
                                          mansoni_params['worm_lifespan'], 'ss_sm')
         update_symptoms_after_worm_death(df, 'ss_sh_aggregate_worm_burden',
-                                         haematobium_params['worm_lifespan'],'ss_sh')
+                                         haematobium_params['worm_lifespan'], 'ss_sh')
 
 
 class SchistoMDAEvent(Event, PopulationScopeEventMixin):
@@ -1635,7 +1801,8 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
 
 
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
-    """This is a Health System Interaction Event for a person with symptoms who has been referred from the FirstAppt
+    """This is a Health System Interaction Event for a person with symptoms who has been
+    referred from the FirstAppt
     for testing at the clinic."""
 
     def __init__(self, module, person_id):
@@ -1891,7 +2058,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             _spec.log_infection_status()
             # _spec.log_mean_worm_burden()  # revert this if needed
 
-        #PZQ MDA episodes
+        # PZQ MDA episodes
         df = population.props
 
         # this is logging MDA only
@@ -1923,7 +2090,6 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # reset the counter
         df['ss_MDA_treatment_counter'] = 0
 
-
         # PERSON-DAYS OF INFECTION
         # log person-days of infection by low, moderate and heavy for all, SAC and PSAC separately
         logger.info(
@@ -1933,7 +2099,6 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
         # Reset the daily counts for the next month
         self.module.log_person_days.loc[:, 'person_days'] = 0
-
 
         # NUMBERS INFECTED
         # extract and map age groups for those alive
@@ -2030,14 +2195,17 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             return property_proportion
 
         # For 'li_unimproved_sanitation'
-        unimproved_sanitation_by_district = df.groupby('district_of_residence').apply(calculate_wash_proportion,
-                                                                                      property_column='li_unimproved_sanitation')
+        unimproved_sanitation_by_district = df.groupby('district_of_residence').apply(
+            calculate_wash_proportion,
+            property_column='li_unimproved_sanitation')
 
-        no_access_handwashing_by_district = df.groupby('district_of_residence').apply(calculate_wash_proportion,
-                                                                             property_column='li_no_access_handwashing')
+        no_access_handwashing_by_district = df.groupby('district_of_residence').apply(
+            calculate_wash_proportion,
+            property_column='li_no_access_handwashing')
 
-        no_clean_drinking_water_by_district = df.groupby('district_of_residence').apply(calculate_wash_proportion,
-                                                                             property_column='li_no_clean_drinking_water')
+        no_clean_drinking_water_by_district = df.groupby('district_of_residence').apply(
+            calculate_wash_proportion,
+            property_column='li_no_clean_drinking_water')
 
         # Convert the results into dictionaries
         unimproved_sanitation_by_district = unimproved_sanitation_by_district.to_dict()
