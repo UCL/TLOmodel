@@ -32,7 +32,10 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, Date, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import get_counts_by_sex_and_age_group
+from tlo.analysis.utils import (
+    flatten_multi_index_series_into_dict_for_logging,
+    get_counts_by_sex_and_age_group,
+)
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography, tb
@@ -42,7 +45,6 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup, read_csv_files
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -1943,9 +1945,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         mask_adult_on_art = (df["age_years"] >= p['age_threshold_child_adult_distinction']) & (df["hv_art"].ne("not"))
         den = mask_adult_on_art.sum()
 
-        # todo Proportion of young adults (15–29) among adults on ART
+        # Proportion of young adults (15–29) among adults on ART
         if den:
-            w = df.loc[mask_adult_on_art, "age_years"].between(p['age_threshold_child_adult_distinction'], 29, inclusive="both").mean()
+            w = df.loc[mask_adult_on_art, "age_years"].between(
+                p['age_threshold_child_adult_distinction'],
+                29,
+                inclusive="both"
+            ).mean()
         else:
             w = self.parameters["proportion_young_adult_on_art"]
 
@@ -3711,7 +3717,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # default to person stopping cotrimoxazole
         df.at[person_id, "hv_on_cotrimoxazole"] = False
 
-        # todo numbers look up dispensation length, DSD from 2021 onwards, else stick with default
+        # numbers look up dispensation length, DSD from 2021 onwards, else stick with default
         currently_breastfeeding = (
             (df["mother_id"] == person_id) & (df["nb_breastfeeding_status"] != "none")
         ).any()

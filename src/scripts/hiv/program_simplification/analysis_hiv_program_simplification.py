@@ -26,8 +26,8 @@ tlo parse-log /Users/tmangal/PycharmProjects/TLOmodel/outputs/hiv_program_simpli
 
 from pathlib import Path
 from typing import Dict
-from scripts.hiv.program_simplification.scenario_definitions import ScenarioDefinitions
 
+from scripts.hiv.program_simplification.scenario_definitions import ScenarioDefinitions
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario

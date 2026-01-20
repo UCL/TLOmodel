@@ -3,29 +3,27 @@ from __future__ import annotations
 
 import datetime
 from pathlib import Path
-
 # import lacroix
-from typing import Iterable, Sequence, Optional, Tuple
+from typing import Iterable, Optional, Sequence, Tuple
+
+import matplotlib.lines as mlines
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.lines as mlines
-
 import seaborn as sns
 
 from tlo import Date
-
 from tlo.analysis.utils import (
     compare_number_of_deaths,
+    compute_summary_statistics,
     extract_params,
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize,
     make_age_grp_lookup,
     make_age_grp_types,
-    compute_summary_statistics,
+    summarize,
 )
 
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
