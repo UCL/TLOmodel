@@ -8,7 +8,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import compare_number_of_deaths, get_root_path, parse_log_file, make_age_grp_types
+from tlo.analysis.utils import (
+    compare_number_of_deaths,
+    get_root_path,
+    make_age_grp_types,
+    parse_log_file,
+)
 from tlo.methods import (
     cardio_metabolic_disorders,
     demography,
