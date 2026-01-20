@@ -3848,19 +3848,31 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for older children
             drugs_available = self.get_consumables(
-                item_codes={self.module.item_codes_for_consumables_required[
-                                'First line ART regimen: older child']: dispensation_days * 3},
-                optional_item_codes={self.module.item_codes_for_consumables_required[
-                                         'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
+                item_codes={
+                    self.module.item_codes_for_consumables_required[
+                                'First line ART regimen: older child'
+                    ]: dispensation_days * 3
+                },
+                optional_item_codes={
+                    self.module.item_codes_for_consumables_required[
+                        'First line ART regimen: older child: cotrimoxazole'
+                    ]: dispensation_days * 480
+                },
                 return_individual_results=True)
 
         else:
             # Formulation for adults
             drugs_available = self.get_consumables(
-                item_codes={self.module.item_codes_for_consumables_required[
-                                'First-line ART regimen: adult']: dispensation_days},
-                optional_item_codes={self.module.item_codes_for_consumables_required[
-                                         'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
+                item_codes={
+                    self.module.item_codes_for_consumables_required[
+                                'First-line ART regimen: adult'
+                    ]: dispensation_days
+                },
+                optional_item_codes={
+                    self.module.item_codes_for_consumables_required[
+                                         'First-line ART regimen: adult: cotrimoxazole'
+                    ]: dispensation_days * 960
+                },
                 return_individual_results=True)
 
         # add drug names to dict
