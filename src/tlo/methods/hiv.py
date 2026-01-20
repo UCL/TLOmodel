@@ -502,6 +502,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.INT,
             "the year when the viral load testing starts (it will occur on 1st January of that year"
         ),
+        "delay_from_viral_load_to_result_months_min": Parameter(
+            Types.REAL,
+            "the minimum delay in months from viral load test to receiving result, months"
+        ),
+        "delay_from_viral_load_to_result_months_max": Parameter(
+            Types.REAL,
+            "the maximum delay in months from viral load test to receiving result, months"
+        ),
         "tdf_test_replace_vl_test": Parameter(
             Types.BOOL,
             "whether urine TDF test should replace viral load monitoring during follow-up appts"
@@ -547,6 +555,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "Weibull distribution scale parameter for number of days between a self-test result and "
             "confirmatory test"
+        ),
+        "proportion_on_treatment_lost_to_follow_up": Parameter(
+            Types.REAL,
+            "proportion of people who are lost to follow up due to not attending follow-up appointments"
         ),
         # ------------------ Module design parameters ------------------ #
         "hiv_regular_polling_event_frequency_months": Parameter(
@@ -2922,7 +2934,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
                 key="message",
                 data="This event should not be running: Hiv_DecisionToContinueOnPrEP is for those currently on prep")
 
-        # todo check this number! check still eligible, person must be <25 years old or a fsw
+        # check still eligible, person must be <25 years old or a fsw
         if (person["age_years"] < p['age_max_prep']) or person["li_is_sexworker"]:
 
             # Determine if this appointment is actually attended by the person who has already started on PrEP
@@ -2970,7 +2982,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
         length_of_current_dispensation = person["hv_arv_dispensing_interval"]
 
         # Convert 3-month retention probability to equivalent retention over a different number of months,
-        # todo number! assuming constant hazard (i.e.exponential decay)
+        # assuming constant hazard (i.e.exponential decay)
         prob_retention = m.parameters["probability_of_being_retained_on_art_every_3_months"] ** (
                 length_of_current_dispensation / 3)
 
@@ -2991,10 +3003,9 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             # Defaults to being off Treatment
             m.stops_treatment(person_id)
 
-            # todo decide whether long-term LTFU or return within 3 months
-            # todo i've changed this from 0.95 as art coverage was around 90%ish = too low
+            # decide whether long-term LTFU or return within 3 months
             # change return to 1 month
-            if m.rng.random_sample() < 0.99:
+            if m.rng.random_sample() < p['proportion_on_treatment_lost_to_follow_up']:
 
                 # refer for another treatment again in 3 months
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -3035,7 +3046,7 @@ class HivScaleUpEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
 
     def apply(self, population):
-        # todo check this has same name in function definition
+
         self.module.update_parameters_for_program_change()
 
 
@@ -3483,8 +3494,11 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
                 if df.at[person_id, "li_is_sexworker"]:
                     df.at[person_id, f'{days_on_prep_property}_FSW'] += days_on_prep
-                # todo check numbers
-                elif (df.at[person_id, "sex"] == "F") and (15 <= df.at[person_id, "age_years"] <= 24):
+
+                elif (
+                    (df.at[person_id, "sex"] == "F")
+                    and (p['age_min_agyw'] <= df.at[person_id, "age_years"] <= p['age_max_agyw'])
+                ):
                     df.at[person_id, f'{days_on_prep_property}_AGYW'] += days_on_prep
 
                 # Schedule 'decision about whether to continue on PrEP'
@@ -3772,7 +3786,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                         q = p["prob_receive_viral_load_test_result"] * p["sensitivity_viral_load_test"]
 
                         if self.module.rng.random_sample() < q:
-                            # todo numbers
+
                             delay_months = self.module.rng.randint(3, 7)
 
                             self.sim.schedule_event(
