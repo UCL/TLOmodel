@@ -2992,7 +2992,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=m,
                                                      facility_level_of_this_hsi="1a"),
-                    topen=self.sim.date + pd.DateOffset(months=1),
+                    topen=self.sim.date + pd.DateOffset(months=3),
                     tclose=None,
                     priority=0,
                 )
