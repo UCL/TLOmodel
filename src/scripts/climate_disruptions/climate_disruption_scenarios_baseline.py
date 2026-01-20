@@ -49,11 +49,10 @@ class ClimateDisruptionScenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2041, 1, 12)
+        self.end_date = Date(2041, 1, 1)
         self.pop_size = 100_000
         self.runs_per_draw = 5
-        self.YEAR_OF_CHANGE = 2025
-        self._parameter_grid = full_grid[0]
+        #self._parameter_grid = full_grid[0]
         self.number_of_draws = 1
 
         with open("selected_parameter_combinations_baseline.json", "w") as f:
