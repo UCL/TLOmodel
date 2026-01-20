@@ -904,29 +904,21 @@ class HealthSystem(Module):
                 f"{self.parameters['cons_availability_postSwitch']}"
             )
 
+        # Schedule a consumables availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(
-                self, parameters={"cons_availability": self.parameters["cons_availability_postSwitch"]}
-            ),
+            HealthSystemChangeParameters(self, parameters_to_change=["cons_availability"]),
             Date(self.parameters["year_cons_availability_switch"], 1, 1),
         )
 
         # Schedule an equipment availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(
-                self, parameters={"equip_availability": self.parameters["equip_availability_postSwitch"]}
-            ),
+            HealthSystemChangeParameters(self, parameters_to_change=["equip_availability"]),
             Date(self.parameters["year_equip_availability_switch"], 1, 1),
         )
 
-        # Schedule an equipment availability switch
+        # Schedule an HRH availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(
-                self,
-                parameters={
-                    "use_funded_or_actual_staffing": self.parameters["use_funded_or_actual_staffing_postSwitch"]
-                },
-            ),
+            HealthSystemChangeParameters(self,parameters_to_change=["use_funded_or_actual_staffing"]),
             Date(self.parameters["year_use_funded_or_actual_staffing_switch"], 1, 1),
         )
 
@@ -3066,45 +3058,35 @@ class HealthSystemSummaryCounter:
 
 class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
     """Event that causes certain internal parameters of the HealthSystem to be changed; specifically:
-        * `mode_appt_constraints`
-        * `ignore_priority`
-        * `capabilities_coefficient`
         * `cons_availability`
-        * `beds_availability`
         * `equip_availability`
         * `use_funded_or_actual_staffing`
     Note that no checking is done here on the suitability of values of each parameter."""
 
-    def __init__(self, module: HealthSystem, parameters: Dict):
+    def __init__(self, module: HealthSystem, parameters_to_change: List):
         super().__init__(module)
-        self._parameters = parameters
         assert isinstance(module, HealthSystem)
 
-    def apply(self, population):
-        if "mode_appt_constraints" in self._parameters:
-            self.module.mode_appt_constraints = self._parameters["mode_appt_constraints"]
-
-        if "ignore_priority" in self._parameters:
-            self.module.ignore_priority = self._parameters["ignore_priority"]
-
-        if "capabilities_coefficient" in self._parameters:
-            self.module.capabilities_coefficient = self._parameters["capabilities_coefficient"]
-
-        if "cons_availability" in self._parameters:
-            self.module.consumables.availability = self._parameters["cons_availability"]
-
-        if "beds_availability" in self._parameters:
-            self.module.bed_days.switch_beddays_availability(
-                new_availability=self._parameters["beds_availability"],
-                effective_on_and_from=self.sim.date,
-                model_to_data_popsize_ratio=self.sim.modules["Demography"].initial_model_to_data_popsize_ratio,
+        self.supported_parameters = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing"]
+        if not all(param in self.supported_parameters for param in parameters_to_change):
+            raise ValueError(
+                f"parameters_to_change can only contain the following values: {self.supported_parameters}. "
+                f"Received: {parameters_to_change}"
             )
 
-        if "equip_availability" in self._parameters:
-            self.module.equipment.availability = self._parameters["equip_availability"]
+        self.parameters_to_change = parameters_to_change
 
-        if "use_funded_or_actual_staffing" in self._parameters:
-            self.module.use_funded_or_actual_staffing = self._parameters["use_funded_or_actual_staffing"]
+    def apply(self, population):
+        p = self.module.parameters
+
+        if "cons_availability" in self.parameters_to_change:
+            self.module.consumables.availability = p["cons_availability_postSwitch"]
+
+        if "equip_availability" in self.parameters_to_change:
+            self.module.equipment.availability = p["equip_availability_postSwitch"]
+
+        if "use_funded_or_actual_staffing" in self.parameters_to_change:
+            self.module.use_funded_or_actual_staffing = p["use_funded_or_actual_staffing_postSwitch"]
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
@@ -3234,7 +3216,7 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
             # For each HSI event in the queue
             while health_system.HSI_EVENT_QUEUE:
                 event = hp.heappop(health_system.HSI_EVENT_QUEUE)
-                
+
                 # Get its clinic eligibility
                 clinic_eligibility = health_system.get_clinic_eligibility(event.hsi_event.TREATMENT_ID)
 
