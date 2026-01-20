@@ -55,8 +55,8 @@ class ClimateDisruptionScenario(BaseScenario):
         #self._parameter_grid = full_grid[0]
         self.number_of_draws = 1
 
-        with open("selected_parameter_combinations_baseline.json", "w") as f:
-            json.dump(self._parameter_grid, f, indent=2)
+        #with open("selected_parameter_combinations_baseline.json", "w") as f:
+        #    json.dump(self._parameter_grid, f, indent=2)
 
     def log_configuration(self):
         return {
