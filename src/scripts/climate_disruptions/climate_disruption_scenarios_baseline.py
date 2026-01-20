@@ -43,7 +43,7 @@ class ClimateDisruptionScenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2041, 1, 1)
+        self.end_date = Date(2025, 1, 1)
         self.pop_size = 100_000
         self.runs_per_draw = 5
         self._parameter_grid = full_grid[0]
@@ -70,7 +70,7 @@ class ClimateDisruptionScenario(BaseScenario):
         return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
-        return get_parameters_for_status_quo() #self._parameter_grid
+        return self._parameter_grid
 
 if __name__ == "__main__":
     from tlo.cli import scenario_run
