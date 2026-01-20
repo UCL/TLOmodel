@@ -556,7 +556,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             "Weibull distribution scale parameter for number of days between a self-test result and "
             "confirmatory test"
         ),
-        "proportion_on_treatment_lost_to_follow_up": Parameter(
+        "proportion_on_treatment_not_lost_to_follow_up": Parameter(
             Types.REAL,
             "proportion of people who are lost to follow up due to not attending follow-up appointments"
         ),
@@ -1024,7 +1024,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # --- Current status
         df.loc[df.is_alive, "hv_inf"] = False
         df.loc[df.is_alive, "hv_art"] = "not"
-        df.loc[df.is_alive, "hv_is_on_prep"] = False
+        df.loc[df.is_alive, "hv_is_on_prep_oral"] = False
+        df.loc[df.is_alive, "hv_is_on_prep_inj"] = False
         df.loc[df.is_alive, "hv_behaviour_change"] = False
         df.loc[df.is_alive, "hv_diagnosed"] = False
         df.loc[df.is_alive, "hv_number_tests"] = 0
@@ -3005,7 +3006,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
 
             # decide whether long-term LTFU or return within 3 months
             # change return to 1 month
-            if m.rng.random_sample() < p['proportion_on_treatment_lost_to_follow_up']:
+            if m.rng.random_sample() < p['proportion_on_treatment_not_lost_to_follow_up']:
 
                 # refer for another treatment again in 3 months
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -4389,7 +4390,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     df.is_alive
                     & df.li_is_sexworker
                     & (df.age_years >= 15)
-                    & df.hv_is_on_prep
+                    & (df.hv_is_on_prep_oral | df.hv_is_on_prep_inj)
                     ]
             ) / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
         ) if len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)]) else 0
