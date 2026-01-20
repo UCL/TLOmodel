@@ -824,6 +824,15 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet["year"].values for sheet in self.parameters["yearly_HR_scaling"].values())
 
+        # Read in climate disruption files
+        # Parameters for climate-mediated disruptions
+        path_to_resourcefiles_for_climate = resourcefilepath / "climate_change_impacts"
+        self.parameters["projected_precip_disruptions"] = pd.read_csv(
+            path_to_resourcefiles_for_climate
+            / f'ResourceFile_Precipitation_Disruptions_{self.parameters["climate_ssp"]}_{self.parameters["climate_model_ensemble_model"]}.csv'
+        )
+
+
     def validate_clinic_configuration(self, clinic_capabilities_df: pd.DataFrame):
         """Validate the contents of the clinics capabilities dataframe.
         :param clinic_capabilities_df: DataFrame read from ResourceFile_Clinics.csv
@@ -856,13 +865,6 @@ class HealthSystem(Module):
                 "are also present in the configuration file."
             )
 
-        # Read in climate disruption files
-        # Parameters for climate-mediated disruptions
-        path_to_resourcefiles_for_climate = resourcefilepath / "climate_change_impacts"
-        self.parameters["projected_precip_disruptions"] = pd.read_csv(
-            path_to_resourcefiles_for_climate
-            / f'ResourceFile_Precipitation_Disruptions_{self.parameters["climate_ssp"]}_{self.parameters["climate_model_ensemble_model"]}.csv'
-        )
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
