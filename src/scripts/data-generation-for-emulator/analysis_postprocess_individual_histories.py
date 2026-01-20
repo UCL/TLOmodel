@@ -101,7 +101,11 @@ def retrieve_analysis_script_commit_hash():
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
   
     individual_histories = extract_individual_histories(results_folder)
+    for i in range(2):
+        print(individual_histories[i].to_csv(f'individual_histories_draw{i}.csv'))
     exit(-1)
+    
+    
     file = Path(__file__).resolve()
     
     # 1. Check that analysis file has been committed, and store path + commit

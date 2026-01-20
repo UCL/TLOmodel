@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, List, Optional
 import numpy as np
 import pandas as pd
 
-from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging, Date
 from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -832,11 +832,9 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         p = m.parameters
 
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (ce_hpv_cc_status) -------------------------------
-        print("HERE ====")
         if p['generate_emulator_data'] and self.sim.date == Date(2010,1,1):
-            print("FIND ELIGIBLE INDIVIDUALS")
-            eligible_individuals = (df.is_alive &#
-                                   (df.sex == 'F')
+            eligible_individuals = (df.is_alive &
+                                   (df.sex == 'F') &
                                    (df.age_years >= 15))
             df.loc[eligible_individuals, 'ce_hpv_cc_status'] = 'cin1'
         else:

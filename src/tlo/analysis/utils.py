@@ -444,7 +444,7 @@ def extract_individual_histories(results_folder: Path,
     format 'entity', 'date', 'event_name', 'Info' where 'Info' is a dictionary that combines
     A&Vs for a particular individual + date + event name combination.
     """
-    module = 'tlo.methods.individual_history'
+    module = 'tlo.methods.individual_history_tracker'
     key = 'individual_histories'
 
     # get number of draws and numbers of runs

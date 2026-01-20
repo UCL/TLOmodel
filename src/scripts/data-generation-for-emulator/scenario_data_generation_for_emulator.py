@@ -13,7 +13,7 @@ import pandas as pd
 
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios, get_filtered_treatment_ids
-from tlo.methods import individual_history_tracker
+from tlo.methods import individual_history_tracker, cervical_cancer, demography, enhanced_lifestyle, symptommanager, healthsystem, healthburden, healthseekingbehaviour, epi, hiv, tb, simplified_births
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 import random
@@ -22,7 +22,7 @@ import ast
 import numpy as np
 
 module_of_interest ='CervicalCancer'
-N_param_combo = 10
+N_param_combo = 2
 
 def detect_and_convert(value):
     # try float
@@ -141,8 +141,8 @@ class TrackIndividualHistories(BaseScenario):
         super().__init__()
         self.seed = 42
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=1)
-        self.pop_size = 1000
+        self.end_date = self.start_date + pd.DateOffset(months=5)
+        self.pop_size = 100
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 2
@@ -159,14 +159,28 @@ class TrackIndividualHistories(BaseScenario):
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.individual_history': logging.INFO
+                'tlo.methods.individual_history_tracker': logging.INFO
             }
         }
 
     def modules(self):
         return (
-            fullmodel() + [individual_history_tracker.IndividualHistoryTracker()]
-        )
+            #fullmodel() + [individual_history_tracker.IndividualHistoryTracker()]
+            [demography.Demography(),
+            cervical_cancer.CervicalCancer(),
+            enhanced_lifestyle.Lifestyle(),
+            healthburden.HealthBurden(),
+            healthseekingbehaviour.HealthSeekingBehaviour(),
+            symptommanager.SymptomManager(),
+            # HealthSystem and the Expanded Programme on Immunizations
+            epi.Epi(),
+            healthsystem.HealthSystem(),
+            hiv.Hiv(),
+            simplified_births.SimplifiedBirths(),
+            tb.Tb(),
+            individual_history_tracker.IndividualHistoryTracker(),
+            ]
+            )
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < self.number_of_draws:
@@ -176,30 +190,28 @@ class TrackIndividualHistories(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         
-        """
         parameter_draws_sampled = sample_param_combo()
         
         parameter_draws = {}
-        for i in range(10):
+        for i in range(N_param_combo):
             parameter_draws[i] = {
                                   'HealthSystem': parameter_draws_sampled[i]['HealthSystem'],
                                   module_of_interest: parameter_draws_sampled[i][module_of_interest]
                                  }
 
         scenarios = {}
-        for i in range(10):
-            scenarios[i] = mix_scenarios(
+        for i in range(N_param_combo):
+            scenarios[str(i)] = mix_scenarios(
                                     self._baseline(),
                                     parameter_draws[i]
                             )
-        """
-        scenarios = {
-                      'Baseline' : mix_scenarios(
-                                    self._baseline(),
-                                    #parameter_draws[i]
-                                    )
-        
-                    }
+        #scenarios = {
+        #              'Baseline' : mix_scenarios(
+        #                            self._baseline(),
+        #                            #parameter_draws[i]
+        #                            )
+        #
+        #            }
         return scenarios
 
     def _baseline(self) -> Dict:
@@ -209,6 +221,12 @@ class TrackIndividualHistories(BaseScenario):
             {
                 "HealthSystem": {
                     "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
+                },
+                "IndividualHistoryTracker": {
+                    "generate_emulation_data": True,
+                },
+                 "CervicalCancer": {
+                    "generate_emulator_data": True,
                 }
             },
         )
