@@ -189,10 +189,10 @@ class CMDChronicKidneyDisease(Module):
             "The date of kidney transplant (pd.NaT if never transplanted)"
         ),
         "ckd_death_event_scheduled": Property(Types.BOOL,
-            "Whether death event has been been scheduled for person"),
+                                              "Whether death event has been been scheduled for person"),
         "ckd_in_renal_clinic": Property(Types.BOOL,
-            "Whether a person is currently attending renal clinic and medication"
-        ),
+                                        "Whether a person is currently attending renal clinic and medication"
+                                        ),
         "ckd_date_started_renal_clinic": Property(
             Types.DATE,
             "The date of commencement of renal clinic"
@@ -246,7 +246,6 @@ class CMDChronicKidneyDisease(Module):
         df.loc[list(alive_ckd_idx), "ckd_death_event_scheduled"] = False
         df.loc[list(alive_ckd_idx), "ckd_in_renal_clinic"] = False
         df.loc[list(alive_ckd_idx), "ckd_date_started_renal_clinic"] = pd.NaT
-
 
         df.loc[list(alive_ckd_idx), "uses_herbal_medicine"] = \
             self.rng.random(len(alive_ckd_idx)) < p['prop_herbal_use_ckd']
@@ -342,7 +341,6 @@ class CMDChronicKidneyDisease(Module):
                 target_categories=["stage5"]
             )
         )
-
 
         # ----- DISABILITY-WEIGHTS -----
         if "HealthBurden" in self.sim.modules:
@@ -508,6 +506,7 @@ class CMDChronicKidneyDisease(Module):
 
         df.at[person_id, 'ckd_death_event_scheduled'] = True
 
+
 class CMDChronicKidneyDiseasePollEvent(RegularEvent, PopulationScopeEventMixin):
     """An event that controls the development process of Chronic Kidney Disease (CKD) and logs current states."""
 
@@ -668,8 +667,9 @@ class CKD_DialysisDeathEvent(Event, IndividualScopeEventMixin):
                 originating_module=self.module
             )
 
-            # Reset the flag since person is now dead
+            # Reset the flags since person is now dead
             df.at[person_id, 'ckd_death_event_scheduled'] = False
+            df.at[person_id, 'ckd_in_renal_clinic'] = False
         else:
             # If person survived this check, reschedule for another check in 6 months
             next_check_date = self.sim.date + DateOffset(months=6)
@@ -678,10 +678,10 @@ class CKD_DialysisDeathEvent(Event, IndividualScopeEventMixin):
                 next_check_date
             )
 
+
 class CKD_Renal_Clinic_DeathEvent(Event, IndividualScopeEventMixin):
     """
-    Performs death for individuals who have been on dialysis for certain durations.
-    Uses dialysis session count to determine time on dialysis.
+    Performs death for individuals who have been the renal clinic for certain durations.
     """
 
     def __init__(self, module, person_id):
@@ -694,52 +694,51 @@ class CKD_Renal_Clinic_DeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
-        # Check if person is still on dialysis
+        # Check if person is still in renal clinic
         if not df.at[person_id, "ckd_in_renal_clinic"]:
             return
 
-        # Calculate approximate years on dialysis based on session count
-        # Assuming 3 sessions per week = 144 sessions per year
-        total_sessions = df.at[person_id, "nc_ckd_total_dialysis_sessions"]
-        approx_years_on_dialysis = total_sessions / 144.0
+        # Calculate years in renal clinic so far
+        date_started = df.at[person_id, "ckd_date_started_renal_clinic"]
+        if pd.isnull(date_started):
+            return
+
+        years_in_clinic = (self.sim.date - date_started).days / 365.25
 
         # Determine if death should occur based on the year thresholds
         should_die = False
 
-        if approx_years_on_dialysis >= 10:
-            # Person has been on dialysis for at least 10 years
+        if years_in_clinic >= 10:
+            # Person has been in renal clinic for at least 10 years
             rand_val = self.module.rng.random()
             # Person dies if random value is less than probability
             should_die = rand_val < p['prob_renal_clinic_death_10_years']
 
-        elif approx_years_on_dialysis >= 5:
-            # Person has been on dialysis for at least 5 years
+        elif years_in_clinic >= 5:
+            # Person has been in renal clinic  for at least 5 years
             rand_val = self.module.rng.random()
             should_die = rand_val < p['prob_renal_clinic_death_5_years']
 
-        elif approx_years_on_dialysis >= 1:
-            # Person has been on dialysis for at least 1 year
+        elif years_in_clinic >= 1:
+            # Person has been in renal clinic  for at least 1 year
             rand_val = self.module.rng.random()
             should_die = rand_val < p['prob_renal_clinic_death_1_year']
 
         if should_die:
-            logger.debug(key="CKD_DialysisDeathEvent",
-                         data=f"CKD_DialysisDeathEvent: scheduling death for person {person_id} "
-                              f"on dialysis for {approx_years_on_dialysis:.1f} years on {self.sim.date}")
-
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
                 cause="chronic_kidney_disease",
                 originating_module=self.module
             )
 
-            # Reset the flag since person is now dead
+            # Reset the flags since person is now dead
             df.at[person_id, 'ckd_death_event_scheduled'] = False
+            df.at[person_id, 'ckd_in_renal_clinic'] = False
         else:
             # If person survived this check, reschedule for another check in 6 months
             next_check_date = self.sim.date + DateOffset(months=6)
             self.sim.schedule_event(
-                CKD_DialysisDeathEvent(self.module, person_id),
+                CKD_Renal_Clinic_DeathEvent(self.module, person_id),
                 next_check_date
             )
 
@@ -842,8 +841,6 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
         if person["ckd_on_treatment"] or not person["ckd_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        assert pd.isnull(df.at[person_id, 'ckd_date_treatment'])
-
         is_cons_available = self.get_consumables(
             self.module.cons_item_codes['renal_consumables']
         )
@@ -857,9 +854,12 @@ class HSI_Renal_Clinic_and_Medication(HSI_Event, IndividualScopeEventMixin):
             # record date of treatment
             #df.at[person_id, 'ckd_on_treatment'] = True
             df.at[person_id, 'ckd_in_renal_clinic'] = True
-            df.at[person_id, 'ckd_date_treatment'] = self.sim.date
+            # df.at[person_id, 'ckd_date_treatment'] = self.sim.date
+            # Set renal clinic start date if patient is new
+            if pd.isna(df.at[person_id, 'ckd_date_started_renal_clinic']):
+                df.at[person_id, 'ckd_date_started_renal_clinic'] = self.sim.date
             df.at[person_id, 'ckd_stage_at_which_treatment_given'] = df.at[person_id, 'ckd_status']
-            self.add_equipment({'Weighing scale', 'Blood pressure machine', 'Purple blood bottle', 'Red blood bottle'
+            self.add_equipment({'Weighing scale', 'Blood pressure machine', 'Purple blood bottle', 'Red blood bottle',
                                 'Ultrasound scanning machine', 'Electrocardiogram', 'Oxygen concentrator'})
             if renal_medication_successful:
                 next_session = self.sim.date + pd.DateOffset(months=1)
@@ -930,39 +930,38 @@ class HSI_Kidney_Transplant_Evaluation(HSI_Event, IndividualScopeEventMixin):
             # Set person to be on dialysis
             df.at[person_id, 'nc_ckd_on_dialysis'] = True
 
-
-# class HSI_Haemodialysis_Refill(HSI_Event, IndividualScopeEventMixin):
-#     """This is an event in which a person goes for dialysis sessions 2 times a week
-#     adding up to 8 times a month."""
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#         self.TREATMENT_ID = 'CKD_Treatment_Haemodialysis'
-#         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-#         self.ACCEPTED_FACILITY_LEVEL = '3'
-#
-#     def apply(self, person_id, squeeze_factor):
-#         df = self.sim.population.props
-#
-#         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'nc_chronic_kidney_disease']:
-#             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-#
-#         if not df.at[person_id, 'nc_ckd_on_dialysis']:
-#             df.at[person_id, 'nc_ckd_on_dialysis'] = True
-#
-#         # Increment total number of dialysis sessions the person has ever had in their lifetime
-#         df.at[person_id, 'nc_ckd_total_dialysis_sessions'] += 1
-#
-#         self.add_equipment({'Chair', 'Dialysis machine', 'Dialyser (Artificial Kidney)',
-#                             'Bloodlines', 'Dialysate solution', 'Dialysis water treatment system'})
-#
-#         next_session_date = self.sim.date + pd.DateOffset(days=3)
-#         self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-#                                                             topen=next_session_date,
-#                                                             tclose=next_session_date + pd.DateOffset(days=1),
-#                                                             priority=1
-#                                                             )
+    # class HSI_Haemodialysis_Refill(HSI_Event, IndividualScopeEventMixin):
+    #     """This is an event in which a person goes for dialysis sessions 2 times a week
+    #     adding up to 8 times a month."""
+    #
+    #     def __init__(self, module, person_id):
+    #         super().__init__(module, person_id=person_id)
+    #
+    #         self.TREATMENT_ID = 'CKD_Treatment_Haemodialysis'
+    #         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+    #         self.ACCEPTED_FACILITY_LEVEL = '3'
+    #
+    #     def apply(self, person_id, squeeze_factor):
+    #         df = self.sim.population.props
+    #
+    #         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'nc_chronic_kidney_disease']:
+    #             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+    #
+    #         if not df.at[person_id, 'nc_ckd_on_dialysis']:
+    #             df.at[person_id, 'nc_ckd_on_dialysis'] = True
+    #
+    #         # Increment total number of dialysis sessions the person has ever had in their lifetime
+    #         df.at[person_id, 'nc_ckd_total_dialysis_sessions'] += 1
+    #
+    #         self.add_equipment({'Chair', 'Dialysis machine', 'Dialyser (Artificial Kidney)',
+    #                             'Bloodlines', 'Dialysate solution', 'Dialysis water treatment system'})
+    #
+    #         next_session_date = self.sim.date + pd.DateOffset(days=3)
+    #         self.sim.modules['HealthSystem'].schedule_hsi_event(self,
+    #                                                             topen=next_session_date,
+    #                                                             tclose=next_session_date + pd.DateOffset(days=1),
+    #                                                             priority=1
+    #                                                             )
 
     def never_ran(self) -> None:
         """What to do if the event is never run by the HealthSystem"""
@@ -1040,27 +1039,24 @@ class HSI_Kidney_Transplant_Surgery(HSI_Event, IndividualScopeEventMixin):
                 )
 
             else:
-                df.at[person_id, 'ckd_date_transplant'] = self.sim.date  #todo Upile look at this logic, related to DALYs
+                df.at[
+                    person_id, 'ckd_date_transplant'] = self.sim.date  #todo Upile look at this logic, related to DALYs
                 # Schedule deaths
                 #self.schedule_dialysis_death_event(person_id)
-                should_die_of_graft_failure = False
                 rand_val = self.module.rng.random()
                 should_die_of_graft_failure = rand_val < p['prob_transplant_death_by_graft_failure']
                 if should_die_of_graft_failure:
-                    self.sim.modules['Demography'].do_death(
-                    individual_id=person_id,
-                    cause="chronic_kidney_disease",
-                    originating_module=self.module)
+                    (self.sim.modules['Demography'].
+                     do_death(individual_id=person_id, cause="chronic_kidney_disease", originating_module=self.module))
 
-                 else:
-                     next_scheduled_HSI = cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_Dialysis_Refill \
-                         if (self.module.rng.random_sample() <
-                             p['prob_going_for_refill_or_evaluation_from_graft_failure']) else HSI_Kidney_Transplant_Evaluation
-                     hs.schedule_hsi_event(
-                         hsi_event=next_scheduled_HSI(module=self.module, person_id=person_id),
-                         topen=self.sim.date,
-                         priority=0
-                     )
+                else:
+                    next_scheduled_hsi = cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_Dialysis_Refill \
+                        if (self.module.rng.random_sample() <
+                            p[
+                                'prob_going_for_refill_or_evaluation_from_graft_failure']) else HSI_Kidney_Transplant_Evaluation
+                    hs.schedule_hsi_event(
+                        hsi_event=next_scheduled_hsi(module=self.module, person_id=person_id),
+                        priority=0)
 
 
 class HSI_AntiRejectionDrug_Refill(HSI_Event, IndividualScopeEventMixin):
