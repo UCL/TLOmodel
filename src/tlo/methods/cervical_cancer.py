@@ -73,7 +73,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             "probability per month of oncogenic hpv infection",
         ),
         "r_cin1_hpv": Parameter(
-            Types.REAL,
+            Types.REAL,x
             "probability per month of incident cin1 amongst people with hpv",
         ),
         "prob_revert_from_cin1": Parameter(
