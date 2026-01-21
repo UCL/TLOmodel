@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List, Optional
 
 import pandas as pd
+
 from tlo import Module, Parameter, Property, Types, logging
 from tlo.notify import notifier
 from tlo.population import Population
