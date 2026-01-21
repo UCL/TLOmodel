@@ -120,7 +120,10 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
         # For each draw, group by individual
         for person_ID, group in individual_histories[draw].groupby('person_ID_in_draw'):
         
-            
+            if group.loc[0]['Info']['iht_track_history'] is False:
+                continue
+                
+            # If proceeding, will collect following
             polling_event_found = False
             # The changing or adding of properties from the first_event will be stored in progression_properties
             progression_properties = {}
@@ -132,22 +135,28 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
             episode_end_properties = {}
             
             resource_access = {}
-            
-            if group.loc[0]['Info']['iht_track_history'] is False:
-                continue
 
             # Iterate over each row in this group
             for idx, row in group.iterrows():
                 
                 info = row['Info']
-
-                    
                 running_date = row['date']
                 
+                # Update running properties
                 if len(progression_properties) == 0:
                     progression_properties = info
                 else:
                     progression_properties.update(info)
+                    
+                # Check if anything was accessed:
+                if 'treatment_ID' in info:
+                    if info['level'] not in resource_access:
+                        resource_access[info['level']]['footprint'] = Counter()
+                        resource_access[info['level']]['consumable'] = Counter()
+                        resource_access[info['level']]['beds'] = Counter()
+                    resource_access[info['level']]['footprint'] += info['footprint']
+                    resource_access[info['level']]['consumable'] += info['consumable']
+                    resource_access[info['level']]['beds'] += info['beds']
             
                 if 'CervicalCancerMainPollingEvent' in row['event_name'] and progression_properties['ce_hpv_cc_status'] == 'cin1' and progression_properties['sex'] == 'F':
                     polling_event_found = True
@@ -181,6 +190,8 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
                 data['is_alive_after_ce'] = episode_end_properties['is_alive']
             else:
                 data['is_alive_after_ce'] = None
+            
+            for key
             
             print("Episode start ", episode_start_date)
             print("properties ", episode_start_properties)
