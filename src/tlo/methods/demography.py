@@ -706,8 +706,8 @@ class Demography(Module):
                                                                     wealth=person['li_wealth'],
                                                                     date_of_birth=person['date_of_birth'],
                                                                     age_range=person['age_range'],
-                                                                    district_of_residence=person[
-                                                                        'district_of_residence'],
+                                                                   # district_of_residence=person[
+                                                                   #     'district_of_residence'],
                                                                     cause_of_death=cause,
                                                                     )
 
