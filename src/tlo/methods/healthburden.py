@@ -578,80 +578,6 @@ class HealthBurden(Module):
             force_cols=self._causes_of_dalys,
         )
 
-        # ============================================================
-        # MONTHLY DALYs (YLD + YLL stacked by time)
-        # ============================================================
-
-        # Monthly YLD by sex and age
-        yld_monthly = self.summarise_results_for_year_and_month(
-            self.years_lived_with_disability,
-            level=[0, 1]  # sex, age_range
-        )
-
-        # Monthly YLL (stacked by time) by sex and age
-        yll_monthly = self.summarise_results_for_year_and_month(
-            self.years_life_lost_stacked_time,
-            level=[0, 1]
-        )
-
-        # Monthly DALYs by sex and age
-        dalys_monthly = self.get_dalys(yld=yld_monthly, yll=yll_monthly)
-
-        log_df_line_by_line(
-            key='dalys_by_month',
-            description=(
-                'Monthly DALYs (YLD + YLL stacked by time), broken down by '
-                'year, month, sex, and age-group.'
-            ),
-            df=dalys_monthly,
-            force_cols=self._causes_of_dalys,
-        )
-
-        # Monthly YLD by causes of disability
-        log_df_line_by_line(
-            key='yld_by_month',
-            description=(
-                'Monthly YLD by the declared cause_of_disability, broken down by '
-                'year, month, sex, and age-group.'
-            ),
-            df=yld_monthly,
-            force_cols=sorted(set(self.causes_of_disability.keys())),
-        )
-
-        # Monthly YLL (stacked by time) by causes of death
-        log_df_line_by_line(
-            key='yll_by_month_stacked',
-            description=(
-                'Monthly YLL (stacked by time) by the declared cause_of_death, broken down by '
-                'year, month, sex, and age-group.'
-            ),
-            df=yll_monthly,
-            force_cols=self._causes_of_yll,
-        )
-
-        # Monthly DALYs by wealth
-        yld_monthly_by_wealth = self.summarise_results_for_year_and_month(
-            self.years_lived_with_disability,
-            level=[2]  # li_wealth
-        )
-
-        yll_monthly_by_wealth = self.summarise_results_for_year_and_month(
-            self.years_life_lost_stacked_time,
-            level=[2]
-        )
-
-        dalys_monthly_by_wealth = self.get_dalys(yld=yld_monthly_by_wealth, yll=yll_monthly_by_wealth)
-
-        log_df_line_by_line(
-            key='dalys_by_month_and_wealth',
-            description=(
-                'Monthly DALYs (YLD + YLL stacked by time), broken down by '
-                'year, month, and wealth category.'
-            ),
-            df=dalys_monthly_by_wealth,
-            force_cols=self._causes_of_dalys,
-        )
-
         # Monthly DALYs by district
         yld_monthly_by_district = self.summarise_results_for_year_and_month(
             self.years_lived_with_disability,
@@ -675,57 +601,7 @@ class HealthBurden(Module):
             force_cols=self._causes_of_dalys,
         )
 
-        # Monthly DALYs by sex, age, and wealth
-        yld_monthly_by_sex_age_wealth = self.summarise_results_for_year_and_month(
-            self.years_lived_with_disability,
-            level=[0, 1, 2]  # sex, age_range, li_wealth
-        )
 
-        yll_monthly_by_sex_age_wealth = self.summarise_results_for_year_and_month(
-            self.years_life_lost_stacked_time,
-            level=[0, 1, 2]
-        )
-
-        dalys_monthly_by_sex_age_wealth = self.get_dalys(
-            yld=yld_monthly_by_sex_age_wealth,
-            yll=yll_monthly_by_sex_age_wealth
-        )
-
-        log_df_line_by_line(
-            key='dalys_by_month_sex_age_wealth',
-            description=(
-                'Monthly DALYs (YLD + YLL stacked by time), broken down by '
-                'year, month, sex, age-group, and wealth category.'
-            ),
-            df=dalys_monthly_by_sex_age_wealth,
-            force_cols=self._causes_of_dalys,
-        )
-
-        # Monthly DALYs by sex, age, and district
-        yld_monthly_by_sex_age_district = self.summarise_results_for_year_and_month(
-            self.years_lived_with_disability,
-            level=[0, 1, 3]  # sex, age_range, district_of_residence
-        )
-
-        yll_monthly_by_sex_age_district = self.summarise_results_for_year_and_month(
-            self.years_life_lost_stacked_time,
-            level=[0, 1, 3]
-        )
-
-        dalys_monthly_by_sex_age_district = self.get_dalys(
-            yld=yld_monthly_by_sex_age_district,
-            yll=yll_monthly_by_sex_age_district
-        )
-
-        log_df_line_by_line(
-            key='dalys_by_month_sex_age_district',
-            description=(
-                'Monthly DALYs (YLD + YLL stacked by time), broken down by '
-                'year, month, sex, age-group, and district.'
-            ),
-            df=dalys_monthly_by_sex_age_district,
-            force_cols=self._causes_of_dalys,
-        )
 
         self._years_written_to_log += [year]
 
