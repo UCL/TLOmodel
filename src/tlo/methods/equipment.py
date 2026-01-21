@@ -145,8 +145,7 @@ class Equipment:
 
         def check_item_descriptors_recognised(item_descriptors: set[str]):
             if not item_descriptors.issubset(self._all_item_descriptors):
-                return
-                # warnings.warn(f'At least one item descriptor was unrecognised "{item_descriptors}".')
+                warnings.warn(f'At least one item descriptor was unrecognised "{item_descriptors}".')
 
         # Make into a set if it is not one already
         if isinstance(items, (str, int)):
