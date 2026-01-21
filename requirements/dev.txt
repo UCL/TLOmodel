@@ -88,6 +88,7 @@ charset-normalizer==3.2.0
 click==8.1.7
     # via
     #   -c requirements/base.txt
+    #   fiona
     #   pip-tools
     #   tlo (pyproject.toml)
 cloudpickle==3.1.2
@@ -151,6 +152,10 @@ filelock==3.20.0
     #   torch
     #   tox
     #   virtualenv
+fiona==1.9.5
+    # via
+    #   -c requirements/base.txt
+    #   geopandas
 fonttools==4.42.1
     # via
     #   -c requirements/base.txt
@@ -159,6 +164,10 @@ fsspec==2025.10.0
     # via
     #   -c requirements/base.txt
     #   torch
+geopandas==0.14.4
+    # via
+    #   -c requirements/base.txt
+    #   tlo (pyproject.toml)
 gitdb==4.0.10
     # via
     #   -c requirements/base.txt
@@ -252,6 +261,7 @@ numpy==1.24.4
     #   copulas
     #   ctgan
     #   deepecho
+    #   geopandas
     #   matplotlib
     #   pandas
     #   rdt
@@ -259,6 +269,7 @@ numpy==1.24.4
     #   scipy
     #   sdmetrics
     #   sdv
+    #   shapely
     #   tlo (pyproject.toml)
 oauthlib==3.2.2
     # via
@@ -272,6 +283,7 @@ packaging==23.1
     # via
     #   -c requirements/base.txt
     #   build
+    #   geopandas
     #   matplotlib
     #   plotly
     #   pyproject-api
@@ -283,6 +295,7 @@ pandas==2.0.3
     #   copulas
     #   ctgan
     #   deepecho
+    #   geopandas
     #   rdt
     #   sdmetrics
     #   sdv
@@ -332,6 +345,10 @@ pyparsing==3.1.1
     # via
     #   -c requirements/base.txt
     #   matplotlib
+pyproj==3.6.1
+    # via
+    #   -c requirements/base.txt
+    #   geopandas
 pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
@@ -411,10 +428,15 @@ sdv==1.24.1
     # via
     #   -c requirements/base.txt
     #   tlo (pyproject.toml)
+shapely==2.0.4
+    # via
+    #   -c requirements/base.txt
+    #   geopandas
 six==1.16.0
     # via
     #   -c requirements/base.txt
     #   azure-core
+    #   fiona
     #   isodate
     #   msrestazure
     #   python-dateutil

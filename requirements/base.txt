@@ -83,8 +83,12 @@ filelock==3.20.0
     # via torch
 fonttools==4.42.1
     # via matplotlib
+fiona==1.9.5
+    # via geopandas
 fsspec==2025.10.0
     # via torch
+geopandas==0.14.4
+    # via tlo (pyproject.toml)
 gitdb==4.0.10
     # via gitpython
 gitpython==3.1.36
@@ -136,6 +140,7 @@ numpy==1.24.4
     #   copulas
     #   ctgan
     #   deepecho
+    #   geopandas
     #   matplotlib
     #   pandas
     #   rdt
@@ -143,6 +148,7 @@ numpy==1.24.4
     #   scipy
     #   sdmetrics
     #   sdv
+    #   shapely
     #   tlo (pyproject.toml)
 oauthlib==3.2.2
     # via requests-oauthlib
@@ -150,6 +156,7 @@ openpyxl==3.1.0
     # via tlo (pyproject.toml)
 packaging==23.1
     # via
+    #   geopandas
     #   matplotlib
     #   plotly
 pandas==2.0.3
@@ -157,6 +164,7 @@ pandas==2.0.3
     #   copulas
     #   ctgan
     #   deepecho
+    #   geopandas
     #   rdt
     #   sdmetrics
     #   sdv
@@ -179,6 +187,8 @@ pyjwt[crypto]==2.8.0
     #   msal
 pyparsing==3.1.1
     # via matplotlib
+pyproj==3.6.1
+    # via geopandas
 pyshp==2.3.1
     # via tlo (pyproject.toml)
 python-dateutil==2.9.0.post0
@@ -222,9 +232,12 @@ sdmetrics==0.24.0
     # via sdv
 sdv==1.24.1
     # via tlo (pyproject.toml)
+shapely==2.0.4
+    # via geopandas
 six==1.16.0
     # via
     #   azure-core
+    #   fiona
     #   isodate
     #   msrestazure
     #   python-dateutil
