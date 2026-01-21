@@ -133,11 +133,15 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
             episode_start_properties = {}
             episode_end_properties = {}
             
+            
+            
             # Iterate over each row in this group
             for idx, row in group.iterrows():
                 
                 info = row['Info']
                 running_date = row['date']
+                
+                
 
                 if len(progression_properties) == 0:
                     progression_properties = info
@@ -163,13 +167,26 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
 
             if episode_start_date is not None and episode_end_date is None:
                 print("Episode began but was not completed for this individual")
+                
+            # To store for each individual:
+            data = {}
+            if episode_end_date is not None and episode_start_date is not None:
+                data['duration_of_episode'] = (episode_end_date - episode_start_date).days
+            else:
+                data['duration_of_episode'] = None
+                
+            if len(episode_end_properties)>0:
+                data['is_alive_after_ce'] = episode_end_properties['is_alive']
+            else:
+                data['is_alive_after_ce'] = None
+            
             print("Episode start ", episode_start_date)
             print("properties ", episode_start_properties)
             print("Episode end ", episode_end_date)
             print("properties ", episode_end_properties)
-            
+            print('data fr individual', data)
 
-            print("Overall duration")
+            print("=============")
 
 
 
