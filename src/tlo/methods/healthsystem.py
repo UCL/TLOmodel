@@ -2660,6 +2660,8 @@ class HealthSystem(Module):
                     for event_details, event_details_key in self._never_ran_hsi_event_details.items()
                 }
             )
+
+    @property
     def weather_cancelled_hsi_event_counts(self) -> Counter:
         """Counts of details of HSI events which were cancelled due to weather so far in simulation.
 
@@ -2683,6 +2685,7 @@ class HealthSystem(Module):
                 }
             )
 
+    @property
     def weather_delayed_hsi_event_counts(self) -> Counter:
         """Counts of details of HSI events which were delayed due to weather so far in simulation.
 
@@ -2826,13 +2829,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # added to the running footprint total to be subtracted from the daily capabilities
                     if np.random.binomial(1, self.module.parameters["prop_supply_side_disruptions"]) and self.module.parameters["mode_appt_constraints"] == 2:
                         footprint = item.hsi_event.expected_time_requests
-                        self.running_total_footprint.update(footprint)
+                        self.module.running_total_footprint.update(footprint)
                     # Regardless of supply or demand side, determine if the appointment will be rescheduled
                     if self.sim.modules[
                         "HealthSeekingBehaviour"
                     ].force_any_symptom_to_lead_to_healthcareseeking:
                         self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
                             priority=item.priority,
+                            clinic_eligibility=item.clinic_eligibility,
                             topen=self.sim.date
                                   + DateOffset(
                                 days=(
@@ -2933,8 +2937,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def process_events_mode_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
-            year = self.sim.date.year
-            month = self.sim.date.month
             # Get the events that are due today:
             list_of_individual_hsi_event_tuples_due_today = self._get_events_due_today()
 
@@ -3546,14 +3548,6 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if "use_funded_or_actual_staffing" in self.parameters_to_change:
             self.module.use_funded_or_actual_staffing = p["use_funded_or_actual_staffing_postSwitch"]
-
-        if 'equip_availability' in self._parameters:
-            self.module.equipment.availability = self._parameters['equip_availability']
-
-        if 'use_funded_or_actual_staffing' in self._parameters:
-            self.module.use_funded_or_actual_staffing = self._parameters['use_funded_or_actual_staffing'],
-
-
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     """This event exists to scale the daily capabilities assumed at fixed time intervals"""
