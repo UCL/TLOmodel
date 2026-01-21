@@ -151,7 +151,9 @@ oauthlib==3.2.2
 openpyxl==3.1.0
     # via tlo (pyproject.toml)
 packaging==23.1
-    # via matplotlib
+    # via
+    #matplotlib
+    # plotly
 pandas==2.0.3
     # via
     #   copulas
