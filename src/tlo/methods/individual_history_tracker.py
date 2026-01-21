@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Optional
 
 import pandas as pd
-
 from tlo import Module, Parameter, Property, Types, logging
 from tlo.notify import notifier
 from tlo.population import Population
@@ -192,10 +191,15 @@ class IndividualHistoryTracker(Module):
             return
             
         # Copy this info for individual
-        self.consumable_access[data['target']] = {
-            ('ConsCall' + str(self.cons_call_number_within_event) + '_' + k): v
-            for k, v in data.items() if k != 'target'}
-            
+        if self.cons_call_number_within_event == 0:
+            self.consumable_access[data['target']] = {'ConsCall' + str(self.cons_call_number_within_event) : {
+                (k): v
+                for k, v in data.items() if k not in ['target', 'module', 'event_name']}}
+        else:
+            self.consumable_access[data['target']]['ConsCall' + str(self.cons_call_number_within_event)] = {
+                (k): v
+                for k, v in data.items() if k not in ['target', 'module', 'event_name']}
+
         self.cons_call_number_within_event += 1
         return
 
