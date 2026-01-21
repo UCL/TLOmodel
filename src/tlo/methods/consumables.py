@@ -353,17 +353,17 @@ class Consumables:
                     items_not_available=items_not_available,
                     items_used=items_used,
                 )
+            if notifier.has_listeners("consumables.post-request_consumables"):
+                data = {
+                    "target": target,
+                    "module": module.name,
+                    "event_name": event_name,
+                    "Item_Available": str(items_available),
+                    "Item_NotAvailable": str(items_not_available),
+                    "Item_Used": str(items_used),
+                }
 
-            data = {
-                "target": target,
-                "module": module.name,
-                "event_name": event_name,
-                "Item_Available": str(items_available),
-                "Item_NotAvailable": str(items_not_available),
-                "Item_Used": str(items_used),
-            }
-
-            notifier.dispatch("consumables.post-request_consumables", data=data)
+                notifier.dispatch("consumables.post-request_consumables", data=data)
 
         # Return the result of the check on availability
         return available

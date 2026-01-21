@@ -112,17 +112,15 @@ def retrieve_analysis_script_commit_hash():
 
 def postprocess_individual_histories(individual_histories): #, draws_parameters):
 
-    # Define initial properties of interest
-    initial_properties_of_interest = []##TO-DO: fill this in]
-    initial_ce_event_properties = set()
-    num_runs = 50
-
     # Iterate over draws
     for draw in range(1):
     
+        data_for_draw = []
+        
         # For each draw, group by individual
         for person_ID, group in individual_histories[draw].groupby('person_ID_in_draw'):
         
+            
             polling_event_found = False
             # The changing or adding of properties from the first_event will be stored in progression_properties
             progression_properties = {}
@@ -133,16 +131,19 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
             episode_start_properties = {}
             episode_end_properties = {}
             
+            resource_access = {}
             
-            
+            if group.loc[0]['Info']['iht_track_history'] is False:
+                continue
+
             # Iterate over each row in this group
             for idx, row in group.iterrows():
                 
                 info = row['Info']
+
+                    
                 running_date = row['date']
                 
-                
-
                 if len(progression_properties) == 0:
                     progression_properties = info
                 else:
@@ -174,7 +175,8 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
                 data['duration_of_episode'] = (episode_end_date - episode_start_date).days
             else:
                 data['duration_of_episode'] = None
-                
+            
+            data['person_ID'] = person_ID
             if len(episode_end_properties)>0:
                 data['is_alive_after_ce'] = episode_end_properties['is_alive']
             else:
@@ -188,7 +190,18 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
 
             print("=============")
 
-
+            data_for_draw.append(data)
+            
+        del df
+        df = pd.DataFrame(data)
+        
+        # Now for this draw, attach draw parameter selection to individual as conditional variables
+        # for k,v in draws_parameters.items()
+            #df[k] = v # Attach this information to every individual in the dataset
+            
+        # Concatenate this df to the overall dataset
+        # dataset.concatenate(df) # This will append data sample from next draws
+    
 
 
 
