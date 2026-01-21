@@ -24,11 +24,11 @@ class LongRun(BaseScenario):
         self.end_date = Date(2040, 1, 1)  # The simulation will stop before reaching this date.
         self.pop_size = 100_000
         self.number_of_draws = 1
-        self.runs_per_draw = 11
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'test_2040_healthburden',  # <- (specified only for local running)
+            'filename': 'test_2040_burden_demog',  # <- (specified only for local running)
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,

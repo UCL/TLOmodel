@@ -2,7 +2,7 @@
   "scenario_script_path": "src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py",
   "scenario_seed": 0,
   "arguments": [],
-  "runs_per_draw": 10,
+  "runs_per_draw": 11,
   "draws": [
     {
       "draw_number": 0,
@@ -24,6 +24,6 @@
       "draw_name": "0"
     }
   ],
-  "commit": "e104507d60af70b632476519b5da081862ae08e9",
-  "github": "https://github.com/UCL/TLOmodel/tree/e104507d60af70b632476519b5da081862ae08e9"
+  "commit": "36eacd6ae8440509d898b517dc04002398283c34",
+  "github": "https://github.com/UCL/TLOmodel/tree/36eacd6ae8440509d898b517dc04002398283c34"
 }
