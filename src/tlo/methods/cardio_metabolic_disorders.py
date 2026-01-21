@@ -1739,6 +1739,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
 
 class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
+    #This is an HSI for medication refill
     """
     This is a Health System Interaction Event in which a person seeks a refill prescription of medication.
     The next refill of medication is also scheduled.
