@@ -103,7 +103,8 @@ def sample_param_combo():
         treatments_in_module = [item for item in treatments if module_of_interest in item]
             
         # Retreive module parameters which are not scenario or design decisions
-        # Ideally unique criterion to filter these
+        # REVIEW: is this best way to access module parameters?
+        # REVIEW: Ideally unique criterion to filter these
         p = pd.read_csv('resources/ResourceFile_Cervical_Cancer/parameter_values.csv')
         # Drop scenario variables
         p = p.drop(p[p['param_label'] == 'scenario'].index)
@@ -118,13 +119,14 @@ def sample_param_combo():
         for draw in range(N_param_combo):
             
             # Create a service availability scenario for this draw. Module treatments are included with a 50/50 probability
-            # TO DO: better handle on random seed here
+            # REVIEW: better handle on random seed here
             selected_treatments = [x for x in treatments_in_module if random.random() < 0.5]
             parameter_draws[draw] = {'HealthSystem': {'Service_Availability': selected_treatments}}
 
             parameter_draws[draw].setdefault(module_of_interest, {})
             for idx, row in p.iterrows():
                 val = row['value']
+                # REVIEW: Resampled value should be informed by prior!
                 r = random.random()
 
                 if isinstance(val, (pd.Series, list, tuple, np.ndarray)):
@@ -141,11 +143,11 @@ class TrackIndividualHistories(BaseScenario):
         super().__init__()
         self.seed = 42
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(months=5)
+        self.end_date = self.start_date + pd.DateOffset(years=30)
         self.pop_size = 100
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 2
+        self.runs_per_draw = 1
         self.generate_event_chains = True
 
     def log_configuration(self):
@@ -190,28 +192,22 @@ class TrackIndividualHistories(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         
-        parameter_draws_sampled = sample_param_combo()
+        module_parameter_and_services_samples = sample_param_combo()
         
         parameter_draws = {}
         for i in range(N_param_combo):
             parameter_draws[i] = {
-                                  'HealthSystem': parameter_draws_sampled[i]['HealthSystem'],
-                                  module_of_interest: parameter_draws_sampled[i][module_of_interest]
+                                  'HealthSystem': module_parameter_and_services_samples[i]['HealthSystem'],
+                                  module_of_interest: module_parameter_and_services_samples[i][module_of_interest]
                                  }
 
         scenarios = {}
-        for i in range(N_param_combo):
+        for i in range(1):
             scenarios[str(i)] = mix_scenarios(
                                     self._baseline(),
-                                    parameter_draws[i]
-                            )
-        #scenarios = {
-        #              'Baseline' : mix_scenarios(
-        #                            self._baseline(),
-        #                            #parameter_draws[i]
-        #                            )
-        #
-        #            }
+                                    #parameter_draws[i]
+                                )
+
         return scenarios
 
     def _baseline(self) -> Dict:

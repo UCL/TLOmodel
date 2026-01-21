@@ -356,7 +356,7 @@ class Consumables:
 
             data = {
                 "target": target,
-                "module": module,
+                "module": module.name,
                 "event_name": event_name,
                 "Item_Available": str(items_available),
                 "Item_NotAvailable": str(items_not_available),

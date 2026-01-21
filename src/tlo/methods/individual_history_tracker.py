@@ -118,7 +118,8 @@ class IndividualHistoryTracker(Module):
             
         # Initialise all individuals as being tracked by default
         pop = self.sim.population.props
-        pop.loc[pop.is_alive, "iht_track_history"] = True
+        pop.loc[pop.is_alive & (pop.sex == "F"), "iht_track_history"] = True
+        pop.loc[pop.is_alive & (pop.sex == "M"), "iht_track_history"] = False
 
     def on_birth(self, mother, child):
         self.sim.population.props.at[child, "iht_track_history"] = True
@@ -193,11 +194,16 @@ class IndividualHistoryTracker(Module):
         # 2) the event is not in the list of events to ignore
         if (data['module'] not in self.modules_of_interest) or (data['event_name'] in self.events_to_ignore):
             return
-            
+
         # Copy this info for individual
-        self.consumable_access[data['target']] = {
-            ('ConsCall' + str(self.cons_call_number_within_event) + '_' + k): v
-            for k, v in data.items() if k != 'target'}
+        if self.cons_call_number_within_event == 0:
+            self.consumable_access[data['target']] = {'ConsCall' + str(self.cons_call_number_within_event) : {
+                (k): v
+                for k, v in data.items() if k not in ['target', 'module', 'event_name']}}
+        else:
+            self.consumable_access[data['target']]['ConsCall' + str(self.cons_call_number_within_event)] = {
+                (k): v
+                for k, v in data.items() if k not in ['target', 'module', 'event_name']}
             
         self.cons_call_number_within_event += 1
         return
