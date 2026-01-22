@@ -16,7 +16,7 @@ from tlo.scenario import BaseScenario
 
 YEAR_OF_CHANGE = 2025
 n_samples_to_use = 200
-LHS_file = "/Users/rem76/PycharmProjects/TLOmodel/src/scripts/climate_disruptions/lhs_parameter_draws.json"
+LHS_file = "src/scripts/climate_disruptions/lhs_parameter_draws.json"
 start_index = 0
 # Latin Hypercube parameters and generation done in src/scripts/climate_disruptions/generate_LHS_params_mode_1.py
 
