@@ -362,7 +362,6 @@ class Consumables:
                     "Item_NotAvailable": str(items_not_available),
                     "Item_Used": str(items_used),
                 }
-
                 notifier.dispatch("consumables.post-request_consumables", data=data)
 
         # Return the result of the check on availability
