@@ -1,7 +1,10 @@
 {
   "scenario_script_path": "src/scripts/climate_disruptions/climate_disruption_scenarios_baseline.py",
   "scenario_seed": 0,
-  "arguments": [],
+  "arguments": [
+    "--suspend-date",
+    "2024-12-31"
+  ],
   "runs_per_draw": 5,
   "draws": [
     {
@@ -31,11 +34,14 @@
           "prop_supply_side_disruptions": 0.5,
           "services_affected_precip": "none",
           "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
         }
       },
       "draw_name": "0"
     }
   ],
-  "commit": "35319d694b82c5ab31f5c07fbedaaf49a462aec1",
-  "github": "https://github.com/UCL/TLOmodel/tree/35319d694b82c5ab31f5c07fbedaaf49a462aec1"
+  "commit": "44bab21e8d6e55d762effedc3c22a726f0495223",
+  "github": "https://github.com/UCL/TLOmodel/tree/44bab21e8d6e55d762effedc3c22a726f0495223"
 }
