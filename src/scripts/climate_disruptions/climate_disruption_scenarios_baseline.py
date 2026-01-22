@@ -35,7 +35,7 @@ full_grid = make_cartesian_parameter_grid(
             "tclose_overwrite": [1000],
         },
         "SymptomManager": {
-            "spurious_symptoms": True,
+            "spurious_symptoms": [True],
         },
     }
 )
