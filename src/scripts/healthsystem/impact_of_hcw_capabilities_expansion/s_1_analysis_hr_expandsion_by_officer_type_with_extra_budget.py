@@ -676,8 +676,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return time_increased_by_treatment
 
     # Get parameter/scenario names
-    param_names = tuple(extra_budget_fracs.drop(columns='s_*'))
-    # param_names = tuple(extra_budget_fracs)
+    # param_names = tuple(extra_budget_fracs.drop(columns='s_*'))
+    param_names = tuple(extra_budget_fracs)
     # param_names = get_parameter_names_from_scenario_file()
 
     # Define cadres in order
@@ -1007,6 +1007,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_treatments_summarized = summarize(num_treatments, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
+    num_treatments_summarized.to_csv(output_folder / 'num_treatments_summarized.csv')
     num_treatments_group_summarized = summarize(num_treatments_group, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
