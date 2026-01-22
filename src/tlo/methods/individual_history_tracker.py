@@ -192,14 +192,13 @@ class IndividualHistoryTracker(Module):
             return
             
         # Copy this info for individual
-        if self.cons_call_number_within_event == 0:
-            self.consumable_access[data['target']] = {'ConsCall' + str(self.cons_call_number_within_event) : {
-                (k): v
-                for k, v in data.items() if k not in ['target', 'module', 'event_name']}}
-        else:
-            self.consumable_access[data['target']]['ConsCall' + str(self.cons_call_number_within_event)] = {
-                (k): v
-                for k, v in data.items() if k not in ['target', 'module', 'event_name']}
+        if data['target'] not in self.consumable_access:
+            self.consumable_access[data['target']] = {}
+        
+        self.consumable_access[data['target']][f'ConsCall{self.cons_call_number_within_event}'] = {
+            (k): v
+            for k, v in data.items() if k not in ['target', 'module', 'event_name']
+        }
 
         self.cons_call_number_within_event += 1
         return
