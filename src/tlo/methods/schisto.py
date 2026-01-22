@@ -571,14 +571,28 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # HSI and treatment params:
         param_list = workbook['parameter_values'].set_index("parameter_name")['value']
 
-        def try_cast_to_float(val):
+        def cast_param(v):
+            if not isinstance(v, str):
+                return v
+
+            s = v.strip()
+            s_lower = s.lower()
+
+            # bool
+            if s_lower == "true":
+                return True
+            if s_lower == "false":
+                return False
+
+            # int (handles + / -)
+            if s_lower.lstrip("+-").isdigit():
+                return int(s)
+
+            # float
             try:
-                # Don't convert strings that contain alphabetic characters
-                if isinstance(val, str) and any(c.isalpha() for c in val):
-                    return val
-                return float(val)
-            except (ValueError, TypeError):
-                return val  # Fall back to original value
+                return float(s)
+            except ValueError:
+                return v
 
         # parameters are all converted to strings if any strings are present
         for _param_name in (
@@ -645,7 +659,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             'avg_weight_adult_kg'
         ):
             value = param_list[_param_name]
-            parameters[_param_name] = try_cast_to_float(value)
+            parameters[_param_name] = value if isinstance(value, bool) else cast_param(value)
 
         # MDA coverage - historic
         # this is updated now with the EPSEN data
