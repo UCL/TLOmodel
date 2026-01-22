@@ -523,8 +523,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             'avg_weight_sac_kg',
             'avg_weight_adult_kg'
         ):
-            # value = param_list[_param_name]
-            # parameters[_param_name] = try_cast_to_float(value)
             value = param_list[_param_name]
             parameters[_param_name] = value if isinstance(value, bool) else cast_param(value)
 
