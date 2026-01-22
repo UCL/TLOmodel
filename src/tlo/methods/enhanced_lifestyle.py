@@ -280,8 +280,31 @@ class Lifestyle(Module):
         ),
         "fsw_transition": Parameter(
             Types.REAL, "proportion of sex workers that stop being a sex worker each year"
-        )
+        ),
+        "init_p_herbal_medication_use_in_rural": Parameter(
+            Types.REAL, "proportion of people in rural areas that use herbal medication"
+        ),
+        "init_p_herbal_medication_use_in_urban": Parameter(
+            Types.REAL, "proportion of people in urban areas that use herbal medication"
+        ),
+        'r_start_herbal_medication_rural': Parameter(
+            Types.REAL,
+            'probability per 3 months of starting herbal medication in rural areas'
+        ),
+        'r_start_herbal_medication_urban': Parameter(
+            Types.REAL,
+            'probability per 3 months of starting herbal medication in urban areas'
+        ),
+        'r_stop_herbal_medication_rural': Parameter(
+            Types.REAL,
+            'probability per 3 months of stopping herbal medication in rural areas'
+        ),
+        'r_stop_herbal_medication_urban': Parameter(
+            Types.REAL,
+            'probability per 3 months of stopping herbal medication in urban areas'
+        ),
     }
+
 
     # Properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -337,7 +360,9 @@ class Lifestyle(Module):
         'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
         'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
         "li_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
-        "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"),
+        "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"
+        ),
+        'li_herbal_medication_use': Property( Types.BOOL, 'whether someone uses herbal medication or not'),
     }
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
@@ -425,7 +450,7 @@ class Lifestyle(Module):
         df.at[child_id, 'li_is_circ'] = (
             self.rng.rand() < self.parameters['proportion_of_men_that_are_assumed_to_be_circumcised_at_birth']
         )
-
+        df.at[child_id, 'herbal_medication_use'] = False
 
 class EduPropertyInitialiser:
     """ a class that will initialise education property in the population dataframe. it is mimicing the
@@ -632,7 +657,12 @@ class LifestyleModels:
             'li_is_sexworker': {
                 'init': self.female_sex_workers(),
                 'update': self.female_sex_workers()
-            }
+            },
+            'li_herbal_medication': {
+                'init': self.herbal_medication_linear_model(),
+                'update': self.update_herbal_medication_property_linear_model(),
+            },
+
         }
 
     def is_edu_dictionary_empty(self):
@@ -1173,6 +1203,26 @@ class LifestyleModels:
         # return male circumcision linear model
         male_circ_lm = LinearModel.custom(handle_male_circumcision_prop, parameters=self.params)
         return male_circ_lm
+
+    def herbal_medication_linear_model(self) -> LinearModel:
+        """Assign herbal medication use based on rural and urban"""
+
+        def predict_herbal_use(self, df, rng=None, **externals) -> pd.Series:
+            p = self.parameters
+            # Probability depends ONLY on li_urban
+            prob = pd.Series(
+                np.where(
+                    df.li_urban,
+                    p['init_p_herbal_medication_use_in_urban'],
+                    p['init_p_herbal_medication_use_in_rural'],
+                ),
+                index=df.index,
+                dtype=float
+            )
+            rnd = rng.random_sample(len(df))
+            return rnd < prob
+
+        return LinearModel.custom(predict_herbal_use, parameters=self.params)
 
     # --------------------- LINEAR MODELS FOR UPDATING POPULATION PROPERTIES ------------------------------ #
     # todo: make exposed to campaign `_property` reflect index of individuals who have transitioned
@@ -1884,6 +1934,51 @@ class LifestyleModels:
         # return bmi categories linear model
         bmi_lm = LinearModel.custom(handle_bmi_transitions, parameters=self.params)
         return bmi_lm
+
+
+    def update_herbal_medication_property_linear_model(self) -> LinearModel:
+        """
+        Update herbal medication use over time.
+        Transitions depend only on rural/urban residence.
+        """
+
+        def handle_herbal_medication_transitions(self, df, rng=None, **externals) -> pd.Series:
+            p = self.parameters
+            # Copy current state
+            herbal_trans = df.li_herbal_medication.copy()
+            # -------------------------
+            # START herbal medication
+            # -------------------------
+            not_using = df.index[df.is_alive & ~df.li_herbal_medication]
+            eff_p_start = pd.Series(
+                np.where(
+                    df.loc[not_using, 'li_urban'],
+                    p['r_start_herbal_medication_urban'],
+                    p['r_start_herbal_medication_rural'],
+                ),
+                index=not_using,
+                dtype=float
+            )
+            will_start = rng.random_sample(len(not_using)) < eff_p_start
+            herbal_trans.loc[not_using[will_start]] = True
+            # -------------------------
+            # STOP herbal medication
+            # -------------------------
+            using = df.index[df.is_alive & df.li_herbal_medication]
+            eff_p_stop = pd.Series(
+                np.where(
+                    df.loc[using, 'li_urban'],
+                    p['r_stop_herbal_medication_urban'],
+                    p['r_stop_herbal_medication_rural'],
+                ),
+                index=using,
+                dtype=float
+            )
+            will_stop = rng.random_sample(len(using)) < eff_p_stop
+            herbal_trans.loc[using[will_stop]] = False
+            return herbal_trans
+
+        return LinearModel.custom(handle_herbal_medication_transitions, parameters=self.params)
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
