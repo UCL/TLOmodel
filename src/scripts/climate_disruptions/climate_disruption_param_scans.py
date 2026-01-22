@@ -20,7 +20,8 @@ LHS_file = "/Users/rem76/PycharmProjects/TLOmodel/src/scripts/climate_disruption
 start_index = 0
 # Latin Hypercube parameters and generation done in src/scripts/climate_disruptions/generate_LHS_params_mode_1.py
 
-LHS_grid_full = json.load(LHS_file)
+with open(LHS_file, 'r') as f:
+    LHS_grid_full = json.load(f)
 
 parameter_grid  = LHS_grid_full[start_index:start_index + n_samples_to_use]
 
