@@ -55,7 +55,7 @@ class ClimateDisruptionScenario(BaseScenario):
         return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
-        return self._parameter_grid[draw_number]
+        return self._parameter_grid
 
 
 if __name__ == "__main__":
