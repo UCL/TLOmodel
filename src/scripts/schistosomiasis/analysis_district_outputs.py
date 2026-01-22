@@ -575,7 +575,7 @@ def compute_icer_district(
         'n_cost_saving':             int((g['status']=='Cost-saving').sum()),
 
         # proportion of valid runs below threshold
-        'prop_valid_below_61': float(
+        'prop_valid_below_threshold': float(
             g.loc[g['status']=='ICER valid','ce_below_threshold'].mean()
         ) if (g['status']=='ICER valid').any() else np.nan
     })).reset_index()
@@ -2922,73 +2922,81 @@ icer_district_cons_only_discount_health.to_excel(results_folder / f'icer_distric
 
 
 # full costs
+# threshold = 61 Ochalek 2018, US$3 to US$116 Woods 2016, 65.8 in 2022 Manthalu
+#  CET of $65 used to select interventions to be prioritised for funding Malawi's
+#  national Health Sector Strategic Plan III 2023–30, inflated to 2024 US$ value -> $80
+
+# todo inflate these to 2024
+threshold = 61
+
+
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district,
                                             wash_strategy="Continue WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_fullcosts.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_{threshold}_fullcosts.xlsx')
 
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district,
                                             wash_strategy="Pause WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_61_fullcosts.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_{threshold}_fullcosts.xlsx')
 
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district,
                                             wash_strategy="Scale-up WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_61_fullcosts.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_{threshold}_fullcosts.xlsx')
 
 
 
 # cons costs
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_cons_only,
                                             wash_strategy="Continue WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_cons.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_{threshold}_cons.xlsx')
 
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_cons_only,
                                             wash_strategy="Pause WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_61_cons.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_{threshold}_cons.xlsx')
 
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_cons_only,
                                             wash_strategy="Scale-up WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_61_cons.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_{threshold}_cons.xlsx')
 
 
 # partial costs
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_partial_only,
                                             wash_strategy="Continue WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_partial.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_{threshold}_partial.xlsx')
 
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_partial_only,
                                             wash_strategy="Pause WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_61_partial.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_{threshold}_partial.xlsx')
 
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_partial_only,
                                             wash_strategy="Scale-up WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_61_partial.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_{threshold}_partial.xlsx')
 
 
 
 # financial costs
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
                                             wash_strategy="Continue WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_financial.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_{threshold}_financial.xlsx')
 
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
                                             wash_strategy="Pause WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_61_financial.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_{threshold}_financial.xlsx')
 
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
                                             wash_strategy="Scale-up WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_61_financial.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_{threshold}_financial.xlsx')
 
 
 
@@ -2996,15 +3004,15 @@ tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_61_financial.xls
 # discount costs for financial costs
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
                                             wash_strategy="Continue WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_financial_discount_cost.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_{threshold}_financial_discount_cost.xlsx')
 
 
 # discount health for financial costs
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
                                             wash_strategy="Continue WASH",
-                                            threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_financial_discount_health.xlsx')
+                                            threshold=threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_{threshold}_financial_discount_health.xlsx')
 
 
 
@@ -3102,24 +3110,24 @@ nhb_district_vs_noMDA_cons_only = compute_nhb(
     dalys_averted=dalys_averted_district_compared_noMDA,
     comparison_costs=cons_costs_relative_noMDA_district,
     discount_rate_dalys=0.0,
-    threshold=61,
+    threshold=threshold,
     discount_rate_costs=0.0,
     return_summary=True
 )
 
-nhb_district_vs_noMDA_cons_only.to_csv(results_folder / f'nhb_district_vs_noMDA_cons_only{target_period()}.csv')
+nhb_district_vs_noMDA_cons_only.to_csv(results_folder / f'nhb_district_vs_noMDA_cons_only_{threshold}_{target_period()}.csv')
 
 
 nhb_district_vs_SAC_cons_only = compute_nhb(
     dalys_averted=dalys_averted_district_compared_SAC,
     comparison_costs=cons_costs_relative_SAC_district,
     discount_rate_dalys=0.0,
-    threshold=61,
+    threshold=threshold,
     discount_rate_costs=0.0,
     return_summary=True
 )
 
-nhb_district_vs_SAC_cons_only.to_csv(results_folder / f'nhb_district_vs_SAC_cons_only{target_period()}.csv')
+nhb_district_vs_SAC_cons_only.to_csv(results_folder / f'nhb_district_vs_SAC_cons_only_{threshold}_{target_period()}.csv')
 
 
 
@@ -3129,24 +3137,24 @@ nhb_district_vs_noMDA_full = compute_nhb(
     dalys_averted=dalys_averted_district_compared_noMDA,
     comparison_costs=full_costs_relative_noMDA_district,
     discount_rate_dalys=0.0,
-    threshold=61,
+    threshold=threshold,
     discount_rate_costs=0.0,
     return_summary=True
 )
 
-nhb_district_vs_noMDA_full.to_csv(results_folder / f'nhb_district_vs_noMDA_full_costs{target_period()}.csv')
+nhb_district_vs_noMDA_full.to_csv(results_folder / f'nhb_district_vs_noMDA_full_costs_{threshold}_{target_period()}.csv')
 
 
 nhb_district_vs_SAC_full = compute_nhb(
     dalys_averted=dalys_averted_district_compared_SAC,
     comparison_costs=full_costs_relative_SAC_district,
     discount_rate_dalys=0.0,
-    threshold=61,
+    threshold=threshold,
     discount_rate_costs=0.0,
     return_summary=True
 )
 
-nhb_district_vs_SAC_full.to_csv(results_folder / f'nhb_district_vs_SAC_full_costs{target_period()}.csv')
+nhb_district_vs_SAC_full.to_csv(results_folder / f'nhb_district_vs_SAC_full_costs_{threshold}_{target_period()}.csv')
 
 
 
@@ -3156,24 +3164,24 @@ nhb_district_vs_noMDA_partial = compute_nhb(
     dalys_averted=dalys_averted_district_compared_noMDA,
     comparison_costs=partial_costs_relative_noMDA_district,
     discount_rate_dalys=0.0,
-    threshold=61,
+    threshold=threshold,
     discount_rate_costs=0.0,
     return_summary=True
 )
 
-nhb_district_vs_noMDA_partial.to_csv(results_folder / f'nhb_district_vs_noMDA_partial_costs{target_period()}.csv')
+nhb_district_vs_noMDA_partial.to_csv(results_folder / f'nhb_district_vs_noMDA_partial_costs_{threshold}_{target_period()}.csv')
 
 
 nhb_district_vs_SAC_partial = compute_nhb(
     dalys_averted=dalys_averted_district_compared_SAC,
     comparison_costs=partial_costs_relative_SAC_district,
     discount_rate_dalys=0.0,
-    threshold=61,
+    threshold=threshold,
     discount_rate_costs=0.0,
     return_summary=True
 )
 
-nhb_district_vs_SAC_partial.to_csv(results_folder / f'nhb_district_vs_SAC_partial_costs{target_period()}.csv')
+nhb_district_vs_SAC_partial.to_csv(results_folder / f'nhb_district_vs_SAC_partial_costs_{threshold}_{target_period()}.csv')
 
 
 
@@ -3182,24 +3190,24 @@ nhb_district_vs_noMDA_financial = compute_nhb(
     dalys_averted=dalys_averted_district_compared_noMDA,
     comparison_costs=financial_costs_relative_noMDA_district,
     discount_rate_dalys=0.0,
-    threshold=61,
+    threshold=threshold,
     discount_rate_costs=0.0,
     return_summary=True
 )
 
-nhb_district_vs_noMDA_financial.to_csv(results_folder / f'nhb_district_vs_noMDA_financial_costs{target_period()}.csv')
+nhb_district_vs_noMDA_financial.to_csv(results_folder / f'nhb_district_vs_noMDA_financial_costs_{threshold}_{target_period()}.csv')
 
 
 nhb_district_vs_SAC_financial = compute_nhb(
     dalys_averted=dalys_averted_district_compared_SAC,
     comparison_costs=financial_costs_relative_SAC_district,
     discount_rate_dalys=0.0,
-    threshold=61,
+    threshold=threshold,
     discount_rate_costs=0.0,
     return_summary=True
 )
 
-nhb_district_vs_SAC_financial.to_csv(results_folder / f'nhb_district_vs_SAC_financial_costs{target_period()}.csv')
+nhb_district_vs_SAC_financial.to_csv(results_folder / f'nhb_district_vs_SAC_financial_costs_{threshold}_{target_period()}.csv')
 
 
 
@@ -3242,6 +3250,7 @@ def get_best_draw_per_district(df, keyword):
             best_draws.loc[district] = [fallback_draw, np.nan, np.nan, np.nan]
 
     return best_draws
+
 
 
 # Apply to each scenario
@@ -3302,91 +3311,6 @@ scaleup_wash_best_financial_costs.to_csv(results_folder / f'scaleup_wash_nhb_vs_
 # not incremental costs but actual costs incurred
 # dalys averted compared to no MDA
 # need this restricted to target period
-
-
-
-
-# def calculate_max_hr_costs(dalys_df, cons_costs_df, cet, start_year=2024, end_year=2050):
-#     """
-#     Calculate maximum allowable HR costs given DALYs averted and consumable costs.
-#
-#     Parameters
-#     ----------
-#     dalys_df : pd.DataFrame
-#         DALYs averted relative to SAC MDA.
-#         Index: MultiIndex (year, district) [unnamed]
-#         Columns: MultiIndex (wash_strategy, comparison, run).
-#     cons_costs_df : pd.DataFrame
-#         Incremental consumable costs, same format as dalys_df.
-#     cet : float
-#         Cost-effectiveness threshold (per DALY).
-#     start_year : int
-#         First year to include in evaluation.
-#     end_year : int
-#         Last year to include in evaluation.
-#
-#     Returns
-#     -------
-#     pd.DataFrame
-#         MultiIndex (district, wash_strategy, comparison)
-#         Columns = ['mean', 'lower', 'upper'] based on run-level estimates.
-#     """
-#
-#     # --- 1. Restrict to evaluation years ---
-#     years = dalys_df.index.get_level_values(0)
-#     mask = (years >= start_year) & (years <= end_year)
-#     dalys_eval = dalys_df.loc[mask]
-#
-#     years = cons_costs_df.index.get_level_values(0)
-#     mask = (years >= start_year) & (years <= end_year)
-#     cons_eval = cons_costs_df.loc[mask]
-#
-#     # --- 2. Align indices ---
-#     dalys_eval, cons_eval = dalys_eval.align(cons_eval, join="inner")
-#
-#     # --- 3. Collapse over years (sum DALYs averted and costs) ---
-#     districts = dalys_eval.index.get_level_values(1)
-#     dalys_eval = dalys_eval.copy()
-#     cons_eval = cons_eval.copy()
-#     dalys_eval.index = districts
-#     cons_eval.index = districts
-#
-#     dalys_sum = dalys_eval.groupby(level=0).sum()
-#     cons_sum = cons_eval.groupby(level=0).sum()
-#
-#     # --- 4. Compute max HR costs: (DALYs * CET) - consumables ---
-#     max_hr = dalys_sum * cet - cons_sum
-#
-#     # --- 5. Summarise across runs ---
-#     results = []
-#     for (wash_strategy, comparison), df_sub in max_hr.groupby(level=[0,1], axis=1):
-#         for district, series in df_sub.iterrows():
-#             vals = series.dropna().values
-#             n = len(vals)
-#             if n == 0:
-#                 continue
-#             mean_val = vals.mean()
-#             if n > 1:
-#                 se = vals.std(ddof=1) / np.sqrt(n)
-#                 lower = mean_val - 1.96 * se
-#                 upper = mean_val + 1.96 * se
-#             else:  # only one run, no uncertainty
-#                 lower = upper = mean_val
-#
-#             results.append({
-#                 "district": district,
-#                 "wash_strategy": wash_strategy,
-#                 "comparison": comparison,
-#                 "mean": mean_val,
-#                 "lower": lower,
-#                 "upper": upper
-#             })
-#
-#     results_df = pd.DataFrame(results)
-#     results_df = results_df.set_index(["district", "wash_strategy", "comparison"])
-#
-#     return results_df
-
 
 
 def calculate_max_hr_costs(
@@ -3536,21 +3460,27 @@ def calculate_max_hr_costs(
 
 max_costs = calculate_max_hr_costs(dalys_df=dalys_averted_district_compared_SAC,
                                    cons_costs_df=cons_costs_relative_SAC_district,
-                                   cet=61,
+                                   cet=threshold,
                                    start_year=2024,
                                    end_year=2050)
 
-max_costs.to_csv(results_folder / f'max_costs_comparedSAC{target_period()}.csv')
+max_costs.to_csv(results_folder / f'max_costs_comparedSAC_{threshold}_{target_period()}.csv')
 
 
 
 max_costs_noMDA = calculate_max_hr_costs(dalys_df=dalys_averted_district_compared_noMDA,
                                    cons_costs_df=cons_costs_relative_noMDA_district,
-                                   cet=61,
+                                   cet=threshold,
                                    start_year=2024,
                                    end_year=2050)
 
-max_costs_noMDA.to_csv(results_folder / f'max_costs_compared_noMDA{target_period()}.csv')
+max_costs_noMDA.to_csv(results_folder / f'max_costs_compared_noMDA_{threshold}_{target_period()}.csv')
+
+
+# todo could do max costs per person treated
+# this will tell us the relative implementation costs acceptable at threshold
+# divide max costs by the number of mda treatment over target period
+
 
 
 
