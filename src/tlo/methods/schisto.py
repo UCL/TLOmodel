@@ -436,28 +436,33 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # HSI and treatment params:
         param_list = workbook['parameter_values'].set_index("parameter_name")['value']
 
-        def cast_param(v):
+        def cast_param(v: str):
+            """Try to cast a string value to the appropriate native type (int, float or bool).
+            Return: the original value is not a string or if casting fails."""
+
             if not isinstance(v, str):
                 return v
 
-            s = v.strip()
-            s_lower = s.lower()
+            s_lower = v.strip().lower()
 
-            # bool
+            # intended to be a bool
             if s_lower == "true":
                 return True
-            if s_lower == "false":
+            elif s_lower == "false":
                 return False
 
-            # int (handles + / -)
-            if s_lower.lstrip("+-").isdigit():
-                return int(s)
+            # intended to be an int (handles + / -)
+            elif s_lower.lstrip("+-").isdigit():
+                return int(s_lower)
 
-            # float
-            try:
-                return float(s)
-            except ValueError:
-                return v
+            # intended to be a float
+            else:
+                # try casting
+                try:
+                    return float(s_lower)
+                except ValueError:
+                    # return original value if casting to float fails
+                    return v
 
         # parameters are all converted to strings if any strings are present
         for _param_name in (
