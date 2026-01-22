@@ -648,6 +648,24 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         # - sum of daly_weight, by sex/age/wealth
         disability_monthly_summary = pd.DataFrame(
             disease_specific_daly_values_this_month.groupby(['sex', 'age_range', 'li_wealth', 'district_of_residence']).sum().fillna(0))
+        # --- LIGHTWEIGHT MONTHLY LOG: total DALYs by district ---
+        monthly_dalys_by_district = (
+            disability_monthly_summary
+                .groupby(level='district_of_residence')
+                .sum()
+                .sum(axis=1)  # sum over causes
+                .reset_index(name='dalys')
+                .assign(
+                    year=self.sim.date.year,
+                    month=self.sim.date.month,
+                )
+        )
+        for _, row in monthly_dalys_by_district.iterrows():
+            logger.info(
+                key='monthly_dalys_by_district',
+                data=row.to_dict(),
+                description='Total DALYs (YLD only) accrued in the previous month, by district'
+            )
 
         # - add the year into the multi-index
         disability_monthly_summary['year'] = self.sim.date.year
