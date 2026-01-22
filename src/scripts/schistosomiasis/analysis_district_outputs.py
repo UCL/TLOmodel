@@ -14,7 +14,6 @@ import pandas as pd
 # import lacroix
 import matplotlib.colors as colors
 import numpy as np
-import statsmodels.api as sm
 import seaborn as sns
 from collections import defaultdict
 import textwrap
@@ -2212,14 +2211,18 @@ mda_episodes_per_year_district_scaled_adj = apply_stop_year_to_mda_counts(
 # assign costs - full including consumables
 cons_cost_per_mda = 0.05  # assuming all children
 cons_cost_per_mda_incl_adults = 0.081  # weighted mean across children and adults
-prog_delivery_cost_per_mda = 2.21 # 1.27 financial costs only, 2.21 includes economic (opportunity) costs
-financial_delivery_cost_per_mda = 1.27
+full_delivery_cost_per_mda = 2.21 # 1.27 financial costs only, 2.21 includes economic (opportunity) costs
+financial_delivery_cost_per_mda = 0.48
+half_financial_costs = 0.5 * 0.48
 
-full_cost_per_mda = prog_delivery_cost_per_mda + cons_cost_per_mda  # assuming all children
-full_cost_per_mda_incl_adults = prog_delivery_cost_per_mda + cons_cost_per_mda_incl_adults
+financial_cost_per_mda = financial_delivery_cost_per_mda + cons_cost_per_mda  # assuming all children
+financial_cost_per_mda_incl_adults = financial_delivery_cost_per_mda + cons_cost_per_mda_incl_adults
 
-partial_cost_per_mda = financial_delivery_cost_per_mda + cons_cost_per_mda  # assuming all children
-partial_cost_per_mda_incl_adults = financial_delivery_cost_per_mda + cons_cost_per_mda_incl_adults
+full_cost_per_mda = full_delivery_cost_per_mda + cons_cost_per_mda  # assuming all children
+full_cost_per_mda_incl_adults = full_delivery_cost_per_mda + cons_cost_per_mda_incl_adults
+
+partial_cost_per_mda = half_financial_costs + cons_cost_per_mda  # assuming all children
+partial_cost_per_mda_incl_adults = half_financial_costs + cons_cost_per_mda_incl_adults
 
 
 
@@ -2234,7 +2237,7 @@ full_costs_per_year_district = combine_on_keyword(full_costs_per_year_district_c
 full_costs_per_year_national = sum_by_year_all_districts(full_costs_per_year_district, TARGET_PERIOD)
 
 
-# --- Partial costs, using financial costs only plus cons ---
+# --- Partial costs, using half financial costs only plus cons ---
 partial_costs_per_year_district_child = mda_episodes_per_year_district_scaled * partial_cost_per_mda
 partial_costs_per_year_district_adults = mda_episodes_per_year_district_scaled * partial_cost_per_mda_incl_adults
 partial_costs_per_year_district = combine_on_keyword(partial_costs_per_year_district_child,
@@ -2243,28 +2246,27 @@ partial_costs_per_year_district = combine_on_keyword(partial_costs_per_year_dist
 partial_costs_per_year_national = sum_by_year_all_districts(partial_costs_per_year_district, TARGET_PERIOD)
 
 
+# --- Financial costs plus cons ---
+financial_costs_per_year_district_child = mda_episodes_per_year_district_scaled * financial_cost_per_mda
+financial_costs_per_year_district_adults = mda_episodes_per_year_district_scaled * financial_cost_per_mda_incl_adults
+financial_costs_per_year_district = combine_on_keyword(financial_costs_per_year_district_child,
+                                                  financial_costs_per_year_district_adults, keyword="MDA All")
 
-# --- Program costs only ---
-prog_costs_per_year_district = mda_episodes_per_year_district_scaled * prog_delivery_cost_per_mda
-prog_costs_per_year_national = sum_by_year_all_districts(prog_costs_per_year_district, TARGET_PERIOD)
-
-# sum across target period
-prog_costs_per_year_national_sum = pd.DataFrame(prog_costs_per_year_national.sum(axis=0)).T
-prog_costs_per_year_national_summary = compute_summary_statistics(prog_costs_per_year_national_sum,
-                                                central_measure='mean')
-fmt = format_summary_for_output(prog_costs_per_year_national_summary, filename='prog_costs_per_year_national')
-
-
-
-# --- Financial costs only ---
-financial_costs_per_year_district = mda_episodes_per_year_district_scaled * financial_delivery_cost_per_mda
 financial_costs_per_year_national = sum_by_year_all_districts(financial_costs_per_year_district, TARGET_PERIOD)
 
+
+
+# --- Financial costs only excluding cons ---
+financial_costs_per_year_district_no_cons = mda_episodes_per_year_district_scaled * financial_delivery_cost_per_mda
+financial_costs_per_year_national_no_cons = sum_by_year_all_districts(
+    financial_costs_per_year_district_no_cons, TARGET_PERIOD)
+
 # sum across target period
-financial_costs_per_year_national_sum = pd.DataFrame(financial_costs_per_year_national.sum(axis=0)).T
-financial_costs_per_year_national_summary = compute_summary_statistics(financial_costs_per_year_national_sum,
+financial_costs_per_year_national_no_cons_sum = pd.DataFrame(financial_costs_per_year_national_no_cons.sum(axis=0)).T
+financial_costs_per_year_national_no_cons_summary = compute_summary_statistics(financial_costs_per_year_national_no_cons_sum,
                                                 central_measure='mean')
-fmt = format_summary_for_output(financial_costs_per_year_national_summary, filename='financial_costs_per_year_national')
+fmt = format_summary_for_output(financial_costs_per_year_national_no_cons_summary,
+                                filename='financial_costs_per_year_national_no_cons_summary')
 
 
 
@@ -2330,6 +2332,24 @@ partial_costs_relative_noMDA.to_excel(results_folder / f'partial_costs_relative_
 # incremental costs incurred - compare each prog in turn to the last one
 incremental_partial_costs_incurred_per_year_national = compute_stepwise_effects_by_wash_strategy(partial_costs_per_year_national)
 incremental_partial_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_partial_costs_incurred_per_year_national{target_period()}.xlsx')
+
+
+
+# --- Financial costs incurred relative to comparator ---
+
+financial_costs_relative_noMDA = compute_number_averted_vs_noMDA_within_wash_strategies(
+    financial_costs_per_year_national,
+    results_path=results_folder,
+    filename_prefix='financial_costs_per_year_national_compared_noMDA',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='incurred',
+)
+financial_costs_relative_noMDA.to_excel(results_folder / f'financial_costs_relative_noMDA{target_period()}.xlsx')
+
+# incremental costs incurred - compare each prog in turn to the last one
+incremental_financial_costs_incurred_per_year_national = compute_stepwise_effects_by_wash_strategy(financial_costs_per_year_national)
+incremental_financial_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_financial_costs_incurred_per_year_national{target_period()}.xlsx')
+
 
 
 # --- Cons costs incurred relative to comparator ---
@@ -2419,7 +2439,49 @@ sum_incremental_partial_costs_incurred_district = (
     .groupby('District')
     .sum()
 )
-sum_incremental_partial_costs_incurred_district.to_excel(results_folder / f'sum_incremental_partial_costs_incurred_district{target_period()}.xlsx')
+sum_incremental_partial_costs_incurred_district.to_excel(
+    results_folder / f'sum_incremental_partial_costs_incurred_district{target_period()}.xlsx')
+
+
+
+# --- Financial costs incurred relative to comparator ---
+financial_costs_relative_noMDA_district = compute_number_averted_vs_noMDA_within_wash_strategies(
+    financial_costs_per_year_district,
+    results_path=results_folder,
+    filename_prefix='financial_costs_per_year_district_compared_noMDA',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='incurred',
+)
+financial_costs_relative_noMDA_district.to_excel(
+    results_folder / f'financial_costs_relative_noMDA_district{target_period()}.xlsx')
+
+financial_costs_relative_SAC_district = compute_number_averted_vs_SAC_within_wash_strategies(
+    financial_costs_per_year_district,
+    results_path=results_folder,
+    filename_prefix='financial_costs_per_year_district_compared_noMDA',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='incurred',
+)
+financial_costs_relative_SAC_district.to_excel(results_folder / f'financial_costs_relative_SAC_district{target_period()}.xlsx')
+
+
+# incremental costs incurred - compare each prog in turn to the last one
+incremental_financial_costs_incurred_per_year_district = compute_stepwise_effects_by_wash_strategy(financial_costs_per_year_district)
+incremental_financial_costs_incurred_per_year_district.to_excel(
+    results_folder / f'incremental_financial_costs_incurred_per_year_district{target_period()}.xlsx')
+
+
+years = incremental_financial_costs_incurred_per_year_district.index.get_level_values('year')
+mask = (years >= TARGET_PERIOD[0].year) & (years <= TARGET_PERIOD[1].year)
+
+sum_incremental_financial_costs_incurred_district = (
+    incremental_financial_costs_incurred_per_year_district.loc[mask]
+    .groupby('District')
+    .sum()
+)
+sum_incremental_financial_costs_incurred_district.to_excel(
+    results_folder / f'sum_incremental_financial_costs_incurred_district{target_period()}.xlsx')
+
 
 
 
@@ -2464,6 +2526,7 @@ sum_incremental_cons_costs_incurred_district.to_excel(results_folder / f'sum_inc
 # %% ICERS
 #################################################################################
 
+# --- ICERS national full costs ---
 
 icer_national = compute_icer_national(
     dalys_averted=incremental_dalys_averted_national,
@@ -2507,7 +2570,57 @@ icer_national_discount_health["formatted"] = icer_national_discount_health.apply
 icer_national_discount_health.to_excel(results_folder / f'icer_national_discount_health_{target_period()}.xlsx')
 
 
-# --- ICERS for consumables costs only ---
+
+# --- ICERS national financial costs ---
+
+
+icer_national_financial = compute_icer_national(
+    dalys_averted=incremental_dalys_averted_national,
+    comparison_costs=incremental_financial_costs_incurred_per_year_national,
+    discount_rate_dalys=0.0,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+icer_national_financial["formatted"] = icer_national_financial.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+icer_national_financial.to_excel(results_folder / f'icer_national_financial{target_period()}.xlsx')
+
+
+icer_national_financial_discount_costs = compute_icer_national(
+    dalys_averted=incremental_dalys_averted_national,
+    comparison_costs=incremental_financial_costs_incurred_per_year_national,
+    discount_rate_dalys=0.0,
+    discount_rate_costs=0.03,
+    return_summary=True
+)
+
+icer_national_financial_discount_costs["formatted"] = icer_national_financial_discount_costs.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+icer_national_financial_discount_costs.to_excel(
+    results_folder / f'icer_national_financial_discount_costs_{target_period()}.xlsx')
+
+
+icer_national_financial_discount_health = compute_icer_national(
+    dalys_averted=incremental_dalys_averted_national,
+    comparison_costs=incremental_financial_costs_incurred_per_year_national,
+    discount_rate_dalys=0.03,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+icer_national_financial_discount_health["formatted"] = icer_national_financial_discount_health.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+icer_national_financial_discount_health.to_excel(
+    results_folder / f'icer_national_financial_discount_health_{target_period()}.xlsx')
+
+
+
+
+# --- ICERS national for consumables costs only ---
 
 icer_national_cons_only = compute_icer_national(
     dalys_averted=incremental_dalys_averted_national,
@@ -2552,7 +2665,7 @@ icer_national_cons_only_discount_health.to_excel(results_folder / f'icer_nationa
 
 
 
-# --- ICERS for consumables costs only ---
+# --- ICERS for partial costs ---
 
 icer_national_partial_only = compute_icer_national(
     dalys_averted=incremental_dalys_averted_national,
@@ -2566,6 +2679,38 @@ icer_national_partial_only["formatted"] = icer_national_partial_only.apply(
     lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
 )
 icer_national_partial_only.to_excel(results_folder / f'icer_national_partial_only_{target_period()}.xlsx')
+
+
+icer_national_partial_only_discount_costs = compute_icer_national(
+    dalys_averted=incremental_dalys_averted_national,
+    comparison_costs=incremental_partial_costs_incurred_per_year_national,
+    discount_rate_dalys=0.0,
+    discount_rate_costs=0.03,
+    return_summary=True
+)
+
+icer_national_partial_only_discount_costs["formatted"] = icer_national_partial_only_discount_costs.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+icer_national_partial_only_discount_costs.to_excel(
+    results_folder / f'icer_national_partial_only_discount_costs{target_period()}.xlsx')
+
+
+
+icer_national_partial_only_discount_health = compute_icer_national(
+    dalys_averted=incremental_dalys_averted_national,
+    comparison_costs=incremental_partial_costs_incurred_per_year_national,
+    discount_rate_dalys=0.03,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+icer_national_partial_only_discount_health["formatted"] = icer_national_partial_only_discount_health.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+icer_national_partial_only_discount_health.to_excel(
+    results_folder / f'icer_national_partial_only_discount_health{target_period()}.xlsx')
+
 
 
 
@@ -2587,6 +2732,93 @@ icer_district["formatted"] = icer_district.apply(
 icer_district.to_excel(results_folder / f'icer_district_{target_period()}.xlsx')
 
 
+icer_district_discount_costs = compute_icer_district(
+    dalys_averted=incremental_dalys_averted_district,
+    comparison_costs=incremental_full_costs_incurred_per_year_district,
+    discount_rate_dalys=0.0,
+    discount_rate_costs=0.03,
+    return_summary=True
+)
+
+icer_district_discount_costs["formatted"] = icer_district_discount_costs.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+
+
+icer_district_discount_costs.to_excel(results_folder / f'icer_district_discount_costs{target_period()}.xlsx')
+
+
+icer_district_discount_health = compute_icer_district(
+    dalys_averted=incremental_dalys_averted_district,
+    comparison_costs=incremental_full_costs_incurred_per_year_district,
+    discount_rate_dalys=0.03,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+icer_district_discount_health["formatted"] = icer_district_discount_health.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+
+
+icer_district_discount_health.to_excel(results_folder / f'icer_district_discount_health{target_period()}.xlsx')
+
+
+
+# --- ICERS district financial costs ---
+
+icer_district_financial = compute_icer_district(
+    dalys_averted=incremental_dalys_averted_district,
+    comparison_costs=incremental_financial_costs_incurred_per_year_district,
+    discount_rate_dalys=0.0,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+icer_district_financial["formatted"] = icer_district_financial.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+
+
+icer_district_financial.to_excel(results_folder / f'icer_district_financial{target_period()}.xlsx')
+
+
+icer_district_financial_discount_costs = compute_icer_district(
+    dalys_averted=incremental_dalys_averted_district,
+    comparison_costs=incremental_financial_costs_incurred_per_year_district,
+    discount_rate_dalys=0.0,
+    discount_rate_costs=0.03,
+    return_summary=True
+)
+
+icer_district_financial_discount_costs["formatted"] = icer_district_financial_discount_costs.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+
+
+icer_district_financial_discount_costs.to_excel(
+    results_folder / f'icer_district_financial_discount_costs{target_period()}.xlsx')
+
+
+icer_district_financial_discount_health = compute_icer_district(
+    dalys_averted=incremental_dalys_averted_district,
+    comparison_costs=incremental_financial_costs_incurred_per_year_district,
+    discount_rate_dalys=0.03,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+icer_district_financial_discount_health["formatted"] = icer_district_financial_discount_health.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+
+
+icer_district_financial_discount_health.to_excel(
+    results_folder / f'icer_district_financial_discount_health{target_period()}.xlsx')
+
+
+
+
 # --- ICERS district for partial costs only ---
 
 icer_district_partial_only = compute_icer_district(
@@ -2601,6 +2833,39 @@ icer_district_partial_only["formatted"] = icer_district_partial_only.apply(
     lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
 )
 icer_district_partial_only.to_excel(results_folder / f'icer_district_partial_only_{target_period()}.xlsx')
+
+
+icer_district_partial_only_discount_costs = compute_icer_district(
+    dalys_averted=incremental_dalys_averted_district,
+    comparison_costs=incremental_partial_costs_incurred_per_year_district,
+    discount_rate_dalys=0.0,
+    discount_rate_costs=0.03,
+    return_summary=True
+)
+
+icer_district_partial_only_discount_costs["formatted"] = icer_district_partial_only_discount_costs.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+icer_district_partial_only_discount_costs.to_excel(
+    results_folder / f'icer_district_partial_only_discount_costs{target_period()}.xlsx')
+
+
+icer_district_partial_only_discount_health = compute_icer_district(
+    dalys_averted=incremental_dalys_averted_district,
+    comparison_costs=incremental_partial_costs_incurred_per_year_district,
+    discount_rate_dalys=0.03,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+icer_district_partial_only_discount_health["formatted"] = icer_district_partial_only_discount_health.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+icer_district_partial_only_discount_health.to_excel(
+    results_folder / f'icer_district_partial_only_discount_health{target_period()}.xlsx')
+
+
+
 
 
 
@@ -2662,6 +2927,15 @@ tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district,
                                             threshold=61.0)
 tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_fullcosts.xlsx')
 
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district,
+                                            wash_strategy="Pause WASH",
+                                            threshold=61.0)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_61_fullcosts.xlsx')
+
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district,
+                                            wash_strategy="Scale-up WASH",
+                                            threshold=61.0)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_61_fullcosts.xlsx')
 
 
 
@@ -2688,23 +2962,49 @@ tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_partial_o
                                             threshold=61.0)
 tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_partial.xlsx')
 
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_partial_only,
+                                            wash_strategy="Pause WASH",
+                                            threshold=61.0)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_61_partial.xlsx')
 
-# discount costs
-tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_cons_only_discount_costs,
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_partial_only,
+                                            wash_strategy="Scale-up WASH",
+                                            threshold=61.0)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_61_partial.xlsx')
+
+
+
+# financial costs
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
                                             wash_strategy="Continue WASH",
                                             threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_discount_cost.xlsx')
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_financial.xlsx')
+
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
+                                            wash_strategy="Pause WASH",
+                                            threshold=61.0)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_61_financial.xlsx')
+
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
+                                            wash_strategy="Scale-up WASH",
+                                            threshold=61.0)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_61_financial.xlsx')
 
 
-# discount health
-tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_cons_only_discount_health,
+
+
+# discount costs for financial costs
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
                                             wash_strategy="Continue WASH",
                                             threshold=61.0)
-tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_discount_health.xlsx')
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_financial_discount_cost.xlsx')
 
 
-
-
+# discount health for financial costs
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
+                                            wash_strategy="Continue WASH",
+                                            threshold=61.0)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_61_financial_discount_health.xlsx')
 
 
 
@@ -2795,7 +3095,10 @@ def compute_nhb(
         return nhb
 
 
-nhb_district_vs_noMDA = compute_nhb(
+
+# --- NHB cons only
+
+nhb_district_vs_noMDA_cons_only = compute_nhb(
     dalys_averted=dalys_averted_district_compared_noMDA,
     comparison_costs=cons_costs_relative_noMDA_district,
     discount_rate_dalys=0.0,
@@ -2804,9 +3107,10 @@ nhb_district_vs_noMDA = compute_nhb(
     return_summary=True
 )
 
-nhb_district_vs_noMDA.to_csv(results_folder / f'nhb_district_vs_noMDA{target_period()}.csv')
+nhb_district_vs_noMDA_cons_only.to_csv(results_folder / f'nhb_district_vs_noMDA_cons_only{target_period()}.csv')
 
-nhb_district_vs_SAC = compute_nhb(
+
+nhb_district_vs_SAC_cons_only = compute_nhb(
     dalys_averted=dalys_averted_district_compared_SAC,
     comparison_costs=cons_costs_relative_SAC_district,
     discount_rate_dalys=0.0,
@@ -2815,9 +3119,25 @@ nhb_district_vs_SAC = compute_nhb(
     return_summary=True
 )
 
-nhb_district_vs_SAC.to_csv(results_folder / f'nhb_district_vs_SAC{target_period()}.csv')
+nhb_district_vs_SAC_cons_only.to_csv(results_folder / f'nhb_district_vs_SAC_cons_only{target_period()}.csv')
 
-nhb_district_vs_SAC_full_costs = compute_nhb(
+
+
+
+# --- NHB full costs
+nhb_district_vs_noMDA_full = compute_nhb(
+    dalys_averted=dalys_averted_district_compared_noMDA,
+    comparison_costs=full_costs_relative_noMDA_district,
+    discount_rate_dalys=0.0,
+    threshold=61,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+nhb_district_vs_noMDA_full.to_csv(results_folder / f'nhb_district_vs_noMDA_full_costs{target_period()}.csv')
+
+
+nhb_district_vs_SAC_full = compute_nhb(
     dalys_averted=dalys_averted_district_compared_SAC,
     comparison_costs=full_costs_relative_SAC_district,
     discount_rate_dalys=0.0,
@@ -2826,7 +3146,61 @@ nhb_district_vs_SAC_full_costs = compute_nhb(
     return_summary=True
 )
 
-nhb_district_vs_SAC_full_costs.to_csv(results_folder / f'nhb_district_vs_SAC_full_costs{target_period()}.csv')
+nhb_district_vs_SAC_full.to_csv(results_folder / f'nhb_district_vs_SAC_full_costs{target_period()}.csv')
+
+
+
+
+# --- NHB partial costs
+nhb_district_vs_noMDA_partial = compute_nhb(
+    dalys_averted=dalys_averted_district_compared_noMDA,
+    comparison_costs=partial_costs_relative_noMDA_district,
+    discount_rate_dalys=0.0,
+    threshold=61,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+nhb_district_vs_noMDA_partial.to_csv(results_folder / f'nhb_district_vs_noMDA_partial_costs{target_period()}.csv')
+
+
+nhb_district_vs_SAC_partial = compute_nhb(
+    dalys_averted=dalys_averted_district_compared_SAC,
+    comparison_costs=partial_costs_relative_SAC_district,
+    discount_rate_dalys=0.0,
+    threshold=61,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+nhb_district_vs_SAC_partial.to_csv(results_folder / f'nhb_district_vs_SAC_partial_costs{target_period()}.csv')
+
+
+
+# --- NHB financial costs
+nhb_district_vs_noMDA_financial = compute_nhb(
+    dalys_averted=dalys_averted_district_compared_noMDA,
+    comparison_costs=financial_costs_relative_noMDA_district,
+    discount_rate_dalys=0.0,
+    threshold=61,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+nhb_district_vs_noMDA_financial.to_csv(results_folder / f'nhb_district_vs_noMDA_financial_costs{target_period()}.csv')
+
+
+nhb_district_vs_SAC_financial = compute_nhb(
+    dalys_averted=dalys_averted_district_compared_SAC,
+    comparison_costs=financial_costs_relative_SAC_district,
+    discount_rate_dalys=0.0,
+    threshold=61,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+nhb_district_vs_SAC_financial.to_csv(results_folder / f'nhb_district_vs_SAC_financial_costs{target_period()}.csv')
+
 
 
 
@@ -2871,22 +3245,50 @@ def get_best_draw_per_district(df, keyword):
 
 
 # Apply to each scenario
-pause_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Pause WASH")
-continue_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Continue WASH")
-scaleup_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Scale-up WASH")
+
+# - cons only
+pause_wash_best_strategy_cons = get_best_draw_per_district(nhb_district_vs_SAC_cons_only, "Pause WASH")
+continue_wash_best_strategy_cons = get_best_draw_per_district(nhb_district_vs_SAC_cons_only, "Continue WASH")
+scaleup_wash_best_strategy_cons = get_best_draw_per_district(nhb_district_vs_SAC_cons_only, "Scale-up WASH")
 # 8 districts showing PSAC, 2 showing All as best strategy
 
+pause_wash_best_strategy_cons.to_csv(results_folder / f'pause_wash_nhb_vs_SAC_cons_{target_period()}.csv')
+continue_wash_best_strategy_cons.to_csv(results_folder / f'continue_wash_nhb_vs_SAC_cons_{target_period()}.csv')
+scaleup_wash_best_strategy_cons.to_csv(results_folder / f'scaleup_wash_nhb_vs_SAC_cons_{target_period()}.csv')
 
-pause_wash_best_strategy.to_csv(results_folder / f'pause_wash_nhb_vs_SAC_{target_period()}.csv')
-continue_wash_best_strategy.to_csv(results_folder / f'continue_wash_nhb_vs_SAC_{target_period()}.csv')
-scaleup_wash_best_strategy.to_csv(results_folder / f'scaleup_wash_nhb_vs_SAC_{target_period()}.csv')
 
-
-pause_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Pause WASH")
-continue_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Continue WASH")
-scaleup_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Scale-up WASH")
+# - full costs
+pause_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full, "Pause WASH")
+continue_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full, "Continue WASH")
+scaleup_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full, "Scale-up WASH")
 # todo this shows 21 districts with no MDA as best strategy,
 #  DALYs averted in MDA SAC probably small so nhb becomes negative
+
+pause_wash_best_full_costs.to_csv(results_folder / f'pause_wash_nhb_vs_SAC_full_{target_period()}.csv')
+continue_wash_best_full_costs.to_csv(results_folder / f'continue_wash_nhb_vs_SAC_full_{target_period()}.csv')
+scaleup_wash_best_full_costs.to_csv(results_folder / f'scaleup_wash_nhb_vs_SAC_full_{target_period()}.csv')
+
+
+# - partial costs
+pause_wash_best_partial_costs = get_best_draw_per_district(nhb_district_vs_SAC_partial, "Pause WASH")
+continue_wash_best_partial_costs = get_best_draw_per_district(nhb_district_vs_SAC_partial, "Continue WASH")
+scaleup_wash_best_partial_costs = get_best_draw_per_district(nhb_district_vs_SAC_partial, "Scale-up WASH")
+
+pause_wash_best_partial_costs.to_csv(results_folder / f'pause_wash_nhb_vs_SAC_partial_{target_period()}.csv')
+continue_wash_best_partial_costs.to_csv(results_folder / f'continue_wash_nhb_vs_SAC_partial_{target_period()}.csv')
+scaleup_wash_best_partial_costs.to_csv(results_folder / f'scaleup_wash_nhb_vs_SAC_partial_{target_period()}.csv')
+
+
+# - financial costs
+pause_wash_best_financial_costs = get_best_draw_per_district(nhb_district_vs_SAC_financial, "Pause WASH")
+continue_wash_best_financial_costs = get_best_draw_per_district(nhb_district_vs_SAC_financial, "Continue WASH")
+scaleup_wash_best_financial_costs = get_best_draw_per_district(nhb_district_vs_SAC_financial, "Scale-up WASH")
+
+pause_wash_best_financial_costs.to_csv(results_folder / f'pause_wash_nhb_vs_SAC_financial_{target_period()}.csv')
+continue_wash_best_financial_costs.to_csv(results_folder / f'continue_wash_nhb_vs_SAC_financial_{target_period()}.csv')
+scaleup_wash_best_financial_costs.to_csv(results_folder / f'scaleup_wash_nhb_vs_SAC_financial_{target_period()}.csv')
+
+
 
 
 
