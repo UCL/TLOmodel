@@ -4,10 +4,13 @@ from pathlib import Path
 import pandas as pd
 import os
 import wandb
+import ast
 import torch
 from tlo.analysis.utils import extract_individual_histories
 import subprocess
 import sys
+import re
+
 import json
 from collections import Counter
 from tlo import Date
@@ -22,8 +25,79 @@ eval_env = {
         'Timestamp': pd.Timestamp,  # Specifically add Timestamp for eval
         'NaT': pd.NaT,
         'nan': float('nan'),       # Include NaN for eval (can also use pd.NA if preferred)
+        'Counter': Counter
         }
         
+def flatten_resource_access(data):
+    result = {}
+    for level, resources in data.items():
+        for res_type, counter in resources.items():
+            for item, count in counter.items():
+                key = f"Level{level}_{item}"
+                result[key] = count
+    return result
+        
+def string_to_set_simple(s):
+    s = s.strip()
+    if s == "set()":
+        return set()
+    # extract numbers inside {}
+    import re
+    numbers = re.findall(r'\d+', s)
+    return set(map(int, numbers))
+    
+def parse_counter_string(s: str) -> Counter:
+    """
+    Parse a string representation of a Counter, including nested Counters.
+    Works for strings like:
+        "Counter({'Over5OPD': 1})"
+        "Counter({})"
+    """
+    s = s.strip()
+    if not s.startswith("Counter(") or not s.endswith(")"):
+        raise ValueError(f"String does not look like a Counter: {s}")
+    
+    # Extract inner dict
+    inner = s[len("Counter("):-1].strip()
+    
+    # Empty Counter
+    if inner == "{}":
+        return Counter()
+    
+    # Safely evaluate inner dict
+    try:
+        data = ast.literal_eval(inner)
+    except Exception as e:
+        raise ValueError(f"Cannot parse Counter string: {s}") from e
+    
+    # Recursively convert nested Counters if needed
+    result = Counter()
+    for k, v in data.items():
+        if isinstance(v, dict):
+            result[k] = Counter(v)
+        else:
+            result[k] = v
+    
+    return result
+
+    
+def update_resource_access(info, resource_access):
+    
+    resource_types = ['footprint', 'ConsAccess', 'beds']
+
+    if 'treatment_ID' in info:
+        if info['level'] not in resource_access:
+            resource_access[info['level']] = {}
+            resource_access[info['level']]['footprint'] = Counter()
+            resource_access[info['level']]['consumable'] = Counter()
+            resource_access[info['level']]['beds'] = Counter()
+        for res in resource_types:
+            if res in info:
+                resource_access[info['level']][res] += eval(info[res],eval_env)
+            
+    return resource_access
+    
+    
 def convert_datetime(datetime_str):
     return datetime.strptime(datetime_str, datetime_format)
 
@@ -119,8 +193,8 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
         
         # For each draw, group by individual
         for person_ID, group in individual_histories[draw].groupby('person_ID_in_draw'):
-        
-            if group.loc[0]['Info']['iht_track_history'] is False:
+            print("At person_ID", person_ID)
+            if group.iloc[0]['Info']['iht_track_history'] is False:
                 continue
                 
             # If proceeding, will collect following
@@ -149,16 +223,9 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
                     progression_properties.update(info)
                     
                 # Check if anything was accessed:
-                if 'treatment_ID' in info:
-                    if info['level'] not in resource_access:
-                        resource_access[info['level']]['footprint'] = Counter()
-                        resource_access[info['level']]['consumable'] = Counter()
-                        resource_access[info['level']]['beds'] = Counter()
-                    resource_access[info['level']]['footprint'] += info['footprint']
-                    resource_access[info['level']]['consumable'] += info['consumable']
-                    resource_access[info['level']]['beds'] += info['beds']
+                update_resource_access(info, resource_access)
             
-                if 'CervicalCancerMainPollingEvent' in row['event_name'] and progression_properties['ce_hpv_cc_status'] == 'cin1' and progression_properties['sex'] == 'F':
+                if 'CervicalCancerMainPollingEvent' in row['event_name'] and progression_properties['ce_hpv_cc_status'] == 'cin1':
                     polling_event_found = True
 
                     # Retain a copy of Polling event
@@ -178,33 +245,28 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
             if episode_start_date is not None and episode_end_date is None:
                 print("Episode began but was not completed for this individual")
                 
-            # To store for each individual:
-            data = {}
-            if episode_end_date is not None and episode_start_date is not None:
-                data['duration_of_episode'] = (episode_end_date - episode_start_date).days
-            else:
-                data['duration_of_episode'] = None
-            
-            data['person_ID'] = person_ID
-            if len(episode_end_properties)>0:
-                data['is_alive_after_ce'] = episode_end_properties['is_alive']
-            else:
-                data['is_alive_after_ce'] = None
-            
-            for key
-            
-            print("Episode start ", episode_start_date)
-            print("properties ", episode_start_properties)
-            print("Episode end ", episode_end_date)
-            print("properties ", episode_end_properties)
-            print('data fr individual', data)
+            if polling_event_found:
+                # To store for each individual:
+                data = {}
+                if episode_end_date is not None and episode_start_date is not None:
+                    data['duration_of_episode'] = (episode_end_date - episode_start_date).days
+                else:
+                    data['duration_of_episode'] = None
+                
+                data['person_ID'] = person_ID
+                if len(episode_end_properties)>0:
+                    data['is_alive_after_ce'] = episode_end_properties['is_alive']
+                else:
+                    data['is_alive_after_ce'] = None
+                
+                resource_access_flatten = flatten_resource_access(resource_access)
+                data.update(resource_access_flatten)
+                print('data for individual', data)
 
-            print("=============")
-
-            data_for_draw.append(data)
+                data_for_draw.append(data)
             
-        del df
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(data_for_draw)
+        print(df)
         
         # Now for this draw, attach draw parameter selection to individual as conditional variables
         # for k,v in draws_parameters.items()
