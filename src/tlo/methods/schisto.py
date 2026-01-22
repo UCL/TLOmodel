@@ -273,10 +273,16 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         df = population.props
         p = self.parameters
         df.loc[df.is_alive, f'{self.module_prefix}_MDA_treatment_counter'] = 0
-
         # reset all to one district if doing calibration or test runs
         # choose district based on parameter (in Malawi, default Zomba district 19) as it has ~10% prev of both species
-        if p['single_district']:
+        def _str_to_bool(val):
+            if isinstance(val, bool):
+                return val
+            if isinstance(val, str):
+                return val.lower() in ('true', '1', 'yes')
+            return bool(val)
+
+        if _str_to_bool(p['single_district']):
             district_num = int(p['single_district_calibration_number'])
             df['district_num_of_residence'] = pd.Categorical([district_num] * len(df),
                                                              categories=df['district_num_of_residence'].cat.categories)
@@ -285,6 +291,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                                          categories=df['district_of_residence'].cat.categories)
             df['region_of_residence'] = pd.Categorical([p['single_district_calibration_region']] * len(df),
                                                        categories=df['region_of_residence'].cat.categories)
+        print(df['region_of_residence'] )
         for _spec in self.species.values():
             _spec.initialise_population(population)
 
