@@ -405,7 +405,6 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
 
         table = wandb.Table(dataframe=dataset)
         print(table.columns)
-        exit(-1)
 
         artifact = wandb.Artifact(
             "test_dataset",
