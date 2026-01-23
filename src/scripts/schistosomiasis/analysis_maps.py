@@ -493,14 +493,14 @@ def plot_3x3_maps(
                     is_pct_panel = False
                 elif r == 1:
                     col = "pct_psac_vs_sac"
-                    title = "ΔNHB (%)"
+                    title = "Δ Net Health Benefit (%)"
                     cmap = nhb_pct_cmap
                     vmin, vmax = pct_vmin, pct_vmax
                     treat_minus99 = False
                     is_pct_panel = True
                 else:
                     col = "pct_all_vs_sac"
-                    title = "ΔNHB (%)"
+                    title = "Δ Net Health Benefit (%)"
                     cmap = nhb_pct_cmap
                     vmin, vmax = pct_vmin, pct_vmax
                     treat_minus99 = False
@@ -577,7 +577,7 @@ def plot_3x3_maps(
             ax.axis("off")
 
             ax.text(
-                -0.02, 0.98, panel_labels[label_idx],
+                -0.2, 0.98, panel_labels[label_idx],
                 transform=ax.transAxes,
                 ha="left", va="top",
                 zorder=20,
