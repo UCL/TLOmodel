@@ -2710,6 +2710,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Log total usage of the facilities
         for clinic in self.module._clinic_names:
+            ## In general there should not be any discrepancy between self.module._clinic_names
+            ## and keys of self.module.capabilities_today
+            ## But this can happen e.g. during testing because self.module.capabilities_today
+            ## only get structured during setup of daily capabilities.
+            if clinic not in self.module.capabilities_today:
+                continue
+
             self.module.log_current_capabilities_and_usage(clinic)
 
         # Trigger jobs to be done at the end of the day (after all HSI run)

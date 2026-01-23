@@ -2894,14 +2894,19 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         )
         sim.make_initial_population(n=tot_population)
 
+        sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "GenericClinic"]
+        ## Even though we don't use the split specified here in this test, we do need
+        ## to include Clinic1 as a column in the _clinic_configuration object, and
+        ## explicitly call setup_daily_capabilities as this function populates several
+        ## key objects.
         sim.modules["HealthSystem"]._clinic_configuration = pd.DataFrame(
-            [{"Facility_ID": 20.0, "Officer_Type_Code": "DCSA", "Clinic1": 0.6, "GenericClinic": 0.4}]
+            [{"Facility_ID": 0.0, "Officer_Type_Code": "DCSA", "Clinic1": 0, "GenericClinic": 1.0}]
         )
         sim.modules["HealthSystem"]._clinic_mapping = pd.DataFrame(
             [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
         )
-        sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "GenericClinic"]
         sim.modules["HealthSystem"].setup_daily_capabilities("funded_plus")
+
 
         # Get any level 0 facility
         district, fac_info = next(iter(sim.modules["HealthSystem"]._facilities_for_each_district['0'].items()))
