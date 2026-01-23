@@ -2208,12 +2208,13 @@ mda_episodes_per_year_district_scaled_adj = apply_stop_year_to_mda_counts(
 
 
 
-# assign costs - full including consumables
+# assign costs - program costs are inflated to 2025, cons costs keep constant
 cons_cost_per_mda = 0.05  # assuming all children
 cons_cost_per_mda_incl_adults = 0.081  # weighted mean across children and adults
-full_delivery_cost_per_mda = 2.21 # 1.27 financial costs only, 2.21 includes economic (opportunity) costs
-financial_delivery_cost_per_mda = 0.48
-half_financial_costs = 0.5 * 0.48
+full_delivery_cost_per_mda = 2.98 # 2.21 includes economic (opportunity) costs
+financial_delivery_cost_per_mda = 0.65  # from 0.48
+half_financial_costs = 0.32 # from 0.5 * 0.48
+
 
 financial_cost_per_mda = financial_delivery_cost_per_mda + cons_cost_per_mda  # assuming all children
 financial_cost_per_mda_incl_adults = financial_delivery_cost_per_mda + cons_cost_per_mda_incl_adults
@@ -2229,8 +2230,8 @@ partial_cost_per_mda_incl_adults = half_financial_costs + cons_cost_per_mda_incl
 # === Costs incurred =========================================================
 
 # --- Full costs ---
-full_costs_per_year_district_child = mda_episodes_per_year_district_scaled * full_cost_per_mda
-full_costs_per_year_district_adults = mda_episodes_per_year_district_scaled * full_cost_per_mda_incl_adults
+full_costs_per_year_district_child = mda_episodes_per_year_district_scaled_adj * full_cost_per_mda
+full_costs_per_year_district_adults = mda_episodes_per_year_district_scaled_adj * full_cost_per_mda_incl_adults
 full_costs_per_year_district = combine_on_keyword(full_costs_per_year_district_child,
                                                   full_costs_per_year_district_adults, keyword="MDA All")
 
@@ -2238,8 +2239,8 @@ full_costs_per_year_national = sum_by_year_all_districts(full_costs_per_year_dis
 
 
 # --- Partial costs, using half financial costs only plus cons ---
-partial_costs_per_year_district_child = mda_episodes_per_year_district_scaled * partial_cost_per_mda
-partial_costs_per_year_district_adults = mda_episodes_per_year_district_scaled * partial_cost_per_mda_incl_adults
+partial_costs_per_year_district_child = mda_episodes_per_year_district_scaled_adj * partial_cost_per_mda
+partial_costs_per_year_district_adults = mda_episodes_per_year_district_scaled_adj * partial_cost_per_mda_incl_adults
 partial_costs_per_year_district = combine_on_keyword(partial_costs_per_year_district_child,
                                                   partial_costs_per_year_district_adults, keyword="MDA All")
 
@@ -2247,8 +2248,8 @@ partial_costs_per_year_national = sum_by_year_all_districts(partial_costs_per_ye
 
 
 # --- Financial costs plus cons ---
-financial_costs_per_year_district_child = mda_episodes_per_year_district_scaled * financial_cost_per_mda
-financial_costs_per_year_district_adults = mda_episodes_per_year_district_scaled * financial_cost_per_mda_incl_adults
+financial_costs_per_year_district_child = mda_episodes_per_year_district_scaled_adj * financial_cost_per_mda
+financial_costs_per_year_district_adults = mda_episodes_per_year_district_scaled_adj * financial_cost_per_mda_incl_adults
 financial_costs_per_year_district = combine_on_keyword(financial_costs_per_year_district_child,
                                                   financial_costs_per_year_district_adults, keyword="MDA All")
 
@@ -2257,7 +2258,7 @@ financial_costs_per_year_national = sum_by_year_all_districts(financial_costs_pe
 
 
 # --- Financial costs only excluding cons ---
-financial_costs_per_year_district_no_cons = mda_episodes_per_year_district_scaled * financial_delivery_cost_per_mda
+financial_costs_per_year_district_no_cons = mda_episodes_per_year_district_scaled_adj * financial_delivery_cost_per_mda
 financial_costs_per_year_national_no_cons = sum_by_year_all_districts(
     financial_costs_per_year_district_no_cons, TARGET_PERIOD)
 
@@ -2271,8 +2272,8 @@ fmt = format_summary_for_output(financial_costs_per_year_national_no_cons_summar
 
 
 # --- Cons costs only ---
-cons_costs_per_year_district_child = mda_episodes_per_year_district_scaled * cons_cost_per_mda
-cons_costs_per_year_district_adults = mda_episodes_per_year_district_scaled * cons_cost_per_mda_incl_adults
+cons_costs_per_year_district_child = mda_episodes_per_year_district_scaled_adj * cons_cost_per_mda
+cons_costs_per_year_district_adults = mda_episodes_per_year_district_scaled_adj * cons_cost_per_mda_incl_adults
 cons_costs_per_year_district = combine_on_keyword(cons_costs_per_year_district_child,
                                                   cons_costs_per_year_district_adults, keyword="MDA All")
 
@@ -2526,6 +2527,18 @@ sum_incremental_cons_costs_incurred_district.to_excel(results_folder / f'sum_inc
 # %% ICERS
 #################################################################################
 
+
+# threshold = 61 Ochalek 2018, US$3 to US$116 Woods 2016, 65.8 in 2022 Manthalu
+#  CET of $65 used to select interventions to be prioritised for funding Malawi's
+#  national Health Sector Strategic Plan III 2023–30, inflated to 2024 US$ value -> $80
+
+
+# todo inflate these to 2025
+threshold = 88  # inflated from 61 in 2018
+upper_threshold = 200  # inflated from 116 in 2016
+
+
+
 # --- ICERS national full costs ---
 
 icer_national = compute_icer_national(
@@ -2721,7 +2734,8 @@ icer_district = compute_icer_district(
     comparison_costs=incremental_full_costs_incurred_per_year_district,
     discount_rate_dalys=0.0,
     discount_rate_costs=0.0,
-    return_summary=True
+    return_summary=True,
+    threshold_ce=threshold,
 )
 
 icer_district["formatted"] = icer_district.apply(
@@ -2737,7 +2751,8 @@ icer_district_discount_costs = compute_icer_district(
     comparison_costs=incremental_full_costs_incurred_per_year_district,
     discount_rate_dalys=0.0,
     discount_rate_costs=0.03,
-    return_summary=True
+    return_summary=True,
+    threshold_ce = threshold,
 )
 
 icer_district_discount_costs["formatted"] = icer_district_discount_costs.apply(
@@ -2753,7 +2768,8 @@ icer_district_discount_health = compute_icer_district(
     comparison_costs=incremental_full_costs_incurred_per_year_district,
     discount_rate_dalys=0.03,
     discount_rate_costs=0.0,
-    return_summary=True
+    return_summary=True,
+    threshold_ce=threshold,
 )
 
 icer_district_discount_health["formatted"] = icer_district_discount_health.apply(
@@ -2772,7 +2788,8 @@ icer_district_financial = compute_icer_district(
     comparison_costs=incremental_financial_costs_incurred_per_year_district,
     discount_rate_dalys=0.0,
     discount_rate_costs=0.0,
-    return_summary=True
+    return_summary=True,
+    threshold_ce=threshold,
 )
 
 icer_district_financial["formatted"] = icer_district_financial.apply(
@@ -2788,7 +2805,8 @@ icer_district_financial_discount_costs = compute_icer_district(
     comparison_costs=incremental_financial_costs_incurred_per_year_district,
     discount_rate_dalys=0.0,
     discount_rate_costs=0.03,
-    return_summary=True
+    return_summary=True,
+    threshold_ce=threshold,
 )
 
 icer_district_financial_discount_costs["formatted"] = icer_district_financial_discount_costs.apply(
@@ -2805,7 +2823,8 @@ icer_district_financial_discount_health = compute_icer_district(
     comparison_costs=incremental_financial_costs_incurred_per_year_district,
     discount_rate_dalys=0.03,
     discount_rate_costs=0.0,
-    return_summary=True
+    return_summary=True,
+    threshold_ce=threshold,
 )
 
 icer_district_financial_discount_health["formatted"] = icer_district_financial_discount_health.apply(
@@ -2826,7 +2845,8 @@ icer_district_partial_only = compute_icer_district(
     comparison_costs=incremental_partial_costs_incurred_per_year_district,
     discount_rate_dalys=0.0,
     discount_rate_costs=0.0,
-    return_summary=True
+    return_summary=True,
+    threshold_ce=threshold,
 )
 
 icer_district_partial_only["formatted"] = icer_district_partial_only.apply(
@@ -2840,7 +2860,8 @@ icer_district_partial_only_discount_costs = compute_icer_district(
     comparison_costs=incremental_partial_costs_incurred_per_year_district,
     discount_rate_dalys=0.0,
     discount_rate_costs=0.03,
-    return_summary=True
+    return_summary=True,
+    threshold_ce=threshold,
 )
 
 icer_district_partial_only_discount_costs["formatted"] = icer_district_partial_only_discount_costs.apply(
@@ -2855,7 +2876,8 @@ icer_district_partial_only_discount_health = compute_icer_district(
     comparison_costs=incremental_partial_costs_incurred_per_year_district,
     discount_rate_dalys=0.03,
     discount_rate_costs=0.0,
-    return_summary=True
+    return_summary=True,
+    threshold_ce=threshold,
 )
 
 icer_district_partial_only_discount_health["formatted"] = icer_district_partial_only_discount_health.apply(
@@ -2876,7 +2898,8 @@ icer_district_cons_only = compute_icer_district(
     comparison_costs=incremental_cons_costs_incurred_per_year_district,
     discount_rate_dalys=0.0,
     discount_rate_costs=0.0,
-    return_summary=True
+    return_summary=True,
+    threshold_ce=threshold,
 )
 
 icer_district_cons_only["formatted"] = icer_district_cons_only.apply(
@@ -2890,7 +2913,8 @@ icer_district_cons_only_discount_costs = compute_icer_district(
     comparison_costs=incremental_cons_costs_incurred_per_year_district,
     discount_rate_dalys=0.0,
     discount_rate_costs=0.03,
-    return_summary=True
+    return_summary=True,
+    threshold_ce=threshold,
 )
 
 icer_district_cons_only_discount_costs["formatted"] = icer_district_cons_only_discount_costs.apply(
@@ -2905,7 +2929,8 @@ icer_district_cons_only_discount_health = compute_icer_district(
     comparison_costs=incremental_cons_costs_incurred_per_year_district,
     discount_rate_dalys=0.03,
     discount_rate_costs=0.0,
-    return_summary=True
+    return_summary=True,
+    threshold_ce=threshold,
 )
 
 icer_district_cons_only_discount_health["formatted"] = icer_district_cons_only_discount_health.apply(
@@ -2922,12 +2947,6 @@ icer_district_cons_only_discount_health.to_excel(results_folder / f'icer_distric
 
 
 # full costs
-# threshold = 61 Ochalek 2018, US$3 to US$116 Woods 2016, 65.8 in 2022 Manthalu
-#  CET of $65 used to select interventions to be prioritised for funding Malawi's
-#  national Health Sector Strategic Plan III 2023–30, inflated to 2024 US$ value -> $80
-
-# todo inflate these to 2024
-threshold = 61
 
 
 tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district,
@@ -2998,6 +3017,22 @@ tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial
                                             threshold=threshold)
 tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_{threshold}_financial.xlsx')
 
+
+# upper threshold - financial costs
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
+                                            wash_strategy="Continue WASH",
+                                            threshold=upper_threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Continue_{upper_threshold}_financial.xlsx')
+
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
+                                            wash_strategy="Pause WASH",
+                                            threshold=upper_threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Pause_{upper_threshold}_financial.xlsx')
+
+tmp = proportion_ce_districts_by_comparison(icer_summary=icer_district_financial,
+                                            wash_strategy="Scale-up WASH",
+                                            threshold=upper_threshold)
+tmp.to_excel(results_folder / f'proportion_ce_districts_Scaleup_{upper_threshold}_financial.xlsx')
 
 
 
@@ -3211,6 +3246,31 @@ nhb_district_vs_SAC_financial.to_csv(results_folder / f'nhb_district_vs_SAC_fina
 
 
 
+# --- NHB financial costs - upper threshold
+nhb_district_vs_noMDA_financial_upper_threshold = compute_nhb(
+    dalys_averted=dalys_averted_district_compared_noMDA,
+    comparison_costs=financial_costs_relative_noMDA_district,
+    discount_rate_dalys=0.0,
+    threshold=upper_threshold,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+nhb_district_vs_noMDA_financial_upper_threshold .to_csv(results_folder / f'nhb_district_vs_noMDA_financial_costs_{upper_threshold}_{target_period()}.csv')
+
+
+nhb_district_vs_SAC_financial_upper_threshold  = compute_nhb(
+    dalys_averted=dalys_averted_district_compared_SAC,
+    comparison_costs=financial_costs_relative_SAC_district,
+    discount_rate_dalys=0.0,
+    threshold=upper_threshold,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+nhb_district_vs_SAC_financial_upper_threshold .to_csv(results_folder / f'nhb_district_vs_SAC_financial_costs_{upper_threshold}_{target_period()}.csv')
+
+
 
 
 def get_best_draw_per_district(df, keyword):
@@ -3298,6 +3358,14 @@ continue_wash_best_financial_costs.to_csv(results_folder / f'continue_wash_nhb_v
 scaleup_wash_best_financial_costs.to_csv(results_folder / f'scaleup_wash_nhb_vs_SAC_financial_{target_period()}.csv')
 
 
+# - financial costs - upper threshold
+pause_wash_best_financial_costs = get_best_draw_per_district(nhb_district_vs_SAC_financial_upper_threshold, "Pause WASH")
+continue_wash_best_financial_costs = get_best_draw_per_district(nhb_district_vs_SAC_financial_upper_threshold, "Continue WASH")
+scaleup_wash_best_financial_costs = get_best_draw_per_district(nhb_district_vs_SAC_financial_upper_threshold, "Scale-up WASH")
+
+pause_wash_best_financial_costs.to_csv(results_folder / f'pause_wash_nhb_vs_SAC_financial_{upper_threshold}_{target_period()}.csv')
+continue_wash_best_financial_costs.to_csv(results_folder / f'continue_wash_nhb_vs_SAC_financial_{upper_threshold}_{target_period()}.csv')
+scaleup_wash_best_financial_costs.to_csv(results_folder / f'scaleup_wash_nhb_vs_SAC_financial_{upper_threshold}_{target_period()}.csv')
 
 
 
@@ -3312,145 +3380,145 @@ scaleup_wash_best_financial_costs.to_csv(results_folder / f'scaleup_wash_nhb_vs_
 # dalys averted compared to no MDA
 # need this restricted to target period
 
-
-def calculate_max_hr_costs(
-    dalys_df: pd.DataFrame,
-    cons_costs_df: pd.DataFrame,
-    cet: float,
-    start_year: int = 2024,
-    end_year: int = 2050
-) -> pd.DataFrame:
-    """
-    Calculate maximum allowable HR costs given DALYs averted and consumable costs.
-
-    Parameters
-    ----------
-    dalys_df : pd.DataFrame
-        DALYs averted relative to SAC MDA.
-        Index: MultiIndex (year, district)
-        Columns: MultiIndex (run, draw, [junk]) where 'draw' looks like
-                 'Pause WASH, no MDA', etc.
-    cons_costs_df : pd.DataFrame
-        Incremental consumable costs, same format as dalys_df.
-    cet : float
-        Cost-effectiveness threshold (per DALY).
-    start_year : int
-        First year to include in evaluation.
-    end_year : int
-        Last year to include in evaluation.
-
-    Returns
-    -------
-    pd.DataFrame
-        Index: (district, wash_strategy, comparison)
-        Columns: ['mean', 'lower', 'upper', 'n_runs'] based on run-level estimates.
-    """
-
-    # ---------- 0. Standardise columns to (wash_strategy, comparison, run) ----------
-    def _standardise_cols(df: pd.DataFrame) -> pd.DataFrame:
-        cols = df.columns
-        if cols.nlevels < 2:
-            raise ValueError("Expected a MultiIndex on columns with at least (run, draw).")
-
-        # Try to get by name; if unnamed, fall back to levels 0/1
-        names = cols.names
-        if names is not None and 'run' in names and 'draw' in names:
-            run = cols.get_level_values('run')
-            draw = cols.get_level_values('draw')
-        else:
-            # assume level 0 = run, level 1 = draw
-            run = cols.get_level_values(0)
-            draw = cols.get_level_values(1)
-
-        wash_strategy = []
-        comparison = []
-        for s in draw:
-            # assume "WASH strategy, comparison"
-            parts = [p.strip() for p in str(s).split(',', 1)]
-            if len(parts) == 2:
-                ws, comp = parts
-            else:
-                ws, comp = str(s).strip(), ""
-            wash_strategy.append(ws)
-            comparison.append(comp)
-
-        new_cols = pd.MultiIndex.from_arrays(
-            [wash_strategy, comparison, run],
-            names=['wash_strategy', 'comparison', 'run']
-        )
-
-        df2 = df.copy()
-        df2.columns = new_cols
-        return df2
-
-    dalys_df = _standardise_cols(dalys_df)
-    cons_costs_df = _standardise_cols(cons_costs_df)
-
-    # ---------- 1. Restrict to evaluation years ----------
-    years = dalys_df.index.get_level_values(0)
-    mask = (years >= start_year) & (years <= end_year)
-    dalys_eval = dalys_df.loc[mask]
-
-    years = cons_costs_df.index.get_level_values(0)
-    mask = (years >= start_year) & (years <= end_year)
-    cons_eval = cons_costs_df.loc[mask]
-
-    # ---------- 2. Align indices and columns ----------
-    dalys_eval, cons_eval = dalys_eval.align(cons_eval, join="inner")
-
-    # ---------- 3. Collapse over years (sum DALYs averted and costs) ----------
-    districts = dalys_eval.index.get_level_values(1)
-    dalys_eval = dalys_eval.copy()
-    cons_eval = cons_eval.copy()
-    dalys_eval.index = districts
-    cons_eval.index = districts
-
-    dalys_sum = dalys_eval.groupby(level=0).sum()
-    cons_sum = cons_eval.groupby(level=0).sum()
-
-    # ---------- 4. Compute max HR costs: (DALYs * CET) - consumables ----------
-    max_hr = dalys_sum * cet - cons_sum
-
-    # ---------- 5. Summarise across runs ----------
-    # max_hr has columns (wash_strategy, comparison, run)
-    results = []
-    for (wash_strategy, comparison), df_sub in max_hr.groupby(level=['wash_strategy', 'comparison'], axis=1):
-        # df_sub has one column per run
-        for district, series in df_sub.iterrows():
-            vals = series.dropna().values  # one value per run
-            n = len(vals)
-            if n == 0:
-                continue
-            mean_val = float(vals.mean())
-            if n > 1:
-                se = vals.std(ddof=1) / np.sqrt(n)
-                lower = mean_val - 1.96 * se
-                upper = mean_val + 1.96 * se
-            else:
-                lower = upper = mean_val
-
-            results.append({
-                "district": district,
-                "wash_strategy": wash_strategy,
-                "comparison": comparison,
-                "mean": mean_val,
-                "lower": lower,
-                "upper": upper,
-                "n_runs": n,
-            })
-
-    if not results:
-        return pd.DataFrame(columns=["mean", "lower", "upper", "n_runs"]).set_index(
-            pd.MultiIndex.from_arrays([[], [], []], names=["district", "wash_strategy", "comparison"])
-        )
-
-    results_df = (
-        pd.DataFrame(results)
-        .set_index(["district", "wash_strategy", "comparison"])
-        .sort_index()
-    )
-
-    return results_df
+#
+# def calculate_max_hr_costs(
+#     dalys_df: pd.DataFrame,
+#     cons_costs_df: pd.DataFrame,
+#     cet: float,
+#     start_year: int = 2024,
+#     end_year: int = 2050
+# ) -> pd.DataFrame:
+#     """
+#     Calculate maximum allowable HR costs given DALYs averted and consumable costs.
+#
+#     Parameters
+#     ----------
+#     dalys_df : pd.DataFrame
+#         DALYs averted relative to SAC MDA.
+#         Index: MultiIndex (year, district)
+#         Columns: MultiIndex (run, draw, [junk]) where 'draw' looks like
+#                  'Pause WASH, no MDA', etc.
+#     cons_costs_df : pd.DataFrame
+#         Incremental consumable costs, same format as dalys_df.
+#     cet : float
+#         Cost-effectiveness threshold (per DALY).
+#     start_year : int
+#         First year to include in evaluation.
+#     end_year : int
+#         Last year to include in evaluation.
+#
+#     Returns
+#     -------
+#     pd.DataFrame
+#         Index: (district, wash_strategy, comparison)
+#         Columns: ['mean', 'lower', 'upper', 'n_runs'] based on run-level estimates.
+#     """
+#
+#     # ---------- 0. Standardise columns to (wash_strategy, comparison, run) ----------
+#     def _standardise_cols(df: pd.DataFrame) -> pd.DataFrame:
+#         cols = df.columns
+#         if cols.nlevels < 2:
+#             raise ValueError("Expected a MultiIndex on columns with at least (run, draw).")
+#
+#         # Try to get by name; if unnamed, fall back to levels 0/1
+#         names = cols.names
+#         if names is not None and 'run' in names and 'draw' in names:
+#             run = cols.get_level_values('run')
+#             draw = cols.get_level_values('draw')
+#         else:
+#             # assume level 0 = run, level 1 = draw
+#             run = cols.get_level_values(0)
+#             draw = cols.get_level_values(1)
+#
+#         wash_strategy = []
+#         comparison = []
+#         for s in draw:
+#             # assume "WASH strategy, comparison"
+#             parts = [p.strip() for p in str(s).split(',', 1)]
+#             if len(parts) == 2:
+#                 ws, comp = parts
+#             else:
+#                 ws, comp = str(s).strip(), ""
+#             wash_strategy.append(ws)
+#             comparison.append(comp)
+#
+#         new_cols = pd.MultiIndex.from_arrays(
+#             [wash_strategy, comparison, run],
+#             names=['wash_strategy', 'comparison', 'run']
+#         )
+#
+#         df2 = df.copy()
+#         df2.columns = new_cols
+#         return df2
+#
+#     dalys_df = _standardise_cols(dalys_df)
+#     cons_costs_df = _standardise_cols(cons_costs_df)
+#
+#     # ---------- 1. Restrict to evaluation years ----------
+#     years = dalys_df.index.get_level_values(0)
+#     mask = (years >= start_year) & (years <= end_year)
+#     dalys_eval = dalys_df.loc[mask]
+#
+#     years = cons_costs_df.index.get_level_values(0)
+#     mask = (years >= start_year) & (years <= end_year)
+#     cons_eval = cons_costs_df.loc[mask]
+#
+#     # ---------- 2. Align indices and columns ----------
+#     dalys_eval, cons_eval = dalys_eval.align(cons_eval, join="inner")
+#
+#     # ---------- 3. Collapse over years (sum DALYs averted and costs) ----------
+#     districts = dalys_eval.index.get_level_values(1)
+#     dalys_eval = dalys_eval.copy()
+#     cons_eval = cons_eval.copy()
+#     dalys_eval.index = districts
+#     cons_eval.index = districts
+#
+#     dalys_sum = dalys_eval.groupby(level=0).sum()
+#     cons_sum = cons_eval.groupby(level=0).sum()
+#
+#     # ---------- 4. Compute max HR costs: (DALYs * CET) - consumables ----------
+#     max_hr = dalys_sum * cet - cons_sum
+#
+#     # ---------- 5. Summarise across runs ----------
+#     # max_hr has columns (wash_strategy, comparison, run)
+#     results = []
+#     for (wash_strategy, comparison), df_sub in max_hr.groupby(level=['wash_strategy', 'comparison'], axis=1):
+#         # df_sub has one column per run
+#         for district, series in df_sub.iterrows():
+#             vals = series.dropna().values  # one value per run
+#             n = len(vals)
+#             if n == 0:
+#                 continue
+#             mean_val = float(vals.mean())
+#             if n > 1:
+#                 se = vals.std(ddof=1) / np.sqrt(n)
+#                 lower = mean_val - 1.96 * se
+#                 upper = mean_val + 1.96 * se
+#             else:
+#                 lower = upper = mean_val
+#
+#             results.append({
+#                 "district": district,
+#                 "wash_strategy": wash_strategy,
+#                 "comparison": comparison,
+#                 "mean": mean_val,
+#                 "lower": lower,
+#                 "upper": upper,
+#                 "n_runs": n,
+#             })
+#
+#     if not results:
+#         return pd.DataFrame(columns=["mean", "lower", "upper", "n_runs"]).set_index(
+#             pd.MultiIndex.from_arrays([[], [], []], names=["district", "wash_strategy", "comparison"])
+#         )
+#
+#     results_df = (
+#         pd.DataFrame(results)
+#         .set_index(["district", "wash_strategy", "comparison"])
+#         .sort_index()
+#     )
+#
+#     return results_df
 
 
 
@@ -3458,28 +3526,261 @@ def calculate_max_hr_costs(
 # todo there are 8 positive values for PSAC vs SAC
 # todo 2 positive values for All vs SAC
 
-max_costs = calculate_max_hr_costs(dalys_df=dalys_averted_district_compared_SAC,
-                                   cons_costs_df=cons_costs_relative_SAC_district,
-                                   cet=threshold,
-                                   start_year=2024,
-                                   end_year=2050)
-
-max_costs.to_csv(results_folder / f'max_costs_comparedSAC_{threshold}_{target_period()}.csv')
+# todo use upper threshold also??
 
 
-
-max_costs_noMDA = calculate_max_hr_costs(dalys_df=dalys_averted_district_compared_noMDA,
-                                   cons_costs_df=cons_costs_relative_noMDA_district,
-                                   cet=threshold,
-                                   start_year=2024,
-                                   end_year=2050)
-
-max_costs_noMDA.to_csv(results_folder / f'max_costs_compared_noMDA_{threshold}_{target_period()}.csv')
-
-
-# todo could do max costs per person treated
+# todo could do max costs per mda episode
 # this will tell us the relative implementation costs acceptable at threshold
-# divide max costs by the number of mda treatment over target period
+# divide max costs by the number of mda treatments over target period
+
+# mda_episodes_per_year_district_scaled_adj
+# need to sum over years
+
+
+
+# max_costs_noMDA_upper_threshold
+# this is total over all target years
+
+
+def max_hr_costs_runlevel(
+    dalys_df: pd.DataFrame,
+    cons_costs_df: pd.DataFrame,
+    cet: float,
+    start_year: int = 2024,
+    end_year: int = 2050,
+) -> pd.DataFrame:
+    """
+    Return run-level max HR costs.
+    Rows: district
+    Cols: (wash_strategy, comparison, run)
+    """
+
+    def _standardise_cols(df: pd.DataFrame) -> pd.DataFrame:
+        cols = df.columns
+        names = cols.names
+        if names is not None and "run" in names and "draw" in names:
+            run = cols.get_level_values("run")
+            draw = cols.get_level_values("draw")
+        else:
+            run = cols.get_level_values(0)
+            draw = cols.get_level_values(1)
+
+        ws, comp = [], []
+        for s in draw:
+            parts = [p.strip() for p in str(s).split(",", 1)]
+            ws.append(parts[0])
+            comp.append(parts[1] if len(parts) == 2 else "")
+
+        out = df.copy()
+        out.columns = pd.MultiIndex.from_arrays([ws, comp, run],
+                                               names=["wash_strategy", "comparison", "run"])
+        return out
+
+    def _restrict_years(df):
+        y = df.index.get_level_values(0)
+        return df.loc[(y >= start_year) & (y <= end_year)]
+
+    # standardise + restrict years
+    dal = _restrict_years(_standardise_cols(dalys_df))
+    con = _restrict_years(_standardise_cols(cons_costs_df))
+
+    # align then sum over years -> district
+    dal, con = dal.align(con, join="inner")
+    dal.index = dal.index.get_level_values(1)  # district only
+    con.index = con.index.get_level_values(1)
+
+    dal_sum = dal.groupby(level=0).sum()
+    con_sum = con.groupby(level=0).sum()
+
+    return dal_sum * cet - con_sum
+
+
+def summarise_over_runs(wide_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    wide_df: rows=district, cols=(wash_strategy, comparison, run)
+    returns: index=(district, wash_strategy, comparison), cols mean/lower/upper/n_runs
+    """
+    out = []
+    for (ws, comp), sub in wide_df.groupby(level=["wash_strategy", "comparison"], axis=1):
+        for district, s in sub.iterrows():
+            vals = s.dropna().values.astype(float)
+            n = len(vals)
+            if n == 0:
+                continue
+            m = float(vals.mean())
+            if n > 1:
+                se = vals.std(ddof=1) / np.sqrt(n)
+                lo, hi = m - 1.96 * se, m + 1.96 * se
+            else:
+                lo = hi = m
+            out.append([district, ws, comp, m, lo, hi, n])
+
+    if not out:
+        return pd.DataFrame(columns=["mean", "lower", "upper", "n_runs"]).set_index(
+            pd.MultiIndex.from_arrays([[], [], []], names=["district", "wash_strategy", "comparison"])
+        )
+
+    return (pd.DataFrame(out, columns=["district","wash_strategy","comparison","mean","lower","upper","n_runs"])
+              .set_index(["district","wash_strategy","comparison"])
+              .sort_index())
+
+
+def calculate_max_hr_costs_or_per_episode(
+    dalys_df: pd.DataFrame,
+    cons_costs_df: pd.DataFrame,
+    cet: float,
+    mda_episodes_df: pd.DataFrame | None = None,
+    output: str = "total",   # "total" or "per_episode"
+    start_year: int = 2024,
+    end_year: int = 2050,
+    zero_episode_handling: str = "nan",  # {"nan","inf","zero","raise"}
+) -> pd.DataFrame:
+    """
+    Small wrapper: compute max HR costs, optionally per-episode (ratio computed per run).
+    """
+
+    max_hr = max_hr_costs_runlevel(dalys_df, cons_costs_df, cet, start_year, end_year)
+
+    if output == "total":
+        return summarise_over_runs(max_hr)
+
+    if output != "per_episode":
+        raise ValueError("output must be 'total' or 'per_episode'.")
+
+    if mda_episodes_df is None:
+        raise ValueError("mda_episodes_df is required when output='per_episode'.")
+
+    # --- build run-level episode totals in the same column format ---
+    # Reuse the same standardisation as above, but keep it minimal here:
+    cols = mda_episodes_df.columns
+    names = cols.names
+    if names is not None and "run" in names and "draw" in names:
+        run = cols.get_level_values("run")
+        draw = cols.get_level_values("draw")
+    else:
+        draw = cols.get_level_values(0)
+        run = cols.get_level_values(1)
+
+    ws, comp = [], []
+    for s in draw:
+        parts = [p.strip() for p in str(s).split(",", 1)]
+        ws.append(parts[0])
+        comp.append(parts[1] if len(parts) == 2 else "")
+
+    epi = mda_episodes_df.copy()
+    epi.columns = pd.MultiIndex.from_arrays([ws, comp, run],
+                                           names=["wash_strategy","comparison","run"])
+
+    y = epi.index.get_level_values(0)
+    epi = epi.loc[(y >= start_year) & (y <= end_year)]
+
+    epi.index = epi.index.get_level_values(1)  # district
+    epi_sum = epi.groupby(level=0).sum()
+
+    # align, ratio per run
+    max_hr, epi_sum = max_hr.align(epi_sum, join="inner")
+    denom = epi_sum.astype(float)
+
+    if zero_episode_handling == "raise" and (denom <= 0).any().any():
+        raise ValueError("Non-positive episode count encountered.")
+
+    ratio = max_hr.astype(float).divide(denom)
+
+    if zero_episode_handling == "nan":
+        ratio = ratio.mask(denom <= 0, np.nan)
+    elif zero_episode_handling == "inf":
+        ratio = ratio.mask(denom <= 0, np.inf)
+    elif zero_episode_handling == "zero":
+        ratio = ratio.mask(denom <= 0, 0.0)
+
+    return summarise_over_runs(ratio)
+
+
+
+# Max implementation costs
+max_hr_total = calculate_max_hr_costs_or_per_episode(
+    dalys_df=dalys_averted_district_compared_noMDA,
+    cons_costs_df=cons_costs_relative_noMDA_district,
+    cet=threshold,
+    output="total",
+    start_year=2024,
+    end_year=2050
+)
+max_hr_total.to_csv(results_folder / f'max_costs_compared_noMDA_{threshold}.csv')
+
+
+max_hr_total_SAC = calculate_max_hr_costs_or_per_episode(
+    dalys_df=dalys_averted_district_compared_SAC,
+    cons_costs_df=cons_costs_relative_SAC_district,
+    cet=threshold,
+    output="total",
+    start_year=2024,
+    end_year=2050
+)
+max_hr_total_SAC.to_csv(results_folder / f'max_costs_compared_SAC_{threshold}.csv')
+
+
+
+# get max costs per mda delivered
+max_hr_per_mda_noMDA = calculate_max_hr_costs_or_per_episode(
+    dalys_df=dalys_averted_district_compared_noMDA,
+    cons_costs_df=cons_costs_relative_noMDA_district,
+    cet=threshold,
+    mda_episodes_df=mda_episodes_per_year_district_scaled_adj,
+    output="per_episode",
+    start_year=2024,
+    end_year=2050,
+    zero_episode_handling="nan"   # recommended
+)
+
+max_hr_per_mda_noMDA.to_csv(results_folder / f'max_costs_compared_noMDA_per_MDA_{threshold}.csv')
+
+
+max_hr_per_mda_SAC = calculate_max_hr_costs_or_per_episode(
+    dalys_df=dalys_averted_district_compared_SAC,
+    cons_costs_df=cons_costs_relative_SAC_district,
+    cet=threshold,
+    mda_episodes_df=mda_episodes_per_year_district_scaled_adj,
+    output="per_episode",
+    start_year=2024,
+    end_year=2050,
+    zero_episode_handling="nan"   # recommended
+)
+
+max_hr_per_mda_SAC.to_csv(results_folder / f'max_costs_compared_SAC_per_MDA_{threshold}.csv')
+
+
+
+# get max costs per mda delivered - upper threshold
+max_hr_per_mda_noMDA_upper_threshold = calculate_max_hr_costs_or_per_episode(
+    dalys_df=dalys_averted_district_compared_noMDA,
+    cons_costs_df=cons_costs_relative_noMDA_district,
+    cet=upper_threshold,
+    mda_episodes_df=mda_episodes_per_year_district_scaled_adj,
+    output="per_episode",
+    start_year=2024,
+    end_year=2050,
+    zero_episode_handling="nan"   # recommended
+)
+
+max_hr_per_mda_noMDA_upper_threshold.to_csv(results_folder / f'max_costs_compared_noMDA_per_MDA_{upper_threshold}.csv')
+
+
+max_hr_per_mda_SAC_upper_threshold = calculate_max_hr_costs_or_per_episode(
+    dalys_df=dalys_averted_district_compared_SAC,
+    cons_costs_df=cons_costs_relative_SAC_district,
+    cet=upper_threshold,
+    mda_episodes_df=mda_episodes_per_year_district_scaled_adj,
+    output="per_episode",
+    start_year=2024,
+    end_year=2050,
+    zero_episode_handling="nan"   # recommended
+)
+
+max_hr_per_mda_SAC_upper_threshold.to_csv(results_folder / f'max_costs_compared_SAC_per_MDA_{upper_threshold}.csv')
+
+
+
 
 
 

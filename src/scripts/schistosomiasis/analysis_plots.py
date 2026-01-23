@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
 from matplotlib.patches import Patch
 import ast
+import re
 
 import pandas as pd
 # import lacroix
 import matplotlib.colors as colors
 import numpy as np
-import statsmodels.api as sm
 import seaborn as sns
 from collections import defaultdict
 import textwrap
@@ -731,17 +731,17 @@ def plot_icer_three_panels(df, context="Continue_WASH"):
             continue
 
         # Sort by district to ensure consistent plotting
-        subset = subset.sort_values('District')
+        subset = subset.sort_values('district')
 
         # Plot points with seaborn
         sns.pointplot(
             data=subset,
-            x='District',
+            x='district',
             y='mean',
             join=False,
             color='blue',
             ax=ax,
-            order=subset['District'].unique()
+            order=subset['district'].unique()
         )
 
         # Add error bars
@@ -770,7 +770,7 @@ def plot_icer_three_panels(df, context="Continue_WASH"):
             ax.set_xticklabels([])
         else:
             ax.set_xlabel('District')
-            ax.set_xticklabels(subset['District'], rotation=45, ha='right')
+            ax.set_xticklabels(subset['district'], rotation=45, ha='right')
 
         ax.set_ylabel('ICER')
 
@@ -779,11 +779,12 @@ def plot_icer_three_panels(df, context="Continue_WASH"):
     plt.show()
 
 
-file_path = results_folder / f'icer_district_cons_only_2024-2050.xlsx'
+file_path = results_folder / f'icer_district_financial2024-2050.xlsx'
 icer_district_df = pd.read_excel(file_path)
 icer_district_df['draw'] = icer_district_df['comparison'].str.extract(r'^(.*?)\s+vs')
 
 plot_icer_three_panels(icer_district_df, context='Continue WASH')
+
 
 plot_icer_three_panels(icer_district_df, context='Scale-up WASH')
 
@@ -800,10 +801,14 @@ file_path = results_folder / f'sum_incremental_full_costs_incurred_district2024-
 full_costs_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
 full_costs_district_df.columns = full_costs_district_df.columns.droplevel(2)
 
-file_path = results_folder / f'sum_incremental_cons_costs_incurred_district2024-2050.xlsx'
-cons_costs_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
-cons_costs_district_df.columns = cons_costs_district_df.columns.droplevel(2)
+file_path = results_folder / f'sum_incremental_financial_costs_incurred_district2024-2050.xlsx'
+fin_costs_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
+fin_costs_district_df.columns = fin_costs_district_df.columns.droplevel(2)
 
+
+file_path = results_folder / f'sum_incremental_partial_costs_incurred_district2024-2050.xlsx'
+partial_costs_district_df = pd.read_excel(file_path, header=[0, 1, 2], index_col=0)
+partial_costs_district_df.columns = partial_costs_district_df.columns.droplevel(2)
 
 
 
@@ -816,6 +821,7 @@ def plot_dalys_vs_costs_by_district_with_thresholds(
     thresholds: list[float] = [500.0],
     scale_x=0.5,
     scale_y=0.5,
+    cost_category: str = 'full'
 ):
     """
     Plot DALYs averted (x-axis) vs incremental costs (y-axis) by district
@@ -950,7 +956,7 @@ def plot_dalys_vs_costs_by_district_with_thresholds(
     plt.title(f'{comparison}')
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
-    plt.savefig(results_folder / f"cost_v_dalys_{wash_strategy}_{comparison}.png", dpi=300)
+    plt.savefig(results_folder / f"cost_v_dalys_{wash_strategy}_{comparison}_{cost_category}.png", dpi=300)
     plt.show()
 
 
@@ -964,9 +970,10 @@ plot_dalys_vs_costs_by_district_with_thresholds(
     wash_strategy='Continue WASH',
     comparison='MDA SAC vs no MDA',
     plot_summary=True,
-    thresholds=[5,10,20,50,61,120,500],
+    thresholds=[5,10,20,50,88,200,522],
     scale_x=0.5,
     scale_y=0.5,
+    cost_category='full',
 )
 
 
@@ -976,9 +983,10 @@ plot_dalys_vs_costs_by_district_with_thresholds(
     wash_strategy='Continue WASH',
     comparison='MDA PSAC+SAC vs MDA SAC',
     plot_summary=True,
-    thresholds=[5,10,20,50,61,120,500],
+    thresholds=[5,10,20,50,88,200,522],
     scale_x=0.5,
     scale_y=0.5,
+    cost_category='full',
 )
 
 
@@ -988,48 +996,100 @@ plot_dalys_vs_costs_by_district_with_thresholds(
     wash_strategy='Continue WASH',
     comparison='MDA All vs MDA PSAC+SAC',
     plot_summary=True,
-    thresholds=[5,10,20,50,61,120,500],
+    thresholds=[5,10,20,50,88,200,522],
     scale_x=0.5,
     scale_y=0.5,
+    cost_category='full',
 )
 
 
 
 
-# cons only
+
+
+# financial costs
 plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
-    costs_district_df=cons_costs_district_df,
+    costs_district_df=fin_costs_district_df,
     wash_strategy='Continue WASH',
     comparison='MDA SAC vs no MDA',
     plot_summary=True,
-    thresholds=[5,10,20,50,61],
+    thresholds=[5,10,20,50,88,200,522],
     scale_x=0.5,
-    scale_y=0.5)
+    scale_y=0.5,
+    cost_category='financial',
+)
 
 
 
 plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
-    costs_district_df=cons_costs_district_df,
+    costs_district_df=fin_costs_district_df,
     wash_strategy='Continue WASH',
     comparison='MDA PSAC+SAC vs MDA SAC',
     plot_summary=True,
-    thresholds=[5,10,20,50,61],
+    thresholds=[5,10,20,50,88,200,522],
     scale_x=0.5,
-    scale_y=0.5,)
+    scale_y=0.5,
+    cost_category='financial',
+)
 
 
 
 plot_dalys_vs_costs_by_district_with_thresholds(
     dalys_district_df=dalys_district_df,
-    costs_district_df=cons_costs_district_df,
+    costs_district_df=fin_costs_district_df,
     wash_strategy='Continue WASH',
     comparison='MDA All vs MDA PSAC+SAC',
     plot_summary=True,
-    thresholds=[5,10,20,50,61],
+    thresholds=[5,10,20,50,88,200,522],
     scale_x=0.5,
-    scale_y=0.5,)
+    scale_y=0.5,
+    cost_category='financial',
+)
+
+
+
+# partial costs
+plot_dalys_vs_costs_by_district_with_thresholds(
+    dalys_district_df=dalys_district_df,
+    costs_district_df=partial_costs_district_df,
+    wash_strategy='Continue WASH',
+    comparison='MDA SAC vs no MDA',
+    plot_summary=True,
+    thresholds=[5,10,20,50,88,200,522],
+    scale_x=0.5,
+    scale_y=0.5,
+    cost_category='partial',
+)
+
+
+
+plot_dalys_vs_costs_by_district_with_thresholds(
+    dalys_district_df=dalys_district_df,
+    costs_district_df=partial_costs_district_df,
+    wash_strategy='Continue WASH',
+    comparison='MDA PSAC+SAC vs MDA SAC',
+    plot_summary=True,
+    thresholds=[5,10,20,50,88,200,522],
+    scale_x=0.5,
+    scale_y=0.5,
+    cost_category='partial',
+)
+
+
+
+plot_dalys_vs_costs_by_district_with_thresholds(
+    dalys_district_df=dalys_district_df,
+    costs_district_df=partial_costs_district_df,
+    wash_strategy='Continue WASH',
+    comparison='MDA All vs MDA PSAC+SAC',
+    plot_summary=True,
+    thresholds=[5,10,20,50,88,200,522],
+    scale_x=0.5,
+    scale_y=0.5,
+    cost_category='partial',
+)
 
 
 
@@ -1200,105 +1260,101 @@ plot_ephp_km_continue(prev_mansoni_HML_All_district, species='mansoni', threshol
 #%%
 # plot ICERs per WASH strategy
 
-file_path = results_folder / f'icer_district_cons_only_2024-2050.xlsx'
+file_path = results_folder / f'icer_district_financial2024-2050.xlsx'
 icer_district_df = pd.read_excel(file_path)
 
 
+#
+# def plot_ce_two_class_overview(df: pd.DataFrame,
+#                                        wash_order=("Continue WASH","Scale-up WASH"),
+#                                        strategies=("SAC","PSAC+SAC","All")):
+#     # Minimal normalisation
+#     d = df.copy()
+#     cols = {c.lower(): c for c in d.columns}
+#     need = ["district","wash_strategy","comparison","n_runs","n_valid",
+#             "n_dominated_no_benefit","prop_valid_below_threshold"]
+#     # map lower→actual
+#     d = d.rename(columns={cols[c]: c for c in need if c in cols})
+#
+#     # Compute counts of “valid <61”
+#     d["n_valid_below"] = d["n_valid"] * d["prop_valid_below_threshold"].fillna(0.0)
+#
+#     # Aggregate to (wash, strategy)
+#     agg = (d.groupby(["wash_strategy","comparison"], as_index=False)
+#              .agg(total_runs=("n_runs","sum"),
+#                   total_valid_below=("n_valid_below","sum"),
+#                   total_dom_noben=("n_dominated_no_benefit","sum")))
+#
+#     # Shares (two classes only)
+#     prop = agg.assign(
+#         valid_share = agg["total_valid_below"] / agg["total_runs"],
+#         dom_share   = agg["total_dom_noben"] / agg["total_runs"]
+#     )[["wash_strategy","comparison","valid_share","dom_share"]]
+#
+#     # Ensure uniqueness (as claimed); raise if violated
+#     if prop.duplicated(["wash_strategy","comparison"]).any():
+#         raise ValueError("Duplicate (wash_strategy, comparison) pairs detected.")
+#
+#     # Δ valid pp (Scale-up − Continue) via strict pivot
+#     vs = prop.pivot(index="comparison", columns="wash_strategy", values="valid_share")
+#     have_both = all(w in vs.columns for w in wash_order)
+#     delta_pp = (100.0 * (vs[wash_order[1]] - vs[wash_order[0]])) if have_both else pd.Series(dtype=float)
+#
+#     # Build plotting vectors in requested order
+#     vals_valid, vals_dom, xticks, xpos, centres = [], [], [], [], []
+#     k = 0
+#     for s in strategies:
+#         pair = []
+#         for w in wash_order:
+#             row = prop[(prop["comparison"]==s) & (prop["wash_strategy"]==w)]
+#             if row.empty:
+#                 continue
+#             r = row.iloc[0]
+#             vals_valid.append(float(r["valid_share"]))
+#             vals_dom.append(float(r["dom_share"]))
+#             xpos.append(k)
+#             xticks.append(f"{s}\n{w.replace(' WASH','')}")
+#             pair.append(k); k += 1
+#         if pair:
+#             centres.append(np.mean(pair))
+#
+#     # Plot
+#     fig, ax = plt.subplots(figsize=(9, 4.6))
+#     bottoms = np.zeros(len(xpos))
+#     ax.bar(xpos, vals_valid, bottom=bottoms, label="ICER valid (<threshold)")
+#     bottoms += np.array(vals_valid)
+#     ax.bar(xpos, vals_dom,   bottom=bottoms, label="Dominated—no additional benefit")
+#
+#     ax.set_ylim(0, 1.05)
+#     ax.set_ylabel("Proportion of runs (aggregated across districts)")
+#     ax.set_xticks(xpos, xticks)
+#     ax.set_title("Classification overview (two-class): MDA scope × WASH context")
+#     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.02, 1.0))
+#     ax.axhline(1.0, color="0.85", lw=0.8)
+#     for c in centres[:-1]:
+#         ax.axvline(c + 1.0, color="0.9", ls="--", lw=0.8)
+#
+#     # Annotate Δ valid (pp) if both contexts present
+#     if not delta_pp.empty:
+#         for s, c in zip(strategies, centres):
+#             if s in delta_pp.index and pd.notna(delta_pp.loc[s]):
+#                 ax.text(c, 1.02, f"Δ valid: {delta_pp.loc[s]:+.1f} pp",
+#                         ha="center", va="bottom", fontsize=9)
+#
+#     plt.tight_layout()
+#     plt.savefig(results_folder / f"ICER_WASH_comparison.png", dpi=300)
+#     plt.show()
+#     return fig, ax, delta_pp, prop
 
-def plot_ce_two_class_overview(df: pd.DataFrame,
-                                       wash_order=("Continue WASH","Scale-up WASH"),
-                                       strategies=("SAC","PSAC+SAC","All")):
-    # Minimal normalisation
-    d = df.copy()
-    cols = {c.lower(): c for c in d.columns}
-    need = ["district","wash_strategy","comparison","n_runs","n_valid",
-            "n_dominated_no_benefit","prop_valid_below_61"]
-    # map lower→actual
-    d = d.rename(columns={cols[c]: c for c in need if c in cols})
-
-    # Compute counts of “valid <61”
-    d["n_valid_below"] = d["n_valid"] * d["prop_valid_below_61"].fillna(0.0)
-
-    # Aggregate to (wash, strategy)
-    agg = (d.groupby(["wash_strategy","comparison"], as_index=False)
-             .agg(total_runs=("n_runs","sum"),
-                  total_valid_below=("n_valid_below","sum"),
-                  total_dom_noben=("n_dominated_no_benefit","sum")))
-
-    # Shares (two classes only)
-    prop = agg.assign(
-        valid_share = agg["total_valid_below"] / agg["total_runs"],
-        dom_share   = agg["total_dom_noben"] / agg["total_runs"]
-    )[["wash_strategy","comparison","valid_share","dom_share"]]
-
-    # Ensure uniqueness (as claimed); raise if violated
-    if prop.duplicated(["wash_strategy","comparison"]).any():
-        raise ValueError("Duplicate (wash_strategy, comparison) pairs detected.")
-
-    # Δ valid pp (Scale-up − Continue) via strict pivot
-    vs = prop.pivot(index="comparison", columns="wash_strategy", values="valid_share")
-    have_both = all(w in vs.columns for w in wash_order)
-    delta_pp = (100.0 * (vs[wash_order[1]] - vs[wash_order[0]])) if have_both else pd.Series(dtype=float)
-
-    # Build plotting vectors in requested order
-    vals_valid, vals_dom, xticks, xpos, centres = [], [], [], [], []
-    k = 0
-    for s in strategies:
-        pair = []
-        for w in wash_order:
-            row = prop[(prop["comparison"]==s) & (prop["wash_strategy"]==w)]
-            if row.empty:
-                continue
-            r = row.iloc[0]
-            vals_valid.append(float(r["valid_share"]))
-            vals_dom.append(float(r["dom_share"]))
-            xpos.append(k)
-            xticks.append(f"{s}\n{w.replace(' WASH','')}")
-            pair.append(k); k += 1
-        if pair:
-            centres.append(np.mean(pair))
-
-    # Plot
-    fig, ax = plt.subplots(figsize=(9, 4.6))
-    bottoms = np.zeros(len(xpos))
-    ax.bar(xpos, vals_valid, bottom=bottoms, label="ICER valid (<61)")
-    bottoms += np.array(vals_valid)
-    ax.bar(xpos, vals_dom,   bottom=bottoms, label="Dominated—no additional benefit")
-
-    ax.set_ylim(0, 1.05)
-    ax.set_ylabel("Proportion of runs (aggregated across districts)")
-    ax.set_xticks(xpos, xticks)
-    ax.set_title("Classification overview (two-class): MDA scope × WASH context")
-    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.02, 1.0))
-    ax.axhline(1.0, color="0.85", lw=0.8)
-    for c in centres[:-1]:
-        ax.axvline(c + 1.0, color="0.9", ls="--", lw=0.8)
-
-    # Annotate Δ valid (pp) if both contexts present
-    if not delta_pp.empty:
-        for s, c in zip(strategies, centres):
-            if s in delta_pp.index and pd.notna(delta_pp.loc[s]):
-                ax.text(c, 1.02, f"Δ valid: {delta_pp.loc[s]:+.1f} pp",
-                        ha="center", va="bottom", fontsize=9)
-
-    plt.tight_layout()
-    plt.savefig(results_folder / f"ICER_WASH_comparison.png", dpi=300)
-    plt.show()
-    return fig, ax, delta_pp, prop
 
 
-import re
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from pathlib import Path
 
 def plot_ce_two_class_from_pairwise(df: pd.DataFrame,
                                     include_wash=("Continue WASH","Scale-up WASH"),
                                     outfile: str | Path | None = None):
     """
     df must contain (any case/spacing): district, wash_strategy, comparison,
-    n_runs, n_valid, n_dominated_no_benefit, prop_valid_below_61.
+    n_runs, n_valid, n_dominated_no_benefit, prop_valid_below_threshold.
     Assumes no cost-saving and no 'worse health' classes.
     """
 
@@ -1306,7 +1362,7 @@ def plot_ce_two_class_from_pairwise(df: pd.DataFrame,
     d = df.copy()
     d.columns = [str(c).strip().lower() for c in d.columns]
     need = {"district","wash_strategy","comparison","n_runs","n_valid",
-            "n_dominated_no_benefit","prop_valid_below_61"}
+            "n_dominated_no_benefit","prop_valid_below_threshold"}
     miss = need - set(d.columns)
     if miss:
         raise ValueError(f"Missing columns: {miss}")
@@ -1334,7 +1390,7 @@ def plot_ce_two_class_from_pairwise(df: pd.DataFrame,
         raise ValueError("No rows matched the expected comparisons.")
 
     # --- counts → proportions by (wash, scope) ---
-    d["n_valid_below"] = d["n_valid"] * d["prop_valid_below_61"].fillna(0.0)
+    d["n_valid_below"] = d["n_valid"] * d["prop_valid_below_threshold"].fillna(0.0)
     agg = (d.groupby(["wash_strategy","scope"], as_index=False)
              .agg(total_runs=("n_runs","sum"),
                   total_valid_below=("n_valid_below","sum"),
@@ -1375,7 +1431,7 @@ def plot_ce_two_class_from_pairwise(df: pd.DataFrame,
     # --- plot ---
     fig, ax = plt.subplots(figsize=(9, 4.6))
     bottoms = np.zeros(len(xpos))
-    ax.bar(xpos, vals_valid, bottom=bottoms, label="ICER valid (<61)")
+    ax.bar(xpos, vals_valid, bottom=bottoms, label="ICER valid (threshold)")
     bottoms += np.array(vals_valid)
     ax.bar(xpos, vals_dom,   bottom=bottoms, label="Dominated—no additional benefit")
 
@@ -1498,7 +1554,10 @@ def plot_optimal_share_curves_from_draws(
         bottom += heights
 
         # x-axis labelling (keep it readable)
-    xtick_labels = [f"{int(l)}" if float(l).is_integer() else f"{float(l):.0f}" for l in shares_df.index]
+    xtick_labels = [
+        f"{float(l):.0f}" if float(l).is_integer() else f"{float(l):.1f}"
+        for l in shares_df.index
+    ]
     ax.set_xticks(x)
     ax.set_xticklabels(xtick_labels, rotation=45, ha="right")
 
@@ -1517,7 +1576,20 @@ def plot_optimal_share_curves_from_draws(
 
 
 
-lambdas = np.arange(20, 601, 20)  # 20, 40, 60, …, 600
+lambdas = np.arange(1, 11, 0.5)  # 20, 40, 60, …, 600
+fig, ax, shares_df = plot_optimal_share_curves_from_draws(
+    dalys_averted=dalys_averted_district_compared_noMDA,
+    comparison_costs=financial_costs_relative_noMDA_district,
+    lambdas=lambdas,
+    draws_keep=(
+        "Continue WASH, MDA SAC",
+        "Continue WASH, MDA PSAC+SAC",
+        "Continue WASH, MDA All",
+    ),
+)
+
+
+lambdas = np.arange(1, 11, 0.5)  # 20, 40, 60, …, 600
 fig, ax, shares_df = plot_optimal_share_curves_from_draws(
     dalys_averted=dalys_averted_district_compared_noMDA,
     comparison_costs=cons_costs_relative_noMDA_district,
