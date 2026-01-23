@@ -143,7 +143,7 @@ class TrackIndividualHistories(BaseScenario):
         super().__init__()
         self.seed = 42
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=30)
+        self.end_date = self.start_date + pd.DateOffset(years=12)
         self.pop_size = 100
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -193,22 +193,18 @@ class TrackIndividualHistories(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         
         module_parameter_and_services_samples = sample_param_combo()
-        
-        parameter_draws = {}
-        for i in range(N_param_combo):
-            parameter_draws[i] = {
-                                  'HealthSystem': module_parameter_and_services_samples[i]['HealthSystem'],
-                                  module_of_interest: module_parameter_and_services_samples[i][module_of_interest]
-                                 }
-
         scenarios = {}
-        for i in range(1):
+        for i in range(N_param_combo):
             scenarios[str(i)] = mix_scenarios(
                                     self._baseline(),
-                                    #parameter_draws[i]
+                                    #{
+                                    #    'HealthSystem': module_parameter_and_services_samples[i]['HealthSystem'],
+                                    #    module_of_interest: module_parameter_and_services_samples[i][module_of_interest]
+                                    #}
                                 )
 
         return scenarios
+
 
     def _baseline(self) -> Dict:
         #Return the Dict with values for the parameter changes that define the baseline scenario.
@@ -219,7 +215,7 @@ class TrackIndividualHistories(BaseScenario):
                     "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
                 },
                 "IndividualHistoryTracker": {
-                    "generate_emulation_data": True,
+                    "generate_emulator_data": True,
                 },
                  "CervicalCancer": {
                     "generate_emulator_data": True,

@@ -315,7 +315,7 @@ class SymptomManager(Module):
         
         # If running the sim to collect data for emulator training, skip this
         standard_run = True
-        if 'IndividualHistoryTracker' in sim.modules and sim.modules['IndividualHistoryTracker'].parameters['generate_emulation_data']:
+        if 'IndividualHistoryTracker' in sim.modules and sim.modules['IndividualHistoryTracker'].parameters['generate_emulator_data']:
             standard_run = False
             
         if self.spurious_symptoms and standard_run:

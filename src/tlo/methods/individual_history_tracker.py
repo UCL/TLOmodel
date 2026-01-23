@@ -46,7 +46,7 @@ class IndividualHistoryTracker(Module):
         "events_to_ignore": Parameter(
             Types.LIST, "Events to be ignored when collecting chains"
         ),
-        "generate_emulation_data": Parameter(
+        "generate_emulator_data": Parameter(
             Types.BOOL, "Specify whether we are tracking individual histories with the specific goal of generating data for emulation training"
         )
     }
@@ -283,10 +283,11 @@ class IndividualHistoryTracker(Module):
             
                 # Create and store event for this individual, regardless of whether any property change occurred
                 link_info = {'event_name' : data['event_name']}
-                if 'footprint' in data.keys():
-                    HSI_specific_fields = {'footprint','level','treatment_ID','equipment','bed_days'}
+                if 'treatment_ID' in data.keys():
+                    HSI_specific_fields = {'level','treatment_ID','footprint','equipment','bed_days'}
                     for field in HSI_specific_fields:
-                        link_info[field] = data[field]
+                        if field in data:
+                            link_info[field] = data[field]
 
                 # Store (if any) property changes as a result of the event for this individual
                 for key in self.row_before.index:

@@ -33,7 +33,7 @@ def flatten_resource_access(data):
     for level, resources in data.items():
         for res_type, counter in resources.items():
             for item, count in counter.items():
-                key = f"Level{level}_{item}"
+                key = f"Level{level}_{res_type}_{item}"
                 result[key] = count
     return result
         
@@ -86,14 +86,26 @@ def update_resource_access(info, resource_access):
     resource_types = ['footprint', 'ConsAccess', 'beds']
 
     if 'treatment_ID' in info:
+        # First time accessing resources at this level
         if info['level'] not in resource_access:
             resource_access[info['level']] = {}
             resource_access[info['level']]['footprint'] = Counter()
-            resource_access[info['level']]['consumable'] = Counter()
-            resource_access[info['level']]['beds'] = Counter()
-        for res in resource_types:
-            if res in info:
-                resource_access[info['level']][res] += eval(info[res],eval_env)
+            resource_access[info['level']]['ConsCall_Item_Used'] = Counter()
+            resource_access[info['level']]['ConsCall_Item_Available'] = Counter()
+            resource_access[info['level']]['equipment'] = Counter()
+            
+        # Add footprint (always in)
+        resource_access[info['level']]['footprint'] += eval(info['footprint'],eval_env)
+        
+        # if any of the keys contain 'ConsCall' add them iteratively to the counter
+        for key, value in info.items():
+            if 'ConsCall' in key:
+                conscall_dict = eval(value,eval_env)
+                resource_access[info['level']]['ConsCall_Item_Used'] += eval(conscall_dict['Item_Used'],eval_env)
+                resource_access[info['level']]['ConsCall_Item_Available'] += eval(conscall_dict['Item_Available'],eval_env)
+            if 'equipment' in key:
+                equipment_set = eval(value,eval_env)
+                resource_access[info['level']]['equipment'].update(equipment_set)
             
     return resource_access
     
@@ -186,8 +198,10 @@ def retrieve_analysis_script_commit_hash():
 
 def postprocess_individual_histories(individual_histories): #, draws_parameters):
 
+    list_of_df = []
+
     # Iterate over draws
-    for draw in range(1):
+    for draw in range(2):
     
         data_for_draw = []
         
@@ -224,6 +238,7 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
                     
                 # Check if anything was accessed:
                 update_resource_access(info, resource_access)
+                print(resource_access)
             
                 if 'CervicalCancerMainPollingEvent' in row['event_name'] and progression_properties['ce_hpv_cc_status'] == 'cin1':
                     polling_event_found = True
@@ -248,12 +263,14 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
             if polling_event_found:
                 # To store for each individual:
                 data = {}
+                data['person_ID_in_draw'] = person_ID
+                data['draw'] = draw
+    
                 if episode_end_date is not None and episode_start_date is not None:
                     data['duration_of_episode'] = (episode_end_date - episode_start_date).days
                 else:
                     data['duration_of_episode'] = None
                 
-                data['person_ID'] = person_ID
                 if len(episode_end_properties)>0:
                     data['is_alive_after_ce'] = episode_end_properties['is_alive']
                 else:
@@ -266,15 +283,20 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
                 data_for_draw.append(data)
             
         df = pd.DataFrame(data_for_draw)
-        print(df)
-        
+
+    
         # Now for this draw, attach draw parameter selection to individual as conditional variables
         # for k,v in draws_parameters.items()
             #df[k] = v # Attach this information to every individual in the dataset
+
+        list_of_df.append(df)
+        print(df)
             
-        # Concatenate this df to the overall dataset
-        # dataset.concatenate(df) # This will append data sample from next draws
+    # Concatenate this df to the overall dataset
+    dataset = pd.concat(list_of_df, ignore_index=True, sort=False) # This will append data sample from next draws
     
+    print(dataset)
+    exit(-1)
 
 
 
@@ -283,6 +305,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     individual_histories = extract_individual_histories(results_folder)
     
     individual_histories[0].to_csv('individual_histories_draw0.csv')
+    individual_histories[1].to_csv('individual_histories_draw1.csv')
+
     postprocess_individual_histories(individual_histories)
     
     file = Path(__file__).resolve()

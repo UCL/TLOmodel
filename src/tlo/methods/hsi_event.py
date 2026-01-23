@@ -223,15 +223,20 @@ class HSI_Event:
         else:
             level = "N/A"
 
-        notifier.dispatch("hsi_event.post-run",
-                          data={"target": self.target,
+        data = {"target": self.target,
                                 "event_name": self.__class__.__name__,
-                                "footprint": footprint,
                                 "level": level,
                                 "treatment_ID": self.TREATMENT_ID,
-                                "equipment": self._EQUIPMENT,
-                                "bed_days": self.bed_days_allocated_to_this_event,
-                                })
+                                "footprint": footprint,
+                                }
+        # If any equipment was used, register
+        if len(self._EQUIPMENT)>0:
+            data["equipment"] = self._EQUIPMENT
+        # If any beddays allocated, register
+        if any(value > 0 for value in self.bed_days_allocated_to_this_event.values()):
+            data["bed_days"] = {k: v for k, v in self.bed_days_allocated_to_this_event.items() if v > 0}
+
+        notifier.dispatch("hsi_event.post-run", data=data)
 
         return updated_appt_footprint
 
