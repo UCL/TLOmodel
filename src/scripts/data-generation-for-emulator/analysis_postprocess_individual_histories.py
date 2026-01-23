@@ -397,7 +397,7 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
     
     # 5. Store in wandb dataset's metadata
     if log_to_wandb:
-        wandb.init(project="dataset-demo", name="test-run1")
+        wandb.init(project="dataset-demo", name="test-run2")
 
         table = wandb.Table(dataframe=dataset)
 
@@ -409,6 +409,7 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
 
         artifact.add(table, "data")
         wandb.log_artifact(artifact)
+        wandb.finish()
 
 if __name__ == "__main__":
     rfp = Path('resources')
