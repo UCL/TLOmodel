@@ -1246,11 +1246,11 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         "use_funded_or_actual_staffing_postSwitch": "actual",
     }
     parameters_to_change = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing"]
-    
+
     initial_parameters = {"cons_availability" : test_parameters["cons_availability"],
                       "equip_availability": test_parameters["equip_availability"],
                       "use_funded_or_actual_staffing": test_parameters["use_funded_or_actual_staffing"]}
-    
+
     new_parameters = {"cons_availability" : test_parameters["cons_availability_postSwitch"],
                       "equip_availability": test_parameters["equip_availability_postSwitch"],
                       "use_funded_or_actual_staffing": test_parameters["use_funded_or_actual_staffing_postSwitch"]}
@@ -2963,7 +2963,7 @@ def test_clinics_rescaling_factor(seed, tmpdir):
     # Now adjust capabilities available.
     # GenericClinic has exactly the capability than needed to run all the appointments;
     # Clinic1  has less capability than needed to run all the appointments;
-    # This will ensure rescaling factor for GenericClinic < 1
+    # This will ensure rescaling factor for GenericClinic is 1 (it cannot be less than 1)
     # and that for Clinic1 > 1
 
     sim.modules["HealthSystem"]._daily_capabilities["Clinic1"] = {}
