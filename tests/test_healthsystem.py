@@ -2077,8 +2077,8 @@ def test_mode_2_clinics(seed, tmpdir):
 
         return sim
 
-    def schedule_hsi_events(notherclinic, nclinic1, sim):
-        for i in range(0, notherclinic):
+    def schedule_hsi_events(ngenericclinic, nclinic1, sim):
+        for i in range(0, ngenericclinic):
             hsi = DummyHSIEvent(
                 module=sim.modules["DummyModuleGenericClinic"],
                 person_id=i,
@@ -2090,7 +2090,7 @@ def test_mode_2_clinics(seed, tmpdir):
                 hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
             )
 
-        for i in range(notherclinic, notherclinic + nclinic1):
+        for i in range(ngenericclinic, ngenericclinic + nclinic1):
             hsi = DummyHSIEvent(
                 module=sim.modules["DummyModuleClinic1"],
                 person_id=i,
@@ -2914,8 +2914,8 @@ def test_clinics_rescaling_factor(seed, tmpdir):
 
         return sim
 
-    def schedule_hsi_events(notherclinic, nclinic1, sim):
-        for i in range(0, notherclinic):
+    def schedule_hsi_events(ngenericclinic, nclinic1, sim):
+        for i in range(0, ngenericclinic):
             hsi = DummyHSIEvent(
                 module=sim.modules["DummyModuleGenericClinic"],
                 person_id=i,
@@ -2927,7 +2927,7 @@ def test_clinics_rescaling_factor(seed, tmpdir):
                 hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
             )
 
-        for i in range(notherclinic, notherclinic + nclinic1):
+        for i in range(ngenericclinic, ngenericclinic + nclinic1):
             hsi = DummyHSIEvent(
                 module=sim.modules["DummyModuleClinic1"],
                 person_id=i,
