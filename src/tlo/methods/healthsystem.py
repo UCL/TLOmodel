@@ -1922,11 +1922,8 @@ class HealthSystem(Module):
             level=event_details.facility_level,
         )
 
-    def log_current_capabilities_and_usage(self):
-        for clinic_name in self._clinic_names:
-            self.log_clinic_current_capabilities_and_usage(clinic_name)
 
-    def log_clinic_current_capabilities_and_usage(self, clinic_name):
+    def log_current_capabilities_and_usage(self, clinic_name):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
         `runnning_total_footprint`. This runs every day.
@@ -2712,7 +2709,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
 
         # Log total usage of the facilities
-        self.module.log_current_capabilities_and_usage()
+        for clinic in self.module._clinic_names:
+            self.module.log_current_capabilities_and_usage(clinic)
 
         # Trigger jobs to be done at the end of the day (after all HSI run)
         self.module.on_end_of_day()
