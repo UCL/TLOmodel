@@ -305,7 +305,6 @@ class Lifestyle(Module):
         ),
     }
 
-
     # Properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
@@ -361,15 +360,15 @@ class Lifestyle(Module):
         'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
         "li_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
         "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"
-        ),
-        'li_herbal_medication': Property( Types.BOOL, 'whether someone uses herbal medication or not'),
+                               ),
+        'li_herbal_medication': Property(Types.BOOL, 'whether someone uses herbal medication or not'),
     }
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         p = self.parameters
         dataframes = read_csv_files(resourcefilepath / 'ResourceFile_Lifestyle_Enhanced',
-            files=["parameter_values", "urban_rural_by_district"],
-        )
+                                    files=["parameter_values", "urban_rural_by_district"],
+                                    )
         self.load_parameters_from_dataframe(dataframes["parameter_values"])
         p['init_p_urban'] = (
             dataframes["urban_rural_by_district"].drop(
@@ -450,7 +449,8 @@ class Lifestyle(Module):
         df.at[child_id, 'li_is_circ'] = (
             self.rng.rand() < self.parameters['proportion_of_men_that_are_assumed_to_be_circumcised_at_birth']
         )
-        df.at[child_id, 'herbal_medication_use'] = False
+        df.at[child_id, 'li_herbal_medication'] = df.at[_id_inherit_from, 'li_herbal_medication']
+
 
 class EduPropertyInitialiser:
     """ a class that will initialise education property in the population dataframe. it is mimicing the
@@ -862,14 +862,14 @@ class LifestyleModels:
             p = self.parameters
 
             li_mar_stat_dtype = df.li_mar_stat.dtype
-            mar_stat = pd.Series(data=1, index=df.index, dtype=li_mar_stat_dtype )
+            mar_stat = pd.Series(data=1, index=df.index, dtype=li_mar_stat_dtype)
             # select individuals of different age category
             age_ranges = [(15, 20), (20, 30), (30, 40), (40, 50), (50, 60), (60, np.inf)]
             for lower_age, upper_age in age_ranges:
                 subpopulation = df.index[
                     df.age_years.between(lower_age, upper_age, inclusive="left")
                     & df.is_alive
-                ]
+                    ]
                 parameters_key = (
                     f"init_dist_mar_stat_age{lower_age}{upper_age}"
                     if upper_age != np.inf else
@@ -1934,7 +1934,6 @@ class LifestyleModels:
         # return bmi categories linear model
         bmi_lm = LinearModel.custom(handle_bmi_transitions, parameters=self.params)
         return bmi_lm
-
 
     def update_herbal_medication_property_linear_model(self) -> LinearModel:
         """
