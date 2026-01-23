@@ -2862,13 +2862,16 @@ class HealthSystemSummaryCounter:
         )
 
         # Log mean of 'fraction time used by facID and officer' from daily entries from the previous
-        # year.
-        logger_summary.info(
-           key="Capacity_By_FacID_and_Officer",
-            description="The fraction of healthcare worker time that is used each day, averaged over this "
-            "calendar year, for each officer type at each facility.",
-            data=flatten_multi_index_series_into_dict_for_logging(self.frac_time_used_by_facID_and_officer('GenericClinic'))#,
-        )
+        # year for each clinic
+
+        for clinic in self._frac_time_used_overall.keys():
+            logger_summary.info(
+               key="Capacity_By_FacID_and_Officer",
+                description="The fraction of healthcare worker time that is used each day, averaged over this "
+                "calendar year, for each officer type at each facility.",
+                data=flatten_multi_index_series_into_dict_for_logging(self.frac_time_used_by_facID_and_officer(clinic))#,
+            )
+
 
         self._reset_internal_stores()
 
@@ -2892,8 +2895,9 @@ class HealthSystemSummaryCounter:
             mean_frac_time_used = {
                 (_facID_and_officer): v / len(self._frac_time_used_overall[clinic])
                 for (_facID_and_officer), v in self._sum_of_daily_frac_time_used_by_facID_and_officer[clinic].items()
-                if (_facID_and_officer == facID_and_officer or _facID_and_officer is None)
+                ##if (_facID_and_officer == facID_and_officer or _facID_and_officer is None)
             }
+            breakpoint()
             return pd.Series(
                 index=pd.MultiIndex.from_tuples(mean_frac_time_used.keys(), names=["facID_and_officer"]),
                 data=mean_frac_time_used.values(),

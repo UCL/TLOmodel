@@ -348,6 +348,7 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     output = parse_log_file(sim.log_filepath, level=logging.INFO)
     pd.set_option('display.max_columns', None)
     summary = output['tlo.methods.healthsystem.summary']
+    breakpoint()
     capacity_by_officer_and_level = summary['Capacity_By_FacID_and_Officer']
 
     # Filter rows for the two years
@@ -2895,17 +2896,6 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         sim.make_initial_population(n=tot_population)
 
         sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "GenericClinic"]
-        ## Even though we don't use the split specified here in this test, we do need
-        ## to include Clinic1 as a column in the _clinic_configuration object, and
-        ## explicitly call setup_daily_capabilities as this function populates several
-        ## key objects.
-        sim.modules["HealthSystem"]._clinic_configuration = pd.DataFrame(
-            [{"Facility_ID": 0.0, "Officer_Type_Code": "DCSA", "Clinic1": 0, "GenericClinic": 1.0}]
-        )
-        sim.modules["HealthSystem"]._clinic_mapping = pd.DataFrame(
-            [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
-        )
-        sim.modules["HealthSystem"].setup_daily_capabilities("funded_plus")
 
 
         # Get any level 0 facility
@@ -2917,6 +2907,20 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         ## Not specifying the dtype explicitly here made the col a string rather than a category
         ## and that caused problems later on.
         sim.population.props[col] = pd.Series(district, index=s.index, dtype=s.dtype)
+
+
+        ## Even though we don't use the split specified here in this test, we do need
+        ## to include Clinic1 as a column in the _clinic_configuration object, and
+        ## explicitly call setup_daily_capabilities as this function populates several
+        ## key objects.
+        sim.modules["HealthSystem"]._clinic_configuration = pd.DataFrame(
+            [{"Facility_ID": fac_id, "Officer_Type_Code": "DCSA", "Clinic1": 0, "GenericClinic": 1.0}]
+        )
+        sim.modules["HealthSystem"]._clinic_mapping = pd.DataFrame(
+            [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
+        )
+        sim.modules["HealthSystem"].setup_daily_capabilities("funded_plus")
+
 
         sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
 
@@ -2977,6 +2981,9 @@ def test_clinics_rescaling_factor(seed, tmpdir):
     # This will ensure rescaling factor for GenericClinic is 1 (it cannot be less than 1)
     # and that for Clinic1 > 1
 
+    ## We will use this key to query capabilities later
+    fac_id_off_type = next(iter(hsi1.expected_time_requests))
+
     sim.modules["HealthSystem"]._daily_capabilities["Clinic1"] = {}
     for k, v in hsi1.expected_time_requests.items():
         sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * nevents_generic_clinic
@@ -2986,23 +2993,15 @@ def test_clinics_rescaling_factor(seed, tmpdir):
     sim.modules["HealthSystem"].healthsystemscheduler.apply(sim.population)
 
     # Record capabilities before rescaling
-    genericclinic_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][
-        "FacilityID_0_Officer_DCSA"
-    ]
-    clinic1_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][
-        "FacilityID_0_Officer_DCSA"
-    ]
+    genericclinic_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][fac_id_off_type]
+    clinic1_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][fac_id_off_type]
 
     # Now trigger rescaling of capabilities
     sim.modules["HealthSystem"]._rescale_capabilities_to_capture_effective_capability()
 
     # Record capabilities after rescaling
-    genericclinic_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][
-        "FacilityID_0_Officer_DCSA"
-    ]
-    clinic1_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][
-        "FacilityID_0_Officer_DCSA"
-    ]
+    genericclinic_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][fac_id_off_type]
+    clinic1_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][fac_id_off_type]
 
     # Expect no change in GenericClinic capabilities and Clinic1 capabilities to be rescaled by 2
     assert np.isclose(
@@ -3014,3 +3013,5 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         clinic1_capabilities_before * 2,
         clinic1_capabilities_after,
     ), "Expected Clinic1 capabilities to be rescaled by factor of 2"
+
+    breakpoint()
