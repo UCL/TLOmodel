@@ -347,7 +347,7 @@ def postprocess_individual_histories(individual_histories, draws_parameters):
             
     # Concatenate this df to the overall dataset
     dataset = pd.concat(list_of_df, ignore_index=True, sort=False) # This will append data sample from next draws
-    
+    print(type(dataset))
     return dataset
 
 
@@ -390,7 +390,7 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
 
     # 4 Postprocess them, i.e. only extract outcomes of interest and add draw parameters
     dataset = postprocess_individual_histories(individual_histories, draws_parameters)
-
+    print(dataset.columns)
     # Only parameters in draws_parameters are the ones common across all draws, so
     # can safely add info from one draw (0) to metadata
     metadata['parameters'] = draws_parameters[0]['parameters']
@@ -404,6 +404,8 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
         wandb.init(project="dataset-demo", name="test-run2")
 
         table = wandb.Table(dataframe=dataset)
+        print(table.columns)
+        exit(-1)
 
         artifact = wandb.Artifact(
             "test_dataset",
