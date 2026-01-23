@@ -362,7 +362,7 @@ class Lifestyle(Module):
         "li_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
         "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"
         ),
-        'li_herbal_medication_use': Property( Types.BOOL, 'whether someone uses herbal medication or not'),
+        'li_herbal_medication': Property( Types.BOOL, 'whether someone uses herbal medication or not'),
     }
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
@@ -2074,7 +2074,17 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 key=_property,
                 data=flatten_multi_index_series_into_dict_for_logging(data)
             )
-
+        #Herbal Medication Use
+        herbal_summary = (
+            df.loc[df.is_alive]
+            .groupby(['li_urban', 'sex', 'li_herbal_medication'])
+            .size()
+            .rename('count')
+        )
+        logger.info(
+            key='li_herbal_medication',
+            data=flatten_multi_index_series_into_dict_for_logging(herbal_summary)
+        )
         # ---------------------- log properties associated with WASH
         under_5 = df.is_alive & (df.age_years < 5)
         between_5_and_15 = df.is_alive & (df.age_years.between(5, 15))

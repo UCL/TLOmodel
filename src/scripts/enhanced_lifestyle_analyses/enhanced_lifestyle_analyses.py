@@ -65,6 +65,8 @@ class LifeStylePlots:
                                             "per urban or rural"),
             "li_is_circ": PlotDescriptor("Male circumcision", "Sum of all males"),
             "li_is_sexworker": PlotDescriptor("sex workers", "Sum of all females aged between 15-49"),
+            "li_herbal_medication": PlotDescriptor("herbal medication use", "Sum of all individuals per urban or rural"
+            ),
         }
 
         # A dictionary to map properties and their description. Useful when setting plot legend
@@ -84,7 +86,7 @@ class LifeStylePlots:
         # define all properties that are categorised by rural or urban in addition to age and sex
         self.cat_by_rural_urban_props = ['li_wealth', 'li_bmi', 'li_low_ex', 'li_ex_alc', 'li_wood_burn_stove',
                                          'li_unimproved_sanitation',
-                                         'li_no_clean_drinking_water']
+                                         'li_no_clean_drinking_water','li_herbal_medication']
 
         # date-stamp to label log files and any other outputs
         self.datestamp: str = datetime.date.today().strftime("__%Y_%m_%d")
