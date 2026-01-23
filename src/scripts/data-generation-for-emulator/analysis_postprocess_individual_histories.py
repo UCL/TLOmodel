@@ -295,26 +295,18 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
     # Concatenate this df to the overall dataset
     dataset = pd.concat(list_of_df, ignore_index=True, sort=False) # This will append data sample from next draws
     
-    print(dataset)
-    exit(-1)
+    return dataset
 
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
   
-    individual_histories = extract_individual_histories(results_folder)
-    
-    individual_histories[0].to_csv('individual_histories_draw0.csv')
-    individual_histories[1].to_csv('individual_histories_draw1.csv')
-
-    postprocess_individual_histories(individual_histories)
-    
     file = Path(__file__).resolve()
     
     # 1. Check that analysis file has been committed, and store path + commit
-    #proceed = check_repo_not_dirty()
-    #if proceed:
-    #    print("Repo is clean and can proceed")
+    proceed = check_repo_not_dirty(file)
+    if proceed:
+        print("Repo is clean and can proceed")
     
     # Get project root using git
     git_root = Path(
@@ -336,59 +328,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     
     # 3. Extract individual histories
     individual_histories = extract_individual_histories(results_folder)
-    
+    individual_histories[0].to_csv('individual_histories_draw0.csv')
+    individual_histories[1].to_csv('individual_histories_draw1.csv')
+
     # 4 Postprocess them, i.e. only extract outcomes of interest and add draw parameters
+    dataset = postprocess_individual_histories(individual_histories, draws_parameters)
 
     # 5. Store in wandb dataset's metadata
     # https://docs.wandb.ai/models/tutorials/artifacts
-    
-
-    # 3. Postprocess individual histories, such that for each disease episode, we extract the relevant information needed to train emulators, and ensure that the draw parameters are additionally stored
-    # Retreive number of draws
-    # for d in [draws]:
-        # group individuals by ID
-            
-            # for each individual
-            # evolving_status = {}
-            # status_at_start_of_episode = None
-            # status_at_concl_of_episode = None
-            # average_dalys = 0
-            # permanent_
-            # average_disability = 0
-            # total_dt_included = 0
-            # dt_in_prev_disability = 0
-            # prev_disability_incurred = 0
-            
-            # dalys_incurred
-            # save initial status from first event (i.e. either birth or StartOfSimulation)
-            
-            # for events linked to individual except the first one:
-                # if event considered is the first official one, freeze status prior event
-                
-                # in any case, update status
-                # status.update(status_in_event)
-                
-                
-        # If the first event  store entired status:
-            # status = status_in_event
-        # else, update propertiesthem which each subsequent event. Hence the 'status' of the individual evolves at
-             # Only update properties which have been changed by event
-        # each 'event'-step. This can be logged at a particularly relevant event.
-        
-        # if i ==
-        # Have two key events: start of the disease episode, and conclusion. Must declare the two events to watch out for.
-        # Note: there could be multiple events linked to the conclusion, e.g. death and resolution
-        
-        # Things to calculate on the fly between these two key events:
-        # 1. The overall duration of the episode
-        # 2. The average DALYs incurred + permanent DALYs incurred
-        # 3. Running resource access
-        # 4. Did individual die as a result of the episode?
-        
-        # Finally store:
-        # Status of individual at the start
-        # 1-4 above
-        # Status of individual at the end
 
 
 if __name__ == "__main__":
