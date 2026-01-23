@@ -41,7 +41,7 @@ tlo batch-submit
 or locally using:
 ```
 tlo scenario-run
- src/scripts/overview_paper/B_finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py
+ src/scripts/overview_paper/B_finding_effects_of_each_treatment/scenario_effect_ of_each_treatment.py
 ```
 
 """
