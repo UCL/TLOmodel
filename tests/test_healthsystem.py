@@ -2903,12 +2903,15 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "GenericClinic"]
         sim.modules["HealthSystem"].setup_daily_capabilities("funded_plus")
 
-        # Assign the entire population to the first district, so that all events are run in the same district
+        # Get any level 0 facility
+        district, fac_info = next(iter(sim.modules["HealthSystem"]._facilities_for_each_district['0'].items()))
+        fac_id = fac_info.id
         col = "district_of_residence"
         s = sim.population.props[col]
+
         ## Not specifying the dtype explicitly here made the col a string rather than a category
         ## and that caused problems later on.
-        sim.population.props[col] = pd.Series(s.cat.categories[0], index=s.index, dtype=s.dtype)
+        sim.population.props[col] = pd.Series(district, index=s.index, dtype=s.dtype)
 
         sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
 
@@ -2950,7 +2953,10 @@ def test_clinics_rescaling_factor(seed, tmpdir):
     nevents_clinic1 = 90
     sim = schedule_hsi_events(nevents_generic_clinic, nevents_clinic1, sim)
 
-    ## This hsi is only created to get the expected items; therefore the treatment_id is not important
+    ## This hsi is only created to get the expected officer type and minutes needed
+    ## for an appointment of type ConWithDCSA
+    ## therefore the treatment_id is not important
+    ## ConWithDCSA needs 10 mins of officer type DCSA at level 0
     hsi1 = DummyHSIEvent(
         module=sim.modules["DummyModuleGenericClinic"],
         person_id=0,  # Ensures call is on officers in first district
@@ -2976,10 +2982,10 @@ def test_clinics_rescaling_factor(seed, tmpdir):
 
     # Record capabilities before rescaling
     genericclinic_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][
-        "FacilityID_20_Officer_DCSA"
+        "FacilityID_0_Officer_DCSA"
     ]
     clinic1_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][
-        "FacilityID_20_Officer_DCSA"
+        "FacilityID_0_Officer_DCSA"
     ]
 
     # Now trigger rescaling of capabilities
@@ -2987,10 +2993,10 @@ def test_clinics_rescaling_factor(seed, tmpdir):
 
     # Record capabilities after rescaling
     genericclinic_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][
-        "FacilityID_20_Officer_DCSA"
+        "FacilityID_0_Officer_DCSA"
     ]
     clinic1_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][
-        "FacilityID_20_Officer_DCSA"
+        "FacilityID_0_Officer_DCSA"
     ]
 
     # Expect no change in GenericClinic capabilities and Clinic1 capabilities to be rescaled by 2
