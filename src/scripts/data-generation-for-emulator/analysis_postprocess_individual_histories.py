@@ -28,6 +28,59 @@ eval_env = {
         'Counter': Counter
         }
         
+        
+def remove_diffs(dicts, diffs):
+    """
+    Removes keys from dicts that appear in diffs.
+    Works recursively for nested dictionaries.
+    """
+    for key, diff_value in diffs.items():
+        if isinstance(diff_value, dict):
+            # Nested differences, recurse
+            nested_dicts = [d.get(key, {}) for d in dicts if key in d]
+            remove_diffs(nested_dicts, diff_value)
+        else:
+            # Remove the differing key from all dicts if it exists
+            for d in dicts:
+                if key in d:
+                    d.pop(key)
+                    
+def collect_diffs(dicts):
+    """
+    Takes a list of dictionaries and returns a dictionary of keys with differing values.
+    Works recursively for nested dictionaries.
+    """
+    from collections import defaultdict
+
+    diffs = {}
+
+    # Get all keys across all dictionaries
+    all_keys = set().union(*(d.keys() for d in dicts))
+
+    for key in all_keys:
+    
+        # Skip metadata keys
+        if key in ('draw_name', 'draw_number'):
+            continue
+            
+        # Collect all values for this key
+        values = [d.get(key, None) for d in dicts]
+
+        # Check if all values are dicts -> recurse
+        if all(isinstance(v, dict) for v in values if v is not None):
+            # Recursive call
+            nested_diff = collect_diffs(values)
+            if nested_diff:  # only add if there is a difference
+                diffs[key] = nested_diff
+        else:
+            # Check if values differ
+            unique_values = set(map(str, values))  # str to handle unhashable types
+            if len(unique_values) > 1:
+                if key != 'draw_name' and key != 'draw_number':
+                    diffs[key] = values
+
+    return diffs
+        
 def flatten_resource_access(data):
     result = {}
     for level, resources in data.items():
@@ -113,24 +166,6 @@ def update_resource_access(info, resource_access):
 def convert_datetime(datetime_str):
     return datetime.strptime(datetime_str, datetime_format)
 
-def log_on_wandb(dataset, metadata):
-
-    # Start a run, with a type to label it and a project it can call home
-    with wandb.init(project="dataset-example", job_type="generate-dataset") as run:
-
-        raw_data = wandb.Artifact(
-            "cervical-cancer",
-            type="dataset",
-            description="TLO-generated dataset for the cervical cancer module",
-            metadata=metadata)
-
-        # Store a new file in the artifact, and write something into its contents.
-        with raw_data.new_file(name + ".pt", mode="wb") as file:
-            x, y = data.tensors
-            torch.save((x, y), file)
-
-        # Save the artifact to W&B.
-        run.log_artifact(raw_data)
 
 def print_filtered_df(df):
     """
@@ -196,12 +231,28 @@ def retrieve_analysis_script_commit_hash():
     )
     return result.stdout.strip()
 
-def postprocess_individual_histories(individual_histories): #, draws_parameters):
-
+def postprocess_individual_histories(individual_histories, draws_parameters):
+    """
+    """
     list_of_df = []
 
+    # Find differences between two draws; parameters that are common across draws can be added to metadata, differences will be added to dataset.
+    # Find all common parameters across draws
+    # Artificially inflate differences:
+    draws_parameters[0]['parameters']['CervicalCancer']['different_param'] = 30
+    draws_parameters[1]['parameters']['CervicalCancer']['different_param'] = 39
+    draws_parameters[0]['parameters']['CervicalCancer']['same_param'] = 2
+    draws_parameters[1]['parameters']['CervicalCancer']['same_param'] = 2
+    draws_parameters[1]['parameters']['CervicalCancer']['different_param+2'] = 57
+    # Collect differences
+    differences = collect_diffs(draws_parameters)
+    # Remove them from the original draws_parameters
+    remove_diffs(draws_parameters,differences)
+    print(draws_parameters)
+    print(differences)
+
     # Iterate over draws
-    for draw in range(2):
+    for draw in range(len(draws_parameters)):
     
         data_for_draw = []
         
@@ -281,16 +332,18 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
                 print('data for individual', data)
 
                 data_for_draw.append(data)
-            
+        
         df = pd.DataFrame(data_for_draw)
-
-    
+        
         # Now for this draw, attach draw parameter selection to individual as conditional variables
         # for k,v in draws_parameters.items()
-            #df[k] = v # Attach this information to every individual in the dataset
-
+        for key,value in differences['parameters'].items():
+            print(key, value)
+            for module_key, module_value in value.items():
+                df[module_key] = module_value[draw]
+        
+        # Attend draw data
         list_of_df.append(df)
-        print(df)
             
     # Concatenate this df to the overall dataset
     dataset = pd.concat(list_of_df, ignore_index=True, sort=False) # This will append data sample from next draws
@@ -298,23 +351,25 @@ def postprocess_individual_histories(individual_histories): #, draws_parameters)
     return dataset
 
 
-
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
+def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilepath: Path = None):
   
-    file = Path(__file__).resolve()
-    
+    # Dictionary to collect all metadata relevant to this dataset
+    metadata = {}
+
     # 1. Check that analysis file has been committed, and store path + commit
-    proceed = check_repo_not_dirty(file)
-    if proceed:
-        print("Repo is clean and can proceed")
+    file = Path(__file__).resolve()
+    if log_to_wandb:
+        proceed = check_repo_not_dirty(file)
+        if proceed:
+            print("Repo is clean and can proceed")
     
     # Get project root using git
     git_root = Path(
         subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
     )
     # Compute relative path
-    analysis_script_path = file.relative_to(git_root)
-    analysis_script_commit_hash = retrieve_analysis_script_commit_hash()
+    metadata['analysis_script_path'] = str(file.relative_to(git_root))
+    metadata['analysis_script_commit_hash'] = retrieve_analysis_script_commit_hash()
     
     # 2. Load json file from output to retrieve:
     # A) Scenario file path
@@ -322,21 +377,38 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # C) Draw combinations
     # Note: A) and B) will be stored in wandb, C) will be attached to data itself
     scenario_json_data = retrieve_scenario_json_file(results_folder)
-    scenario_script_path = scenario_json_data['scenario_script_path']
-    scenario_script_commit_hash = scenario_json_data['commit']
+    metadata['scenario_script_path'] = scenario_json_data['scenario_script_path']
+    metadata['scenario_script_commit_hash'] = scenario_json_data['commit']
+    metadata['job_ID'] = os.path.basename(os.path.normpath(results_folder))
     draws_parameters = scenario_json_data['draws']
     
     # 3. Extract individual histories
     individual_histories = extract_individual_histories(results_folder)
-    individual_histories[0].to_csv('individual_histories_draw0.csv')
-    individual_histories[1].to_csv('individual_histories_draw1.csv')
+    print(len(individual_histories))
+    for d in range(len(individual_histories)):
+        individual_histories[d].to_csv(f'individual_histories_draw{d}.csv')
 
     # 4 Postprocess them, i.e. only extract outcomes of interest and add draw parameters
     dataset = postprocess_individual_histories(individual_histories, draws_parameters)
 
+    # Only parameters in draws_parameters are the ones common across all draws, so
+    # can safely add info from one draw (0) to metadata
+    metadata['parameters'] = draws_parameters[0]['parameters']
+    
     # 5. Store in wandb dataset's metadata
-    # https://docs.wandb.ai/models/tutorials/artifacts
+    if log_to_wandb:
+        wandb.init(project="dataset-demo", name="test-run1")
 
+        table = wandb.Table(dataframe=dataset)
+
+        artifact = wandb.Artifact(
+            "test_dataset",
+            type="dataset",
+            metadata=metadata
+        )
+
+        artifact.add(table, "data")
+        wandb.log_artifact(artifact)
 
 if __name__ == "__main__":
     rfp = Path('resources')
@@ -372,6 +444,11 @@ if __name__ == "__main__":
         default=None,
         required=False
     )
+    parser.add_argument(
+        "--log-to-wandb",
+        action="store_true",
+        help="Enable logging"
+    )
     args = parser.parse_args()
     assert args.results_path is not None
     results_path = args.results_path
@@ -381,86 +458,6 @@ if __name__ == "__main__":
     apply(
         results_folder=results_path,
         output_folder=output_path,
-        resourcefilepath=args.resources_path
+        resourcefilepath=args.resources_path,
+        log_to_wandb=args.log_to_wandb
     )
-
-
-"""
-                # Skip the initial_properties, or in other words only consider these if they are 'proper' events
-                if row['event_name'] != 'StartOfSimulation' and row['event_name'] != 'Birth':
-
-                    if 'CervicalCancerMainPollingEvent' in row['event_name']:
-                        polling_event_found = True
-
-                        # Retain a copy of Polling event
-                        polling_event = row.copy()
-  
-                        # Capture properties statu
-                        progression_properties = initial_properties.copy()
-                        progression_properties.update(i)
-                        progression_properties['event_start_date'] = row['date']
-                        
-                        # Update parameters of interest following Polling
-                        key_first_event = {key: i[key] if key in i else value for key, value in first_event.items()}
-                        
-                        # Calculate age of individual at time of event
-                        key_first_event['age_in_days_at_event'] = (row['date'] - convert_datetime(initial_properties['date_of_birth'])).days
-                        
-
-                        
-                        # Initialise chain of Dalys incurred
-                        if 'ce_disability' in i:
-                            prev_disability_incurred = i['ce_disability']
-                            prev_date = i['event_date']
-
-                    else:
-                        # Progress properties of individual, even if this event is a death
-                        progression_properties.update(i)
-                        progression_properties['event_date'] = row['date']
-
-                        # If disability has changed as a result of this, recalculate and add previous to rolling average
-                        if 'ce_disability' in i:
-
-                            dt_in_prev_disability = (i['event_date'] - prev_date).days
-                            #print("Detected change in disability", i['rt_disability'], "after dt=", dt_in_prev_disability)
-                            #print("Adding the following to the average", prev_disability_incurred, " x ", dt_in_prev_disability )
-                            average_disability += prev_disability_incurred*dt_in_prev_disability
-                            total_dt_included += dt_in_prev_disability
-                            # Update variables
-                            prev_disability_incurred = i['rt_disability']
-                            prev_date = i['event_date']
-
-                    # Update running footprint
-                    if 'appt_footprint' in i and i['appt_footprint'] != 'Counter()':
-                        footprint = i['appt_footprint']
-                        if 'Counter' in footprint:
-                            footprint = footprint[len("Counter("):-1]
-                        apply = eval(footprint, eval_env)
-                        ind_Counter[i['level']].update(Counter(apply))
-                    
-                    # If the individual has died, ensure chain of event is interrupted here and update rolling average of DALYs
-                    if 'is_alive' in i and i['is_alive'] is False:
-                        if ((i['event_date'] - polling_event['rt_date_inj']).days) > total_dt_included:
-                            dt_in_prev_disability = (i['event_date'] - prev_date).days
-                            average_disability += prev_disability_incurred*dt_in_prev_disability
-                            total_dt_included += dt_in_prev_disability
-                        break
-                       
-            # check_if_beyond_time_range_considered(progression_properties)
-            
-            if polling_event_found:
-                # Compute final properties of individual
-                key_last_event['is_alive_after_ce'] = progression_properties['is_alive']
-                key_last_event.update({'total_footprint': ind_Counter})
-
-                if key_last_event['duration_days']!=total_dt_included:
-                    print("The duration of event and total_dt_included don't match", key_last_event['duration_days'], total_dt_included)
-                    exit(-1)
-                
-                properties = key_first_event | key_last_event
-                    
-                record.append(properties)
-            
-    df = pd.DataFrame(record)
-    df.to_csv("new_raw_data_" + name_tag + ".csv", index=False)
-"""
