@@ -34,8 +34,8 @@ class ClimateDisruptionScenario(BaseScenario):
         self.pop_size = 100_000
         self.runs_per_draw = 5
         self.YEAR_OF_CHANGE = YEAR_OF_CHANGE
-        self._parameter_grid = parameter_grid[0]
-        self.number_of_draws = 1#len(self._parameter_grid)
+        self._parameter_grid = parameter_grid
+        self.number_of_draws = len(self._parameter_grid)
 
     def log_configuration(self):
         return {
