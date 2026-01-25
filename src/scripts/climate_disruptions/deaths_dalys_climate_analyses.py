@@ -16,8 +16,8 @@ from tlo.analysis.utils import (
 )
 
 
-min_year = 2026
-max_year = 2041
+min_year = 2010
+max_year = 2024
 spacing_of_years = 1
 scenario_names_all = [
     "Baseline",
@@ -163,6 +163,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # %% Quantify the health gains associated with all interventions combined.
 
             # Absolute Number of Deaths and DALYs
+            print(extract_results(
+                    results_folder,
+                    module="tlo.methods.demography",
+                    key="death",
+                    custom_generate_series=get_num_deaths_by_cause_label,
+                    do_scaling=True,
+                ))
             result_data_deaths = summarize(
                 extract_results(
                     results_folder,
@@ -173,11 +180,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 ),
                 only_mean=True,
                 collapse_columns=True,
-            )[draw]
+            )#[draw]
 
-            all_years_data_deaths_mean[target_year] = result_data_deaths["mean"]
-            all_years_data_deaths_lower[target_year] = result_data_deaths["lower"]
-            all_years_data_deaths_upper[target_year] = result_data_deaths["upper"]
+            all_years_data_deaths_mean[target_year] = result_data_deaths#["mean"]
+            all_years_data_deaths_lower[target_year] = result_data_deaths#["lower"]
+            all_years_data_deaths_upper[target_year] = result_data_deaths#["upper"]
 
             result_data_dalys = summarize(
                 extract_results(
@@ -189,10 +196,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 ),
                 only_mean=True,
                 collapse_columns=True,
-            )[draw]
-            all_years_data_dalys_mean[target_year] = result_data_dalys["mean"]
-            all_years_data_dalys_lower[target_year] = result_data_dalys["lower"]
-            all_years_data_dalys_upper[target_year] = result_data_dalys["upper"]
+            )#[draw]
+            all_years_data_dalys_mean[target_year] = result_data_dalys#["mean"]
+            all_years_data_dalys_lower[target_year] = result_data_dalys#["lower"]
+            all_years_data_dalys_upper[target_year] = result_data_dalys#["upper"]
 
             result_data_population = summarize(
                 extract_results(
@@ -204,10 +211,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 ),
                 only_mean=True,
                 collapse_columns=True,
-            )[draw]
-            all_years_data_population_mean[target_year] = result_data_population["mean"]
-            all_years_data_population_lower[target_year] = result_data_population["lower"]
-            all_years_data_population_upper[target_year] = result_data_population["upper"]
+            )#[draw]
+            all_years_data_population_mean[target_year] = result_data_population#["mean"]
+            all_years_data_population_lower[target_year] = result_data_population#["lower"]
+            all_years_data_population_upper[target_year] = result_data_population#["upper"]
 
         # Convert the accumulated data into a DataFrame for plotting
         df_all_years_DALYS_mean = pd.DataFrame(all_years_data_dalys_mean)
