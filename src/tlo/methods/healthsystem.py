@@ -2895,7 +2895,7 @@ class HealthSystemSummaryCounter:
             mean_frac_time_used = {
                 (_facID_and_officer): v / len(self._frac_time_used_overall[clinic])
                 for (_facID_and_officer), v in self._sum_of_daily_frac_time_used_by_facID_and_officer[clinic].items()
-                ##if (_facID_and_officer == facID_and_officer or _facID_and_officer is None)
+                if (_facID_and_officer == facID_and_officer or _facID_and_officer is None)
             }
             breakpoint()
             return pd.Series(
