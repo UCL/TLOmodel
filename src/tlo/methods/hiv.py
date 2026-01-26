@@ -1521,6 +1521,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
             p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
+            p["hiv_healthseekingbehaviour_cap"] = 2
+
         # ----------------------------------------------
         # 2 PrEP oral only in FSW, switch everything else off
         # ----------------------------------------------
@@ -1545,6 +1547,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
             p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
+            p["hiv_healthseekingbehaviour_cap"] = 2
 
         # ----------------------------------------------
         # 3 PrEP oral + inj in FSW
@@ -1577,6 +1580,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
             p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
+            p["hiv_healthseekingbehaviour_cap"] = 2
+
         # ----------------------------------------------
         # 4 PrEP oral only AGYW and Pregnant women
         # ----------------------------------------------
@@ -1600,6 +1605,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["annual_rate_selftest"] = p["annual_rate_selftest"] * 0.75
             p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
             p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
+
+            p["hiv_healthseekingbehaviour_cap"] = 2
 
         # ----------------------------------------------
         # 5 PrEP oral + inj AGYW and Pregnant women
@@ -1625,6 +1632,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["annual_rate_selftest"] = p["annual_rate_selftest"] * 0.75
             p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
             p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
+
+            p["hiv_healthseekingbehaviour_cap"] = 2
 
         # ----------------------------------------------
         # 6 Retain VMMC
@@ -1653,6 +1662,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
             p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
+            p["hiv_healthseekingbehaviour_cap"] = 2
+
         # ----------------------------------------------
         # 7 Key population outreach FSW
         # ----------------------------------------------
@@ -1680,6 +1691,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["annual_rate_selftest"] = p["annual_rate_selftest"] * 0.75
             p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
             p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
+
+            p["hiv_healthseekingbehaviour_cap"] = 2
 
         # ----------------------------------------------
         # 8 Testing
@@ -1728,6 +1741,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75 # ANC-based screening
             p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
 
+            p["hiv_healthseekingbehaviour_cap"] = 2
+
 
         # ----------------------------------------------
         # 10 Worst case
@@ -1758,6 +1773,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["annual_rate_selftest"] = 0
             p["prob_hiv_test_at_anc_or_delivery"] = 0  # no ANC-based screening
             p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75 # infant screening
+
+            p["hiv_healthseekingbehaviour_cap"] = 2
 
             # drop availability of ARVs by 50%
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
@@ -1796,6 +1813,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["annual_rate_selftest"] = 0
             p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.5 # ANC-based screening
             p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.5 # infant screening
+
+            p["hiv_healthseekingbehaviour_cap"] = 2
 
 
 
@@ -3589,15 +3608,30 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                             )
         else:
             # Test was not possible, set blank footprint and schedule another test
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             # set cap for number of repeat tests
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.
 
-            if (
-                self.counter_for_test_not_available
-                <= self.module.parameters["hiv_healthseekingbehaviour_cap"]
-            ):
+            # todo changing logic for MIHPSA scenarios
+            # todo select if mihpsa scenario and year >2024......
+            # repeat HSB if AIDS symptoms
+            persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
+
+            repeat_for_supply_constraint = (
+                self.counter_for_test_not_available <= self.module.parameters["hiv_healthseekingbehaviour_cap"]
+            )
+
+            # scenarios 0 (SQ) and 8 (allow testing) don't have the stricter HSB caps
+            repeat_for_aids_symptoms_from_2024 = (
+                (self.sim.date.year >= 2024) and ("aids_symptoms" in persons_symptoms)
+            )
+
+            should_repeat = repeat_for_supply_constraint or (
+                (not repeat_for_supply_constraint) and repeat_for_aids_symptoms_from_2024
+            )
+
+            if should_repeat:
                 # repeat appt for HIV test
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     self,
@@ -3605,6 +3639,18 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
+
+            # if (
+            #     self.counter_for_test_not_available
+            #     <= self.module.parameters["hiv_healthseekingbehaviour_cap"]
+            # ) or "aids_symptoms" in persons_symptoms:
+            #     # repeat appt for HIV test
+            #     self.sim.modules["HealthSystem"].schedule_hsi_event(
+            #         self,
+            #         topen=self.sim.date + pd.DateOffset(days=7),
+            #         tclose=None,
+            #         priority=0,
+            #     )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
