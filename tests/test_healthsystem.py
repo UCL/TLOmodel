@@ -348,7 +348,6 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     output = parse_log_file(sim.log_filepath, level=logging.INFO)
     pd.set_option('display.max_columns', None)
     summary = output['tlo.methods.healthsystem.summary']
-    breakpoint()
     capacity_by_officer_and_level = summary['Capacity_By_FacID_and_Officer']
 
     # Filter rows for the two years
@@ -368,7 +367,7 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
             continue  # skip the date column
         if not (capacity_by_officer_and_level[col] == 0).any():  # check column is not all zeros
             ratio = row_2010[col] / row_2011[col]
-
+            print(ratio)
             results[col] = ratio > 100
 
     assert all(results.values())
@@ -3013,5 +3012,3 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         clinic1_capabilities_before * 2,
         clinic1_capabilities_after,
     ), "Expected Clinic1 capabilities to be rescaled by factor of 2"
-
-    breakpoint()

@@ -1263,6 +1263,7 @@ class HealthSystem(Module):
                 rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
                     facID_and_officer=facID_and_officer, clinic=clinic
                 )
+
                 if rescaling_factor > 1 and rescaling_factor != float("inf"):
                     self._daily_capabilities[clinic][facID_and_officer] *= rescaling_factor
 
@@ -2895,11 +2896,14 @@ class HealthSystemSummaryCounter:
             mean_frac_time_used = {
                 (_facID_and_officer): v / len(self._frac_time_used_overall[clinic])
                 for (_facID_and_officer), v in self._sum_of_daily_frac_time_used_by_facID_and_officer[clinic].items()
-                if (_facID_and_officer == facID_and_officer or _facID_and_officer is None)
+                ## SB: It is not clear to me what this filtering intends to achieve; since
+                ## facID_and_officer is None here, and _facID_and_officer is not expected to be None,
+                ## it looks like this condition will always be false, making the dictionary empty.
+                ## I have therefore commented it out.
+                ##if (_facID_and_officer == facID_and_officer or _facID_and_officer is None)
             }
-            breakpoint()
             return pd.Series(
-                index=pd.MultiIndex.from_tuples(mean_frac_time_used.keys(), names=["facID_and_officer"]),
+                index=pd.MultiIndex.from_tuples([(clinic, key) for key in mean_frac_time_used.keys()], names=["clinic", "facID_and_officer"]),
                 data=mean_frac_time_used.values(),
             ).sort_index()
 
