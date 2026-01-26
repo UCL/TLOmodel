@@ -63,6 +63,7 @@ import abc
 import argparse
 import datetime
 import json
+import os
 from collections.abc import Iterable
 from itertools import product
 from pathlib import Path, PurePosixPath
@@ -160,7 +161,7 @@ class BaseScenario(abc.ABC):
         for key, value in vars(arguments).items():
             if value is not None:
                 if hasattr(self, key):
-                    logger.info(key="message", data=f"Overriding attribute: {key}: {getattr(self, key)} -> {value}")
+                    print(f"Overriding attribute with argument value: {key}: {getattr(self, key)} -> {value}")
                 setattr(self, key, value)
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -359,8 +360,8 @@ class SampleRunner:
         self.scenario = ScenarioLoader(self.run_config["scenario_script_path"]).get_scenario()
         if self.run_config["arguments"] is not None:
             self.scenario.parse_arguments(self.run_config["arguments"])
-        logger.info(key="message", data=f"Loaded scenario using {run_configuration_path}")
-        logger.info(key="message", data=f"Found {self.number_of_draws} draws; {self.runs_per_draw} runs/draw")
+        print(f"Loaded scenario from config at {run_configuration_path}")
+        print(f"Found {self.number_of_draws} draws with {self.runs_per_draw} runs-per-draw.")
 
     @property
     def number_of_draws(self):
@@ -397,27 +398,38 @@ class SampleRunner:
         sample = self.get_sample(draw, sample_number)
         log_config = self.scenario.get_log_config(output_directory)
 
-        logger.info(
-            key="message",
-            data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}",
-        )
+        print(f"Running draw {sample['draw_number']}, run {sample['sample_number']}.")
 
         # if user has specified a restore simulation, we load it from a pickle file
         if (
             hasattr(self.scenario, "resume_simulation")
             and self.scenario.resume_simulation is not None
         ):
-            suspended_simulation_path = (
-                Path(self.scenario.resume_simulation)
-                / str(draw_number)
-                / str(sample_number)
-                / "suspended_simulation.pickle"
-            )
+            # expand any environment variables in the path
+            if "$" in self.scenario.resume_simulation:
+                self.scenario.resume_simulation = os.path.expandvars(self.scenario.resume_simulation)
+
+            suspended_simulation_path = Path(self.scenario.resume_simulation)
+
+            # if the resume_simulation doesn't end with a draw number, we are resuming all draws
+            last_component = self.scenario.resume_simulation.rstrip("/").split("/")[-1]
+            try:
+                int(last_component)
+            except ValueError:
+                suspended_simulation_path = suspended_simulation_path / str(draw_number)
+
+            suspended_simulation_path = suspended_simulation_path / str(sample_number) / "suspended_simulation.pickle"
+
+            sim = Simulation.load_from_pickle(pickle_path=suspended_simulation_path, log_config=log_config)
+
             logger.info(
                 key="message",
-                data=f"Loading pickled suspended simulation from {suspended_simulation_path}",
+                data=f"Loading suspended simulation from {suspended_simulation_path}",
             )
-            sim = Simulation.load_from_pickle(pickle_path=suspended_simulation_path, log_config=log_config)
+
+            # if parameters are specified, we override them
+            if sample["parameters"] is not None:
+                self.override_parameters(sim, sample["parameters"])
         else:
             sim = Simulation(
                 start_date=self.scenario.start_date,
@@ -442,12 +454,13 @@ class SampleRunner:
         ):
             sim.run_simulation_to(to_date=self.scenario.suspend_date)
             suspended_simulation_path = Path(log_config["directory"]) / "suspended_simulation.pickle"
-            sim.save_to_pickle(pickle_path=suspended_simulation_path)
-            sim.close_output_file()
             logger.info(
                 key="message",
-                data=f"Simulation suspended at {self.scenario.suspend_date} and saved to {suspended_simulation_path}",
+                data=f"Suspending simulation at {self.scenario.suspend_date} and saving to {suspended_simulation_path}."
+                     f" Note, output file handle will be closed first and no more output logged",
             )
+            sim.close_output_file()
+            sim.save_to_pickle(pickle_path=suspended_simulation_path)
         else:
             sim.run_simulation_to(to_date=self.scenario.end_date)
             sim.finalise()

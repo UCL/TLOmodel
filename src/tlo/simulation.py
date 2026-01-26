@@ -26,6 +26,7 @@ from tlo.dependencies import (
     topologically_sort_modules,
 )
 from tlo.events import Event, IndividualScopeEventMixin
+from tlo.notify import notifier
 from tlo.progressbar import ProgressBar
 
 if TYPE_CHECKING:
@@ -106,7 +107,6 @@ class Simulation:
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
-
         self.show_progress_bar = show_progress_bar
         self.resourcefilepath = Path(resourcefilepath)
 
@@ -116,6 +116,8 @@ class Simulation:
         self._custom_log_levels = None
         self._log_filepath = self._configure_logging(**log_config)
 
+        # clear notifier listeners from any previous simulation in this process
+        notifier.clear_listeners()
 
         # random number generator
         seed_from = "auto" if seed is None else "user"
@@ -263,7 +265,7 @@ class Simulation:
             a keyword parameter for clarity.
         """
         start = time.time()
-
+        
         # Collect information from all modules, that is required the population dataframe
         for module in self.modules.values():
             module.pre_initialise_population()
@@ -282,13 +284,12 @@ class Simulation:
                 key="debug",
                 data=f"{module.name}.initialise_population() {time.time() - start1} s",
             )
-
+                               
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
-
+        
     def initialise(self, *, end_date: Date) -> None:
         """Initialise all modules in simulation.
-
         :param end_date: Date to end simulation on - accessible to modules to allow
             initialising data structures which may depend (in size for example) on the
             date range being simulated.
@@ -298,9 +299,17 @@ class Simulation:
             raise SimulationPreviouslyInitialisedError(msg)
         self.date = self.start_date
         self.end_date = end_date  # store the end_date so that others can reference it
+
         for module in self.modules.values():
             module.initialise_simulation(self)
         self._initialised = True
+        
+        # Since CollectEventChains listeners are added to notified upon module initialisation,
+        # this can only be dispatched here.
+        # Otherwise, would have to add listener outside of CollectEventChains initialisation
+        
+        # Dispatch notification that pop has been initialised
+        notifier.dispatch("simulation.post-initialise")
 
     def finalise(self, wall_clock_time: Optional[float] = None) -> None:
         """Finalise all modules in simulation and close logging file if open.
@@ -382,6 +391,7 @@ class Simulation:
                 self._update_progress_bar(progress_bar, date)
             self.fire_single_event(event, date)
         self.date = to_date
+
         if self.show_progress_bar:
             progress_bar.stop()
 
@@ -436,7 +446,12 @@ class Simulation:
         child_id = self.population.do_birth()
         for module in self.modules.values():
             module.on_birth(mother_id, child_id)
+            
+        # Dispatch notification that birth is about to occur
+        notifier.dispatch("simulation.post-do_birth", data={'child_id': child_id})
+
         return child_id
+
 
     def find_events_for_person(self, person_id: int) -> list[tuple[Date, Event]]:
         """Find the events in the queue for a particular person.

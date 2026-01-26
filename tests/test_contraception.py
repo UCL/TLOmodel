@@ -185,13 +185,17 @@ def __check_no_illegal_switches(sim):
     HealthSystem/consumables are not available."""
     logs = parse_log_file(sim.log_filepath)
 
+    sterilization_age_limit = sim.modules['Contraception'].parameters['sterilization_age_limit']
+
     # Check for no illegal changes
     if 'tlo.methods.contraception' in logs:
         if 'contraception_change' in logs['tlo.methods.contraception']:
             con = logs['tlo.methods.contraception']['contraception_change']
             assert not (con.switch_from == 'female_sterilization').any()  # no switching from female_sterilization
-            assert not (con.loc[con['age_years'] < 30, 'switch_to'] == 'female_sterilization').any()  # no switching to
-            # No female_sterilization if age less than 30
+            assert not (
+                con.loc[con['age_years'] < sterilization_age_limit, 'switch_to'] == 'female_sterilization'
+            ).any()  # no switching to
+            # No female_sterilization if age less than sterilization_age_limit (usually 30 years)
 
 
 @pytest.mark.slow
