@@ -1,6 +1,6 @@
 {
   "scenario_script_path": "src/scripts/hiv/mihpsa_runs/scenario_longterm_control.py",
-  "scenario_seed": 35919,
+  "scenario_seed": 2136,
   "arguments": [],
   "runs_per_draw": 3,
   "draws": [
@@ -125,6 +125,6 @@
       "draw_name": "11"
     }
   ],
-  "commit": "0216cc244aea4f3c8fe0ea7bee0640831e5a6dae",
-  "github": "https://github.com/UCL/TLOmodel/tree/0216cc244aea4f3c8fe0ea7bee0640831e5a6dae"
+  "commit": "2c87f4268280b2fe7b16d206a2e391d0d817239e",
+  "github": "https://github.com/UCL/TLOmodel/tree/2c87f4268280b2fe7b16d206a2e391d0d817239e"
 }
