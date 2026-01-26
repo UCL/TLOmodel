@@ -46,9 +46,12 @@ import pandas as pd
 from typing import Optional, List
 import re
 
+from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios import (
+    generate_alternative_availability_scenarios,
+    generate_descriptive_consumable_availability_plots,
+    generate_redistribution_scenarios
+)
 from tlo.methods.consumables import check_format_of_consumables_file
-from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios.generate_consumable_availability_scenarios_for_impact_analysis import generate_alternative_availability_scenarios, generate_descriptive_consumable_availability_plots
-from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios.create_consumable_redistribution_scenarios import generate_redistribution_scenarios
 
 # Set local shared folder source
 path_to_share = Path(  # <-- point to the shared folder
@@ -69,8 +72,8 @@ outputfilepath = Path("./outputs")
 resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
+
 # Define necessary functions
-# Functions to clean LMIS data
 def change_colnames(df, NameChangeList):  # Change column names
     ColNames = df.columns
     ColNames2 = ColNames
@@ -575,7 +578,9 @@ programs_lmis_dict = {1: 'Essential Meds', 2: 'HIV', 3: 'Malaria', 4: 'Nutrition
 months_withdata = ['January', 'February', 'April', 'October', 'November']
 months_interpolated = ['March', 'May', 'June', 'July', 'August', 'September', 'December']
 
-# 1B. RESHAPE AND REORDER
+# 2. RESHAPE AND REORDER ##
+#########################################################################################
+
 # Reshape dataframe so that each row represent a unique consumable and facility
 lmis_df_wide = lmis_df.pivot_table(index=['district', 'fac_type_tlo', 'fac_name', 'program', 'item'], columns='month',
                                    values=['closing_bal', 'dispensed', 'received', 'stkout_days', 'amc'],
@@ -590,7 +595,8 @@ lmis_df_wide = lmis_df_wide.reindex(months, axis=1, level=1)
 num = lmis_df_wide._get_numeric_data()
 lmis_df_wide[num < 0] = np.nan
 
-# 1C. INTERPOLATE MISSING VALUES ##
+# 3. INTERPOLATE MISSING VALUES ##
+#########################################################################################
 # When stkout_days is empty but closing balance, dispensed and received entries are available
 lmis_df_wide_flat = lmis_df_wide.reset_index()
 count_stkout_entries = lmis_df_wide_flat['stkout_days'].count(axis=1).sum()
@@ -666,6 +672,45 @@ items_introduced_in_september = {
 # TODO check whether there is any issue with the above items_introduced_in_september which only show up from September
 #  onwards
 
+def rename_items_to_address_inconsistentencies(_df, item_dict):
+    """Return a dataframe with rows for the same item with inconsistent names collapsed into one"""
+    # Recode item names appearing from Jan to Aug to the new names adopted from September onwards
+    old_unique_item_count = _df.item.nunique()
+    for item in item_dict:
+        print(len(_df[_df.item == item_dict[item]]), ''' instances of "''', item_dict[item], '''"'''
+                                                                                             ''' changed to "''', item,
+              '''"''')
+        # row_newname = _df.item == item
+        row_oldname = _df.item == item_dict[item]
+        _df.loc[row_oldname, 'item'] = item
+
+    # Make a list of column names to be collapsed using different methods
+    columns_to_sum = [col for col in _df.columns if
+                      col[0].startswith(('amc', 'closing_bal', 'dispensed', 'received', 'stkout_days'))]
+    columns_to_preserve = [col for col in _df.columns if
+                           col[0].startswith(('data_source'))]
+
+    # Define aggregation function to be applied to collapse data by item
+    def custom_agg(x):
+        if x.name in columns_to_sum:
+            return x.sum(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        # , i.e. not changed to 0, when the corresponding data for both item name variations are NaN, and when there
+        # is a 0 or positive value for one or both item name variation, the sum is taken.
+        elif x.name in columns_to_preserve:
+            return x.str.cat(
+                sep='')  # for the data_source column, this function concatenates the string values
+
+    # Collapse dataframe
+    _collapsed_df = _df.groupby(['program', 'item', 'district', 'fac_type_tlo', 'fac_name']).agg(
+        {col: custom_agg for col in columns_to_preserve + columns_to_sum}
+    ).reset_index()
+
+    # Test that all items in the dictionary have been found in the dataframe
+    new_unique_item_count = _collapsed_df.item.nunique()
+    assert len(item_dict) == old_unique_item_count - new_unique_item_count
+    return _collapsed_df
+
 # Hold out the dataframe with no naming inconsistencies
 list_of_items_with_inconsistent_names_zipped = set(zip(inconsistent_item_names_mapping.keys(), inconsistent_item_names_mapping.values()))
 list_of_items_with_inconsistent_names = [item for sublist in list_of_items_with_inconsistent_names_zipped for item in sublist]
@@ -678,7 +723,7 @@ df_without_consistent_item_names_corrected = rename_items_to_address_inconsisten
 lmis_df_wide_flat = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent_item_names],
                               ignore_index=True)
 
-# 1. --- RULE: 1.If i) stockout is missing, ii) closing_bal, amc and received are not missing , and iii) amc !=0 and,
+# --- 3.1 RULE: 1.If i) stockout is missing, ii) closing_bal, amc and received are not missing , and iii) amc !=0 and,
 #          then stkout_days[m] = (amc[m] - closing_bal[m-1] - received)/amc * number of days in the month ---
 # (Note that the number of entries for closing balance, dispensed and received is always the same)
 for m in range(2, 13):
@@ -714,7 +759,7 @@ for m in range(2, 13):
 count_stkout_entries = lmis_df_wide_flat['stkout_days'].count(axis=1).sum()
 print(count_stkout_entries, "stockout entries after first interpolation")
 
-# 2. --- If any stockout_days < 0 after the above interpolation, update to stockout_days = 0 ---
+# 3.2 --- If any stockout_days < 0 after the above interpolation, update to stockout_days = 0 ---
 # RULE: If closing balance[previous month] - dispensed[this month] + received[this month] > 0, stockout == 0
 for m in range(1, 13):
     cond1 = lmis_df_wide_flat['stkout_days', months_dict[m]] < 0
@@ -732,7 +777,7 @@ lmis_df_wide_flat['consumable_reporting_freq'] = lmis_df_wide_flat['closing_bal'
 # Flatten multilevel columns
 lmis_df_wide_flat.columns = [' '.join(col).strip() for col in lmis_df_wide_flat.columns.values]
 
-# 3. --- If the consumable was previously reported and during a given month, if any consumable was reported, assume
+# 3.3 --- If the consumable was previously reported and during a given month, if any consumable was reported, assume
 # 100% days of stckout ---
 # RULE: If the balance on a consumable is ever reported and if any consumables are reported during the month, stkout_
 # days = number of days of the month
@@ -760,7 +805,9 @@ for m in range(1, 13):
     count_stkout_entries = count_stkout_entries + lmis_df_wide_flat['stkout_days ' + months_dict[m]].count().sum()
 print(count_stkout_entries, "stockout entries after third interpolation")
 
-# 1D. CALCULATE STOCK OUT RATES BY MONTH and FACILITY
+# 4. CALCULATE STOCK OUT RATES BY MONTH and FACILITY ##
+#########################################################################################
+
 lmis = lmis_df_wide_flat  # choose dataframe
 
 # Generate variables denoting the stockout proportion in each month
@@ -779,9 +826,10 @@ lmis = pd.wide_to_long(lmis, stubnames=['closing_bal', 'received', 'amc', 'dispe
                        sep=' ', suffix=r'\w+')
 lmis = lmis.reset_index()
 
-# 2. LOAD CLEANED MATCHED CONSUMABLE LIST FROM TLO MODEL AND MERGE WITH LMIS DATA
-########################################################################################################################
-# 1. --- Load and clean data ---
+# 5. LOAD CLEANED MATCHED CONSUMABLE LIST FROM TLO MODEL AND MERGE WITH LMIS DATA ##
+#########################################################################################
+
+# 5.1 --- Load and clean data ---
 # Import matched list of consumanbles
 consumables_df = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False,
                              encoding="ISO-8859-1")
@@ -800,11 +848,48 @@ change_colnames(matched_consumables, NameChangeList)
 
 
 # Update matched consumable name where the name in the OpenLMIS data was updated in September
+def replace_old_item_names_in_lmis_data(_df, item_dict):
+    """Return a dataframe with old LMIS consumable names replaced with the new name"""
+    for item in item_dict:
+        cond_oldname = _df.item == item_dict[item]
+        _df.loc[cond_oldname, 'item'] = item
+    return _df
+
+
 matched_consumables = replace_old_item_names_in_lmis_data(matched_consumables, inconsistent_item_names_mapping)
 
-# 2. --- Merge data with LMIS data ---
+# 5.2 --- Merge data with LMIS data ---
 lmis_matched_df = pd.merge(lmis, matched_consumables, how='inner', on=['item'])
 lmis_matched_df = lmis_matched_df.sort_values('data_source')
+
+
+def collapse_stockout_data(_df, groupby_list, var):
+    """Return a dataframe with rows for the same TLO model item code collapsed into 1"""
+    # Define column lists based on the aggregation function to be applied
+    columns_to_multiply = [var]
+    columns_to_sum = ['closing_bal', 'amc', 'dispensed', 'received']
+    columns_to_preserve = ['data_source', 'consumable_reporting_freq', 'consumables_reported_in_mth']
+
+    # Define aggregation function to be applied to collapse data by item
+    def custom_agg_stkout(x):
+        if x.name in columns_to_multiply:
+            return x.prod(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        elif x.name in columns_to_sum:
+            return x.sum(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        # , i.e. not changed to 1, when the corresponding data for both item name variations are NaN, and when there
+        # is a 0 or positive value for one or both item name variation, the sum is taken.
+        elif x.name in columns_to_preserve:
+            return x.iloc[0]  # this function extracts the first value
+
+    # Collapse dataframe
+    _collapsed_df = _df.groupby(groupby_list).agg(
+        {col: custom_agg_stkout for col in columns_to_multiply + columns_to_sum + columns_to_preserve}
+    ).reset_index()
+
+    return _collapsed_df
+
 
 # 2.i. For substitable drugs (within drug category), collapse by taking the product of stkout_prop (OR condition)
 # This represents Pr(all substitutes with the item code are stocked out)
@@ -853,9 +938,10 @@ stkout_df = stkout_df[
      'available_prop', 'closing_bal', 'amc', 'dispensed', 'received',
      'data_source', 'consumable_reporting_freq', 'consumables_reported_in_mth']]
 
-# 3. ADD STOCKOUT DATA FROM OTHER SOURCES TO COMPLETE STOCKOUT DATAFRAME
-########################################################################################################################
-# --- 1. Generate a dataframe of stock availability for consumables which were not found in the OpenLMIS data but
+# 6. ADD STOCKOUT DATA FROM OTHER SOURCES TO COMPLETE STOCKOUT DATAFRAME ##
+#########################################################################################
+
+# --- 6.1. Generate a dataframe of stock availability for consumables which were not found in the OpenLMIS data but
 # available in the HHFA 2018/19 --- #
 # Save the list of items for which a match was not found in the OpenLMIS data
 unmatched_consumables = consumables_df.drop_duplicates(['item_code'])
@@ -931,13 +1017,13 @@ NameChangeList = [('consumable_name_tlo_x', 'consumable_name_tlo'),
                   ('available_prop_hhfa', 'available_prop')]
 change_colnames(unmatched_consumables_df, NameChangeList)
 
-# --- 2. Append OpenLMIS stockout dataframe with HHFA stockout dataframe and Extract in .csv format --- #
+# --- 6.2 Append OpenLMIS stockout dataframe with HHFA stockout dataframe and Extract in .csv format --- #
 # Append common consumables stockout dataframe with the main dataframe
 cond = unmatched_consumables_df['available_prop'].notna()
 unmatched_consumables_df.loc[~cond, 'data_source'] = 'Not available'
 stkout_df = pd.concat([stkout_df, unmatched_consumables_df], axis=0, ignore_index=True)
 
-# --- 3. Append stockout rate for facility level 0 from HHFA --- #
+# --- 6.3 Append stockout rate for facility level 0 from HHFA --- #
 cond = hhfa_df['item_code'].notna()
 hhfa_fac0 = hhfa_df[cond][
     ['item_code', 'consumable_name_tlo', 'fac_count_Facility_level_0', 'available_prop_hhfa_Facility_level_0']]
@@ -954,7 +1040,47 @@ cond = stkout_df['fac_type_tlo'] == 'Facility_level_0'
 stkout_df = stkout_df[~cond]
 stkout_df = pd.concat([stkout_df, hhfa_fac0], axis=0, ignore_index=True)
 
-# --- 4. Generate new category variable for analysis --- #
+# --- 6.4 Generate new category variable for analysis --- #
+def recategorize_modules_into_consumable_categories(_df):
+    _df['item_category'] = _df['module_name'].str.lower()
+    cond_RH = (_df['item_category'].str.contains('care_of_women_during_pregnancy')) | \
+              (_df['item_category'].str.contains('labour'))
+    cond_newborn = (_df['item_category'].str.contains('newborn'))
+    cond_newborn[cond_newborn.isna()] = False
+    cond_childhood = (_df['item_category'] == 'acute lower respiratory infections') | \
+                     (_df['item_category'] == 'measles') | \
+                     (_df['item_category'] == 'diarrhoea')
+    cond_rti = _df['item_category'] == 'road traffic injuries'
+    cond_cancer = _df['item_category'].str.contains('cancer')
+    cond_cancer[cond_cancer.isna()] = False
+    cond_ncds = (_df['item_category'] == 'epilepsy') | \
+                (_df['item_category'] == 'depression')
+    _df.loc[cond_RH, 'item_category'] = 'reproductive_health'
+    _df.loc[cond_cancer, 'item_category'] = 'cancer'
+    _df.loc[cond_newborn, 'item_category'] = 'neonatal_health'
+    _df.loc[cond_childhood, 'item_category'] = 'other_childhood_illnesses'
+    _df.loc[cond_rti, 'item_category'] = 'road_traffic_injuries'
+    _df.loc[cond_ncds, 'item_category'] = 'ncds'
+    cond_condom = _df['item_code'] == 2
+    _df.loc[cond_condom, 'item_category'] = 'contraception'
+
+    # Create a general consumables category
+    general_cons_list = [300, 33, 57, 58, 141, 5, 6, 10, 21, 23, 127, 24, 80, 93, 144, 149, 154, 40, 67, 73, 76,
+                         82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247, 49, 112, 1933, 1960]
+    cond_general = _df['item_code'].isin(general_cons_list)
+    _df.loc[cond_general, 'item_category'] = 'general'
+
+    # Fill gaps in categories
+    dict_for_missing_categories = {292: 'acute lower respiratory infections', 293: 'acute lower respiratory infections',
+                                   307: 'reproductive_health', 2019: 'reproductive_health',
+                                   2678: 'tb', 1171: 'other_childhood_illnesses', 1237: 'cancer', 1239: 'cancer'}
+    # Use map to create a new series from item_code to fill missing values in category
+    mapped_categories = _df['item_code'].map(dict_for_missing_categories)
+    # Use fillna on the 'item_category' column to fill missing values using the mapped_categories
+    _df['item_category'] = _df['item_category'].fillna(mapped_categories)
+
+    return _df
+
 stkout_df = recategorize_modules_into_consumable_categories(stkout_df)
 item_code_category_mapping = stkout_df[['item_category', 'item_code']].drop_duplicates()
 
@@ -964,12 +1090,12 @@ item_designations = item_designations.drop(columns = 'item_category')
 item_designations = item_designations.merge(item_code_category_mapping, left_on = 'Item_Code', right_on = 'item_code', how = 'left', validate = '1:1')
 item_designations.drop(columns = 'item_code').to_csv(path_for_new_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv', index = False)
 
-# --- 5. Replace district/fac_name/month entries where missing --- #
+# --- 6.5 Replace district/fac_name/month entries where missing --- #
 for var in ['district', 'fac_name', 'month']:
     cond = stkout_df[var].isna()
     stkout_df.loc[cond, var] = 'Aggregate'
 
-# --- 6. Export final stockout dataframe --- #
+# --- 6.6 Export final stockout dataframe --- #
 # stkout_df.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
 # <-- this line commented out as the file is very large.
 
@@ -979,6 +1105,26 @@ for var in ['district', 'fac_name', 'month']:
 lmis_consumable_usage = stkout_df.copy()
 # TODO Generate a smaller version of this file
 # Collapse individual facilities
+def get_inflow_to_outflow_ratio_by_item_and_facilitylevel(_df):
+    df_by_item_level_month = \
+    _df.groupby(['item_category', 'item_code', 'district', 'fac_type_tlo', 'month'])[
+        ['closing_bal', 'dispensed', 'received']].sum()
+    df_by_item_level_month = df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') != "Aggregate"]
+    # Opening balance in January is the closing balance for the month minus what was received during the month plus what was dispensed
+    opening_bal_january = df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') == 'January', 'closing_bal'] + \
+                          df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') == 'January', 'dispensed'] - \
+                          df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') == 'January', 'received']
+    closing_bal_december = df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') == 'December', 'closing_bal']
+    # the consumable inflow during the year is the opening balance in January + what was received throughout the year - what was transferred to the next year (i.e. closing bal of December)
+    total_consumables_inflow_during_the_year = df_by_item_level_month['received'].groupby(level=['item_category', 'item_code', 'district', 'fac_type_tlo']).sum() +\
+                                             opening_bal_january.reset_index(level='month', drop=True) -\
+                                             closing_bal_december.reset_index(level='month', drop=True)
+    total_consumables_outflow_during_the_year  = df_by_item_level_month['dispensed'].groupby(level=['item_category', 'item_code', 'district', 'fac_type_tlo']).sum()
+    inflow_to_outflow_ratio = total_consumables_inflow_during_the_year.div(total_consumables_outflow_during_the_year, fill_value=1)
+    inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1  # Ratio can't be less than 1
+
+    return inflow_to_outflow_ratio
+
 inflow_to_outflow_ratio = get_inflow_to_outflow_ratio_by_item_and_facilitylevel(lmis_consumable_usage)
 # Clean values for analysis
 inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1 # Ratio can't be less than 1
@@ -1000,6 +1146,7 @@ assert not stkout_df.duplicated(['fac_type_tlo', 'fac_name', 'district', 'month'
 #  the Master Facilities List.
 
 # unify the set within each facility_id
+
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
 districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
 fac_levels = {'0', '1a', '1b', '2', '3', '4'}
@@ -1025,8 +1172,7 @@ sf['district_std'] = sf['district'].replace(rename_and_collapse_to_model_distric
 # Take averages (now that 'Mzimba' is mapped-to by both 'Mzimba South' and 'Mzimba North'.)
 sf = sf.groupby(by=['district_std', 'fac_type_tlo', 'month', 'item_code'])['available_prop'].mean().reset_index()
 
-# 4. INTERPOLATE MISSING DATA TO ENSURE DATA IS AVAILABLE FOR ALL ITEMS, MONTHS, LEVELS, DISTRICTS
-########################################################################################################################
+# Fill in missing data:
 # 1) Cities to get same results as their respective regions
 copy_source_to_destination = {
     'Mzimba': 'Mzuzu City',
@@ -1054,33 +1200,7 @@ mwanza_1a = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')]
 mwanza_1b = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')].copy().assign(fac_type_tlo='1b')
 sf = pd.concat([sf, mwanza_1b], axis=0, ignore_index=True)
 
-# 4) Update the availability Xpert (item_code = 187)
-# First add rows for Xpert at level 1b by cloning rows for level 2 -> only if not already present
-xpert_item = sf['item_code'].eq(187)
-level_2    = sf['fac_type_tlo'].eq('2')
-level_1b   = sf['fac_type_tlo'].eq('1b')
-
-# Clone rows from level 2
-base   = sf.loc[level_2 & xpert_item].copy()
-new_rows  = base.copy()
-new_rows['fac_type_tlo'] = '1b'
-
-# Add rows to main availability dataframe and drop duplicates, if any
-sf = pd.concat([sf, new_rows], ignore_index=True)
-id_cols = [c for c in sf.columns if c != 'available_prop']
-dupe_mask = sf.duplicated(subset=id_cols, keep=False)
-dupes = sf.loc[dupe_mask].sort_values(id_cols)
-sf = sf.drop_duplicates(subset=id_cols, keep='first').reset_index(drop=True)
-
-# Compute the average availability Sep–Dec (months >= 9) for level 2, item 187
-sep_to_dec = sf['month'].ge(9)
-new_xpert_availability = sf.loc[level_2 & xpert_item & sep_to_dec, 'available_prop'].mean()
-# Assign new availability to relevant facility levels
-levels_1b_2_or_3 = sf['fac_type_tlo'].isin(['1b', '2', '3'])
-xpert_item = sf['item_code'].eq(187)
-sf.loc[levels_1b_2_or_3 & xpert_item, 'available_prop'] = new_xpert_availability
-
-# 5) Copy all the results to create a level 0 with an availability equal to half that in the respective 1a
+# 4) Copy all the results to create a level 0 with an availability equal to half that in the respective 1a
 all_1a = sf.loc[sf.fac_type_tlo == '1a']
 all_0 = sf.loc[sf.fac_type_tlo == '1a'].copy().assign(fac_type_tlo='0')
 all_0.available_prop *= 0.5
@@ -1126,9 +1246,25 @@ full_set = pd.Series(
 full_set = full_set.combine_first(sf_final.set_index(['Facility_ID', 'month', 'item_code'])['available_prop'])
 
 # Fill in the blanks with rules for interpolation.
+
 facilities_by_level = defaultdict(set)
 for ix, row in mfl.iterrows():
     facilities_by_level[row['Facility_Level']].add(row['Facility_ID'])
+
+
+def get_other_facilities_of_same_level(_fac_id):
+    """Return a set of facility_id for other facilities that are of the same level as that provided."""
+    for v in facilities_by_level.values():
+        if _fac_id in v:
+            return v - {_fac_id}
+
+
+def interpolate_missing_with_mean(_ser):
+    """Return a series in which any values that are null are replaced with the mean of the non-missing."""
+    if pd.isnull(_ser).all():
+        raise ValueError
+    return _ser.fillna(_ser.mean())
+
 
 # Create new dataset that include the interpolations (The operation is not done "in place", because the logic is based
 # on what results are missing before the interpolations in other facilities).
@@ -1221,18 +1357,18 @@ plot_availability_before_and_after_level1b_fix(old_df = full_set_interpolated_wi
 # 6. CHECK FORMAT AND SAVE AS RESOURCEFILE
 ########################################################################################################################
 # --- Check that the exported file has the properties required of it by the model code. --- #
-check_format_of_consumables_file(df=full_set_interpolated_with_scenarios_level1b_fixed, fac_ids=fac_ids)
+check_format_of_consumables_file(df=full_set_interpolated, fac_ids=fac_ids)
 
 # %%
 # Save
-full_set_interpolated_with_scenarios_level1b_fixed.to_csv(
+full_set_interpolated.to_csv(
     path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
     index=False
 )
 
 # %%
-# 7. COMPARISON WITH HHFA DATA, 2018/19
-########################################################################################################################
+# 7. COMPARISON WITH HHFA DATA, 2018/19 ##
+#########################################################################################
 # --- 7.1 Prepare comparison dataframe --- ##
 # Note that this only plot consumables for which data is available in the HHFA
 # i. Prepare data from HHFA
@@ -1247,7 +1383,7 @@ hhfa_comparison_df['fac_type_tlo'] = hhfa_comparison_df['fac_type_tlo'].str.repl
 hhfa_comparison_df = hhfa_comparison_df.rename({'fac_type_tlo': 'Facility_Level'}, axis=1)
 
 # ii. Collapse final model availability data by facility level
-final_availability_df = full_set_interpolated_with_scenarios_level1b_fixed
+final_availability_df = full_set_interpolated
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
 final_availability_df = pd.merge(final_availability_df, mfl[['District', 'Facility_Level', 'Facility_ID']], how="left",
                                  on=['Facility_ID'],
@@ -1269,7 +1405,39 @@ comparison_df.groupby(['Facility_Level'])[['available_prop', 'available_prop_hhf
 size = 10
 comparison_df['consumable_labels'] = comparison_df['consumable_name_tlo'].str[:10]
 
+# Define function to draw calibration plots at different levels of disaggregation
+def comparison_plot(level_of_disaggregation, group_by_var, colour):
+    comparison_df_agg = comparison_df.groupby([group_by_var],
+                                              as_index=False).agg({'available_prop': 'mean',
+                                                                   'available_prop_hhfa': 'mean',
+                                                                   'Facility_Level': 'first',
+                                                                   'consumable_labels': 'first'})
+    comparison_df_agg['labels'] = comparison_df_agg[level_of_disaggregation]
+
+    ax = comparison_df_agg.plot.scatter('available_prop', 'available_prop_hhfa', c=colour)
+    ax.axline([0, 0], [1, 1])
+    for i, label in enumerate(comparison_df_agg['labels']):
+        plt.annotate(label,
+                     (comparison_df_agg['available_prop'][i] + 0.005,
+                      comparison_df_agg['available_prop_hhfa'][i] + 0.005),
+                     fontsize=6, rotation=38)
+    if level_of_disaggregation != 'aggregate':
+        plt.title('Disaggregated by ' + level_of_disaggregation, fontsize=size, weight="bold")
+    else:
+        plt.title('Aggregate', fontsize=size, weight="bold")
+    plt.xlabel('Pr(drug available) as per TLO model')
+    plt.ylabel('Pr(drug available) as per HHFA')
+    save_name = 'comparison_plots/calibration_to_hhfa_' + level_of_disaggregation + '.png'
+    plt.savefig(outputfilepath / save_name)
+
+
 # 7.2.1 Aggregate plot
+# First create folder in which to store the plots
+
+if not os.path.exists(outputfilepath / 'comparison_plots'):
+    os.makedirs(outputfilepath / 'comparison_plots')
+    print("folder to store Model-HHFA comparison plots created")
+
 comparison_df['aggregate'] = 'aggregate'
 level_of_disaggregation = 'aggregate'
 colour = 'red'
@@ -1288,7 +1456,23 @@ group_by_var = 'consumable_name_tlo'
 colour = 'yellow'
 comparison_plot(level_of_disaggregation, group_by_var, colour)
 
+
 # 7.2.4 Plot by item and facility level
+def comparison_plot_by_level(fac_type):
+    cond_fac_type = comparison_df['Facility_Level'] == fac_type
+    comparison_df_by_level = comparison_df[cond_fac_type].reset_index()
+    plt.scatter(comparison_df_by_level['available_prop'],
+                comparison_df_by_level['available_prop_hhfa'])
+    plt.axline([0, 0], [1, 1])
+    for i, label in enumerate(comparison_df_by_level['consumable_labels']):
+        plt.annotate(label, (comparison_df_by_level['available_prop'][i] + 0.005,
+                             comparison_df_by_level['available_prop_hhfa'][i] + 0.005),
+                     fontsize=6, rotation=27)
+    plt.title(fac_type, fontsize=size, weight="bold")
+    plt.xlabel('Pr(drug available) as per TLO model')
+    plt.ylabel('Pr(drug available) as per HHFA')
+
+
 fig = plt.figure(figsize=(22, 22))
 plt.subplot(421)
 comparison_plot_by_level(comparison_df['Facility_Level'].unique()[1])

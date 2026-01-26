@@ -7,6 +7,7 @@ import numpy as np
 
 from tlo import Date, logging
 from tlo.events import Event
+from tlo.notify import notifier
 
 if TYPE_CHECKING:
     from tlo import Module, Simulation
@@ -52,8 +53,11 @@ class HSIEventQueueItem(NamedTuple):
 
     Ensure priority is above topen in order for held-over events with low priority not
     to jump ahead higher priority ones which were opened later.
+
+
     """
 
+    clinic_eligibility: str
     priority: int
     topen: Date
     rand_queue_counter: (
@@ -194,12 +198,43 @@ class HSI_Event:
                 facility_id=self.facility_info.id
             )
 
+
     def run(self, squeeze_factor):
         """Make the event happen."""
+
+        # Dispatch notification that HSI event is about to run
+        notifier.dispatch("hsi_event.pre-run",
+                          data={"target": self.target,
+                                "module" : self.module.name,
+                                "event_name": self.__class__.__name__})
+
         updated_appt_footprint = self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
         self._run_after_hsi_event()
+
+        # Dispatch notification that HSI event has just ran
+        if updated_appt_footprint is not None:
+            footprint = updated_appt_footprint
+        else:
+            footprint = self.EXPECTED_APPT_FOOTPRINT
+
+        if self.facility_info:
+            level = self.facility_info.level
+        else:
+            level = "N/A"
+
+        notifier.dispatch("hsi_event.post-run",
+                          data={"target": self.target,
+                                "event_name": self.__class__.__name__,
+                                "footprint": footprint,
+                                "level": level,
+                                "treatment_ID": self.TREATMENT_ID,
+                                "equipment": self._EQUIPMENT,
+                                "bed_days": self.bed_days_allocated_to_this_event,
+                                })
+
         return updated_appt_footprint
+
 
     def get_consumables(
         self,
@@ -239,6 +274,9 @@ class HSI_Event:
             to_log=_to_log,
             facility_info=self.facility_info,
             treatment_id=self.TREATMENT_ID,
+            target=self.target,
+            event_name=self.__class__.__name__,
+            module = self.module
         )
 
         # Return result in expected format:
@@ -353,28 +391,6 @@ class HSI_Event:
                 appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
             )
         )
-
-
-        # Do checks
-        self._check_if_appt_footprint_can_run()
-
-    def _check_if_appt_footprint_can_run(self) -> bool:
-        """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
-        this does not demand officers that are _never_ available), and issue warning if not.
-        """
-        if self.healthcare_system._officers_with_availability.issuperset(
-            self.expected_time_requests.keys()
-        ):
-            return True
-        else:
-            logger.debug(
-                key="message",
-                data=(
-                    f"The expected footprint of {self.TREATMENT_ID} is not possible with the configuration of "
-                    f"officers."
-                ),
-            )
-            return False
 
     @staticmethod
     def _return_item_codes_in_dict(
