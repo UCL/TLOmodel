@@ -52,8 +52,9 @@ class MaternalNewbornHealthCohort(Module):
         # Read in excel sheet with cohort
         all_preg_df = pd.read_excel(Path(f'{self.sim.resourcefilepath}/maternal cohort') /
                                     'ResourceFile_All2025PregnanciesCohortModel.xlsx')
+        all_preg_df = all_preg_df.drop(columns=['Unnamed: 0'])
 
-        # Only select rows equal to the desired population size
+        # Select rows equal to the desired population size
         if len(self.sim.population.props) <= len(all_preg_df):
             preg_pop = all_preg_df.loc[0:(len(self.sim.population.props))-1]
         else:
@@ -75,6 +76,26 @@ class MaternalNewbornHealthCohort(Module):
             # Concatenate the original DataFrame with the additional rows
             preg_pop = pd.concat([all_preg_df, rows_to_add], ignore_index=True)
 
+        # As merging in master may results in more/fewer columns than in the cohort dataframe which has been read in,
+        # here we remove old columns and/or append new columns. New column values are set as the most common value in
+        # the population.props dataframe
+        additional_cols =  [col for col in preg_pop.columns if col not in self.sim.population.props.columns]
+        preg_pop = preg_pop.drop(columns=additional_cols)
+
+        missing_cols = [col for col in self.sim.population.props.columns if col not in preg_pop.columns]
+        props_sub = self.sim.population.props[missing_cols]
+        is_constant = props_sub.nunique(dropna=False) == 1
+        modes = props_sub.mode(dropna=False).iloc[0]
+
+        new_cols = pd.DataFrame(index=range(len(self.sim.population.props)))
+
+        for col in missing_cols:
+            if is_constant[col]:
+                new_cols[col] = self.sim.population.props[col].iloc[0]  # broadcasts to n rows
+            else:
+                new_cols[col] = modes[col]
+
+        preg_pop = preg_pop.join(new_cols)
 
         # Set the dtypes and index of the cohort dataframe
         props_dtypes = self.sim.population.props.dtypes.to_dict()
