@@ -367,8 +367,10 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
             continue  # skip the date column
         if not (capacity_by_officer_and_level[col] == 0).any():  # check column is not all zeros
             ratio = row_2010[col] / row_2011[col]
-            print(ratio)
+
             results[col] = ratio > 100
+            if not results[col]:
+                print(f"Load for {col} did not reduce sufficiently: ratio={ratio}")
 
     assert all(results.values())
 
