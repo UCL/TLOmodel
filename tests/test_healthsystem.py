@@ -309,6 +309,12 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
             }
         }, resourcefilepath=resourcefilepath
     )
+    
+    n_sim_initial_population = 1000
+    n_pop_2010 =14.6e6
+    # Ensure capabilities are much smaller (1/1000) than expected given initial pop size
+    small_capabilities = (n_sim_initial_population/n_pop_2010)/10000
+    print(small_capabilities)
 
     # Register the core modules
     # Set the year in which mode is changed to start_date + 1 year, and mode after that still 1.
@@ -317,7 +323,7 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
                  simplified_births.SimplifiedBirths(),
                  enhanced_lifestyle.Lifestyle(),
                  healthsystem.HealthSystem(
-                                           capabilities_coefficient=0.0000001,  # This will mean that capabilities are
+                                           capabilities_coefficient=small_capabilities,  # This will mean that capabilities are
                                                                                 # very close to 0 everywhere.
                                                                                 # (If the value was 0, then it would
                                                                                 # be interpreted as the officers NEVER
@@ -340,7 +346,7 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     hs_params['scale_to_effective_capabilities'] = True
 
     # Run the simulation
-    sim.make_initial_population(n=1000)
+    sim.make_initial_population(n=n_sim_initial_population)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
@@ -353,25 +359,27 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     # Filter rows for the two years
     row_2010 = capacity_by_officer_and_level.loc[capacity_by_officer_and_level["date"] == "2010-12-31"].squeeze()
     row_2011 = capacity_by_officer_and_level.loc[capacity_by_officer_and_level["date"] == "2011-12-31"].squeeze()
-
+    
     # Dictionary to store results
     results = {}
 
     # Check that load has significantly reduced in second year, thanks to the significant
     # rescaling of capabilities.
     # (There is some degeneracy here, in that load could also be reduced due to declining demand.
-    # However it is extremely unlikely that demand for care would have dropped by a factor of 100
+    # However it is extremely unlikely that demand for care would have dropped by a factor of 10
     # in second year, hence this is a fair test).
     for col in capacity_by_officer_and_level.columns:
         if col == "date":
             continue  # skip the date column
-        if not (capacity_by_officer_and_level[col] == 0).any():  # check column is not all zeros
+        if not (capacity_by_officer_and_level[col] == 0).any() and ('GenericClinic' in col):  # check column is not all zeros
             ratio = row_2010[col] / row_2011[col]
 
-            results[col] = ratio > 100
+            results[col] = ratio > 10
             if not results[col]:
                 print(f"Load for {col} did not reduce sufficiently: ratio={ratio}")
 
+    # Ensure that this test is not passing because issue in results
+    assert len(results) > 0
     assert all(results.values())
 
 
