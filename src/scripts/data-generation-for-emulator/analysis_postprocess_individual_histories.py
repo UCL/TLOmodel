@@ -401,18 +401,18 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
         if wandb.run is not None:
             wandb.finish()
     
-        wandb.init(project="dataset-demo", name="test-run2")
+        wandb.init(project="dataset-demo", job_type = "create and store dataset", name="test-run2")
 
-        table = wandb.Table(dataframe=dataset)
-        print(table.columns)
+        dataset.to_hdf("dataset.h5", key="data", mode="w")
 
         artifact = wandb.Artifact(
             "test_dataset",
             type="dataset",
+            description="Test dataset artifact used to train TLO emulators",
             metadata=metadata
         )
-
-        artifact.add(table, "data")
+        
+        artifact.add_file("dataset.h5")
         wandb.log_artifact(artifact)
         wandb.finish()
 
