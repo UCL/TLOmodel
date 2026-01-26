@@ -2903,7 +2903,8 @@ class HealthSystemSummaryCounter:
                 ##if (_facID_and_officer == facID_and_officer or _facID_and_officer is None)
             }
             return pd.Series(
-                index=pd.MultiIndex.from_tuples([(clinic, key) for key in mean_frac_time_used.keys()], names=["clinic", "facID_and_officer"]),
+                index=pd.MultiIndex.from_tuples([(clinic, key) for key in mean_frac_time_used.keys()],
+                                                names=["clinic", "facID_and_officer"]),
                 data=mean_frac_time_used.values(),
             ).sort_index()
 

@@ -323,14 +323,15 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
                  simplified_births.SimplifiedBirths(),
                  enhanced_lifestyle.Lifestyle(),
                  healthsystem.HealthSystem(
-                                           capabilities_coefficient=small_capabilities,  # This will mean that capabilities are
-                                                                                # very close to 0 everywhere.
-                                                                                # (If the value was 0, then it would
-                                                                                # be interpreted as the officers NEVER
-                                                                                # being available at a facility,
-                                                                                # which would mean the HSIs should not
-                                                                                # run (as opposed to running with
-                                                                                # a very high squeeze factor)).
+                                           capabilities_coefficient=small_capabilities,
+                                            # This will mean that capabilities are
+                                            # very close to 0 everywhere.
+                                            # (If the value was 0, then it would
+                                            # be interpreted as the officers NEVER
+                                            # being available at a facility,
+                                            # which would mean the HSIs should not
+                                            # run (as opposed to running with
+                                            # a very high squeeze factor)).
                  ),
                  symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
@@ -371,7 +372,7 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     for col in capacity_by_officer_and_level.columns:
         if col == "date":
             continue  # skip the date column
-        if not (capacity_by_officer_and_level[col] == 0).any() and ('GenericClinic' in col):  # check column is not all zeros
+        if not (capacity_by_officer_and_level[col] == 0).any() and ('GenericClinic' in col):
             ratio = row_2010[col] / row_2011[col]
 
             results[col] = ratio > 10
@@ -2993,24 +2994,26 @@ def test_clinics_rescaling_factor(seed, tmpdir):
     ## We will use this key to query capabilities later
     fac_id_off_type = next(iter(hsi1.expected_time_requests))
 
-    sim.modules["HealthSystem"]._daily_capabilities["Clinic1"] = {}
+    hs = sim.modules["HealthSystem"]
+
+    hs._daily_capabilities["Clinic1"] = {}
     for k, v in hsi1.expected_time_requests.items():
-        sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][k] = v * nevents_generic_clinic
-        sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][k] = v * (nevents_clinic1 / 2)
+        hs._daily_capabilities["GenericClinic"][k] = v * nevents_generic_clinic
+        hs._daily_capabilities["Clinic1"][k] = v * (nevents_clinic1 / 2)
 
     # Run healthsystemscheduler
-    sim.modules["HealthSystem"].healthsystemscheduler.apply(sim.population)
+    hs.healthsystemscheduler.apply(sim.population)
 
     # Record capabilities before rescaling
-    genericclinic_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][fac_id_off_type]
-    clinic1_capabilities_before = sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][fac_id_off_type]
+    genericclinic_capabilities_before = hs._daily_capabilities["GenericClinic"][fac_id_off_type]
+    clinic1_capabilities_before = hs._daily_capabilities["Clinic1"][fac_id_off_type]
 
     # Now trigger rescaling of capabilities
-    sim.modules["HealthSystem"]._rescale_capabilities_to_capture_effective_capability()
+    hs._rescale_capabilities_to_capture_effective_capability()
 
     # Record capabilities after rescaling
-    genericclinic_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities["GenericClinic"][fac_id_off_type]
-    clinic1_capabilities_after = sim.modules["HealthSystem"]._daily_capabilities["Clinic1"][fac_id_off_type]
+    genericclinic_capabilities_after = hs._daily_capabilities["GenericClinic"][fac_id_off_type]
+    clinic1_capabilities_after = hs._daily_capabilities["Clinic1"][fac_id_off_type]
 
     # Expect no change in GenericClinic capabilities and Clinic1 capabilities to be rescaled by 2
     assert np.isclose(
