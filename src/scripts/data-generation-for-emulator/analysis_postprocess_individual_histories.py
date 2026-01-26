@@ -403,7 +403,7 @@ def apply(results_folder: Path, output_folder: Path, log_to_wandb, resourcefilep
     
         wandb.init(project="dataset-demo", job_type = "create and store dataset", name="test-run2")
 
-        dataset.to_csv("dataset.csv", key="data", mode="w")
+        dataset.to_csv("dataset.csv", mode="w")
 
         artifact = wandb.Artifact(
             "test_dataset",
