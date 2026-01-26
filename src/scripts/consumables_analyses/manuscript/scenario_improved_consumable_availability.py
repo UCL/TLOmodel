@@ -13,12 +13,8 @@ or locally using:
 tlo scenario-run src/scripts/consumables_analyses/manuscript/scenario_improved_consumable_availability.py
 
 # TODO Pending actions
-# check if 7 days of persistence
-# Scale-up in 2026
-# Relaxing health worker capacity constraint
-# Reduced persistence of care-seeking
 # Private market substitution - derive percentage from TLM data
-# Don't run sensitivity analyses yet (can be added later) - only run the HR one --> 20 scenarios
+# Don't run sensitivity analyses yet (can be added later) - only run the HR one --> 24 scenarios
  ```
 
 """
@@ -56,7 +52,7 @@ class ConsumablesCosting(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1) # TODO change to 2041
+        self.end_date = Date(2028, 1, 1) # TODO change to 2041
         # Run until 2040 even though analysis maybe focused on years until 2030
         self.pop_size = 5_000 # TODO change to 100_000
 
@@ -82,7 +78,6 @@ class ConsumablesCosting(BaseScenario):
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
-                "tlo.methods.healthsystem": logging.INFO, # TODO Confirm whether this needs to be logged
             }
         }
 

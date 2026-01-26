@@ -46,11 +46,11 @@ import pandas as pd
 from typing import Optional, List
 import re
 
-from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios import (
+from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios.generate_consumable_availability_scenarios_for_impact_analysis import (
     generate_alternative_availability_scenarios,
-    generate_descriptive_consumable_availability_plots,
-    generate_redistribution_scenarios
+    generate_descriptive_consumable_availability_plots
 )
+
 from tlo.methods.consumables import check_format_of_consumables_file
 
 # Set local shared folder source
@@ -1200,7 +1200,33 @@ mwanza_1a = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')]
 mwanza_1b = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')].copy().assign(fac_type_tlo='1b')
 sf = pd.concat([sf, mwanza_1b], axis=0, ignore_index=True)
 
-# 4) Copy all the results to create a level 0 with an availability equal to half that in the respective 1a
+# 4) Update the availability Xpert (item_code = 187)
+# First add rows for Xpert at level 1b by cloning rows for level 2 -> only if not already present
+xpert_item = sf['item_code'].eq(187)
+level_2    = sf['fac_type_tlo'].eq('2')
+level_1b   = sf['fac_type_tlo'].eq('1b')
+
+# Clone rows from level 2
+base   = sf.loc[level_2 & xpert_item].copy()
+new_rows  = base.copy()
+new_rows['fac_type_tlo'] = '1b'
+
+# Add rows to main availability dataframe and drop duplicates, if any
+sf = pd.concat([sf, new_rows], ignore_index=True)
+id_cols = [c for c in sf.columns if c != 'available_prop']
+dupe_mask = sf.duplicated(subset=id_cols, keep=False)
+dupes = sf.loc[dupe_mask].sort_values(id_cols)
+sf = sf.drop_duplicates(subset=id_cols, keep='first').reset_index(drop=True)
+
+# Compute the average availability Sep–Dec (months >= 9) for level 2, item 187
+sep_to_dec = sf['month'].ge(9)
+new_xpert_availability = sf.loc[level_2 & xpert_item & sep_to_dec, 'available_prop'].mean()
+# Assign new availability to relevant facility levels
+levels_1b_2_or_3 = sf['fac_type_tlo'].isin(['1b', '2', '3'])
+xpert_item = sf['item_code'].eq(187)
+sf.loc[levels_1b_2_or_3 & xpert_item, 'available_prop'] = new_xpert_availability
+
+# 5) Copy all the results to create a level 0 with an availability equal to half that in the respective 1a
 all_1a = sf.loc[sf.fac_type_tlo == '1a']
 all_0 = sf.loc[sf.fac_type_tlo == '1a'].copy().assign(fac_type_tlo='0')
 all_0.available_prop *= 0.5
@@ -1361,7 +1387,7 @@ check_format_of_consumables_file(df=full_set_interpolated, fac_ids=fac_ids)
 
 # %%
 # Save
-full_set_interpolated.to_csv(
+full_set_interpolated_with_scenarios_level1b_fixed.to_csv(
     path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
     index=False
 )
@@ -1488,7 +1514,7 @@ plt.savefig(outputfilepath / 'comparison_plots/calibration_to_hhfa_fac_type_and_
 # 8. PLOT SCENARIO SUMMARIES
 ########################################################################################################################
 # Create the directory if it doesn't exist
-figurespath_scenarios = outputfilepath / 'consumable_scenarios'
+figurespath_scenarios = outputfilepath / 'consumable_scenarios1'
 if not os.path.exists(figurespath_scenarios):
     os.makedirs(figurespath_scenarios)
 
