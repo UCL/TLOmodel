@@ -1,7 +1,6 @@
 """
-Runs the diabetic retinopathy module and produces the standard compare_number_of_deaths analysis to check
-the number of deaths modelled against the GBD data. It also produces plots for diabetes DALYs with and
-without the healthsytem
+Runs the diabetic retinopathy module and produces plots for diabetes DALYs with and
+without the healthsystem
 """
 
 import matplotlib.pyplot as plt
@@ -43,8 +42,9 @@ log_config = {
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 5_000
+end_date = Date(2020, 1, 1)
+popsize = 10_000
+
 
 def get_diabetes_dalys(logfile):
     output = parse_log_file(logfile)
@@ -140,7 +140,8 @@ for ax, sex in zip(axs, ("M", "F")):
 axs[-1].set_xlabel("Age group")
 
 plt.tight_layout()
-plt.show()
+# This plot not be needed since deaths occur due to diabetes and not DR or DMO
+#plt.show()
 
 # Plot for DALYs
 fig, axs = plt.subplots(1, 2, figsize=(10, 4), sharey=True)

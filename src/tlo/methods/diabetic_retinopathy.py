@@ -69,14 +69,14 @@ class DiabeticRetinopathy(Module):
         "rp_dr_urban": Parameter(
             Types.REAL, "relative prevalence at baseline of diabetic retinopathy if urban"
         ),
-        "prob_diabetes_controlled": Parameter(
-            Types.REAL,
-            "Probability that a person with mild DR has controlled diabetes"
-        ),
-        "prob_mild_to_none_if_controlled_diabetes": Parameter(
-            Types.REAL,
-            "Probability that people with mild DR and controlled diabetes regress to 'none'"
-        ),
+        # "prob_diabetes_controlled": Parameter(
+        #     Types.REAL,
+        #     "Probability that a person with mild DR has controlled diabetes"
+        # ),
+        # "prob_mild_to_none_if_controlled_diabetes": Parameter(
+        #     Types.REAL,
+        #     "Probability that people with mild DR and controlled diabetes regress to 'none'"
+        # ),
         "probs_for_dmo_when_dr_status_mild_or_moderate": Parameter(
             Types.LIST, "probability of having a DMO state when an individual has non-proliferative mild/moderate "
                         "Diabetic Retinopathy "),
@@ -158,12 +158,12 @@ class DiabeticRetinopathy(Module):
         "dr_on_treatment": Property(
             Types.BOOL, "Whether this person is on diabetic retinopathy treatment",
         ),
+        "dmo_on_treatment": Property(
+            Types.BOOL, "Whether this person is on diabetic macular oedema treatment",
+        ),
         "dr_date_treatment": Property(
             Types.DATE,
             "date of first receiving diabetic retinopathy treatment (pd.NaT if never started treatment)"
-        ),
-        "dmo_on_treatment": Property(
-            Types.BOOL, "Whether this person is on diabetic macular oedema treatment",
         ),
         "dmo_date_treatment": Property(
             Types.DATE,
@@ -173,6 +173,14 @@ class DiabeticRetinopathy(Module):
             Types.DATE,
             "Date of last eye screening (pd.NaT if never screened)"
         ),
+        "dr_date_prc_treatment": Property(
+            Types.DATE,
+            "date of first receiving Laser Pan Retinal Coagulation treatment (pd.NaT if never started treatment)"
+        ),
+        "dr_date_diagnosis": Property(
+            Types.DATE,
+            "The date of diagnosis of diabetic retinopathy (pd.NaT if never diagnosed)"
+        ),
         "dr_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
             "The DR stage at which treatment was given (used to apply stage-specific treatment effect)",
@@ -180,21 +188,6 @@ class DiabeticRetinopathy(Module):
         ),
         "dr_diagnosed": Property(
             Types.BOOL, "Whether this person has been diagnosed with many form of diabetic retinopathy"
-        ),
-        "dr_mild_diagnosed": Property(
-            Types.BOOL, "Whether this person has been diagnosed with mild/moderate non-proliferative diabetic "
-                        "retinopathy"
-        ),
-        "dr_proliferative_diagnosed": Property(
-            Types.BOOL, "Whether this person has been diagnosed with proliferative diabetic retinopathy"
-        ),
-        "dr_dmo_diagnosed": Property(
-            Types.BOOL, "Whether this person has been diagnosed with any diabetic retinopathy or diabetic macular "
-                        "oedema"
-        ),
-        "dr_date_diagnosis": Property(
-            Types.DATE,
-            "The date of diagnosis of diabetic retinopathy (pd.NaT if never diagnosed)"
         ),
         "selected_for_eye_screening": Property(
             Types.BOOL, "selected for screening this period"
@@ -208,10 +201,6 @@ class DiabeticRetinopathy(Module):
         ),
         "on_laser_pan_retinal_coagulation_treatment": Property(
             Types.BOOL, "Whether this person is on Laser Pan Retinal Coagulation treatment",
-        ),
-        "dr_date_prc_treatment": Property(
-            Types.DATE,
-            "date of first receiving Laser Pan Retinal Coagulation treatment (pd.NaT if never started treatment)"
         ),
         "vision_status": Property(
             Types.CATEGORICAL,
@@ -408,17 +397,18 @@ class DiabeticRetinopathy(Module):
                 columns=vision_states
             )
 
-            # Force numeric
-            mat = mat.astype(float)
+            # CSV is row-stochastic → model expects column-stochastic
+            mat = mat.T
 
-            # Normalize each row to sum exactly to 1
-            # col_sums = mat.sum(axis=0)
-            # mat = mat.divide(col_sums, axis=1)
-            row_sums = mat.sum(axis=1)
-            mat = mat.divide(row_sums, axis=0)
+            # Validate (columns must sum to 1)
+            col_sums = mat.sum(axis=0)
+            if not np.allclose(col_sums, 1.0):
+                raise ValueError(
+                    f"{key} has columns that do not sum to 1:\n{col_sums}"
+                )
 
-            # Safety check
-            assert np.allclose(mat.sum(axis=1), 1.0)
+            if (mat < 0).any().any():
+                raise ValueError(f"{key} contains negative probabilities")
 
             self.parameters[key] = mat
 
@@ -573,7 +563,7 @@ class DiabeticRetinopathy(Module):
         success_prob = p['prob_laser_prc_success_proliferative']
 
         if self.rng.random_sample() < success_prob:
-            # Treatment successful, then regress DR status
+            # If treatment successful, then regress vision status
             vs = df.at[person_id, 'vision_status']
 
             if vs not in ['normal', 'blindness']:
@@ -648,29 +638,14 @@ class DiabeticRetinopathy(Module):
 
             current = df.loc[idx, 'vision_status']
 
-            # Ensure matrix is row-stochastic at runtime
-            matrix = base_matrix.astype(float).copy()
-
-            col_sums = matrix.sum(axis=0)
-
-            # Hard failure if any column has zero probability mass
-            if (col_sums == 0).any():
-                bad = col_sums[col_sums == 0]
+            # Safety check only — no renormalisation
+            if not np.allclose(base_matrix.sum(axis=0), 1.0):
                 raise ValueError(
-                    f"Transition matrix has zero-probability columns:\n{bad}"
-                )
-
-            # Renormalise rows
-            matrix = matrix.divide(col_sums, axis=1)
-
-            # Final safety check
-            if not np.allclose(matrix.sum(axis=0), 1.0):
-                raise ValueError(
-                    "Transition matrix columns do not sum to 1 after renormalisation"
+                    "Vision transition matrix columns do not sum to 1"
                 )
 
             # Propose new vision states
-            proposed = transition_states(current, matrix, rng)
+            proposed = transition_states(current, base_matrix, rng)
 
             # on_treatment = df.loc[idx, 'dr_on_treatment']
             #
@@ -757,21 +732,21 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         # Update DMO status
         self.module.update_dmo_status()
 
-        mild_dr_individuals = diabetes_and_alive_mild_moderate_dr
-        # Get those who are currently on diabetes weight loss medication from cardiometabolicdisorders
-        mild_dr_individuals_eligible = mild_dr_individuals[mild_dr_individuals.nc_diabetes_on_medication]
-        # Get those with controlled diabetes among those with mild dr_status
-        selected_individuals_with_controlled_and_mild = (
-            self.module.rng.random_sample(len(mild_dr_individuals_eligible))
-            < self.module.parameters['prob_diabetes_controlled'])
-        controlled_and_mild_idx = mild_dr_individuals_eligible.index[selected_individuals_with_controlled_and_mild]
-
-        # Get those who will regress to none dr_status among those with mild dr_status and controlled diabetes
-        selected_to_regress_to_none = (self.module.rng.random_sample(len(controlled_and_mild_idx))
-                                       < self.module.parameters['prob_mild_to_none_if_controlled_diabetes'])
-        regress_to_none_idx = controlled_and_mild_idx[selected_to_regress_to_none]
-
-        df.loc[regress_to_none_idx, "dr_status"] = "none"
+        # mild_dr_individuals = diabetes_and_alive_mild_moderate_dr
+        # # Get those who are currently on diabetes weight loss medication from cardiometabolicdisorders
+        # mild_dr_individuals_eligible = mild_dr_individuals[mild_dr_individuals.nc_diabetes_on_medication]
+        # # Get those with controlled diabetes among those with mild dr_status
+        # selected_individuals_with_controlled_and_mild = (
+        #     self.module.rng.random_sample(len(mild_dr_individuals_eligible))
+        #     < self.module.parameters['prob_diabetes_controlled'])
+        # controlled_and_mild_idx = mild_dr_individuals_eligible.index[selected_individuals_with_controlled_and_mild]
+        #
+        # # Get those who will regress to none dr_status among those with mild dr_status and controlled diabetes
+        # selected_to_regress_to_none = (self.module.rng.random_sample(len(controlled_and_mild_idx))
+        #                                < self.module.parameters['prob_mild_to_none_if_controlled_diabetes'])
+        # regress_to_none_idx = controlled_and_mild_idx[selected_to_regress_to_none]
+        #
+        # df.loc[regress_to_none_idx, "dr_status"] = "none"
         # df.loc[regress_to_none_idx, "dmo_status"] = "none"
 
         self.module.update_vision_status()
