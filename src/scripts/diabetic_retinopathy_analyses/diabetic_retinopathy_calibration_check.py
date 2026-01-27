@@ -46,7 +46,6 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 5_000
 
-
 def get_diabetes_dalys(logfile):
     output = parse_log_file(logfile)
     dalys = output['tlo.methods.healthburden']['dalys_stacked']

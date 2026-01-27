@@ -93,6 +93,10 @@ class DiabeticRetinopathy(Module):
             "Probability that a patient who remains proliferative at follow-up/review will "
             "require a repeat of HSI_Dr_Laser_Pan_Retinal_Coagulation"
         ),
+        "prob_repeat_dmo_treatment": Parameter(
+            Types.REAL,
+            "Probability that clinically significant DMO requires repeat treatment at review"
+        ),
         "next_screening_if_mild_or_moderate": Parameter(
             Types.INT,
             "Number of months until next eye screening if DR status is mild or moderate"
@@ -131,6 +135,10 @@ class DiabeticRetinopathy(Module):
             Types.LIST,
             "Probability matrix for vision status transitions for people with sight-threatening DR"
         ),
+        "vision_transition_matrix_treated_sight_threatening": Parameter(
+            Types.LIST,
+            "Probability matrix for vision status transitions for people with sight-threatening DR"
+        ),
         "sensitivity_of_dilated_eye_exam_dr_dmo": Parameter(
             Types.REAL, "sensitivity of dilated eye exam/test for DR and DMO"
         ),
@@ -160,6 +168,10 @@ class DiabeticRetinopathy(Module):
         "dmo_date_treatment": Property(
             Types.DATE,
             "date of first receiving diabetic macular oedema treatment (pd.NaT if never started treatment)"
+        ),
+        "dr_date_last_screening": Property(
+            Types.DATE,
+            "Date of last eye screening (pd.NaT if never screened)"
         ),
         "dr_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
@@ -257,6 +269,7 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "selected_for_eye_screening"] = False
         df.loc[list(alive_diabetes_idx), "dr_date_treatment"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dmo_date_treatment"] = pd.NaT
+        df.loc[list(alive_diabetes_idx), "dr_date_last_screening"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dr_stage_at_which_treatment_given"] = "none"
         df.loc[list(alive_diabetes_idx), "dr_date_diagnosis"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dmo_antivegf_count"] = 0
@@ -386,7 +399,8 @@ class DiabeticRetinopathy(Module):
 
         for key in [
             'vision_transition_matrix_no_dr',
-            'vision_transition_matrix_sight_threatening'
+            'vision_transition_matrix_sight_threatening',
+            'vision_transition_matrix_treated_sight_threatening'
         ]:
             mat = pd.DataFrame(
                 self.parameters[key],
@@ -619,9 +633,15 @@ class DiabeticRetinopathy(Module):
             (df.dmo_status == 'clinically_significant')
         )
 
+        # People on treatment should have better outcomes so should be isolated
+        on_treatment = df.dr_on_treatment | df.dmo_on_treatment
+
         for idx, base_matrix in [
             (alive_diabetes & ~sight_threatening, p['vision_transition_matrix_no_dr']),
-            (alive_diabetes & sight_threatening, p['vision_transition_matrix_sight_threatening']),
+            (alive_diabetes & sight_threatening & ~on_treatment,
+             p['vision_transition_matrix_sight_threatening']),
+            (alive_diabetes & sight_threatening & on_treatment,
+             p['vision_transition_matrix_treated_sight_threatening'])
         ]:
             if not idx.any():
                 continue
@@ -661,11 +681,14 @@ class DiabeticRetinopathy(Module):
             # )
 
             # Allow only same or worse vision (ordinal categories)
-            allowed = proposed >= current
+            # allowed = proposed >= current
+
+            # Series of True values with the same index
+            # allowed = pd.Series(True, index=current.index)
 
             # Apply updates
-            df.loc[idx & allowed, 'vision_status'] = proposed[allowed]
-
+            # df.loc[idx & allowed, 'vision_status'] = proposed[allowed]
+            df.loc[idx, 'vision_status'] = proposed
         # Update cause only when vision impaired and diabetes-related eye disease
         impaired = df.vision_status.isin([
             'moderate_vision_impairment',
@@ -758,10 +781,13 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
 
         eligible_population_for_eye_screening = (
             (df.is_alive & df.nc_diabetes) &  #todo add condition for people not to be selected again witin 1 year
-            (df.dr_status == 'none') &
-            (df.dmo_status == 'none') &
+            # (df.dr_status == 'none') &
+            # (df.dmo_status == 'none') &
             (df.age_years >= 20) &
-            (pd.isna(df.dr_date_diagnosis))
+            (pd.isna(df.dr_date_diagnosis)) &
+            # Add time since last screening condition
+            ((df.dr_date_last_screening.isna()) |
+             (df.dr_date_last_screening < self.sim.date - pd.DateOffset(years=1)))
         )
 
         df.loc[eligible_population_for_eye_screening, 'selected_for_eye_screening'] = (
@@ -801,8 +827,6 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(key='debug',
-                     data=f'This is HSI_Dr_Dmo_Screening: investigating the condition of {person_id}')
         df = self.sim.population.props
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
@@ -810,13 +834,10 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
 
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+            return hs.get_blank_appt_footprint()
 
-        # if person already on treatment or not yet diagnosed, do nothing
-        if person["dr_on_treatment"]:
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        assert pd.isnull(df.at[person_id, 'dr_date_treatment'])
+        if person["dr_on_treatment"] and not pd.isna(person["dr_date_last_screening"]):
+            return hs.get_blank_appt_footprint()
 
         is_cons_available = self.get_consumables(
             self.module.cons_item_codes['eye_screening']
@@ -831,8 +852,14 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
             # record date of diagnosis
             df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
             df.at[person_id, 'dr_date_treatment'] = self.sim.date
+            df.at[person_id, 'dr_date_last_screening'] = self.sim.date
             df.at[person_id, 'dr_diagnosed'] = True
             df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
+
+            # Set diabetes ever diagnosed to true if not already set
+            if not df.at[person_id, 'nc_diabetes_ever_diagnosed']:
+                df.at[person_id, 'nc_diabetes_ever_diagnosed'] = True
+
             # If consumables are available, add equipment used
             self.add_equipment({'Visual acuity chart', 'Direct ophthalmoscope',
                                 'Fundus camera'})
@@ -902,17 +929,17 @@ class HSI_Dr_Dmo_Focal_Laser(HSI_Event, IndividualScopeEventMixin):
                      data=f'This is HSI_Dr_Focal_Laser: initiating laser treatment for person {person_id}')
         df = self.sim.population.props
         person = df.loc[person_id]
-        # hs = self.sim.modules["HealthSystem"]
+        hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+            return hs.get_blank_appt_footprint()
 
-        # if person already on treatment or not yet diagnosed, do nothing
-        if person["dr_on_treatment"] or not person["dr_diagnosed"]:
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        # if not already diagnosed, do nothing
+        if not person["dr_diagnosed"]:
+            return hs.get_blank_appt_footprint()
 
-        assert pd.isnull(df.at[person_id, 'dr_date_treatment'])
+        # assert pd.isnull(df.at[person_id, 'dr_date_treatment'])
 
         is_cons_available = self.get_consumables(
             self.module.cons_item_codes['focal_laser']
@@ -932,8 +959,8 @@ class HSI_Dr_Dmo_Focal_Laser(HSI_Event, IndividualScopeEventMixin):
 
             # Schedule follow-up checkup after 3 months #todo add chance that person needs after 3 months
             follow_up_date = self.sim.date + pd.DateOffset(months=3)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Dr_Dmo_Screening(self.module, person_id),
+            hs.schedule_hsi_event(
+                hsi_event=HSI_Dr_Dmo_Review(self.module, person_id),
                 topen=follow_up_date,
                 priority=1
             )
@@ -957,14 +984,15 @@ class HSI_Dr_Dmo_AntiVEGF(HSI_Event, IndividualScopeEventMixin):
                      data=f'This is HSI_Dr_AntiVEGF for person {person_id}')
         df = self.sim.population.props
         person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+            return hs.get_blank_appt_footprint()
 
-        # If person already on treatment or not yet diagnosed, do nothing
-        if person["dr_on_treatment"] or not person["dr_diagnosed"]:
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        # If not already diagnosed, do nothing
+        if not person["dr_diagnosed"]:
+            return hs.get_blank_appt_footprint()
 
         is_cons_available = self.get_consumables(
             self.module.cons_item_codes['anti_vegf_injection']
@@ -974,8 +1002,6 @@ class HSI_Dr_Dmo_AntiVEGF(HSI_Event, IndividualScopeEventMixin):
             self.add_equipment({'Visual acuity chart', 'Silt lamp', 'Optical coherence tomography device',
                                 'Fundus camera', 'Tonometre'})
 
-            self.module.do_treatment_success_dmo(person_id, 'antivegf')
-
             df.at[person_id, 'dmo_date_treatment'] = self.sim.date
             df.at[person_id, 'dmo_on_treatment'] = True
             # Increment the injection count
@@ -983,11 +1009,13 @@ class HSI_Dr_Dmo_AntiVEGF(HSI_Event, IndividualScopeEventMixin):
 
             # Check if more injections are needed. Must not exceed 8
             if df.at[person_id, 'dmo_antivegf_count'] < 8:
+                self.module.do_treatment_success_dmo(person_id, 'antivegf')
+
                 next_session = self.sim.date + pd.DateOffset(months=1)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(self,
-                                                                    topen=next_session,
-                                                                    priority=0
-                                                                    )
+                hs.schedule_hsi_event(self,
+                                      topen=next_session,
+                                      priority=0
+                                      )
             else:
                 # Reset individual injections after getting 8 of them
                 df.at[person_id, 'dmo_antivegf_count'] = 0
@@ -1000,7 +1028,7 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
     exam/screening
     """
 
-    def __init__(self, module, person_id, session: int = 1):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, DiabeticRetinopathy)
 
@@ -1009,7 +1037,6 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.ALERT_OTHER_DISEASES = []
-        self.session = int(session)
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='debug',
@@ -1020,11 +1047,11 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
 
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+            return hs.get_blank_appt_footprint()
 
-        # if person already on treatment or not yet diagnosed, do nothing
+        # if person not yet diagnosed, do nothing
         if not person["dr_diagnosed"]:
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+            return hs.get_blank_appt_footprint()
 
         is_cons_available = self.get_consumables(
             self.module.cons_item_codes['laser_pan_retinal_photocoagulation']
@@ -1058,21 +1085,58 @@ class HSI_Dr_Laser_Pan_Retinal_Coagulation(HSI_Event, IndividualScopeEventMixin)
             else:
                 df.at[person_id, 'on_laser_pan_retinal_coagulation_treatment'] = False
 
-                # Schedule follow-up at 2 months
+                # Schedule follow-up and/or review at 2 months
                 follow_up = self.sim.date + pd.DateOffset(months=2)
                 hs.schedule_hsi_event(
-                    HSI_Dr_Dmo_Screening(self.module, person_id),
+                    HSI_Dr_Dmo_Review(self.module, person_id),
                     topen=follow_up,
                     priority=1
                 )
 
                 # Schedule reviews at 3, 6, 9, 12 months
-                for m in [3, 6, 9, 12]:
-                    hs.schedule_hsi_event(
-                        HSI_Dr_Dmo_Screening(self.module, person_id),
-                        topen=self.sim.date + pd.DateOffset(months=m),
-                        priority=1
-                    )
+                # for m in [3, 6, 9, 12]:
+                #     hs.schedule_hsi_event(
+                #         self,
+                #         topen=self.sim.date + pd.DateOffset(months=m),
+                #         priority=1
+                #     )
+
+
+class HSI_Dr_Dmo_Review(HSI_Event, IndividualScopeEventMixin):
+    """Review appointment after pan-retinal laser"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        self.TREATMENT_ID = 'Dr_Dmo_Review'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '3'
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        p = self.module.parameters
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            # The person is not alive, the event did not happen: so return a blank footprint
+            return hs.get_blank_appt_footprint()
+
+        if df.at[person_id, 'dr_status'] == 'proliferative':
+            if self.module.rng.random_sample() < p['prob_repeat_laser']:
+                # Schedule new treatment cycle
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    HSI_Dr_Laser_Pan_Retinal_Coagulation(module=self.module, person_id=person_id),
+                    topen=self.sim.date,
+                    priority=0
+                )
+        if df.at[person_id, 'dmo_status'] == 'clinically_significant':
+            if self.module.rng.random_sample() < p['prob_repeat_dmo_treatment']:
+                treatment_for_cs_dmo = HSI_Dr_Dmo_AntiVEGF \
+                    if self.module.rng.random_sample() < 0.5 else HSI_Dr_Dmo_Focal_Laser
+                hs.schedule_hsi_event(
+                    hsi_event=treatment_for_cs_dmo(module=self.module, person_id=person_id),
+                    topen=self.sim.date,
+                    priority=0
+                )
 
 
 class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
