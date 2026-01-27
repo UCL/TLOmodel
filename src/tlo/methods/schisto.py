@@ -436,14 +436,33 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # HSI and treatment params:
         param_list = workbook['parameter_values'].set_index("parameter_name")['value']
 
-        def try_cast_to_float(val):
-            try:
-                # Don't convert strings that contain alphabetic characters
-                if isinstance(val, str) and any(c.isalpha() for c in val):
-                    return val
-                return float(val)
-            except (ValueError, TypeError):
-                return val  # Fall back to original value
+        def cast_param(v: str):
+            """Try to cast a string value to the appropriate native type (int, float or bool).
+            Return: the original value is not a string or if casting fails."""
+
+            if not isinstance(v, str):
+                return v
+
+            s_lower = v.strip().lower()
+
+            # intended to be a bool
+            if s_lower == "true":
+                return True
+            elif s_lower == "false":
+                return False
+
+            # intended to be an int (handles + / -)
+            elif s_lower.lstrip("+-").isdigit():
+                return int(s_lower)
+
+            # intended to be a float
+            else:
+                # try casting
+                try:
+                    return float(s_lower)
+                except ValueError:
+                    # return original value if casting to float fails
+                    return v
 
         # parameters are all converted to strings if any strings are present
         for _param_name in (
@@ -510,7 +529,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             'avg_weight_adult_kg'
         ):
             value = param_list[_param_name]
-            parameters[_param_name] = try_cast_to_float(value)
+            parameters[_param_name] = value if isinstance(value, bool) else cast_param(value)
 
         # MDA coverage - historic
         # this is updated now with the EPSEN data
