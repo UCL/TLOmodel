@@ -8,13 +8,13 @@ from pathlib import Path
 from typing import Dict, NamedTuple, Optional
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from matplotlib import ticker
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
 from tlo.methods import demography, enhanced_lifestyle, simplified_births
-import numpy as np
 
 
 def add_footnote(fig: plt.Figure, footnote: str):
@@ -302,14 +302,8 @@ class LifeStylePlots:
         first_level_values = df_property.columns.get_level_values(0).unique()
 
         # Determine the structure
-        has_gender_first = all(v in ['F', 'M'] for v in first_level_values)
         has_urban_rural_first = all(
             str(v).lower() in ['true', 'false'] or v in [True, False] for v in first_level_values)
-
-        print(f"DEBUG for {li_property}:")
-        print(f"  First level values: {list(first_level_values)}")
-        print(f"  has_gender_first: {has_gender_first}")
-        print(f"  has_urban_rural_first: {has_urban_rural_first}")
 
         # Special handling for li_in_ed which has different structure
         if li_property == 'li_in_ed':
@@ -333,7 +327,7 @@ class LifeStylePlots:
                     data_series = gender_cols[col_name]
 
                     total_population += data_series
-                    if in_ed_status == 'True' or in_ed_status == True:
+                    if in_ed_status in ('True', True):
                         total_in_education += data_series
 
                 proportion = total_in_education / total_population.replace(0, np.nan)
@@ -792,7 +786,7 @@ class LifeStylePlots:
                 # Sort by index if it's numeric-like
                 try:
                     plot_data = plot_data.sort_index(key=lambda x: pd.to_numeric(x, errors='ignore'))
-                except:
+                except (ValueError, TypeError, AttributeError):
                     pass
             else:
                 # Convert to Series if it's not
@@ -879,8 +873,8 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 1, 1)
-    pop_size = 5000
+    end_date = Date(2050, 1, 1)
+    pop_size = 20000
 
     # Path to the resource files used by the disease and intervention methods
     resourcefilepath = './resources'
