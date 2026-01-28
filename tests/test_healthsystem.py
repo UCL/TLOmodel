@@ -348,11 +348,7 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     hs_params["scale_to_effective_capabilities"] = True
 
     # Run the simulation
-<<<<<<< HEAD
-    sim.make_initial_population(n=1000)
-=======
     sim.make_initial_population(n=n_sim_initial_population)
->>>>>>> origin/molaro/clinics-fix-and-squeeze-factor-removal
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
@@ -360,11 +356,7 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     output = parse_log_file(sim.log_filepath, level=logging.INFO)
     pd.set_option("display.max_columns", None)
     summary = output["tlo.methods.healthsystem.summary"]
-<<<<<<< HEAD
-    capacity_by_officer_and_level = summary["Capacity_By_OfficerType_And_FacilityLevel"]
-=======
     capacity_by_officer_and_level = summary["Capacity_By_FacID_and_Officer"]
->>>>>>> origin/molaro/clinics-fix-and-squeeze-factor-removal
 
     # Filter rows for the two years
     row_2010 = capacity_by_officer_and_level.loc[capacity_by_officer_and_level["date"] == "2010-12-31"].squeeze()
@@ -376,22 +368,12 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     # Check that load has significantly reduced in second year, thanks to the significant
     # rescaling of capabilities.
     # (There is some degeneracy here, in that load could also be reduced due to declining demand.
-<<<<<<< HEAD
-    # However it is extremely unlikely that demand for care would have dropped by a factor of 100
-=======
     # However it is extremely unlikely that demand for care would have dropped by a factor of 10
->>>>>>> origin/molaro/clinics-fix-and-squeeze-factor-removal
     # in second year, hence this is a fair test).
     for col in capacity_by_officer_and_level.columns:
         if col == "date":
             continue  # skip the date column
-<<<<<<< HEAD
-        if not (capacity_by_officer_and_level[col] == 0).any():  # check column is not all zeros
-            ratio = row_2010[col] / row_2011[col]
 
-            results[col] = ratio > 100
-
-=======
         if not (capacity_by_officer_and_level[col] == 0).any() and ("GenericClinic" in col):
             ratio = row_2010[col] / row_2011[col]
 
@@ -401,7 +383,6 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
 
     # Ensure that this test is not passing because issue in results
     assert len(results) > 0
->>>>>>> origin/molaro/clinics-fix-and-squeeze-factor-removal
     assert all(results.values())
 
 

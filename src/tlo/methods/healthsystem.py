@@ -1290,6 +1290,7 @@ class HealthSystem(Module):
             for facID_and_officer in clinic_cl.keys():
                 rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
                     facID_and_officer=facID_and_officer, clinic=clinic
+                )
 
                 if rescaling_factor > 1 and rescaling_factor != float("inf"):
                     self._daily_capabilities[clinic][facID_and_officer] *= rescaling_factor
@@ -2968,7 +2969,6 @@ class HealthSystemSummaryCounter:
         self,
         clinic:str,
         facID_and_officer: Optional[str] = None,
-        clinic: Optional[str] = None,
     ) -> Union[float, pd.Series]:
         """Average fraction of time used by officer type and level since last reset.
         If `officer_type` and/or `level` is not provided (left to default to `None`) then a pd.Series with a multi-index
