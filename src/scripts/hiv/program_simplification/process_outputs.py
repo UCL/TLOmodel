@@ -934,10 +934,7 @@ def extract_deaths_by_cause(results_folder):
         values are summed for all ages
         df returned: rows=COD, columns=draw
         """
-        return _df \
-            .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
-            .groupby(_df['label']) \
-            .size()
+
 
     num_deaths_by_label = extract_results(
         results_folder,

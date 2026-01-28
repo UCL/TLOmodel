@@ -5,11 +5,14 @@ import datetime
 from pathlib import Path
 
 # import lacroix
-from typing import Iterable, Sequence, Optional, Tuple
+from typing import Iterable, Sequence, Optional, Tuple, Union, Dict
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
+import ast
+from collections import Counter, defaultdict
+from pathlib import Path
 
 import seaborn as sns
 
@@ -88,52 +91,173 @@ param_names = get_parameter_names_from_scenario_file()
 # %% -------------------------------------------------------------------------------------------------------
 # EXTRACT SERVICES USED USING TREATMENT_ID
 
+
+########################
+## TREATMENT_ID
+
 # extract numbers of appts delivered for every run within a specified draw
-def sum_appt_by_id(results_folder, module, key, column, draw):
+def _parse_dict_cell(x) -> Dict[str, float]:
+    if isinstance(x, dict):
+        return x
+    if pd.isna(x):
+        return {}
+    if isinstance(x, str):
+        return ast.literal_eval(x)
+    return {}
+
+
+
+def make_series_treatment_counts_by_year(
+    treatment_col: str = "TREATMENT_ID",
+    date_col: str = "date",
+    TARGET_PERIOD: Optional[Tuple[object, object]] = None,
+):
     """
-    sum occurrences of each treatment_id over the simulation period for every run within a draw
+    Returns a function suitable for `custom_generate_series`.
 
-    produces dataframe: rows=treatment_id, columns=counts for every run
-
-    results are scaled to true population size
+    Output Series:
+      - index: MultiIndex (year, treatment_id)
+      - values: counts summed within year
     """
+    def custom_generate_series(df: pd.DataFrame) -> pd.Series:
 
-    info = get_scenario_info(results_folder)
-    # create emtpy dataframe
-    results = pd.DataFrame()
+        # Filter to target period (your established pattern)
+        if TARGET_PERIOD is not None:
+            df = df.loc[pd.to_datetime(df.date).between(*TARGET_PERIOD)]
 
-    for run in range(info['runs_per_draw']):
-        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+        if df.empty:
+            return pd.Series(dtype=float)
 
-        new = df[['date', column]].copy()
-        tmp = pd.DataFrame(new[column].to_list())
+        years = pd.to_datetime(df[date_col]).dt.year
 
-        # sum each column to get total appts of each type over the simulation
-        tmp2 = pd.DataFrame(tmp.sum())
-        # add results to dataframe for output
-        results = pd.concat([results, tmp2], axis=1)
+        by_year: Dict[int, Counter] = {}
 
-    # multiply appt numbers by scaling factor
-    results = results.mul(scaling_factor.values[0][0])
+        for yr, cell in zip(years, df[treatment_col]):
+            d = _parse_dict_cell(cell)
+            by_year.setdefault(int(yr), Counter()).update(d)
 
-    return results
+        wide = pd.DataFrame({yr: dict(cnt) for yr, cnt in by_year.items()}).T
+        wide.index.name = "year"
+        wide = wide.sort_index()
+
+        s = wide.stack(dropna=False)
+        s.index.names = ["year", "treatment_id"]
+        s.name = "count"
+
+        return s
+
+    return custom_generate_series
 
 
-# extract numbers of appts
 module = "tlo.methods.healthsystem.summary"
-key = 'HSI_Event'
-column = 'TREATMENT_ID'
+key = "HSI_Event"
 
-# get total counts of every appt type for each scenario
-appt_sums = sum_appt_by_id(results_folder,
-                           module=module, key=key, column=column, draw=0)
-appt_sums.to_csv(outputspath / "Apr2024_HTMresults/appt_sums_baseline.csv")
+custom = make_series_treatment_counts_by_year(
+    treatment_col="TREATMENT_ID",
+    TARGET_PERIOD=TARGET_PERIOD,
+)
+
+# treatment_by_year is a DataFrame with:
+#   - index: MultiIndex (year, treatment_id)
+#   - columns: MultiIndex (draw, run)
+#   - values: counts
+treatment_by_year = extract_results(
+    results_folder=results_folder,
+    module=module,
+    key=key,
+    custom_generate_series=custom,
+    do_scaling=True,
+)
+
+treatment_by_year.to_excel(results_folder / "treatment_id_counts_by_year_draw_run.xlsx")
+
+treatment_by_year_hiv = treatment_by_year.loc[
+    treatment_by_year.index
+        .get_level_values("treatment_id")
+        .str.startswith("Hiv")
+]
+treatment_by_year_hiv.to_excel(results_folder / "treatment_by_year_hiv.xlsx")
 
 
 
+########################
+## APPT TYPES BY LEVEL
 
 
+def make_series_appt_counts_by_year_and_facility(
+    treatment_col: str = "Number_By_Appt_Type_Code_And_Level",
+    date_col: str = "date",
+    TARGET_PERIOD: Optional[Tuple[object, object]] = None,
+):
+    """
+    For cells of the form:
+        { '0': {'ConWithDCSA': 102, ...},
+          '1a': {'Over5OPD': 38099, ...},
+          '1b': {...},
+          ... }
 
+    Returns a function suitable for custom_generate_series, producing a pd.Series with:
+      - index: MultiIndex (year, facility_level, appt_type)
+      - values: counts summed within year for that facility_level/appt_type
+    """
+    def custom_generate_series(df: pd.DataFrame) -> pd.Series:
+        # Filter to target period (your pattern)
+        if TARGET_PERIOD is not None:
+            df = df.loc[pd.to_datetime(df.date).between(*TARGET_PERIOD)]
+
+        if df.empty:
+            return pd.Series(dtype=float)
+
+        years = pd.to_datetime(df[date_col]).dt.year
+
+        # by_year_fac[year][facility_level] = Counter(appt_type -> count)
+        by_year_fac = defaultdict(lambda: defaultdict(Counter))
+
+        for yr, cell in zip(years, df[treatment_col]):
+            nested = _parse_dict_cell(cell)  # dict: facility_level -> dict(appt_type -> count)
+
+            if not isinstance(nested, dict):
+                continue
+
+            for fac_level, inner in nested.items():
+                if isinstance(inner, dict) and inner:
+                    by_year_fac[int(yr)][str(fac_level)].update(inner)
+
+        # Convert to long records then to Series
+        records = []
+        for yr, fac_dict in by_year_fac.items():
+            for fac_level, cnt in fac_dict.items():
+                for appt_type, val in cnt.items():
+                    records.append((yr, fac_level, appt_type, val))
+
+        if not records:
+            return pd.Series(dtype=float)
+
+        out = pd.DataFrame(records, columns=["year", "facility_level", "appt_type", "count"])
+        s = out.set_index(["year", "facility_level", "appt_type"])["count"].sort_index()
+        s.index.names = ["year", "facility_level", "treatment_id"]  # keep your naming convention
+        s.name = "count"
+        return s
+
+    return custom_generate_series
+
+
+# appt types
+key="HSI_Event_non_blank_appt_footprint"
+appt_numbers = make_series_appt_counts_by_year_and_facility(
+    treatment_col="Number_By_Appt_Type_Code_And_Level",
+    TARGET_PERIOD=TARGET_PERIOD,
+)
+
+appt_by_year_facility = extract_results(
+    results_folder=results_folder,
+    module=module,
+    key=key,
+    custom_generate_series=appt_numbers,
+    do_scaling=True,
+)
+
+appt_by_year_facility.to_excel(results_folder / "appt_by_year_facility.xlsx")
 
 
 
@@ -144,48 +268,171 @@ hcw_time = pd.read_csv("resources/healthsystem/human_resources/definitions/Resou
 # assume all services delivered at facility level 1a
 
 
-# Filter mapping for facility level 1a
-hcw_map = hcw_time.loc[hcw_time["Facility_Level"] == "1a"]
+# # Filter mapping for facility level 1a
+# hcw_map = hcw_time.loc[
+#     hcw_time["Facility_Level"].isin(["0", "1a"])
+# ]
 
+
+# todo add facility level
 # Map table: Appt type → minutes per cadre
-map_table = hcw_map.pivot_table(index="Appt_Type_Code",
+map_table = hcw_time.pivot_table(index="Appt_Type_Code",
                                 columns="Officer_Category",
                                 values="Time_Taken_Mins",
                                 aggfunc="mean")
 
-# Align rows with appointment counts
-map_table = map_table.reindex(appt_counts.index)
-
-# Multiply counts × minutes, sum over appt types, one total per cadre
-per_cadre = {}
-for cadre in map_table.columns:
-    contrib = appt_counts.mul(map_table[cadre], axis=0)
-    per_cadre[cadre] = contrib.sum(axis=0)
-
-# Final dataframe: rows = cadres, columns = same as appt_counts
-hcw_minutes = pd.DataFrame(per_cadre).T
-hcw_hours = hcw_minutes[appt_counts.columns] / 60
 
 
-# get the difference in hcw across the runs
+def hcw_time_by_year(
+    appt_by_year: pd.DataFrame,
+    map_table: pd.DataFrame,
+    *,
+    unit: str = "hours",   # "minutes" or "hours"
+) -> dict[str, pd.DataFrame]:
+    """
+    Returns a dict: {officer_category: DataFrame(index=year, columns=(draw,run), values=time)}.
+    """
 
-num_hcw_hours_diff = compute_summary_statistics(
-    find_difference_relative_to_comparison_series_dataframe(
-        hcw_hours,
-        comparison='Status Quo'
-    ), central_measure='mean'
+    # 1) Appointments to tidy (one row per year, treatment_id, draw, run)
+    appt_long = (
+        appt_by_year
+        .stack(["draw", "run"], future_stack=True)
+        .rename("n_appts")
+        .reset_index()
+    )
+    # columns now: year, treatment_id, draw, run, n_appts
+
+    # 2) Map table to tidy weights (one row per appt type, officer category)
+    weights_long = (
+        map_table
+        .fillna(0)
+        .reset_index()  # brings Appt_Type_Code out as a column
+        .melt(
+            id_vars=["Appt_Type_Code"],
+            var_name="Officer_Category",
+            value_name="minutes_per_appt",
+        )
+        .rename(columns={"Appt_Type_Code": "treatment_id"})
+    )
+
+    # 3) Merge and compute time
+    merged = appt_long.merge(weights_long, on="treatment_id", how="left")
+    merged["minutes_per_appt"] = merged["minutes_per_appt"].fillna(0)
+    merged["time_minutes"] = merged["n_appts"] * merged["minutes_per_appt"]
+
+    # 4) Aggregate to year/draw/run/officer_category
+    out_long = (
+        merged
+        .groupby(["Officer_Category", "year", "draw", "run"], as_index=False)["time_minutes"]
+        .sum()
+    )
+
+    if unit == "hours":
+        out_long["time"] = out_long["time_minutes"] / 60.0
+    elif unit == "minutes":
+        out_long["time"] = out_long["time_minutes"]
+    else:
+        raise ValueError("unit must be 'minutes' or 'hours'")
+
+    # 5) Split into one DataFrame per officer category, pivot back to (draw,run) columns
+    out = {}
+    for oc, g in out_long.groupby("Officer_Category", sort=True):
+        wide = (
+            g.pivot(index="year", columns=["draw", "run"], values="time")
+             .sort_index()
+        )
+        wide.columns.names = ["draw", "run"]
+        out[oc] = wide
+
+    return out
+
+
+time_by_officer = hcw_time_by_year(appt_by_year_facility, map_table, unit="hours")
+
+
+
+clinical_time = time_by_officer["Clinical"]                 # index=year, cols=(draw,run)
+nursing_time  = time_by_officer["Nursing_and_Midwifery"]
+pharm_time = time_by_officer["Pharmacy"]
+# mental_time = time_by_officer["Mental"]
+# nutrition_time = time_by_officer["Nutrition"]
+# radiography_time = time_by_officer["Radiography"]
+lab_time = time_by_officer["Laboratory"]
+dsca_time = time_by_officer["DCSA"]
+dental_time = time_by_officer["Dental"]
+
+
+
+
+# read in the HRH cost sheet
+hcw_costs = pd.read_csv("resources/ResourceFile_HIV/hrh_costs.csv")
+
+
+# hourly-cost lookup for facility level 1a
+def apply_level_1a_hourly_costs(
+    time_by_officer: dict[str, pd.DataFrame],
+    hcw_costs: pd.DataFrame,
+    *,
+    facility_level: str = "1a",
+    unit: str = "hours",   # "hours" or "minutes"
+) -> pd.DataFrame:
+    """
+    Multiply cadre time by cadre-specific hourly costs (assuming a single facility level for all activity).
+    """
+
+    # Cost lookup for the chosen facility level
+    cost_level = (
+        hcw_costs
+        .loc[hcw_costs["Facility_Level"] == facility_level, ["Officer_Category", "Total_hourly_cost"]]
+        .dropna(subset=["Total_hourly_cost"])
+        .set_index("Officer_Category")["Total_hourly_cost"]
+    )
+
+    blocks = {}
+
+    for officer_category, df_time in time_by_officer.items():
+        if officer_category not in cost_level.index:
+            # If no cost available for that cadre at this facility level, skip explicitly.
+            # Alternatively: raise KeyError to force completeness.
+            continue
+
+        df_hours = df_time / 60.0 if unit == "minutes" else df_time
+        blocks[officer_category] = df_hours * float(cost_level.loc[officer_category])
+
+    out = pd.concat(blocks, axis=1)
+    out.columns.names = ["Officer_Category", "draw", "run"]
+    out.index.name = "year"
+
+    return out
+
+
+
+time_by_officer = {
+    "Clinical": clinical_time,  # year x (draw,run)
+    "Nursing_and_Midwifery": nursing_time,
+    "Pharmacy": pharm_time,
+    # add others you have...
+}
+
+hcw_costs_by_year = apply_level_1a_hourly_costs(
+    time_by_officer=time_by_officer,
+    hcw_costs=hcw_costs,
+    facility_level="1a",
+    unit="hours",
 )
 
-
-hcw_hours.to_csv(results_folder / f'hcw_hours_{target_period()}.csv')
-num_hcw_hours_diff.to_csv(results_folder / f'num_hcw_hours_diff_{target_period()}.csv')
+total_cost_by_year = hcw_costs_by_year.groupby(axis=1, level=["draw", "run"]).sum()
 
 
-draw_order = hcw_minutes.columns.get_level_values("draw").unique()
 
-# Reorder the index
-num_hcw_hours_diff = num_hcw_hours_diff.reindex(draw_order, axis=1, level="draw")
 
-# remove Status Quo columns
-num_hcw_hours_diff_edit = num_hcw_hours_diff.drop(columns="Status Quo", level="draw")
+
+
+
+
+
+
+
+
+
 
