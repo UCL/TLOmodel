@@ -905,10 +905,7 @@ class HealthSystem(Module):
 
         # Schedule service availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(
-                self,
-                parameters={"service_availability": self.parameters["service_availability_postSwitch"]},
-            ),
+            HealthSystemChangeParameters(self,parameters_to_change=["service_availability"]),
             Date(self.parameters["year_service_availability_switch"], 1, 1),
         )
 
@@ -1576,10 +1573,10 @@ class HealthSystem(Module):
             # The HSI is allowed and will be added to the HSI_EVENT_QUEUE.
             # Let the HSI gather information about itself (facility_id and appt-footprint time requirements):
             hsi_event.initialise()
-            clinic_eligibility = self.get_clinic_eligibility(hsi_event.TREATMENT_ID)
+            clinic = self.get_clinic_eligibility(hsi_event.TREATMENT_ID)
 
             self._add_hsi_event_queue_item_to_hsi_event_queue(
-                clinic_eligibility=clinic_eligibility,
+                clinic=clinic,
                 priority=priority,
                 topen=topen,
                 tclose=tclose,
@@ -1587,7 +1584,7 @@ class HealthSystem(Module):
             )
 
     def _add_hsi_event_queue_item_to_hsi_event_queue(
-        self, clinic_eligibility, priority, topen, tclose, hsi_event
+        self, clinic, priority, topen, tclose, hsi_event
     ) -> None:
         """Add an event to the HSI_EVENT_QUEUE."""
         # Create HSIEventQueue Item, including a counter for the number of HSI_Events, to assist with sorting in the
@@ -1595,8 +1592,8 @@ class HealthSystem(Module):
 
         # First check that the service the HSI needs is available. If not, don't add to queue.
         # Don't increment the counter; log and return.
-        if hsi_event.TREATMENT_ID not in self.service_availability:
-            self.call_and_record_never_ran_hsi_event(hsi_event=hsi_event, priority=priority)
+        if not self.is_treatment_id_allowed(hsi_event.TREATMENT_ID, self.service_availability):
+            self.call_and_record_never_ran_hsi_event(hsi_event=hsi_event, priority=priority, clinic=clinic)
             return
 
         self.hsi_event_queue_counter += 1
@@ -1608,7 +1605,7 @@ class HealthSystem(Module):
             rand_queue = self.hsi_event_queue_counter
 
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            clinic_eligibility, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event
+            clinic, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event
         )
 
         # Add to queue:
@@ -2203,7 +2200,7 @@ class HealthSystem(Module):
 
         return ok_to_run
 
-    def run_individual_level_events_in_mode_1(
+    def run_individual_level_events_in_mode_0_or_1(
         self, _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]
     ) -> List:
         """Run a list of individual level events. Returns: list of events that did not run (maybe an empty list)."""
@@ -2909,6 +2906,7 @@ class HealthSystemSummaryCounter:
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
+
         logger_summary.info(
             key="HSI_Event",
             description="Counts of the HSI_Events that have occurred in this calendar year by TREATMENT_ID, "
@@ -3011,7 +3009,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         super().__init__(module)
         assert isinstance(module, HealthSystem)
 
-        self.supported_parameters = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing"]
+        self.supported_parameters = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing", "service_availability"]
         if not all(param in self.supported_parameters for param in parameters_to_change):
             raise ValueError(
                 f"parameters_to_change can only contain the following values: {self.supported_parameters}. "
@@ -3032,8 +3030,8 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         if "use_funded_or_actual_staffing" in self.parameters_to_change:
             self.module.use_funded_or_actual_staffing = p["use_funded_or_actual_staffing_postSwitch"]
 
-        if "service_availability" in self._parameters:
-            self.module.parameters['Service_Availability'] = self._parameters["service_availability"]
+        if "service_availability" in self.parameters_to_change:
+            self.module.parameters['Service_Availability'] = p["service_availability"]
             ## As part of the switching, clear the queue of any events currently scheduled
             ## that might require one of the omitted services when they actually run.
             retained_events = []

@@ -2894,7 +2894,6 @@ def test_service_availability_switch(tmpdir, seed):
 
     # read the results
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
-    breakpoint()
     # Do the checks
     assert len(output["tlo.methods.healthsystem"]["HSI_Event"]) > 0
     hsi_events = output["tlo.methods.healthsystem"]["HSI_Event"]
