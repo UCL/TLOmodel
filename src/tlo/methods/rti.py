@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -1176,7 +1177,8 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,  # Disease modules: Any disease module should carry this label.
         Metadata.USES_SYMPTOMMANAGER,  # The 'Symptom Manager' recognises modules with this label.
         Metadata.USES_HEALTHSYSTEM,  # The 'HealthSystem' recognises modules with this label.
-        Metadata.USES_HEALTHBURDEN  # The 'HealthBurden' module recognises modules with this label.
+        Metadata.USES_HEALTHBURDEN,  # The 'HealthBurden' module recognises modules with this label.
+        Metadata.REPORTS_DISEASE_NUMBERS # The 'ReportDiseaseNumbers' module recognises modules with this label.
     }
 
     # Declare Causes of Death
@@ -2553,6 +2555,12 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         disability_series_for_alive_persons = df.loc[df.is_alive, "rt_disability"]
         return disability_series_for_alive_persons
 
+    def report_summary_stats(self):
+        # This returns dataframe that reports on the prevalence of RTIs for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'rt_road_traffic_inc')
+        return {'number_within_last_month': number_by_age_group_sex}
+
     def rti_assign_injuries(self, number):
         """
         A function that can be called specifying the number of people affected by RTI injuries
@@ -2987,9 +2995,11 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
                          .when('.between(70,79)', self.rr_injrti_age7079),
                          Predictor('li_ex_alc').when(True, self.rr_injrti_excessalcohol)
                          )
+
         pred = eq.predict(df.loc[rt_current_non_ind])
         random_draw_in_rti = self.module.rng.random_sample(size=len(rt_current_non_ind))
         selected_for_rti = rt_current_non_ind[pred > random_draw_in_rti]
+
         # Update to say they have been involved in a rti
         df.loc[selected_for_rti, 'rt_road_traffic_inc'] = True
         # Set the date that people were injured to now
@@ -5017,6 +5027,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self.treated_code = 'none'
 
     def apply(self, person_id, squeeze_factor):
+
         self._number_of_times_this_event_has_run += 1
         df = self.sim.population.props
         rng = self.module.rng
@@ -5067,10 +5078,12 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # injury is being treated in this surgery
         # find untreated injury codes that are treated with major surgery
         relevant_codes = np.intersect1d(injuries_to_be_treated, surgically_treated_codes)
+
         # check that the person sent here has an appropriate code(s)
         assert len(relevant_codes) > 0
         # choose a code at random
         self.treated_code = rng.choice(relevant_codes)
+
         if request_outcome:
             # check the people sent here hasn't died due to rti, have had their injuries diagnosed and been through
             # RTI_Med
@@ -5157,7 +5170,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
             # ------------------------------------- Perm disability from amputation ------------------------------------
             codes = ['782', '782a', '782b', '782c', '783', '882', '883', '884']
+
             if self.treated_code in codes:
+
                 # Track whether they are permanently disabled
                 df.at[person_id, 'rt_perm_disability'] = True
                 # Find the column and code where the permanent injury is stored
