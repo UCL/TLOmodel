@@ -2025,24 +2025,12 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # NB: In addition to logging properties by sex and age groups, there are some properties that requires
         # individual's urban or rural status. define and log these properties separately
         cat_by_rural_urban_props = ['li_wealth', 'li_bmi', 'li_low_ex', 'li_ex_alc', 'li_wood_burn_stove',
-                                    'li_unimproved_sanitation', 'li_no_clean_drinking_water']
+                                    'li_unimproved_sanitation', 'li_no_clean_drinking_water', 'li_herbal_medication']
         # these properties are applicable to individuals 15+ years
         log_by_age_15up = ['li_low_ex', 'li_mar_stat', 'li_ex_alc', 'li_bmi', 'li_tob']
 
         for _property in all_lm_keys:
             if _property in log_by_age_15up:
-                if _property == 'li_herbal_medication':
-                    # Log li_herbal_medication like other properties that are categorized by rural/urban
-                    data = grouped_counts_with_all_combinations(
-                        df.loc[df.is_alive],
-                        ["li_urban", "sex", "li_herbal_medication", "age_range"]
-                    )
-                    logger.info(
-                        key=_property,
-                        data=flatten_multi_index_series_into_dict_for_logging(data)
-                    )
-                    continue
-
                 if _property in cat_by_rural_urban_props:
                     data = grouped_counts_with_all_combinations(
                         df.loc[df.is_alive & (df.age_years >= 15)],
@@ -2085,17 +2073,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 key=_property,
                 data=flatten_multi_index_series_into_dict_for_logging(data)
             )
-        #Herbal Medication Use
-        # herbal_summary = (
-        #     df.loc[df.is_alive]
-        #     .groupby(['li_urban', 'sex', 'li_herbal_medication'])
-        #     .size()
-        #     .rename('count')
-        # )
-        # logger.info(
-        #     key='li_herbal_medication',
-        #     data=flatten_multi_index_series_into_dict_for_logging(herbal_summary)
-        # )
+
         # ---------------------- log properties associated with WASH
         under_5 = df.is_alive & (df.age_years < 5)
         between_5_and_15 = df.is_alive & (df.age_years.between(5, 15))
