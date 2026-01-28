@@ -1514,7 +1514,7 @@ plt.savefig(outputfilepath / 'comparison_plots/calibration_to_hhfa_fac_type_and_
 # 8. PLOT SCENARIO SUMMARIES
 ########################################################################################################################
 # Create the directory if it doesn't exist
-figurespath_scenarios = outputfilepath / 'consumable_scenarios1'
+figurespath_scenarios = outputfilepath / 'consumable_scenarios'
 if not os.path.exists(figurespath_scenarios):
     os.makedirs(figurespath_scenarios)
 
