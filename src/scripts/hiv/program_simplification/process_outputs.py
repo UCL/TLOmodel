@@ -1036,13 +1036,14 @@ plot_with_ci(
     percent_df=pc_infect_ci,
     colour_map=scenario_colours,
     ax=axes[0],
-    # annotate_labels={'Reduce HIV testing',
-    #                  'Remove Viral Load Testing',
-    #                  'Remove PrEP for FSW',
-    #                  'Remove VMMC',
-    #                  'Increase 6-monthly Dispensing',
-    #                  'Reduce All Elements',
-    #                  'Program Scale-up'}
+    annotate_labels={'Reduce HIV testing',
+                     'Remove Viral Load Testing',
+                     'Target Viral Load Testing',
+                     'Replace Viral Load Testing',
+                     'Remove VMMC',
+                     'Target All Elements',
+                     'Reduce All Elements',
+                     'Program Scale-up'}
 )
 
 
@@ -1054,27 +1055,29 @@ plot_with_ci(
     percent_df=pc_aids_ci,
     colour_map=scenario_colours,
     ax=axes[1],
-    # annotate_labels={'Reduce HIV testing',
-    #                  'Remove Viral Load Testing',
-    #                  'Replace Viral Load Testing',
-    #                  'Increase 6-monthly Dispensing',
-    #                  'Reduce All Elements',
-    #                  'Program Scale-up'}
+    annotate_labels={'Reduce HIV testing',
+                     'Remove Viral Load Testing',
+                     'Target Viral Load Testing',
+                     'Replace Viral Load Testing',
+                     'Target All Elements',
+                     'Reduce All Elements',
+                     'Program Scale-up'}
 )
 
 
 plot_with_ci(
-    df=aids_deaths_ci_edit,
+    df=aids_deaths_ci_edit / 1000,
     variable="HIV/AIDS",   # row name in that table
     title=f"Difference in AIDS deaths from Status Quo {target_period()}",
-    ylabel="Difference from Status Quo",
+    ylabel="Difference from Status Quo, thousands",
     percent_df=pc_aids_deaths_ci,
     colour_map=scenario_colours,
     ax=axes[2],
     annotate_labels={'Reduce HIV testing',
                      'Remove Viral Load Testing',
+                     'Target Viral Load Testing',
                      'Replace Viral Load Testing',
-                     'Increase 6-monthly Dispensing',
+                     'Target All Elements',
                      'Reduce All Elements',
                      'Program Scale-up'}
 )
@@ -1085,6 +1088,8 @@ for ax in axes[:-1]:
 
 fig.tight_layout()
 fig.subplots_adjust(bottom=0.2)   # enough room for rotation
+plt.savefig(results_folder / "infections_dalys_deaths_vs_baseline.png")
+
 plt.show()
 
 
