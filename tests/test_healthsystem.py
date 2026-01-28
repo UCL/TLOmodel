@@ -315,7 +315,6 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     n_pop_2010 = 14.6e6
     # Ensure capabilities are much smaller (1/1000) than expected given initial pop size
     small_capabilities = (n_sim_initial_population / n_pop_2010) / 10000
-    print(small_capabilities)
 
     # Register the core modules
     # Set the year in which mode is changed to start_date + 1 year, and mode after that still 1.
