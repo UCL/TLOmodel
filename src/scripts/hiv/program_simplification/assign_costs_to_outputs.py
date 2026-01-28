@@ -49,6 +49,15 @@ params = extract_params(results_folder)
 
 TARGET_PERIOD = (Date(2025, 1, 1), Date(2050, 12, 31))
 
+# extract scaling factor
+scaling_factor = extract_results(
+    results_folder,
+    module="tlo.methods.population",
+    key="scaling_factor",
+    column="scaling_factor",
+    index="date",
+    do_scaling=False)
+
 
 def target_period() -> str:
     """Returns the target period as a string of the form YYYY-YYYY"""
@@ -76,57 +85,51 @@ param_names = get_parameter_names_from_scenario_file()
 
 
 
-def summarise_appointments(df: pd.DataFrame) -> pd.Series:
+# %% -------------------------------------------------------------------------------------------------------
+# EXTRACT SERVICES USED USING TREATMENT_ID
+
+# extract numbers of appts delivered for every run within a specified draw
+def sum_appt_by_id(results_folder, module, key, column, draw):
     """
-    Extract and sum all appointment types during the TARGET_PERIOD from the HSI_Event log.
+    sum occurrences of each treatment_id over the simulation period for every run within a draw
 
-    Returns a Series indexed by appointment type.
+    produces dataframe: rows=treatment_id, columns=counts for every run
+
+    results are scaled to true population size
     """
-    df["date"] = pd.to_datetime(df["date"])
-    mask = df["date"].between(*TARGET_PERIOD)
-    filtered = df.loc[mask, "Number_By_Appt_Type_Code"]
 
-    # Expand list of counts per row into a DataFrame
-    expanded = pd.DataFrame(filtered.tolist())
+    info = get_scenario_info(results_folder)
+    # create emtpy dataframe
+    results = pd.DataFrame()
 
-    # Sum across all rows (time points)
-    summed = expanded.sum()
+    for run in range(info['runs_per_draw']):
+        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
 
-    # Return as Series with integer index
-    summed.index.name = "AppointmentTypeCode"
-    return summed
+        new = df[['date', column]].copy()
+        tmp = pd.DataFrame(new[column].to_list())
 
-appt_counts = extract_results(
-    results_folder=results_folder,
-    module="tlo.methods.healthsystem.summary",
-    key="HSI_Event_non_blank_appt_footprint",
-    custom_generate_series=summarise_appointments,
-    do_scaling=True  # to scale to national population
-).pipe(set_param_names_as_column_index_level_0)
+        # sum each column to get total appts of each type over the simulation
+        tmp2 = pd.DataFrame(tmp.sum())
+        # add results to dataframe for output
+        results = pd.concat([results, tmp2], axis=1)
 
-appt_counts_by_draw = appt_counts.groupby(level="draw", axis=1).mean()
-appt_counts_by_draw.to_excel(results_folder / "appt_counts_by_draw.xlsx")
+    # multiply appt numbers by scaling factor
+    results = results.mul(scaling_factor.values[0][0])
+
+    return results
 
 
+# extract numbers of appts
+module = "tlo.methods.healthsystem.summary"
+key = 'HSI_Event'
+column = 'TREATMENT_ID'
+
+# get total counts of every appt type for each scenario
+appt_sums = sum_appt_by_id(results_folder,
+                           module=module, key=key, column=column, draw=0)
+appt_sums.to_csv(outputspath / "Apr2024_HTMresults/appt_sums_baseline.csv")
 
 
-appt_diff_from_statusquo = compute_summary_statistics(
-    find_difference_relative_to_comparison_series_dataframe(
-        appt_counts,
-        comparison="Status Quo"
-    )
-)
-appt_diff_from_statusquo.to_excel(results_folder / "appt_diff_from_statusquo.xlsx")
-
-
-pc_diff_appt_counts_vs_statusquo = 100.0 * compute_summary_statistics(
-    pd.DataFrame(
-        find_difference_relative_to_comparison_series_dataframe(
-            appt_counts,
-            comparison='Status Quo',
-        scaled=True)
-    ), only_central=True
-)
 
 
 
