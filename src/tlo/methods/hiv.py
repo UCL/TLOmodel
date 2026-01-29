@@ -3336,10 +3336,10 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
         # HIV test is negative - check that PrEP is available and if it is, initiate or continue PrEP:
-        # 90 days supply oral tablets, injection lasts 8 weeks
+        # 90 days supply oral tablets, injection lasts 6 months (LEN)
         else:
             days_on_prep = self.module.parameters[
-                               'initial_dispensation_period_months'] * 90 if self.type_of_prep == 'oral' else 56
+                               'initial_dispensation_period_months'] * 90 if self.type_of_prep == 'oral' else 182
             if self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['prep']: days_on_prep}
             ):
