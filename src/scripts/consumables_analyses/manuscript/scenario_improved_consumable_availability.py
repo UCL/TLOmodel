@@ -23,7 +23,7 @@ from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
 
-class ConsumablesCosting(BaseScenario):
+class ConsumablesImpact(BaseScenario):
     # -----------------------------
     # 1) DEFINE SCENARIOS EXPLICITLY
     # -----------------------------
@@ -93,6 +93,7 @@ class ConsumablesCosting(BaseScenario):
         return {
             'HealthSystem': {
                 'cons_availability': 'default',
+                'data_source_for_cons_availability_estimates': 'updated',
                 'year_cons_availability_switch': 2026,
                 'cons_availability_postSwitch': cons_scenario,
                 'mode_appt_constraints':1,
