@@ -20,6 +20,8 @@ from collections import defaultdict
 from pulp import LpProblem, LpMaximize, LpVariable, LpBinary, LpStatus, value, lpSum, LpContinuous, PULP_CBC_CMD
 from math import ceil
 
+from scripts.costing.cost_estimation import clean_consumable_name
+
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 
@@ -171,6 +173,7 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
         xtick_rotation: int = 45,
         ytick_rotation: int = 0,
         annotation: bool = True,
+        footnote: str = None,
     ):
         """
         Heatmap values: for each (month, district), the % of item_code groups where
@@ -292,6 +295,17 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
             cbar_ax.ticklabel_format(style="plain")
         except Exception:
             pass
+
+        # ---- Footnote ----
+        if footnote is not None:
+            fig.subplots_adjust(bottom=0.08)
+            fig.text(
+                0.5, 0.035,
+                footnote,
+                ha="center",
+                va="top",
+                fontsize=10
+            )
 
         # ---- 7) Save & return ----
         figures_path.mkdir(parents=True, exist_ok=True)
@@ -1427,36 +1441,53 @@ def generate_redistribution_scenarios(tlo_availability_df: pd.DataFrame,
     #edges_flat = build_edges_within_radius_flat(T_car, max_minutes= 60)
 
     # 2) Explore the availability and distances to make decisions about optimisation rules
+    # Attach clean item names to lmis
+    consumables_dict = \
+        pd.read_csv(resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv',
+                    low_memory=False,
+                    encoding="ISO-8859-1")[['Items', 'Item_Code']]
+    consumables_dict = dict(zip(consumables_dict['Item_Code'], consumables_dict['Items']))
+    lmis['item_name'] = pd.to_numeric(lmis["item_code"], errors="coerce").map(consumables_dict)
+    lmis['item_name'] = (
+        lmis['item_name']
+        .astype(str)
+        .apply(clean_consumable_name)
+    )
+
     # Plot stock adequacy by district and month to assess what bounds to set when pooling
+    empty_cell_note = "Note: Grey cells in the heatmap indicate missing data."
     fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
-                                                     y_var = 'district', value_var = 'item_code',
+                                                     y_var = 'district', value_var = 'item_name',
                                                      value_label= f"% of consumables with Opening Balance ≥ 3 × AMC",
                                                      amc_threshold = 3, compare = "ge",
                                                      filename = "mth_district_stock_adequacy_3amc.png", figsize = (12,10))
     fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
-                                                     y_var = 'district', value_var = 'item_code',
+                                                     y_var = 'district', value_var = 'item_name',
                                                      value_label= f"% of consumables with Opening Balance ≥ 1.5 × AMC",
                                                      amc_threshold = 1.5, compare = "ge",
                                                      filename = "mth_district_stock_adequacy_1.5amc.png", figsize = (12,10))
     fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
-                                                     y_var = 'district', value_var = 'item_code',
+                                                     y_var = 'district', value_var = 'item_name',
                                                      value_label= f"% of consumables with Opening Balance <= 1 × AMC",
                                                      amc_threshold = 1, compare = "le",
                                                      filename = "mth_district_stock_inadequacy_1amc.png", figsize = (12,10))
     fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
-                                                     y_var = 'item_code', value_var = 'fac_name',
+                                                     y_var = 'item_name', value_var = 'fac_name',
                                                      value_label= f"% of facilities with Opening Balance ≥ 3 × AMC",
                                                      amc_threshold = 3, compare = "ge",
+                                                     footnote = empty_cell_note,
                                                      filename = "mth_item_stock_adequacy_3amc.png")
     fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
-                                                     y_var = 'item_code', value_var = 'fac_name',
+                                                     y_var = 'item_name', value_var = 'fac_name',
                                                      value_label= f"% of facilities with Opening Balance ≥ 1.5 × AMC",
                                                      amc_threshold = 1.5, compare = "ge",
+                                                     footnote = empty_cell_note,
                                                      filename = "mth_item_stock_adequacy_1.5amc.png")
     fig, ax, hm_df = generate_stock_adequacy_heatmap(df = lmis, figures_path = outputfilepath,
-                                                     y_var = 'item_code', value_var = 'fac_name',
+                                                     y_var = 'item_name', value_var = 'fac_name',
                                                      value_label= f"% of facilities with Opening Balance <= 1 × AMC",
                                                      amc_threshold = 1, compare = "le",
+                                                     footnote = empty_cell_note,
                                                      filename = "mth_item_stock_inadequacy_1amc.png")
 
 
