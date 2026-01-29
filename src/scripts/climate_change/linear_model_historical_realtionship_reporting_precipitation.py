@@ -263,14 +263,20 @@ X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 
 #results, y_pred, mask_ANC_data, selected_features = build_model(X_ANC_standardized , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold, feature_selection = feature_selection)
 
-included, results, y_pred, mask_ANC_data = stepwise_selection(X_ANC_standardized , y, poisson = poisson, log_y=log_y,)
+included, results, y_pred, mask_ANC_data = stepwise_selection(X_ANC_standardized, y, poisson=poisson, log_y=log_y)
 coefficients = results.params
 
 coefficient_names = ["year", "month", "altitude", "minimum_distance"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
                      list(owner_encoded.columns)
 coefficient_names = pd.Series(coefficient_names)
-coefficient_names = coefficient_names[included]
+coefficient_names = coefficient_names[included].reset_index(drop=True)
+
 coefficients_df = pd.DataFrame(coefficients, columns=['coefficients'])
+
+# Extract confidence intervals
+conf_int = results.conf_int()
+conf_int_df = pd.DataFrame(conf_int, columns=['CI_lower', 'CI_upper'])
+
 continuous_coefficients = coefficients[:len(X_continuous_scaled[0])]
 categorical_coefficients = coefficients[len(X_continuous_scaled[0]):]
 means = scaler.mean_
@@ -278,13 +284,14 @@ scales = scaler.scale_
 rescaled_continuous_coefficients = continuous_coefficients * scales
 rescaled_coefficients = np.concatenate([rescaled_continuous_coefficients, categorical_coefficients])
 rescaled_coefficients_df = pd.DataFrame(rescaled_coefficients, columns=['rescaled coefficients'])
+
 p_values = results.pvalues
 p_values_df = pd.DataFrame(p_values, columns=['p_values'])
-results_df = pd.concat([coefficient_names, coefficients_df, p_values_df], axis=1)
+rescaled_coefficients_df_reset = rescaled_coefficients_df.reset_index(drop=True)
 
+# Include confidence intervals in results
+results_df = pd.concat([coefficient_names, coefficients_df, conf_int_df, p_values_df], axis=1)
 results_df.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_{service}.csv')
-
-
 y_weather = np.exp(y_pred)
 
 print("ANC prediction", results.summary())
@@ -400,7 +407,7 @@ if use_percentile_mask_threshold:
 
 # results_of_weather_model, y_pred_weather, mask_all_data, selected_features = build_model(X_weather_standardized, y, poisson = poisson, log_y=log_y,
 #                                                                  X_mask_mm=mask_threshold, feature_selection =  feature_selection)
-included_weather, results_of_weather_model, y_pred_weather, mask_all_data = stepwise_selection(X_weather_standardized , y, poisson = poisson, log_y=log_y,)
+included_weather, results_of_weather_model, y_pred_weather, mask_all_data = stepwise_selection(X_weather_standardized, y, poisson=poisson, log_y=log_y)
 
 coefficient_names_weather = ["precip_monthly_total", "precip_5_day_max", "precip_monthly_total_2", "precip_5_day_max_2",
                              "precip_monthly_total_3", "precip_5_day_max_3", "5_day_monthly", "year", "month",
@@ -410,16 +417,22 @@ coefficient_names_weather = ["precip_monthly_total", "precip_5_day_max", "precip
                             list(resid_encoded.columns) + list(zone_encoded.columns) + \
                             list(owner_encoded.columns)
 coefficient_names_weather = pd.Series(coefficient_names_weather)
-coefficient_names_weather = coefficient_names_weather[included_weather]
+coefficient_names_weather = coefficient_names_weather[included_weather].reset_index(drop=True)
 print(coefficient_names_weather)
-coefficients_weather = results_of_weather_model.params
-coefficients_weather_df = pd.DataFrame(coefficients_weather, columns=['coefficients'])
 
-p_values_weather = results_of_weather_model.pvalues
-p_values_weather_df = pd.DataFrame(p_values_weather, columns=['p_values'])
-results_weather_df = pd.concat([coefficient_names_weather, coefficients_weather_df, p_values_weather_df, rescaled_coefficients_df], axis=1)
+coefficients_weather_df = pd.DataFrame({'coefficients': results_of_weather_model.params}).reset_index(drop=True)
+
+conf_int_weather = results_of_weather_model.conf_int()
+conf_int_weather_df = pd.DataFrame(conf_int_weather, columns=['CI_lower', 'CI_upper']).reset_index(drop=True)
+
+p_values_weather_df = pd.DataFrame({'p_values': results_of_weather_model.pvalues}).reset_index(drop=True)
+
+
+results_weather_df = pd.concat([coefficient_names_weather.rename('coefficient_name'),
+                                coefficients_weather_df,
+                                conf_int_weather_df,
+                                p_values_weather_df,], axis=1)
 results_weather_df.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_weather_model_historical_{service}.csv')
-
 print("All predictors", results_of_weather_model.summary())
 #
 X_filtered = X_weather_standardized[mask_all_data]
