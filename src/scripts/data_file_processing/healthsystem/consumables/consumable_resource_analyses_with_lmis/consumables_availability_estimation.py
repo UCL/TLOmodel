@@ -50,6 +50,7 @@ from scripts.data_file_processing.healthsystem.consumables.generating_consumable
     generate_alternative_availability_scenarios,
     generate_descriptive_consumable_availability_plots
 )
+from scripts.data_file_processing.healthsystem.consumables.generating_consumable_scenarios.create_consumable_redistribution_scenarios import generate_redistribution_scenarios
 
 from tlo.methods.consumables import check_format_of_consumables_file
 
@@ -1383,12 +1384,19 @@ plot_availability_before_and_after_level1b_fix(old_df = full_set_interpolated_wi
 # 6. CHECK FORMAT AND SAVE AS RESOURCEFILE
 ########################################################################################################################
 # --- Check that the exported file has the properties required of it by the model code. --- #
-check_format_of_consumables_file(df=full_set_interpolated, fac_ids=fac_ids)
+check_format_of_consumables_file(df=full_set_interpolated_with_scenarios_level1b_fixed, fac_ids=fac_ids)
 
 # %%
 # Save
 full_set_interpolated_with_scenarios_level1b_fixed.to_csv(
     path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
+    index=False
+)
+
+# Save legacy availability resourcefile before level 1b-2 fix
+check_format_of_consumables_file(df=full_set_interpolated_with_scenarios, fac_ids=fac_ids)
+full_set_interpolated_with_scenarios.to_csv(
+    path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small_original.csv",
     index=False
 )
 
