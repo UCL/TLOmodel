@@ -127,7 +127,7 @@ def generate_heatmap(
     cmap: str = "RdYlGn",
     annot: bool = True,
     fmt: Optional[str] = None,              # None -> auto choose
-    font_scale: float = 0.9,
+    font_scale: float = 0.75,
     cbar_label: str = "Proportion of days on which consumable is available",
     xlabel: Optional[str] = None,
     ylabel: Optional[str] = None,
@@ -345,7 +345,7 @@ def generate_detail_availability_table_by_scenario(
 # Import and clean data files
 #**********************************
 # Import TLO model availability data
-tlo_availability_df = pd.read_csv(consumable_resourcefilepath / "ResourceFile_Consumables_availability_small.csv")
+tlo_availability_df = pd.read_csv(consumable_resourcefilepath / "ResourceFile_Consumables_availability_small_original.csv")
 scenario_names_dict={
         'available_prop': 'Actual',
         'available_prop_scenario1': 'Non-therapeutic consumables',
@@ -362,12 +362,16 @@ scenario_names_dict={
         'available_prop_scenario12': 'HIV moved to Govt supply chain (Avg by Level)',
         'available_prop_scenario13': 'HIV moved to Govt supply chain (Avg by Facility_ID)',
         'available_prop_scenario14': 'HIV moved to Govt supply chain (Avg by Facility_ID times 1.25)',
-        'available_prop_scenario15': 'HIV moved to Govt supply chain (Avg by Facility_ID times 0.75)'
+        'available_prop_scenario15': 'HIV moved to Govt supply chain (Avg by Facility_ID times 0.75)',
+        'available_prop_scenario16': 'Redistribution (District pooling)',
+        'available_prop_scenario17': 'Redistribution (Neighbourhood pooling)',
+        'available_prop_scenario18': 'Redistribution (Pairwise exchanges - large radius)',
+        'available_prop_scenario19': 'Redistribution (Pairwise exchanges - small radius)'
     }
 
 tlo_availability_df = prepare_availability_dataset_for_plots(
     _df=tlo_availability_df,
-    scenario_list=[1, 2, 3, 6, 7, 8, 10, 11, 12, 13, 14, 15],
+    scenario_list=[1, 2, 3, 6, 7, 8, 16, 17, 18, 19],
     scenario_names_dict=scenario_names_dict,
     consumable_resourcefilepath=consumable_resourcefilepath,
     resourcefilepath=resourcefilepath
@@ -375,6 +379,7 @@ tlo_availability_df = prepare_availability_dataset_for_plots(
 
 # Generate figures for manuscript
 #**********************************
+# TODO Consider redoing these plots with the legacy Resourcefile
 # Figure 1: Average probability of consumable availability in public and CHAM health facilities in Malawi
 _ = generate_heatmap(
     df=tlo_availability_df,
@@ -392,7 +397,11 @@ _ = generate_heatmap(
 )
 
 # Figure 3: Comparison of consumable availability across modelled scenarios
-scenario_cols = ['Actual', 'Non-therapeutic consumables', 'Vital medicines', 'Pharmacist- managed','75th percentile facility', '90th percentile facility', 'Best facility']
+scenario_cols = ['Actual', 'Non-therapeutic consumables', 'Vital medicines', 'Pharmacist- managed',
+                 '75th percentile facility', '90th percentile facility', 'Best facility',
+                 'Redistribution (District pooling)', 'Redistribution (Neighbourhood pooling)',
+                 'Redistribution (Pairwise exchanges - large radius)',
+                 'Redistribution (Pairwise exchanges - small radius)',]
 for level in ['1a', '1b']:
     _ = generate_heatmap(
         df=tlo_availability_df,
