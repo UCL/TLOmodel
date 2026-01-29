@@ -259,7 +259,15 @@ appt_by_year_facility = extract_results(
 
 appt_by_year_facility.to_excel(results_folder / "appt_by_year_facility.xlsx")
 
-
+# HIV-related appts:
+# VCTNegative
+# VCTPositive
+# MaleCirc
+# NewAdult
+# EstMedCom
+# EstNonCom
+# PMTCT
+# Peds
 
 
 # get HCW time by mapping appts to person-time
