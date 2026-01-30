@@ -224,18 +224,18 @@ class Demography(Module):
 
         # all facility info
         self.parameters["facilities_info"] = pd.read_csv(
-            resourcefilepath / "climate_change_impacts" / "facilities_with_lat_long_region.csv"
+            resourcefilepath / "demography" / "ResourceFile_Facilities_with_lat_long_region.csv"
         )
 
         # possible facilities for all levels
         self.parameters["possible_facilities"] = pd.read_csv(
-            resourcefilepath / "climate_change_impacts" / "facilities_with_lat_long_region.csv"
+            resourcefilepath / "demography" / "ResourceFile_Facilities_with_lat_long_region.csv"
         )["Fname"]
 
         # density by district
         gpd.read_file(resourcefilepath / "mapping" / "ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
 
-        self.parameters["worldpop_gdf"] = gpd.read_file(resourcefilepath / "climate_change_impacts" / "worldpop_density_with_districts.shp")
+        self.parameters["worldpop_gdf"] = gpd.read_file(resourcefilepath / "demography" / "worldpop_density_with_districts.shp")
 
 
 
