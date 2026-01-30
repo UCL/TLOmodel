@@ -1001,7 +1001,7 @@ class NewbornOutcomes(Module):
             if facility_type != '1a':
 
                 neo_sepsis_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
-                    self, int_name='neo_sepsis_treatment_supp_care', hsi_event=hsi_event,
+                    self, int_name='neo_sepsis_treatment', hsi_event=hsi_event,
                     q_param=[l_params['prob_hcw_avail_iv_abx'], l_params[f'mean_hcw_competence_{pnc_location}']],
                     cons=self.item_codes_nb_consumables['sepsis_supportive_care_core'],
                     opt_cons=self.item_codes_nb_consumables['sepsis_supportive_care_optional'],
@@ -1013,7 +1013,7 @@ class NewbornOutcomes(Module):
             # The same pattern is then followed for health centre care
             else:
                 neo_sepsis_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
-                    self, int_name='neo_sepsis_treatment_abx', hsi_event=hsi_event,
+                    self, int_name='neo_sepsis_treatment', hsi_event=hsi_event,
                     q_param=[l_params['prob_hcw_avail_iv_abx'], l_params[f'mean_hcw_competence_{pnc_location}']],
                     cons=self.item_codes_nb_consumables['sepsis_abx'],
                     opt_cons=self.item_codes_nb_consumables['iv_drug_equipment'],
