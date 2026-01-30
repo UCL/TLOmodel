@@ -15,6 +15,7 @@ import scipy.stats as st
 import seaborn as sns
 from matplotlib import lines as mpl_lines
 from matplotlib import pyplot as plt
+from matplotlib.patches import Rectangle
 from matplotlib.ticker import FuncFormatter
 from PIL import Image
 from run_costing_analysis_wast import run_costing_analysis_wast as run_costing
@@ -585,6 +586,54 @@ def extract_daly_data_frames_and_outcomes(
         "interv_years": intervention_years,
     }
 
+def extract_pop_sizes_data_frames_and_outcomes(
+    folder,
+    years_of_interest,
+    intervention_years,
+    interv,
+) -> Dict[str, pd.DataFrame]:
+    """
+    Extracts and summarizes data on pop. sizes (total under-5, moderately/severely wasted under 5) year for intervention
+    period.
+
+    :param folder: Path to the folder containing outcome data.
+    :param years_of_interest: List of years to extract data for.
+    :param intervention_years: List of years during which the intervention was implemented (if any).
+    :param interv: Name or identifier of the intervention.
+    :return: Dictionary with DataFrames with pop. sizes by year, mean and CI
+    """
+
+    print(f"    -{interv=}")
+    pop_sizes_wasted_df = extract_results(
+        folder,
+        module="tlo.methods.wasting",
+        key="pop sizes",
+        custom_generate_series = (
+            lambda df: df.assign(year=df['date'].dt.year)
+            .set_index('year')['total__under5']
+        ),
+        do_scaling=True).fillna(0)
+
+    pop_size_wasted_df = extract_results(
+        folder,
+        module="tlo.methods.wasting",
+        key="pop sizes",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year)
+            .set_index("year")
+            .pipe(lambda d: d["mod__under5"] + d["sev__under5"])
+        ),
+        do_scaling=True,
+    ).fillna(0)
+
+    interv_pop_size_wasted_df = pop_size_wasted_df.loc[intervention_years]
+    interv_pop_size_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_pop_size_wasted_df)
+
+    return {
+        "pop_size_wasted_df": pop_size_wasted_df,
+        "pop_size_wasted_mean_ci_df": interv_pop_size_per_year_per_draw_df
+    }
+
 def regenerate_pickles_with_debug_logs(iterv_folders_dict) -> None:
     for interv_folder_path in iterv_folders_dict.values():
         print(f"\n{interv_folder_path=} in regenerate_wasting_pickle_with_debug_logs")
@@ -976,6 +1025,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
     timestamps_suffix: str,
     interv_timestamps_dict: dict = None,
     births_dict: dict = None,
+    pop_size_dict: dict = None,
     force_calculation: list = None,
 ) -> None:
     """
@@ -1264,20 +1314,38 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                     print(f"\nUNIT COST: {unit_cost}")
                     impl_costs = dict()
-                    for scen in scenarios_without_SQ:
-                        scen_coef = (
-                            (in_FS_multiplier if scen == "FS" else 1) if "_" not in scen else
-                            (2 - in_sharing_GM_CS + in_FS_multiplier) if scen.count("_") == 2 else
-                            (2 - in_sharing_GM_CS) if scen == "GM_CS" else (1 + in_FS_multiplier)
+
+                    def GM_CS_unit_cost_coef(in_scen: str):
+                        return (
+                            (0 if in_scen == "FS" else 1)
+                            if "_" not in in_scen
+                            else (2 - in_sharing_GM_CS)
+                            if in_scen.count("_") == 2
+                            else (2 - in_sharing_GM_CS)
+                            if in_scen == "GM_CS"
+                            else (1)
                         )
+
+                    def FS_unit_cost_coef(in_scen: str):
+                        return in_FS_multiplier if "FS" in in_scen else 0
+
+                    for scen in scenarios_without_SQ:
                         impl_cost_df = pd.DataFrame(
                             {
                                 "year": interv_years,
                                 "impl_costs": [
-                                    births_dict[scen]["births_mean_ci_df"][0].loc[year][0]
-                                    * coverage
-                                    * ((unit_cost + start_up_unit_cost) if year == interv_years[0] else unit_cost)
-                                    * scen_coef
+                                    (
+                                        births_dict[scen]["births_mean_ci_df"][0].loc[year][0]
+                                        * coverage
+                                        * ((unit_cost + start_up_unit_cost) if year == interv_years[0] else unit_cost)
+                                        * GM_CS_unit_cost_coef(scen)
+                                    )
+                                    + (
+                                        pop_size_dict[scen]["pop_size_wasted_mean_ci_df"][0].loc[year][0]
+                                        * coverage
+                                        * ((unit_cost + start_up_unit_cost) if year == interv_years[0] else unit_cost)
+                                        * FS_unit_cost_coef(scen)
+                                    )
                                     for year in interv_years
                                 ],
                             }
@@ -1464,6 +1532,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                             # Round to 1 decimal place if very close to CET
                             rounded = round_standard(val, decimals=1)
                             icer_domination[current_scen] = f"\\${rounded:.1f}"
+                            print(f"\nICER close to CET: {val}")
                         else:
                             # Round to 0 decimal places otherwise
                             rounded = round_standard(val, decimals=0)
@@ -1630,14 +1699,6 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     impl_cost = all_costs_df.loc[all_costs_df['scenario'] == scen, 'implementation_costs'].values[0]
                     total_cost = incremental_costs + impl_cost
 
-                    max_impl_costs = (averted_dalys * CET) - incremental_costs
-                    max_impl_costs_lower = (averted_dalys_lower * CET) - incremental_costs
-                    max_impl_costs_upper = (averted_dalys_upper * CET) - incremental_costs
-
-                    ICER_sq = total_cost / averted_dalys
-                    ICER_sq_lower = total_cost / averted_dalys_upper
-                    ICER_sq_upper = total_cost / averted_dalys_lower
-
                     net_health_benefit = averted_dalys - (total_cost / CET)
                     net_health_benefit_lower = averted_dalys_lower - (total_cost / CET)
                     net_health_benefit_upper = averted_dalys_upper - (total_cost / CET)
@@ -1646,17 +1707,28 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     net_monetary_benefit_lower = (averted_dalys_lower * CET) - total_cost
                     net_monetary_benefit_upper = (averted_dalys_upper * CET) - total_cost
 
+                    max_allow_total_costs = (averted_dalys * CET)
+                    max_allow_total_costs_lower = (averted_dalys_lower * CET)
+                    max_allow_total_costs_upper = (averted_dalys_upper * CET)
+
                     ce_table_rows.append(
                         {
                             "Scenario": scen,
-                            "Averted DALYs (95% CI)": f"{averted_dalys:,.0f} ({averted_dalys_lower:,.0f}; {averted_dalys_upper:,.0f})",
                             "Total costs (2023 USD)": f"{total_cost:,.0f}",
+                            "Averted DALYs (95% CI)": f"{averted_dalys:,.0f} "
+                                                      f"({averted_dalys_lower:,.0f}; {averted_dalys_upper:,.0f})",
                             "Incremental consumable-related costs (2023 USD)": f"{incremental_costs:,.0f}",
-                            "Maximum additional implementation costs (2023 USD, 95% CI)": f"{max_impl_costs:,.0f} ({max_impl_costs_lower:,.0f}; {max_impl_costs_upper:,.0f})",
                             "Implementation costs estimate (2023 USD)": f"{impl_cost:,.0f}",
-                            "ICER (2023 USD)": f"{ICER_sq:,.1f} ({ICER_sq_lower:,.1f}; {ICER_sq_upper:,.1f})" if domination[scen] == "" else domination[scen],
-                            "Incremental net health benefit (95% CI)": f"{net_health_benefit:,.0f} ({net_health_benefit_lower:,.0f}; {net_health_benefit_upper:,.0f})",
-                            "Incremental net monetary benefit (95% CI)": f"{net_monetary_benefit:,.0f} ({net_monetary_benefit_lower:,.0f}; {net_monetary_benefit_upper:,.0f})",
+                            "ICER (2023 USD)": f"{icer_domination[scen]}",
+                            "Incremental net health benefit (95% CI)":
+                                f"{net_health_benefit:,.0f} "
+                                f"({net_health_benefit_lower:,.0f}; {net_health_benefit_upper:,.0f})",
+                            "Incremental net monetary benefit (95% CI)":
+                                f"{net_monetary_benefit:,.0f} "
+                                f"({net_monetary_benefit_lower:,.0f}; {net_monetary_benefit_upper:,.0f})",
+                            "Maximum allowable total costs (2023 USD, 95% CI)":
+                                f"{max_allow_total_costs:,.0f} "
+                                f"({max_allow_total_costs_lower:,.0f}; {max_allow_total_costs_upper:,.0f})",
                         }
                     )
                 ce_table_df = pd.DataFrame(ce_table_rows)
@@ -1689,7 +1761,8 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     # sensitivity to sharing implementation costs for GM and CS interventions
                     sharing_GM_CS = [0.5, 0]
                     # sensitivity to FS intervention multiplier
-                    FS_multiplier = [1, 0.5, 0.18, 0.09]
+                    FS_multiplier = [10, 2, 1, 0.5]
+
                     # Individual CE planes
                     # medical consumables are given by model, hence do not change within the sensitivity analyses
                     medical_calc_done = False
@@ -1703,9 +1776,16 @@ def plot_sum_outcome_and_CIs_intervention_period(
 
                     ########################################
                     # Sensitivity plot - create grid of CE figures for all unit_cost / GM_CS / FS combinations
+                    # (highlight the grid with the value assumed in main analysis)
                     ########################################
                     print("\nplotting sensitivity CE plot ...")
-                    # build grid dims
+
+                    # 1. Define the target for the "Main Analysis" highlight
+                    target_unit_cost = "Pearson_etal2018"
+                    target_gm_cs = 0.5
+                    target_fs_mult = 1.0
+
+                    # 2. Build grid dims
                     n_rows = len(data_impl_cost_name) * len(sharing_GM_CS)
                     n_cols = len(FS_multiplier)
 
@@ -1723,7 +1803,13 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     # Ensure axes is a 2D array for consistent indexing
                     axes = np.atleast_2d(axes)
 
-                    # iterate rows and columns in desired order:
+                    # 3.  Calculate target indices
+                    r1_idx_target = data_impl_cost_name.index(target_unit_cost)
+                    r2_idx_target = sharing_GM_CS.index(target_gm_cs)
+                    row_idx_target = r1_idx_target * len(sharing_GM_CS) + r2_idx_target
+                    col_idx_target = list(FS_multiplier).index(target_fs_mult)
+
+                    # 4. Iterate rows and columns in desired order to create all grids:
                     # rows: for each unit_cost in data_impl_cost_name -> for each GM_CS in sharing_GM_CS
                     for r1_idx, unit_cost in enumerate(data_impl_cost_name):
                         for r2_idx, gm_cs in enumerate(sharing_GM_CS):
@@ -1736,21 +1822,55 @@ def plot_sum_outcome_and_CIs_intervention_period(
                                     f"cost_effectiveness_scatter_DALYsAverted_vs_TotalCosts__"
                                     f"{scenarios_tocompare_prefix}__{timestamps_and_ce_suffix}.png"
                                 )
+
                                 if img_path.exists():
                                     # Open image and display with preserved aspect ratio; turn axes off
                                     img = Image.open(img_path).convert("RGB")
                                     ax.imshow(img, aspect='auto', interpolation='bilinear')
-                                    ax.set_xticks([])
-                                    ax.set_yticks([])
-                                    ax.set_axis_off()
                                 else:
                                     # Clear axes and show placeholder text
                                     ax.clear()
                                     ax.text(0.5, 0.5, f"Missing:\\n{img_path.name}", ha="center", va="center",
                                             fontsize=8)
-                                    ax.set_xticks([])
-                                    ax.set_yticks([])
-                                    ax.set_axis_off()
+                                # Clean up axes for all cells
+                                ax.set_xticks([])
+                                ax.set_yticks([])
+                                ax.set_axis_off()
+
+                                # Apply the Green Rectangle Highlight to the target cell
+                                # expansions for the highlight so it does not cover label or legend
+                                padding_x = 0.03  # Extra space on right side
+                                padding_y = 0.04  # Extra space on bottom
+                                if row_idx == row_idx_target and col_idx == col_idx_target:
+                                    # Add thick green border
+                                    rect = Rectangle(
+                                        (-0.6 * padding_x , -0.5 * padding_y),
+                                        1 + padding_x,
+                                        1 + padding_y,
+                                        linewidth=10,  # Very thick to be visible over image edges
+                                        edgecolor="#c6e0b4",
+                                        facecolor="none",
+                                        transform=ax.transAxes,
+                                        zorder=10,
+                                        clip_on=False,
+                                    )
+                                    ax.add_patch(rect)
+
+                                    # Add identifying label
+                                    (
+                                        ax.text(
+                                            0.63,
+                                            0.98,
+                                            "MAIN ANALYSIS",
+                                            transform=ax.transAxes,
+                                            color="white",
+                                            weight="bold",
+                                            fontsize=10,
+                                            ha="left",
+                                            va="top",
+                                            bbox=dict(facecolor="#c6e0b4", edgecolor="none", pad=4),
+                                        ),
+                                    )
 
                     # Create a unit cost mapping dictionary
                     unit_cost_mapping = {
@@ -1767,7 +1887,7 @@ def plot_sum_outcome_and_CIs_intervention_period(
                         if r == 0:
                             for c in range(n_cols):
                                 axes[0, c].set_title(f"$\\bf{{FS\\ multiplier:}}$ {FS_multiplier[c]}",
-                                                     loc="center", x=0.43, pad=2, fontsize=8)
+                                                     loc="center", x=0.43, pad=10, fontsize=8)
                         # row labels: place in left margin of the row; use transform to align with axes coordinates
                         row_label = (
                             f"$\\bf{{unit\\ cost:}}$ {unit_cost_mapping[data_impl_cost_name[unit_idx]]};\n"
