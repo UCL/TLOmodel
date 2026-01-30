@@ -1,9 +1,13 @@
 from pathlib import Path
 from typing import Dict, Optional
 
+import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import (
     LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2,
@@ -28,8 +32,6 @@ class WeatherDisruptions(Module):
     healthcare seeking behavior and appointment scheduling.
 
     """
-    super().__init__(name)
-    self.resourcefilepath = resourcefilepath
 
     # Declare dependencies
     INIT_DEPENDENCIES = {"Demography", "HealthSeekingBehaviour"}
@@ -99,12 +101,12 @@ class WeatherDisruptions(Module):
             "vs demand-side (frees up capabilities in mode 2)."
         ),
 
-        # Baseline model (no weather) coefficients
+        # Baseline model, no precipitation coefficients
         "baseline_coef_intercept": Parameter(Types.REAL, "Baseline model intercept"),
         "baseline_coef_year": Parameter(Types.REAL, "Baseline: year"),
         "baseline_coef_month": Parameter(Types.REAL, "Baseline: month"),
-        "baseline_coef_altitude": Parameter(Types.REAL, "Baseline: altitude"),
-        "baseline_coef_min_distance": Parameter(Types.REAL, "Baseline: min distance to clinic"),
+        "baseline_coef_min_distance": Parameter(Types.REAL, "Baseline: min distance to facility"),
+        "baseline_coef_altitude": Parameter(Types.REAL, "Baseline: altitude of facility"),
         "baseline_coef_urban": Parameter(Types.REAL, "Baseline: urban vs rural"),
         "baseline_coef_central_west": Parameter(Types.REAL, "Baseline: Central West zone"),
         "baseline_coef_northern": Parameter(Types.REAL, "Baseline: Northern zone"),
@@ -113,36 +115,24 @@ class WeatherDisruptions(Module):
         "baseline_coef_government": Parameter(Types.REAL, "Baseline: Government ownership"),
         "baseline_coef_private": Parameter(Types.REAL, "Baseline: Private ownership"),
 
-        # Weather model coefficients (includes all baseline + weather variables)
-        "precip_coef_intercept": Parameter(Types.REAL, "Weather model intercept"),
-        "precip_coef_year": Parameter(Types.REAL, "Weather: year"),
-        "precip_coef_month": Parameter(Types.REAL, "Weather: month"),
-        "precip_coef_altitude": Parameter(Types.REAL, "Weather: altitude"),
-        "precip_coef_min_distance": Parameter(Types.REAL, "Weather: min distance"),
-        "precip_coef_urban": Parameter(Types.REAL, "Weather: urban vs rural"),
-        "precip_coef_central_west": Parameter(Types.REAL, "Weather: Central West zone"),
-        "precip_coef_northern": Parameter(Types.REAL, "Weather: Northern zone"),
-        "precip_coef_south_east": Parameter(Types.REAL, "Weather: South East zone"),
-        "precip_coef_south_west": Parameter(Types.REAL, "Weather: South West zone"),
-        "precip_coef_government": Parameter(Types.REAL, "Weather: Government ownership"),
-        "precip_coef_private": Parameter(Types.REAL, "Weather: Private ownership"),
-        "precip_coef_precip_monthly": Parameter(Types.REAL, "Weather: monthly cumulative precip"),
-        "precip_coef_precip_5day": Parameter(Types.REAL, "Weather: 5-day max precip"),
-        "precip_coef_precip_monthly_sq": Parameter(Types.REAL, "Weather: monthly precip squared"),
-        "precip_coef_precip_5day_sq": Parameter(Types.REAL, "Weather: 5-day precip squared"),
-        "precip_coef_precip_monthly_cube": Parameter(Types.REAL, "Weather: monthly precip cubed"),
-        "precip_coef_precip_5day_cube": Parameter(Types.REAL, "Weather: 5-day precip cubed"),
-        "precip_coef_precip_interaction": Parameter(Types.REAL, "Weather: monthly * 5day interaction"),
-        "precip_coef_lag_1month": Parameter(Types.REAL, "Weather: 1-month lag"),
-        "precip_coef_lag_2month": Parameter(Types.REAL, "Weather: 2-month lag"),
-        "precip_coef_lag_3month": Parameter(Types.REAL, "Weather: 3-month lag"),
-        "precip_coef_lag_4month": Parameter(Types.REAL, "Weather: 4-month lag"),
-        "precip_coef_lag_9month": Parameter(Types.REAL, "Weather: 9-month lag"),
-        "precip_coef_lag_1_5day": Parameter(Types.REAL, "Weather: 1-month lag 5-day max"),
-        "precip_coef_lag_2_5day": Parameter(Types.REAL, "Weather: 2-month lag 5-day max"),
-        "precip_coef_lag_3_5day": Parameter(Types.REAL, "Weather: 3-month lag 5-day max"),
-        "precip_coef_lag_4_5day": Parameter(Types.REAL, "Weather: 4-month lag 5-day max"),
-        "precip_coef_lag_9_5day": Parameter(Types.REAL, "Weather: 9-month lag 5-day max"),
+        # Precipitation model coefficients
+        "precipitation_coef_intercept": Parameter(Types.REAL, "Precipitation model intercept"),
+        "precipitation_coef_year": Parameter(Types.REAL, "Precipitation: year"),
+        "precipitation_coef_month": Parameter(Types.REAL, "Precipitation: month"),
+        "precipitation_coef_min_distance": Parameter(Types.REAL, "Precipitation: min distance"),
+        "precipitation_coef_altitude": Parameter(Types.REAL, "Precipitation: altitude of facility"),
+        "precipitation_coef_urban": Parameter(Types.REAL, "Precipitation: urban vs rural"),
+        "precipitation_coef_central_west": Parameter(Types.REAL, "Precipitation: Central West zone"),
+        "precipitation_coef_northern": Parameter(Types.REAL, "Precipitation: Northern zone"),
+        "precipitation_coef_south_east": Parameter(Types.REAL, "Precipitation: South East zone"),
+        "precipitation_coef_south_west": Parameter(Types.REAL, "Baseline: South East zone"),
+        "precipitation_coef_government": Parameter(Types.REAL, "Precipitation: Government ownership"),
+        "precipitation_coef_private": Parameter(Types.REAL, "Precipitation: Private ownership"),
+        "precipitation_coef_precip_monthly": Parameter(Types.REAL, "Precipitation: monthly cumulative precip"),
+        "precipitation_coef_precip_5day": Parameter(Types.REAL, "Precipitation: 5-day cumulative max precip"),
+        "precipitation_coef_lag_4month": Parameter(Types.REAL, "Precipitation: monthly cumulative precip 4 month lag"),
+        "precipitation_coef_lag_9month": Parameter(Types.REAL, "Precipitation: monthly cumulative precip 9 month lag"),
+        "precipitation_coef_lag_1_5day": Parameter(Types.REAL, "Precipitation: 5-day max precip 1 month lag"),
 
     }
 
@@ -213,19 +203,14 @@ class WeatherDisruptions(Module):
         self._supply_side_disruptions_count = 0
         self._demand_side_disruptions_count = 0
 
+        self._disruptions_by_district = {}
+        self._cancelled_by_district = {}
+        self._delayed_by_district = {}
+        self._supply_side_by_district = {}
+        self._demand_side_by_district = {}
 
     def read_parameters(self, resourcefilepath: str | Path) -> None:
         p = self.parameters
-        # Read in climate disruption files
-        self.parameters["projected_precip_disruptions"] = pd.read_csv(
-            resourcefilepath
-            / f'ResourceFile_Precipitation_Disruptions_{self.parameters["climate_ssp"]}_{self.parameters["climate_model_ensemble_model"]}.csv'
-        )
-
-        self.load_parameters_from_dataframe(
-            read_csv_files(resourcefilepath / 'ResourceFile_Climate_Disruptions', files='parameter_values')
-        )
-
         #Override with values from scenario files
         if self.arg_climate_ssp is not None:
             self.parameters["climate_ssp"] = self.arg_climate_ssp
@@ -248,12 +233,10 @@ class WeatherDisruptions(Module):
         if self.arg_prop_supply_side is not None:
             self.parameters["prop_supply_side_disruptions"] = self.arg_prop_supply_side
 
-        # Validate year
-        if self.parameters["year_effective_climate_disruptions"] < 2025:
-
-            self.parameters["year_effective_climate_disruptions"] = 2025
-
-        # Read in precip files etc to later be used in linear model
+        # Read in parameters
+        self.load_parameters_from_dataframe(
+            read_csv_files(resourcefilepath / 'ResourceFile_WeatherDisruption', files='parameter_values')
+        )
 
         # Validate year
         if self.parameters["year_effective_climate_disruptions"] < 2025:
@@ -265,15 +248,16 @@ class WeatherDisruptions(Module):
 
         # Load precipitation data
 
+        ssp = self.parameters["climate_ssp"]
         model = self.parameters["climate_model_ensemble_model"]
         service = self.parameters["services_affected_precip"]
 
         # Load five-day and monthly precipitation
-        five_day_file = self.resourcefilepath / f"{model}_window_prediction_weather_by_facility_{service}.csv"
-        monthly_file = self.resourcefilepath / f"{model}_monthly_prediction_weather_by_facility_{service}.csv"
+        precip_5day = read_csv_files(resourcefilepath / 'ResourceFile_WeatherDisruption', files= f"ResourceFile_Precipitation_Disruptions_{ssp}_{model}_window_prediction_weather_by_facility.csv")
+        monthly_file = read_csv_files(resourcefilepath / 'ResourceFile_WeatherDisruption', files= f"ResourceFile_Precipitation_Disruptions_{ssp}_{model}_monthly_prediction_weather_by_facility.csv")
 
-        precip_5day = pd.read_csv(five_day_file).drop(columns=[pd.read_csv(five_day_file).columns[0]])
-        precip_monthly = pd.read_csv(monthly_file).drop(columns=[pd.read_csv(monthly_file).columns[0]])
+        precip_5day = precip_5day.iloc[:, 1:]
+        precip_monthly = monthly_file.iloc[:, 1:]
 
         # Remove zero-sum columns
         zero_cols_monthly = precip_monthly.columns[precip_monthly.sum() == 0]
@@ -286,29 +270,252 @@ class WeatherDisruptions(Module):
         self.parameters["precipitation_data_five_day"] = precip_5day
 
         # Load facility characteristics
-        self.parameters["facility_characteristics"] = pd.read_csv( self.resourcefilepath / "ResourceFile_Facility_Characteristics.csv"
-        )
+        self.parameters["facility_characteristics"] = read_csv_files(resourcefilepath / 'ResourceFile_WeatherDisruption', files= f"ResourceFile_Facility_Characteristics.csv")
 
-
-    def pre_initialise_population(self) -> None:
+    def pre_initialise_population(self):
+        """Pre-initialization (not needed for this module)."""
         pass
 
     def initialise_population(self, population):
+        """Population initialization (no properties added)."""
+        super().initialise_population(population=population)
 
-
-        pass
 
     def initialise_simulation(self, sim):
-        pass
+        """Build disruption predictions at simulation start."""
+        # Calculate disruptions
+        self.build_disruption_probabilities()
+
+        # Log configuration
+
+        # Schedule monthly logger
+        first_log_date = (sim.date + DateOffset(months=1)).replace(day=1) - DateOffset(days=1)
+        sim.schedule_event(WeatherDisruptionsMonthlyLogger(self), first_log_date)
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
-
-        :param mother_id: The person ID of the mother
-        :param child_id: The person ID of the newborn
         """
         pass
 
 
     def on_simulation_end(self):
         pass
+
+
+    def build_linear_models(self):
+        """Build the baseline and precipitation linear models using TLO's LinearModel class."""
+        p = self.parameters
+        # ===== BASELINE MODEL (no weather) =====
+        self.lm_baseline = LinearModel(
+            LinearModelType.ADDITIVE,
+            0,
+            Predictor('year', external=True).when('.', p['baseline_coef_year']),
+            Predictor('min_distance_to_clinic', external=True).when('.', p['baseline_coef_min_distance']),
+            Predictor('urban_rural').when('urban', p['baseline_coef_urban']).otherwise(0.0),
+            Predictor('zone', conditions_are_mutually_exclusive=True)
+            .when('Central West', p['baseline_coef_central_west'])
+            .when('Northern', p['baseline_coef_northern'])
+            .when('South East', p['baseline_coef_south_east'])
+            .otherwise(0.0),  # Central East is reference
+            Predictor('ownership', conditions_are_mutually_exclusive=True)
+            .when('Government', p['baseline_coef_government'])
+            .when('Private', p['baseline_coef_private'])
+            .otherwise(0.0),  # CHAM is reference
+        )
+
+        # ===== PRECIPITATION MODEL (with weather) =====
+        self.lm_precipitation = LinearModel(
+            LinearModelType.ADDITIVE,
+            0,
+            Predictor('year', external=True).when('.', p['precipitation_coef_year']),
+            Predictor('min_distance_to_clinic', external=True).when('.', p['precipitation_coef_min_distance']),
+            Predictor('urban_rural').when('urban', p['precipitation_coef_urban']).otherwise(0.0),
+            Predictor('zone', conditions_are_mutually_exclusive=True)
+            .when('Central West', p['precipitation_coef_central_west'])
+            .when('Northern', p['precipitation_coef_northern'])
+            .when('South East', p['precipitation_coef_south_east'])
+            .otherwise(0.0),
+            Predictor('ownership', conditions_are_mutually_exclusive=True)
+            .when('Government', p['precipitation_coef_government'])
+            .when('Private', p['precipitation_coef_private'])
+            .otherwise(0.0),
+            # Precip variables
+            Predictor('precip_monthly', external=True).when('.', p['precipitation_coef_precip_monthly']),
+            Predictor('precip_5day', external=True).when('.', p['precipitation_coef_precip_5day']),
+            Predictor('lag_4month', external=True).when('.', p['precipitation_coef_lag_4month']),
+            Predictor('lag_9month', external=True).when('.', p['precipitation_coef_lag_9month']),
+            Predictor('lag_1_5day', external=True).when('.', p['precipitation_coef_lag_1_5day']),
+        )
+
+
+
+    def build_disruption_probabilities(self):
+        """
+        Calculate service deficits by comparing baseline and precipitation models.
+        Uses TLO's LinearModel for consistency with other modules.
+
+        Deficit = exp(Baseline) - exp(Precipitation)
+        Positive deficit = appointments lost due to precipitation
+        """
+        p = self.parameters
+
+        # Build the linear models
+        self.build_linear_models()
+
+        # Get data
+        precip_monthly = p["precipitation_data_monthly"]
+        precip_5day = p["precipitation_data_five_day"]
+        # Calculate lag variables
+        lag_4month_monthly = precip_monthly.shift(4)
+        lag_9month_monthly = precip_monthly.shift(9)
+        lag_1_5day = precip_5day.shift(1)
+
+        facility_chars = p["facility_characteristics"]
+        facility_chars = facility_chars.set_index(facility_chars.columns[0])
+        facility_chars  = facility_chars.T # First column is facility ID
+
+        facilities = precip_monthly.columns.tolist()
+        n_time = len(precip_monthly)
+
+        # Create time index
+        year = 2025 # earliest is 2025
+        month = 1 # earliest month is January
+        time_index = []
+        for _ in range(n_time):
+            time_index.append((year, month))
+            month += 1
+            if month > 12:
+                month, year = 1, year + 1
+
+        # Build list to store all facility-month combinations
+        rows = []
+
+        for t_idx, (year, month) in enumerate(time_index):
+            for fac_idx, fac in enumerate(facilities):
+                if fac not in facility_chars.index:
+                    continue
+
+                # Get precipitation values
+                precip_m = precip_monthly.iloc[t_idx, fac_idx]
+                precip_5d = precip_5day.iloc[t_idx, fac_idx]
+
+                # Get lag values (use 0 if not available due to early time points)
+                lag_4m = lag_4month_monthly.iloc[t_idx, fac_idx] if not pd.isna(
+                    lag_4month_monthly.iloc[t_idx, fac_idx]) else 0.0
+                lag_9m = lag_9month_monthly.iloc[t_idx, fac_idx] if not pd.isna(
+                    lag_9month_monthly.iloc[t_idx, fac_idx]) else 0.0
+                lag_1_5d = lag_1_5day.iloc[t_idx, fac_idx] if not pd.isna(lag_1_5day.iloc[t_idx, fac_idx]) else 0.0
+                # Get facility characteristics
+                dist = facility_chars.at[fac, "min_distance_to_clinic"]
+                urban = facility_chars.at[fac, "urban_rural"]
+                zone = facility_chars.at[fac, "zone"]
+                owner = facility_chars.at[fac, "ownership"]
+                rows.append({
+                    'RealFacility_ID': fac,
+                    'year': year,
+                    'month': month,
+                    'min_distance_to_clinic': dist,
+                    'urban_rural': urban,
+                    'zone': zone,
+                    'ownership': owner,
+                    'precip_monthly': precip_m,
+                    'precip_5day': precip_5d,
+                    'lag_4month': lag_4m,
+                    'lag_9month': lag_9m,
+                    'lag_1_5day': lag_1_5d,
+                })
+
+        # Create dataframe with all facility-month-year combinations
+        facility_month_df = pd.DataFrame(rows)
+        print(facility_month_df)
+        # ===== PREDICT USING LINEAR MODELS =====
+
+        # Baseline predictions (no weather)
+        log_pred_baseline = self.lm_baseline.predict(
+            facility_month_df,
+            rng=None,
+            year=facility_month_df['year'].values,
+            min_distance_to_clinic=facility_month_df['min_distance_to_clinic'].values,
+        )
+
+        # Precipitation predictions (with all weather variables)
+        log_pred_precip = self.lm_precipitation.predict(
+            facility_month_df,
+            rng=None,
+            year=facility_month_df['year'].values,
+            min_distance_to_clinic=facility_month_df['min_distance_to_clinic'].values,
+            precip_monthly=facility_month_df['precip_monthly'].values,
+            precip_5day=facility_month_df['precip_5day'].values,
+            lag_4month=facility_month_df['lag_4month'].values,
+            lag_9month=facility_month_df['lag_9month'].values,
+            lag_1_5day=facility_month_df['lag_1_5day'].values,
+        )
+
+        # Convert from log scale
+        pred_baseline = np.exp(log_pred_baseline)
+        pred_precip = np.exp(log_pred_precip)
+
+        # Calculate deficit (positive = appointments lost)
+        deficit = pred_baseline - pred_precip
+        print(deficit)
+        # Convert deficit to probability of disruption
+        prob_disruption = np.where(
+            pred_baseline > 0,
+            np.clip(deficit / pred_baseline, 0, 1),
+            0
+        )
+
+        # Add predictions to dataframe
+        facility_month_df['service'] = p["services_affected_precip"]
+        facility_month_df['disruption'] = prob_disruption
+        facility_month_df['pred_baseline'] = pred_baseline
+        facility_month_df['pred_precip'] = pred_precip
+
+        # Keep only the columns needed for lookup
+        self.parameters["projected_precip_disruptions"] = facility_month_df[[
+            'RealFacility_ID', 'year', 'month', 'service', 'disruption',
+            'pred_baseline', 'pred_precip'
+        ]].copy()
+
+
+
+class WeatherDisruptionsMonthlyLogger(RegularEvent, PopulationScopeEventMixin):
+        """Monthly logger for weather disruptions."""
+
+        def __init__(self, module: WeatherDisruptions):
+            super().__init__(module, frequency=DateOffset(months=1), priority=Priority.END_OF_DAY)
+
+        def apply(self, population):
+            """Log monthly statistics overall and by district."""
+
+            # Overall statistics
+            logger_summary.info(
+                key="weather_disruptions_monthly",
+                data={
+                    "year": self.sim.date.year,
+                    "month": self.sim.date.month,
+                    "checked": self.module._disruptions_checked_count,
+                    "cancelled": self.module._disruptions_cancelled_count,
+                    "delayed": self.module._disruptions_delayed_count,
+                    "supply_side": self.module._supply_side_disruptions_count,
+                    "demand_side": self.module._demand_side_disruptions_count,
+                }
+            )
+
+            # District-level statistics
+            logger_summary.info(
+                key="weather_disruptions_monthly_by_district",
+                data={
+                    "year": self.sim.date.year,
+                    "month": self.sim.date.month,
+                    "checked_by_district": dict(self.module._disruptions_by_district),
+                    "cancelled_by_district": dict(self.module._cancelled_by_district),
+                    "delayed_by_district": dict(self.module._delayed_by_district),
+                    "supply_side_by_district": dict(self.module._supply_side_by_district),
+                    "demand_side_by_district": dict(self.module._demand_side_by_district),
+                }
+            )
+
+            self.module.reset_monthly_counters()
+
