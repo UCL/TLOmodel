@@ -11,8 +11,10 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Optional, Union
 
+import geopandas as gpd
 import numpy as np
 import pandas as pd
+from scipy.spatial import cKDTree
 
 from tlo import (
     DAYS_IN_MONTH,
@@ -113,6 +115,8 @@ class Demography(Module):
         'gbd_causes_of_death_data': Parameter(Types.DATA_FRAME,
                                               'Proportion of deaths in each age/sex group attributable to each possible'
                                               ' cause of death in the GBD dataset.'),
+
+        'possible_facilities': Parameter(Types.DATA_FRAME, "Possible facilities for individuals to be assigned"),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -143,11 +147,25 @@ class Demography(Module):
             'The district (name) of residence (mapped from district_num_of_residence).',
             categories=['SET_AT_RUNTIME']
         ),
-
         'region_of_residence': Property(
             Types.CATEGORICAL,
             'The region of residence (mapped from district_num_of_residence).',
             categories=['SET_AT_RUNTIME']
+        ),
+        "level_0": Property(
+            Types.CATEGORICAL, 'Which level 0 facility is "used" by individual.', categories=["SET_AT_RUNTIME"]
+        ),
+        "level_1a": Property(
+            Types.CATEGORICAL, 'Which level 1a facility is "used" by individual.', categories=["SET_AT_RUNTIME"]
+        ),
+        "level_1b": Property(
+            Types.CATEGORICAL, 'Which level 1b facility is "used" by individual.', categories=["SET_AT_RUNTIME"]
+        ),
+        "level_2": Property(
+            Types.CATEGORICAL, 'Which level 2 facility is "used" by individual.', categories=["SET_AT_RUNTIME"]
+        ),
+        "level_3": Property(
+            Types.CATEGORICAL, 'Which level 3 facility is "used" by individual.', categories=["SET_AT_RUNTIME"]
         ),
 
         # Age calculation is handled by demography module
@@ -204,6 +222,24 @@ class Demography(Module):
             resourcefilepath / 'gbd' / 'ResourceFile_CausesOfDeath_GBD2019.csv'
         ).set_index(['Sex', 'Age_Grp'])
 
+        # all facility info
+        self.parameters["facilities_info"] = pd.read_csv(
+            resourcefilepath / "climate_change_impacts" / "facilities_with_lat_long_region.csv"
+        )
+
+        # possible facilities for all levels
+        self.parameters["possible_facilities"] = pd.read_csv(
+            resourcefilepath / "climate_change_impacts" / "facilities_with_lat_long_region.csv"
+        )["Fname"]
+
+        # density by district
+        gpd.read_file(resourcefilepath / "mapping" / "ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
+
+        self.parameters["worldpop_gdf"] = gpd.read_file(resourcefilepath / "climate_change_impacts" / "worldpop_density_with_districts.shp")
+
+
+
+
     def pre_initialise_population(self):
         """
         1) Store all the cause of death represented in the imported GBD data
@@ -239,6 +275,36 @@ class Demography(Module):
             Types.CATEGORICAL,
             'The region of residence (mapped from district_num_of_residence).',
             categories=self.parameters['pop_2010']['Region'].unique().tolist()
+        )
+
+        self.PROPERTIES["level_0"] = Property(
+            Types.CATEGORICAL,
+            'Which level 0 facility is "used" by individual.',
+            categories=self.parameters["possible_facilities"].unique().tolist(),
+        )
+
+        self.PROPERTIES["level_1a"] = Property(
+            Types.CATEGORICAL,
+            'Which level 1a facility is "used" by individual.',
+            categories=self.parameters["possible_facilities"].unique().tolist(),
+        )
+
+        self.PROPERTIES["level_1b"] = Property(
+            Types.CATEGORICAL,
+            'Which level 1b facility is "used" by individual.',
+            categories=self.parameters["possible_facilities"].unique().tolist(),
+        )
+
+        self.PROPERTIES["level_2"] = Property(
+            Types.CATEGORICAL,
+            'Which level 2 facility is "used" by individual.',
+            categories=self.parameters["possible_facilities"].unique().tolist(),
+        )
+
+        self.PROPERTIES["level_3"] = Property(
+            Types.CATEGORICAL,
+            'Which level 3 facility is "used" by individual.',
+            categories=self.parameters["possible_facilities"].unique().tolist(),
         )
 
     def initialise_population(self, population):
@@ -288,6 +354,13 @@ class Demography(Module):
         df.loc[df.is_alive, 'age_days'] = (
             self.sim.date - demog_char_to_assign['date_of_birth']
         ).dt.days
+        self.assign_closest_facility_level()
+        df.loc[df.is_alive, "facility_used_level_0"] = self.sim.population.props.loc[df.is_alive, "level_0"]
+        df.loc[df.is_alive, "facility_used_level_1a"] = self.sim.population.props.loc[df.is_alive, "level_1a"]
+        df.loc[df.is_alive, "facility_used_level_1b"] = self.sim.population.props.loc[df.is_alive, "level_1b"]
+        df.loc[df.is_alive, "facility_used_level_2"] = self.sim.population.props.loc[df.is_alive, "level_2"]
+        df.loc[df.is_alive, "facility_used_level_3"] = self.sim.population.props.loc[df.is_alive, "level_3"]
+
 
         # Ensure first individual in df is a man, to safely exclude person_id=0 from selection of direct birth mothers.
         # If no men are found in df, issue a warning and proceed with female individual at person_id = 0.
@@ -365,6 +438,15 @@ class Demography(Module):
         _district_num_of_residence = df.at[_id_inherit_from, 'district_num_of_residence']
         _district_of_residence = df.at[_id_inherit_from, 'district_of_residence']
         _region_of_residence = df.at[_id_inherit_from, 'region_of_residence']
+        _level_0 = df.at[_id_inherit_from, "level_0"]
+
+        _level_1a = df.at[_id_inherit_from, "level_1a"]
+
+        _level_1b = df.at[_id_inherit_from, "level_1b"]
+
+        _level_2 = df.at[_id_inherit_from, "level_2"]
+
+        _level_3 = df.at[_id_inherit_from, "level_3"]
 
         child = {
             'is_alive': True,
@@ -410,6 +492,74 @@ class Demography(Module):
         _df = df.drop(df.index[df.Age > max_age])  # Remove characteristics with age greater than max_age
         _df.prob = _df.prob / _df.prob.sum()  # Rescale `prob` so that it sums to 1.0
         return _df.reset_index(drop=True)
+
+    def assign_closest_facility_level(self):
+        """Function that assigns an individual coordinates,
+        and then the facilities at which they recieve care at each level."""
+        # Load district polygons from shapefile
+        worldpop_gdf = self.parameters["worldpop_gdf"]
+
+        worldpop_gdf["Z_prop"] = pd.to_numeric(
+            worldpop_gdf["Z_prop"], errors="coerce"
+        )  # even when saved as numeric, read in as string
+
+        def assign_coordinate_by_population_weight(district_name):
+            """Assigns a coordinate within the district, weighted by population density (Z_proportion)."""
+            subset = worldpop_gdf[worldpop_gdf["ADM2_EN"] == district_name]
+            if subset.empty:
+                return None
+            chosen_point = subset.sample(weights="Z_prop").iloc[0]["geometry"]
+            return chosen_point
+
+        # Assign unique coordinates to each individual based on their district
+        df = self.sim.population.props.copy()  # take copy of dataframe
+        df["coordinate_of_residence"] = df["district_of_residence"].apply(assign_coordinate_by_population_weight)
+        facility_info = self.parameters["facilities_info"]  # these are ones that were included in the regression model
+        facility_levels_types = {
+            "level_0": [
+                "Health Post",
+                "Village Health Committee",
+                "Community Health Station",
+                "Village Clinic",
+                "Mobile Clinic",
+                "Outreach Clinic",
+            ],
+            "level_1a": [
+                "Dispensary",
+                "Rural Health Centre",
+                "Urban Health Centre",
+                "Private Clinic",
+                "Special Clinic",
+                "Antenatal Clinic",
+                "Maternity Clinic",
+                "Maternity Facility",
+            ],
+            "level_1b": ["Community Hospital", "Rural Hospital", "CHAM Hospital"],
+            "level_2": ["District Hospital", "District Health Office"],
+            "level_3": [
+                "Kamuzu Central Hospital",
+                "Mzuzu Central Hospital",
+                "Zomba Central Hospital",
+                "Queen Elizabeth Central Hospital",
+            ],
+            "level_4": ["Zomba Mental Hospital"],
+        }
+
+        individual_coords = np.array(
+            [(point.x, point.y) if point else (np.nan, np.nan) for point in df["coordinate_of_residence"]]
+        )
+
+        for level, facility_types in facility_levels_types.items():
+            relevant_facilities = facility_info[facility_info["Ftype"].isin(facility_types)]
+            if not relevant_facilities.empty:
+                facility_coords = list(
+                    zip(relevant_facilities["A109__Longitude"], relevant_facilities["A109__Latitude"])
+                )
+                facility_tree = cKDTree(facility_coords)
+                distances, indices = facility_tree.query(individual_coords, k=1, workers=-1)
+                df[level] = relevant_facilities.iloc[indices].reset_index(drop=True)["Fname"].astype("category")
+        df.drop("coordinate_of_residence", inplace=True, axis=1)
+        self.sim.population.props = df
 
     @staticmethod
     def _edit_init_pop_so_that_equal_number_in_each_district(df) -> pd.DataFrame:
@@ -527,6 +677,7 @@ class Demography(Module):
             'cause': str(cause),
             'label': self.causes_of_death[cause].label,
             'person_id': individual_id,
+            'district_of_residence': person['district_of_residence'],
             'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
         }
 
@@ -555,6 +706,8 @@ class Demography(Module):
                                                                     wealth=person['li_wealth'],
                                                                     date_of_birth=person['date_of_birth'],
                                                                     age_range=person['age_range'],
+                                                                    district_of_residence=person[
+                                                                        'district_of_residence'],
                                                                     cause_of_death=cause,
                                                                     )
 
@@ -818,12 +971,13 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 2) Compute Statistics for the log
         sex_count = df[df.is_alive].groupby('sex').size()
-
+        district_count = df[df.is_alive].groupby("district_of_residence").size()
         logger.info(
             key='population',
             data={'total': sum(sex_count),
                   'male': sex_count['M'],
-                  'female': sex_count['F']
+                  'female': sex_count['F'],
+                  'district_of_residence': district_count.to_dict(),
                   })
 
         # (nb. if you groupby both sex and age_range, you weirdly lose categories where size==0, so
