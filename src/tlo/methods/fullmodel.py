@@ -119,7 +119,7 @@ def fullmodel(
         depression.Depression,
         epilepsy.Epilepsy,
         # Climate-change related modules
-        [weather_disruptions.WeatherDisruptions] if use_weather_disruptions else []
+        weather_disruptions.WeatherDisruptions
     ]
     return [
         module_class(
