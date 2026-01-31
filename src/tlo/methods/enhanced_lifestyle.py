@@ -275,8 +275,8 @@ class Lifestyle(Module):
             Types.REAL, 'Proportion of men (of all ages) that are assumed to be circumcised at the initiation of the'
                         'simulation.'
         ),
-        "proportion_female_sex_workers": Parameter(
-            Types.REAL, "proportion of women aged 15-49 years who are sex workers"
+        "number_female_sex_workers": Parameter(
+            Types.INT, "number of women aged 15-49 years who are sex workers"
         ),
         "fsw_transition": Parameter(
             Types.REAL, "proportion of sex workers that stop being a sex worker each year"
@@ -1122,13 +1122,8 @@ class LifestyleModels:
                                   & (df.li_mar_stat != 2)].index
 
             n_sw = len(df.loc[df.is_alive & df.li_is_sexworker].index)
-            # todo remove this
-            # target_n_sw = int(np.round(len(df.loc[df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)].index)
-            #                            * p["proportion_female_sex_workers"]
-            #                            )
-            #                   )
-            # todo need to cap this number around 39,000
-            target_n_sw = int(39_000 / externals['scaling_factor'])
+            # need to cap this number around 39,000
+            target_n_sw = int(p['number_female_sex_workers'] / externals['scaling_factor'])
             deficit = target_n_sw - n_sw
             if deficit > 0:
                 if deficit < len(eligible_idx):
