@@ -502,6 +502,12 @@ class Tb(Module):
         "ipt_appointment_window_days": Parameter(
             Types.INT, "Appointment window for IPT in days"
         ),
+        "number_doses_3hp_per_dispensation": Parameter(
+            Types.INT, "Number of 3hp doses per dispensation",
+        )
+        "number_doses_ipt_per_dispensation": Parameter(
+            Types.INT, "Number of ipt doses per dispensation",
+        ),
         # ------------------ scale-up parameters for scenario analysis ------------------ #
         "type_of_scaleup": Parameter(
             Types.STRING, "argument to determine type scale-up of program which will be implemented, "
@@ -2790,16 +2796,19 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
             if (self.sim.date.year >= 2019) and (person["age_years"] >= p["age_threshold_adult_years"]):
                 # 12 weeks dispensation, once weekly
                 drugs_available = self.get_consumables(
-                    item_codes={self.module.item_codes_for_consumables_required["tb_3HP"]: 12}
+                    item_codes={
+                        self.module.item_codes_for_consumables_required["tb_3HP"]:
+                            p['number_doses_3hp_per_dispensation']}
                 )
-                # todo replace numbers
-                months_to_follow_up = 3
+                days_to_follow_up = p['number_doses_3hp_per_dispensation'] * 7  # dosage is weekly
 
             else:
                 # 6 months dispensation, once daily
                 drugs_available = self.get_consumables(
-                    item_codes={self.module.item_codes_for_consumables_required["tb_ipt"]: 180})
-                months_to_follow_up = 6
+                    item_codes={
+                        self.module.item_codes_for_consumables_required["tb_ipt"]:
+                            p['number_doses_ipt_per_dispensation']})
+                days_to_follow_up = p['number_doses_ipt_per_dispensation']
 
             # if available, schedule IPT decision
             if drugs_available:
@@ -2810,7 +2819,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                 # schedule decision to continue or end IPT after prescription ends
                 self.sim.schedule_event(
                     Tb_DecisionToContinueIPT(self.module, person_id),
-                    self.sim.date + DateOffset(months=months_to_follow_up),
+                    self.sim.date + DateOffset(days=days_to_follow_up),
                 )
 
             else:
