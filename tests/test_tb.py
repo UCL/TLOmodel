@@ -699,7 +699,8 @@ def test_ipt_to_child_of_tb_mother(seed):
         ev for ev in sim.find_events_for_person(child_id) if
         isinstance(ev[1], tb.Tb_DecisionToContinueIPT)
     ][0]
-    assert date_event == sim.date + pd.DateOffset(months=6)
+    assert date_event == sim.date + pd.DateOffset(
+        days=sim.modules['Tb'].parameters['number_doses_ipt_per_dispensation'])
 
 
 def test_mdr(seed):
