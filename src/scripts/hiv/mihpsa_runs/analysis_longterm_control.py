@@ -16,22 +16,16 @@ longterm_mihpsa_runs-2025-05-17T165444Z
 
 import datetime
 from pathlib import Path
-from tlo.analysis.utils import parse_log_file, compute_summary_statistics
-
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
 import pandas as pd
 import pickle
 
 from tlo.analysis.utils import (
-    compare_number_of_deaths,
+    parse_log_file,
     extract_params,
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize,
     compute_summary_statistics
 )
 from tlo import Date
@@ -521,6 +515,8 @@ with pd.ExcelWriter(results_folder / "full_summarised_deaths.xlsx") as writer:
 for var_name, df_var in dataframes.items():
     # collapse to draw-only columns if you like
     mean_df = df_var.xs('mean', axis=1, level=1, drop_level=True)
+    print(var_name)
+    print(mean_df.index)
     # mean_df: index 0..40, columns = draw IDs 0..11
 
     for draw_id in mean_df.columns:
@@ -547,7 +543,7 @@ for var_name, df_var in dataframes.items():
 
 # -----------------------------------------------------------------------------------
 # DALYS AVERTED
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2050, 12, 31))
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2074, 12, 31))
 
 
 def get_num_dalys_by_year(_df):
