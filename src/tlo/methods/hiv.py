@@ -4129,13 +4129,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             },
         )
 
-        # # store some outputs in dict for calibration
-        # self.module.hiv_outputs["date"] += [self.sim.date.year]
-        # self.module.hiv_outputs["hiv_prev_adult_1549"] += [adult_prev_1549]
-        # self.module.hiv_outputs["hiv_adult_inc_1549"] += [adult_inc_1549]
-        # self.module.hiv_outputs["hiv_prev_child"] += [child_prev]
-        # self.module.hiv_outputs["population"] += [total_population]
-
         # ------------------------------------ PREVALENCE BY AGE and SEX  ------------------------------------
 
         # Prevalence by Age/Sex (to make every category be output, do separately by 'sex')
