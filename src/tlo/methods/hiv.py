@@ -3591,18 +3591,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         else:
             # ------------------------- if ART not available ------------------------- #
-
-            # logger for drugs not available
-            # person_details_for_tx = {
-            #     'age': person['age_years'],
-            #     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-            #     'number_appts': self.counter_for_drugs_not_available,
-            #     'district': person['district_of_residence'],
-            #     'person_id': person_id,
-            #     'drugs_available': drugs_were_available,
-            # }
-            # logger.info(key='hiv_arv_NA', data=person_details_for_tx)
-
             # As drugs were not available, the person will default to being off ART (...if they were on ART at the
             # beginning of the HSI.)
             # NB. If the person was not on ART at the beginning of the HSI, then there is no need to stop them (which
