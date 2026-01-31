@@ -81,7 +81,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.daly_wts = dict()
         self.lm = dict()
         self.item_codes_for_consumables_required = dict()
-        self.vl_testing_available_by_year: int | None = None
+        # create dict of years (keys) where VL testing is available (values=True / False)
+        self.vl_testing_available_by_year: dict[int, bool] = {}
 
     INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager"}
 
