@@ -65,8 +65,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.run_with_checks = run_with_checks
 
         self.stored_test_numbers = []  # create empty list for storing hiv test numbers
-        self.stored_tdf_numbers = 0
-        self.stored_selftest_numbers = 0
+        self.stored_tdf_numbers = 0  # create container for storing numbers of tdf tests
+        self.stored_selftest_numbers = 0 # create container for storing numbers of hiv self tests
 
         # hiv outputs needed for calibration
         keys = ["date",
