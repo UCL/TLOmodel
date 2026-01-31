@@ -3106,14 +3106,6 @@ class HSI_Hiv_SelfTest(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
-        # # Log the appt footprint
-        # details = {
-        #     'appt_type': self.TREATMENT_ID,
-        #     'footprint': self.EXPECTED_APPT_FOOTPRINT,
-        #     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-        # }
-        # logger.info(key='hiv_appts', data=details)
-
 
 class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
