@@ -1251,7 +1251,7 @@ def test_baseline_hiv_prevalence(seed):
     sim.make_initial_population(n=popsize)
     df = sim.population.props
 
-    # et absolute tolerance to the interval of the uncertainty around calibration targets
+    # get absolute tolerance to the interval of the uncertainty around calibration targets
     adult_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
     ) / len(df[df.is_alive & df.age_years.between(15, 49)])
