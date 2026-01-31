@@ -2161,7 +2161,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         else:
             prob_positive = self.parameters["p_tdf_positive_given_not_suppressed"]
 
-        return True if self.rng.random_sample() < prob_positive
+        return self.rng.random_sample() < prob_positive
 
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""
