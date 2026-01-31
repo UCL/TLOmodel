@@ -2146,7 +2146,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                 priority=0
             )
 
-    def perform_tdf_test(self, is_suppressed: bool) -> str:
+    def perform_tdf_test(self, is_suppressed: bool) -> bool:
         """
         Simulate TDF urine test result based on known viral suppression status.
 
@@ -2154,14 +2154,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         - is_suppressed (bool): True if the person is virally suppressed, False if not.
 
         Returns:
-        - 'positive' or 'negative' based on test result
+        - true (positive) or false (negative) based on test result
         """
         if is_suppressed:
             prob_positive = self.parameters["p_tdf_positive_given_suppressed"]
         else:
             prob_positive = self.parameters["p_tdf_positive_given_not_suppressed"]
 
-        return 'positive' if self.rng.random_sample() < prob_positive else 'negative'
+        return True if self.rng.random_sample() < prob_positive
 
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""
@@ -3771,7 +3771,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 if test_type == 'TDF':
                     tdf_result = self.module.perform_tdf_test(is_suppressed=is_suppressed)
 
-                    if tdf_result == 'negative' and person["hv_art"] == "on_not_VL_suppressed":
+                    if not tdf_result and person["hv_art"] == "on_not_VL_suppressed":
                         # schedule Adherence Counselling - no delay
                         self.sim.schedule_event(
                             Hiv_AdherenceCounselling(person_id=person_id, module=self.module),
