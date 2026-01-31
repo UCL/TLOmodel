@@ -504,7 +504,7 @@ class Tb(Module):
         ),
         "number_doses_3hp_per_dispensation": Parameter(
             Types.INT, "Number of 3hp doses per dispensation",
-        )
+        ),
         "number_doses_ipt_per_dispensation": Parameter(
             Types.INT, "Number of ipt doses per dispensation",
         ),
