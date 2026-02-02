@@ -1454,6 +1454,8 @@ minutes_per_year_summed_by_cadre = (
 )
 minutes_per_year_summed_by_cadre.to_excel(results_folder / "minutes_per_year_summed_by_cadre.xlsx")
 
+hours_per_year_cadre = minutes_per_year_summed_by_cadre / 60
+hours_per_year_cadre.to_excel(results_folder / "hours_per_year_cadre.xlsx")
 
 minutes_all_years_summed_by_cadre = (
     minutes_by_appt_and_cadre
@@ -1461,6 +1463,118 @@ minutes_all_years_summed_by_cadre = (
     .sum()
 )
 minutes_all_years_summed_by_cadre.to_excel(results_folder / "minutes_all_years_summed_by_cadre.xlsx")
+hours_all_years_cadre = minutes_all_years_summed_by_cadre / 60
+hours_all_years_cadre.to_excel(results_folder / "hours_all_years_cadre.xlsx")
+
+
+################################
+# add costs to HCW time
+################################
+
+# read in the HRH cost sheet
+hcw_costs = pd.read_csv("resources/ResourceFile_HIV/hrh_costs.csv")
+
+
+def hcw_time_costs_by_facility(
+    minutes_by_appt_and_cadre: pd.DataFrame,
+    hcw_costs: pd.DataFrame,
+    minutes_to_hours: bool = True,
+    fill_missing_cost: float | None = None
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Compute HCW time (hours) and costs by year × facility_level × cadre
+    preserving columns (draw/run/scenario)
+    """
+
+    # --- 1) aggregate minutes to year × facility × cadre ---
+    mins_yfc = (
+        minutes_by_appt_and_cadre
+        .groupby(level=["year", "facility_level", "hcw_cadre"])
+        .sum()
+    )
+
+    # --- 2) convert to hours ---
+    hours_yfc = mins_yfc / 60 if minutes_to_hours else mins_yfc.copy()
+
+    # --- 3) prep cost lookup keyed on (facility_level, cadre) ---
+    costs = hcw_costs.copy()
+    costs["Facility_Level"] = costs["Facility_Level"].astype(str).str.strip()
+    costs["Officer_Category"] = costs["Officer_Category"].astype(str).str.strip()
+
+    # If duplicates exist per (Facility_Level, Officer_Category), average them
+    cost_lookup = (
+        costs
+        .groupby(["Facility_Level", "Officer_Category"], as_index=True)["Total_hourly_cost"]
+        .mean()
+    )
+
+    # --- 4) align lookup to hours_yfc rows ---
+    idx = hours_yfc.index
+    fac = idx.get_level_values("facility_level").astype(str).str.strip()
+    cad = idx.get_level_values("hcw_cadre").astype(str).str.strip()
+
+    hourly_cost_aligned = pd.MultiIndex.from_arrays(
+        [fac, cad],
+        names=["Facility_Level", "Officer_Category"]
+    ).map(cost_lookup)
+
+    if fill_missing_cost is not None:
+        hourly_cost_aligned = hourly_cost_aligned.fillna(fill_missing_cost)
+
+    # --- 5) cost = hours × hourly_cost (row-wise) ---
+    costs_yfc = hours_yfc.mul(hourly_cost_aligned.to_numpy(), axis=0)
+
+    return hours_yfc, costs_yfc
+
+
+# --- usage ---
+hours_by_year_fac_cadre, costs_by_year_fac_cadre = hcw_time_costs_by_facility(
+    minutes_by_appt_and_cadre=minutes_by_appt_and_cadre,
+    hcw_costs=hcw_costs,
+    minutes_to_hours=True,
+    fill_missing_cost=None   # or 0.0 if you want unmapped costs to contribute zero
+)
+
+hours_by_year_fac_cadre.to_excel(results_folder / "hours_by_year_fac_cadre.xlsx")
+costs_by_year_fac_cadre.to_excel(results_folder / "costs_by_year_fac_cadre.xlsx")
+
+
+# get the costs for all hcw by year
+total_costs_by_year = (
+    costs_by_year_fac_cadre
+    .groupby(level="year")
+    .sum()
+)
+total_costs_by_year.to_excel(results_folder / "total_costs_by_year.xlsx")
+
+# get total costs across all the years
+total_costs_all_years = costs_by_year_fac_cadre.sum()
+total_costs_all_years.to_excel(results_folder / "total_costs_all_years.xlsx")
+
+
+# total_costs_all_years is a Series with MultiIndex (e.g. run, draw) or (draw, run)
+total_costs_all_years_df = total_costs_all_years.to_frame().T
+
+
+cost_diff_from_statusquo = compute_summary_statistics(
+    find_difference_relative_to_comparison_series_dataframe(
+        total_costs_all_years_df,
+        comparison="Status Quo"
+    ), central_measure='mean',
+)
+
+cost_diff_from_statusquo.to_excel(results_folder / "cost_diff_from_statusquo.xlsx")
+
+
+pc_cost_diff_from_statusquo = 100.0 * compute_summary_statistics(
+    pd.DataFrame(
+        find_difference_relative_to_comparison_series_dataframe(
+            total_costs_all_years_df,
+            comparison='Status Quo',
+        scaled=True)
+    ), only_central=True
+)
+pc_cost_diff_from_statusquo.to_excel(results_folder / "pc_cost_diff_from_statusquo.xlsx")
 
 
 
