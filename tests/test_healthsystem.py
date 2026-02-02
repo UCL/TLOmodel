@@ -373,7 +373,6 @@ def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     for col in capacity_by_officer_and_level.columns:
         if col == "date":
             continue  # skip the date column
-
         if not (capacity_by_officer_and_level[col] == 0).any() and ("GenericClinic" in col):
             ratio = row_2010[col] / row_2011[col]
 
@@ -2847,6 +2846,7 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
     )
 
 
+
 @pytest.mark.slow
 def test_service_availability_switch(tmpdir, seed):
     """Test that the service availability is updated in the year specified.
@@ -2922,6 +2922,7 @@ def test_service_availability_switch(tmpdir, seed):
     ).all()  # All the events that had a non-blank footprint experienced high squeezing.
 
 
+
 def test_clinics_rescaling_factor(seed, tmpdir):
     """Test that rescaling factor for clinics is computed correctly."""
 
@@ -2984,8 +2985,6 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         )
         sim.make_initial_population(n=tot_population)
 
-
-
         # Get any level 0 facility
         district, fac_info = next(iter(sim.modules["HealthSystem"]._facilities_for_each_district["0"].items()))
         fac_id = fac_info.id
@@ -3007,10 +3006,7 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         sim.modules["HealthSystem"]._clinic_mapping = pd.DataFrame(
             [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
         )
-        sim.modules["HealthSystem"].service_availability = ["DummyHSIEvent", "DummyHSIEventGenericClinic"]
-
         sim.modules["HealthSystem"].setup_daily_capabilities("funded_plus")
-
 
         sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
 
@@ -3057,7 +3053,6 @@ def test_clinics_rescaling_factor(seed, tmpdir):
     ## for an appointment of type ConWithDCSA
     ## therefore the treatment_id is not important
     ## ConWithDCSA needs 10 mins of officer type DCSA at level 0
-
     hsi1 = DummyHSIEvent(
         module=sim.modules["DummyModuleGenericClinic"],
         person_id=0,  # Ensures call is on officers in first district

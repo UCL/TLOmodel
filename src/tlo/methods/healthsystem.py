@@ -1839,7 +1839,6 @@ class HealthSystem(Module):
 
         return appt_footprint_times
 
-
     def get_total_minutes_of_this_officer_in_this_district(self, current_capabilities, _officer):
         """Returns the minutes of current capabilities for the officer identified (this officer type in this
         facility_id)."""
@@ -2200,6 +2199,7 @@ class HealthSystem(Module):
 
         return ok_to_run
 
+
     def run_individual_level_events_in_mode_0_or_1(
         self, _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]
     ) -> List:
@@ -2213,6 +2213,7 @@ class HealthSystem(Module):
             # For all events in the list, expand the appt-footprint of the event to give the demands on each
             # officer-type in each facility_id and clinic.
             footprints_of_all_individual_level_hsi_event = defaultdict(list)
+
 
             ## _list_of_individual_hsi_event_tuples is a flat list, whereas we will now
             ## store the footprint by clinic; as we loop over the list of events to be run, we
@@ -2229,7 +2230,6 @@ class HealthSystem(Module):
                 event_num_of_all_individual_level_hsi_event[event_clinic].append(eve_num)
 
             # For each clinic, compute total appointment footprint across all events
-
             for clinic, footprint in footprints_of_all_individual_level_hsi_event.items():
                 for hsi_footprint in footprint:
                     # Counter.update method when called with dict-like argument adds counts
@@ -2243,6 +2243,7 @@ class HealthSystem(Module):
 
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
+
                 # Mode 0: All HSI Event run, with no squeeze
                 # Mode 1: All HSI Events run provided all required officers have non-zero capabilities
                 ok_to_run = True
@@ -2257,6 +2258,11 @@ class HealthSystem(Module):
                 # since the event was scheduled
                 if not self.is_treatment_id_allowed(event.TREATMENT_ID, self.service_availability):
                     ok_to_run = False
+
+                # In this mode, all HSI Events run provided all required officers have non-zero capabilities
+                if event.expected_time_requests:
+                    ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
+                                    event.expected_time_requests, clinic=clinic)
 
                 if ok_to_run:
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
@@ -2284,17 +2290,12 @@ class HealthSystem(Module):
                         updated_call = self.get_appt_footprint_as_time_request(
                             facility_info=event.facility_info, appt_footprint=actual_appt_footprint
                         )
-                        ev_num_in_clinics_footprint = event_num_of_all_individual_level_hsi_event[event_clinic].index(
-                            ev_num
-                        )
-                        original_call = footprints_of_all_individual_level_hsi_event[event_clinic][
-                            ev_num_in_clinics_footprint
-                        ]
-                        footprints_of_all_individual_level_hsi_event[event_clinic][ev_num_in_clinics_footprint] = (
-                            updated_call
-                        )
-                        self.running_total_footprint[event_clinic] -= original_call
-                        self.running_total_footprint[event_clinic] += updated_call
+
+                        ev_num_in_clinics_fp = event_num_of_all_individual_level_hsi_event[clinic].index(ev_num)
+                        original_call = footprints_of_all_individual_level_hsi_event[clinic][ev_num_in_clinics_fp]
+                        footprints_of_all_individual_level_hsi_event[clinic][ev_num_in_clinics_fp] = updated_call
+                        self.running_total_footprint[clinic] -= original_call
+                        self.running_total_footprint[clinic] += updated_call
 
                     else:
                         # no actual footprint is returned so take the expected initial declaration as the actual,
@@ -2894,11 +2895,10 @@ class HealthSystemSummaryCounter:
         self,
         fraction_time_used_across_all_facilities_in_this_clinic: float,
         fraction_time_used_by_facID_and_officer_in_this_clinic: Dict[str, float],
-        clinic: str,
+        clinic: str
     ) -> None:
         """Record a current status metric of the HealthSystem."""
-
-        # The fraction of all healthcare worker time that is used in this clinic:
+        # The fraction of all healthcare worker time that is used:
         self._frac_time_used_overall[clinic].append(fraction_time_used_across_all_facilities_in_this_clinic)
 
         for facID_and_officer, fraction_time in fraction_time_used_by_facID_and_officer_in_this_clinic.items():
@@ -2906,7 +2906,6 @@ class HealthSystemSummaryCounter:
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
-
         logger_summary.info(
             key="HSI_Event",
             description="Counts of the HSI_Events that have occurred in this calendar year by TREATMENT_ID, "
@@ -2953,6 +2952,9 @@ class HealthSystemSummaryCounter:
             },
         )
 
+        # Log mean of 'fraction time used by facID and officer' from daily entries from the previous
+        # year for each clinic
+
         for clinic in self._frac_time_used_overall.keys():
             logger_summary.info(
                key="Capacity_By_FacID_and_Officer",
@@ -2983,7 +2985,6 @@ class HealthSystemSummaryCounter:
             mean_frac_time_used = {
                 (_facID_and_officer): v / len(self._frac_time_used_overall[clinic])
                 for (_facID_and_officer), v in self._sum_of_daily_frac_time_used_by_facID_and_officer[clinic].items()
-
                 ## SB: It is not clear to me what this filtering intends to achieve; since
                 ## facID_and_officer is None here, and _facID_and_officer is not expected to be None,
                 ## it looks like this condition will always be false, making the dictionary empty.
