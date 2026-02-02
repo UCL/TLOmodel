@@ -3871,8 +3871,8 @@ class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         )
 
         # Log the appt footprint
-        footprint = self.EXPECTED_APPT_FOOTPRINT
-        footprint["InpatientDays"] = self.beddays
+        # footprint = self.EXPECTED_APPT_FOOTPRINT
+        # footprint["InpatientDays"] = self.beddays
 
         # details = {
         #     'appt_type': self.TREATMENT_ID,

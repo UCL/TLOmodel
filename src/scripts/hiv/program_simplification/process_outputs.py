@@ -5,11 +5,13 @@ import datetime
 from pathlib import Path
 
 # import lacroix
-from typing import Iterable, Sequence, Optional, Tuple
+from typing import Iterable, Sequence, Optional, Tuple, Union, Dict
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
+import ast
+from collections import Counter, defaultdict
 
 import seaborn as sns
 
@@ -1095,8 +1097,272 @@ plt.show()
 
 
 
+#%% ####################### HS use  #######################
 
-# HS use
+# get numbers by treatment ID by year
+# map to expected facility level -> list of treatment IDs by facility level by year
+# map to appt type by facility level
+# map to cadre time required
+# then can sum for the plots
+
+
+
+
+# extract numbers of appts delivered for every run within a specified draw
+def _parse_dict_cell(x) -> Dict[str, float]:
+    if isinstance(x, dict):
+        return x
+    if pd.isna(x):
+        return {}
+    if isinstance(x, str):
+        return ast.literal_eval(x)
+    return {}
+
+
+
+def make_series_treatment_counts_by_year(
+    treatment_col: str = "TREATMENT_ID",
+    date_col: str = "date",
+    TARGET_PERIOD: Optional[Tuple[object, object]] = None,
+):
+    """
+    Returns a function suitable for `custom_generate_series`.
+
+    Output Series:
+      - index: MultiIndex (year, treatment_id)
+      - values: counts summed within year
+    """
+    def custom_generate_series(df: pd.DataFrame) -> pd.Series:
+
+        # Filter to target period (your established pattern)
+        if TARGET_PERIOD is not None:
+            df = df.loc[pd.to_datetime(df.date).between(*TARGET_PERIOD)]
+
+        if df.empty:
+            return pd.Series(dtype=float)
+
+        years = pd.to_datetime(df[date_col]).dt.year
+
+        by_year: Dict[int, Counter] = {}
+
+        for yr, cell in zip(years, df[treatment_col]):
+            d = _parse_dict_cell(cell)
+            by_year.setdefault(int(yr), Counter()).update(d)
+
+        wide = pd.DataFrame({yr: dict(cnt) for yr, cnt in by_year.items()}).T
+        wide.index.name = "year"
+        wide = wide.sort_index()
+
+        s = wide.stack(dropna=False)
+        s.index.names = ["year", "treatment_id"]
+        s.name = "count"
+
+        return s
+
+    return custom_generate_series
+
+
+module = "tlo.methods.healthsystem.summary"
+key = "HSI_Event"
+
+custom = make_series_treatment_counts_by_year(
+    treatment_col="TREATMENT_ID",
+    TARGET_PERIOD=TARGET_PERIOD,
+)
+
+# treatment_by_year is a DataFrame with:
+#   - index: MultiIndex (year, treatment_id)
+#   - columns: MultiIndex (draw, run)
+#   - values: counts
+treatment_by_year = extract_results(
+    results_folder=results_folder,
+    module=module,
+    key=key,
+    custom_generate_series=custom,
+    do_scaling=True,
+).pipe(set_param_names_as_column_index_level_0)
+
+treatment_by_year.to_excel(results_folder / "treatment_id_counts_by_year_draw_run.xlsx")
+
+treatment_by_year_hiv = treatment_by_year.loc[
+    treatment_by_year.index
+        .get_level_values("treatment_id")
+        .str.startswith("Hiv")
+]
+treatment_by_year_hiv.to_excel(results_folder / "treatment_by_year_hiv.xlsx")
+
+
+# get appt types by facility level and year
+def summarise_appointments(df: pd.DataFrame) -> pd.Series:
+    """
+    Sum appointment type counts by calendar year *and facility level* (within TARGET_PERIOD)
+    from the HSI_Event log.
+
+    Returns
+    -------
+    pd.Series
+        MultiIndex (year, facility_level, AppointmentTypeCode) -> total count
+    """
+    d = df.copy()
+    d["date"] = pd.to_datetime(d["date"])
+
+    mask = d["date"].between(*TARGET_PERIOD)
+    d = d.loc[mask, ["date", "Number_By_Appt_Type_Code_And_Level"]]
+
+    # Collect long-form rows: (date, year, level, appt_type, count)
+    rows = []
+    for dt, level_dict in zip(d["date"].values, d["Number_By_Appt_Type_Code_And_Level"].values):
+        if not isinstance(level_dict, dict) or len(level_dict) == 0:
+            continue
+        year = pd.Timestamp(dt).year
+
+        for level, appt_dict in level_dict.items():
+            if not isinstance(appt_dict, dict) or len(appt_dict) == 0:
+                continue
+            for appt_type, count in appt_dict.items():
+                if count is None:
+                    continue
+                rows.append((year, str(level), appt_type, float(count)))
+
+    if not rows:
+        # Empty, but keep the expected index names
+        return pd.Series(dtype=float, index=pd.MultiIndex.from_arrays([[], [], []],
+                                                                      names=["year", "facility_level", "AppointmentTypeCode"]))
+
+    long = pd.DataFrame(rows, columns=["year", "facility_level", "AppointmentTypeCode", "count"])
+
+    out = (
+        long.groupby(["year", "facility_level", "AppointmentTypeCode"], sort=False)["count"]
+        .sum()
+    )
+    out.index = out.index.set_names(["year", "facility_level", "AppointmentTypeCode"])
+    return out
+
+
+appt_counts = (
+    extract_results(
+        results_folder=results_folder,
+        module="tlo.methods.healthsystem.summary",
+        key="HSI_Event_non_blank_appt_footprint",
+        custom_generate_series=summarise_appointments,
+        do_scaling=True,  # scale to national population
+    )
+    .pipe(set_param_names_as_column_index_level_0)
+)
+
+
+# remove unneeded appt types, keep only those from hiv program
+
+# Explicit allow-list of appointment types to KEEP
+KEEP_APPT_TYPES = [
+    "VCTPositive",
+    "VCTNegative",
+    "NewAdult",
+    "Peds",
+    "EstNonCom",
+    "MaleCirc",
+]
+
+TREATMENT_TO_APPT_SPEC = {
+    "PharmDispensing": ("Hiv_Test_Selftest",      "1a",  1.0),
+    "ConWithDCSA":     ("Hiv_Prevention_Prep",    "0",   1.0),
+    "IPAdmission":     ("Hiv_PalliativeCare",     "2",   2.0),
+    "InpatientDays":   ("Hiv_PalliativeCare",     "2",  17.0),
+}
+
+def keep_selected_appt_types(
+    appt_counts: pd.Series | pd.DataFrame,
+    appt_types_to_keep: list[str],
+    *,
+    appt_level: str = "AppointmentTypeCode",
+) -> pd.Series | pd.DataFrame:
+    """
+    Keep only selected appointment types (across all years and facility levels).
+    """
+    idx = appt_counts.index
+    mask_keep = idx.get_level_values(appt_level).isin(appt_types_to_keep)
+    return appt_counts.loc[mask_keep].copy()
+
+
+def add_mapped_treatments_as_appt_types(
+    appt_counts_base: pd.DataFrame,
+    trt_counts: pd.DataFrame,
+    mapping_appt_to_spec: dict[str, tuple[str, str, float]],
+    *,
+    year_level: str = "year",
+    trt_level: str = "treatment_id",
+) -> pd.DataFrame:
+    """
+    Sparse behaviour:
+      - does NOT create a full year×level×type grid
+      - only creates rows for the (year, specified facility_level, appt_type) that are inserted
+      - overwrites if those rows already exist
+    """
+    out = appt_counts_base.copy()
+
+    trt = trt_counts.copy().sort_index()
+
+    for appt_type, (trt_id, facility_level, mult) in mapping_appt_to_spec.items():
+        # Select treatment counts indexed by year
+        trt_block = trt.xs(trt_id, level=trt_level, drop_level=True).copy()
+        trt_block = trt_block * float(mult)
+
+        years = trt_block.index.get_level_values(year_level)
+
+        target_index = pd.MultiIndex.from_arrays(
+            [
+                years,
+                pd.Index([str(facility_level)] * len(years)),
+                pd.Index([appt_type] * len(years)),
+            ],
+            names=["year", "facility_level", "AppointmentTypeCode"],
+        )
+
+        src = trt_block.copy()
+        src.index = target_index
+
+        # Add rows as needed, then assign
+        out = out.reindex(out.index.union(target_index))
+        out.loc[target_index, :] = src
+
+    return out
+
+
+# ----
+appt_counts_kept = keep_selected_appt_types(appt_counts, KEEP_APPT_TYPES)
+
+appt_counts_final = add_mapped_treatments_as_appt_types(
+    appt_counts_kept,
+    treatment_by_year_hiv,
+    TREATMENT_TO_APPT_SPEC,
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###############################################################################
 
 def summarise_appointments(df: pd.DataFrame) -> pd.Series:
     """
