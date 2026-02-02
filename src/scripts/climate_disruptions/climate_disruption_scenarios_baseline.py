@@ -60,9 +60,9 @@ class ClimateDisruptionScenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2035, 1, 1)
+        self.end_date = Date(2041, 1, 1)
         self.pop_size = 100_000
-        self.runs_per_draw = 1
+        self.runs_per_draw = 5
         self._parameter_grid = full_grid
         self.number_of_draws = len(self._parameter_grid)
 
