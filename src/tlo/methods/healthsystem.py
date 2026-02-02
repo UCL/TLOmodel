@@ -1058,6 +1058,25 @@ class HealthSystem(Module):
                     }
                 },
             )
+            logger_summary.info(
+                key="weather_delayed_hsi_event_details",
+                description="Map from integer keys to weather delayed hsi event detail dictionaries",
+                data={
+                    "weather_delayed_hsi_event_key_to_event_details": {
+                        k: d._asdict() for d, k in self._weather_delayed_hsi_event_details.items()
+                    }
+                },
+            )
+            logger_summary.info(
+                key="weather_cancelled_hsi_event_details",
+                description="Map from integer keys to weather cancelled hsi event detail dictionaries",
+                data={
+                    "weather_cancelled_hsi_event_key_to_event_details": {
+                        k: d._asdict() for d, k in self._weather_cancelled_hsi_event_details.items()
+                    }
+                },
+            )
+
 
     def setup_priority_policy(self):
         # Determine name of policy to be considered **at the start of the simulation**.
@@ -2448,6 +2467,35 @@ class HealthSystem(Module):
         )
         self._never_ran_hsi_event_counts_cumulative += self._never_ran_hsi_event_counts_log_period
         self._never_ran_hsi_event_counts_log_period.clear()
+
+    def _write_weather_cancelled_hsi_event_counts_to_log_and_reset(self):
+        logger_summary.info(
+            key="weather_cancelled_hsi_event_counts",
+            description=(
+                f"Counts of the HSI events that were cancelled due to weather ran "
+                f"{self._hsi_event_count_log_period} with keys corresponding to integer"
+                f" keys recorded in dictionary in hsi_event_details log entry."
+            ),
+            data={
+                "weather_cancelled_hsi_event_key_to_counts": dict(self._weather_cancelled_hsi_event_counts_log_period)
+            },
+        )
+        self._weather_cancelled_hsi_event_counts_cumulative += self._weather_cancelled_hsi_event_counts_log_period
+        self._weather_cancelled_hsi_event_counts_log_period.clear()
+
+    def _write_weather_delayed_hsi_event_counts_to_log_and_reset(self):
+        logger_summary.info(
+            key="weather_delayed_hsi_event_counts",
+            description=(
+                f"Counts of the HSI events that were delayed due to weather ran "
+                f"{self._hsi_event_count_log_period} with keys corresponding to integer"
+                f" keys recorded in dictionary in hsi_event_details log entry."
+            ),
+            data={"weather_delayed_hsi_event_key_to_counts": dict(self._weather_delayed_hsi_event_counts_log_period)},
+        )
+        self._weather_delayed_hsi_event_counts_cumulative += self._weather_delayed_hsi_event_counts_log_period
+        self._weather_delayed_hsi_event_counts_log_period.clear()
+
 
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
