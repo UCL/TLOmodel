@@ -103,7 +103,7 @@ def compute_scen_sum_and_averted(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Sum `interv_df` across years into a single-row DataFrame labeled "start_year—end_year", then compute averted outcome
-    (DALYs or deaths) as compared to sum of otucome under SQ. If limit_to_zero True, averted outcome cannot be negative.
+    (DALYs or deaths) as compared to sum of outcome under SQ. If limit_to_zero True, averted outcome cannot be negative.
     Returns (scen_sum_df, averted_mean_ci_df).
     """
     # Sum Series -> single-row DataFrame and set new index 'year' as "first-last"
