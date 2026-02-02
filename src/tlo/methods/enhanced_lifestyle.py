@@ -287,22 +287,6 @@ class Lifestyle(Module):
         "init_p_herbal_medication_use_in_urban": Parameter(
             Types.REAL, "proportion of people in urban areas that use herbal medication"
         ),
-        'r_start_herbal_medication_rural': Parameter(
-            Types.REAL,
-            'probability per 3 months of starting herbal medication in rural areas'
-        ),
-        'r_start_herbal_medication_urban': Parameter(
-            Types.REAL,
-            'probability per 3 months of starting herbal medication in urban areas'
-        ),
-        'r_stop_herbal_medication_rural': Parameter(
-            Types.REAL,
-            'probability per 3 months of stopping herbal medication in rural areas'
-        ),
-        'r_stop_herbal_medication_urban': Parameter(
-            Types.REAL,
-            'probability per 3 months of stopping herbal medication in urban areas'
-        ),
     }
 
     # Properties of individuals that this module provides.
@@ -660,7 +644,7 @@ class LifestyleModels:
             },
             'li_herbal_medication': {
                 'init': self.herbal_medication_linear_model(),
-                'update': self.update_herbal_medication_property_linear_model(),
+                'update': None
             },
 
         }
@@ -1935,49 +1919,6 @@ class LifestyleModels:
         bmi_lm = LinearModel.custom(handle_bmi_transitions, parameters=self.params)
         return bmi_lm
 
-    def update_herbal_medication_property_linear_model(self) -> LinearModel:
-        """
-        Update herbal medication use over time.
-        Transitions depend only on rural/urban residence.
-        """
-
-        def handle_herbal_medication_transitions(self, df, rng=None, **externals) -> pd.Series:
-            p = self.parameters
-            # Copy current state
-            herbal_trans = df.li_herbal_medication.copy()
-            # -------------------------
-            # START herbal medication
-            # -------------------------
-            not_using = df.index[df.is_alive & ~df.li_herbal_medication]
-            eff_p_start = pd.Series(
-                np.where(
-                    df.loc[not_using, 'li_urban'],
-                    p['r_start_herbal_medication_urban'],
-                    p['r_start_herbal_medication_rural'],
-                ),
-                index=not_using,
-                dtype=float
-            )
-            will_start = rng.random_sample(len(not_using)) < eff_p_start
-            herbal_trans.loc[not_using[will_start]] = True
-            # -------------------------
-            # STOP herbal medication
-            # -------------------------
-            using = df.index[df.is_alive & df.li_herbal_medication]
-            eff_p_stop = pd.Series(
-                np.where(
-                    df.loc[using, 'li_urban'],
-                    p['r_stop_herbal_medication_urban'],
-                    p['r_stop_herbal_medication_rural'],
-                ),
-                index=using,
-                dtype=float
-            )
-            will_stop = rng.random_sample(len(using)) < eff_p_stop
-            herbal_trans.loc[using[will_stop]] = False
-            return herbal_trans
-
-        return LinearModel.custom(handle_herbal_medication_transitions, parameters=self.params)
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
