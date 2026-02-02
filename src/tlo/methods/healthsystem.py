@@ -1041,6 +1041,8 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period == "simulation":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_weather_cancelled_hsi_event_counts_to_log_and_reset()
+            self._write_weather_delayed_hsi_event_counts_to_log_and_reset()
         if self._hsi_event_count_log_period is not None:
             logger_summary.info(
                 key="hsi_event_details",
@@ -2453,12 +2455,16 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period == "day":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_weather_cancelled_hsi_event_counts_to_log_and_reset()
+            self._write_weather_delayed_hsi_event_counts_to_log_and_reset()
 
     def on_end_of_month(self) -> None:
         """Do jobs to be done at the end of the month (after all HSI run)"""
         if self._hsi_event_count_log_period == "month":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_weather_cancelled_hsi_event_counts_to_log_and_reset()
+            self._write_weather_delayed_hsi_event_counts_to_log_and_reset()
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
@@ -2475,6 +2481,8 @@ class HealthSystem(Module):
         if self._hsi_event_count_log_period == "year":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
+            self._write_weather_cancelled_hsi_event_counts_to_log_and_reset()
+            self._write_weather_delayed_hsi_event_counts_to_log_and_reset()
 
         # Record equipment usage for the year, for each facility
         self._record_general_equipment_usage_for_year()
@@ -2799,7 +2807,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # First, check for climate disruption
         if (
-            year >= self.module.parameters["year_effective_climate_disruptions"]
+            year >= 2025
             and self.module.parameters["services_affected_precip"] != "none"
             and self.module.parameters["services_affected_precip"] is not None
         ):
@@ -2860,7 +2868,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 )
                             )
                                    + DateOffset((item.topen - item.tclose).days),
-                            hsi_event=item.hsi_event,
+                            hsi_event=item.hsi_event
                         )
                         self.module.call_and_record_weather_delayed_hsi_event(
                             hsi_event=item.hsi_event, priority=item.priority
@@ -2897,6 +2905,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         if will_seek_care:
                             self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
                                 priority=item.priority,
+                                clinic_eligibility=item.clinic_eligibility,
                                 topen=self.sim.date
                                       + DateOffset(
                                     days=(
@@ -2951,7 +2960,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             for item in list_of_individual_hsi_event_tuples_due_today:
                 climate_disrupted = self._check_climate_disruption(item, hold_over)
-
                 # If not climate disrupted, check equipment
                 if not climate_disrupted:
                     equipment_available = True
@@ -3468,6 +3476,27 @@ class HealthSystemSummaryCounter:
                 "Number_By_Appt_Type_Code_And_Level": self._never_ran_appts_by_level,
             },
         )
+        # Log summary of HSI_Events that were climate disrupted
+        logger_summary.info(
+            key="Weather_cancelled_HSI_Event",
+            description="Counts of the HSI_Events that were cancelled due to weather in this calendar year by TREATMENT_ID, "
+                        "and the respective 'Appt_Type's that were cancelled in this calendar year.",
+            data={
+                "TREATMENT_ID": self._weather_cancelled_treatment_ids,
+                "Number_By_Appt_Type_Code": self._weather_cancelled_appts,
+                "Number_By_Appt_Type_Code_And_Level": self._weather_cancelled_appts_by_level,
+            },
+        ),
+        logger_summary.info(
+            key="Weather_delayed_HSI_Event",
+            description="Counts of the HSI_Events that were delayed due to weather in this calendar year by TREATMENT_ID, "
+                        "and the respective 'Appt_Type's that were delayed in this calendar year.",
+            data={
+                "TREATMENT_ID": self._weather_delayed_treatment_ids,
+                "Number_By_Appt_Type_Code": self._weather_delayed_appts,
+                "Number_By_Appt_Type_Code_And_Level": self._weather_delayed_appts_by_level,
+            },
+        ),
 
         logger_summary.info(
             key="Capacity",
