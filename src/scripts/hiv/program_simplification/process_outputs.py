@@ -1106,7 +1106,9 @@ plt.show()
 # then can sum for the plots
 
 
-
+#########################
+# extract treatment id
+#########################
 
 # extract numbers of appts delivered for every run within a specified draw
 def _parse_dict_cell(x) -> Dict[str, float]:
@@ -1192,6 +1194,11 @@ treatment_by_year_hiv = treatment_by_year.loc[
 treatment_by_year_hiv.to_excel(results_folder / "treatment_by_year_hiv.xlsx")
 
 
+#########################
+# extract appt types
+#########################
+
+
 # get appt types by facility level and year
 def summarise_appointments(df: pd.DataFrame) -> pd.Series:
     """
@@ -1262,6 +1269,12 @@ KEEP_APPT_TYPES = [
     "EstNonCom",
     "MaleCirc",
 ]
+
+
+################################
+# map treatment id to appt types
+################################
+
 
 TREATMENT_TO_APPT_SPEC = {
     "PharmDispensing": ("Hiv_Test_Selftest",      "1a",  1.0),
@@ -1338,10 +1351,116 @@ appt_counts_final = add_mapped_treatments_as_appt_types(
 )
 
 
+################################
+# map appt numbers to HCW time
+################################
+
+# get HCW time by mapping appts to person-time
+hcw_time = pd.read_csv("resources/healthsystem/human_resources/definitions/ResourceFile_Appt_Time_Table.csv")
 
 
 
+def appt_counts_to_hcw_minutes(appt_counts_final: pd.DataFrame,
+                              hcw_time: pd.DataFrame,
+                              fill_missing_minutes: float | None = None) -> pd.DataFrame:
+    """
+    Returns a DataFrame with the SAME columns as appt_counts_final, and an expanded MultiIndex:
+      ['year','facility_level','AppointmentTypeCode','hcw_cadre']
+    Values are: (number of appointments) × (minutes per appointment for that cadre at that facility level).
+    """
 
+    # --- normalise keys to strings for exact matching ---
+    counts = appt_counts_final.copy()
+    counts = counts.rename_axis(index={
+        "facility_level": "Facility_Level",
+        "AppointmentTypeCode": "Appt_Type_Code"
+    })
+
+    # Ensure index levels are string (facility/appt)
+    counts_idx = counts.index
+    counts = counts.copy()
+    counts.index = pd.MultiIndex.from_arrays(
+        [
+            counts_idx.get_level_values("year"),
+            counts_idx.get_level_values("Facility_Level").astype(str).str.strip(),
+            counts_idx.get_level_values("Appt_Type_Code").astype(str).str.strip(),
+        ],
+        names=["year", "Facility_Level", "Appt_Type_Code"]
+    )
+
+    hcw = hcw_time.copy()
+    hcw["Facility_Level"] = hcw["Facility_Level"].astype(str).str.strip()
+    hcw["Appt_Type_Code"] = hcw["Appt_Type_Code"].astype(str).str.strip()
+    hcw["Officer_Category"] = hcw["Officer_Category"].astype(str).str.strip()
+
+    # --- build minutes-per-appointment map: (Facility_Level, Appt_Type_Code) × cadre ---
+    map_table = hcw.pivot_table(
+        index=["Facility_Level", "Appt_Type_Code"],
+        columns="Officer_Category",
+        values="Time_Taken_Mins",
+        aggfunc="mean"
+    )
+
+    cadres = list(map_table.columns)
+
+    # Target index for aligning minutes with counts rows (drop year)
+    target = pd.MultiIndex.from_arrays(
+        [
+            counts.index.get_level_values("Facility_Level"),
+            counts.index.get_level_values("Appt_Type_Code"),
+        ],
+        names=["Facility_Level", "Appt_Type_Code"]
+    )
+
+    out_parts = []
+    nrows = len(counts)
+
+    # Multiply counts (nrows × ncols) by mins_vec (nrows) per cadre
+    for cadre in cadres:
+        mins_c = map_table[cadre].reindex(target)  # Series aligned to counts rows (year-dropped index)
+
+        if fill_missing_minutes is not None:
+            mins_c = mins_c.fillna(fill_missing_minutes)
+
+        # broadcasting across columns
+        df_c = counts.mul(mins_c.to_numpy(), axis=0)
+
+        # expand index with cadre level
+        df_c.index = pd.MultiIndex.from_arrays(
+            [
+                counts.index.get_level_values("year"),
+                counts.index.get_level_values("Facility_Level"),
+                counts.index.get_level_values("Appt_Type_Code"),
+                pd.Index([cadre] * nrows)
+            ],
+            names=["year", "facility_level", "AppointmentTypeCode", "hcw_cadre"]
+        )
+
+        out_parts.append(df_c)
+
+    out = pd.concat(out_parts).sort_index()
+    return out
+
+
+# --- usage ---
+minutes_by_appt_and_cadre = appt_counts_to_hcw_minutes(appt_counts_final, hcw_time, fill_missing_minutes=0.0)
+minutes_by_appt_and_cadre.to_excel(results_folder / "minutes_by_appt_and_cadre.xlsx")
+
+
+minutes_per_year_summed_by_cadre = (
+    minutes_by_appt_and_cadre
+    .groupby(level=["year", "hcw_cadre"])
+    .sum()
+)
+minutes_per_year_summed_by_cadre.to_excel(results_folder / "minutes_per_year_summed_by_cadre.xlsx")
+
+
+minutes_all_years_summed_by_cadre = (
+    minutes_by_appt_and_cadre
+    .groupby(level=["hcw_cadre"])
+    .sum()
+)
+minutes_all_years_summed_by_cadre.to_excel(results_folder / "minutes_all_years_summed_by_cadre.xlsx")
 
 
 
