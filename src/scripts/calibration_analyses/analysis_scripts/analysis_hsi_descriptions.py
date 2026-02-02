@@ -732,7 +732,6 @@ def figure7_capacity_stats(results_folder: Path, output_folder: Path, resourcefi
     fac_id_and_officers = capacity.index.get_level_values('facID_and_officer')
 
     # Extract FacilityID and Officer from fac_id_and_officers
-    facility_ids = fac_id_and_officers.map(lambda x: x.split('_')[1]).astype(int)
     officers = fac_id_and_officers.map(lambda x: x.split('_')[3])
 
     # Find mean capacity for each Officer, across the Facility IDs but within each clinic
