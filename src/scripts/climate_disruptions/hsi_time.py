@@ -22,7 +22,7 @@ from tlo.analysis.utils import (
 PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
-min_year = 2020
+min_year = 2025
 max_year = 2040
 spacing_of_years = 1
 number_of_runs = 10
@@ -108,6 +108,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
 
             def get_counts_of_hsi_by_short_treatment_id(_df):
                 """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
+                print(_df)
                 _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
                 _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
                 return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
@@ -118,7 +119,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
                     module='tlo.methods.healthsystem.summary',
                     key='HSI_Event',
                     custom_generate_series=get_counts_of_hsi_by_short_treatment_id,
-                    do_scaling=True
+                    do_scaling=False
                 ),
                 only_mean=True,
                 collapse_columns=True,
@@ -128,10 +129,11 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
             def get_population_for_year(_df):
                 """Returns the population in the year of interest"""
                 _df['date'] = pd.to_datetime(_df['date'])
-
+                print(_df['date'])
                 # Filter the DataFrame based on the target period
                 filtered_df = _df.loc[_df['date'].between(*target_period)]
                 numeric_df = filtered_df.drop(columns=['female', 'male'], errors='ignore')
+                print(numeric_df)
                 population_sum = numeric_df.sum(numeric_only=True)
 
                 return population_sum
@@ -140,7 +142,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
                 module='tlo.methods.demography',
                 key='population',
                 custom_generate_series=get_population_for_year,
-                do_scaling=True
+                do_scaling=False
             ),
                 only_mean=True,
                 collapse_columns=True,
@@ -287,6 +289,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     all_draws_population = pd.DataFrame(columns=range(len(scenario_names)))
     all_draws_population_normalised = pd.DataFrame(columns=range(len(scenario_names)))
     for draw in range(len(scenario_names)):
+        print(draw)
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig10_{stub}_{draw}.png"  # noqa: E731
         appointment_time_table = pd.read_csv(
             resourcefilepath
@@ -331,7 +334,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                 module='tlo.methods.demography',
                 key='population',
                 custom_generate_series=get_population_for_year,
-                do_scaling=True
+                do_scaling=False
             ),
                 only_mean=True,
                 collapse_columns=True,
@@ -420,7 +423,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                 module='tlo.methods.demography',
                 key='population',
                 custom_generate_series=get_population_for_year,
-                do_scaling=True
+                do_scaling=False
             ),
                 only_mean=True,
                 collapse_columns=True,
@@ -906,7 +909,7 @@ def table2_description_of_coarse_hsi_events(
                 module='tlo.methods.healthsystem.summary',
                 key='HSI_Event_non_blank_appt_footprint',
                 custom_generate_series=get_num_treatments_group,
-                do_scaling=True
+                do_scaling=False
             ),
                 only_mean=True,
                 collapse_columns=True,
@@ -916,7 +919,7 @@ def table2_description_of_coarse_hsi_events(
                 module='tlo.methods.demography',
                 key='population',
                 custom_generate_series=get_population_for_year,
-                do_scaling=True
+                do_scaling=False
             ),
                 only_mean=True,
                 collapse_columns=True,
@@ -1037,17 +1040,17 @@ def table2_description_of_coarse_hsi_events(
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = '/Users/rem76/PycharmProjects/TLOmodel/resources'):
     """Description of the usage of healthcare system resources."""
 
-    # figure9_distribution_of_hsi_event_all_years_line_graph(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-    #     min_year=min_year, max_year=max_year)
+    figure9_distribution_of_hsi_event_all_years_line_graph(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+        min_year=min_year, max_year=max_year)
 
-    figure10_minutes_per_cadre_and_treatment(
-        results_folder=results_folder,
-        output_folder=output_folder,
-        resourcefilepath=resourcefilepath,
-        min_year=min_year,
-        max_year=max_year
-    ),
+    # figure10_minutes_per_cadre_and_treatment(
+    #     results_folder=results_folder,
+    #     output_folder=output_folder,
+    #     resourcefilepath=resourcefilepath,
+    #     min_year=min_year,
+    #     max_year=max_year
+    # ),
     # table1_description_of_hsi_events(
     #     results_folder= results_folder,
     #     output_folder= output_folder,

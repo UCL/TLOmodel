@@ -15,7 +15,7 @@ from tlo.methods.scenario_switcher import (
 from tlo.scenario import BaseScenario
 
 YEAR_OF_CHANGE = 2025
-n_samples_to_use = 200
+n_samples_to_use = 2
 LHS_file = "src/scripts/climate_disruptions/lhs_parameter_draws.json"
 start_index = 0
 # Latin Hypercube parameters and generation done in src/scripts/climate_disruptions/generate_LHS_params_mode_1.py
@@ -30,8 +30,8 @@ class ClimateDisruptionScenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2041, 1, 12)
-        self.pop_size = 100_000
+        self.end_date = Date(2011, 1, 12)
+        self.pop_size = 1000
         self.runs_per_draw = 5
         self.YEAR_OF_CHANGE = YEAR_OF_CHANGE
         self._parameter_grid = parameter_grid
@@ -47,6 +47,7 @@ class ClimateDisruptionScenario(BaseScenario):
                 "tlo.methods.demography.detail": logging.WARNING,
                 "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
+                "tlo.methods.healthsystem": logging.INFO,
                 "tlo.methods.population": logging.INFO,
             },
         }
