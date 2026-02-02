@@ -757,37 +757,37 @@ def figure7_capacity_stats(results_folder: Path, output_folder: Path, resourcefi
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
 
-    # table1_description_of_hsi_events(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # figure1_distribution_of_hsi_event_by_treatment_id(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # figure2_appointments_used(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # figure3_fraction_of_time_of_hcw_used_by_treatment(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # figure4_hr_use_overall(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # figure5_bed_use(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # figure6_cons_use(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # table_2_relative_frequency_of_cons_use(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
+    table1_description_of_hsi_events(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure1_distribution_of_hsi_event_by_treatment_id(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure2_appointments_used(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure3_fraction_of_time_of_hcw_used_by_treatment(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure4_hr_use_overall(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure5_bed_use(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure6_cons_use(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    table_2_relative_frequency_of_cons_use(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
 
     figure7_capacity_stats(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
