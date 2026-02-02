@@ -1285,9 +1285,7 @@ class HealthSystem(Module):
         self._compute_factors_for_effective_capabilities()
         for clinic, clinic_cl in self._daily_capabilities.items():
             for facID_and_officer in clinic_cl.keys():
-                rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
-                    facID_and_officer=facID_and_officer, clinic=clinic
-                )
+                rescaling_factor = self._rescaling_factors[clinic][facID_and_officer]
 
                 if rescaling_factor > 1 and rescaling_factor != float("inf"):
                     self._daily_capabilities[clinic][facID_and_officer] *= rescaling_factor
