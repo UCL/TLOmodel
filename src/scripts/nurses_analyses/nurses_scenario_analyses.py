@@ -15,12 +15,10 @@ from pathlib import Path
 from typing import Dict
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
+from tlo.analysis.utils import get_parameters_for_status_quo, get_root_path, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
-from tlo.analysis.utils import get_root_path
-
 
 
 class StaffingScenario(BaseScenario):
@@ -51,12 +49,6 @@ class StaffingScenario(BaseScenario):
     def modules(self):
         return fullmodel() + [
             ImprovedHealthSystemAndCareSeekingScenarioSwitcher()]
-
-    # def modules(self):
-    #     return (
-    #         fullmodel(resourcefilepath=self.resources)
-    #         + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
-    #     )
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < self.number_of_draws:
@@ -131,8 +123,8 @@ class StaffingScenario(BaseScenario):
                 mix_scenarios(
                     self._default_of_all_max_healthsystem_scenarios(),
                     {"HealthSystem": {
-                            'HR_scaling_by_level_and_officer_type_mode': "default",
-                        }},
+                        'HR_scaling_by_level_and_officer_type_mode': "default",
+                    }},
                     {'ScenarioSwitcher': {
                         'max_healthsystem_function': [False] * 2,
                         'max_healthcare_seeking': [True] * 2,
