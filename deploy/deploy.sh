@@ -17,7 +17,7 @@ az acr login --name "${REGISTRY_NAME}"
 echo "done"
 # Build the image
 echo "Building docker image ${IMAGE_FULL_NAME}..."
-docker build --tag "${IMAGE_FULL_NAME}" .
+docker build --platform linux/amd64 --tag "${IMAGE_FULL_NAME}" .
 # Tag the image
 echo -n "Tagging ${REGISTRY_URL}/${IMAGE_FULL_NAME}..."
 docker tag "${IMAGE_FULL_NAME}" "${REGISTRY_URL}/${IMAGE_FULL_NAME}"
