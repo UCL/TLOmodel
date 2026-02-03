@@ -7,8 +7,7 @@ RUN apt-get update -qq && \
     DEBIAN_FRONTEND=noninteractive apt-get install -qq -y git git-lfs < /dev/null > /dev/null && \
     rm -rf /var/lib/apt/lists/* && \
     git lfs install && \
-    git clone --depth 1 --branch "${BRANCH_NAME}" https://github.com/UCL/TLOmodel.git /TLOmodel && \
-    rm -rf /root/.ssh
+    git clone --branch "${BRANCH_NAME}" https://github.com/UCL/TLOmodel.git /TLOmodel
 
 WORKDIR /TLOmodel
 
