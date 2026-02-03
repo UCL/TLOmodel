@@ -2,10 +2,14 @@
 
 set -e
 
+if [[ -z "$IMAGE_TAG" ]]; then
+    echo "Must provide IMAGE_TAG in environment" 1>&2
+    exit 1
+fi
+
 REGISTRY_NAME="tlob1acr"
 REGISTRY_URL="${REGISTRY_NAME}.azurecr.io"
 IMAGE_NAME="tlo"
-IMAGE_TAG="1.3"
 IMAGE_FULL_NAME="${IMAGE_NAME}:${IMAGE_TAG}"
 
 # Documentation at
