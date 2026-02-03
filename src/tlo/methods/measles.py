@@ -518,7 +518,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.consumables['severe_pneumonia']: 23040})))
 
         # request the treatment
-        if self.get_consumables(item_codes):
+        if all(drugs_available):
             logger.debug(key="HSI_Measles_Treatment",
                          data=f"HSI_Measles_Treatment: giving required measles treatment to person {person_id}")
 
