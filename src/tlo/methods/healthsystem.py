@@ -461,7 +461,7 @@ class HealthSystem(Module):
         services_affected_precip: Optional[str] = "none",
         scale_factor_appointment_urgency: Optional[str] = 1,
         delay_in_seeking_care_weather: Optional[float] = 4,
-        scale_factor_severity_disruption_and_delay: Optional[float] = 1,
+        scale_factor_severity_disruption_and_delay: Optional[float] = None,
         prop_supply_side_disruptions: Optional[float] = 0.5,
     ):
         """
@@ -588,17 +588,6 @@ class HealthSystem(Module):
         # Define the container for calls for health system interaction events
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
-
-        # Store the arguments provided for climate disruption parameters
-
-        self.arg_climate_ssp = climate_ssp
-        self.arg_climate_model_ensemble_model = climate_model_ensemble_model
-        self.arg_year_effective_climate_disruptions = year_effective_climate_disruptions
-        self.arg_services_affected_precip = services_affected_precip
-        self.arg_scale_factor_appointment_urgency = scale_factor_appointment_urgency
-        self.arg_delay_in_seeking_care_weather = delay_in_seeking_care_weather
-        self.arg_scale_factor_severity_disruption_and_delay = scale_factor_severity_disruption_and_delay
-        self.arg_prop_supply_side_disruptions = prop_supply_side_disruptions
 
         # Store the arguments provided for cons/beds/equip_availability
         assert cons_availability in (None, "default", "all", "none")
@@ -1553,62 +1542,6 @@ class HealthSystem(Module):
         )
 
         return _equip_availability
-
-    def get_climate_ssp(self) -> str:
-        """Returns climate_ssp. Uses argument if provided, otherwise parameter."""
-        if self.arg_climate_ssp is not None:
-            return self.arg_climate_ssp
-        return self.parameters["climate_ssp"]
-
-    def get_climate_model_ensemble_model(self) -> str:
-        """Returns climate_model_ensemble_model. Uses argument if provided, otherwise parameter."""
-        if self.arg_climate_model_ensemble_model is not None:
-            return self.arg_climate_model_ensemble_model
-        return self.parameters["climate_model_ensemble_model"]
-
-    def get_year_effective_climate_disruptions(self) -> int:
-        """Returns year_effective_climate_disruptions. Uses argument if provided, otherwise parameter."""
-        if self.arg_year_effective_climate_disruptions is not None:
-            return self.arg_year_effective_climate_disruptions
-        return self.parameters["year_effective_climate_disruptions"]
-
-    def get_services_affected_precip(self) -> str:
-        """Returns services_affected_precip. Uses argument if provided, otherwise parameter."""
-        if self.arg_services_affected_precip is not None and self.arg_services_affected_precip != "none":
-            return self.arg_services_affected_precip
-        return self.parameters["services_affected_precip"]
-
-    def get_scale_factor_appointment_urgency(self) -> float:
-        """Returns scale_factor_appointment_urgency. Uses argument if provided, otherwise parameter."""
-        if self.arg_scale_factor_appointment_urgency is not None:
-            return self.arg_scale_factor_appointment_urgency
-        return self.parameters["scale_factor_appointment_urgency"]
-
-    def get_delay_in_seeking_care_weather(self) -> float:
-        """Returns delay_in_seeking_care_weather. Uses argument if provided, otherwise parameter."""
-        if self.arg_delay_in_seeking_care_weather is not None:
-            return self.arg_delay_in_seeking_care_weather
-        return self.parameters["delay_in_seeking_care_weather"]
-
-    def get_scale_factor_severity_disruption_and_delay(self) -> float:
-        """Returns scale_factor_severity_disruption_and_delay. Uses argument if provided, otherwise parameter."""
-        if self.arg_scale_factor_severity_disruption_and_delay is not None:
-            return self.arg_scale_factor_severity_disruption_and_delay
-        return self.parameters["scale_factor_severity_disruption_and_delay"]
-
-    def get_prop_supply_side_disruptions(self) -> float:
-        """Returns prop_supply_side_disruptions. Uses argument if provided, otherwise parameter."""
-        if self.arg_prop_supply_side_disruptions is not None:
-            return self.arg_prop_supply_side_disruptions
-        return self.parameters["prop_supply_side_disruptions"]
-
-    def get_scale_factor_prob_disruption(self) -> float:
-        """Returns scale_factor_prob_disruption from parameters."""
-        return self.parameters["scale_factor_prob_disruption"]
-
-    def get_scale_factor_reseeking_healthcare_post_disruption(self) -> float:
-        """Returns scale_factor_reseeking_healthcare_post_disruption from parameters."""
-        return self.parameters["scale_factor_reseeking_healthcare_post_disruption"]
 
     def schedule_to_call_never_ran_on_date(self, hsi_event: "HSI_Event", tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
@@ -2920,20 +2853,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         climate_disrupted = False
 
-        # Get climate parameters using getter methods
-        services_affected_precip = self.module.get_services_affected_precip()
-        year_effective_climate_disruptions = self.module.get_year_effective_climate_disruptions()
-        scale_factor_prob_disruption = self.module.get_scale_factor_prob_disruption()
-        prop_supply_side_disruptions = self.module.get_prop_supply_side_disruptions()
-        scale_factor_appointment_urgency = self.module.get_scale_factor_appointment_urgency()
-        scale_factor_severity_disruption_and_delay = self.module.get_scale_factor_severity_disruption_and_delay()
-        delay_in_seeking_care_weather = self.module.get_delay_in_seeking_care_weather()
-        scale_factor_reseeking_healthcare_post_disruption = self.module.get_scale_factor_reseeking_healthcare_post_disruption()
         # First, check for climate disruption
         if (
-            year >= year_effective_climate_disruptions
-            and services_affected_precip != "none"
-            and services_affected_precip is not None
+            year >= 2025
+            and self.module.parameters["services_affected_precip"] != "none"
+            and self.module.parameters["services_affected_precip"] is not None
         ):
             fac_level = item.hsi_event.facility_info.level
             facility_used = self.sim.population.props.at[item.hsi_event.target, f"level_{fac_level}"]
@@ -2947,19 +2871,19 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     & (self.module.parameters["projected_precip_disruptions"]["month"] == month)
                     & (
                         self.module.parameters["projected_precip_disruptions"]["service"]
-                        == services_affected_precip
+                        == self.module.parameters["services_affected_precip"]
                     ),
                     "disruption",
                 ]
                 prob_disruption = pd.DataFrame(prob_disruption)
                 prob_disruption = min(
-                    float(prob_disruption.iloc[0]) * scale_factor_prob_disruption, 1
-                )  # use data on deficit of HSIs from ANC paper as prior, then scale
+                    float(prob_disruption.iloc[0]) * self.module.parameters["scale_factor_prob_disruption"], 1
+                )  # use data on defecit of HSIs from ANC paper as prior, then scale
                 if np.random.binomial(1, prob_disruption) == 1:
                     climate_disrupted = True
                     # determine whether "supply side" or "demand side" disruption. If demand, then the required footprint
                     # added to the running footprint total to be subtracted from the daily capabilities
-                    if np.random.binomial(1, prop_supply_side_disruptions) and self.module.mode_appt_constraints == 2:
+                    if np.random.binomial(1, self.module.parameters["prop_supply_side_disruptions"]) and self.module.parameters["mode_appt_constraints"] == 2:
                         footprint = item.hsi_event.expected_time_requests
                         self.module.running_total_footprint.update(footprint)
                     # Regardless of supply or demand side, determine if the appointment will be rescheduled
@@ -2973,10 +2897,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                   + DateOffset(
                                 days=(
                                     int(
-                                        max(scale_factor_appointment_urgency * item.priority, 1)
+                                        max( self.module.parameters["scale_factor_appointment_urgency"] * item.priority, 1)
                                         * prob_disruption
-                                        * scale_factor_severity_disruption_and_delay
-                                        * delay_in_seeking_care_weather
+                                        * self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                        * self.module.parameters["delay_in_seeking_care_weather"]
                                     )
                                 )
                             ),
@@ -2984,10 +2908,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                    + DateOffset(
                                 days=(
                                     int(
-                                        max(scale_factor_appointment_urgency * item.priority, 1)
+                                        max( self.module.parameters["scale_factor_appointment_urgency"] * item.priority, 1)
                                         * prob_disruption
-                                        * scale_factor_severity_disruption_and_delay
-                                        * delay_in_seeking_care_weather
+                                        * self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                        * self.module.parameters["delay_in_seeking_care_weather"]
                                     )
                                 )
                             )
@@ -3014,7 +2938,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             hsb_model = self.sim.modules["HealthSeekingBehaviour"].hsb_linear_models["adults"]
 
                         will_seek_care_prob = min(
-                            scale_factor_reseeking_healthcare_post_disruption
+                            self.module.parameters["scale_factor_reseeking_healthcare_post_disruption"]
                             * hsb_model.predict(  # don't supply rng, so get a probability
                                 df=patient,
                                 subgroup=subgroup_name,
@@ -3034,10 +2958,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                       + DateOffset(
                                     days=(
                                         int(
-                                            max(scale_factor_appointment_urgency * item.priority, 1)
+                                            max(self.module.parameters[
+                                                    "scale_factor_appointment_urgency"] * item.priority, 1)
                                             * prob_disruption
-                                            * scale_factor_severity_disruption_and_delay
-                                            * delay_in_seeking_care_weather
+                                            * self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                            * self.module.parameters["delay_in_seeking_care_weather"]
                                         )
                                     )
                                 ),  # makes it proportional to urgency. Most urgent are 0 and 1 (ped/adult)
@@ -3045,10 +2970,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                        + DateOffset(
                                     days=(
                                         int(
-                                            max(scale_factor_appointment_urgency * item.priority, 1)
+                                            max(self.module.parameters[
+                                                    "scale_factor_appointment_urgency"] * item.priority, 1)
                                             * prob_disruption
-                                            * scale_factor_severity_disruption_and_delay
-                                            * delay_in_seeking_care_weather
+                                            * self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                                            * self.module.parameters["delay_in_seeking_care_weather"]
                                         )
                                     )
                                 )
