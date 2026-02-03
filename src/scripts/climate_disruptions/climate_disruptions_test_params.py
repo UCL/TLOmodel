@@ -71,7 +71,7 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "test_memory_issue_w_param_grid_2025",
+            "filename": "test_disruption_parameters",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
