@@ -2855,7 +2855,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # First, check for climate disruption
         if (
-            year >= 2025
+            year >= self.module.parameters["year_effective_climate_disruptions"]
             and self.module.parameters["services_affected_precip"] != "none"
             and self.module.parameters["services_affected_precip"] is not None
         ):
