@@ -47,7 +47,8 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -594,6 +595,23 @@ class Depression(Module, GenericFirstAppointmentsMixin):
             fraction_of_month_depr * self.daly_wts['average_per_day_during_any_episode'], fill_value=0.0)
 
         return av_daly_wt_last_month
+
+    def report_summary_stats(self):
+        # This reports age- and sex-specific prevalence of depression for all individuals
+        df = self.sim.population.props
+        any_depr_in_the_last_month = df[
+            (df['is_alive']) &
+            (~pd.isnull(df['de_date_init_most_rec_depr'])) &
+            (df['de_date_init_most_rec_depr'] <= self.sim.date) &
+            (
+                (pd.isnull(df['de_date_depr_resolved'])) |
+                (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
+            )
+        ]
+        number_depressed = (
+            any_depr_in_the_last_month.groupby(['sex', 'age_range']).size().unstack(fill_value=0)
+        ).to_dict(orient='index')
+        return {'number_with_depressive_episode_in_past_month': number_depressed}
 
     def _check_for_suspected_depression(
         self, symptoms: List[str], treatment_id: str, has_even_been_diagnosed: bool
