@@ -24,7 +24,7 @@ with open(LHS_file, 'r') as f:
     LHS_grid_full = json.load(f)
 
 parameter_grid  = LHS_grid_full[start_index:start_index + n_samples_to_use]
-
+print(parameter_grid)
 class ClimateDisruptionScenario(BaseScenario):
     def __init__(self):
         super().__init__()
@@ -56,8 +56,38 @@ class ClimateDisruptionScenario(BaseScenario):
         return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
-        return self._parameter_grid[draw_number]
-
+        params = self._parameter_grid[draw_number]
+        return {
+            "HealthSystem": {
+                "services_affected_precip": params["services_affected_precip"],
+                "climate_ssp": params["climate_ssp"],
+                "climate_model_ensemble_model": params["climate_model_ensemble_model"],
+                "year_effective_climate_disruptions": params["year_effective_climate_disruptions"],
+                "scale_factor_prob_disruption": params["scale_factor_prob_disruption"],
+                "delay_in_seeking_care_weather": params["delay_in_seeking_care_weather"],
+                "scale_factor_reseeking_healthcare_post_disruption": params[
+                    "scale_factor_reseeking_healthcare_post_disruption"],
+                "scale_factor_appointment_urgency": params["scale_factor_appointment_urgency"],
+                "scale_factor_severity_disruption_and_delay": params["scale_factor_severity_disruption_and_delay"],
+                "prop_supply_side_disruptions": float(params["prop_supply_side_disruptions"]),
+                "mode_appt_constraints": params["mode_appt_constraints"],
+                "mode_appt_constraints_postSwitch": params["mode_appt_constraints_postSwitch"],
+                "cons_availability": params["cons_availability"],
+                "cons_availability_postSwitch": params["cons_availability_postSwitch"],
+                "year_cons_availability_switch": params["year_cons_availability_switch"],
+                "beds_availability": params["beds_availability"],
+                "equip_availability": params["equip_availability"],
+                "equip_availability_postSwitch": params["equip_availability_postSwitch"],
+                "year_equip_availability_switch": params["year_equip_availability_switch"],
+                "use_funded_or_actual_staffing": params["use_funded_or_actual_staffing"],
+                "scale_to_effective_capabilities": params["scale_to_effective_capabilities"],
+                "policy_name": params["policy_name"],
+                "tclose_overwrite": params["tclose_overwrite"],
+            },
+            "SymptomManager": {
+                "spurious_symptoms": True,
+            },
+        }
 
 if __name__ == "__main__":
     from tlo.cli import scenario_run
