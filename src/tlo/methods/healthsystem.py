@@ -2155,7 +2155,7 @@ class HealthSystem(Module):
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
 
-        # Capture rescaling factors at the end of historical scaling i.e. in 2025
+
         if (self.sim.date.year == self.parameters['year_service_availability_switch']):
             self._compute_factors_for_effective_capabilities()
 
@@ -2946,6 +2946,7 @@ class HealthSystemSummaryCounter:
                 "average_Frac_Time_Used_Overall": {
                     clinic: np.mean(values) for clinic, values in self._frac_time_used_overall.items()
                 },
+                "rescaling_factor_for_clinics": self._rescaling_factors,
                 # <-- leaving space here for additional summary measures that may be needed in the future.
             },
         )
@@ -3030,16 +3031,16 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.use_funded_or_actual_staffing = p["use_funded_or_actual_staffing_postSwitch"]
 
         if "service_availability" in self.parameters_to_change:
-            self.module.parameters['Service_Availability'] = p["service_availability"]
+            self.module.service_availability = p["service_availability_postSwitch"]
             ## As part of the switching, clear the queue of any events currently scheduled
             ## that might require one of the omitted services when they actually run.
             retained_events = []
             while len(self.module.HSI_EVENT_QUEUE) > 0:
                 next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
-                if self.module.is_treatment_id_allowed(hsi_event.TREATMENT_ID, self.module.service_availability):
+                if self.module.is_treatment_id_allowed(next_event_tuple.hsi_event.TREATMENT_ID, self.module.service_availability):
                     retained_events.append(next_event_tuple)
                 else:
-                    self.module.call_and_record_never_ran_hsi_event(hsi_event=next_event_tuple.hsi_event, priority=next_event_tuple.priority)
+                    self.module.schedule_to_call_never_ran_on_date(hsi_event=next_event_tuple.hsi_event, tdate=next_event_tuple.topen)
 
             self.module.HSI_EVENT_QUEUE = retained_events
             hp.heapify(self.module.HSI_EVENT_QUEUE)

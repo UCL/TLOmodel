@@ -2856,70 +2856,100 @@ def test_service_availability_switch(tmpdir, seed):
     that need one of the unavailable services.
     """
 
-    sim = Simulation(
-        start_date=start_date,
-        seed=seed,
-        log_config={
-            "filename": "log",
-            "directory": tmpdir,
-            "custom_levels": {
-                "tlo.methods.healthsystem": logging.DEBUG,
-            },
-        },
-        resourcefilepath=resourcefilepath,
-    )
+    class DummyModuleGenericClinic(Module):
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
 
-    # Register the core modules
-    # Set the year of service availability switch to start_date + 1 year
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    # Create a dummy HSI event class
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id, appt_type, level, treatment_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = treatment_id
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+            self.ACCEPTED_FACILITY_LEVEL = level
+
+        def apply(self, person_id, squeeze_factor):
+            self.this_hsi_event_ran = True
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+    }
+    start_date = Date(2010, 1, 1)
+    tot_population = 100
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+
     sim.register(
         demography.Demography(),
-        simplified_births.SimplifiedBirths(),
-        enhanced_lifestyle.Lifestyle(),
-        healthsystem.HealthSystem(),
-        symptommanager.SymptomManager(),
-        healthseekingbehaviour.HealthSeekingBehaviour(),
-        mockitis.Mockitis(),
-        chronicsyndrome.ChronicSyndrome(),
+        healthsystem.HealthSystem(
+            capabilities_coefficient=1.0,
+            mode_appt_constraints=1,
+            ignore_priority=False,
+            randomise_queue=True,
+            policy_name="",
+            use_funded_or_actual_staffing="funded_plus",
+        ),
+        DummyModuleGenericClinic()
     )
 
-    # Define the "switch" from Mode 1 to Mode 1, with the rescaling
     hs_params = sim.modules["HealthSystem"].parameters
-    hs_params["year_service_availability_switch"] = start_date.year + 1
-    hs_params["Service_availability_postSwitch"] = ["Alri_Pneumonia_Treatment_Inpatient"]
+    hs_params["Service_Availability"] = ["ThisEventShouldRun", "ThisEventShouldNotRunPostSwitch"]
+    year_service_availability_switch = 2011
+    hs_params["year_service_availability_switch"] = year_service_availability_switch
+    hs_params["service_availability_postSwitch"] = ["ThisEventShouldRun"]
 
-
-    # Run the simulation
     sim.make_initial_population(n=popsize)
+    ## Schedule 10 events that should run; 10 events that have a treatment id that is not available
+    ## after service availability switch.
+    nevents_with_available_ids = 10
+    nevents_with_withdrawn_ids = 10
+    for i in range(0, nevents_with_available_ids):
+        hsi = DummyHSIEvent(
+            module=sim.modules["DummyModuleGenericClinic"],
+            person_id=i,
+            appt_type="ConWithDCSA",
+            level="0",
+            treatment_id="ThisEventShouldRun",
+        )
+        sim.modules["HealthSystem"].schedule_hsi_event(
+            hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+        )
+
+    for i in range(nevents_with_available_ids, nevents_with_available_ids + nevents_with_withdrawn_ids):
+        hsi = DummyHSIEvent(
+            module=sim.modules["DummyModuleGenericClinic"],
+            person_id=i,
+            appt_type="ConWithDCSA",
+            level="0",
+            treatment_id="ThisEventShouldNotRunPostSwitch",
+        )
+        ## These events open after service availability switch
+        topen = pd.Timestamp(year_service_availability_switch, 1, 1)
+        sim.modules["HealthSystem"].schedule_hsi_event(
+            hsi, topen=topen, tclose=topen + pd.DateOffset(days=1), priority=1
+        )
+
     sim.simulate(end_date=end_date)
-
-    # read the results
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
-    # Do the checks
-    assert len(output["tlo.methods.healthsystem"]["HSI_Event"]) > 0
-    hsi_events = output["tlo.methods.healthsystem"]["HSI_Event"]
-    hsi_events["date"] = pd.to_datetime(hsi_events["date"]).dt.year
+    breakpoint()
+    hsi_events = output["tlo.methods.healthsystem"]['HSI_Event']
+    ## Expect 10 rows in hsi_events['HSI_Event'] with did_run True and TREATMENT_ID ThisEventShouldRun
+    nevents_ran = hsi_events.groupby("TREATMENT_ID")["did_run"].value_counts()
+    assert nevents_ran.loc[('ThisEventShouldRun', True)] == nevents_with_available_ids
+    ## Expect 10 rows in hsi_events['Never_ran_HSI_Event'] with TREATMENT_ID ThisEventShouldNotRunPostSwitch
+    never_ran_events = output["tlo.methods.healthsystem"]['Never_ran_HSI_Event']
+    nevents_did_not_run = never_ran_events[never_ran_events['TREATMENT_ID'] == 'ThisEventShouldNotRunPostSwitch'].shape[0]
+    assert nevents_did_not_run == nevents_with_withdrawn_ids
 
-    # Check that all squeeze factors were high in 2010, but not all were high in 2011
-    # thanks to rescaling of capabilities
-    assert (
-        hsi_events.loc[
-            (hsi_events["Person_ID"] >= 0)
-            & (hsi_events["Number_By_Appt_Type_Code"] != {})
-            & (hsi_events["date"] == 2010),
-            "Squeeze_Factor",
-        ]
-        >= 100.0
-    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
-
-    assert not (
-        hsi_events.loc[
-            (hsi_events["Person_ID"] >= 0)
-            & (hsi_events["Number_By_Appt_Type_Code"] != {})
-            & (hsi_events["date"] == 2011),
-            "Squeeze_Factor",
-        ]
-        >= 100.0
-    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
 
 
 
