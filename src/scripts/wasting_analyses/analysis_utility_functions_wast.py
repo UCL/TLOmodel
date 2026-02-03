@@ -5,6 +5,7 @@ heatmaps_cons_wast.py.
 """
 
 import logging
+import pickle
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import Dict
@@ -21,7 +22,7 @@ from PIL import Image
 from run_costing_analysis_wast import run_costing_analysis_wast as run_costing
 
 from src.scripts.costing.cost_estimation import apply_discounting_to_cost_data
-from tlo.analysis.utils import create_pickles_locally, extract_results
+from tlo.analysis.utils import create_pickles_locally, extract_results, get_scenario_outputs
 
 plt.style.use('seaborn-darkgrid')
 
@@ -604,15 +605,6 @@ def extract_pop_sizes_data_frames_and_outcomes(
     """
 
     print(f"    -{interv=}")
-    pop_sizes_wasted_df = extract_results(
-        folder,
-        module="tlo.methods.wasting",
-        key="pop sizes",
-        custom_generate_series = (
-            lambda df: df.assign(year=df['date'].dt.year)
-            .set_index('year')['total__under5']
-        ),
-        do_scaling=True).fillna(0)
 
     pop_size_wasted_df = extract_results(
         folder,
@@ -989,30 +981,6 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
                 bbox_inches='tight'
             )
             plt.close(fig)
-
-def plot_percentage_deaths_with_SAM(
-    cohort: str,
-    scenarios_dict: dict,
-    scenarios_to_compare: list,
-    plot_years: list,
-    outcome_type: str,
-    outcomes_dict: dict,
-    outputs_path: Path,
-    scenarios_tocompare_prefix: str,
-    timestamps_suffix: str
-) -> None:
-    """
-    Plots mean deaths or DALYs and confidence intervals over time for the specified cohort for multiple scenarios.
-    :param cohort: 'Neonatal' or 'Under-5'
-    :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
-    :param scenarios_to_compare: List of scenarios to plot
-    :param plot_years: List of years to plot
-    :param outcome_type: 'deaths', 'deaths_with_SAM', or 'DALYs'
-    :param outcomes_dict: Dictionary containing data for plotting nested as outcomes_dict[interv][outcome][draw][run]
-    :param outputs_path: Path to save the plots
-    :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
-    :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
-    """
 
 def plot_sum_outcome_and_CIs_intervention_period(
     cohort: str,
@@ -1980,6 +1948,149 @@ def plot_sum_outcome_and_CIs_intervention_period(
                     table_effectiveness(averted_dict, f"{outcome_type}_{cause}")
             # if outcome_type == "deaths":
             #     table_effectiveness(averted_deaths, f"{outcome_type}_{cause}")
+
+# ----------------------------------------------------------------------------------------------------------------------
+def plot_calibration_outputs(calib_outputs_path: Path) -> None:
+    """
+    Creates 3 plots comparing
+    calibration outputs (mean and CI over runs) and data (reported value and CI derived from reported age group sizes):
+        * prevalence of moderate and severe wasting among age groups in 2016,
+        * prevalence of moderate and severe wasting among age groups in 2020,
+        * average annual direct deaths due to SAM.
+    :param calib_outputs_path:
+    """
+
+    # Get latest SQ timestamp
+    SQ_outcomes_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/SQ")
+    SQ_outcomes_file_prefix = 'wasting_analysis__full_model_SQ-'
+    SQ_timestamp = \
+        get_scenario_outputs(SQ_outcomes_file_prefix, SQ_outcomes_path)[-1].name.split(f"{SQ_outcomes_file_prefix}")[-1]
+
+    # Get the file with death outcomes
+    outcomes_data_dir = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes/outcomes_data")
+
+    # Find the file with death outcomes for this SQ timestamp (should be exactly one)
+    search_pattern = f"death_outcomes_*{SQ_timestamp}*.pkl"
+    matches = list(outcomes_data_dir.glob(search_pattern))
+    if len(matches) == 0:
+        raise FileNotFoundError(f"No file found matching pattern: {search_pattern} in {outcomes_data_dir}")
+    if len(matches) > 1:
+        # List the found files in the error message to help debugging
+        files_found = [f.name for f in matches]
+        raise ValueError(f"Ambiguity Error: Found multiple files matching pattern '{search_pattern}': {files_found}")
+    death_outcomes_path = matches[0]
+
+    # Load modelled under 5 death outcomes due to SAM
+    # ###
+    print("\nloading death outcomes from file ...")
+    with death_outcomes_path.open("rb") as f:
+        death_outcomes_dict = pickle.load(f)
+    # SAM deaths over intervention period Sum and 95% CI
+    SQ_interv_period_under5_SAM_deaths_sum_ci_list = \
+        death_outcomes_dict['SQ']['interv_under5_SAM_deaths_sum_ci_df'].loc['sum', 0]
+    print("\nSQ_interv_period_under5_SAM_deaths_sum_ci_list:")
+    print(SQ_interv_period_under5_SAM_deaths_sum_ci_list)
+    # Average and 95% CI: Annual nmb of SAM deaths (avg over interv period)
+    SQ_interv_period_avg_annual_under5_SAM_deaths_avg_ci_list = \
+        [val / 5 for val in SQ_interv_period_under5_SAM_deaths_sum_ci_list]
+    print("\nSQ_interv_period_avg_annual_under5_SAM_deaths_avg_ci_list:")
+    print(SQ_interv_period_avg_annual_under5_SAM_deaths_avg_ci_list)
+
+    # Load GBD 2019 deaths due to 'Protein-energy malnutrition'
+    # ###
+    # - Load data, format and limit to deaths only:
+    gbd_data_df = pd.read_csv(Path("./resources/gbd/ResourceFile_Deaths_And_DALYS_GBD2019.csv"))
+    print("\ngbd_data_df:")
+    print(gbd_data_df)
+    print("\ntype:")
+    print(type(gbd_data_df))
+    print("\ncolumn names:")
+    print(list(gbd_data_df.columns))
+    # List of columns you want to inspect
+    target_columns = ["measure_name", "Age_Grp", "Age_Grp_GBD", "Year", "Period", "cause_name", "cause_id"]
+
+    print("\n--- Unique Values in Target Columns ---")
+
+    for col in target_columns:
+        if col in gbd_data_df.columns:
+            # Get unique values and convert to list for a cleaner print
+            unique_vals = gbd_data_df[col].unique().tolist()
+            print(f"\n{col} ({len(unique_vals)} unique values):")
+            print(unique_vals)
+        else:
+            print(f"\n[!] Column '{col}' not found in DataFrame.")
+
+    print("\n--- Unique Combinations of 'Age_Grp' and 'Age_Grp_GBD' ---")
+    if "Age_Grp" in gbd_data_df.columns and "Age_Grp_GBD" in gbd_data_df.columns:
+        unique_combinations = gbd_data_df[["Age_Grp", "Age_Grp_GBD"]].drop_duplicates().sort_values("Age_Grp")
+
+        # Using to_string() ensures the whole table is printed without truncation
+        print(unique_combinations.to_string(index=False))
+    else:
+        print("One or both Age Group columns are missing.")
+
+    # Keep only deaths under 5 in calib perod 2015-2019 (incl.) due to "Protein-energy malnutrition"
+    mask = (
+        (gbd_data_df["measure_name"] == "Deaths")
+        & (gbd_data_df["Age_Grp"] == "0-4")
+        &
+        # Ensuring Year is treated as an integer for the range comparison
+        (gbd_data_df["Year"].astype(int) >= 2015)
+        & (gbd_data_df["Year"].astype(int) <= 2019)
+        & (gbd_data_df["cause_name"] == "Protein-energy malnutrition")
+    )
+
+    gbd_filtered_df = gbd_data_df[mask].copy()
+
+    # Verify the result
+    print(f"Original nmb rows: {len(gbd_data_df)}")
+    print(f"Filtered nmb rows: {len(gbd_filtered_df)}")
+
+    # Display unique values in the filtered set to confirm
+    print("\nFiltered unique values:")
+    print(f"Years: {sorted(gbd_filtered_df['Year'].unique())}")
+    print(f"Causes: {gbd_filtered_df['cause_name'].unique()}")
+
+    print("\n--- Full GBD Filtered DataFrame (Formatted) ---")
+    with pd.option_context("display.max_rows", None, "display.max_columns", None, "display.width", 1000):
+        print(gbd_filtered_df)
+
+    # Group and sum by 'Year' (select the target columns, and calculate the sum)
+    gbd_yearly_sum_df = gbd_filtered_df.groupby("Year")[["GBD_Est", "GBD_Upper", "GBD_Lower"]].sum()
+
+    # Print the result with the Year as the index
+    print("\n--- GBD Deaths Summed by Year (Aggregated across Sex and Age_Grp_GBD) ---")
+    print(gbd_yearly_sum_df)
+
+    # Total average across these years
+    print("\nMean across 2015-2019:")
+    gbd_means = gbd_yearly_sum_df.mean()
+    print(gbd_means)
+
+    gbd_means_list = [gbd_means["GBD_Est"], gbd_means["GBD_Lower"], gbd_means["GBD_Upper"]]
+    print("\nMean across 2015-2019 as list [GBD_Est, GBD_Lower, GBD_Upper]:")
+    print(gbd_means_list)
+
+    # gbd_data_df = gbd_data_df.loc[gbd_data_df['measure_name'] == 'Deaths']
+    # gbd_data_df = gbd_data_df.rename(columns={
+    #     'Sex': 'sex',
+    #     'Age_Grp': 'age_grp',
+    #     'Period': 'period',
+    #     'GBD_Est': 'mean',
+    #     'GBD_Lower': 'lower',
+    #     'GBD_Upper': 'upper'})
+    #
+    # # - Label GBD causes of death by 'label' defined in the simulation
+    # mapper_from_gbd_causes = pd.Series(
+    #     output['tlo.methods.demography']['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]
+    # ).to_dict()
+    # gbd_data_df['label'] = gbd_data_df['cause_name'].map(mapper_from_gbd_causes)
+    # assert not gbd_data_df['label'].isna().any()
+    #
+    # # - Create comparable data structure:
+    # gbd = gbd_data_df.groupby(['period', 'sex', 'age_grp', 'label'])[['mean', 'lower', 'upper']].sum().div(5.0)
+    # gbd = gbd.add_prefix('GBD_')
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 def plot_availability_heatmaps(outputs_path: Path) -> None:
