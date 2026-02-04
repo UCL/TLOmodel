@@ -26,7 +26,8 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    create_pickles_locally
+    create_pickles_locally,
+    summarize,
 )
 
 # Define a timestamp for script outputs
@@ -94,14 +95,25 @@ cons_scenarios = {
     16: "Neighbourhood pooling – Default health system",
     17: "Neighbourhood pooling – Perfect health system",
 
-    18: "Large radius pairwise exchanges – Default health system",
-    19: "Large radius pairwise exchanges – Perfect health system",
+    18: "Pairwise exchange (Large radius) – Default health system",
+    19: "Pairwise exchange (Large radius) – Perfect health system",
 
-    20: "Small radius pairwise exchanges – Default health system",
-    21: "Small radius pairwise exchanges – Perfect health system",
+    20: "Pairwise exchange (Small radius) – Default health system",
+    21: "Pairwise exchange (Small radius) – Perfect health system",
 
     22: "Perfect availability – Default health system",
     23: "Perfect availability – Perfect health system",
+}
+
+main_analysis_subset = [
+    k for k, v in cons_scenarios.items()
+    if "Default health system" in v
+]
+
+cons_scenarios_main = {
+    k: v.replace(" – Default health system", "")
+    for k, v in cons_scenarios.items()
+    if k in main_analysis_subset
 }
 
 # Function to get incremental values
@@ -210,6 +222,132 @@ def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations
 
     return fig, ax
 
+def plot_stacked_mean_with_total_ci(
+    summary_df,
+    colors: dict,
+    scenario_labels: dict | None = None,
+    ylabel: str = "",
+    xlabel: str = "Scenario",
+    title: str | None = None,
+    figsize=(12, 6),
+    legend_outside: bool = True,
+):
+    """
+    Plot stacked bars using mean values by disease group, with a confidence
+    interval for the total (lower/upper summed across groups).
+
+    Parameters
+    ----------
+    summary_df : pd.DataFrame
+        Index: disease_group
+        Columns: MultiIndex (draw, stat) where stat ∈ {'lower','mean','upper'}
+
+    colors : dict
+        Mapping {disease_group: color}
+
+    scenario_labels : dict, optional
+        Mapping {draw: label} for x-axis
+
+    ylabel : str
+        Y-axis label
+
+    xlabel : str
+        X-axis label
+
+    title : str, optional
+        Figure title
+
+    figsize : tuple
+        Figure size
+
+    legend_outside : bool
+        Whether to place legend outside the plot
+    """
+
+    # ---- Extract mean values (for stacking) ----
+    mean_df = summary_df.xs("mean", level="stat", axis=1)
+
+    # ---- Extract totals for CI ----
+    total_mean = mean_df.sum(axis=0)
+    total_lower = (
+        summary_df.xs("lower", level="stat", axis=1)
+        .sum(axis=0)
+    )
+    total_upper = (
+        summary_df.xs("upper", level="stat", axis=1)
+        .sum(axis=0)
+    )
+
+    # ---- X axis ----
+    draws = mean_df.columns
+    x = np.arange(len(draws))
+
+    # ---- Plot ----
+    fig, ax = plt.subplots(figsize=figsize)
+
+    bottom = np.zeros(len(draws))
+
+    for group in mean_df.index:
+        vals = mean_df.loc[group].values
+        ax.bar(
+            x,
+            vals,
+            bottom=bottom,
+            color=colors.get(group, "grey"),
+            label=group
+        )
+        bottom += vals
+
+    # ---- CI for total only ----
+    yerr = np.vstack([
+        total_mean - total_lower,
+        total_upper - total_mean
+    ])
+
+    ax.errorbar(
+        x,
+        total_mean,
+        yerr=yerr,
+        fmt="none",
+        ecolor="black",
+        elinewidth=1.5,
+        capsize=4,
+        zorder=5
+    )
+
+    # ---- Formatting ----
+    ax.axhline(0, color="black", linewidth=0.8)
+
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
+    if title:
+        ax.set_title(title, pad=10)
+
+    if scenario_labels:
+        ax.set_xticks(x)
+        ax.set_xticklabels(
+            [scenario_labels.get(d, d) for d in draws],
+            rotation=45,
+            ha="right"
+        )
+    else:
+        ax.set_xticks(x)
+        ax.set_xticklabels(draws, rotation=45)
+
+    if legend_outside:
+        ax.legend(
+            title="Disease group",
+            bbox_to_anchor=(1.02, 1),
+            loc="upper left",
+            frameon=False
+        )
+    else:
+        ax.legend(frameon=False)
+
+    fig.tight_layout()
+    return fig, ax
+
 #
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
@@ -247,6 +385,7 @@ num_dalys_averted = (-1.0 *
 
 # Plot DALYs
 num_dalys_averted_summarized = summarize_cost_data(num_dalys_averted, _metric=chosen_metric)
+num_dalys_averted_summarized = num_dalys_averted_summarized[num_dalys_averted_summarized.index.isin(main_analysis_subset)]
 num_dalys_averted_subset_for_figure = num_dalys_averted_summarized[
     num_dalys_averted_summarized.index.get_level_values('draw').isin(list(cons_scenarios.keys()))]
 name_of_plot = f'Incremental DALYs averted compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
@@ -265,3 +404,189 @@ ax.set_ylabel('DALYs \n(Millions)')
 ax.set_ylim(bottom=0)
 fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
+
+def get_num_dalys_by_disease(_df):
+    """
+    Return discounted total DALYs by disease over the TARGET_PERIOD.
+    Output: Series indexed by disease name.
+    """
+    years_needed = relevant_period_for_costing
+    assert set(_df.year.unique()).issuperset(years_needed), \
+        "Some years are not recorded."
+
+    # Keep only years of interest
+    _df = _df.loc[_df.year.between(*years_needed)]
+
+    # Drop non-disease columns
+    disease_cols = _df.columns.difference(
+        ['date', 'sex', 'age_range', 'year']
+    )
+
+    # Sum by year × disease
+    by_year_disease = (
+        _df[['year'] + list(disease_cols)]
+        .groupby('year')
+        .sum()
+    )
+
+    # Discounting
+    initial_year = by_year_disease.index.min()
+    discount_factors = (1 + discount_rate_health) ** (
+        by_year_disease.index - initial_year
+    )
+
+    discounted = by_year_disease.div(discount_factors, axis=0)
+
+    # Sum over time → total DALYs by disease
+    return discounted.sum()
+
+num_dalys_by_disease = extract_results(
+    results_folder,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=get_num_dalys_by_disease,
+    do_scaling=True
+)
+
+disease_groups = {
+    # --- HIV / TB / Malaria ---
+    "HIV/AIDS": [
+        "AIDS",
+    ],
+    "Malaria": [
+        "Malaria",
+    ],
+
+    # --- MNCH ---
+    "RMNCH": [
+        "Maternal Disorders",
+        "Neonatal Disorders",
+        "Congenital birth defects",
+        "Childhood Diarrhoea",
+        "Childhood Undernutrition",
+        "Lower respiratory infections",
+        "Measles",
+    ],
+
+    # --- NCDs ---
+    "Cardiometabolic": [
+        "Heart Disease",
+        "Stroke",
+        "Diabetes",
+        "Kidney Disease",
+    ],
+    "Cancer": [
+        "Cancer (Bladder)",
+        "Cancer (Breast)",
+        "Cancer (Cervix)",
+        "Cancer (Oesophagus)",
+        "Cancer (Prostate)",
+        "Cancer (Other)",
+    ],
+    "Mental & Neurological": [
+        "Depression / Self-harm",
+        "Epilepsy",
+        "Lower Back Pain",
+    ],
+    "Other": [
+        "COPD",
+        "Schistosomiasis",
+        "Other",
+    ],
+
+    # --- Injuries ---
+    "Injuries": [
+        "Transport Injuries",
+    ],
+}
+def aggregate_by_disease_group(df: pd.DataFrame,
+                               disease_groups: dict) -> pd.DataFrame:
+    """
+    Aggregate disease-level rows into disease-group rows.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Index: disease names
+        Columns: MultiIndex (draw, run)
+        Values: DALYs
+
+    disease_groups : dict
+        Mapping {group_name: [list of disease names]}
+
+    Returns
+    -------
+    pd.DataFrame
+        Index: disease groups
+        Columns: same as df (draw, run)
+        Values: summed DALYs per group
+    """
+    grouped_rows = {}
+
+    for group_name, diseases in disease_groups.items():
+        # Select diseases that actually exist in the index
+        present = [d for d in diseases if d in df.index]
+
+        if not present:
+            continue
+
+        grouped_rows[group_name] = df.loc[present].sum(axis=0)
+
+    return pd.DataFrame.from_dict(grouped_rows, orient="index")
+
+num_dalys_by_group = aggregate_by_disease_group(
+    num_dalys_by_disease,
+    disease_groups
+)
+
+# Get absolute DALYs averted
+num_dalys_averted_by_group = {}
+
+for disease in num_dalys_by_group.index:
+    # Extract ONE disease → Series with index (draw, run)
+    ser = num_dalys_by_group.loc[disease]
+
+    # Name index levels correctly (optional but good hygiene)
+    ser.index.names = ["draw", "run"]
+
+    # Apply the existing function
+    num_dalys_averted_by_group[disease] = find_difference_relative_to_comparison(
+        ser,
+        comparison=0,
+        scaled=False,
+        drop_comparison=True
+    )
+
+num_dalys_averted_by_group = pd.concat(
+    num_dalys_averted_by_group,
+    names=["disease_group"]
+)
+
+# Plot DALYs
+num_dalys_averted_by_group_summarized = summarize(num_dalys_averted_by_group.unstack().unstack())
+num_dalys_averted_by_group_summarized  = (
+    num_dalys_averted_by_group_summarized
+    .loc[:, num_dalys_averted_by_group_summarized.columns
+          .get_level_values("draw")
+          .isin(main_analysis_subset)]
+)
+disease_colors = {
+    "HIV/AIDS": "#e41a1c",
+    "Malaria": "#377eb8",
+    "RMNCH": "#4daf4a",
+    "Cardiometabolic": "#984ea3",
+    "Cancer": "#ff7f00",
+    "Mental & Neurological": "#a65628",
+    "Injuries": "#f781bf",
+    "Other": "#999999",
+}
+
+fig, ax = plot_stacked_mean_with_total_ci(
+    summary_df=num_dalys_averted_by_group_summarized,
+    colors=disease_colors,
+    scenario_labels=cons_scenarios_main,
+    ylabel="DALYs averted",
+    title=""
+)
+fig.savefig(figurespath / "dalys_averted_by_disease_group.png",
+            dpi=300, bbox_inches="tight")
