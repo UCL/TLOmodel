@@ -27,7 +27,7 @@ class StaffingScenario(BaseScenario):
         self.resources = get_root_path() / "resources"
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 1)
+        self.end_date = Date(2035, 1, 1)
         self.pop_size = 200
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -64,12 +64,12 @@ class StaffingScenario(BaseScenario):
                     'mode_appt_constraints': 1,
                     'mode_appt_constraints_postSwitch': 2,
                     "scale_to_effective_capabilities": True,
-                    "year_HR_scaling_by_level_and_officer_type": 2025,
+                    "year_HR_scaling_by_level_and_officer_type": 2027,
                     # This happens in the year before mode change, as the model calibration is done by that year
                     "year_mode_switch": 2020,
                     'cons_availability': 'default',
                     'cons_availability_postSwitch': "all",
-                    # 'year_cons_availability_switch': 2025,
+                    # 'year_cons_availability_switch': 2027,
                     'yearly_HR_scaling_mode': 'historical_scaling',  # for 5 years of 2020-2024; source data year 2019
                     "policy_name": 'Naive',
                     "tclose_overwrite": 1,
@@ -78,7 +78,7 @@ class StaffingScenario(BaseScenario):
                 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                     'max_healthcare_seeking': [False, False],
                     'max_healthsystem_function': [False, False],
-                    'year_of_switch': 2025,
+                    'year_of_switch': 2027,
                 }
             },
         )
@@ -91,12 +91,12 @@ class StaffingScenario(BaseScenario):
                     'mode_appt_constraints': 1,
                     'mode_appt_constraints_postSwitch': 2,
                     "scale_to_effective_capabilities": True,
-                    "year_HR_scaling_by_level_and_officer_type": 2025,
+                    "year_HR_scaling_by_level_and_officer_type": 2027,
                     # This happens in the year before mode change, as the model calibration is done by that year
                     "year_mode_switch": 2020,
                     'cons_availability': 'default',
                     'cons_availability_postSwitch': "all",
-                    # 'year_cons_availability_switch': 2025,
+                    # 'year_cons_availability_switch': 2027,
                     'yearly_HR_scaling_mode': 'historical_scaling',  # for 5 years of 2020-2024; source data year 2019
                     "policy_name": 'Naive',
                     "tclose_overwrite": 1,
@@ -128,7 +128,7 @@ class StaffingScenario(BaseScenario):
                     {'ScenarioSwitcher': {
                         'max_healthsystem_function': [False] * 2,
                         'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2025,
+                        'year_of_switch': 2027,
                     },
                     }
                 ),
@@ -142,7 +142,7 @@ class StaffingScenario(BaseScenario):
                     {'ScenarioSwitcher': {
                         'max_healthsystem_function': [True] * 2,
                         'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2025,
+                        'year_of_switch': 2027,
                     },
                     }
                 ),
@@ -166,7 +166,7 @@ class StaffingScenario(BaseScenario):
                     {'ScenarioSwitcher': {
                         'max_healthsystem_function': [False] * 2,
                         'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2025,
+                        'year_of_switch': 2027,
                     },
                     }
                 ),
@@ -180,7 +180,7 @@ class StaffingScenario(BaseScenario):
                     {'ScenarioSwitcher': {
                         'max_healthsystem_function': [True] * 2,
                         'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2025,
+                        'year_of_switch': 2027,
                     },
                     }
                 ),
@@ -204,7 +204,7 @@ class StaffingScenario(BaseScenario):
                     {'ScenarioSwitcher': {
                         'max_healthsystem_function': [False] * 2,
                         'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2025,
+                        'year_of_switch': 2027,
                     },
                     }
                 ),
@@ -218,7 +218,7 @@ class StaffingScenario(BaseScenario):
                     {'ScenarioSwitcher': {
                         'max_healthsystem_function': [True] * 2,
                         'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2025,
+                        'year_of_switch': 2027,
                     },
                     }
                 ),
