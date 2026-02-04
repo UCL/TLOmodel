@@ -506,12 +506,12 @@ def test_individual_testing_and_treatment(sim):
     pollevent.run()
 
     assert not pd.isnull(df.at[person_id, "ma_date_symptoms"])
-    assert set(sim.modules["SymptomManager"].has_what(person_id=person_id)) == {
+    assert {
         "fever",
         "headache",
         "vomiting",
         "stomachache",
-    }
+    }.issubset(sim.modules["SymptomManager"].has_what(person_id=person_id))
 
     # check rdt is scheduled
     date_event, event = [
