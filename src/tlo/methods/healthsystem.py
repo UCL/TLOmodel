@@ -653,6 +653,8 @@ class HealthSystem(Module):
             self._never_ran_hsi_event_details = dict()
             self._weather_cancelled_hsi_event_details = dict()
             self._weather_delayed_hsi_event_details = dict()
+            self._hsi_event_counts_by_facility_monthly = Counter()
+
         elif hsi_event_count_log_period is not None:
             raise ValueError(
                 "hsi_event_count_log_period argument should be one of 'day', 'month' 'year', 'simulation' or None."
@@ -2136,6 +2138,10 @@ class HealthSystem(Module):
                 # `HSIEventDetails`).
                 event_details_key = self._hsi_event_details.setdefault(event_details, len(self._hsi_event_details))
                 self._hsi_event_counts_log_period[event_details_key] += 1
+
+                if facility_id is not None and facility_id != -99:
+                    facility_key = f"{facility_id}:{event_details.treatment_id}"
+                    self._hsi_event_counts_by_facility_monthly[facility_key] += 1
             # Do logging for 'summary logger'
             self._summary_counter.record_hsi_event(
                 treatment_id=event_details.treatment_id,
@@ -2496,6 +2502,24 @@ class HealthSystem(Module):
         self._weather_delayed_hsi_event_counts_cumulative += self._weather_delayed_hsi_event_counts_log_period
         self._weather_delayed_hsi_event_counts_log_period.clear()
 
+    def _write_hsi_event_counts_by_facility_to_log_and_reset(self):
+            """Write monthly HSI event counts broken down by facility_id to log and reset counter."""
+            if self._hsi_event_count_log_period is None:
+                return
+
+            logger_summary.info(
+                key="hsi_event_counts_by_facility_monthly",
+                description=(
+                    "Monthly counts of HSI events by facility_id and treatment_id. "
+                    "Keys are in format 'facility_id:treatment_id'."
+                ),
+                data={
+                    "date": str(self.sim.date),
+                    "counts": dict(self._hsi_event_counts_by_facility_monthly)
+                },
+            )
+            self._hsi_event_counts_by_facility_monthly.clear()
+
 
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
@@ -2508,11 +2532,15 @@ class HealthSystem(Module):
 
     def on_end_of_month(self) -> None:
         """Do jobs to be done at the end of the month (after all HSI run)"""
+        if self._hsi_event_count_log_period is not None:
+            self._write_hsi_event_counts_by_facility_to_log_and_reset()
+
         if self._hsi_event_count_log_period == "month":
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
             self._write_weather_cancelled_hsi_event_counts_to_log_and_reset()
             self._write_weather_delayed_hsi_event_counts_to_log_and_reset()
+
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
