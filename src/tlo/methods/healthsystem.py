@@ -630,6 +630,7 @@ class HealthSystem(Module):
         self._get_squeeze_factors_store = {}
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
+        self._hsi_event_counts_by_facility_monthly = Counter()
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
             # Counters for binning HSI events run (by unique integer keys) over
             # simulation period specified by hsi_event_count_log_period and cumulative
@@ -2506,9 +2507,6 @@ class HealthSystem(Module):
 
     def _write_hsi_event_counts_by_facility_to_log_and_reset(self):
             """Write monthly HSI event counts broken down by facility_id to log and reset counter."""
-            if self._hsi_event_count_log_period is None:
-                return
-
             logger_summary.info(
                 key="hsi_event_counts_by_facility_monthly",
                 description=(
@@ -2534,8 +2532,7 @@ class HealthSystem(Module):
 
     def on_end_of_month(self) -> None:
         """Do jobs to be done at the end of the month (after all HSI run)"""
-        if self._hsi_event_count_log_period is not None:
-            self._write_hsi_event_counts_by_facility_to_log_and_reset()
+        self._write_hsi_event_counts_by_facility_to_log_and_reset()
 
         if self._hsi_event_count_log_period == "month":
             self._write_hsi_event_counts_to_log_and_reset()
