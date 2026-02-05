@@ -630,3 +630,211 @@ fig, axs = plot_3x3_maps(
     savepath=results_folder / "maps_3x3.png",
 )
 plt.show()
+
+
+
+
+############################
+# NHB, Delta NHB and elimination 3x3 plot
+
+def plot_3x3_maps_delta_nhb(
+    gdfs: tuple["gpd.GeoDataFrame", "gpd.GeoDataFrame", "gpd.GeoDataFrame"],
+    lake_malawi: "gpd.GeoDataFrame",
+    gdf_national: "gpd.GeoDataFrame",
+    row_titles: tuple[str, str, str] = (
+        "MDA SAC",
+        "MDA PSAC+SAC",
+        "MDA All",
+    ),
+    target_crs: str = "EPSG:4326",
+    nhb_col: str = "mean",
+    haem_col: str = "year_ephp_haem",
+    mansoni_col: str = "year_ephp_mansoni",
+    nhb_cmap: str = "viridis",
+    dnhb_cmap: str = "RdBu_r",
+    year_cmap: str = "plasma",
+    year_vmin: int = 2010,
+    year_vmax: int = 2050,
+    figsize: tuple[int, int] = (16, 18),
+    panel_labels: list[str] | None = None,
+    label_kwargs: dict | None = None,
+    savepath: str | None = None,
+    # NEW: fixed symmetric cap for ΔNHB
+    dnhb_cap: float = 30000.0,
+):
+    """
+    Left column:
+        Row 1: absolute NHB (SAC)
+        Row 2: ΔNHB (PSAC+SAC − SAC)
+        Row 3: ΔNHB (All − SAC)
+
+    ΔNHB panels:
+        - symmetric fixed cap ±dnhb_cap
+        - colourbar labels show ≤ and ≥ at limits
+    """
+
+    if len(gdfs) != 3:
+        raise ValueError("gdfs must contain exactly three GeoDataFrames.")
+
+    if panel_labels is None:
+        panel_labels = [chr(ord("A") + i) for i in range(9)]
+    if label_kwargs is None:
+        label_kwargs = dict(fontsize=14, fontweight="bold")
+
+    # --- CRS alignment
+    gdfs = tuple(g.copy() for g in gdfs)
+    lake = lake_malawi.copy()
+    nat = gdf_national.copy()
+
+    for g in (*gdfs, lake, nat):
+        if g.crs is None:
+            g.set_crs(target_crs, inplace=True)
+        else:
+            g.to_crs(target_crs, inplace=True)
+
+    gdf_sac, gdf_psac, gdf_all = gdfs
+
+    # --- compute absolute ΔNHB
+    sac = gdf_sac[["district", nhb_col]].rename(columns={nhb_col: "nhb_sac"})
+    ps  = gdf_psac[["district", nhb_col]].rename(columns={nhb_col: "nhb_psac"})
+    al  = gdf_all[["district", nhb_col]].rename(columns={nhb_col: "nhb_all"})
+
+    tmp = sac.merge(ps, on="district").merge(al, on="district")
+
+    for c in ["nhb_sac", "nhb_psac", "nhb_all"]:
+        tmp[c] = pd.to_numeric(tmp[c], errors="coerce")
+
+    tmp["dnhb_psac_vs_sac"] = tmp["nhb_psac"] - tmp["nhb_sac"]
+    tmp["dnhb_all_vs_sac"]  = tmp["nhb_all"]  - tmp["nhb_sac"]
+
+    gdf_psac = gdf_psac.merge(tmp[["district", "dnhb_psac_vs_sac"]], on="district", how="left")
+    gdf_all  = gdf_all.merge(tmp[["district", "dnhb_all_vs_sac"]],  on="district", how="left")
+
+    # --- NHB absolute scale (SAC only)
+    nhb_vals = pd.to_numeric(gdf_sac[nhb_col], errors="coerce")
+    nhb_vmin = float(np.nanmin(nhb_vals))
+    nhb_vmax = float(np.nanmax(nhb_vals))
+
+    # --- fixed symmetric ΔNHB scale
+    dnhb_vmin = -float(dnhb_cap)
+    dnhb_vmax = float(dnhb_cap)
+
+    fig, axs = plt.subplots(3, 3, figsize=figsize)
+
+    label_idx = 0
+    for r in range(3):
+        for c in range(3):
+            ax = axs[r, c]
+            gdf_row = gdf_sac if r == 0 else (gdf_psac if r == 1 else gdf_all)
+
+            if c == 0:
+                if r == 0:
+                    col = nhb_col
+                    title = "Net Health Benefit"
+                    cmap = nhb_cmap
+                    vmin, vmax = nhb_vmin, nhb_vmax
+                    is_delta = False
+                elif r == 1:
+                    col = "dnhb_psac_vs_sac"
+                    title = "Δ Net Health Benefit (vs SAC)"
+                    cmap = dnhb_cmap
+                    vmin, vmax = dnhb_vmin, dnhb_vmax
+                    is_delta = True
+                else:
+                    col = "dnhb_all_vs_sac"
+                    title = "Δ Net Health Benefit (vs SAC)"
+                    cmap = dnhb_cmap
+                    vmin, vmax = dnhb_vmin, dnhb_vmax
+                    is_delta = True
+
+            elif c == 1:
+                col = haem_col
+                title = "Elimination Year: S. Haematobium"
+                cmap = year_cmap
+                vmin, vmax = year_vmin, year_vmax
+                is_delta = False
+            else:
+                col = mansoni_col
+                title = "Elimination Year: S. Mansoni"
+                cmap = year_cmap
+                vmin, vmax = year_vmin, year_vmax
+                is_delta = False
+
+            gdf = gdf_row.copy()
+            gdf[col] = pd.to_numeric(gdf[col], errors="coerce")
+
+            if "year_ephp" in col:
+                gdf[col] = gdf[col].where(gdf[col] != -99, np.nan)
+
+            norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+
+            lake.plot(ax=ax, facecolor="none", edgecolor="lightblue",
+                      linewidth=0.5, hatch="///", zorder=1)
+
+            gdf.plot(
+                column=col,
+                cmap=cmap,
+                linewidth=0.8,
+                edgecolor="0.8",
+                ax=ax,
+                legend=False,
+                norm=norm,
+                zorder=3,
+                missing_kwds={"color": "white", "edgecolor": "lightgrey"},
+            )
+
+            nat.boundary.plot(ax=ax, edgecolor="grey", linewidth=1.5, zorder=4)
+
+            ax.set_title(title, fontsize=13)
+            ax.axis("off")
+
+            ax.text(
+                -0.2, 0.98, panel_labels[label_idx],
+                transform=ax.transAxes,
+                ha="left", va="top",
+                zorder=20,
+                **label_kwargs
+            )
+            label_idx += 1
+
+            sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
+            sm.set_array([])
+            cbar = fig.colorbar(sm, ax=ax, orientation="vertical",
+                                fraction=0.046, pad=0.02)
+
+            # --- rounded legend ticks with ≥ / ≤ labels for delta panels
+            if is_delta:
+                ticks = [dnhb_vmin, 0, dnhb_vmax]
+                cbar.set_ticks(ticks)
+                cbar.set_ticklabels([
+                    f"≤{int(dnhb_vmin):,}",
+                    "0",
+                    f"≥{int(dnhb_vmax):,}",
+                ])
+
+        axs[r, 0].text(
+            -0.05, 0.5, row_titles[r],
+            transform=axs[r, 0].transAxes,
+            rotation=90,
+            ha="right", va="center",
+            fontsize=12
+        )
+
+    plt.subplots_adjust(wspace=0.08, hspace=0.12)
+
+    if savepath is not None:
+        fig.savefig(savepath, dpi=300, bbox_inches="tight")
+
+    return fig, axs
+
+
+# save with different name
+fig, axs = plot_3x3_maps_delta_nhb(
+    gdfs=gdfs,
+    lake_malawi=lake_malawi,
+    gdf_national=gdf_national,
+    panel_labels=list("ABCDEFGHI"),
+    savepath=results_folder / "maps_3x3_deltaNHB_capped.png",
+    dnhb_cap=30000,
+)
+plt.show()

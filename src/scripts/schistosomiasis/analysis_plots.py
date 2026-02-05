@@ -540,22 +540,6 @@ def plot_prevalence_heatmap(df, year=2050, threshold=2, filename=None, title=Non
     ax.set_xticklabels(tick_labels, rotation=45, ha='right')
     ax.set_xlabel('')
 
-    # # Draw phase label (only Continue now)
-    # n_mda = len(mda_order)
-    # start, end = 0, len(mean_df.columns) - 1
-    # mid = (start + end) / 2 + 0.5
-    # ax.text(
-    #     x=mid,
-    #     y=-0.15,
-    #     s="Continue",
-    #     ha='center',
-    #     va='top',
-    #     fontsize=12,
-    #     fontweight='bold',
-    #     color='black',
-    #     transform=ax.get_xaxis_transform()
-    # )
-
     plt.subplots_adjust(bottom=0.2, top=0.9)
     if filename:
         plt.savefig(results_folder / filename, dpi=300)
@@ -590,6 +574,166 @@ plot_prevalence_heatmap(prev_mansoni_HML_All_district, year=2050, threshold=0.02
                         filename='prev_mansoni_HML_district2050.png',
                         title="S. mansoni")
 
+
+#################################################################################
+# %% 2050 PREVALENCE HEATMAP TWO PANELS
+#################################################################################
+
+
+
+
+def prepare_prevalence_matrix(df, year=2050):
+    """Prepare dataframe for heatmap plotting (no plotting here)."""
+
+    df_year = df.loc[year]
+
+    # Mean over runs if columns have a 'run' level
+    if isinstance(df_year.columns, pd.MultiIndex) and 'run' in df_year.columns.names:
+        mean_df = df_year.groupby(level='draw', axis=1).mean()
+    else:
+        mean_df = df_year.copy()
+
+    draw_labels = mean_df.columns.tolist()
+
+    # Parse draw labels
+    phase_labels, mda_labels = [], []
+    for label in draw_labels:
+        try:
+            phase_part, mda_part = label.split(', ')
+        except Exception:
+            phase_part, mda_part = label, ''
+        phase_clean = phase_part.replace(' WASH', '')
+        phase_labels.append(phase_clean)
+        mda_labels.append(mda_part)
+
+    # Keep only "Continue"
+    keep_mask = [p == "Continue" for p in phase_labels]
+    mean_df = mean_df.loc[:, keep_mask]
+    phase_labels = [p for p, k in zip(phase_labels, keep_mask) if k]
+    mda_labels = [m for m, k in zip(mda_labels, keep_mask) if k]
+    draw_labels = [d for d, k in zip(draw_labels, keep_mask) if k]
+
+    phase_order = ['Continue']
+    mda_order = ['no MDA', 'MDA SAC', 'MDA PSAC+SAC', 'MDA All']
+
+    col_df = pd.DataFrame({'phase': phase_labels,
+                           'mda': mda_labels,
+                           'orig': draw_labels})
+
+    col_df['phase_order'] = col_df['phase'].apply(
+        lambda x: phase_order.index(x) if x in phase_order else 99
+    )
+    col_df['mda_order'] = col_df['mda'].apply(
+        lambda x: mda_order.index(x) if x in mda_order else 99
+    )
+
+    col_df = col_df.sort_values(
+        by=['phase_order', 'mda_order']
+    ).reset_index(drop=True)
+
+    multi_cols = pd.MultiIndex.from_arrays(
+        [col_df['phase'], col_df['mda']],
+        names=['Phase', 'MDA']
+    )
+
+    mean_df = mean_df[col_df['orig']]
+    mean_df.columns = multi_cols
+
+    return mean_df, col_df
+
+
+
+
+def plot_two_prevalence_heatmaps(df1, df2, year=2050,
+                                 threshold=0.02,
+                                 title1="",
+                                 title2="",
+                                 filename=None):
+
+    mean_df1, col_df1 = prepare_prevalence_matrix(df1, year)
+    mean_df2, col_df2 = prepare_prevalence_matrix(df2, year)
+
+    vmin = min(mean_df1.min().min(), mean_df2.min().min())
+    vmax = max(mean_df1.max().max(), mean_df2.max().max())
+
+    # ---- Make panels narrower (cells narrower) by using a narrower figure ----
+    fig = plt.figure(figsize=(6.0, 11.0))
+
+    # Two axes for heatmaps (leave room on the right for colourbar)
+    ax1 = fig.add_axes([0.18, 0.16, 0.28, 0.76])  # left panel
+    ax2 = fig.add_axes([0.52, 0.16, 0.28, 0.76], sharey=ax1)
+
+    # Colourbar aligned with panels
+    cax = fig.add_axes([0.84, 0.16, 0.02, 0.76])
+
+    # -------- Panel 1 (no colourbar) ----------
+    sns.heatmap(
+        mean_df1,
+        ax=ax1,
+        cmap="coolwarm",
+        vmin=vmin, vmax=vmax,
+        cbar=False,
+        linewidths=0.5,
+        linecolor="gray",
+    )
+    ax1.set_title(f"{title1}")
+    ax1.set_ylabel("District")
+
+    tick_positions1 = [i + 0.5 for i in range(len(mean_df1.columns))]
+    ax1.set_xticks(tick_positions1)
+    ax1.set_xticklabels(col_df1["mda"].tolist(), rotation=45, ha="right")
+    ax1.set_xlabel("")
+
+    for y in range(mean_df1.shape[0]):
+        for x in range(mean_df1.shape[1]):
+            if mean_df1.iloc[y, x] < threshold:
+                ax1.add_patch(plt.Rectangle((x, y), 1, 1, fill=False,
+                                            edgecolor="grey", lw=1.2, hatch="//"))
+
+    # -------- Panel 2 (single colourbar on cax) ----------
+    sns.heatmap(
+        mean_df2,
+        ax=ax2,
+        cmap="coolwarm",
+        vmin=vmin, vmax=vmax,
+        cbar=True,
+        cbar_ax=cax,                 # <- forces colourbar *outside* the panel
+        cbar_kws={"label": "Mean prevalence"},
+        linewidths=0.5,
+        linecolor="gray",
+    )
+    ax2.set_title(f"{title2}")
+    ax2.set_ylabel("")
+    plt.setp(ax2.get_yticklabels(), visible=False)
+    ax2.tick_params(axis="y", left=False)
+
+    tick_positions2 = [i + 0.5 for i in range(len(mean_df2.columns))]
+    ax2.set_xticks(tick_positions2)
+    ax2.set_xticklabels(col_df2["mda"].tolist(), rotation=45, ha="right")
+    ax2.set_xlabel("")
+
+    for y in range(mean_df2.shape[0]):
+        for x in range(mean_df2.shape[1]):
+            if mean_df2.iloc[y, x] < threshold:
+                ax2.add_patch(plt.Rectangle((x, y), 1, 1, fill=False,
+                                            edgecolor="grey", lw=1.2, hatch="//"))
+
+    if filename:
+        plt.savefig(results_folder / filename, dpi=300, bbox_inches="tight")
+
+    plt.show()
+
+
+
+plot_two_prevalence_heatmaps(
+    prev_haem_HML_All_district,
+    prev_mansoni_HML_All_district,
+    year=2050,
+    threshold=0.02,
+    title1="S. haematobium",
+    title2="S. mansoni",
+    filename="prev_both_heatmaps_2050.png"
+)
 
 
 #################################################################################

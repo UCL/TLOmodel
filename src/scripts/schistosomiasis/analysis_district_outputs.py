@@ -17,7 +17,7 @@ import numpy as np
 import seaborn as sns
 from collections import defaultdict
 import textwrap
-from typing import Tuple, Union
+from typing import Tuple, Union, Literal, Optional
 
 from scipy.stats import norm
 
@@ -204,135 +204,309 @@ def compute_stepwise_effects_by_wash_strategy(df: pd.DataFrame) -> pd.DataFrame:
     return pd.concat(result_frames, axis=1)
 
 
+# todo replaced this with the version below
+# def compute_number_averted_vs_noMDA_within_wash_strategies(
+#     df: pd.DataFrame,
+#     wash_strategies: tuple = ("Pause WASH", "Continue WASH", "Scale-up WASH"),
+#     results_path: Path = None,
+#     filename_prefix: str = 'dalys_averted_by_year_run_district',
+#     target_period: tuple = None,
+#     averted_or_incurred: str = 'averted',
+# ) -> pd.DataFrame:
+#     """
+#     Computes value (dalys or number py) averted by comparing each WASH strategy's MDA scenarios
+#     to the corresponding 'no MDA' baseline within the same strategy group.
+#     """
+#     if averted_or_incurred == 'averted':
+#         scale = -1.0
+#     else:
+#         scale = 1.0
+#
+#     comparator_results = []
+#
+#     for strategy in wash_strategies:
+#         comparator_draw = f"{strategy}, no MDA"
+#         # Skip the comparator in selection
+#         relevant_draws = [col for col in df.columns.get_level_values(0).unique()
+#                           if strategy in col and col != comparator_draw]
+#         if not relevant_draws:
+#             continue
+#
+#         # Filter to relevant columns for this strategy
+#         df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
+#
+#         # Compute difference relative to the strategy's 'no MDA' comparator
+#         diff_df = scale * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+#
+#         # Select only the relevant MDA draws
+#         comparator_results.append(diff_df)
+#
+#     # Concatenate results across all strategies
+#     combined_df = pd.concat(comparator_results, axis=1)
+#
+#     if results_path:
+#         period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
+#         output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
+#         combined_df.to_excel(output_file)
+#
+#     return combined_df
 
-def compute_number_averted_vs_noMDA_within_wash_strategies(
+
+
+
+#
+# todo updated but version below may break things
+# def compute_number_averted_vs_SAC_within_wash_strategies(
+#     df: pd.DataFrame,
+#     wash_strategies: tuple = ("Pause WASH", "Continue WASH", "Scale-up WASH"),
+#     results_path: Path = None,
+#     filename_prefix: str = 'dalys_averted_by_year_run_district',
+#     target_period: tuple = None,
+#     averted_or_incurred: str = 'averted',
+# ) -> pd.DataFrame:
+#     """
+#     Computes value (dalys or number py) averted by comparing each WASH strategy's MDA scenarios
+#     to the corresponding 'no MDA' baseline within the same strategy group.
+#     """
+#     if averted_or_incurred == 'averted':
+#         scale = -1.0
+#     else:
+#         scale = 1.0
+#
+#     comparator_results = []
+#
+#     for strategy in wash_strategies:
+#         comparator_draw = f"{strategy}, MDA SAC"
+#         # Skip the comparator in selection
+#         relevant_draws = [col for col in df.columns.get_level_values(0).unique()
+#                           if strategy in col and col != comparator_draw]
+#         if not relevant_draws:
+#             continue
+#
+#         # Filter to relevant columns for this strategy
+#         df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
+#
+#         # Compute difference relative to the strategy's 'no MDA' comparator
+#         diff_df = scale * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+#
+#         # Select only the relevant MDA draws
+#         comparator_results.append(diff_df)
+#
+#     # Concatenate results across all strategies
+#     combined_df = pd.concat(comparator_results, axis=1)
+#
+#     if results_path:
+#         period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
+#         output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
+#         combined_df.to_excel(output_file)
+#
+#     return combined_df
+
+#
+# def compute_number_averted_vs_continueWASH_noMDA(
+#         df: pd.DataFrame,
+#         results_path: Path = None,
+#         filename_prefix: str = 'dalys_averted_by_year_run_district_vs_continueWASH_noMDA',
+#         target_period: tuple = None,
+#         averted_or_incurred: str = 'averted',
+# ) -> pd.DataFrame:
+#     """
+#     Computes value (e.g. DALYs or person-years) averted by comparing all scenarios
+#     to the fixed comparator 'Continue WASH, no MDA'.
+#     """
+#     if averted_or_incurred == 'averted':
+#         scale = -1.0
+#     else:
+#         scale = 1.0
+#
+#     comparator_draw = 'Continue WASH, no MDA'
+#
+#     # Identify all draws excluding the comparator
+#     all_draws = df.columns.get_level_values(0).unique()
+#     relevant_draws = [draw for draw in all_draws if draw != comparator_draw]
+#
+#     # Subset dataframe to comparator + relevant draws
+#     df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
+#
+#     # Compute differences relative to comparator
+#     diff_df = scale * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+#
+#     if results_path:
+#         period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
+#         output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
+#         diff_df.to_excel(output_file)
+#
+#     return diff_df
+
+
+# todo this is the updated function that might break everything
+
+def compute_number_averted_within_wash_strategies(
     df: pd.DataFrame,
     wash_strategies: tuple = ("Pause WASH", "Continue WASH", "Scale-up WASH"),
+    comparator: str = "no MDA",
     results_path: Path = None,
-    filename_prefix: str = 'dalys_averted_by_year_run_district',
+    filename_prefix: str = "dalys_averted_by_year_run_district",
     target_period: tuple = None,
-    averted_or_incurred: str = 'averted',
+    averted_or_incurred: str = "averted",
 ) -> pd.DataFrame:
     """
-    Computes value (dalys or number py) averted by comparing each WASH strategy's MDA scenarios
-    to the corresponding 'no MDA' baseline within the same strategy group.
+    For each WASH strategy, compute (scenario - MDA SAC) within that strategy, per run.
+    Assumes df.columns MultiIndex: level 0 = draw, level 1 = run.
+    Returns only non-comparator draws.
     """
-    if averted_or_incurred == 'averted':
-        scale = -1.0
-    else:
-        scale = 1.0
+    scale = -1.0 if averted_or_incurred == "averted" else 1.0
 
-    comparator_results = []
+    if not isinstance(df.columns, pd.MultiIndex) or df.columns.nlevels < 2:
+        raise ValueError("Expected df.columns MultiIndex with at least 2 levels: (draw, run).")
+
+    draw_level = 0
+    all_draws = df.columns.get_level_values(draw_level).unique()
+
+    out_blocks = []
 
     for strategy in wash_strategies:
-        comparator_draw = f"{strategy}, no MDA"
-        # Skip the comparator in selection
-        relevant_draws = [col for col in df.columns.get_level_values(0).unique()
-                          if strategy in col and col != comparator_draw]
+        comparator_draw = f"{strategy}, {comparator}"
+        relevant_draws = [d for d in all_draws if (strategy in d and d != comparator_draw)]
         if not relevant_draws:
             continue
+        if comparator_draw not in set(all_draws):
+            raise KeyError(f"Comparator draw '{comparator_draw}' not found for strategy '{strategy}'.")
 
-        # Filter to relevant columns for this strategy
-        df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
+        comp = df.xs(comparator_draw, axis=1, level=draw_level)  # columns = run
 
-        # Compute difference relative to the strategy's 'no MDA' comparator
-        diff_df = scale * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+        pieces = []
+        for d in relevant_draws:
+            x = df.xs(d, axis=1, level=draw_level)               # columns = run
+            diff = scale * x.sub(comp, axis=1)                   # align on run
+            diff.columns = pd.MultiIndex.from_product([[d], diff.columns], names=df.columns.names)
+            pieces.append(diff)
 
-        # Select only the relevant MDA draws
-        comparator_results.append(diff_df)
+        out_blocks.append(pd.concat(pieces, axis=1))
 
-    # Concatenate results across all strategies
-    combined_df = pd.concat(comparator_results, axis=1)
+    combined_df = pd.concat(out_blocks, axis=1) if out_blocks else pd.DataFrame(index=df.index)
 
     if results_path:
         period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
         output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
-        combined_df.to_excel(output_file)
+        export_df = combined_df.copy()
+        export_df.columns = [f"{draw} | run={run}" for draw, run in export_df.columns]
+        export_df.to_excel(output_file)
 
     return combined_df
 
 
-def compute_number_averted_vs_SAC_within_wash_strategies(
+
+
+
+
+DateLike = Union[int, str, pd.Timestamp]
+
+def compute_district_period_change_within_wash_strategies(
     df: pd.DataFrame,
+    target_period: Tuple[DateLike, DateLike],
     wash_strategies: tuple = ("Pause WASH", "Continue WASH", "Scale-up WASH"),
-    results_path: Path = None,
-    filename_prefix: str = 'dalys_averted_by_year_run_district',
-    target_period: tuple = None,
-    averted_or_incurred: str = 'averted',
+    comparator: str = "no MDA",
+    output: Literal["percent", "absolute"] = "percent",
+    percent_scale: float = 100.0,
+    eps: float = 0.0,
+    nan_if_div0: bool = True,
+    results_path: Optional[Path] = None,
+    filename_prefix: str = "dalys_change_by_district_period",
 ) -> pd.DataFrame:
     """
-    Computes value (dalys or number py) averted by comparing each WASH strategy's MDA scenarios
-    to the corresponding 'no MDA' baseline within the same strategy group.
-    """
-    if averted_or_incurred == 'averted':
-        scale = -1.0
-    else:
-        scale = 1.0
+    Sum over target period to district totals run-by-run, then compute change vs comparator within each WASH strategy.
 
-    comparator_results = []
+    Index expectations:
+      - df.index MultiIndex: level 0 = year OR datetime; level 1 = district
+      - df.columns MultiIndex: level 0 = draw; level 1 = run
+
+    Returns:
+      index = district, columns = (draw, run) excluding comparator draw
+    """
+    if not isinstance(df.columns, pd.MultiIndex) or df.columns.nlevels < 2:
+        raise ValueError("Expected df.columns MultiIndex with at least 2 levels: (draw, run).")
+    if not isinstance(df.index, pd.MultiIndex) or df.index.nlevels < 2:
+        raise ValueError("Expected df.index MultiIndex with at least 2 levels: (time/year, district).")
+
+    time_level, district_level = 0, 1
+    draw_level = 0
+
+    start, end = target_period
+    start_ts = pd.to_datetime(start)
+    end_ts = pd.to_datetime(end)
+
+    t = pd.Index(df.index.get_level_values(time_level))
+
+    # Robust period mask:
+    # - If t is integer years, filter by start_ts.year..end_ts.year
+    # - If t is datetime-like, filter by timestamps directly
+    if pd.api.types.is_integer_dtype(t) or pd.api.types.is_numeric_dtype(t):
+        years = t.astype(int)
+        mask = (years >= start_ts.year) & (years <= end_ts.year)
+        period_label = f"{start_ts.year}-{end_ts.year}"
+    else:
+        t_dt = pd.to_datetime(t)
+        mask = (t_dt >= start_ts) & (t_dt <= end_ts)
+        period_label = f"{start_ts.date()}_{end_ts.date()}"
+
+    df_period = df.loc[mask, :]
+
+    # District totals over the period
+    df_district_totals = df_period.groupby(level=district_level).sum()
+
+    all_draws = df_district_totals.columns.get_level_values(draw_level).unique()
+    out_blocks = []
 
     for strategy in wash_strategies:
-        comparator_draw = f"{strategy}, MDA SAC"
-        # Skip the comparator in selection
-        relevant_draws = [col for col in df.columns.get_level_values(0).unique()
-                          if strategy in col and col != comparator_draw]
+        comparator_draw = f"{strategy}, {comparator}"
+        if comparator_draw not in set(all_draws):
+            raise KeyError(
+                f"Comparator draw '{comparator_draw}' not found for strategy '{strategy}'. "
+                f"Check comparator string matches exactly (case/spaces)."
+            )
+
+        relevant_draws = [d for d in all_draws if (strategy in d and d != comparator_draw)]
         if not relevant_draws:
             continue
 
-        # Filter to relevant columns for this strategy
-        df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
+        comp = df_district_totals.xs(comparator_draw, axis=1, level=draw_level)  # columns = run
 
-        # Compute difference relative to the strategy's 'no MDA' comparator
-        diff_df = scale * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+        pieces = []
+        for d in relevant_draws:
+            x = df_district_totals.xs(d, axis=1, level=draw_level)               # columns = run
+            delta = x.sub(comp, axis=1)
 
-        # Select only the relevant MDA draws
-        comparator_results.append(diff_df)
+            if output == "absolute":
+                out = delta
+            elif output == "percent":
+                denom = comp.abs()
+                if eps != 0.0:
+                    denom = denom + eps
+                out = percent_scale * (delta / denom)
+                if nan_if_div0:
+                    out = out.replace([np.inf, -np.inf], np.nan)
+            else:
+                raise ValueError("output must be 'percent' or 'absolute'.")
 
-    # Concatenate results across all strategies
-    combined_df = pd.concat(comparator_results, axis=1)
+            out.columns = pd.MultiIndex.from_product([[d], out.columns], names=df.columns.names)
+            pieces.append(out)
 
-    if results_path:
-        period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
-        output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
-        combined_df.to_excel(output_file)
+        out_blocks.append(pd.concat(pieces, axis=1))
 
-    return combined_df
-
-
-def compute_number_averted_vs_continueWASH_noMDA(
-        df: pd.DataFrame,
-        results_path: Path = None,
-        filename_prefix: str = 'dalys_averted_by_year_run_district_vs_continueWASH_noMDA',
-        target_period: tuple = None,
-        averted_or_incurred: str = 'averted',
-) -> pd.DataFrame:
-    """
-    Computes value (e.g. DALYs or person-years) averted by comparing all scenarios
-    to the fixed comparator 'Continue WASH, no MDA'.
-    """
-    if averted_or_incurred == 'averted':
-        scale = -1.0
-    else:
-        scale = 1.0
-
-    comparator_draw = 'Continue WASH, no MDA'
-
-    # Identify all draws excluding the comparator
-    all_draws = df.columns.get_level_values(0).unique()
-    relevant_draws = [draw for draw in all_draws if draw != comparator_draw]
-
-    # Subset dataframe to comparator + relevant draws
-    df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
-
-    # Compute differences relative to comparator
-    diff_df = scale * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+    result = pd.concat(out_blocks, axis=1) if out_blocks else pd.DataFrame(index=df_district_totals.index)
 
     if results_path:
-        period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
-        output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
-        diff_df.to_excel(output_file)
+        suffix = "_pct" if output == "percent" else "_abs"
+        output_file = results_path / f"{filename_prefix}{suffix}_{period_label}.xlsx"
+        export_df = result.copy()
+        export_df.columns = [f"{draw} | run={run}" for draw, run in export_df.columns]
+        export_df.to_excel(output_file)
 
-    return diff_df
+    return result
+
+
+
 
 
 
@@ -1779,6 +1953,7 @@ num_py_averted_combined_national.to_excel(results_folder / f'num_py_averted_nati
 #################################################################################
 # %% PERSON-YEARS INFECTED BY AGE AND DISTRICT
 #################################################################################
+
 TARGET_PERIOD = (Date(2024, 1, 1), Date(2050, 12, 31))
 infection_levels = ['Low-infection', 'Moderate-infection', 'Heavy-infection']
 
@@ -1856,6 +2031,46 @@ def run_analysis_for_period_and_levels(period_name, period_tuple,
     # Save district + age totals
     scaled_py_district_age.to_excel(
         results_folder / f'num_py_infected_by_district_and_age_{period_name}_{levels_name}.xlsx'
+    )
+
+    # ---------------------------------------------------
+    # PY averted by district AND age-group
+    # ---------------------------------------------------
+
+    # Absolute PY averted
+    num_py_averted_district_age_full = -1.0 * find_difference_relative_to_comparison_dataframe(
+            scaled_py_district_age,
+            comparison="Continue WASH, no MDA",
+        )
+
+    num_py_averted_district_age_full.to_excel(
+        results_folder / f"num_py_averted_by_district_age_{period_name}_{levels_name}_FULL.xlsx"
+    )
+
+    num_py_averted_district_age = compute_summary_statistics(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            scaled_py_district_age,
+            comparison="Continue WASH, no MDA",
+        ),
+        central_measure="mean",
+    )
+
+    num_py_averted_district_age.to_excel(
+        results_folder / f"num_py_averted_by_district_age_{period_name}_{levels_name}.xlsx"
+    )
+
+    # Percentage PY averted
+    pc_py_averted_district_age = 100.0 * compute_summary_statistics(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            scaled_py_district_age,
+            comparison="Continue WASH, no MDA",
+            scaled=True,
+        ),
+        central_measure="mean",
+    )
+
+    pc_py_averted_district_age.to_excel(
+        results_folder / f"pc_py_averted_by_district_age_{period_name}_{levels_name}.xlsx"
     )
 
     # Summary statistics
@@ -1945,6 +2160,103 @@ for pname, ptuple in target_periods.items():
 
 
 
+###########################################################################################################
+# %% get person-years national by year and age-group
+###########################################################################################################
+
+
+
+def get_person_years_infected_by_district_age_year(
+    _df: pd.DataFrame,
+    target_period: tuple,
+    infection_levels: list,
+) -> pd.Series:
+    """
+    Returns person-years infected indexed by (district, age_group, year),
+    summed over species and infection levels provided, and summed within each year.
+    """
+    # Filter to target period, keep date
+    df = _df.loc[pd.to_datetime(_df.date).between(*target_period)].copy()
+    df["year"] = pd.to_datetime(df["date"]).dt.year
+
+    # Drop date column from values matrix
+    df_vals = df.drop(columns=["date"])
+
+    # Filter columns by infection level(s)
+    pattern = "|".join(infection_levels)
+    df_filtered = df_vals.filter(regex=f"infection_level=({pattern})")
+
+    # Convert column names to a MultiIndex
+    columns_split = df_filtered.columns.str.extract(
+        r"species=([^|]+)\|age_group=([^|]+)\|infection_level=([^|]+)\|district=([^|]+)"
+    )
+    df_filtered.columns = pd.MultiIndex.from_frame(
+        columns_split,
+        names=["species", "age_group", "infection_level", "district"]
+    )
+
+    # Sum across infection_level and species at each time point
+    # (so remaining column levels are district, age_group)
+    df_agg = df_filtered.groupby(level=["district", "age_group"], axis=1).sum()
+
+    # Now sum within each year over time points, then convert person-days -> person-years
+    yearly = df_agg.groupby(df["year"]).sum() / 365.25   # index=year, columns=(district, age_group)
+
+    # Return as Series indexed by (district, age_group, year)
+    s = yearly.stack(["district", "age_group"])
+    s.index = s.index.set_names(["year", "district", "age_group"])
+    s = s.reorder_levels(["district", "age_group", "year"]).sort_index()
+
+    return s
+
+
+def export_national_mean_py_by_age_year(
+    period_tuple,
+    infection_levels,
+):
+    py_district_age_year = extract_results(
+        results_folder,
+        module="tlo.methods.schisto",
+        key="Schisto_person_days_infected",
+        custom_generate_series=lambda _df: get_person_years_infected_by_district_age_year(
+            _df, target_period=period_tuple, infection_levels=infection_levels
+        ),
+        do_scaling=False,
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    # Scale to district population
+    scaled = py_district_age_year.mul(
+        district_scaling_factor["scaling_factor"],
+        axis=0,
+        level="district"
+    )
+
+    # National: sum across districts → index becomes (age_group, year)
+    national = scaled.groupby(level=["age_group", "year"]).sum()
+
+    # Mean across runs within each draw (keeping scenario)
+    # If your columns are (scenario, draw, run): this averages over run.
+    mean_over_runs = national.groupby(axis=1, level=["draw"]).mean()
+
+    # Save
+    mean_over_runs.to_excel(results_folder / "national_py_infected_by_age_year_mean_over_runs.xlsx")
+
+    return mean_over_runs
+
+
+full_TARGET_PERIOD = (Date(2011, 1, 1), Date(2050, 12, 31))
+mean_over_runs = export_national_mean_py_by_age_year(full_TARGET_PERIOD, infection_levels)
+
+
+
+
+
+
+
+
+
+
+
 
 
 ###########################################################################################################
@@ -1996,28 +2308,64 @@ formatted_table = format_summary_for_output(dalys_national_summary, filename='su
 
 # === DALYs averted by district =========================================================
 
-dalys_averted_district_compared_noMDA = compute_number_averted_vs_noMDA_within_wash_strategies(
+# todo this is giving same result across scenarios
+# todo dalys_schisto_district_scaled looks fine so issue is from here forward
+
+dalys_averted_district_compared_noMDA = compute_number_averted_within_wash_strategies(
     dalys_schisto_district_scaled,
     results_path=results_folder,
     filename_prefix='schisto_dalys_averted_by_year_run_district',
     target_period=TARGET_PERIOD,
-    averted_or_incurred='averted'
+    averted_or_incurred='averted',
+    comparator='no MDA'
 )
-dalys_averted_district_compared_noMDA.to_excel(results_folder / f'dalys_averted_district_compared_noMDA{target_period()}.xlsx')
+
+dalys_averted_district_compared_noMDA.to_excel(
+    results_folder / f'dalys_averted_district_compared_noMDA{target_period()}.xlsx')
 
 
-dalys_averted_district_compared_ContinueWASHnoMDA = compute_number_averted_vs_continueWASH_noMDA(
+
+pc_dalys_averted_district_compared_noMDA = compute_district_period_change_within_wash_strategies(
     dalys_schisto_district_scaled,
     results_path=results_folder,
     filename_prefix='schisto_dalys_averted_by_year_run_district',
     target_period=TARGET_PERIOD,
-    averted_or_incurred='averted'
+    comparator='no MDA',
+    output='percent',
 )
-dalys_averted_district_compared_ContinueWASHnoMDA.to_excel(results_folder / f'dalys_averted_district_compared_continueWASHnoMDA{target_period()}.xlsx')
+
+pc_dalys_averted_district_compared_noMDA.to_excel(
+    results_folder / f'pc_dalys_averted_district_compared_noMDA{target_period()}.xlsx')
+
+
+
+total_dalys_averted_district_compared_noMDA = compute_district_period_change_within_wash_strategies(
+    dalys_schisto_district_scaled,
+    results_path=results_folder,
+    filename_prefix='schisto_dalys_averted_by_year_run_district',
+    target_period=TARGET_PERIOD,
+    comparator='no MDA',
+    output='absolute',
+)
+total_dalys_averted_district_compared_noMDA.to_excel(
+    results_folder / f'total_dalys_averted_district_compared_noMDA{target_period()}.xlsx')
 
 
 
 
+# todo I think this is not needed
+# dalys_averted_district_compared_ContinueWASHnoMDA = compute_number_averted_vs_continueWASH_noMDA(
+#     dalys_schisto_district_scaled,
+#     results_path=results_folder,
+#     filename_prefix='schisto_dalys_averted_by_year_run_district',
+#     target_period=TARGET_PERIOD,
+#     averted_or_incurred='averted'
+# )
+# dalys_averted_district_compared_ContinueWASHnoMDA.to_excel(results_folder / f'dalys_averted_district_compared_continueWASHnoMDA{target_period()}.xlsx')
+#
+
+
+# todo use the updated function here, should be fine but haven't checked
 dalys_averted_district_compared_SAC = compute_number_averted_vs_SAC_within_wash_strategies(
     dalys_schisto_district_scaled,
     results_path=results_folder,
