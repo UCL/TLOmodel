@@ -2116,7 +2116,9 @@ class HealthSystem(Module):
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         # Debug logger gives simple line-list for every HSI event
-
+        print(f"DEBUG: _hsi_event_count_log_period = {self._hsi_event_count_log_period}")
+        print(
+                f"DEBUG: has _hsi_event_counts_by_facility_monthly = {hasattr(self, '_hsi_event_counts_by_facility_monthly')}")
         hsi_record = {
             "Event_Name": event_details.event_name,
             "TREATMENT_ID": event_details.treatment_id,
