@@ -654,7 +654,6 @@ class HealthSystem(Module):
             self._never_ran_hsi_event_details = dict()
             self._weather_cancelled_hsi_event_details = dict()
             self._weather_delayed_hsi_event_details = dict()
-            self._hsi_event_counts_by_facility_monthly = Counter()
 
         elif hsi_event_count_log_period is not None:
             raise ValueError(
