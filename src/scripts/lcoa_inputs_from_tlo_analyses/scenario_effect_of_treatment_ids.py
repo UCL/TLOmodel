@@ -1,19 +1,20 @@
 """
-This files runs the full model under a set of scenario in which each one TREATMENT_ID is excluded.
+This files runs the full model under a set of scenario in which only a single TREATMENT_ID is included.
 
-This version of the scenario represents _actual_ healthcare capacity/performance and normal healthcare seeking.
+To check scenarios are generated correctly:
+```
+tlo scenario-run --draw-only src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_treatment_ids.py
+```
 
 Run on the batch system using:
 
 ```
-tlo batch-submit
- src/scripts/overview_paper/B_finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py
+tlo batch-submit src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_treatment_ids.py
 ```
 
 or locally using:
 ```
-tlo scenario-run
- src/scripts/overview_paper/B_finding_effects_of_each_treatment/scenario_effect_ of_each_treatment.py
+tlo scenario-run src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_treatment_ids.py
 ```
 
 """
@@ -70,7 +71,7 @@ class EffectOfEachTreatment(BaseScenario):
             scenario_definitions.baseline(),
             {
                 'HealthSystem': {
-                    'Service_Availability': list(self._scenarios.values())[draw_number],
+                    'service_availability_postSwitch': list(self._scenarios.values())[draw_number],
                 },
             }
         )
@@ -80,7 +81,7 @@ class EffectOfEachTreatment(BaseScenario):
         The sequences of scenarios systematically omits all but one TREATMENT_ID that is defined in the model."""
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
-        treatments = get_filtered_treatment_ids(depth=1)
+        treatments = get_filtered_treatment_ids(depth=None)
         # Return 'Service_Availability' values, with scenarios for nothing, and ones for which all but one
         # treatment is omitted
         service_availability = dict({"Nothing": []})
