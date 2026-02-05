@@ -525,6 +525,7 @@ class HealthSystem(Module):
         assert not (ignore_priority and policy_name is not None), (
             "Cannot adopt a priority policy if the priority will be then ignored"
         )
+        print("DEBUG: HealthSystem __init__ starting", flush=True)
 
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
@@ -631,6 +632,8 @@ class HealthSystem(Module):
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         self._hsi_event_counts_by_facility_monthly = Counter()
+        print(f"DEBUG: Created _hsi_event_counts_by_facility_monthly", flush=True)
+
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
             # Counters for binning HSI events run (by unique integer keys) over
             # simulation period specified by hsi_event_count_log_period and cumulative
@@ -2117,9 +2120,8 @@ class HealthSystem(Module):
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         # Debug logger gives simple line-list for every HSI event
-        print(f"DEBUG: _hsi_event_count_log_period = {self._hsi_event_count_log_period}")
-        print(
-                f"DEBUG: has _hsi_event_counts_by_facility_monthly = {hasattr(self, '_hsi_event_counts_by_facility_monthly')}")
+        print(f"DEBUG: _hsi_event_count_log_period = {self._hsi_event_count_log_period}", flush=True)
+        print(f"DEBUG: has attr = {hasattr(self, '_hsi_event_counts_by_facility_monthly')}", flush=True)
         hsi_record = {
             "Event_Name": event_details.event_name,
             "TREATMENT_ID": event_details.treatment_id,
