@@ -50,6 +50,7 @@ dev = [
     "pytest-xdist",
     "virtualenv",
     "tox",
+    "pytest_resource_usage",
     # Linting
     "isort",
     "pylint",
