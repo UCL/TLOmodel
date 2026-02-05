@@ -636,6 +636,7 @@ class HealthSystem(Module):
             # counts over previous log periods
             self._hsi_event_counts_log_period = Counter()
             self._hsi_event_counts_cumulative = Counter()
+            self._hsi_event_counts_by_facility_monthly = Counter()
             # Dictionary mapping from HSI event details to unique integer keys
             self._hsi_event_details = dict()
 
