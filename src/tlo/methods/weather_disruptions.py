@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Priority
 
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -306,12 +306,15 @@ class WeatherDisruptions(Module):
     def build_linear_models(self):
         """Build the baseline and precipitation linear models using TLO's LinearModel class."""
         p = self.parameters
+
         # ===== BASELINE MODEL (no weather) =====
         self.lm_baseline = LinearModel(
             LinearModelType.ADDITIVE,
             0,
-            Predictor('year', external=True).when('.', p['baseline_coef_year']),
-            Predictor('min_distance_to_clinic', external=True).when('.', p['baseline_coef_min_distance']),
+            Predictor('year', external=True).otherwise(p['baseline_coef_year']),
+            Predictor('month', external=True).otherwise(p['baseline_coef_month']),
+            Predictor('min_distance_to_clinic', external=True).otherwise(p['baseline_coef_min_distance']),
+            Predictor('altitude', external=True).otherwise(p['baseline_coef_altitude']),
             Predictor('urban_rural').when('urban', p['baseline_coef_urban']).otherwise(0.0),
             Predictor('zone', conditions_are_mutually_exclusive=True)
             .when('Central West', p['baseline_coef_central_west'])
@@ -328,8 +331,10 @@ class WeatherDisruptions(Module):
         self.lm_precipitation = LinearModel(
             LinearModelType.ADDITIVE,
             0,
-            Predictor('year', external=True).when('.', p['precipitation_coef_year']),
-            Predictor('min_distance_to_clinic', external=True).when('.', p['precipitation_coef_min_distance']),
+            Predictor('year', external=True).otherwise(p['precipitation_coef_year']),
+            Predictor('month', extrenal=True).otherwise(p['precipitation_coef_month']),
+            Predictor('min_distance_to_clinic', external=True).otherwise(p['precipitation_coef_min_distance']),
+            Predictor('altitude', external=True).otherwise(p['precipitation_coef_altitude']),
             Predictor('urban_rural').when('urban', p['precipitation_coef_urban']).otherwise(0.0),
             Predictor('zone', conditions_are_mutually_exclusive=True)
             .when('Central West', p['precipitation_coef_central_west'])
@@ -341,11 +346,11 @@ class WeatherDisruptions(Module):
             .when('Private', p['precipitation_coef_private'])
             .otherwise(0.0),
             # Precip variables
-            Predictor('precip_monthly', external=True).when('.', p['precipitation_coef_precip_monthly']),
-            Predictor('precip_5day', external=True).when('.', p['precipitation_coef_precip_5day']),
-            Predictor('lag_4month', external=True).when('.', p['precipitation_coef_lag_4month']),
-            Predictor('lag_9month', external=True).when('.', p['precipitation_coef_lag_9month']),
-            Predictor('lag_1_5day', external=True).when('.', p['precipitation_coef_lag_1_5day']),
+            Predictor('precip_monthly', external=True).otherwise(p['precipitation_coef_precip_monthly']),
+            Predictor('precip_5day', external=True).otherwise(p['precipitation_coef_precip_5day']),
+            Predictor('lag_4month', external=True).otherwise(p['precipitation_coef_lag_4month']),
+            Predictor('lag_9month', external=True).otherwise(p['precipitation_coef_lag_9month']),
+            Predictor('lag_1_5day', external=True).otherwise(p['precipitation_coef_lag_1_5day']),
         )
 
 
@@ -408,6 +413,7 @@ class WeatherDisruptions(Module):
                 lag_1_5d = lag_1_5day.iloc[t_idx, fac_idx] if not pd.isna(lag_1_5day.iloc[t_idx, fac_idx]) else 0.0
                 # Get facility characteristics
                 dist = facility_chars.at[fac, "min_distance_to_clinic"]
+                altitude = facility_chars.at[fac, "altitude"]
                 urban = facility_chars.at[fac, "urban_rural"]
                 zone = facility_chars.at[fac, "zone"]
                 owner = facility_chars.at[fac, "ownership"]
@@ -416,6 +422,7 @@ class WeatherDisruptions(Module):
                     'year': year,
                     'month': month,
                     'min_distance_to_clinic': dist,
+                    'altitude': altitude,
                     'urban_rural': urban,
                     'zone': zone,
                     'ownership': owner,
@@ -437,6 +444,7 @@ class WeatherDisruptions(Module):
             rng=None,
             year=facility_month_df['year'].values,
             min_distance_to_clinic=facility_month_df['min_distance_to_clinic'].values,
+            altitude=facility_month_df['altitude'].values
         )
 
         # Precipitation predictions (with all weather variables)
@@ -445,6 +453,7 @@ class WeatherDisruptions(Module):
             rng=None,
             year=facility_month_df['year'].values,
             min_distance_to_clinic=facility_month_df['min_distance_to_clinic'].values,
+            altitude=facility_month_df['altitude'].values,
             precip_monthly=facility_month_df['precip_monthly'].values,
             precip_5day=facility_month_df['precip_5day'].values,
             lag_4month=facility_month_df['lag_4month'].values,
