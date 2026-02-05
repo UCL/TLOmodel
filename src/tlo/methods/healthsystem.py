@@ -209,7 +209,8 @@ class HealthSystem(Module):
             "consumables in the merged 1b/2 facility level.",
         ),
         "availability_estimates": Parameter(
-            Types.DATA_FRAME, "Estimated availability of consumables in the LMIS dataset."
+            Types.DICT, "Estimated availability of consumables in the LMIS dataset. Dict contains all the databases "
+                        "that might be selected using `data_source_for_cons_availability_estimates`"
         ),
         "cons_availability": Parameter(
             Types.STRING,
@@ -650,17 +651,13 @@ class HealthSystem(Module):
             dtype={"Item_Code": int, "is_diagnostic": bool, "is_medicine": bool, "is_other": bool},
         ).set_index("Item_Code")
 
-        # Choose to read-in the updated availabilty estimates or the legacy availability estimates
-        if self.parameters["data_source_for_cons_availability_estimates"] == "original":
-            filename_for_cons_availability_estimates = "ResourceFile_Consumables_availability_small_original.csv"
-        elif self.parameters["data_source_for_cons_availability_estimates"] == "updated":
-            filename_for_cons_availability_estimates = "ResourceFile_Consumables_availability_small.csv"
-        else:
-            raise ValueError("data_source_for_cons_availability_estimates should be either 'original' or 'updated'")
+        def read_consumables(filename):
+            return pd.read_csv(path_to_resourcefiles_for_healthsystem / "consumables" / filename)
+        self.parameters["availability_estimates"] = {
+            "original": read_consumables("ResourceFile_Consumables_availability_small_original.csv"),
+            "updated": read_consumables("ResourceFile_Consumables_availability_small.csv"),
+        }
 
-        self.parameters["availability_estimates"] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / "consumables" / filename_for_cons_availability_estimates
-        )
 
         # Data on the number of beds available of each type by facility_id
         self.parameters["BedCapacity"] = pd.read_csv(
@@ -800,11 +797,14 @@ class HealthSystem(Module):
         self.bed_days = BedDays(hs_module=self, availability=self.get_beds_availability())
         self.bed_days.pre_initialise_population()
 
+        # Confirm availability data for consumables
+        _availability_data = self.update_consumables_availability_to_represent_merging_of_levels_1b_and_2(
+                self.parameters["availability_estimates"][self.parameters["data_source_for_cons_availability_estimates"]]
+            )
+
         # Initialise the Consumables class
         self.consumables = Consumables(
-            availability_data=self.update_consumables_availability_to_represent_merging_of_levels_1b_and_2(
-                self.parameters["availability_estimates"]
-            ),
+            availability_data=_availability_data,
             item_code_designations=self.parameters["consumables_item_designations"],
             rng=rng_for_consumables,
             availability=self.get_cons_availability(),
