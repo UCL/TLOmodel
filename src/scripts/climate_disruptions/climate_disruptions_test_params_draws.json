@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "src/scripts/climate_disruptions/climate_disruption_scenarios_baseline.py",
+  "scenario_script_path": "src/scripts/climate_disruptions/climate_disruptions_test_params.py",
   "scenario_seed": 0,
   "arguments": [
     "--resume-simulation",
@@ -12,7 +12,7 @@
       "parameters": {
         "HealthSystem": {
           "scale_factor_reseeking_healthcare_post_disruption": 1.0,
-          "scale_factor_prob_disruption": 1.0,
+          "scale_factor_prob_disruption": 0.0,
           "delay_in_seeking_care_weather": 28.0,
           "scale_factor_appointment_urgency": 1.0,
           "scale_factor_severity_disruption_and_delay": 1.0,
@@ -32,7 +32,7 @@
           "climate_model_ensemble_model": "mean",
           "year_effective_climate_disruptions": 2025,
           "prop_supply_side_disruptions": 0.5,
-          "services_affected_precip": "none",
+          "services_affected_precip": "all",
           "tclose_overwrite": 1000
         },
         "SymptomManager": {
@@ -45,7 +45,7 @@
       "draw_number": 1,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_reseeking_healthcare_post_disruption": 1.0,
+          "scale_factor_reseeking_healthcare_post_disruption": 0.0,
           "scale_factor_prob_disruption": 1.0,
           "delay_in_seeking_care_weather": 28.0,
           "scale_factor_appointment_urgency": 1.0,
@@ -79,11 +79,11 @@
       "draw_number": 2,
       "parameters": {
         "HealthSystem": {
-          "scale_factor_reseeking_healthcare_post_disruption": 2.0,
-          "scale_factor_prob_disruption": 2.0,
-          "delay_in_seeking_care_weather": 60.0,
-          "scale_factor_appointment_urgency": 2.0,
-          "scale_factor_severity_disruption_and_delay": 2.0,
+          "scale_factor_reseeking_healthcare_post_disruption": 1.0,
+          "scale_factor_prob_disruption": 10000.0,
+          "delay_in_seeking_care_weather": 28.0,
+          "scale_factor_appointment_urgency": 1.0,
+          "scale_factor_severity_disruption_and_delay": 1.0,
           "mode_appt_constraints": 1,
           "mode_appt_constraints_postSwitch": 1,
           "cons_availability": "default",
@@ -108,8 +108,42 @@
         }
       },
       "draw_name": "2"
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "HealthSystem": {
+          "scale_factor_reseeking_healthcare_post_disruption": 1.0,
+          "scale_factor_prob_disruption": 1,
+          "delay_in_seeking_care_weather": 10000,
+          "scale_factor_appointment_urgency": 1.0,
+          "scale_factor_severity_disruption_and_delay": 1.0,
+          "mode_appt_constraints": 1,
+          "mode_appt_constraints_postSwitch": 1,
+          "cons_availability": "default",
+          "cons_availability_postSwitch": "default",
+          "year_cons_availability_switch": 2025,
+          "beds_availability": "default",
+          "equip_availability": "default",
+          "equip_availability_postSwitch": "default",
+          "year_equip_availability_switch": 2025,
+          "use_funded_or_actual_staffing": "actual",
+          "scale_to_effective_capabilities": false,
+          "policy_name": "Naive",
+          "climate_ssp": "ssp245",
+          "climate_model_ensemble_model": "mean",
+          "year_effective_climate_disruptions": 2025,
+          "prop_supply_side_disruptions": 0.5,
+          "services_affected_precip": "all",
+          "tclose_overwrite": 1000
+        },
+        "SymptomManager": {
+          "spurious_symptoms": true
+        }
+      },
+      "draw_name": "3"
     }
   ],
-  "commit": "5dcf9edf80bfada154dba0386e720993f847af30",
-  "github": "https://github.com/UCL/TLOmodel/tree/5dcf9edf80bfada154dba0386e720993f847af30"
+  "commit": "fd2411990f5077559b3bc0db057a3ccc3a69583b",
+  "github": "https://github.com/UCL/TLOmodel/tree/fd2411990f5077559b3bc0db057a3ccc3a69583b"
 }
