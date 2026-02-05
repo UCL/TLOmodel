@@ -54,6 +54,7 @@ AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2 = ["1b"]  # <-- Implies th
 # Note that, as of PR #1743, this should not be changed, as the availability of consumables at level 1b is now
 # encoded to reflect a (weighted) average of the availability of levels '1b' and '2'.
 
+
 def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFrame:
     """Return a modified version of the imported capabilities DataFrame to reflect that the capabilities of level 1b
     are pooled with those of level 2, and all labelled as level 2."""
@@ -201,10 +202,11 @@ class HealthSystem(Module):
             "Look-up table for the designations of consumables (whether diagnostic, medicine, or other",
         ),
         "data_source_for_cons_availability_estimates": Parameter(
-            Types.STRING, "Source of data on consumable availability. Options are: `original` or `updated`."
-                          "The original source was used in the calibration and presented in the overview paper. The "
-                          "updated source introduced in PR #1743 and better reflects the average availability of "
-                          "consumables in the merged 1b/2 facility level."
+            Types.STRING,
+            "Source of data on consumable availability. Options are: `original` or `updated`."
+            "The original source was used in the calibration and presented in the overview paper. The "
+            "updated source introduced in PR #1743 and better reflects the average availability of "
+            "consumables in the merged 1b/2 facility level.",
         ),
         "availability_estimates": Parameter(
             Types.DATA_FRAME, "Estimated availability of consumables in the LMIS dataset."
@@ -262,10 +264,8 @@ class HealthSystem(Module):
         ),
         "year_service_availability_switch": Parameter(Types.INT, "Year in which service availability changes."),
         "service_availability_postSwitch": Parameter(
-            Types.LIST,
-            "List of services to be available after the switch in `year_service_availability_switch`"
+            Types.LIST, "List of services to be available after the switch in `year_service_availability_switch`"
         ),
-
         "policy_name": Parameter(Types.STRING, "Name of priority policy adopted"),
         "year_mode_switch": Parameter(Types.INT, "Year in which mode switch is enforced"),
         "scale_to_effective_capabilities": Parameter(
@@ -651,9 +651,9 @@ class HealthSystem(Module):
         ).set_index("Item_Code")
 
         # Choose to read-in the updated availabilty estimates or the legacy availability estimates
-        if self.parameters["data_source_for_cons_availability_estimates"] == 'original':
+        if self.parameters["data_source_for_cons_availability_estimates"] == "original":
             filename_for_cons_availability_estimates = "ResourceFile_Consumables_availability_small_original.csv"
-        elif self.parameters["data_source_for_cons_availability_estimates"] == 'updated':
+        elif self.parameters["data_source_for_cons_availability_estimates"] == "updated":
             filename_for_cons_availability_estimates = "ResourceFile_Consumables_availability_small.csv"
         else:
             raise ValueError("data_source_for_cons_availability_estimates should be either 'original' or 'updated'")
@@ -661,7 +661,6 @@ class HealthSystem(Module):
         self.parameters["availability_estimates"] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / "consumables" / filename_for_cons_availability_estimates
         )
-
 
         # Data on the number of beds available of each type by facility_id
         self.parameters["BedCapacity"] = pd.read_csv(
@@ -899,16 +898,15 @@ class HealthSystem(Module):
 
         # Schedule an HRH availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(self,parameters_to_change=["use_funded_or_actual_staffing"]),
+            HealthSystemChangeParameters(self, parameters_to_change=["use_funded_or_actual_staffing"]),
             Date(self.parameters["year_use_funded_or_actual_staffing_switch"], 1, 1),
         )
 
         # Schedule service availability switch
         sim.schedule_event(
-            HealthSystemChangeParameters(self,parameters_to_change=["service_availability"]),
+            HealthSystemChangeParameters(self, parameters_to_change=["service_availability"]),
             Date(self.parameters["year_service_availability_switch"], 1, 1),
         )
-
 
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
@@ -1268,12 +1266,12 @@ class HealthSystem(Module):
         self._rescaling_factors = defaultdict(dict)
         for clinic, clinic_cl in self._daily_capabilities.items():
             for facID_and_officer in clinic_cl.keys():
-                self._rescaling_factors[clinic][facID_and_officer] = self._summary_counter.frac_time_used_by_facID_and_officer(
-                    facID_and_officer=facID_and_officer, clinic=clinic
+                self._rescaling_factors[clinic][facID_and_officer] = (
+                    self._summary_counter.frac_time_used_by_facID_and_officer(
+                        facID_and_officer=facID_and_officer, clinic=clinic
+                    )
                 )
         self._summary_counter._rescaling_factors = self._rescaling_factors
-
-
 
     def _rescale_capabilities_to_capture_effective_capability(self):
         # Notice that capabilities will only be expanded through this process
@@ -1356,7 +1354,7 @@ class HealthSystem(Module):
             ]
         )
         updated_facilities = set(
-            mfl.loc[mfl['Facility_Level'] == LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2, 'Facility_ID']
+            mfl.loc[mfl["Facility_Level"] == LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2, "Facility_ID"]
         )
         assert facilities_with_any_differences.issubset(updated_facilities)
 
@@ -1581,9 +1579,7 @@ class HealthSystem(Module):
                 hsi_event=hsi_event,
             )
 
-    def _add_hsi_event_queue_item_to_hsi_event_queue(
-        self, clinic, priority, topen, tclose, hsi_event
-    ) -> None:
+    def _add_hsi_event_queue_item_to_hsi_event_queue(self, clinic, priority, topen, tclose, hsi_event) -> None:
         """Add an event to the HSI_EVENT_QUEUE."""
         # Create HSIEventQueue Item, including a counter for the number of HSI_Events, to assist with sorting in the
         # queue (NB. the sorting is done ascending and by the order of the items in the tuple).
@@ -1986,7 +1982,6 @@ class HealthSystem(Module):
             level=event_details.facility_level,
         )
 
-
     def log_current_capabilities_and_usage(self, clinic_name):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
@@ -2155,8 +2150,7 @@ class HealthSystem(Module):
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
 
-
-        if (self.sim.date.year == self.parameters['year_service_availability_switch']):
+        if self.sim.date.year == self.parameters["year_service_availability_switch"]:
             self._compute_factors_for_effective_capabilities()
 
         # If we are at the end of the year preceeding the mode switch, and if wanted
@@ -2176,7 +2170,7 @@ class HealthSystem(Module):
         # Record equipment usage for the year, for each facility
         self._record_general_equipment_usage_for_year()
 
-    def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests, clinic)-> bool:
+    def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests, clinic) -> bool:
         """Check if all officers required by the appt footprint are available to perform the HSI"""
 
         ok_to_run = True
@@ -2187,8 +2181,7 @@ class HealthSystem(Module):
             # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
             if availability is None:
                 logger.warning(
-                    key="message",
-                    data=(f"Requested officer {officer} is not contemplated by health system. ")
+                    key="message", data=(f"Requested officer {officer} is not contemplated by health system. ")
                 )
                 availability = 0.0
 
@@ -2196,7 +2189,6 @@ class HealthSystem(Module):
                 ok_to_run = False
 
         return ok_to_run
-
 
     def run_individual_level_events_in_mode_0_or_1(
         self, _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]
@@ -2211,7 +2203,6 @@ class HealthSystem(Module):
             # For all events in the list, expand the appt-footprint of the event to give the demands on each
             # officer-type in each facility_id and clinic.
             footprints_of_all_individual_level_hsi_event = defaultdict(list)
-
 
             ## _list_of_individual_hsi_event_tuples is a flat list, whereas we will now
             ## store the footprint by clinic; as we loop over the list of events to be run, we
@@ -2260,7 +2251,8 @@ class HealthSystem(Module):
                 # In this mode, all HSI Events run provided all required officers have non-zero capabilities
                 if event.expected_time_requests:
                     ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
-                                    event.expected_time_requests, clinic=clinic)
+                        event.expected_time_requests, clinic=clinic
+                    )
 
                 if ok_to_run:
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
@@ -2308,7 +2300,7 @@ class HealthSystem(Module):
                         priority=_priority,
                         clinic=event_clinic,
                     )
-                                   # if not ok_to_run
+                # if not ok_to_run
                 else:
                     # Do not run,
                     # Call did_not_run for the hsi_event
@@ -2327,9 +2319,8 @@ class HealthSystem(Module):
                         actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                         squeeze_factor=0.0,
                         did_run=False,
-                        priority=_priority
+                        priority=_priority,
                     )
-
 
         return _to_be_held_over
 
@@ -2852,13 +2843,10 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ("0", "1a", "1b", "2", "3", "4")}
 
         self._rescaling_factors = defaultdict(dict)
-        self._frac_time_used_overall = defaultdict(list) # Running record of the usage of the healthcare system
+        self._frac_time_used_overall = defaultdict(list)  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_facID_and_officer = defaultdict(Counter)
 
-
-    def record_hsi_event(
-        self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str
-    ) -> None:
+    def record_hsi_event(self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
 
         # Count the treatment_id:
@@ -2893,7 +2881,7 @@ class HealthSystemSummaryCounter:
         self,
         fraction_time_used_across_all_facilities_in_this_clinic: float,
         fraction_time_used_by_facID_and_officer_in_this_clinic: Dict[str, float],
-        clinic: str
+        clinic: str,
     ) -> None:
         """Record a current status metric of the HealthSystem."""
         # The fraction of all healthcare worker time that is used:
@@ -2956,17 +2944,19 @@ class HealthSystemSummaryCounter:
 
         for clinic in self._frac_time_used_overall.keys():
             logger_summary.info(
-               key="Capacity_By_FacID_and_Officer",
+                key="Capacity_By_FacID_and_Officer",
                 description="The fraction of healthcare worker time that is used each day, averaged over this "
                 "calendar year, for each officer type at each facility.",
-                data=flatten_multi_index_series_into_dict_for_logging(self.frac_time_used_by_facID_and_officer(clinic))#,
+                data=flatten_multi_index_series_into_dict_for_logging(
+                    self.frac_time_used_by_facID_and_officer(clinic)
+                ),  # ,
             )
 
         self._reset_internal_stores()
 
     def frac_time_used_by_facID_and_officer(
         self,
-        clinic:str,
+        clinic: str,
         facID_and_officer: Optional[str] = None,
     ) -> Union[float, pd.Series]:
         """Average fraction of time used by officer type and level since last reset.
@@ -2991,8 +2981,9 @@ class HealthSystemSummaryCounter:
                 ##if (_facID_and_officer == facID_and_officer or _facID_and_officer is None)
             }
             return pd.Series(
-                index=pd.MultiIndex.from_tuples([(clinic, key) for key in mean_frac_time_used.keys()],
-                                                names=["clinic", "facID_and_officer"]),
+                index=pd.MultiIndex.from_tuples(
+                    [(clinic, key) for key in mean_frac_time_used.keys()], names=["clinic", "facID_and_officer"]
+                ),
                 data=mean_frac_time_used.values(),
             ).sort_index()
 
@@ -3009,7 +3000,12 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         super().__init__(module)
         assert isinstance(module, HealthSystem)
 
-        self.supported_parameters = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing", "service_availability"]
+        self.supported_parameters = [
+            "cons_availability",
+            "equip_availability",
+            "use_funded_or_actual_staffing",
+            "service_availability",
+        ]
         if not all(param in self.supported_parameters for param in parameters_to_change):
             raise ValueError(
                 f"parameters_to_change can only contain the following values: {self.supported_parameters}. "
@@ -3037,14 +3033,17 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             retained_events = []
             while len(self.module.HSI_EVENT_QUEUE) > 0:
                 next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
-                if self.module.is_treatment_id_allowed(next_event_tuple.hsi_event.TREATMENT_ID, self.module.service_availability):
+                if self.module.is_treatment_id_allowed(
+                    next_event_tuple.hsi_event.TREATMENT_ID, self.module.service_availability
+                ):
                     retained_events.append(next_event_tuple)
                 else:
-                    self.module.schedule_to_call_never_ran_on_date(hsi_event=next_event_tuple.hsi_event, tdate=next_event_tuple.topen)
+                    self.module.schedule_to_call_never_ran_on_date(
+                        hsi_event=next_event_tuple.hsi_event, tdate=next_event_tuple.topen
+                    )
 
             self.module.HSI_EVENT_QUEUE = retained_events
             hp.heapify(self.module.HSI_EVENT_QUEUE)
-
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):

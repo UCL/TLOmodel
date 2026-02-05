@@ -28,7 +28,6 @@ from scripts.lcoa_inputs_from_tlo_analyses.scenarios_definitions import (
 from tlo import Date, logging
 from tlo.analysis.utils import (
     get_filtered_treatment_ids,
-    get_parameters_for_status_quo,
     mix_scenarios,
 )
 from tlo.methods.fullmodel import fullmodel
@@ -41,14 +40,14 @@ class EffectOfEachTreatment(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2040, 1, 1)
-        self.pop_size = 250_000
+        self.pop_size = 100
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment_group_status_quo',
+            'filename': 'effect_of_each_treatment_id',
             'directory': Path('./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,

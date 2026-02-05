@@ -2846,7 +2846,6 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
     )
 
 
-
 @pytest.mark.slow
 def test_service_availability_switch(tmpdir, seed):
     """Test that the service availability is updated in the year specified.
@@ -2885,7 +2884,7 @@ def test_service_availability_switch(tmpdir, seed):
         "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
     }
     start_date = Date(2010, 1, 1)
-    tot_population = 100
+
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
 
     sim.register(
@@ -2898,7 +2897,7 @@ def test_service_availability_switch(tmpdir, seed):
             policy_name="",
             use_funded_or_actual_staffing="funded_plus",
         ),
-        DummyModuleGenericClinic()
+        DummyModuleGenericClinic(),
     )
 
     hs_params = sim.modules["HealthSystem"].parameters
@@ -2941,16 +2940,16 @@ def test_service_availability_switch(tmpdir, seed):
     sim.simulate(end_date=end_date)
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     breakpoint()
-    hsi_events = output["tlo.methods.healthsystem"]['HSI_Event']
+    hsi_events = output["tlo.methods.healthsystem"]["HSI_Event"]
     ## Expect 10 rows in hsi_events['HSI_Event'] with did_run True and TREATMENT_ID ThisEventShouldRun
     nevents_ran = hsi_events.groupby("TREATMENT_ID")["did_run"].value_counts()
-    assert nevents_ran.loc[('ThisEventShouldRun', True)] == nevents_with_available_ids
+    assert nevents_ran.loc[("ThisEventShouldRun", True)] == nevents_with_available_ids
     ## Expect 10 rows in hsi_events['Never_ran_HSI_Event'] with TREATMENT_ID ThisEventShouldNotRunPostSwitch
-    never_ran_events = output["tlo.methods.healthsystem"]['Never_ran_HSI_Event']
-    nevents_did_not_run = never_ran_events[never_ran_events['TREATMENT_ID'] == 'ThisEventShouldNotRunPostSwitch'].shape[0]
+    never_ran_events = output["tlo.methods.healthsystem"]["Never_ran_HSI_Event"]
+    nevents_did_not_run = never_ran_events[never_ran_events["TREATMENT_ID"] == "ThisEventShouldNotRunPostSwitch"].shape[
+        0
+    ]
     assert nevents_did_not_run == nevents_with_withdrawn_ids
-
-
 
 
 def test_clinics_rescaling_factor(seed, tmpdir):
@@ -3041,7 +3040,6 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
 
         return sim
-
 
     def schedule_hsi_events(ngenericclinic, nclinic1, sim):
         for i in range(0, ngenericclinic):
