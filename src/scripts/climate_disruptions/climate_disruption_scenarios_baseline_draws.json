@@ -1,10 +1,7 @@
 {
   "scenario_script_path": "src/scripts/climate_disruptions/climate_disruption_scenarios_baseline.py",
   "scenario_seed": 0,
-  "arguments": [
-    "--resume-simulation",
-    "${AZ_BATCH_NODE_MOUNTS_DIR}/mnt/rm916@ic.ac.uk/climate_scenario_runs_lhs_param_scan-2026-01-22T172056Z/0"
-  ],
+  "arguments": [],
   "runs_per_draw": 5,
   "draws": [
     {
@@ -110,6 +107,6 @@
       "draw_name": "2"
     }
   ],
-  "commit": "412f5e31c0370bbb081129d06b9b7b9610672504",
-  "github": "https://github.com/UCL/TLOmodel/tree/412f5e31c0370bbb081129d06b9b7b9610672504"
+  "commit": "0e07cca4b47fe0fe5442a63f51919fb7f9f19fba",
+  "github": "https://github.com/UCL/TLOmodel/tree/0e07cca4b47fe0fe5442a63f51919fb7f9f19fba"
 }
