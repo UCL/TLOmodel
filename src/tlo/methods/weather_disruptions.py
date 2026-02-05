@@ -306,20 +306,22 @@ class WeatherDisruptions(Module):
     def build_linear_models(self):
         """Build the baseline and precipitation linear models using TLO's LinearModel class."""
         p = self.parameters
-
+        print(type(p['baseline_coef_min_distance']))
+        print(p['baseline_coef_min_distance'])
         # ===== BASELINE MODEL (no weather) =====
         self.lm_baseline = LinearModel(
             LinearModelType.ADDITIVE,
             0,
-            Predictor('year', external=True).otherwise(p['baseline_coef_year']),
-            Predictor('month', external=True).otherwise(p['baseline_coef_month']),
-            Predictor('min_distance_to_clinic', external=True).otherwise(p['baseline_coef_min_distance']),
-            Predictor('altitude', external=True).otherwise(p['baseline_coef_altitude']),
+            Predictor('year', external=True).apply(lambda x: p['baseline_coef_year']*x),
+            #Predictor('month', external=True).apply(lambda x: p['baseline_coef_month']*x),
+            Predictor('min_distance_to_clinic', external=True).apply(lambda x: p['baseline_coef_min_distance']* np.array(x)),
+            Predictor('altitude', external=True).apply(lambda x: p['baseline_coef_altitude']*x),
             Predictor('urban_rural').when('urban', p['baseline_coef_urban']).otherwise(0.0),
             Predictor('zone', conditions_are_mutually_exclusive=True)
             .when('Central West', p['baseline_coef_central_west'])
             .when('Northern', p['baseline_coef_northern'])
             .when('South East', p['baseline_coef_south_east'])
+            .when('South West', p['baseline_coef_south_west'])
             .otherwise(0.0),  # Central East is reference
             Predictor('ownership', conditions_are_mutually_exclusive=True)
             .when('Government', p['baseline_coef_government'])
@@ -331,29 +333,28 @@ class WeatherDisruptions(Module):
         self.lm_precipitation = LinearModel(
             LinearModelType.ADDITIVE,
             0,
-            Predictor('year', external=True).otherwise(p['precipitation_coef_year']),
-            Predictor('month', extrenal=True).otherwise(p['precipitation_coef_month']),
-            Predictor('min_distance_to_clinic', external=True).otherwise(p['precipitation_coef_min_distance']),
-            Predictor('altitude', external=True).otherwise(p['precipitation_coef_altitude']),
+            Predictor('year', external=True).apply(lambda x: p['precipitation_coef_year']*x),
+            #Predictor('month', external=True).apply(lambda x: p['precipitation_coef_month']*x),
+            Predictor('min_distance_to_clinic', external=True).apply(lambda x: p['precipitation_coef_min_distance']*x),
+            Predictor('altitude', external=True).apply(lambda x: p['precipitation_coef_altitude']*x),
             Predictor('urban_rural').when('urban', p['precipitation_coef_urban']).otherwise(0.0),
             Predictor('zone', conditions_are_mutually_exclusive=True)
             .when('Central West', p['precipitation_coef_central_west'])
             .when('Northern', p['precipitation_coef_northern'])
             .when('South East', p['precipitation_coef_south_east'])
+            .when('South West', p['precipitation_coef_south_west'])
             .otherwise(0.0),
             Predictor('ownership', conditions_are_mutually_exclusive=True)
             .when('Government', p['precipitation_coef_government'])
             .when('Private', p['precipitation_coef_private'])
             .otherwise(0.0),
             # Precip variables
-            Predictor('precip_monthly', external=True).otherwise(p['precipitation_coef_precip_monthly']),
-            Predictor('precip_5day', external=True).otherwise(p['precipitation_coef_precip_5day']),
-            Predictor('lag_4month', external=True).otherwise(p['precipitation_coef_lag_4month']),
-            Predictor('lag_9month', external=True).otherwise(p['precipitation_coef_lag_9month']),
-            Predictor('lag_1_5day', external=True).otherwise(p['precipitation_coef_lag_1_5day']),
+            Predictor('precip_monthly', external=True).apply(lambda x: p['precipitation_coef_precip_monthly']*x),
+            Predictor('precip_5day', external=True).apply(lambda x: p['precipitation_coef_precip_5day']*x),
+            Predictor('lag_4month', external=True).apply(lambda x: p['precipitation_coef_lag_4month']*x),
+            Predictor('lag_9month', external=True).apply(lambda x: p['precipitation_coef_lag_9month']*x),
+            Predictor('lag_1_5day', external=True).apply(lambda x: p['precipitation_coef_lag_1_5day']*x),
         )
-
-
 
     def build_disruption_probabilities(self):
         """
@@ -368,24 +369,33 @@ class WeatherDisruptions(Module):
         # Build the linear models
         self.build_linear_models()
 
-        # Get data
-        precip_monthly = p["precipitation_data_monthly"]
-        precip_5day = p["precipitation_data_five_day"]
-        # Calculate lag variables
-        lag_4month_monthly = precip_monthly.shift(4)
-        lag_9month_monthly = precip_monthly.shift(9)
-        lag_1_5day = precip_5day.shift(1)
+        # Get data (includes 2024 for lag calculation)
+        precip_monthly_full = p["precipitation_data_monthly"]
+        precip_5day_full = p["precipitation_data_five_day"]
+
+        # Calculate lag variables on FULL data (including 2024)
+        lag_4month_monthly = precip_monthly_full.shift(4)
+        lag_9month_monthly = precip_monthly_full.shift(9)
+        lag_1_5day = precip_5day_full.shift(1)
+
+        # Skip 2024 (first 12 rows) for predictions - keep only 2025 onwards
+        start_idx = 12  # Skip 2024
+        precip_monthly = precip_monthly_full.iloc[start_idx:].reset_index(drop=True)
+        precip_5day = precip_5day_full.iloc[start_idx:].reset_index(drop=True)
+        lag_4month_monthly = lag_4month_monthly.iloc[start_idx:].reset_index(drop=True)
+        lag_9month_monthly = lag_9month_monthly.iloc[start_idx:].reset_index(drop=True)
+        lag_1_5day = lag_1_5day.iloc[start_idx:].reset_index(drop=True)
 
         facility_chars = p["facility_characteristics"]
         facility_chars = facility_chars.set_index(facility_chars.columns[0])
-        facility_chars  = facility_chars.T # First column is facility ID
+        facility_chars = facility_chars.T  # First column is facility ID
 
         facilities = precip_monthly.columns.tolist()
         n_time = len(precip_monthly)
 
-        # Create time index
-        year = 2025 # earliest is 2025
-        month = 1 # earliest month is January
+        # Create time index starting from 2025
+        year = 2025
+        month = 1
         time_index = []
         for _ in range(n_time):
             time_index.append((year, month))
@@ -405,18 +415,20 @@ class WeatherDisruptions(Module):
                 precip_m = precip_monthly.iloc[t_idx, fac_idx]
                 precip_5d = precip_5day.iloc[t_idx, fac_idx]
 
-                # Get lag values (use 0 if not available due to early time points)
+                # Get lag values (now properly calculated from 2024 data)
                 lag_4m = lag_4month_monthly.iloc[t_idx, fac_idx] if not pd.isna(
                     lag_4month_monthly.iloc[t_idx, fac_idx]) else 0.0
                 lag_9m = lag_9month_monthly.iloc[t_idx, fac_idx] if not pd.isna(
                     lag_9month_monthly.iloc[t_idx, fac_idx]) else 0.0
                 lag_1_5d = lag_1_5day.iloc[t_idx, fac_idx] if not pd.isna(lag_1_5day.iloc[t_idx, fac_idx]) else 0.0
+
                 # Get facility characteristics
                 dist = facility_chars.at[fac, "min_distance_to_clinic"]
                 altitude = facility_chars.at[fac, "altitude"]
                 urban = facility_chars.at[fac, "urban_rural"]
                 zone = facility_chars.at[fac, "zone"]
                 owner = facility_chars.at[fac, "ownership"]
+
                 rows.append({
                     'RealFacility_ID': fac,
                     'year': year,
@@ -435,16 +447,24 @@ class WeatherDisruptions(Module):
 
         # Create dataframe with all facility-month-year combinations
         facility_month_df = pd.DataFrame(rows)
-        print(facility_month_df)
         # ===== PREDICT USING LINEAR MODELS =====
-
+        facility_month_df['min_distance_to_clinic'] = pd.to_numeric(
+            facility_month_df['min_distance_to_clinic'], errors='coerce'
+        )
+        facility_month_df['altitude'] = pd.to_numeric(
+            facility_month_df['altitude'], errors='coerce'
+        )
         # Baseline predictions (no weather)
         log_pred_baseline = self.lm_baseline.predict(
             facility_month_df,
             rng=None,
             year=facility_month_df['year'].values,
+            month=facility_month_df['month'].values,
             min_distance_to_clinic=facility_month_df['min_distance_to_clinic'].values,
-            altitude=facility_month_df['altitude'].values
+            altitude=facility_month_df['altitude'].values,
+            urban=facility_month_df['urban_rural'].values,
+            zone=facility_month_df['zone'].values,
+            ownership=facility_month_df['ownership'].values
         )
 
         # Precipitation predictions (with all weather variables)
@@ -452,6 +472,7 @@ class WeatherDisruptions(Module):
             facility_month_df,
             rng=None,
             year=facility_month_df['year'].values,
+            month=facility_month_df['month'].values,
             min_distance_to_clinic=facility_month_df['min_distance_to_clinic'].values,
             altitude=facility_month_df['altitude'].values,
             precip_monthly=facility_month_df['precip_monthly'].values,
@@ -459,6 +480,9 @@ class WeatherDisruptions(Module):
             lag_4month=facility_month_df['lag_4month'].values,
             lag_9month=facility_month_df['lag_9month'].values,
             lag_1_5day=facility_month_df['lag_1_5day'].values,
+            urban=facility_month_df['urban_rural'].values,
+            zone=facility_month_df['zone'].values,
+            ownership=facility_month_df['ownership'].values
         )
 
         # Convert from log scale
@@ -467,14 +491,13 @@ class WeatherDisruptions(Module):
 
         # Calculate deficit (positive = appointments lost)
         deficit = pred_baseline - pred_precip
-        print(deficit)
         # Convert deficit to probability of disruption
         prob_disruption = np.where(
             pred_baseline > 0,
             np.clip(deficit / pred_baseline, 0, 1),
             0
         )
-
+        print(prob_disruption)
         # Add predictions to dataframe
         facility_month_df['service'] = p["services_affected_precip"]
         facility_month_df['disruption'] = prob_disruption
@@ -527,4 +550,5 @@ class WeatherDisruptionsMonthlyLogger(RegularEvent, PopulationScopeEventMixin):
             )
 
             self.module.reset_monthly_counters()
+
 
