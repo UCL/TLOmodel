@@ -1,21 +1,26 @@
 """
-This scenario file sets up the scenarios for simulating the effects of nursing staffing levels
-The scenarios are:
-0- Baseline
-1- Baseline Perfect Healthcare Seeking
-2- Baseline Perfect Clinical Practice
-3- Improved Staffing
-4- Improved Perfect Healthcare Seeking
-5- Improved Perfect Clinical Practice
-6- Worst Case
-7- Worst Perfect Healthcare Seeking
-8- Worst Perfect Healthcare Seeking
+This scenario file sets up the scenarios for simulating the effects of nursing staffing levels.
+
+Run on the batch system using:
+```
+tlo batch-submit src/scripts/nurses_analyses/nurses_scenario_analyses.py
+```
+
+or locally using:
+```
+tlo scenario-run src/scripts/nurses_analyses/nurses_scenario_analyses.py
+ ```
+
+
+
 """
+
 from pathlib import Path
 from typing import Dict
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, get_root_path, mix_scenarios
+from tlo.analysis.utils import get_parameters_for_status_quo, get_root_path, mix_scenarios, \
+    get_parameters_for_hrh_historical_scaling_and_rescaling_for_mode2
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
@@ -53,54 +58,30 @@ class StaffingScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         if draw_number < self.number_of_draws:
             return list(self._scenarios.values())[draw_number]
-        else:
-            return
 
+    def draw_name(self, draw_number) -> str:
+        """Store scenario name.
+        (This name can be retrieved by the plotting scripts to make the graphs be labelled nicely).
+        """
+        if draw_number < self.number_of_draws:
+            return list(self._scenarios.keys())[draw_number]
+
+    @property
     def _default_of_all_scenarios(self) -> Dict:
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {
-                'HealthSystem': {
-                    'mode_appt_constraints': 1,
-                    'mode_appt_constraints_postSwitch': 2,
-                    "scale_to_effective_capabilities": True,
-                    "year_HR_scaling_by_level_and_officer_type": 2027,
-                    # This happens in the year before mode change, as the model calibration is done by that year
-                    "year_mode_switch": 2020,
-                    'cons_availability': 'default',
-                    'cons_availability_postSwitch': "all",
-                    # 'year_cons_availability_switch': 2027,
-                    'yearly_HR_scaling_mode': 'historical_scaling',  # for 5 years of 2020-2024; source data year 2019
-                    "policy_name": 'Naive',
-                    "tclose_overwrite": 1,
-                    "tclose_days_offset_overwrite": 7,
-                },
-                'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
-                    'max_healthcare_seeking': [False, False],
-                    'max_healthsystem_function': [False, False],
-                    'year_of_switch': 2027,
-                }
-            },
-        )
+        """Base set of parameters is the standard historical scaling and transition into Mode 2."""
+        return get_parameters_for_hrh_historical_scaling_and_rescaling_for_mode2()
 
+    @property
     def _default_of_all_max_healthsystem_scenarios(self) -> Dict:
+        """Improved Health System Performance: the same as the default for scenarios, but increases health system
+        function and healthcare seeking behaviour in 2027"""
         return mix_scenarios(
-            get_parameters_for_status_quo(),
+            self._default_of_all_scenarios,  # <-- start with the same default set of parameters (to avoid repeating them)
             {
-                'HealthSystem': {
-                    'mode_appt_constraints': 1,
-                    'mode_appt_constraints_postSwitch': 2,
-                    "scale_to_effective_capabilities": True,
-                    "year_HR_scaling_by_level_and_officer_type": 2027,
-                    # This happens in the year before mode change, as the model calibration is done by that year
-                    "year_mode_switch": 2020,
-                    'cons_availability': 'default',
-                    'cons_availability_postSwitch': "all",
-                    # 'year_cons_availability_switch': 2027,
-                    'yearly_HR_scaling_mode': 'historical_scaling',  # for 5 years of 2020-2024; source data year 2019
-                    "policy_name": 'Naive',
-                    "tclose_overwrite": 1,
-                    "tclose_days_offset_overwrite": 7,
+                'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                    'max_healthcare_seeking': [False, True],
+                    'max_healthsystem_function': [False, True],
+                    'year_of_switch': 2027,
                 },
             },
         )
@@ -109,118 +90,70 @@ class StaffingScenario(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         """
         return {
-            "Baseline":
+            "Baseline Nurses / Default Healthsystem Function":
                 mix_scenarios(
-                    self._default_of_all_scenarios(),
+                    self._default_of_all_scenarios,
                     {
                         "HealthSystem": {
                             'HR_scaling_by_level_and_officer_type_mode': "default",
+                            "year_HR_scaling_by_level_and_officer_type": 2027,
                         },
-                    }
-                ),
-
-            "Baseline Perfect Healthcare Seeking":
-                mix_scenarios(
-                    self._default_of_all_max_healthsystem_scenarios(),
-                    {"HealthSystem": {
-                        'HR_scaling_by_level_and_officer_type_mode': "default",
-                    }},
-                    {'ScenarioSwitcher': {
-                        'max_healthsystem_function': [False] * 2,
-                        'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2027,
                     },
-                    }
                 ),
 
-            "Baseline Perfect Clinical Practice":
+            "Fewer Nurses / Default Healthsystem Function":
                 mix_scenarios(
-                    self._default_of_all_max_healthsystem_scenarios(),
-                    {"HealthSystem": {
-                        'HR_scaling_by_level_and_officer_type_mode': "default",
-                    }},
-                    {'ScenarioSwitcher': {
-                        'max_healthsystem_function': [True] * 2,
-                        'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2027,
-                    },
-                    }
-                ),
-
-            "Improved Staffing":
-                mix_scenarios(
-                    self._default_of_all_scenarios(),
-                    {
-                        "HealthSystem": {
-                            'HR_scaling_by_level_and_officer_type_mode': "improved_staffing",
-                        },
-                    }
-                ),
-
-            "Improved Perfect Healthcare Seeking":
-                mix_scenarios(
-                    self._default_of_all_max_healthsystem_scenarios(),
-                    {"HealthSystem": {
-                        'HR_scaling_by_level_and_officer_type_mode': "improved_staffing",
-                    }},
-                    {'ScenarioSwitcher': {
-                        'max_healthsystem_function': [False] * 2,
-                        'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2027,
-                    },
-                    }
-                ),
-
-            "Improved Perfect Clinical Practice":
-                mix_scenarios(
-                    self._default_of_all_max_healthsystem_scenarios(),
-                    {"HealthSystem": {
-                        'HR_scaling_by_level_and_officer_type_mode': "improved_staffing",
-                    }},
-                    {'ScenarioSwitcher': {
-                        'max_healthsystem_function': [True] * 2,
-                        'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2027,
-                    },
-                    }
-                ),
-
-            "Worst Case":
-                mix_scenarios(
-                    self._default_of_all_scenarios(),
+                    self._default_of_all_scenarios,
                     {
                         "HealthSystem": {
                             'HR_scaling_by_level_and_officer_type_mode': "custom_worse",
+                            "year_HR_scaling_by_level_and_officer_type": 2027,
                         },
-                    }
+                    },
                 ),
 
-            "Worst Perfect Healthcare Seeking":
+            "More Nurses / Default Healthsystem Function":
                 mix_scenarios(
-                    self._default_of_all_max_healthsystem_scenarios(),
-                    {"HealthSystem": {
-                        'HR_scaling_by_level_and_officer_type_mode': "custom_worse",
-                    }},
-                    {'ScenarioSwitcher': {
-                        'max_healthsystem_function': [False] * 2,
-                        'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2027,
+                    self._default_of_all_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "improved_staffing",
+                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                        },
                     },
-                    }
                 ),
 
-            "Worst Perfect Clinical Practice":
+            "Baseline Nurses / Improved Healthsystem Function":
                 mix_scenarios(
-                    self._default_of_all_max_healthsystem_scenarios(),
-                    {"HealthSystem": {
-                        'HR_scaling_by_level_and_officer_type_mode': "custom_worse",
-                    }},
-                    {'ScenarioSwitcher': {
-                        'max_healthsystem_function': [True] * 2,
-                        'max_healthcare_seeking': [True] * 2,
-                        'year_of_switch': 2027,
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "default",
+                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                        },
                     },
-                    }
+                ),
+
+            "Fewer Nurses / Improved Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "custom_worse",
+                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                        },
+                    },
+                ),
+
+            "More Nurses / Improved Healthsystem Function":
+                mix_scenarios(
+                    self._default_of_all_max_healthsystem_scenarios,
+                    {
+                        "HealthSystem": {
+                            'HR_scaling_by_level_and_officer_type_mode': "improved_staffing",
+                            "year_HR_scaling_by_level_and_officer_type": 2027,
+                        },
+                    },
                 ),
         }
 
