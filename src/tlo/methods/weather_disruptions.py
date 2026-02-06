@@ -5,8 +5,13 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Priority
-
+from tlo.events import (
+    Event,
+    IndividualScopeEventMixin,
+    PopulationScopeEventMixin,
+    Priority,
+    RegularEvent,
+)
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import (
@@ -25,60 +30,51 @@ logger.setLevel(logging.INFO)
 logger_summary = logging.getLogger(f"{__name__}.summary")
 logger_summary.setLevel(logging.INFO)
 
+
 class WeatherDisruptions(Module):
     """
     Module to handle climate-mediated disruptions to healthcare services.
     Manages weather-related service interruptions and their impact on
     healthcare seeking behavior and appointment scheduling.
-
     """
 
     # Declare dependencies
     INIT_DEPENDENCIES = {"Demography", "HealthSeekingBehaviour"}
-
     OPTIONAL_INIT_DEPENDENCIES = {"HealthSystem"}
-
-    # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}
 
-    # Define module-level parameters
-
     PARAMETERS = {
-
         # Disruption-related parameters
         "projected_precip_disruptions": Parameter(
-            Types.REAL, "Probabilities of precipitation-mediated " "disruptions to services by month, year, and clinic."
+            Types.REAL, "Probabilities of precipitation-mediated disruptions to services by month, year, and clinic."
         ),
         "scale_factor_prob_disruption": Parameter(
             Types.REAL,
-            "Due to uknown behaviours (from patient and health practiciion), broken chains of events, etc, which cause discrepencies  "
+            "Due to unknown behaviours (from patient and health practitioner), broken chains of events, etc, which cause discrepancies "
             "between the estimated disruptions and those modelled in TLO, rescale the original probability of disruption.",
         ),
         # Scenario-related parameters
         "climate_ssp": Parameter(
             Types.STRING,
-            "Which future shared socioeconomic pathway (determines degree of "
-            "warming) is under consideration."
-            "Options are ssp126, ssp245, and ssp585, in terms of increasing "
-            "severity.",
+            "Which future shared socioeconomic pathway (determines degree of warming) is under consideration. "
+            "Options are ssp126, ssp245, and ssp585, in terms of increasing severity.",
         ),
         "climate_model_ensemble_model": Parameter(
             Types.STRING,
-            "Which model from the model ensemble for each climate ssp is under consideration."
+            "Which model from the model ensemble for each climate ssp is under consideration. "
             "Options are lowest, mean, and highest, based on total precipitation between 2025 and 2070.",
         ),
-        "year_effective_climate_disruptions": Parameter(Types.INT,
-                                                        "Mimimum year from which there can be climate disruptions. Minimum is 2025"),
-
+        "year_effective_climate_disruptions": Parameter(
+            Types.INT, "Minimum year from which there can be climate disruptions. Minimum is 2025"
+        ),
         "services_affected_precip": Parameter(
             Types.STRING, "Which modelled services can be affected by weather. Options are all, none"
         ),
-
         # Rescheduling parameters
         "delay_in_seeking_care_weather": Parameter(
             Types.REAL,
             "If faced with a climate disruption, and it is determined the individual will "
-            "reseek healthcare, the number of days of delay in seeking healthcare."
+            "reseek healthcare, the number of days of delay in seeking healthcare. "
             "Scale factor makes it proportional to the urgency.",
         ),
         "scale_factor_reseeking_healthcare_post_disruption": Parameter(
@@ -86,22 +82,20 @@ class WeatherDisruptions(Module):
             "If faced with a climate disruption, and it is determined the individual will "
             "reseek healthcare, scaling of their original probability of seeking care.",
         ),
-
         "scale_factor_appointment_urgency": Parameter(
-            Types.REAL,
-            "Scale factor in seeking healthcare for how urgent a HSI is."
+            Types.REAL, "Scale factor in seeking healthcare for how urgent a HSI is."
         ),
         "scale_factor_severity_disruption_and_delay": Parameter(
             Types.REAL,
-            "Scale factor that changes the delay in reseeking healthcare to the severity of disruption (as measured by probability of disruption)",
+            "Scale factor that changes the delay in reseeking healthcare to the severity of disruption "
+            "(as measured by probability of disruption)",
         ),
         "prop_supply_side_disruptions": Parameter(
             Types.REAL,
             "Probability that a climate disruption is supply-side (consumes capabilities in mode 2) "
             "vs demand-side (frees up capabilities in mode 2)."
         ),
-
-        # Baseline model, no precipitation coefficients
+        # Baseline model coefficients
         "baseline_coef_intercept": Parameter(Types.REAL, "Baseline model intercept"),
         "baseline_coef_year": Parameter(Types.REAL, "Baseline: year"),
         "baseline_coef_month": Parameter(Types.REAL, "Baseline: month"),
@@ -114,7 +108,6 @@ class WeatherDisruptions(Module):
         "baseline_coef_south_west": Parameter(Types.REAL, "Baseline: South West zone"),
         "baseline_coef_government": Parameter(Types.REAL, "Baseline: Government ownership"),
         "baseline_coef_private": Parameter(Types.REAL, "Baseline: Private ownership"),
-
         # Precipitation model coefficients
         "precipitation_coef_intercept": Parameter(Types.REAL, "Precipitation model intercept"),
         "precipitation_coef_year": Parameter(Types.REAL, "Precipitation: year"),
@@ -125,7 +118,7 @@ class WeatherDisruptions(Module):
         "precipitation_coef_central_west": Parameter(Types.REAL, "Precipitation: Central West zone"),
         "precipitation_coef_northern": Parameter(Types.REAL, "Precipitation: Northern zone"),
         "precipitation_coef_south_east": Parameter(Types.REAL, "Precipitation: South East zone"),
-        "precipitation_coef_south_west": Parameter(Types.REAL, "Baseline: South East zone"),
+        "precipitation_coef_south_west": Parameter(Types.REAL, "Precipitation: South West zone"),
         "precipitation_coef_government": Parameter(Types.REAL, "Precipitation: Government ownership"),
         "precipitation_coef_private": Parameter(Types.REAL, "Precipitation: Private ownership"),
         "precipitation_coef_precip_monthly": Parameter(Types.REAL, "Precipitation: monthly cumulative precip"),
@@ -133,12 +126,9 @@ class WeatherDisruptions(Module):
         "precipitation_coef_lag_4month": Parameter(Types.REAL, "Precipitation: monthly cumulative precip 4 month lag"),
         "precipitation_coef_lag_9month": Parameter(Types.REAL, "Precipitation: monthly cumulative precip 9 month lag"),
         "precipitation_coef_lag_1_5day": Parameter(Types.REAL, "Precipitation: 5-day max precip 1 month lag"),
-
     }
 
-    # Define properties of individuals (none)
-    PROPERTIES = {
-    }
+    PROPERTIES = {}
 
     def __init__(
         self,
@@ -155,32 +145,6 @@ class WeatherDisruptions(Module):
         scale_factor_severity_disruption_and_delay: Optional[float] = None,
         prop_supply_side_disruptions: Optional[float] = None,
     ):
-        """
-        Initialize the ClimateDisruptions module.
-
-        :param name: Name to use for this module
-        :param resourcefilepath: Path to directory containing resource files
-        :param climate_ssp: Climate scenario. Options are ssp126, ssp245, ssp585
-        :param climate_model_ensemble_model: Which model from the model ensemble for each climate ssp
-            is under consideration. Options are 'lowest', 'mean', and 'highest', based on total
-            precipitation between 2025 and 2070.
-        :param year_effective_climate_disruptions: Minimum year from which climate disruptions occur.
-            Minimum is 2025.
-        :param services_affected_precip: Which modelled services can be affected by weather.
-            Options are 'all', 'none'.
-        :param response_to_disruption: How an appointment that is determined to be affected by weather
-            will be handled. Options are 'delay', 'cancel'.
-        :param delay_in_seeking_care_weather: The scale factor on number of days delay in reseeking
-            healthcare after an appointment has been delayed by weather. Unit is day.
-        :param scale_factor_reseeking_healthcare_post_disruption: Rescaling of probability of seeking
-            care after a disruption has occurred.
-        :param scale_factor_prob_disruption: To account for structural/behavioural assumptions in the TLO
-            and limitations of DHIS2 dataset.
-        :param scale_factor_severity_disruption_and_delay: Scale on the delay in reseeking healthcare
-            based on the "severity" of disruption.
-        :param prop_supply_side_disruptions: Probability that the climate-mediated disruptions to
-            healthcare are from the supply-side.
-        """
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
@@ -210,8 +174,7 @@ class WeatherDisruptions(Module):
         self._demand_side_by_district = {}
 
     def read_parameters(self, resourcefilepath: str | Path) -> None:
-        p = self.parameters
-        #Override with values from scenario files
+        # Override with values from scenario files
         if self.arg_climate_ssp is not None:
             self.parameters["climate_ssp"] = self.arg_climate_ssp
         if self.arg_climate_model_ensemble_model is not None:
@@ -247,14 +210,18 @@ class WeatherDisruptions(Module):
             self.parameters["year_effective_climate_disruptions"] = 2025
 
         # Load precipitation data
-
         ssp = self.parameters["climate_ssp"]
         model = self.parameters["climate_model_ensemble_model"]
-        service = self.parameters["services_affected_precip"]
 
         # Load five-day and monthly precipitation
-        precip_5day = read_csv_files(resourcefilepath / 'ResourceFile_WeatherDisruption', files= f"ResourceFile_Precipitation_Disruptions_{ssp}_{model}_window_prediction_weather_by_facility.csv")
-        monthly_file = read_csv_files(resourcefilepath / 'ResourceFile_WeatherDisruption', files= f"ResourceFile_Precipitation_Disruptions_{ssp}_{model}_monthly_prediction_weather_by_facility.csv")
+        precip_5day = read_csv_files(
+            resourcefilepath / 'ResourceFile_WeatherDisruption',
+            files=f"ResourceFile_Precipitation_Disruptions_{ssp}_{model}_window_prediction_weather_by_facility.csv"
+        )
+        monthly_file = read_csv_files(
+            resourcefilepath / 'ResourceFile_WeatherDisruption',
+            files=f"ResourceFile_Precipitation_Disruptions_{ssp}_{model}_monthly_prediction_weather_by_facility.csv"
+        )
 
         precip_5day = precip_5day.iloc[:, 1:]
         precip_monthly = monthly_file.iloc[:, 1:]
@@ -270,73 +237,102 @@ class WeatherDisruptions(Module):
         self.parameters["precipitation_data_five_day"] = precip_5day
 
         # Load facility characteristics
-        self.parameters["facility_characteristics"] = read_csv_files(resourcefilepath / 'ResourceFile_WeatherDisruption', files= f"ResourceFile_Facility_Characteristics.csv")
+        self.parameters["facility_characteristics"] = read_csv_files(
+            resourcefilepath / 'ResourceFile_WeatherDisruption',
+            files="ResourceFile_Facility_Characteristics.csv"
+        )
 
     def pre_initialise_population(self):
-        """Pre-initialization (not needed for this module)."""
         pass
 
     def initialise_population(self, population):
-        """Population initialization (no properties added)."""
         super().initialise_population(population=population)
 
-
     def initialise_simulation(self, sim):
-        """Build disruption predictions at simulation start."""
         # Calculate disruptions
         self.build_disruption_probabilities()
-
-        # Log configuration
 
         # Schedule monthly logger
         first_log_date = (sim.date + DateOffset(months=1)).replace(day=1) - DateOffset(days=1)
         sim.schedule_event(WeatherDisruptionsMonthlyLogger(self), first_log_date)
 
-
     def on_birth(self, mother_id, child_id):
-        """Initialise properties for a newborn individual.
-        """
         pass
-
 
     def on_simulation_end(self):
-        pass
+        # Overall statistics
+        logger_summary.info(
+            key="weather_disruptions_final",
+            data={
+                "year": self.sim.date.year,
+                "month": self.sim.date.month,
+                "checked": self._disruptions_checked_count,
+                "cancelled": self._disruptions_cancelled_count,
+                "delayed": self._disruptions_delayed_count,
+                "supply_side": self._supply_side_disruptions_count,
+                "demand_side": self._demand_side_disruptions_count,
+            }
+        )
 
+        # District-level statistics
+        logger_summary.info(
+            key="weather_disruptions_final_by_district",
+            data={
+                "year": self.sim.date.year,
+                "month": self.sim.date.month,
+                "checked_by_district": dict(self._disruptions_by_district),
+                "cancelled_by_district": dict(self._cancelled_by_district),
+                "delayed_by_district": dict(self._delayed_by_district),
+                "supply_side_by_district": dict(self._supply_side_by_district),
+                "demand_side_by_district": dict(self._demand_side_by_district),
+            }
+        )
+
+    def reset_monthly_counters(self):
+        self._disruptions_cancelled_count = 0
+        self._disruptions_delayed_count = 0
+        self._disruptions_checked_count = 0
+        self._supply_side_disruptions_count = 0
+        self._demand_side_disruptions_count = 0
+
+        self._disruptions_by_district = {}
+        self._cancelled_by_district = {}
+        self._delayed_by_district = {}
+        self._supply_side_by_district = {}
+        self._demand_side_by_district = {}
 
     def build_linear_models(self):
-        """Build the baseline and precipitation linear models using TLO's LinearModel class."""
         p = self.parameters
-        print(type(p['baseline_coef_min_distance']))
-        print(p['baseline_coef_min_distance'])
+
         # ===== BASELINE MODEL (no weather) =====
         self.lm_baseline = LinearModel(
             LinearModelType.ADDITIVE,
             0,
-            Predictor('year', external=True).apply(lambda x: p['baseline_coef_year']*x),
-            #Predictor('month', external=True).apply(lambda x: p['baseline_coef_month']*x),
-            Predictor('min_distance_to_clinic', external=True).apply(lambda x: p['baseline_coef_min_distance']* np.array(x)),
-            Predictor('altitude', external=True).apply(lambda x: p['baseline_coef_altitude']*x),
+            Predictor('year', external=True).apply(lambda x: p['baseline_coef_year'] * x),
+            Predictor('min_distance_to_clinic', external=True).apply(
+                lambda x: p['baseline_coef_min_distance'] * np.array(x)),
+            Predictor('altitude', external=True).apply(lambda x: p['baseline_coef_altitude'] * x),
             Predictor('urban_rural').when('urban', p['baseline_coef_urban']).otherwise(0.0),
             Predictor('zone', conditions_are_mutually_exclusive=True)
             .when('Central West', p['baseline_coef_central_west'])
             .when('Northern', p['baseline_coef_northern'])
             .when('South East', p['baseline_coef_south_east'])
             .when('South West', p['baseline_coef_south_west'])
-            .otherwise(0.0),  # Central East is reference
+            .otherwise(0.0),
             Predictor('ownership', conditions_are_mutually_exclusive=True)
             .when('Government', p['baseline_coef_government'])
             .when('Private', p['baseline_coef_private'])
-            .otherwise(0.0),  # CHAM is reference
+            .otherwise(0.0),
         )
 
         # ===== PRECIPITATION MODEL (with weather) =====
         self.lm_precipitation = LinearModel(
             LinearModelType.ADDITIVE,
             0,
-            Predictor('year', external=True).apply(lambda x: p['precipitation_coef_year']*x),
-            #Predictor('month', external=True).apply(lambda x: p['precipitation_coef_month']*x),
-            Predictor('min_distance_to_clinic', external=True).apply(lambda x: p['precipitation_coef_min_distance']*x),
-            Predictor('altitude', external=True).apply(lambda x: p['precipitation_coef_altitude']*x),
+            Predictor('year', external=True).apply(lambda x: p['precipitation_coef_year'] * x),
+            Predictor('min_distance_to_clinic', external=True).apply(
+                lambda x: p['precipitation_coef_min_distance'] * x),
+            Predictor('altitude', external=True).apply(lambda x: p['precipitation_coef_altitude'] * x),
             Predictor('urban_rural').when('urban', p['precipitation_coef_urban']).otherwise(0.0),
             Predictor('zone', conditions_are_mutually_exclusive=True)
             .when('Central West', p['precipitation_coef_central_west'])
@@ -349,21 +345,14 @@ class WeatherDisruptions(Module):
             .when('Private', p['precipitation_coef_private'])
             .otherwise(0.0),
             # Precip variables
-            Predictor('precip_monthly', external=True).apply(lambda x: p['precipitation_coef_precip_monthly']*x),
-            Predictor('precip_5day', external=True).apply(lambda x: p['precipitation_coef_precip_5day']*x),
-            Predictor('lag_4month', external=True).apply(lambda x: p['precipitation_coef_lag_4month']*x),
-            Predictor('lag_9month', external=True).apply(lambda x: p['precipitation_coef_lag_9month']*x),
-            Predictor('lag_1_5day', external=True).apply(lambda x: p['precipitation_coef_lag_1_5day']*x),
+            Predictor('precip_monthly', external=True).apply(lambda x: p['precipitation_coef_precip_monthly'] * x),
+            Predictor('precip_5day', external=True).apply(lambda x: p['precipitation_coef_precip_5day'] * x),
+            Predictor('lag_4month', external=True).apply(lambda x: p['precipitation_coef_lag_4month'] * x),
+            Predictor('lag_9month', external=True).apply(lambda x: p['precipitation_coef_lag_9month'] * x),
+            Predictor('lag_1_5day', external=True).apply(lambda x: p['precipitation_coef_lag_1_5day'] * x),
         )
 
     def build_disruption_probabilities(self):
-        """
-        Calculate service deficits by comparing baseline and precipitation models.
-        Uses TLO's LinearModel for consistency with other modules.
-
-        Deficit = exp(Baseline) - exp(Precipitation)
-        Positive deficit = appointments lost due to precipitation
-        """
         p = self.parameters
 
         # Build the linear models
@@ -415,7 +404,7 @@ class WeatherDisruptions(Module):
                 precip_m = precip_monthly.iloc[t_idx, fac_idx]
                 precip_5d = precip_5day.iloc[t_idx, fac_idx]
 
-                # Get lag values (now properly calculated from 2024 data)
+                # Get lag values
                 lag_4m = lag_4month_monthly.iloc[t_idx, fac_idx] if not pd.isna(
                     lag_4month_monthly.iloc[t_idx, fac_idx]) else 0.0
                 lag_9m = lag_9month_monthly.iloc[t_idx, fac_idx] if not pd.isna(
@@ -447,13 +436,10 @@ class WeatherDisruptions(Module):
 
         # Create dataframe with all facility-month-year combinations
         facility_month_df = pd.DataFrame(rows)
-        # ===== PREDICT USING LINEAR MODELS =====
-        facility_month_df['min_distance_to_clinic'] = pd.to_numeric(
-            facility_month_df['min_distance_to_clinic'], errors='coerce'
-        )
-        facility_month_df['altitude'] = pd.to_numeric(
-            facility_month_df['altitude'], errors='coerce'
-        )
+        facility_month_df['min_distance_to_clinic'] = pd.to_numeric(facility_month_df['min_distance_to_clinic'],
+                                                                    errors='coerce')
+        facility_month_df['altitude'] = pd.to_numeric(facility_month_df['altitude'], errors='coerce')
+
         # Baseline predictions (no weather)
         log_pred_baseline = self.lm_baseline.predict(
             facility_month_df,
@@ -491,13 +477,12 @@ class WeatherDisruptions(Module):
 
         # Calculate deficit (positive = appointments lost)
         deficit = pred_baseline - pred_precip
-        # Convert deficit to probability of disruption
         prob_disruption = np.where(
             pred_baseline > 0,
             np.clip(deficit / pred_baseline, 0, 1),
             0
         )
-        print(prob_disruption)
+
         # Add predictions to dataframe
         facility_month_df['service'] = p["services_affected_precip"]
         facility_month_df['disruption'] = prob_disruption
@@ -510,45 +495,207 @@ class WeatherDisruptions(Module):
             'pred_baseline', 'pred_precip'
         ]].copy()
 
+    def check_hsi_for_disruption(self, hsi_event_item: HSIEventQueueItem, current_date: Date) -> bool:
+        """
+        Check if an HSI event should be disrupted due to climate/weather conditions.
+        Returns True if event was disrupted (and should not proceed), False otherwise.
+        """
+        year = current_date.year
+        month = current_date.month
+        year = 2025
+        # Check if climate disruptions are active
+        if year < self.parameters["year_effective_climate_disruptions"]:
+            return False
+
+        if self.parameters["services_affected_precip"] in ("none", None):
+            return False
+
+        # Get facility information
+        fac_level = hsi_event_item.hsi_event.facility_info.level
+        person_id = hsi_event_item.hsi_event.target
+        facility_used = self.sim.population.props.at[person_id, f"level_{fac_level}"]
+
+        # Check if this facility has disruption data
+        if facility_used not in self.parameters["projected_precip_disruptions"]["RealFacility_ID"].values:
+            return False
+        #
+        # # Look up disruption probability
+        # prob_disruption = self._get_disruption_probability(
+        #     facility_id=facility_used,
+        #     year=year,
+        #     month=month,
+        #     service=self.parameters["services_affected_precip"]
+        # )
+        prob_disruption = 1
+
+        # Determine if disruption occurs
+        if self.rng.binomial(1, prob_disruption) == 0:
+            return False
+
+        # Disruption occurred - handle it
+        self._handle_disruption(
+            hsi_event_item=hsi_event_item,
+            prob_disruption=prob_disruption,
+            current_date=current_date
+        )
+        print("DISRUPTION")
+        return True
+
+    def _get_disruption_probability(self, facility_id: int, year: int, month: int, service: str) -> float:
+        """Get the disruption probability for a given facility/year/month/service."""
+        disruption_probs = self.parameters["projected_precip_disruptions"]
+
+        prob_disruption = disruption_probs.loc[
+            (disruption_probs["RealFacility_ID"] == facility_id)
+            & (disruption_probs["year"] == year)
+            & (disruption_probs["month"] == month)
+            & (disruption_probs["service"] == service),
+            "disruption",
+        ]
+        if prob_disruption.empty:
+            return 0.0
+
+        # Scale by parameter and cap at 1.0
+        return min(
+            float(prob_disruption.iloc[0]) * self.parameters["scale_factor_prob_disruption"],
+            1.0
+        )
+
+    def _handle_disruption(self, hsi_event_item: HSIEventQueueItem, prob_disruption: float, current_date: Date):
+        """Handle a disruption event - determine supply/demand side, reschedule or cancel, and log."""
+        # Determine if supply-side (affects capabilities in mode 2)
+        is_supply_side = self.rng.binomial(1, self.parameters["prop_supply_side_disruptions"])
+
+        if is_supply_side and self.sim.modules["HealthSystem"].mode_appt_constraints == 2:
+            # Supply-side disruption - add footprint to running total
+            footprint = hsi_event_item.hsi_event.expected_time_requests
+            self.sim.modules["HealthSystem"].running_total_footprint.update(footprint)
+            self._supply_side_disruptions_count += 1
+        else:
+            self._demand_side_disruptions_count += 1
+
+        # Determine if patient will reschedule
+        will_reschedule = self._determine_rescheduling(hsi_event_item, prob_disruption)
+
+        if will_reschedule:
+            # Calculate delay
+            delay_days = self._calculate_delay(hsi_event_item, prob_disruption)
+
+            # Reschedule the HSI
+            self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
+                priority=hsi_event_item.priority,
+                clinic_eligibility=hsi_event_item.clinic_eligibility,
+                topen=current_date + DateOffset(days=delay_days),
+                tclose=current_date + DateOffset(days=delay_days) + DateOffset(
+                    days=(hsi_event_item.tclose - hsi_event_item.topen).days),
+                hsi_event=hsi_event_item.hsi_event
+            )
+
+            # Log as delayed
+            self._log_delayed_hsi(hsi_event_item)
+            self._disruptions_delayed_count += 1
+        else:
+            # Log as cancelled
+            self._log_cancelled_hsi(hsi_event_item)
+            self._disruptions_cancelled_count += 1
+
+        # Track total disruptions
+        self._disruptions_checked_count += 1
+
+    def _determine_rescheduling(self, hsi_event_item: HSIEventQueueItem, prob_disruption: float) -> bool:
+        """Determine if a person will reschedule their appointment after a disruption."""
+        # If health seeking is forced, always reschedule
+        if self.sim.modules["HealthSeekingBehaviour"].force_any_symptom_to_lead_to_healthcareseeking:
+            return True
+
+        # Otherwise, use health seeking behavior model
+        person_id = hsi_event_item.hsi_event.target
+        patient = self.sim.population.props.loc[[person_id]]
+
+        if patient.age_years.iloc[0] < 15:
+            subgroup_name = "children"
+            care_seeking_odds_ratios = self.sim.modules["HealthSeekingBehaviour"].odds_ratio_health_seeking_in_children
+            hsb_model = self.sim.modules["HealthSeekingBehaviour"].hsb_linear_models["children"]
+        else:
+            subgroup_name = "adults"
+            care_seeking_odds_ratios = self.sim.modules["HealthSeekingBehaviour"].odds_ratio_health_seeking_in_adults
+            hsb_model = self.sim.modules["HealthSeekingBehaviour"].hsb_linear_models["adults"]
+
+        will_seek_care_prob = min(
+            self.parameters["scale_factor_reseeking_healthcare_post_disruption"]
+            * hsb_model.predict(
+                df=patient,
+                subgroup=subgroup_name,
+                care_seeking_odds_ratios=care_seeking_odds_ratios,
+            ).iloc[0],
+            1.0,
+        )
+
+        return self.rng.random() < will_seek_care_prob
+
+    def _calculate_delay(self, hsi_event_item: HSIEventQueueItem, prob_disruption: float) -> int:
+        """Calculate the delay in days for rescheduling."""
+        return int(
+            max(self.parameters["scale_factor_appointment_urgency"] * hsi_event_item.priority, 1)
+            * prob_disruption
+            * self.parameters["scale_factor_severity_disruption_and_delay"]
+            * self.parameters["delay_in_seeking_care_weather"]
+        )
+
+    def _log_delayed_hsi(self, hsi_event_item: HSIEventQueueItem):
+        """Log an HSI that was delayed due to weather."""
+        if hasattr(self.sim.modules["HealthSystem"], 'call_and_record_weather_delayed_hsi_event'):
+            self.sim.modules["HealthSystem"].call_and_record_weather_delayed_hsi_event(
+                hsi_event=hsi_event_item.hsi_event,
+                priority=hsi_event_item.priority
+            )
+
+    def _log_cancelled_hsi(self, hsi_event_item: HSIEventQueueItem):
+        """Log an HSI that was cancelled due to weather."""
+        hsi_event_item.hsi_event.never_ran()
+
+        if hasattr(self.sim.modules["HealthSystem"], 'call_and_record_weather_cancelled_hsi_event'):
+            self.sim.modules["HealthSystem"].call_and_record_weather_cancelled_hsi_event(
+                hsi_event=hsi_event_item.hsi_event,
+                priority=hsi_event_item.priority
+            )
 
 
 class WeatherDisruptionsMonthlyLogger(RegularEvent, PopulationScopeEventMixin):
-        """Monthly logger for weather disruptions."""
+    """Monthly logger for weather disruptions."""
 
-        def __init__(self, module: WeatherDisruptions):
-            super().__init__(module, frequency=DateOffset(months=1), priority=Priority.END_OF_DAY)
+    def __init__(self, module: WeatherDisruptions):
+        super().__init__(module, frequency=DateOffset(months=1), priority=Priority.END_OF_DAY)
 
-        def apply(self, population):
-            """Log monthly statistics overall and by district."""
+    def apply(self, population):
+        """Log monthly statistics overall and by district."""
 
-            # Overall statistics
-            logger_summary.info(
-                key="weather_disruptions_monthly",
-                data={
-                    "year": self.sim.date.year,
-                    "month": self.sim.date.month,
-                    "checked": self.module._disruptions_checked_count,
-                    "cancelled": self.module._disruptions_cancelled_count,
-                    "delayed": self.module._disruptions_delayed_count,
-                    "supply_side": self.module._supply_side_disruptions_count,
-                    "demand_side": self.module._demand_side_disruptions_count,
-                }
-            )
+        # Overall statistics
+        logger_summary.info(
+            key="weather_disruptions_monthly",
+            data={
+                "year": self.sim.date.year,
+                "month": self.sim.date.month,
+                "checked": self.module._disruptions_checked_count,
+                "cancelled": self.module._disruptions_cancelled_count,
+                "delayed": self.module._disruptions_delayed_count,
+                "supply_side": self.module._supply_side_disruptions_count,
+                "demand_side": self.module._demand_side_disruptions_count,
+            }
+        )
 
-            # District-level statistics
-            logger_summary.info(
-                key="weather_disruptions_monthly_by_district",
-                data={
-                    "year": self.sim.date.year,
-                    "month": self.sim.date.month,
-                    "checked_by_district": dict(self.module._disruptions_by_district),
-                    "cancelled_by_district": dict(self.module._cancelled_by_district),
-                    "delayed_by_district": dict(self.module._delayed_by_district),
-                    "supply_side_by_district": dict(self.module._supply_side_by_district),
-                    "demand_side_by_district": dict(self.module._demand_side_by_district),
-                }
-            )
+        # District-level statistics
+        logger_summary.info(
+            key="weather_disruptions_monthly_by_district",
+            data={
+                "year": self.sim.date.year,
+                "month": self.sim.date.month,
+                "checked_by_district": dict(self.module._disruptions_by_district),
+                "cancelled_by_district": dict(self.module._cancelled_by_district),
+                "delayed_by_district": dict(self.module._delayed_by_district),
+                "supply_side_by_district": dict(self.module._supply_side_by_district),
+                "demand_side_by_district": dict(self.module._demand_side_by_district),
+            }
+        )
 
-            self.module.reset_monthly_counters()
-
-
+        self.module.reset_monthly_counters()
