@@ -2134,38 +2134,11 @@ class HealthSystem(Module):
         assert self.mode_appt_constraints == 1
 
         if _list_of_individual_hsi_event_tuples:
-            # Examine total call on health officers time from the HSI events in the list:
-
-            # For all events in the list, expand the appt-footprint of the event to give the demands on each
-            # officer-type in each facility_id and clinic.
-            footprints_of_all_individual_level_hsi_event = defaultdict(list)
-            ## _list_of_individual_hsi_event_tuples is a flat list, whereas we will now
-            ## store the footprint by clinic; as we loop over the list of events to be run, we
-            ## will retrieve the updated footprint using get_appt_footprint_as_time_request.
-            ## We want to ensure that we update the footprint of the ``correct'' event. We will
-            ## therefore also store the number of the event in the original flat list in a
-            ## dictionary keyed by clinics.
-            event_num_of_all_individual_level_hsi_event = defaultdict(list)
-            for eve_num, event_tuple in enumerate(_list_of_individual_hsi_event_tuples):
-                event_clinic = event_tuple.clinic_eligibility
-                footprints_of_all_individual_level_hsi_event[event_clinic].append(
-                    event_tuple.hsi_event.expected_time_requests
-                )
-                event_num_of_all_individual_level_hsi_event[event_clinic].append(eve_num)
-
-            # For each clinic, compute total appointment footprint across all events
-
-            for clinic, footprint in footprints_of_all_individual_level_hsi_event.items():
-                for hsi_footprint in footprint:
-                    # Counter.update method when called with dict-like argument adds counts
-                    # from argument to Counter object called from
-                    self.running_total_footprint[clinic].update(hsi_footprint)
 
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
                 clinic = event.clinic_eligibility
                 event = event.hsi_event
-
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
 
@@ -2175,6 +2148,7 @@ class HealthSystem(Module):
                     ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
                                     event.expected_time_requests, clinic=clinic)
                 if ok_to_run:
+
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
                     if sum(event.BEDDAYS_FOOTPRINT.values()):
                         event._received_info_about_bed_days = self.bed_days.issue_bed_days_according_to_availability(
@@ -2197,20 +2171,17 @@ class HealthSystem(Module):
                         # check its formatting:
                         assert self.appt_footprint_is_valid(actual_appt_footprint)
 
-                        # Update load factors:
-                        updated_call = self.get_appt_footprint_as_time_request(
-                            facility_info=event.facility_info, appt_footprint=actual_appt_footprint
-                        )
-                        ev_num_in_clinics_fp = event_num_of_all_individual_level_hsi_event[clinic].index(ev_num)
-                        original_call = footprints_of_all_individual_level_hsi_event[clinic][ev_num_in_clinics_fp]
-                        footprints_of_all_individual_level_hsi_event[clinic][ev_num_in_clinics_fp] = updated_call
-                        self.running_total_footprint[clinic] -= original_call
-                        self.running_total_footprint[clinic] += updated_call
 
                     else:
                         # no actual footprint is returned so take the expected initial declaration as the actual,
                         # as recorded before the HSI event run
                         actual_appt_footprint = _appt_footprint_before_running
+
+                    # Update load factors:
+                    actual_call = self.get_appt_footprint_as_time_request(
+                        facility_info=event.facility_info, appt_footprint=actual_appt_footprint
+                    )
+                    self.running_total_footprint[clinic].update(actual_call)
 
                     # Write to the log
                     self.record_hsi_event(
