@@ -659,29 +659,37 @@ def plot_3x3_maps_delta_nhb(
     panel_labels: list[str] | None = None,
     label_kwargs: dict | None = None,
     savepath: str | None = None,
-    # NEW: fixed symmetric cap for ΔNHB
     dnhb_cap: float = 30000.0,
 ):
     """
-    Left column:
-        Row 1: absolute NHB (SAC)
-        Row 2: ΔNHB (PSAC+SAC − SAC)
-        Row 3: ΔNHB (All − SAC)
+    3x3 grid:
+      rows = (SAC, PSAC+SAC, All)
+      cols = (NHB context, ΔNHB vs SAC, elimination year haem, elimination year mansoni)
 
-    ΔNHB panels:
-        - symmetric fixed cap ±dnhb_cap
-        - colourbar labels show ≤ and ≥ at limits
+    Panels:
+      - Row 1, Col 1: absolute NHB for SAC (context)
+      - Row 2, Col 1: ΔNHB = NHB(PSAC+SAC) - NHB(SAC)
+      - Row 3, Col 1: ΔNHB = NHB(All)      - NHB(SAC)
+
+    ΔNHB:
+      - fixed symmetric cap ±dnhb_cap
+      - colourbar shows intermediate ticks and uses ≤ / ≥ at ends
+
+    Elimination plots unchanged (treat -99 as missing).
     """
 
     if len(gdfs) != 3:
-        raise ValueError("gdfs must contain exactly three GeoDataFrames.")
+        raise ValueError("gdfs must contain exactly three GeoDataFrames (SAC, PSAC+SAC, All).")
 
     if panel_labels is None:
         panel_labels = [chr(ord("A") + i) for i in range(9)]
+    if len(panel_labels) < 9:
+        raise ValueError("panel_labels must have length >= 9 (e.g. list('ABCDEFGHI')).")
+
     if label_kwargs is None:
         label_kwargs = dict(fontsize=14, fontweight="bold")
 
-    # --- CRS alignment
+    # --- CRS alignment (copy so we don't mutate inputs)
     gdfs = tuple(g.copy() for g in gdfs)
     lake = lake_malawi.copy()
     nat = gdf_national.copy()
@@ -694,13 +702,22 @@ def plot_3x3_maps_delta_nhb(
 
     gdf_sac, gdf_psac, gdf_all = gdfs
 
-    # --- compute absolute ΔNHB
+    # --- required columns
+    for name, g in [("SAC", gdf_sac), ("PSAC+SAC", gdf_psac), ("All", gdf_all)]:
+        if "district" not in g.columns:
+            raise ValueError(f"{name} GeoDataFrame is missing 'district' column.")
+        if g["district"].duplicated().any():
+            dups = g.loc[g["district"].duplicated(), "district"].unique()[:10]
+            raise ValueError(f"{name} GeoDataFrame has duplicated district rows (e.g. {dups}). Expect 1 row per district.")
+        if nhb_col not in g.columns:
+            raise ValueError(f"{name} GeoDataFrame is missing NHB column {nhb_col!r}.")
+
+    # --- compute ΔNHB using SAC as baseline
     sac = gdf_sac[["district", nhb_col]].rename(columns={nhb_col: "nhb_sac"})
     ps  = gdf_psac[["district", nhb_col]].rename(columns={nhb_col: "nhb_psac"})
     al  = gdf_all[["district", nhb_col]].rename(columns={nhb_col: "nhb_all"})
 
-    tmp = sac.merge(ps, on="district").merge(al, on="district")
-
+    tmp = sac.merge(ps, on="district", how="inner").merge(al, on="district", how="inner")
     for c in ["nhb_sac", "nhb_psac", "nhb_all"]:
         tmp[c] = pd.to_numeric(tmp[c], errors="coerce")
 
@@ -710,14 +727,19 @@ def plot_3x3_maps_delta_nhb(
     gdf_psac = gdf_psac.merge(tmp[["district", "dnhb_psac_vs_sac"]], on="district", how="left")
     gdf_all  = gdf_all.merge(tmp[["district", "dnhb_all_vs_sac"]],  on="district", how="left")
 
-    # --- NHB absolute scale (SAC only)
-    nhb_vals = pd.to_numeric(gdf_sac[nhb_col], errors="coerce")
+    # --- scales
+    # absolute NHB scale for SAC (context panel)
+    nhb_vals = pd.to_numeric(gdf_sac[nhb_col], errors="coerce").to_numpy()
     nhb_vmin = float(np.nanmin(nhb_vals))
     nhb_vmax = float(np.nanmax(nhb_vals))
 
-    # --- fixed symmetric ΔNHB scale
+    # fixed symmetric ΔNHB scale
     dnhb_vmin = -float(dnhb_cap)
     dnhb_vmax = float(dnhb_cap)
+
+    # nice intermediate ticks for delta colourbars
+    # (keep these aligned with your cap=30000)
+    delta_ticks = [-dnhb_cap, -20000, -10000, 0, 10000, 20000, dnhb_cap]
 
     fig, axs = plt.subplots(3, 3, figsize=figsize)
 
@@ -727,24 +749,28 @@ def plot_3x3_maps_delta_nhb(
             ax = axs[r, c]
             gdf_row = gdf_sac if r == 0 else (gdf_psac if r == 1 else gdf_all)
 
+            # --- choose variable by panel
             if c == 0:
                 if r == 0:
                     col = nhb_col
                     title = "Net Health Benefit"
                     cmap = nhb_cmap
                     vmin, vmax = nhb_vmin, nhb_vmax
+                    treat_minus99 = False
                     is_delta = False
                 elif r == 1:
                     col = "dnhb_psac_vs_sac"
                     title = "Δ Net Health Benefit (vs SAC)"
                     cmap = dnhb_cmap
                     vmin, vmax = dnhb_vmin, dnhb_vmax
+                    treat_minus99 = False
                     is_delta = True
                 else:
                     col = "dnhb_all_vs_sac"
                     title = "Δ Net Health Benefit (vs SAC)"
                     cmap = dnhb_cmap
                     vmin, vmax = dnhb_vmin, dnhb_vmax
+                    treat_minus99 = False
                     is_delta = True
 
             elif c == 1:
@@ -752,25 +778,36 @@ def plot_3x3_maps_delta_nhb(
                 title = "Elimination Year: S. Haematobium"
                 cmap = year_cmap
                 vmin, vmax = year_vmin, year_vmax
+                treat_minus99 = True
                 is_delta = False
+
             else:
                 col = mansoni_col
                 title = "Elimination Year: S. Mansoni"
                 cmap = year_cmap
                 vmin, vmax = year_vmin, year_vmax
+                treat_minus99 = True
                 is_delta = False
 
             gdf = gdf_row.copy()
             gdf[col] = pd.to_numeric(gdf[col], errors="coerce")
 
-            if "year_ephp" in col:
+            if treat_minus99:
                 gdf[col] = gdf[col].where(gdf[col] != -99, np.nan)
 
             norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 
-            lake.plot(ax=ax, facecolor="none", edgecolor="lightblue",
-                      linewidth=0.5, hatch="///", zorder=1)
+            # lake overlay
+            lake.plot(
+                ax=ax,
+                facecolor="none",
+                edgecolor="lightblue",
+                linewidth=0.5,
+                hatch="///",
+                zorder=1,
+            )
 
+            # districts
             gdf.plot(
                 column=col,
                 cmap=cmap,
@@ -780,14 +817,33 @@ def plot_3x3_maps_delta_nhb(
                 legend=False,
                 norm=norm,
                 zorder=3,
-                missing_kwds={"color": "white", "edgecolor": "lightgrey"},
+                missing_kwds={"color": "white", "edgecolor": "lightgrey", "label": "No data"},
             )
 
+            # national boundary
             nat.boundary.plot(ax=ax, edgecolor="grey", linewidth=1.5, zorder=4)
+
+            # islands overlay
+            if "district" in gdf.columns:
+                islands = gdf[gdf["district"].str.contains("Likoma|Chizumulu", case=False, na=False)]
+                if not islands.empty:
+                    islands.plot(
+                        column=col,
+                        cmap=cmap,
+                        vmin=vmin,
+                        vmax=vmax,
+                        norm=norm,
+                        ax=ax,
+                        edgecolor="none",
+                        linewidth=0,
+                        legend=False,
+                        zorder=9,
+                    )
 
             ax.set_title(title, fontsize=13)
             ax.axis("off")
 
+            # panel label
             ax.text(
                 -0.2, 0.98, panel_labels[label_idx],
                 transform=ax.transAxes,
@@ -797,21 +853,25 @@ def plot_3x3_maps_delta_nhb(
             )
             label_idx += 1
 
+            # colourbar per panel
             sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
             sm.set_array([])
-            cbar = fig.colorbar(sm, ax=ax, orientation="vertical",
-                                fraction=0.046, pad=0.02)
+            cbar = fig.colorbar(sm, ax=ax, orientation="vertical", fraction=0.046, pad=0.02)
 
-            # --- rounded legend ticks with ≥ / ≤ labels for delta panels
+            # customise ΔNHB colourbar ticks/labels
             if is_delta:
-                ticks = [dnhb_vmin, 0, dnhb_vmax]
-                cbar.set_ticks(ticks)
-                cbar.set_ticklabels([
-                    f"≤{int(dnhb_vmin):,}",
-                    "0",
-                    f"≥{int(dnhb_vmax):,}",
-                ])
+                cbar.set_ticks(delta_ticks)
+                tick_labels = []
+                for t in delta_ticks:
+                    if np.isclose(t, -dnhb_cap):
+                        tick_labels.append(f"≤{int(t):,}")
+                    elif np.isclose(t, dnhb_cap):
+                        tick_labels.append(f"≥{int(t):,}")
+                    else:
+                        tick_labels.append(f"{int(t):,}")
+                cbar.set_ticklabels(tick_labels)
 
+        # row title on left
         axs[r, 0].text(
             -0.05, 0.5, row_titles[r],
             transform=axs[r, 0].transAxes,
@@ -828,13 +888,14 @@ def plot_3x3_maps_delta_nhb(
     return fig, axs
 
 
-# save with different name
+# --- run + save with a distinct filename
 fig, axs = plot_3x3_maps_delta_nhb(
     gdfs=gdfs,
     lake_malawi=lake_malawi,
     gdf_national=gdf_national,
     panel_labels=list("ABCDEFGHI"),
-    savepath=results_folder / "maps_3x3_deltaNHB_capped.png",
+    savepath=results_folder / "maps_3x3_deltaNHB.png",
     dnhb_cap=30000,
 )
 plt.show()
+

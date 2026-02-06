@@ -2638,11 +2638,22 @@ cons_costs_total_by_district_summary.to_excel(results_folder / f'cons_costs_tota
 
 cons_costs_per_year_national = sum_by_year_all_districts(cons_costs_per_year_district, TARGET_PERIOD)
 
+
 # sum across target period
 cons_costs_per_year_national_sum = pd.DataFrame(cons_costs_per_year_national.sum(axis=0)).T
 cons_costs_per_year_national_summary = compute_summary_statistics(cons_costs_per_year_national_sum,
                                                 central_measure='mean')
 fmt = format_summary_for_output(cons_costs_per_year_national_summary, filename='cons_costs_per_year_national')
+
+
+# get financial costs excl cons sumamrised by district
+df_filtered = financial_costs_per_year_district_no_cons.loc[start_year.year:end_year.year]
+financial_costs_total_by_district = df_filtered.groupby('District').sum()
+financial_costs_total_by_district_summary = compute_summary_statistics(financial_costs_total_by_district,
+                                                                  central_measure='mean')
+financial_costs_total_by_district_summary.to_excel(results_folder / f'financial_costs_no_cons_total_by_district_summary{target_period()}.xlsx')
+
+
 
 
 #################################################################################
@@ -4128,6 +4139,246 @@ max_hr_per_mda_SAC_upper_threshold = calculate_max_hr_costs_or_per_episode(
 max_hr_per_mda_SAC_upper_threshold.to_csv(results_folder / f'max_costs_compared_SAC_per_MDA_{upper_threshold}.csv')
 
 
+
+
+#################################################################################
+# %% table summarising ICERS across sensitivity analyses
+#################################################################################
+
+
+
+
+def make_ce_summary_tables(
+    df: pd.DataFrame,
+    *,
+    wash_col: str = "wash_strategy",
+    comp_col: str = "comparison",
+    district_col: str = "district",
+    status_col: str = "status",
+    below_cet_col: str = "prop_valid_below_threshold",
+    dominated_no_benefit_col: str = "n_dominated_no_benefit",
+    dominated_worse_health_col: str = "n_dominated_worse_health",
+    cost_saving_col: str = "n_cost_saving",
+    n_runs_col: str = "n_runs",
+    n_valid_col: str = "n_valid",
+    cet_label: str = "≤CET",
+) -> dict[str, pd.DataFrame]:
+    """
+    Build manuscript-ready summary tables (one per WASH strategy) from a district-level dataframe.
+
+    Output tables contain, for each comparison, the number and % of districts classified as:
+      - Cost-saving
+      - Cost-effective (ICER ≤ CET among non-dominated, non-cost-saving runs)
+      - Not cost-effective (ICER > CET among non-dominated, non-cost-saving runs)
+      - Dominated
+
+    Classification is derived primarily from `status` if present; otherwise from counters.
+    Returns: dict keyed by wash_strategy with a clean wide dataframe for each.
+    """
+
+    d = df.copy()
+
+    # --- basic hygiene
+    for c in [wash_col, comp_col, district_col]:
+        if c not in d.columns:
+            raise ValueError(f"Missing required column: {c!r}")
+
+    # ensure one row per district per scenario+comparison
+    key = [wash_col, comp_col, district_col]
+    if d.duplicated(key).any():
+        d = (
+            d.sort_values(key)
+             .drop_duplicates(key, keep="first")
+        )
+
+    # --- robust decision classification
+    # Prefer 'status' strings if they exist; else infer from counters + prop_valid_below_threshold.
+    def classify_row(r: pd.Series) -> str:
+        status = str(r.get(status_col, "")).strip().lower()
+
+        if status:
+            if "cost-saving" in status or "cost saving" in status or "dominant" in status:
+                return "Cost-saving"
+            if "dominated" in status:
+                return "Dominated"
+
+        # fallback to counters
+        cs = r.get(cost_saving_col, np.nan)
+        dnb = r.get(dominated_no_benefit_col, np.nan)
+        dwh = r.get(dominated_worse_health_col, np.nan)
+        p   = r.get(below_cet_col, np.nan)
+
+        # treat counters as "any runs in that state" if present
+        if pd.notna(cs) and cs > 0:
+            return "Cost-saving"
+        if (pd.notna(dnb) and dnb > 0) or (pd.notna(dwh) and dwh > 0):
+            return "Dominated"
+
+        # if neither dominated nor cost-saving, classify by CET probability where available
+        if pd.notna(p):
+            return f"Cost-effective ({cet_label})" if p >= 0.5 else "Not cost-effective"
+
+        return "Unclassified"
+
+    d["decision"] = d.apply(classify_row, axis=1)
+
+    # --- summarise counts by wash_strategy + comparison
+    counts = (
+        d.groupby([wash_col, comp_col, "decision"], dropna=False)[district_col]
+         .nunique()
+         .rename("n_districts")
+         .reset_index()
+    )
+
+    totals = (
+        d.groupby([wash_col, comp_col])[district_col]
+         .nunique()
+         .rename("total_districts")
+         .reset_index()
+    )
+
+    counts = counts.merge(totals, on=[wash_col, comp_col], how="left")
+    counts["pct_districts"] = 100.0 * counts["n_districts"] / counts["total_districts"]
+
+    # --- wide format (manuscript-ready)
+    wide_n = (
+        counts.pivot_table(
+            index=[wash_col, comp_col],
+            columns="decision",
+            values="n_districts",
+            fill_value=0,
+            aggfunc="sum",
+        )
+        .reset_index()
+    )
+
+    wide_pct = (
+        counts.pivot_table(
+            index=[wash_col, comp_col],
+            columns="decision",
+            values="pct_districts",
+            fill_value=0.0,
+            aggfunc="sum",
+        )
+        .reset_index()
+    )
+
+    # merge n and % into a single clean table: "n (pct%)"
+    decision_cols = sorted(set(counts["decision"].unique()))
+
+    out = wide_n.merge(
+        wide_pct,
+        on=[wash_col, comp_col],
+        suffixes=("_n", "_pct"),
+        how="left",
+    ).merge(
+        totals,
+        on=[wash_col, comp_col],
+        how="left",
+    )
+
+    for dc in decision_cols:
+        n_col = f"{dc}_n"
+        p_col = f"{dc}_pct"
+        if n_col not in out.columns:
+            out[n_col] = 0
+        if p_col not in out.columns:
+            out[p_col] = 0.0
+
+        out[dc] = out[n_col].astype(int).astype(str) + " (" + out[p_col].round(1).map(lambda x: f"{x:.1f}%") + ")"
+
+    # keep tidy column order
+    preferred_order = [
+        wash_col,
+        comp_col,
+        "total_districts",
+        "Cost-saving",
+        f"Cost-effective ({cet_label})",
+        "Not cost-effective",
+        "Dominated",
+        "Unclassified",
+    ]
+    keep = [c for c in preferred_order if c in out.columns]
+    out = out[keep].sort_values([wash_col, comp_col]).reset_index(drop=True)
+
+    # --- split by wash strategy
+    tables = {}
+    for w, sub in out.groupby(wash_col, sort=False):
+        tables[str(w)] = sub.drop(columns=[wash_col]).reset_index(drop=True)
+
+    return tables
+
+
+
+tables_by_wash = make_ce_summary_tables(icer_district_financial)
+
+# get the "Continue WASH" table as a clean dataframe:
+continue_wash_table = tables_by_wash.get("Continue WASH")
+print(continue_wash_table)
+
+# write one sheet per wash strategy to Excel
+with pd.ExcelWriter(results_folder / "ce_summary_by_wash_financial.xlsx") as xw:
+    for wash, t in tables_by_wash.items():
+        # Excel sheet names must be <=31 chars
+        sheet = wash[:31]
+        t.to_excel(xw, sheet_name=sheet, index=False)
+
+
+
+
+tables_by_wash = make_ce_summary_tables(icer_district_cons_only)
+# write one sheet per wash strategy to Excel
+with pd.ExcelWriter(results_folder / "ce_summary_by_wash_cons_only.xlsx") as xw:
+    for wash, t in tables_by_wash.items():
+        # Excel sheet names must be <=31 chars
+        sheet = wash[:31]
+        t.to_excel(xw, sheet_name=sheet, index=False)
+
+
+
+tables_by_wash = make_ce_summary_tables(icer_district_financial_discount_costs)
+# write one sheet per wash strategy to Excel
+with pd.ExcelWriter(results_folder / "ce_summary_by_wash_financial_discount_costs.xlsx") as xw:
+    for wash, t in tables_by_wash.items():
+        # Excel sheet names must be <=31 chars
+        sheet = wash[:31]
+        t.to_excel(xw, sheet_name=sheet, index=False)
+
+
+
+tables_by_wash = make_ce_summary_tables(icer_district_financial_discount_health)
+# write one sheet per wash strategy to Excel
+with pd.ExcelWriter(results_folder / "ce_summary_by_wash_financial_discount_health.xlsx") as xw:
+    for wash, t in tables_by_wash.items():
+        # Excel sheet names must be <=31 chars
+        sheet = wash[:31]
+        t.to_excel(xw, sheet_name=sheet, index=False)
+
+
+
+tables_by_wash = make_ce_summary_tables(icer_district_partial_only)
+# write one sheet per wash strategy to Excel
+with pd.ExcelWriter(results_folder / "ce_summary_by_wash_financial_partial_only_2024-2050.xlsx") as xw:
+    for wash, t in tables_by_wash.items():
+        # Excel sheet names must be <=31 chars
+        sheet = wash[:31]
+        t.to_excel(xw, sheet_name=sheet, index=False)
+
+
+
+
+
+results_folder_SI = get_scenario_outputs("schisto_scenarios_SI.py", output_folder)[-1]
+
+icer_district_SI = pd.read_excel(results_folder_SI / "icer_district_financial2024-2050_SI.xlsx")
+
+tables_by_wash = make_ce_summary_tables(icer_district_SI)
+# write one sheet per wash strategy to Excel
+with pd.ExcelWriter(results_folder / "ce_summary_by_wash_financial_SI_2024-2050.xlsx") as xw:
+    for wash, t in tables_by_wash.items():
+        # Excel sheet names must be <=31 chars
+        sheet = wash[:31]
+        t.to_excel(xw, sheet_name=sheet, index=False)
 
 
 
