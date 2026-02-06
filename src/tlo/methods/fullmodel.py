@@ -36,7 +36,7 @@ from tlo.methods import (
     symptommanager,
     tb,
     wasting,
-    weather_disruptions
+    weather_disruptions,
 )
 
 
