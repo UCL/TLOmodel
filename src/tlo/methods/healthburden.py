@@ -677,9 +677,9 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
             # - add the year into the multi-index
 
-            disability_monthly_summary['year'] = self.sim.date.year
-            disability_monthly_summary.set_index('year', append=True, inplace=True)
-            disability_monthly_summary = disability_monthly_summary.reorder_levels(
+        disability_monthly_summary['year'] = self.sim.date.year
+        disability_monthly_summary.set_index('year', append=True, inplace=True)
+        disability_monthly_summary = disability_monthly_summary.reorder_levels(
                 ['sex', 'age_range', 'li_wealth', 'district_of_residence', 'year'])
 
 
