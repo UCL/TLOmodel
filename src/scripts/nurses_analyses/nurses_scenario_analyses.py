@@ -19,8 +19,11 @@ from pathlib import Path
 from typing import Dict
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, get_root_path, mix_scenarios, \
-    get_parameters_for_hrh_historical_scaling_and_rescaling_for_mode2
+from tlo.analysis.utils import (
+    get_parameters_for_hrh_historical_scaling_and_rescaling_for_mode2,
+    get_root_path,
+    mix_scenarios,
+)
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
