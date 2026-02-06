@@ -3121,14 +3121,14 @@ class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
         # both of which would have been rescaled to current efficiency levels if scale_to_effective_capabilities=True
         # This returns the number of staff counts normalised by the self.capabilities_coefficient parameter
         current_staff_count = {}
-        for clinic in sorted(hs.capabilities_today):
+        for clinic in sorted(hs._daily_capabilities):
             current_staff_count[clinic] = {}
-            for fid in sorted(hs.capabilities_today[clinic]):
+            for fid in sorted(hs._daily_capabilities[clinic]):
                 denom = hs._daily_capabilities_per_staff[clinic][fid]
                 if denom == 0:
                     current_staff_count[clinic][fid] = 0
                 else:
-                    current_staff_count[clinic][fid] = hs.capabilities_today[clinic][fid] / denom
+                    current_staff_count[clinic][fid] = hs._daily_capabilities[clinic][fid] / denom
 
         logger_summary.info(
             key="number_of_hcw_staff",
