@@ -2539,16 +2539,31 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # For each individual level event, check whether the equipment it has already declared is available. If it
             # is not, then call the HSI's never_run function, and do not take it forward for running; if it is then
             # add it to the list of events to run.
-            list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment = list()
+            list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions = list()
             for item in list_of_individual_hsi_event_tuples_due_today:
-                if not item.hsi_event.is_all_declared_equipment_available:
-                    self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
-                else:
-                    list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
+                # Check if weather disruptions module exists and check for disruption
+                climate_disrupted = False
+                if 'WeatherDisruptions' in self.sim.modules:
+                    climate_disrupted = self.sim.modules['WeatherDisruptions'].check_hsi_for_disruption(
+                        hsi_event_item=item,
+                        current_date=self.sim.date
+                    )
+
+                # If not climate disrupted, check equipment
+                if not climate_disrupted:
+                    equipment_available = True
+                    if not item.hsi_event.is_all_declared_equipment_available:
+                        self.module.call_and_record_never_ran_hsi_event(
+                            hsi_event=item.hsi_event, priority=item.priority
+                        )
+                        equipment_available = False
+
+                    if equipment_available:
+                        list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
 
             # Try to run the list of individual-level events that have their essential equipment
             _to_be_held_over = self.module.run_individual_level_events_in_mode_1(
-                list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment,
+                list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions,
             )
             hold_over.extend(_to_be_held_over)
 
@@ -2614,86 +2629,80 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # through the heapq as all other events will also not be due.
                         break
 
-                else:
-                    # The event is now due to run today and the person is confirmed to be still alive.
-                    # Run event immediately.
-
-                    # Retrieve officers&facility required for HSI
-                    original_call = next_event_tuple.hsi_event.expected_time_requests
-                    _priority = next_event_tuple.priority
-                    # In this version of mode_appt_constraints = 2, do not have access to squeeze
-                    # based on queue information, and we assume no squeeze ever takes place.
-                    squeeze_factor = 0.0
-
-                    # Check if any of the officers required have run out.
-                    out_of_resources = False
-                    for officer, call in original_call.items():
-                        # If any of the officers are not available, then out of resources
-                        if officer not in capabilities_still_available:
-                            out_of_resources = True
-                    # If officers still available, run event. Note: in current logic, a little
-                    # overtime is allowed to run last event of the day. This seems more realistic
-                    # than medical staff leaving earlier than
-                    # planned if seeing another patient would take them into overtime.
-
-                    if out_of_resources:
-                        # Do not run,
-                        # Call did_not_run for the hsi_event
-                        rtn_from_did_not_run = event.did_not_run()
-
-                        # If received no response from the call to did_not_run, or a True signal, then
-                        # add to the hold-over queue.
-                        # Otherwise (disease module returns "FALSE") the event is not rescheduled and
-                        # will not run.
-
-                        if rtn_from_did_not_run is not False:
-                            # reschedule event
-                            # Add the event to the queue:
-                            hp.heappush(hold_over, next_event_tuple)
-
-                        # Log that the event did not run
-                        self.module.record_hsi_event(
-                            hsi_event=event,
-                            actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                            squeeze_factor=squeeze_factor,
-                            did_run=False,
-                            priority=_priority,
-                            clinic=event_clinic,
-                        )
-
-                    # Have enough capabilities left to run event
                     else:
-                        # Notes-to-self: Shouldn't this be done after checking the footprint?
-                        # Compute the bed days that are allocated to this HSI and provide this
-                        # information to the HSI
-                        if sum(event.BEDDAYS_FOOTPRINT.values()):
-                            event._received_info_about_bed_days = (
-                                self.module.bed_days.issue_bed_days_according_to_availability(
-                                    facility_id=self.module.bed_days.get_facility_id_for_beds(persons_id=event.target),
-                                    footprint=event.BEDDAYS_FOOTPRINT,
+                        # The event is now due to run today and the person is confirmed to be still alive.
+                        # Retrieve officers&facility required for HSI
+                        original_call = next_event_tuple.hsi_event.expected_time_requests
+                        _priority = next_event_tuple.priority
+                        squeeze_factor = 0.0
+
+                        # Check for climate disruption
+                        climate_disrupted = False
+                        if 'WeatherDisruptions' in self.sim.modules:
+                            climate_disrupted = self.sim.modules['WeatherDisruptions'].check_hsi_for_disruption(
+                                hsi_event_item=next_event_tuple,
+                                current_date=self.sim.date
+                            )
+
+                        # If not climate disrupted, check resources and run event
+                        if not climate_disrupted:
+                            # Check if any of the officers required have run out.
+                            out_of_resources = False
+                            for officer, call in original_call.items():
+                                # If any of the officers are not available, then out of resources
+                                if officer not in capabilities_still_available:
+                                    out_of_resources = True
+                            # If officers still available, run event
+                            if out_of_resources:
+                                # Do not run - call did_not_run for the hsi_event
+                                rtn_from_did_not_run = event.did_not_run()
+                                if rtn_from_did_not_run is not False:
+                                    # reschedule event
+                                    hp.heappush(hold_over, next_event_tuple)
+                                # Log that the event did not run
+                                self.module.record_hsi_event(
+                                    hsi_event=event,
+                                    actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                                    squeeze_factor=squeeze_factor,
+                                    did_run=False,
+                                    priority=_priority,
+                                    clinic=event_clinic,
                                 )
-                            )
 
-                        # Check that a facility has been assigned to this HSI
-                        assert event.facility_info is not None, (
-                            f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
-                        )
+                            # Have enough capabilities left to run event
 
-                        # Check if equipment declared is available. If not, call `never_ran` and do not run the
-                        # event. (`continue` returns flow to beginning of the `while` loop)
-                        if not event.is_all_declared_equipment_available:
-                            self.module.call_and_record_never_ran_hsi_event(
-                                hsi_event=event,
-                                priority=next_event_tuple.priority,
-                                clinic=next_event_tuple.clinic_eligibility,
-                            )
-                            continue
+                            else:
+                                # Compute the bed days that are allocated to this HSI
+                                if sum(event.BEDDAYS_FOOTPRINT.values()):
+                                    event._received_info_about_bed_days = (
+                                        self.module.bed_days.issue_bed_days_according_to_availability(
+                                            facility_id=self.module.bed_days.get_facility_id_for_beds(
+                                                persons_id=event.target
+                                            ),
+                                            footprint=event.BEDDAYS_FOOTPRINT,
+                                        )
+                                    )
 
-                        # Expected appt footprint before running event
-                        _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
-                        # Run event & get actual footprint
-                        actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
+                                # Check that a facility has been assigned to this HSI
+                                assert event.facility_info is not None, (
+                                    f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
+                                )
 
+                                # Check if equipment declared is available
+
+                                if not event.is_all_declared_equipment_available:
+                                    self.module.call_and_record_never_ran_hsi_event(
+                                        hsi_event=event,
+                                        priority=next_event_tuple.priority,
+                                        clinic=next_event_tuple.clinic_eligibility,
+                                    )
+                                    continue
+
+                                # Expected appt footprint before running event
+                                _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
+                                # Run event & get actual footprint
+
+                                actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
                         # Check if the HSI event returned updated_appt_footprint, and if so adjust original_call
                         if actual_appt_footprint is not None:
                             # check its formatting:
