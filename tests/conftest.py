@@ -1,5 +1,5 @@
 """Collection of shared fixtures"""
-import pkgutil
+from importlib.util import find_spec
 
 import pytest
 
@@ -34,7 +34,7 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_slow)
 
     # skip if pytest_resource_usage is not installed
-    if pkgutil.find_loader("pytest_resource_usage"):
+    if find_spec("pytest_resource_usage"):
         for item in items:
             item.add_marker(pytest.mark.report_duration)
 
