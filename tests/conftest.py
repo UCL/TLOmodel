@@ -1,4 +1,6 @@
 """Collection of shared fixtures"""
+import pkgutil
+
 import pytest
 
 DEFAULT_SEED = 83563095832589325021
@@ -31,6 +33,10 @@ def pytest_collection_modifyitems(config, items):
             if "slow" in item.keywords:
                 item.add_marker(skip_slow)
 
+    # skip if pytest_resource_usage is not installed
+    if pkgutil.find_loader("pytest_resource_usage"):
+        for item in items:
+            item.add_marker(pytest.mark.report_duration)
 
 def pytest_generate_tests(metafunc):
     if "seed" in metafunc.fixturenames:
