@@ -54,11 +54,12 @@ scenario_filename_prefix = 'wasting_analysis__full_model'
 # Where to save the outcomes
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
 cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
-# force_calculation of [births_data, deaths_data, dalys_data, tx_data, medical_cost_data, all_cost_data],
+# force_calculation of [births_data, deaths_data, dalys_data, tx_data, medical_cost_data, all_cost_data, pop_sizes_data],
 #   if True, enables to force recalculation of the corresponding data
-force_calculation = [False, False, False, False, False, False]
-# force_calculation = [False, False, False, False, False, True]
-######################################################################################################################
+force_calculation = [False, False, False, False, False, False, False]
+# force_calculation = [False, False, False, False, False, True, False]
+# force_calculation = [True, True, True, True, True, True, True]
+##############################################################  ########################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")
 # Ensure Status Quo is always included within the both intervs_of_interest and scenarios_to_compare
@@ -134,6 +135,8 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     birth_outcomes_path = outputspath / f"outcomes_data/birth_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
     death_outcomes_path = outputspath / f"outcomes_data/death_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
     dalys_outcomes_path = outputspath / f"outcomes_data/dalys_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
+    pop_sizes_outcomes_path \
+        = outputspath / f"outcomes_data/pop_sizes_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
 
     # Extract or load birth outcomes
     if birth_outcomes_path.exists() and not force_calculation[0]:
@@ -213,6 +216,29 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     #         print(f"{outcome}:\n{dalys_outcomes_dict[interv][outcome]}")
     #
 
+    # Extract or load pop sizes outcomes
+    if pop_sizes_outcomes_path.exists() and not force_calculation[6]:
+        print("\nloading pop sizes outcomes from file ...")
+        with pop_sizes_outcomes_path.open("rb") as f:
+            pop_sizes_outcomes_dict = pickle.load(f)
+    else:
+        print("\npop sizes outcomes for intervention period calculation ...")
+        pop_sizes_outcomes_dict = {
+            interv: util_fncs.extract_pop_sizes_data_frames_and_outcomes(
+                iterv_folders_dict[interv], datayears, interventionyears, interv
+            ) for interv in scenario_folders
+        }
+        print("saving pop sizes outcomes for intervention period to file ...")
+        with pop_sizes_outcomes_path.open("wb") as f:
+            pickle.dump(pop_sizes_outcomes_dict, f)
+    # # TODO: rm
+    # print("\nPOP SIZES OUTCOMES")
+    # for interv in scenario_folders:
+    #     print(f"### {interv=}")
+    #     for outcome in pop_sizes_outcomes_dict[interv]:
+    #         print(f"{outcome}:\n{pop_sizes_outcomes_dict[interv][outcome]}")
+
+
     # --------------------------------------------- Main Analyses Plots  --------------------------------------------- #
     # Prepare scenarios_tocompare_prefix
     if 'Status Quo' in scenarios_tocompare:
@@ -264,12 +290,12 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         util_fncs.plot_sum_outcome_and_CIs_intervention_period(
             cohort, scenarios_dict, scenarios_tocompare,"deaths", death_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix, interv_timestamps_dict,
-            birth_outcomes_dict, force_calculation
+            birth_outcomes_dict, pop_sizes_outcomes_dict, force_calculation
         )
         util_fncs.plot_sum_outcome_and_CIs_intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "deaths_with_SAM", death_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix, interv_timestamps_dict,
-            birth_outcomes_dict, force_calculation
+            birth_outcomes_dict, pop_sizes_outcomes_dict, force_calculation
         )
         print("    plotting mean DALYs ...")
         util_fncs.plot_mean_outcome_and_CIs__scenarios_comparison(
@@ -280,7 +306,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         util_fncs.plot_sum_outcome_and_CIs_intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "DALYs", dalys_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix, interv_timestamps_dict,
-            birth_outcomes_dict, force_calculation
+            birth_outcomes_dict, pop_sizes_outcomes_dict, force_calculation
         )
 
     # --------------------- Create a PDF to save all figures and save each page also as PNG file --------------------- #
