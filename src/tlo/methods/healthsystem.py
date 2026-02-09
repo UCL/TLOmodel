@@ -2548,6 +2548,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         hsi_event_item=item,
                         current_date=self.sim.date
                     )
+                print(climate_disrupted)
 
                 # If not climate disrupted, check equipment
                 if not climate_disrupted:
@@ -2643,7 +2644,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 hsi_event_item=next_event_tuple,
                                 current_date=self.sim.date
                             )
-
                         # If not climate disrupted, check resources and run event
                         if not climate_disrupted:
                             # Check if any of the officers required have run out.
