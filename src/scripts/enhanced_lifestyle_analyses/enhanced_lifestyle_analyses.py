@@ -810,6 +810,151 @@ class LifeStylePlots:
         plt.savefig(self.outputpath / (li_property + self.datestamp + '.png'), format='png')
         plt.close(fig=fig)  # close figure after saving it to avoid opening multiple figures
 
+    def plot_herbal_medication_by_urban_rural_over_time(self):
+        """Plot herbal medication use prevalence by urban/rural over time using bar charts with month labels"""
+
+        if 'li_herbal_medication' not in self.dfs:
+            print("ERROR: li_herbal_medication data not found in logs")
+            return
+
+        df = self.dfs['li_herbal_medication']
+
+        # Initialize series for storing results
+        urban_prevalence = pd.Series(index=df.index, dtype=float)
+        rural_prevalence = pd.Series(index=df.index, dtype=float)
+
+        # Process each time point
+        for date_idx in df.index:
+            date_data = df.loc[date_idx]
+
+            # Initialize counters for this date
+            urban_true = urban_false = rural_true = rural_false = 0
+
+            # Process each column
+            for col, value in date_data.items():
+                li_urban_val, sex, herbal_val, age_range = col
+
+                # Determine if urban/rural
+                try:
+                    if isinstance(li_urban_val, bool):
+                        is_urban = li_urban_val
+                    elif isinstance(li_urban_val, str):
+                        is_urban = (li_urban_val.lower() == 'true')
+                    else:
+                        is_urban = bool(li_urban_val)
+                except (ValueError, TypeError):
+                    # Skip this column if we can't determine urban status
+                    continue
+
+                # Determine if uses herbal medication
+                try:
+                    if isinstance(herbal_val, bool):
+                        uses_herbal = herbal_val
+                    elif isinstance(herbal_val, str):
+                        uses_herbal = (herbal_val.lower() == 'true')
+                    else:
+                        uses_herbal = bool(herbal_val)
+                except (ValueError, TypeError):
+                    # Skip this column if we can't determine herbal status
+                    continue
+
+                # Add to appropriate counter
+                if is_urban:
+                    if uses_herbal:
+                        urban_true += value
+                    else:
+                        urban_false += value
+                else:
+                    if uses_herbal:
+                        rural_true += value
+                    else:
+                        rural_false += value
+
+            # Calculate prevalences for this date
+            urban_total = urban_true + urban_false
+            rural_total = rural_true + rural_false
+
+            urban_prevalence[date_idx] = urban_true / urban_total if urban_total > 0 else 0
+            rural_prevalence[date_idx] = rural_true / rural_total if rural_total > 0 else 0
+
+        fig, ax = plt.subplots(figsize=(14, 7))
+
+        # Set up bar positions
+        dates = df.index
+        x = np.arange(len(dates))
+        width = 0.35
+
+        # Create bars
+        bars1 = ax.bar(x - width / 2, urban_prevalence.values, width, label='Urban', color='blue', alpha=0.7)
+        bars2 = ax.bar(x + width / 2, rural_prevalence.values, width, label='Rural', color='green', alpha=0.7)
+
+        # Format the plot
+        ax.set_xlabel('Time (Year-Month)', fontsize=12)
+        ax.set_ylabel('Prevalence of Herbal Medication Use', fontsize=12)
+        ax.set_title('Herbal Medication Use by Residence Over Time', fontsize=14, fontweight='bold')
+        ax.set_xticks(x)
+
+        # Create date labels with year and month
+        date_labels = []
+        for date in dates:
+            date_labels.append(date.strftime('%Y-%m'))
+
+        # Set x-axis labels
+        ax.set_xticklabels(date_labels)
+
+        # Rotate labels
+        plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+
+        # If there are too many labels, show only some of them
+        if len(dates) > 24:  # If more than 2 years of quarterly data
+            # Show every Nth label
+            n = max(1, len(dates) // 12)  # Show about 12 labels total
+            for i, label in enumerate(ax.xaxis.get_ticklabels()):
+                if i % n != 0:
+                    label.set_visible(False)
+
+        ax.legend(fontsize=11)
+        ax.grid(True, alpha=0.3, axis='y')
+
+        # Set y-axis limit to give some headroom
+        max_prevalence = max(urban_prevalence.max(), rural_prevalence.max())
+        ax.set_ylim([0, min(1.0, max_prevalence * 1.15)])
+
+        # Add value labels on top of bars (only for selected bars to avoid clutter)
+        def autolabel_selected(bars, every_n=4):
+            """Add labels to every Nth bar to avoid clutter"""
+            for i, bar in enumerate(bars):
+                if i % every_n == 0:  # Label every Nth bar
+                    height = bar.get_height()
+                    if height > 0:  # Only label non-zero values
+                        ax.annotate(f'{height:.3f}',
+                                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                                    xytext=(0, 3),
+                                    textcoords="offset points",
+                                    ha='center', va='bottom', fontsize=8,
+                                    rotation=45)
+
+        # Determine labeling frequency based on number of bars
+        label_freq = max(1, len(dates) // 8)  # Show about 8 labels
+        autolabel_selected(bars1, every_n=label_freq)
+        autolabel_selected(bars2, every_n=label_freq)
+
+        # Add a horizontal line at y=0 for reference
+        ax.axhline(y=0, color='black', linewidth=0.5, alpha=0.3)
+
+        # Footnote
+        footnote = (f"Data collected quarterly. Total time points: {len(dates)}. Denominator: Total individuals per "
+                    f"urban/rural category.")
+        ax.figure.text(0.5, 0.01, footnote, ha='center', fontsize=10,
+                       bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
+
+        plt.tight_layout()
+
+        # Save the plot
+        output_path = self.outputpath / (f'herbal_medication_by_urban_rural_over_time{self.datestamp}.png')
+        plt.savefig(output_path, format='png', dpi=300, bbox_inches='tight')
+        plt.close(fig=fig)  # close figure after saving it to avoid opening multiple figures
+
     def display_all_categorical_and_non_categorical_plots_by_age_group(self):
         """ a function that will display plots of all enhanced lifestyle properties grouped by age group """
         for _property in self.en_props.keys():
@@ -915,3 +1060,6 @@ g_plots.display_all_categorical_and_non_categorical_plots_by_gender()
 
 # plot by age groups
 g_plots.display_all_categorical_and_non_categorical_plots_by_age_group()
+
+# plt herbal medication by rural/urban over time
+g_plots.plot_herbal_medication_by_urban_rural_over_time()
