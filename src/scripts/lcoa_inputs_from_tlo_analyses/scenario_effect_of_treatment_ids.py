@@ -1,5 +1,7 @@
 """
-This files runs the full model under a set of scenario in which only a single TREATMENT_ID is included.
+This file contains all the definitions of scenarios for the TLO-LCOA project.
+
+It runs the full model under a set of scenario in which only a single TREATMENT_ID is included.
 
 To check scenarios are generated correctly:
 ```
@@ -18,6 +20,7 @@ tlo scenario-run src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_tr
 ```
 
 """
+
 from pathlib import Path
 from typing import Dict, List
 
@@ -29,9 +32,45 @@ from tlo import Date, logging
 from tlo.analysis.utils import (
     get_filtered_treatment_ids,
     mix_scenarios,
+    get_parameters_for_status_quo
 )
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
+
+class ScenarioDefinitions:
+
+    @property
+    def YEAR_OF_SERVICE_AVAILABILITY_SWITCH(self) -> int:
+        return 2026
+
+    def baseline(self) -> Dict:
+        """Return the Dict with values for the parameter changes that define the baseline scenario. """
+        return mix_scenarios(
+            get_parameters_for_status_quo(),  # <-- Parameters that have been the calibration targets
+
+            {
+                "HealthSystem": {
+                    "cons_availability": 'default',
+                    'year_cons_availability_switch': self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
+                    'cons_availability_postSwitch': 'all',
+
+                    "mode_appt_constraints": 1,
+                    "year_service_availability_switch": self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
+
+                    # allow historical HRH scaling to occur 2018-2024
+                    # 'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
+                    'yearly_HR_scaling_mode': 'historical_scaling',
+                },
+
+                "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
+                    'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
+                    'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
+                    'year_of_switch': self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
+                }
+
+
+            },
+        )
 
 
 class EffectOfEachTreatment(BaseScenario):
@@ -39,7 +78,7 @@ class EffectOfEachTreatment(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2040, 1, 1)
+        self.end_date = Date(2041, 1, 1)
         self.pop_size = 100
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -60,7 +99,7 @@ class EffectOfEachTreatment(BaseScenario):
 
     def modules(self):
         return (
-            fullmodel(resourcefilepath=self.resources)
+            fullmodel()
             + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
         )
 

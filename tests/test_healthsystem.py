@@ -3090,8 +3090,8 @@ def test_service_availability_switch(tmpdir, seed):
     sim.make_initial_population(n=popsize)
     ## Schedule 10 events that should run; 10 events that have a treatment id that is not available
     ## after service availability switch.
-    nevents_with_available_ids = 10
-    nevents_with_withdrawn_ids = 10
+    nevents_with_available_ids = 60
+    nevents_with_withdrawn_ids = 40
     for i in range(0, nevents_with_available_ids):
         hsi = DummyHSIEvent(
             module=sim.modules["DummyModuleGenericClinic"],
@@ -3121,10 +3121,10 @@ def test_service_availability_switch(tmpdir, seed):
     sim.simulate(end_date=end_date)
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     hsi_events = output["tlo.methods.healthsystem"]["HSI_Event"]
-    ## Expect 10 rows in hsi_events['HSI_Event'] with did_run True and TREATMENT_ID ThisEventShouldRun
+    ## Expect nevents_with_available_ids rows in hsi_events['HSI_Event'] with did_run True and TREATMENT_ID ThisEventShouldRun
     nevents_ran = hsi_events.groupby("TREATMENT_ID")["did_run"].value_counts()
     assert nevents_ran.loc[("ThisEventShouldRun", True)] == nevents_with_available_ids
-    ## Expect 10 rows in hsi_events['Never_ran_HSI_Event'] with TREATMENT_ID ThisEventShouldNotRunPostSwitch
+    ## Expect nevents_with_withdrawn_ids rows in hsi_events['Never_ran_HSI_Event'] with TREATMENT_ID ThisEventShouldNotRunPostSwitch
     never_ran_events = output["tlo.methods.healthsystem"]["Never_ran_HSI_Event"]
     nevents_did_not_run = never_ran_events[never_ran_events["TREATMENT_ID"] == "ThisEventShouldNotRunPostSwitch"].shape[
         0

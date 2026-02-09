@@ -1592,8 +1592,8 @@ class HealthSystem(Module):
         # First check that the service the HSI needs is available. If not, don't add to queue.
         # Don't increment the counter; log and return.
         if not self.is_treatment_id_allowed(hsi_event.TREATMENT_ID, self.service_availability):
-            self.call_and_record_never_ran_hsi_event(hsi_event=hsi_event, priority=priority, clinic=clinic)
-            return
+            self.schedule_to_call_never_ran_on_date(hsi_event=hsi_event, tdate=topen)
+
 
         self.hsi_event_queue_counter += 1
 
