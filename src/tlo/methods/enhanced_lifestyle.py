@@ -280,7 +280,13 @@ class Lifestyle(Module):
         ),
         "fsw_transition": Parameter(
             Types.REAL, "proportion of sex workers that stop being a sex worker each year"
-        )
+        ),
+        "init_p_herbal_medication_use_in_rural": Parameter(
+            Types.REAL, "proportion of people in rural areas that use herbal medication"
+        ),
+        "init_p_herbal_medication_use_in_urban": Parameter(
+            Types.REAL, "proportion of people in urban areas that use herbal medication"
+        ),
     }
 
     # Properties of individuals that this module provides.
@@ -337,14 +343,16 @@ class Lifestyle(Module):
         'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
         'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
         "li_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
-        "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"),
+        "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"
+                               ),
+        'li_herbal_medication': Property(Types.BOOL, 'whether someone uses herbal medication or not'),
     }
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         p = self.parameters
         dataframes = read_csv_files(resourcefilepath / 'ResourceFile_Lifestyle_Enhanced',
-            files=["parameter_values", "urban_rural_by_district"],
-        )
+                                    files=["parameter_values", "urban_rural_by_district"],
+                                    )
         self.load_parameters_from_dataframe(dataframes["parameter_values"])
         p['init_p_urban'] = (
             dataframes["urban_rural_by_district"].drop(
@@ -425,6 +433,7 @@ class Lifestyle(Module):
         df.at[child_id, 'li_is_circ'] = (
             self.rng.rand() < self.parameters['proportion_of_men_that_are_assumed_to_be_circumcised_at_birth']
         )
+        df.at[child_id, 'li_herbal_medication'] = df.at[_id_inherit_from, 'li_herbal_medication']
 
 
 class EduPropertyInitialiser:
@@ -632,7 +641,12 @@ class LifestyleModels:
             'li_is_sexworker': {
                 'init': self.female_sex_workers(),
                 'update': self.female_sex_workers()
-            }
+            },
+            'li_herbal_medication': {
+                'init': self.herbal_medication_linear_model(),
+                'update': None
+            },
+
         }
 
     def is_edu_dictionary_empty(self):
@@ -832,14 +846,14 @@ class LifestyleModels:
             p = self.parameters
 
             li_mar_stat_dtype = df.li_mar_stat.dtype
-            mar_stat = pd.Series(data=1, index=df.index, dtype=li_mar_stat_dtype )
+            mar_stat = pd.Series(data=1, index=df.index, dtype=li_mar_stat_dtype)
             # select individuals of different age category
             age_ranges = [(15, 20), (20, 30), (30, 40), (40, 50), (50, 60), (60, np.inf)]
             for lower_age, upper_age in age_ranges:
                 subpopulation = df.index[
                     df.age_years.between(lower_age, upper_age, inclusive="left")
                     & df.is_alive
-                ]
+                    ]
                 parameters_key = (
                     f"init_dist_mar_stat_age{lower_age}{upper_age}"
                     if upper_age != np.inf else
@@ -1173,6 +1187,26 @@ class LifestyleModels:
         # return male circumcision linear model
         male_circ_lm = LinearModel.custom(handle_male_circumcision_prop, parameters=self.params)
         return male_circ_lm
+
+    def herbal_medication_linear_model(self) -> LinearModel:
+        """Assign herbal medication use based on rural and urban"""
+
+        def predict_herbal_use(self, df, rng=None, **externals) -> pd.Series:
+            p = self.parameters
+            # Probability depends ONLY on li_urban
+            prob = pd.Series(
+                np.where(
+                    df.li_urban,
+                    p['init_p_herbal_medication_use_in_urban'],
+                    p['init_p_herbal_medication_use_in_rural'],
+                ),
+                index=df.index,
+                dtype=float
+            )
+            rnd = rng.random_sample(len(df))
+            return rnd < prob
+
+        return LinearModel.custom(predict_herbal_use, parameters=self.params)
 
     # --------------------- LINEAR MODELS FOR UPDATING POPULATION PROPERTIES ------------------------------ #
     # todo: make exposed to campaign `_property` reflect index of individuals who have transitioned
@@ -1886,6 +1920,7 @@ class LifestyleModels:
         return bmi_lm
 
 
+
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that updates all lifestyle properties for population
@@ -1931,7 +1966,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # NB: In addition to logging properties by sex and age groups, there are some properties that requires
         # individual's urban or rural status. define and log these properties separately
         cat_by_rural_urban_props = ['li_wealth', 'li_bmi', 'li_low_ex', 'li_ex_alc', 'li_wood_burn_stove',
-                                    'li_unimproved_sanitation', 'li_no_clean_drinking_water']
+                                    'li_unimproved_sanitation', 'li_no_clean_drinking_water', 'li_herbal_medication']
         # these properties are applicable to individuals 15+ years
         log_by_age_15up = ['li_low_ex', 'li_mar_stat', 'li_ex_alc', 'li_bmi', 'li_tob']
 
