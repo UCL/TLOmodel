@@ -23,11 +23,6 @@ tlo scenario-run src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_tr
 
 from pathlib import Path
 from typing import Dict, List
-
-from scripts.lcoa_inputs_from_tlo_analyses.scenarios_definitions import (
-    ScenarioDefinitions,
-)
-
 from tlo import Date, logging
 from tlo.analysis.utils import (
     get_filtered_treatment_ids,
@@ -35,6 +30,7 @@ from tlo.analysis.utils import (
     get_parameters_for_status_quo
 )
 from tlo.methods.fullmodel import fullmodel
+from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
 
 class ScenarioDefinitions:
@@ -100,7 +96,7 @@ class EffectOfEachTreatment(BaseScenario):
     def modules(self):
         return (
             fullmodel()
-            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
+            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher()]
         )
 
     def draw_parameters(self, draw_number, rng):
