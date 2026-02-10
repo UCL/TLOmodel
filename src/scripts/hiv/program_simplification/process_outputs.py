@@ -30,6 +30,13 @@ from tlo.analysis.utils import (
     compute_summary_statistics,
 )
 
+from scripts.costing.cost_estimation import (
+    estimate_input_cost_of_scenarios, summarize_cost_data,
+    do_stacked_bar_plot_of_cost_by_category, do_line_plot_of_cost,
+    create_summary_treemap_by_cost_subgroup, estimate_projected_health_spending
+)
+
+
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 # outputspath = Path("./outputs")
 
@@ -931,19 +938,22 @@ def extract_deaths_by_cause(results_folder):
     for the specified cause
     """
 
-    def get_num_deaths_by_label(_df):
+    def get_num_deaths_by_cause_label(_df):
         """Return total number of Deaths by label within the TARGET_PERIOD
         values are summed for all ages
         df returned: rows=COD, columns=draw
         """
-
+        return _df \
+            .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
+            .groupby(_df['label']) \
+            .size()
 
     num_deaths_by_label = extract_results(
         results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=get_num_deaths_by_label,
-        do_scaling=True,
+        module='tlo.methods.demography',
+        key='death',
+        custom_generate_series=get_num_deaths_by_cause_label,
+        do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
     causes = {
@@ -965,6 +975,7 @@ num_deaths_by_cause = extract_deaths_by_cause(results_folder)
 
 summary_num_deaths_by_cause = compute_summary_statistics(extract_deaths_by_cause(results_folder),
                                                  central_measure='mean')
+
 summary_num_deaths_by_cause.to_csv(results_folder / f'num_deaths_by_cause_{target_period()}.csv')
 
 
@@ -1579,138 +1590,8 @@ pc_cost_diff_from_statusquo.to_excel(results_folder / "pc_cost_diff_from_statusq
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ###############################################################################
-
-def summarise_appointments(df: pd.DataFrame) -> pd.Series:
-    """
-    Extract and sum all appointment types during the TARGET_PERIOD from the HSI_Event log.
-
-    Returns a Series indexed by appointment type.
-    """
-    df["date"] = pd.to_datetime(df["date"])
-    mask = df["date"].between(*TARGET_PERIOD)
-    filtered = df.loc[mask, "Number_By_Appt_Type_Code"]
-
-    # Expand list of counts per row into a DataFrame
-    expanded = pd.DataFrame(filtered.tolist())
-
-    # Sum across all rows (time points)
-    summed = expanded.sum()
-
-    # Return as Series with integer index
-    summed.index.name = "AppointmentTypeCode"
-    return summed
-
-appt_counts = extract_results(
-    results_folder=results_folder,
-    module="tlo.methods.healthsystem.summary",
-    key="HSI_Event_non_blank_appt_footprint",
-    custom_generate_series=summarise_appointments,
-    do_scaling=True  # to scale to national population
-).pipe(set_param_names_as_column_index_level_0)
-
-appt_counts_by_draw = appt_counts.groupby(level="draw", axis=1).mean()
-appt_counts_by_draw.to_excel(results_folder / "appt_counts_by_draw.xlsx")
-
-
-
-
-appt_diff_from_statusquo = compute_summary_statistics(
-    find_difference_relative_to_comparison_series_dataframe(
-        appt_counts,
-        comparison="Status Quo"
-    )
-)
-appt_diff_from_statusquo.to_excel(results_folder / "appt_diff_from_statusquo.xlsx")
-
-
-pc_diff_appt_counts_vs_statusquo = 100.0 * compute_summary_statistics(
-    pd.DataFrame(
-        find_difference_relative_to_comparison_series_dataframe(
-            appt_counts,
-            comparison='Status Quo',
-        scaled=True)
-    ), only_central=True
-)
-
-
-
-
-
-
-
-
-# get HCW time by mapping appts to person-time
-hcw_time = pd.read_csv("resources/healthsystem/human_resources/definitions/ResourceFile_Appt_Time_Table.csv")
-
-# assume all services delivered at facility level 1a
-
-
-# Filter mapping for facility level 1a
-hcw_map = hcw_time.loc[hcw_time["Facility_Level"] == "1a"]
-
-# Map table: Appt type → minutes per cadre
-map_table = hcw_map.pivot_table(index="Appt_Type_Code",
-                                columns="Officer_Category",
-                                values="Time_Taken_Mins",
-                                aggfunc="mean")
-
-# Align rows with appointment counts
-map_table = map_table.reindex(appt_counts.index)
-
-# Multiply counts × minutes, sum over appt types, one total per cadre
-per_cadre = {}
-for cadre in map_table.columns:
-    contrib = appt_counts.mul(map_table[cadre], axis=0)
-    per_cadre[cadre] = contrib.sum(axis=0)
-
-# Final dataframe: rows = cadres, columns = same as appt_counts
-hcw_minutes = pd.DataFrame(per_cadre).T
-hcw_hours = hcw_minutes[appt_counts.columns] / 60
-
-
-# get the difference in hcw across the runs
-
-num_hcw_hours_diff = compute_summary_statistics(
-    find_difference_relative_to_comparison_series_dataframe(
-        hcw_hours,
-        comparison='Status Quo'
-    ), central_measure='mean'
-)
-
-
-hcw_hours.to_csv(results_folder / f'hcw_hours_{target_period()}.csv')
-num_hcw_hours_diff.to_csv(results_folder / f'num_hcw_hours_diff_{target_period()}.csv')
-
-
-draw_order = hcw_minutes.columns.get_level_values("draw").unique()
-
-# Reorder the index
-num_hcw_hours_diff = num_hcw_hours_diff.reindex(draw_order, axis=1, level="draw")
-
-# remove Status Quo columns
-num_hcw_hours_diff_edit = num_hcw_hours_diff.drop(columns="Status Quo", level="draw")
-
-
-
-
-
+# PLOTS - infections / deaths vs HCW hours
 
 def plot_cadre_hours_vs_outcomes(
     num_hcw_hours_diff_edit,
@@ -1789,6 +1670,27 @@ def plot_cadre_hours_vs_outcomes(
     plt.show()
 
 
+# todo update this with the new dfs
+num_hcw_hours_diff = compute_summary_statistics(
+    find_difference_relative_to_comparison_series_dataframe(
+        hours_all_years_cadre,
+        comparison='Status Quo'
+    ), central_measure='mean'
+)
+
+
+num_hcw_hours_diff.to_csv(results_folder / f'num_hcw_hours_diff_{target_period()}.csv')
+
+draw_order = hours_all_years_cadre.columns.get_level_values("draw").unique()
+
+# Reorder the index
+num_hcw_hours_diff = num_hcw_hours_diff.reindex(draw_order, axis=1, level="draw")
+
+# remove Status Quo columns
+num_hcw_hours_diff_edit = num_hcw_hours_diff.drop(columns="Status Quo", level="draw")
+
+
+
 plot_cadre_hours_vs_outcomes(
     num_hcw_hours_diff_edit=num_hcw_hours_diff_edit,
     epi_df=infect_ci,
@@ -1820,46 +1722,149 @@ plot_cadre_hours_vs_outcomes(
 
 
 
+# epi outputs vs cost differences
 
-
-
-
-
-
-def plot_grouped_appt_counts(appt_counts_by_draw, title="Percentage change in appt numbers", figsize=(14, 6)):
+def plot_cost_vs_outcomes(
+    num_hcw_hours_diff_edit,
+    epi_df,
+    scenario_colours: dict | None = None,
+    figsize=(10, 6),
+    ylabel=None,
+    exclude_scenarios: list[str] | None = None,
+):
     """
-    Plot grouped bar chart showing appointment counts per type, grouped by draw.
-    Adds vertical separators between appointment type groups.
+    Scatter: Costs(x) vs epidemiological outcome (y) with asymmetric CI whiskers.
     """
 
-    index = appt_counts_by_draw.index.astype(str)  # appointment types as str
-    columns = appt_counts_by_draw.columns          # draw numbers
-    n_types = len(index)
-    n_draws = len(columns)
+    # --- y (epi) (assume single row) ---
+    y_c = epi_df.xs("central", axis=1, level="stat").iloc[0]
+    y_l = epi_df.xs("lower",   axis=1, level="stat").iloc[0]
+    y_u = epi_df.xs("upper",   axis=1, level="stat").iloc[0]
 
-    bar_width = 0.8 / n_draws
-    x = np.arange(n_types)
+    # --- x (hours) (assume single row) ---
+    x_c = num_hcw_hours_diff_edit.xs("central", axis=1, level="stat").iloc[0]
+    x_l = num_hcw_hours_diff_edit.xs("lower",   axis=1, level="stat").iloc[0]
+    x_u = num_hcw_hours_diff_edit.xs("upper",   axis=1, level="stat").iloc[0]
 
-    fig, ax = plt.subplots(figsize=figsize)
+    # Use scenario/draw order from x_c index
+    draws_order = list(x_c.index)
 
-    # Plot bars
-    for i, draw in enumerate(columns):
-        offset = (i - n_draws / 2) * bar_width + bar_width / 2
-        ax.bar(x + offset, appt_counts_by_draw[draw], width=bar_width, label=f"{draw}")
+    # Drop any excluded scenarios
+    if exclude_scenarios:
+        draws_order = [d for d in draws_order if d not in exclude_scenarios]
 
-    # Add vertical lines between groups
-    for i in range(1, n_types):
-        ax.axvline(x=i - 0.5, color="grey", linestyle="--", linewidth=0.5, alpha=0.6)
+    # Align y to the same order
+    yc = y_c.reindex(draws_order)
+    yl = y_l.reindex(draws_order)
+    yu = y_u.reindex(draws_order)
 
-    ax.set_xticks(x)
-    ax.set_xticklabels(index, rotation=45, ha="right")
-    ax.set_ylabel("Percentage change")
-    ax.set_title(title)
-    ax.legend(title="Scenario")
-    ax.grid(axis="y", linestyle="--", alpha=0.6)
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
 
-    plt.tight_layout()
+    for d in draws_order:
+        xc = x_c[d]
+        xm = x_c[d] - x_l[d]
+        xp = x_u[d] - x_c[d]
+
+        yc_d = yc[d]
+        ym = yc[d] - yl[d]
+        yp = yu[d] - yc[d]
+
+        colour = scenario_colours.get(d, "grey") if scenario_colours else "C0"
+
+        ax.errorbar(
+            xc, yc_d,
+            xerr=[[xm], [xp]], yerr=[[ym], [yp]],
+            fmt="o", capsize=3,
+            color=colour, ecolor=colour, elinewidth=1, alpha=0.9,
+        )
+
+    ax.set_title(ylabel)
+    ax.set_xlabel("Cost (difference)")
+    ax.set_ylabel(ylabel if ylabel is not None else "")
+    ax.grid(True, linestyle="--", alpha=0.4)
+    ax.axhline(0, color="grey", linewidth=1, alpha=0.6)
+    ax.axvline(0, color="grey", linewidth=1, alpha=0.6)
+
+    # Proxy legend (robust, independent of errorbar handles)
+    if scenario_colours:
+        handles = [
+            mlines.Line2D(
+                [], [], color=scenario_colours.get(d, "grey"),
+                marker="o", linestyle="None", markersize=8, label=d
+            )
+            for d in draws_order
+        ]
+        # reserve space on the right so the legend doesn’t overlap
+        fig.tight_layout(rect=(0, 0, 0.7, 1))
+        fig.legend(
+            handles=handles, title="Scenario",
+            loc="center left", bbox_to_anchor=(0.7, 0.5),
+            bbox_transform=fig.transFigure, frameon=False
+        )
+    else:
+        fig.tight_layout()
+
+    # NOTE: results_folder/target_period() must exist in your outer scope (as in your original)
+    plt.savefig(results_folder / f'cost_diff_{ylabel}_{target_period()}.png')
     plt.show()
 
 
-plot_grouped_appt_counts(pc_diff_appt_counts_vs_statusquo)
+
+
+plot_cost_vs_outcomes(
+    num_hcw_hours_diff_edit=cost_diff_from_statusquo,
+    epi_df=infect_ci,
+    scenario_colours=scenario_colours,
+    figsize=(10, 11),
+    ylabel="New HIV infections (difference)",
+    exclude_scenarios=["Program Scale-up"]
+)
+
+
+plot_cost_vs_outcomes(
+    num_hcw_hours_diff_edit=cost_diff_from_statusquo,
+    epi_df=epi_df,
+    scenario_colours=scenario_colours,
+    figsize=(10, 11),
+    ylabel="New HIV infections (difference)",
+    exclude_scenarios=["Program Scale-up"]
+)
+
+
+####################################################################################
+#%% get unit costs
+####################################################################################
+
+
+resourcefilepath = Path("./resources")
+
+# Period relevant for costing
+relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
+list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
+# list_of_years_for_plot = list(range(2024, 2041))
+number_of_years_costed = relevant_period_for_costing[1] - 2024 + 1
+
+# Costing parameters
+discount_rate = 0.03
+
+# Estimate standard input costs of scenario
+# -----------------------------------------------------------------------------------------------------------------------
+# Standard 3% discount rate
+input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
+                                               _years=list_of_relevant_years_for_costing,
+                                               cost_only_used_staff=True,
+                                               _discount_rate=discount_rate,
+                                               summarize=True)
+
+
+
+
+
+
+# Undiscounted costs
+input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
+                                               _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
+                                               _discount_rate=0, summarize=False)
+
+
+
