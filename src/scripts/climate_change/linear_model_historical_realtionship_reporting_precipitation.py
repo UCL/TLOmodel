@@ -803,7 +803,29 @@ for ssp_scenario in ssp_scenarios:
 
         #Save the results
         full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_{ssp_scenario}_{model_type}_{service}.csv", index=False)
+        # Add this code after the line:
+        # full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_{ssp_scenario}_{model_type}_{service}.csv", index=False)
 
+        # (a) Projected total ANC summed across DISTRICTS by MONTH and YEAR
+        district_monthly_totals = full_data_weather_predictions.groupby(['District', 'Year', 'Month']).agg({
+            'Predicted_Weather_Model': 'sum',
+            'Predicted_No_Weather_Model': 'sum',
+            'Difference_in_Expectation': 'sum',
+            'Precipitation': 'mean'  # Average precipitation across facilities in district
+        }).reset_index()
+
+        # Rename columns for clarity
+        district_monthly_totals.rename(columns={
+            'Predicted_Weather_Model': 'Total_Projected_ANC_With_Weather',
+            'Predicted_No_Weather_Model': 'Total_Projected_ANC_No_Weather',
+            'Difference_in_Expectation': 'Total_Disruption',
+            'Precipitation': 'Mean_Precipitation'
+        }, inplace=True)
+
+        district_monthly_totals.to_csv(
+            f"/Users/rem76/Desktop/Climate_change_health/Results/district_disruption_summary_{ssp_scenario}_{model_type}_{service}.csv",
+            index=False
+        )
         X_basis_weather_filtered = pd.DataFrame(X_basis_weather_filtered)
 
         # Save to CSV
