@@ -777,25 +777,40 @@ class WastingAnalyses:
 
     def plot_model_gbd_deaths_excl_burnin_period(self):
         """ compare model and GBD deaths 2015-2019 """
-        death_compare = \
-            compare_number_of_deaths(self.__log_file_path, resources_path)
-        fig, ax = plt.subplots(figsize=(10, 6))
         # cause of death as of GBD 2019 'Protein-energy malnutrition' was labeled as 'Childhood Undernutrition' in
         # wasting module
-        plot_df = death_compare.loc[(['2015-2019'],
+        death_compare = \
+            compare_number_of_deaths(self.__log_file_path, resources_path)
+        calib_period = '2015-2019'
+        plot_df = death_compare.loc[([calib_period],
                                      slice(None), ['0-4'], 'Childhood Undernutrition'
                                      )].groupby('period').sum()
-        plotting = plot_df.loc[['2015-2019']]
-        ax = plotting['model'].plot.bar(label='deaths due to SAM (model)', ax=ax, rot=0)
-        ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
-                    yerr=[plotting.GBD_lower, plotting.GBD_upper],
-                    fmt='o', color='#000', label="deaths due to SAM (GBD 2019)")
+        gbd_data = plot_df.loc[calib_period, ['GBD_mean', 'GBD_lower', 'GBD_upper']].tolist()
+
+        # as these need mean outcomes across all the runs, we calculate these with the script
+        # plot_calib_outputs__using_analysis_utility_fncs_wast.py, and add these figures here by hand
+        # (could be automatised in future)
+        model_data = [2972.865386866667, 96.43464129549511, 96.43464129549557]
+
+        # Setup labels and values
+        labels = ["model", "GBD 2019"]
+        means = [model_data[0], gbd_data[0]]
+        yerr = [
+            [model_data[1], gbd_data[1]],
+            [model_data[2], gbd_data[2]],
+        ]
+
+        # Specify colors
+        custom_colors = [self.__colors_model["severe wasting"], self.__colors_data["severe wasting"]]
+
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.bar(labels, means, yerr=yerr, capsize=8, color=custom_colors, edgecolor="black")
 
         # ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5',
         #              fontsize=title_fontsize - 1)
-        ax.set_xlabel("time period")
-        ax.set_ylabel("number of deaths")
-        ax.legend(loc='upper right', fontsize=legend_fontsize)
+        ax.set_xlabel(calib_period)
+        ax.set_ylabel("number of deaths due to SAM")
         fig.tight_layout()
         fig_output_name = ('model_gbd_deaths_excl_burnin__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
