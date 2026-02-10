@@ -1551,7 +1551,7 @@ class HealthSystem(Module):
 
             # Check all officers are available at the clinic that the HSI event is eligible for
             for officer in hsi_event.expected_time_requests:
-                if officer not in self.capabilities_today[clinic_eligibility]:
+                if officer not in self._daily_capabilities[clinic_eligibility]:
                     logger.warning(
                         key="message",
                         data=f"Requested officer {officer} is not contemplated by health system. "
