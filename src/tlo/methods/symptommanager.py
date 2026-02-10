@@ -193,14 +193,14 @@ class SymptomManager(Module):
                         'NB. This is over-ridden if a module key-word argument is provided.'),
     }
 
-    def __init__(self, name=None, spurious_symptoms=None, always_refer_to_properties: Optional[bool] = None):
+    def __init__(self, name=None, spurious_symptoms=None, always_refer_to_properties: bool = False):
         super().__init__(name)
         self.spurious_symptoms = None
         self.arg_spurious_symptoms = spurious_symptoms
         self._persons_with_newly_onset_symptoms = set()
 
         assert isinstance(always_refer_to_properties, bool), "Argument `always_refer_to_properties` must be a bool."
-        self.always_refer_to_properties = always_refer_to_properties
+        self.always_refer_to_properties = always_refer_to_properties  # <-- avoids use of in-build tracker
 
         self.generic_symptoms = {
             'fever',
