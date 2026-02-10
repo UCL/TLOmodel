@@ -1840,19 +1840,24 @@ resourcefilepath = Path("./resources")
 
 # Period relevant for costing
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
-list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
-# list_of_years_for_plot = list(range(2024, 2041))
+list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0],  relevant_period_for_costing[1] + 1))
+list_of_years_for_plot = list(range(2024, 2051))
 number_of_years_costed = relevant_period_for_costing[1] - 2024 + 1
 
 # Costing parameters
 discount_rate = 0.03
+
+# todo costing scripts throwing errors
+# todo perhaps my logs files out of date compared with costing scripts
+# todo get consumables item codes + quantities and assign costs
+
 
 # Estimate standard input costs of scenario
 # -----------------------------------------------------------------------------------------------------------------------
 # Standard 3% discount rate
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
                                                _years=list_of_relevant_years_for_costing,
-                                               cost_only_used_staff=True,
+                                               cost_only_used_staff=False,
                                                _discount_rate=discount_rate,
                                                summarize=True)
 
