@@ -1384,7 +1384,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
         if person_age < 1:
             prob = p["growth_monitoring_attendance_prob_agecat"][0]
-        if person_age < 2:
+        elif person_age < 2:
             prob = p["growth_monitoring_attendance_prob_agecat"][1]
         else:
             prob = p["growth_monitoring_attendance_prob_agecat"][2]
