@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import get_counts_by_sex_and_age_group
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -34,7 +35,8 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHBURDEN,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_SYMPTOMMANAGER
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.REPORTS_DISEASE_NUMBERS
     }
 
     # Declare Causes of Death
@@ -235,6 +237,12 @@ class Measles(Module, GenericFirstAppointmentsMixin):
                 self.sim.modules["SymptomManager"].who_has(symptom)] += daly_wt
 
         return health_values
+
+    def report_summary_stats(self):
+        # This reports age- and sex-specific prevalence of measles for all individuals
+        df = self.sim.population.props
+        number_by_age_group_sex = get_counts_by_sex_and_age_group(df, 'me_has_measles')
+        return {'number_with_measles': number_by_age_group_sex}
 
     def process_parameters(self):
         """Process the parameters (following being read-in) prior to the simulation starting.
@@ -493,18 +501,24 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
 
         # for non-complicated measles
-        item_codes = [self.module.consumables['vit_A']]
+        # vitamin A give 200,000 IU per day for 2 days
+        drugs_available = [self.get_consumables(
+            item_codes={self.module.consumables['vit_A']: 2})]
 
         # for measles with severe diarrhoea
+        # 1 sachet ORS makes 1 litre solution
         if "diarrhoea" in symptoms:
-            item_codes.append(self.module.consumables['severe_diarrhoea'])
+            drugs_available.append(bool(self.get_consumables(
+                item_codes={self.module.consumables['severe_diarrhoea']: 1})))
 
         # for measles with pneumonia
+        # assume 8 litres/min for 2 days (2880 mins * 8 litres)
         if "respiratory_symptoms" in symptoms:
-            item_codes.append(self.module.consumables['severe_pneumonia'])
+            drugs_available.append(bool(self.get_consumables(
+                item_codes={self.module.consumables['severe_pneumonia']: 23040})))
 
         # request the treatment
-        if self.get_consumables(item_codes):
+        if all(drugs_available):
             logger.debug(key="HSI_Measles_Treatment",
                          data=f"HSI_Measles_Treatment: giving required measles treatment to person {person_id}")
 

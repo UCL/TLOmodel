@@ -67,6 +67,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         self.possible_intrapartum_complications = list()
         self.possible_postpartum_complications = list()
 
+        # Counter for number of still_births (is reset in calls to report_summary_stats)
+        self.intrapartum_stillbirth_since_last_reset = 0
+
         # Finally define a dictionary which will hold the required consumables for each intervention
         self.item_codes_lab_consumables = dict()
 
@@ -84,6 +87,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN,
+        Metadata.REPORTS_DISEASE_NUMBERS,
     }
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
@@ -1128,6 +1132,23 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         daly_series = pd.Series(data=0, index=df.index[df.is_alive])
 
         return daly_series
+
+    def report_summary_stats(self):
+        """
+        This function reports the prevalence of intrapartum stillbirth for this module generated in the previous month
+        """
+
+        # Get the number of intrapartum still births since last call to this function
+        result_to_return = {
+            'number of intrapartum stillbirth since last report':
+                self.intrapartum_stillbirth_since_last_reset
+        }
+
+        # Reset the counter
+        self.intrapartum_stillbirth_since_last_reset = 0
+
+        # Return the result
+        return result_to_return
 
     # ===================================== HELPER AND TESTING FUNCTIONS ==============================================
     def set_date_of_labour(self, individual_id):
@@ -2630,7 +2651,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             logger.debug(key='message', data=f'person {individual_id} has experienced an intrapartum still birth')
 
             random_draw = self.module.rng.random_sample()
-
+            self.module.intrapartum_stillbirth_since_last_reset += 1
             # If this woman will experience a stillbirth and she was not pregnant with twins OR she was pregnant with
             # twins but both twins have died during labour we reset/set the appropriate variables
             if not df.at[individual_id, 'ps_multiple_pregnancy'] or \

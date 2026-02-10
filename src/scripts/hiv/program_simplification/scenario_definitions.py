@@ -2,6 +2,7 @@
 
 from typing import Dict
 
+
 class ScenarioDefinitions:
 
     def status_quo(self) -> Dict:
