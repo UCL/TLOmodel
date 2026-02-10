@@ -2105,26 +2105,22 @@ class HealthSystem(Module):
         # Record equipment usage for the year, for each facility
         self._record_general_equipment_usage_for_year()
 
-    def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests, clinic)-> bool:
+    def do_all_required_officers_have_nonzero_capabilities(self, expected_time_requests, clinic)-> bool:
         """Check if all officers required by the appt footprint are available to perform the HSI"""
-
-        ok_to_run = True
-
-        for officer in expected_time_requests.keys():
-            availability = self.capabilities_today[clinic][officer]
-
-            # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
+        clinic_capabilities = self.capabilities_today[clinic]
+        for officer in expected_time_requests:
+            availability = clinic_capabilities.get(officer)
             if availability is None:
                 logger.warning(
                     key="message",
-                    data=(f"Requested officer {officer} is not contemplated by health system. ")
+                    data=f"Requested officer {officer} is not contemplated by health system. "
                 )
-                availability = 0.0
+                return False
 
             if availability == 0.0:
-                ok_to_run = False
+                return False
 
-        return ok_to_run
+        return True
 
     def run_individual_level_events_in_mode_1(
         self, _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]
@@ -2145,7 +2141,7 @@ class HealthSystem(Module):
                 # In this mode, all HSI Events run provided all required officers have non-zero capabilities
                 ok_to_run = True
                 if event.expected_time_requests:
-                    ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
+                    ok_to_run = self.do_all_required_officers_have_nonzero_capabilities(
                                     event.expected_time_requests, clinic=clinic)
                 if ok_to_run:
 
