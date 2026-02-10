@@ -1549,6 +1549,14 @@ class HealthSystem(Module):
             hsi_event.initialise()
             clinic_eligibility = self.get_clinic_eligibility(hsi_event.TREATMENT_ID)
 
+            # Check all officers are available at the clinic that the HSI event is eligible for
+            for officer in hsi_event.expected_time_requests:
+                if officer not in self.capabilities_today[clinic_eligibility]:
+                    logger.warning(
+                        key="message",
+                        data=f"Requested officer {officer} is not contemplated by health system. "
+                    )
+
             self._add_hsi_event_queue_item_to_hsi_event_queue(
                 clinic_eligibility=clinic_eligibility,
                 priority=priority,
@@ -2109,17 +2117,8 @@ class HealthSystem(Module):
         """Check if all officers required by the appt footprint are available to perform the HSI"""
         clinic_capabilities = self.capabilities_today[clinic]
         for officer in expected_time_requests:
-            availability = clinic_capabilities.get(officer)
-            if availability is None:
-                logger.warning(
-                    key="message",
-                    data=f"Requested officer {officer} is not contemplated by health system. "
-                )
+            if clinic_capabilities.get(officer, 0.0) == 0.0:
                 return False
-
-            if availability == 0.0:
-                return False
-
         return True
 
     def run_individual_level_events_in_mode_1(
