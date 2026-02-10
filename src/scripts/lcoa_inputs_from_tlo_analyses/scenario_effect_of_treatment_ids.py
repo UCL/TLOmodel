@@ -75,7 +75,7 @@ class EffectOfEachTreatment(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2041, 1, 1)
-        self.pop_size = 100
+        self.pop_size = 250_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 5
@@ -120,9 +120,10 @@ class EffectOfEachTreatment(BaseScenario):
         # treatment is omitted
         service_availability = dict({"Nothing": []})
         # For each treatment group, create scenarios keeping only one treatment from that group
-        service_availability.update(
-            {f"Only {treatment}": [treatment] for treatment in treatments}
-        )
+        # Commenting to allow draw 0 to be run and suspended.
+        #service_availability.update(
+        #    {f"Only {treatment}": [treatment] for treatment in treatments}
+        #)
 
         return service_availability
 
