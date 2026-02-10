@@ -801,20 +801,65 @@ for ssp_scenario in ssp_scenarios:
             'Difference_in_Expectation': predictions,
         })
 
-        #Save the results
-        full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_{ssp_scenario}_{model_type}_{service}.csv", index=False)
-        # Add this code after the line:
-        # full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_{ssp_scenario}_{model_type}_{service}.csv", index=False)
+        # Save the results
+        full_data_weather_predictions.to_csv(
+            f"{data_path}weather_predictions_with_X_{ssp_scenario}_{model_type}_{service}.csv", index=False)
+
+        # Add facility level information
+        facility_info_with_levels = pd.read_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/"
+            "facilities_with_lat_long_region.csv"
+        )
+        facility_info_with_levels = facility_info_with_levels.drop_duplicates(subset='Fname', keep='first')
+
+        # Define facility level mapping
+        facility_levels_types = {
+            "level_0": [
+                "Health Post",
+                "Village Health Committee",
+                "Community Health Station",
+                "Village Clinic",
+                "Mobile Clinic",
+                "Outreach Clinic",
+            ],
+            "level_1a": [
+                "Dispensary",
+                "Rural Health Centre",
+                "Urban Health Centre",
+                "Private Clinic",
+                "Special Clinic",
+                "Antenatal Clinic",
+                "Maternity Clinic",
+                "Maternity Facility",
+            ],
+            "level_1b": ["Community Hospital", "Rural Hospital", "CHAM Hospital"],
+            "level_2": ["District Hospital", "District Health Office"],
+            "level_3": [
+                "Kamuzu Central Hospital",
+                "Mzuzu Central Hospital",
+                "Zomba Central Hospital",
+                "Queen Elizabeth Central Hospital",
+            ],
+            "level_4": ["Zomba Mental Hospital"],
+        }
+
+        # Create reverse lookup: FType -> Level
+        ftype_to_level = {}
+        for level, ftypes in facility_levels_types.items():
+            for ftype in ftypes:
+                ftype_to_level[ftype] = level
+
+        # Add Level column to full_data_weather_predictions based on Facility_Type
+        full_data_weather_predictions['Level'] = full_data_weather_predictions['Facility_Type'].map(ftype_to_level)
 
         # (a) Projected total ANC summed across DISTRICTS by MONTH and YEAR
         district_monthly_totals = full_data_weather_predictions.groupby(['District', 'Year', 'Month']).agg({
             'Predicted_Weather_Model': 'sum',
             'Predicted_No_Weather_Model': 'sum',
             'Difference_in_Expectation': 'sum',
-            'Precipitation': 'mean'  # Average precipitation across facilities in district
+            'Precipitation': 'mean'
         }).reset_index()
 
-        # Rename columns for clarity
         district_monthly_totals.rename(columns={
             'Predicted_Weather_Model': 'Total_Projected_ANC_With_Weather',
             'Predicted_No_Weather_Model': 'Total_Projected_ANC_No_Weather',
@@ -823,7 +868,32 @@ for ssp_scenario in ssp_scenarios:
         }, inplace=True)
 
         district_monthly_totals.to_csv(
-            f"/Users/rem76/Desktop/Climate_change_health/Results/district_disruption_summary_{ssp_scenario}_{model_type}_{service}.csv",
+            f"{data_path}district_monthly_totals_{ssp_scenario}_{model_type}_{service}.csv",
+            index=False
+        )
+
+        # (b) Projected totals by DISTRICT, LEVEL, MONTH, and YEAR
+        district_level_monthly_totals = full_data_weather_predictions.groupby(
+            ['District', 'Level', 'Year', 'Month']
+        ).agg({
+            'Predicted_Weather_Model': 'sum',
+            'Predicted_No_Weather_Model': 'sum',
+            'Difference_in_Expectation': 'sum',
+            'Precipitation': 'mean',
+            'Facility_ID': 'count'  # Count number of facilities
+        }).reset_index()
+
+        district_level_monthly_totals.rename(columns={
+            'Predicted_Weather_Model': 'Total_Projected_ANC_With_Weather',
+            'Predicted_No_Weather_Model': 'Total_Projected_ANC_No_Weather',
+            'Difference_in_Expectation': 'Total_Disruption',
+            'Precipitation': 'Mean_Precipitation',
+            'Facility_ID': 'N_Facilities'
+        }, inplace=True)
+
+        # Save the district-level breakdown
+        district_level_monthly_totals.to_csv(
+            f"{data_path}district_level_monthly_totals_{ssp_scenario}_{model_type}_{service}.csv",
             index=False
         )
         X_basis_weather_filtered = pd.DataFrame(X_basis_weather_filtered)
