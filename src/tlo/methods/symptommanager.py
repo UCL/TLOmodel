@@ -193,11 +193,14 @@ class SymptomManager(Module):
                         'NB. This is over-ridden if a module key-word argument is provided.'),
     }
 
-    def __init__(self, name=None, spurious_symptoms=None):
+    def __init__(self, name=None, spurious_symptoms=None, always_refer_to_properties: Optional[bool] = None):
         super().__init__(name)
         self.spurious_symptoms = None
         self.arg_spurious_symptoms = spurious_symptoms
         self._persons_with_newly_onset_symptoms = set()
+
+        assert isinstance(always_refer_to_properties, bool), "Argument `always_refer_to_properties` must be a bool."
+        self.always_refer_to_properties = always_refer_to_properties
 
         self.generic_symptoms = {
             'fever',
@@ -508,7 +511,7 @@ class SymptomManager(Module):
         ), "Disease Module Name is not recognised"
 
         # Faster to get current symptoms using tracker when no disease is specified
-        if disease_module is None and person_id is not None:
+        if (not self.always_refer_to_properties) and (disease_module is None) and (person_id is not None):
             return list(self._get_current_symptoms_from_tracker(person_id))
 
         if individual_details is not None:
