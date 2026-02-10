@@ -346,6 +346,11 @@ def extract_death_data_frames_and_outcomes(
     interv_under5_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_under5_Diarrhoea_deaths_with_SAM_df)
 
+    # sum and CI of under 5 SAM deaths over calibration period, mean across run
+    calibration_years = [2015, 2016, 2017, 2018, 2019]  #TODO: later as an input parameter?
+    calib_under5_SAM_deaths_df = under5_SAM_deaths_df.loc[calibration_years]
+    calib_under5_SAM_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(calib_under5_SAM_deaths_df)
+
     under5_scen_sum_deaths_df, under5_averted_deaths_mean_ci_df = compute_scen_sum_and_averted(
         interv, interv_under5_deaths_df,
         'under5_scen_sum_deaths_df', False, sq_deaths
@@ -444,6 +449,8 @@ def extract_death_data_frames_and_outcomes(
         "under5_scen_sum_Diarrhoea_deaths_with_SAM_df": under5_scen_sum_Diarrhoea_deaths_with_SAM_df,
         "under5_averted_Diarrhoea_deaths_with_SAM_mean_ci_df": under5_averted_Diarrhoea_deaths_with_SAM_mean_ci_df,
         "interv_years": intervention_years,
+        "calib_under5_SAM_deaths_sum_ci_df": calib_under5_SAM_deaths_sum_per_draw_CI_across_runs_df,
+        "calib_years": calibration_years,
     }
 
 def extract_daly_data_frames_and_outcomes(
@@ -1950,16 +1957,15 @@ def plot_sum_outcome_and_CIs_intervention_period(
             #     table_effectiveness(averted_deaths, f"{outcome_type}_{cause}")
 
 # ----------------------------------------------------------------------------------------------------------------------
-def plot_calibration_outputs(calib_outputs_path: Path) -> None:
+def calc_calibration_annual_death_CIs(calib_outputs_path: Path) -> None:
     """
-    Creates 3 plots comparing
-    calibration outputs (mean and CI over runs) and data (reported value and CI derived from reported age group sizes):
+    Calculate and print mean annual direct deaths due to SAM and CI over runs and data (reported value and CI derived from reported age group sizes):
         * prevalence of moderate and severe wasting among age groups in 2016,
         * prevalence of moderate and severe wasting among age groups in 2020,
         * average annual direct deaths due to SAM.
     :param calib_outputs_path:
     """
-
+    print("\nannual direct deaths, average over calibration period calculation ...")
     # Get latest SQ timestamp
     SQ_outcomes_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/SQ")
     SQ_outcomes_file_prefix = 'wasting_analysis__full_model_SQ-'
@@ -1980,116 +1986,34 @@ def plot_calibration_outputs(calib_outputs_path: Path) -> None:
         raise ValueError(f"Ambiguity Error: Found multiple files matching pattern '{search_pattern}': {files_found}")
     death_outcomes_path = matches[0]
 
-    # Load modelled under 5 death outcomes due to SAM
+    # Load modelled under 5 death outcomes due to SAM for calibration period
     # ###
     print("\nloading death outcomes from file ...")
     with death_outcomes_path.open("rb") as f:
         death_outcomes_dict = pickle.load(f)
-    # SAM deaths over intervention period Sum and 95% CI
-    SQ_interv_period_under5_SAM_deaths_sum_ci_list = \
-        death_outcomes_dict['SQ']['interv_under5_SAM_deaths_sum_ci_df'].loc['sum', 0]
-    print("\nSQ_interv_period_under5_SAM_deaths_sum_ci_list:")
-    print(SQ_interv_period_under5_SAM_deaths_sum_ci_list)
-    # Average and 95% CI: Annual nmb of SAM deaths (avg over interv period)
-    SQ_interv_period_avg_annual_under5_SAM_deaths_avg_ci_list = \
-        [val / 5 for val in SQ_interv_period_under5_SAM_deaths_sum_ci_list]
-    print("\nSQ_interv_period_avg_annual_under5_SAM_deaths_avg_ci_list:")
-    print(SQ_interv_period_avg_annual_under5_SAM_deaths_avg_ci_list)
+    # SAM deaths over calibration period Sum and 95% CI
+    SQ_calib_period_under5_SAM_deaths_sum_ci_list = \
+        death_outcomes_dict['SQ']['calib_under5_SAM_deaths_sum_ci_df'].loc['sum', 0]
+    calib_period = death_outcomes_dict['SQ']['calib_years']
 
-    # Load GBD 2019 deaths due to 'Protein-energy malnutrition'
-    # ###
-    # - Load data, format and limit to deaths only:
-    gbd_data_df = pd.read_csv(Path("./resources/gbd/ResourceFile_Deaths_And_DALYS_GBD2019.csv"))
-    print("\ngbd_data_df:")
-    print(gbd_data_df)
-    print("\ntype:")
-    print(type(gbd_data_df))
-    print("\ncolumn names:")
-    print(list(gbd_data_df.columns))
-    # List of columns you want to inspect
-    target_columns = ["measure_name", "Age_Grp", "Age_Grp_GBD", "Year", "Period", "cause_name", "cause_id"]
+    # Average and 95% CI errors: Annual nmb of SAM deaths (avg over calib period)
+    SQ_calib_period_avg_annual_under5_SAM_deaths_avg_ci_list = \
+        [val / 5 for val in SQ_calib_period_under5_SAM_deaths_sum_ci_list]
+    print(f"\ncalibration period: {calib_period}")
+    mean, low, upp = SQ_calib_period_avg_annual_under5_SAM_deaths_avg_ci_list
+    SQ_calib_annual_under5_SAM_deaths_mean_errors_list =\
+        [mean, mean - low, upp - mean]
+    print("\nSQ_calib_annual_under5_SAM_deaths_mean_errors_list:")
+    print(SQ_calib_annual_under5_SAM_deaths_mean_errors_list)
 
-    print("\n--- Unique Values in Target Columns ---")
-
-    for col in target_columns:
-        if col in gbd_data_df.columns:
-            # Get unique values and convert to list for a cleaner print
-            unique_vals = gbd_data_df[col].unique().tolist()
-            print(f"\n{col} ({len(unique_vals)} unique values):")
-            print(unique_vals)
-        else:
-            print(f"\n[!] Column '{col}' not found in DataFrame.")
-
-    print("\n--- Unique Combinations of 'Age_Grp' and 'Age_Grp_GBD' ---")
-    if "Age_Grp" in gbd_data_df.columns and "Age_Grp_GBD" in gbd_data_df.columns:
-        unique_combinations = gbd_data_df[["Age_Grp", "Age_Grp_GBD"]].drop_duplicates().sort_values("Age_Grp")
-
-        # Using to_string() ensures the whole table is printed without truncation
-        print(unique_combinations.to_string(index=False))
-    else:
-        print("One or both Age Group columns are missing.")
-
-    # Keep only deaths under 5 in calib perod 2015-2019 (incl.) due to "Protein-energy malnutrition"
-    mask = (
-        (gbd_data_df["measure_name"] == "Deaths")
-        & (gbd_data_df["Age_Grp"] == "0-4")
-        &
-        # Ensuring Year is treated as an integer for the range comparison
-        (gbd_data_df["Year"].astype(int) >= 2015)
-        & (gbd_data_df["Year"].astype(int) <= 2019)
-        & (gbd_data_df["cause_name"] == "Protein-energy malnutrition")
-    )
-
-    gbd_filtered_df = gbd_data_df[mask].copy()
-
-    # Verify the result
-    print(f"Original nmb rows: {len(gbd_data_df)}")
-    print(f"Filtered nmb rows: {len(gbd_filtered_df)}")
-
-    # Display unique values in the filtered set to confirm
-    print("\nFiltered unique values:")
-    print(f"Years: {sorted(gbd_filtered_df['Year'].unique())}")
-    print(f"Causes: {gbd_filtered_df['cause_name'].unique()}")
-
-    print("\n--- Full GBD Filtered DataFrame (Formatted) ---")
-    with pd.option_context("display.max_rows", None, "display.max_columns", None, "display.width", 1000):
-        print(gbd_filtered_df)
-
-    # Group and sum by 'Year' (select the target columns, and calculate the sum)
-    gbd_yearly_sum_df = gbd_filtered_df.groupby("Year")[["GBD_Est", "GBD_Upper", "GBD_Lower"]].sum()
-
-    # Print the result with the Year as the index
-    print("\n--- GBD Deaths Summed by Year (Aggregated across Sex and Age_Grp_GBD) ---")
-    print(gbd_yearly_sum_df)
-
-    # Total average across these years
-    print("\nMean across 2015-2019:")
-    gbd_means = gbd_yearly_sum_df.mean()
-    print(gbd_means)
-
-    gbd_means_list = [gbd_means["GBD_Est"], gbd_means["GBD_Lower"], gbd_means["GBD_Upper"]]
-    print("\nMean across 2015-2019 as list [GBD_Est, GBD_Lower, GBD_Upper]:")
-    print(gbd_means_list)
-
-    # gbd_data_df = gbd_data_df.loc[gbd_data_df['measure_name'] == 'Deaths']
-    # gbd_data_df = gbd_data_df.rename(columns={
-    #     'Sex': 'sex',
-    #     'Age_Grp': 'age_grp',
-    #     'Period': 'period',
-    #     'GBD_Est': 'mean',
-    #     'GBD_Lower': 'lower',
-    #     'GBD_Upper': 'upper'})
-    #
-    # # - Label GBD causes of death by 'label' defined in the simulation
-    # mapper_from_gbd_causes = pd.Series(
-    #     output['tlo.methods.demography']['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]
-    # ).to_dict()
-    # gbd_data_df['label'] = gbd_data_df['cause_name'].map(mapper_from_gbd_causes)
-    # assert not gbd_data_df['label'].isna().any()
-    #
-    # # - Create comparable data structure:
-    # gbd = gbd_data_df.groupby(['period', 'sex', 'age_grp', 'label'])[['mean', 'lower', 'upper']].sum().div(5.0)
-    # gbd = gbd.add_prefix('GBD_')
+def plot_calibration_prevalence_outputs(calib_outputs_path: Path) -> None:
+    """
+    Creates 3 plots comparing
+    calibration outputs (mean and CI over runs) and data (reported value and CI derived from reported age group sizes):
+        * prevalence of moderate and severe wasting among age groups in 2016,
+        * prevalence of moderate and severe wasting among age groups in 2020,
+    :param calib_outputs_path:
+    """
 
 
 # ----------------------------------------------------------------------------------------------------------------------
