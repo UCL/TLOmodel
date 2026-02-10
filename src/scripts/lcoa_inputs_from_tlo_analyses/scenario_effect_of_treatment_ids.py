@@ -24,47 +24,37 @@ tlo scenario-run src/scripts/lcoa_inputs_from_tlo_analyses/scenario_effect_of_tr
 from pathlib import Path
 from typing import Dict, List
 from tlo import Date, logging
-from tlo.analysis.utils import (
-    get_filtered_treatment_ids,
-    mix_scenarios,
-    get_parameters_for_status_quo
-)
+from tlo.analysis.utils import get_filtered_treatment_ids, mix_scenarios, get_parameters_for_status_quo
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
 
-class ScenarioDefinitions:
 
+class ScenarioDefinitions:
     @property
     def YEAR_OF_SERVICE_AVAILABILITY_SWITCH(self) -> int:
         return 2026
 
     def baseline(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
+        """Return the Dict with values for the parameter changes that define the baseline scenario."""
         return mix_scenarios(
             get_parameters_for_status_quo(),  # <-- Parameters that have been the calibration targets
-
             {
                 "HealthSystem": {
-                    "cons_availability": 'default',
-                    'year_cons_availability_switch': self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
-                    'cons_availability_postSwitch': 'all',
-
+                    "cons_availability": "default",
+                    "year_cons_availability_switch": self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
+                    "cons_availability_postSwitch": "all",
                     "mode_appt_constraints": 1,
                     "year_service_availability_switch": self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
-
                     # allow historical HRH scaling to occur 2018-2024
                     # 'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
-                    'yearly_HR_scaling_mode': 'historical_scaling',
+                    "yearly_HR_scaling_mode": "historical_scaling",
                 },
-
                 "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
-                    'max_healthsystem_function': [False, True],  # <-- switch from False to True mid-way
-                    'max_healthcare_seeking': [False, True],  # <-- switch from False to True mid-way
-                    'year_of_switch': self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
-                }
-
-
+                    "max_healthsystem_function": [False, True],  # <-- switch from False to True mid-way
+                    "max_healthcare_seeking": [False, True],  # <-- switch from False to True mid-way
+                    "year_of_switch": self.YEAR_OF_SERVICE_AVAILABILITY_SWITCH,
+                },
             },
         )
 
@@ -82,35 +72,25 @@ class EffectOfEachTreatment(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment_id',
-            'directory': Path('./outputs'),
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-            }
+            "filename": "effect_of_each_treatment_id",
+            "directory": Path("./outputs"),
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+            },
         }
 
     def modules(self):
-        return (
-            fullmodel()
-            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher()]
-        )
+        return fullmodel() + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher()]
 
     def draw_parameters(self, draw_number, rng):
-        scenario_definitions = ScenarioDefinitions()
-        return mix_scenarios(
-            scenario_definitions.baseline(),
-            {
-                'HealthSystem': {
-                    'service_availability_postSwitch': list(self._scenarios.values())[draw_number],
-                },
-            }
-        )
+        if draw_number < len(self._scenarios):
+            return list(self._scenarios.values())[draw_number]
 
-    def _get_scenarios(self) -> Dict[str, List[str]]:
+    def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
         The sequences of scenarios systematically omits all but one TREATMENT_ID that is defined in the model."""
 
@@ -121,14 +101,23 @@ class EffectOfEachTreatment(BaseScenario):
         service_availability = dict({"Nothing": []})
         # For each treatment group, create scenarios keeping only one treatment from that group
         # Commenting to allow draw 0 to be run and suspended.
-        #service_availability.update(
+        # service_availability.update(
         #    {f"Only {treatment}": [treatment] for treatment in treatments}
-        #)
+        # )
 
-        return service_availability
+        scenario_definitions = ScenarioDefinitions()
+
+        scenarios = {
+            key: mix_scenarios(
+                scenario_definitions.baseline(), {"HealthSystem": {"service_availability_postSwitch": value}}
+            )
+            for key, value in service_availability.items()
+        }
+
+        return scenarios
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])
