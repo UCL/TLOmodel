@@ -1379,17 +1379,16 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Undernutrition_GrowthMonitoring"
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
-        rng = self.module.rng
+        person_age = self.sim.population.props.at[self.target, 'age_exact_years']
+
         p = self.module.parameters
-        person_age = self.sim.population.props.loc[self.target].age_exact_years
-        def get_attendance_prob(age):
-            if age < 1:
-                return p["growth_monitoring_attendance_prob_agecat"][0]
-            if age < 2:
-                return p["growth_monitoring_attendance_prob_agecat"][1]
-            else:
-                return p["growth_monitoring_attendance_prob_agecat"][2]
-        self.attendance = rng.random_sample() < get_attendance_prob(person_age)
+        if person_age < 1:
+            prob = p["growth_monitoring_attendance_prob_agecat"][0]
+        if person_age < 2:
+            prob = p["growth_monitoring_attendance_prob_agecat"][1]
+        else:
+            prob = p["growth_monitoring_attendance_prob_agecat"][2]
+        self.attendance = self.module.rng.random_sample() < prob
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
 
     def apply(self, person_id, squeeze_factor):
