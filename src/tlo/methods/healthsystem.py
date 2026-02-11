@@ -1554,7 +1554,8 @@ class HealthSystem(Module):
                 if officer not in self._daily_capabilities[clinic_eligibility]:
                     logger.warning(
                         key="message",
-                        data=f"Requested officer {officer} is not contemplated by health system. "
+                        data=f"Requested officer {officer} does not exist"
+                             "at the designated facility_level at the time of scheduling"
                     )
 
             self._add_hsi_event_queue_item_to_hsi_event_queue(
