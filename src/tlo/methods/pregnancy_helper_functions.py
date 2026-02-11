@@ -133,6 +133,8 @@ def check_int_deliverable(self, int_name, hsi_event,
         # If so, we determine if this intervention will be delivered given the set probability of delivery.
         can_int_run_analysis = self.rng.random_sample() < p_params['intervention_analysis_availability']
 
+        # todo - we need to log consumables used here
+
         # The intervention has no effect
         if not can_int_run_analysis:
             int_will_run = False
@@ -227,6 +229,80 @@ def check_int_deliverable(self, int_name, hsi_event,
         c[f'{int_name}_deliv'] += 1
 
     return int_will_run
+
+def check_int_deliverable_update(self, int_name, hsi_event,
+                          q_param=None, cons=None, alt_con=None, opt_cons=None, equipment=None, dx_test=None):
+    """
+    This function is called to determine if an intervention within the MNH modules can be delivered to an individual
+    during a given HSI. This applied to all MNH interventions. If analyses are being conducted in which the probability
+    of intervention delivery should be set explicitly, this is achieved during this function. Otherwise, probability of
+     intervention delivery is determined by any module-level quality parameters, consumable availability, and
+     (if applicable) the results of any dx_tests. Equipment is also declared.
+
+   :param self: module
+    param int_name: items for code look up
+    param hsi_event: module
+    param q_param: items for code look up
+    param cons: module
+    param opt_cons: items for code look up
+    param equipment: module
+    param dx_test: items for code look up
+    """
+
+    df = self.sim.population.props
+    individual_id = hsi_event.target
+    p_params = self.sim.modules['PregnancySupervisor'].current_parameters
+    l_params = self.sim.modules['Labour'].current_parameters
+    c = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
+
+    assert int_name in p_params['all_interventions']
+
+    int_will_run = None
+    c[f'{int_name}_req'] += 1
+
+    if (p_params['interventions_analysis'] and
+        p_params['ps_analysis_in_progress'] and
+        (int_name in p_params['interventions_under_analysis'])):
+
+        can_int_run = self.rng.random_sample() < p_params['intervention_analysis_availability']
+
+        # TODO: Log consumables for both
+
+        if can_int_run:
+            int_will_run = True
+        else:
+            int_will_run = False
+
+
+        # if can_int_run and dx_test is None:
+        #     int_will_run = True
+        #
+        # elif can_int_run and dx_test is not None:
+        #     test = self.sim.modules['HealthSystem'].dx_manager.dx_tests[dx_test]
+        #
+        #     if ((test[0].target_categories is None and (df.at[individual_id, test[0].property])) or
+        #         ((test[0].target_categories is not None) and
+        #          (df.at[individual_id, test[0].property] in test[0].target_categories))):
+        #
+        #         int_will_run = True
+        #
+        # else:
+        #     int_will_run = False
+
+
+
+
+
+    assert int_will_run is not None
+    return int_will_run
+
+
+
+
+
+
+
+
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):
@@ -564,7 +640,7 @@ def update_mni_dictionary(self, individual_id):
         mni[individual_id] = self.sim.modules['PregnancySupervisor'].default_mni_values.copy()
 
     elif self == self.sim.modules['Labour']:
-    
+
         labour_default = self.sim.modules['PregnancySupervisor'].default_labour_values.copy()
         mni[individual_id].update(labour_default)
 

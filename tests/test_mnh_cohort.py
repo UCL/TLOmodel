@@ -31,7 +31,7 @@ def test_run_sim_with_mnh_cohort(tmpdir, seed):
                      log_config={"filename": "log", "custom_levels":{"*": logging.DEBUG},"directory": tmpdir})
 
     register_modules(sim)
-    sim.make_initial_population(n=1000)
+    sim.make_initial_population(n=5000)
     sim.simulate(end_date=Date(2026, 1, 2))
 
     output= parse_log_file(sim.log_filepath, level=logging.DEBUG)
