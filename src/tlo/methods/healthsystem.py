@@ -1549,13 +1549,13 @@ class HealthSystem(Module):
             hsi_event.initialise()
             clinic_eligibility = self.get_clinic_eligibility(hsi_event.TREATMENT_ID)
 
-            # Check all officers are available at the clinic that the HSI event is eligible for
+            # Check we recognise requested officers
             for officer in hsi_event.expected_time_requests:
                 if officer not in self._daily_capabilities[clinic_eligibility]:
                     logger.warning(
                         key="message",
-                        data=f"Requested officer {officer} does not exist"
-                             "at the designated facility_level at the time of scheduling"
+                        data=f"Unknown officer '{officer}' requested by "
+                             f"{hsi_event.__class__.__name__} at time of scheduling."
                     )
 
             self._add_hsi_event_queue_item_to_hsi_event_queue(
