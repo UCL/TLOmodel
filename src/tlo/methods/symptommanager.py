@@ -516,7 +516,7 @@ class SymptomManager(Module):
         ), "person_id must be a single integer for one particular person"
 
         # Faster to get current symptoms using tracker when no disease is specified
-        if (not self.always_refer_to_properties) and (disease_module is None) and (person_id is not None):
+        if not self.always_refer_to_properties and disease_module is None:
             return list(self._get_current_symptoms_from_tracker(person_id))
 
         # User requested symptoms for a particular disease module, so need to check the bitset handler
