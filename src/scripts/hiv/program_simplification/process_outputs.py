@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import ast
 from collections import Counter, defaultdict
+from ast import literal_eval
 
 import seaborn as sns
 
@@ -35,6 +36,7 @@ from scripts.costing.cost_estimation import (
     do_stacked_bar_plot_of_cost_by_category, do_line_plot_of_cost,
     create_summary_treemap_by_cost_subgroup, estimate_projected_health_spending
 )
+from scripts.costing.cost_estimation import load_unit_cost_assumptions
 
 
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
@@ -1841,35 +1843,211 @@ resourcefilepath = Path("./resources")
 # Period relevant for costing
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0],  relevant_period_for_costing[1] + 1))
-list_of_years_for_plot = list(range(2024, 2051))
-number_of_years_costed = relevant_period_for_costing[1] - 2024 + 1
+list_of_years_for_plot = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1]+1))
+number_of_years_costed = relevant_period_for_costing[1] - relevant_period_for_costing[0] + 1
+#
+# # Costing parameters
+# Scenarios
+# cost_scenarios = {0: "Actual", 1: "Perfect consumable availability"}
 
 # Costing parameters
-discount_rate = 0.03
-
-# todo costing scripts throwing errors
-# todo perhaps my logs files out of date compared with costing scripts
-# todo get consumables item codes + quantities and assign costs
-
-
-# Estimate standard input costs of scenario
-# -----------------------------------------------------------------------------------------------------------------------
-# Standard 3% discount rate
-input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-                                               _years=list_of_relevant_years_for_costing,
-                                               cost_only_used_staff=False,
-                                               _discount_rate=discount_rate,
-                                               summarize=True)
+discount_rate = 0
 
 
 
+# Extract consumables dispensed data
+def drop_outside_period(_df):
+    """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
+    return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
+
+def get_counts_of_items_requested(_df):
+    _df = drop_outside_period(_df).copy()
+
+    _df["year"] = pd.to_datetime(_df["date"]).dt.year
+    _df["Item_Used"] = _df["Item_Used"].apply(
+        lambda x: literal_eval(x) if isinstance(x, str) else x
+    )
+
+    # Turn dicts into list of (item, num) pairs and explode
+    used = (
+        _df[["year", "Item_Used"]]
+        .assign(item_num=_df["Item_Used"].map(dict.items))
+        .explode("item_num", ignore_index=True)
+    )
+
+    # Split tuple into columns
+    tmp = used["item_num"].apply(
+        lambda x: x if isinstance(x, tuple) else (pd.NA, 0)
+    )
+
+    used[["item", "value"]] = pd.DataFrame(tmp.tolist(), index=used.index)
+    used["value"] = pd.to_numeric(used["value"], errors="coerce").fillna(0)
+
+    # Aggregate
+    return (
+        used.groupby(["year", "item"], sort=False)["value"]
+        .sum()
+    )
+
+# Extract results using your existing pipeline
+cons_dispensed = extract_results(
+    results_folder,
+    module='tlo.methods.healthsystem.summary',
+    key='Consumables',
+    custom_generate_series=get_counts_of_items_requested,
+    do_scaling=True
+)
 
 
 
-# Undiscounted costs
-input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-                                               _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
-                                               _discount_rate=0, summarize=False)
+idx = pd.IndexSlice
+cons_dispensed = cons_dispensed.apply(pd.to_numeric, errors="coerce")
+cons_dispensed.to_excel(results_folder / f'cons_dispensed_{target_period()}.xlsx')
+
+
+# cons_dispensed_summary = compute_summary_statistics(
+#     cons_dispensed, central_measure = 'median').reset_index()
+
+# Add consumable name and unit cost
+cons_dict = \
+    pd.read_csv(resourcefilepath / 'healthsystem/consumables/ResourceFile_Consumables_Items_and_Packages.csv',
+                low_memory=False,
+                encoding="ISO-8859-1")[['Items', 'Item_Code']]
+
+cons_dict = dict(zip(cons_dict['Item_Code'], cons_dict['Items']))
+
+unit_costs = load_unit_cost_assumptions(resourcefilepath)
+
+cons_costs_by_item_code = unit_costs["consumables"]
+cons_costs_by_item_code = dict(zip(cons_costs_by_item_code['Item_Code'], cons_costs_by_item_code['Price_per_unit']))
+
+
+
+
+
+def apply_unit_costs(
+    cons_dispensed: pd.DataFrame,
+    cons_costs_by_item_code: dict,
+    *,
+    item_level: str = "item",
+    on_missing: str = "warn_nan",   # "warn_nan" | "zero" | "ignore"
+) -> pd.DataFrame:
+    """
+    Multiply dispensed quantities by unit costs matched on the `item` level of the index.
+
+    Missing costs will NOT raise an error.
+    """
+
+    # --- normalise cost dict keys to strings ---
+    costs = {str(k).strip(): v for k, v in cons_costs_by_item_code.items()}
+
+    # --- extract item codes from index ---
+    items = cons_dispensed.index.get_level_values(item_level).astype(str).str.strip()
+
+    # --- map unit costs ---
+    unit_cost = pd.Series(items.map(costs), index=cons_dispensed.index, name="unit_cost")
+
+    # --- handle missing costs ---
+    missing_mask = unit_cost.isna()
+    if missing_mask.any():
+        missing_items = sorted(pd.unique(items[missing_mask]).tolist())
+
+        if on_missing == "warn_nan":
+            print(f"WARNING: Missing unit costs for {len(missing_items)} item(s): {missing_items[:20]}")
+            # leave as NaN
+
+        elif on_missing == "zero":
+            print(f"WARNING: Missing unit costs set to 0 for items: {missing_items[:20]}")
+            unit_cost = unit_cost.fillna(0.0)
+
+        elif on_missing == "ignore":
+            pass
+
+    # --- multiply row-wise ---
+    cons_costed = cons_dispensed.mul(unit_cost, axis=0)
+
+    return cons_costed
+
+
+cons_costed = apply_unit_costs(
+    cons_dispensed,
+    cons_costs_by_item_code,
+    on_missing="warn_nan"
+)
+
+
+
+
+
+
+
+
+
+
+#
+# cons_dispensed[idx['item_name']] = cons_dispensed[idx['item']].map(cons_dict)
+# cons_dispensed[idx['unit_cost']] = cons_dispensed[idx['item']].map(cons_costs_by_item_code)
+
+
+
+
+
+# Calculate cost
+cols = cons_dispensed.columns
+stat_cols = [
+    c for c in cols
+    if isinstance(c[0], int) and c[1] in {"lower", "central", "upper"}
+]
+cons_cost_summary = cons_dispensed_summary.copy()
+cons_cost_summary.loc[:, stat_cols] = (
+    cons_cost_summary.loc[:, stat_cols]
+    .mul(cons_cost_summary[idx['unit_cost']], axis=0)
+)
+#cons_cost_summary = cons_cost_summary.groupby([idx['year'], idx['TREATMENT_ID']])[stat_cols].sum()
+# Get cost dataframes ready for merge
+cons_cost_summary = cons_cost_summary.rename(
+    columns={0: 'cons_cost_actual', 1: 'cons_cost_perfect'},
+    level=0
+)
+cons_dispensed_summary = cons_dispensed_summary.rename(
+    columns={0: 'cons_dispensed_actual', 1: 'cons_dispensed_perfect'},
+    level=0
+)
+cons_dispensed_summary = cons_dispensed_summary.drop([idx['item_name'], idx['unit_cost']], axis=1)
+cons_cost_summary = cons_cost_summary.merge(cons_dispensed_summary, on = [idx['year'], idx['TREATMENT_ID'], idx['item']],
+                                            how = 'left', validate = '1:1')
+cons_cost_summary.set_index([idx['year'], idx['TREATMENT_ID']], inplace = True)
+
+#cons_cost_summary.to_csv(figurespath / 'sample_output_v2.csv')
+
+
+
+
+
+
+
+
+
+
+#
+# # todo costing scripts throwing errors
+# # todo perhaps my logs files out of date compared with costing scripts
+# # todo get consumables item codes + quantities and assign costs
+#
+#
+# # Estimate standard input costs of scenario
+# # -----------------------------------------------------------------------------------------------------------------------
+# # Standard 3% discount rate
+# input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
+#                                                _years=list_of_relevant_years_for_costing,
+#                                                cost_only_used_staff=False,
+#                                                _discount_rate=discount_rate,
+#                                                summarize=True)
+#
+# # Undiscounted costs
+# input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
+#                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
+#                                                _discount_rate=0, summarize=False)
 
 
 
