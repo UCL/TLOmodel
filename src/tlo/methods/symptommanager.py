@@ -532,7 +532,7 @@ class SymptomManager(Module):
                 return [s for s in self.symptom_names if df.at[person_id, self.get_column_name_for_symptom(s)] > 0]
 
         assert (
-            disease_module in self.recognised_module_names
+            disease_module.name in self.recognised_module_names
             or disease_module.name == self.name
         ), f"Disease module {disease_module.name} is not recognised"
 
