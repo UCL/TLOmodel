@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, List
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
@@ -79,10 +80,9 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         "me_on_treatment": Property(Types.BOOL, "Currently on treatment for measles complications"),
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
 
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # Declare the symptoms that this module will use:
         self.symptoms = {
@@ -98,10 +98,10 @@ class Measles(Module, GenericFirstAppointmentsMixin):
 
         self.consumables = None  # (will store item_codes for consumables used in HSI)
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from file
         """
-        workbook = read_csv_files(self.resourcefilepath/'ResourceFile_Measles', files=None)
+        workbook = read_csv_files(resourcefilepath/'ResourceFile_Measles', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         self.parameters["symptom_prob"] = workbook["symptoms"]
@@ -238,7 +238,7 @@ class MeaslesEvent(RegularEvent, PopulationScopeEventMixin):
         # transmission probability follows a sinusoidal function with peak in May
         # value is per person per month
         trans_prob = p["beta_baseline"] * (1 + p["beta_scale"] *
-                                           math.cos((2 + math.pi * (month - p["phase_shift"])) / p["period"]))
+                                           math.cos((2 * math.pi * (month - p["phase_shift"])) / p["period"]))
 
         # get individual levels of protection due to vaccine
         protected_by_vaccine = pd.Series(1, index=df.index)  # all fully susceptible
@@ -337,7 +337,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         return date_of_symp_onset
 
     def get_prob_death(self, _age):
-        """Returns the probability of death for this person based on their age and whether they have untreated HIV."""
+        """Returns the probability of death for this person based on their age."""
         p = self.module.parameters
         return p["case_fatality_rate"].get(_age)
 

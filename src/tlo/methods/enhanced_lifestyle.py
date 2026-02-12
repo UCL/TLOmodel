@@ -3,7 +3,7 @@ Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -13,7 +13,7 @@ from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.logging.helpers import grouped_counts_with_all_combinations
-from tlo.util import get_person_id_to_inherit_from
+from tlo.util import get_person_id_to_inherit_from, read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -25,9 +25,8 @@ class Lifestyle(Module):
     by urban/rural, wealth, tobacco usage etc.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath: Path = resourcefilepath
 
         # a pointer to the linear models class
         self.models = None
@@ -341,11 +340,10 @@ class Lifestyle(Module):
         "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         p = self.parameters
-        dataframes = pd.read_excel(
-            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
-            sheet_name=["parameter_values", "urban_rural_by_district"],
+        dataframes = read_csv_files(resourcefilepath / 'ResourceFile_Lifestyle_Enhanced',
+            files=["parameter_values", "urban_rural_by_district"],
         )
         self.load_parameters_from_dataframe(dataframes["parameter_values"])
         p['init_p_urban'] = (
@@ -1981,3 +1979,47 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 key=_property,
                 data=flatten_multi_index_series_into_dict_for_logging(data)
             )
+
+        # ---------------------- log properties associated with WASH
+        under_5 = df.is_alive & (df.age_years < 5)
+        between_5_and_15 = df.is_alive & (df.age_years.between(5, 15))
+
+        # unimproved sanitation (True = no sanitation)
+        no_sanitation_ALL = no_sanitation_PSAC = no_sanitation_SAC = 0
+
+        # no access hand-washing
+        no_handwashing_ALL = no_handwashing_PSAC = no_handwashing_SAC = 0
+
+        # no clean drinking water
+        no_drinkingwater_ALL = no_drinkingwater_PSAC = no_drinkingwater_SAC = 0
+
+        if sum(df.is_alive):
+            no_sanitation_ALL = sum(df.li_unimproved_sanitation & df.is_alive) / sum(df.is_alive)
+            no_handwashing_ALL = sum(df.li_no_access_handwashing & df.is_alive) / sum(df.is_alive)
+            no_drinkingwater_ALL = sum(df.li_no_clean_drinking_water & df.is_alive) / sum(df.is_alive)
+
+        if sum(under_5):
+            no_sanitation_PSAC = sum(df.li_unimproved_sanitation & under_5) / sum(under_5)
+            no_handwashing_PSAC = sum(df.li_no_access_handwashing & under_5) / sum(under_5)
+            no_drinkingwater_PSAC = sum(df.li_no_clean_drinking_water & under_5) / sum(under_5)
+
+        if sum(between_5_and_15):
+            no_sanitation_SAC = sum(df.li_unimproved_sanitation & between_5_and_15) / sum(between_5_and_15)
+            no_handwashing_SAC = sum(df.li_no_access_handwashing & between_5_and_15) / sum(between_5_and_15)
+            no_drinkingwater_SAC = sum(df.li_no_clean_drinking_water & between_5_and_15) / sum(between_5_and_15)
+
+        logger.info(
+            key="summary_WASH_properties",
+            description="Summary of current status of WASH properties",
+            data={
+                "no_sanitation_PSAC": no_sanitation_PSAC,
+                "no_sanitation_SAC": no_sanitation_SAC,
+                "no_sanitation_ALL": no_sanitation_ALL,
+                "no_handwashing_PSAC": no_handwashing_PSAC,
+                "no_handwashing_SAC": no_handwashing_SAC,
+                "no_handwashing_ALL": no_handwashing_ALL,
+                "no_drinkingwater_PSAC": no_drinkingwater_PSAC,
+                "no_drinkingwater_SAC": no_drinkingwater_SAC,
+                "no_drinkingwater_ALL": no_drinkingwater_ALL,
+            },
+        )
