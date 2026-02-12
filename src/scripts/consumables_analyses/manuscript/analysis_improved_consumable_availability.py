@@ -385,6 +385,125 @@ def plot_stacked_mean_with_total_ci(
     fig.tight_layout()
     return fig, ax
 
+
+def plot_percentage_change_with_ci(
+    summary_df,
+    colors: dict,
+    scenario_labels: dict | None = None,
+    ylabel: str = "Percentage change relative to baseline",
+    xlabel: str = "Scenario",
+    title: str | None = None,
+    figsize=(12, 6),
+    xticklabels_wrapped: bool = False,
+    wrap_width: int = 20,
+    markers: list | None = None,
+):
+    """
+    Dot + 95% CI plot for percentage change outcomes (non-additive).
+
+    Parameters
+    ----------
+    summary_df : pd.DataFrame
+        Index: disease_group
+        Columns: MultiIndex (draw, stat) where stat ∈ {'mean','lower','upper'}
+
+    colors : dict
+        Mapping {disease_group: color}
+
+    scenario_labels : dict, optional
+        Mapping {draw: label}
+
+    markers : list, optional
+        Custom marker list per disease group
+    """
+
+    # ---- Extract statistics ----
+    mean_df = summary_df.xs("mean", level="stat", axis=1)
+    lower_df = summary_df.xs("lower", level="stat", axis=1)
+    upper_df = summary_df.xs("upper", level="stat", axis=1)
+
+    draws = mean_df.columns
+    x = np.arange(len(draws))
+
+    disease_groups = mean_df.index.tolist()
+
+    # Default markers if not provided
+    if markers is None:
+        markers = ["o", "s", "D", "^", "P", "X", "v", "*", "<", ">"]
+    marker_map = {
+        dg: markers[i % len(markers)]
+        for i, dg in enumerate(disease_groups)
+    }
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Slight horizontal jitter to prevent overlap
+    jitter_strength = 0.08
+    offsets = np.linspace(
+        -jitter_strength, jitter_strength, len(disease_groups)
+    )
+
+    # ---- Plot each disease group ----
+    for i, group in enumerate(disease_groups):
+
+        y = mean_df.loc[group].values
+        yerr = np.vstack([
+            y - lower_df.loc[group].values,
+            upper_df.loc[group].values - y
+        ])
+
+        ax.errorbar(
+            x + offsets[i],
+            y,
+            yerr=yerr,
+            fmt=marker_map[group],
+            color=colors.get(group, "black"),
+            markersize=6,
+            capsize=3,
+            linestyle="none",
+            alpha=0.85,
+            label=group
+        )
+
+    # Reference line at zero
+    ax.axhline(0, color="black", linestyle="--", linewidth=1)
+
+    # ---- X tick labels ----
+    if scenario_labels:
+        labels = [scenario_labels.get(d, d) for d in draws]
+    else:
+        labels = list(draws)
+
+    if xticklabels_wrapped:
+        labels = [
+            "\n".join(textwrap.wrap(str(l), wrap_width))
+            for l in labels
+        ]
+        ha = "center"
+    else:
+        ha = "right"
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=90, ha=ha)
+
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+
+    if title:
+        ax.set_title(title, pad=12)
+
+    ax.grid(axis="y", alpha=0.3)
+
+    ax.legend(
+        title="Disease group",
+        bbox_to_anchor=(1.02, 1),
+        loc="upper left",
+        frameon=False
+    )
+
+    fig.tight_layout()
+    return fig, ax
+
 # Plot DALYs averted - Total
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
@@ -587,7 +706,7 @@ num_dalys_averted_by_group =  (-1.0 *
                          find_difference_relative_to_comparison(
                              num_dalys_by_group,
                              comparison=0,
-                             scaled=False,
+                             scaled=True,
                              drop_comparison=True)  # sets the comparator to 0 which is the Actual scenario
                      ))
 
@@ -628,11 +747,11 @@ disease_colors = {
     "Other": "#999999",
 }
 
-fig, ax = plot_stacked_mean_with_total_ci(
+fig, ax = plot_percentage_change_with_ci(
     summary_df=num_dalys_averted_by_group_summarized,
     colors=disease_colors,
     scenario_labels=cons_scenarios_main,
-    ylabel="DALYs averted",
+    ylabel="DALYs averted \n (% relative to Baseline)",
     title="",
     xticklabels_wrapped=True,
 )
@@ -670,7 +789,8 @@ num_incremental_treatments = (
                      pd.DataFrame(
                          find_difference_relative_to_comparison(
                              num_treatments_total,
-                             comparison=0)  # sets the comparator to 0 which is the Actual scenario
+                             comparison=0,
+                             scaled = True)  # sets the comparator to 0 which is the Actual scenario
                      ).T.unstack(level='run'))
 num_incremental_treatments.columns = num_incremental_treatments.columns.droplevel(0)
 
@@ -681,10 +801,11 @@ num_incremental_treatments_summarized = num_incremental_treatments_summarized[
 num_incremental_treatments_summarized = num_incremental_treatments_summarized[
     num_incremental_treatments_summarized.index.get_level_values('draw').isin(list(cons_scenarios.keys()))]
 name_of_plot = f'Incremental services delivered compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+yaxis_scaling_factor = 1/100
 fig, ax = do_standard_bar_plot_with_ci(
-    (num_incremental_treatments_summarized / 1e6).clip(0.0),
+    (num_incremental_treatments_summarized / yaxis_scaling_factor).clip(0.0),
     annotations=[
-        f"{row[chosen_metric] / 1e6:.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
+        f"{row[chosen_metric] / yaxis_scaling_factor:.2f} ({row['lower'] / yaxis_scaling_factor :.2f}- {row['upper'] / yaxis_scaling_factor:.2f})"
         for _, row in num_incremental_treatments_summarized.iterrows()
     ],
     xticklabels_wrapped=True,
@@ -693,7 +814,7 @@ fig, ax = do_standard_bar_plot_with_ci(
     scenarios_dict=cons_scenarios_main
 )
 #ax.set_title(name_of_plot)
-ax.set_ylabel('Incremental services selivered \n(Millions)')
+ax.set_ylabel('Additional services delivered \n(% relative to Baseline)')
 ax.set_ylim(bottom=0)
 fig.savefig(figurespath / 'incremental_services_delivered_total.png', dpi=600)
 plt.close(fig)
@@ -717,11 +838,6 @@ num_treatments_by_disease_group = extract_results(
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
-num_incremental_treatments_by_disease_group  = pd.DataFrame(
-                         find_difference_relative_to_comparison(
-                             num_treatments_by_disease_group,
-                             comparison=0)  # sets the comparator to 0 which is the Actual scenario
-                     )
 
 # Recategorize above TREATMENT_IDs into disease groups (as used to classify DALYs averted)
 service_to_group = {
@@ -765,17 +881,25 @@ service_to_group = {
 }
 
 # Map services to DALY groups
-num_incremental_treatments_by_disease_group['disease_group'] = (
-    num_incremental_treatments_by_disease_group.index.map(service_to_group))
+num_treatments_by_disease_group['disease_group'] = (
+    num_treatments_by_disease_group.index.map(service_to_group))
 
 # Check if any services are unmapped
-assert (num_incremental_treatments_by_disease_group['disease_group'].isna().sum() == 0)
+assert (num_treatments_by_disease_group['disease_group'].isna().sum() == 0)
 
 # Aggregate
-num_incremental_treatments_by_disease_group = (num_incremental_treatments_by_disease_group
+num_treatments_by_disease_group = (num_treatments_by_disease_group
                            .set_index("disease_group", append=True)
                            .groupby(level="disease_group")
                            .sum())
+
+
+num_incremental_treatments_by_disease_group  = pd.DataFrame(
+                         find_difference_relative_to_comparison(
+                             num_treatments_by_disease_group,
+                             comparison=0,
+                             scaled = True)  # sets the comparator to 0 which is the Actual scenario
+                     )
 
 num_incremental_treatments_by_disease_group_long = (
     num_incremental_treatments_by_disease_group
@@ -803,11 +927,11 @@ num_incremental_treatments_by_disease_group_summarized  = (
 )
 
 
-fig, ax = plot_stacked_mean_with_total_ci(
+fig, ax = plot_percentage_change_with_ci(
     summary_df=num_incremental_treatments_by_disease_group_summarized,
     colors=disease_colors,
     scenario_labels=cons_scenarios_main,
-    ylabel="Incremental services delivered",
+    ylabel="Additional services delivered \n (% relative to Baseline)",
     title="",
     xticklabels_wrapped=True,
 )
