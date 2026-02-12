@@ -504,63 +504,58 @@ class SymptomManager(Module):
         :param disease_module: (optional) disease module of interest.
         :return: list of strings for the symptoms that are currently being experienced.
         """
-        assert (
-            (person_id is not None) or (individual_details is not None)
-        ), "Must provide either person_id or individual_details"
+        assert (person_id is None) != (individual_details is None), "Provide either person_id or individual_details"
 
-        if individual_details is not None:
+        disease_specified = disease_module is not None
+        use_individual_details = individual_details is not None
+        use_tracker = not self.always_refer_to_properties
+
+        if use_individual_details:
             person_id = individual_details['person_id']
 
-        assert isinstance(
-            person_id, (int, np.integer)
-        ), "person_id must be a single integer for one particular person"
+        assert isinstance(person_id, (int, np.integer)), "person_id must be a integer of single person"
 
-        # Faster to get current symptoms using tracker when no disease is specified
-        if not self.always_refer_to_properties and disease_module is None:
+        # Faster to get symptoms using tracker if we can
+        if use_tracker and not disease_specified:
             return list(self._get_current_symptoms_from_tracker(person_id))
 
-        # If user requested symptoms for a particular disease module, check the bitset handler
-        if disease_module is not None:
-            assert (
-                disease_module.name in ([self.name] + self.recognised_module_names)
-            ), f"Disease module {disease_module.name} is not recognised"
+        df = self.sim.population.props
 
-        if individual_details is not None:
-            # We are working in an IndividualDetails context, avoid lookups to the
-            # population DataFrame as we have this context stored already.
-            assert individual_details["is_alive"], "The person is not alive"
-
-            if disease_module is not None:
-                int_repr = self.bsh._element_to_int_map[disease_module.name]
-                return [
-                    symptom
-                    for symptom in self.symptom_names
-                    if individual_details[
-                           self.bsh._get_columns(self.get_column_name_for_symptom(symptom))
-                       ]
-                       & int_repr
-                       != 0
-                ]
-            else:
+        if not disease_specified:
+            if use_individual_details:
                 return [
                     symptom
                     for symptom in self.symptom_names
                     if individual_details[self.get_column_name_for_symptom(symptom)] > 0
                 ]
-        else:
-            df = self.sim.population.props
-            assert df.at[person_id, "is_alive"], "The person is not alive"
-
-            if disease_module is not None:
-                sy_columns = [
-                    self.get_column_name_for_symptom(s) for s in self.symptom_names
-                ]
-                person_has = self.bsh.has(
-                    [person_id], disease_module.name, first=True, columns=sy_columns
-                )
-                return [s for s in self.symptom_names if person_has[self.get_column_name_for_symptom(s)]]
             else:
                 return [s for s in self.symptom_names if df.at[person_id, self.get_column_name_for_symptom(s)] > 0]
+
+        assert (
+            disease_module in self.recognised_module_names
+            or disease_module.name == self.name
+        ), f"Disease module {disease_module.name} is not recognised"
+
+        if use_individual_details:
+            int_repr = self.bsh._element_to_int_map[disease_module.name]
+            return [
+                symptom
+                for symptom in self.symptom_names
+                if individual_details[
+                       self.bsh._get_columns(self.get_column_name_for_symptom(symptom))
+                   ]
+                   & int_repr
+                   != 0
+            ]
+        else:
+            sy_columns = [
+                self.get_column_name_for_symptom(s) for s in self.symptom_names
+            ]
+            person_has = self.bsh.has(
+                [person_id], disease_module.name, first=True, columns=sy_columns
+            )
+            return [s for s in self.symptom_names if person_has[self.get_column_name_for_symptom(s)]]
+
 
     def have_what(self, person_ids: Sequence[int]):
         """Find the set of symptoms for a list of person_ids.
