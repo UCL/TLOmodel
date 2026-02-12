@@ -117,24 +117,40 @@ cons_scenarios_main = {
 }
 
 # Function to get incremental values
-def find_difference_relative_to_comparison(_ser: pd.Series,
-                                           comparison: str,
-                                           scaled: bool = False,
-                                           drop_comparison: bool = True,
-                                           ):
-    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
-    within the runs (level 1), relative to where draw = `comparison`.
-    The comparison is `X - COMPARISON`."""
-    return _ser \
-        .unstack(level=0) \
-        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
-        .drop(columns=([comparison] if drop_comparison else [])) \
-        .stack()
+def find_difference_relative_to_comparison(
+    df: pd.DataFrame,
+    comparison: str,
+    scaled: bool = False,
+    drop_comparison: bool = True,
+):
+    """
+    Compute difference relative to a comparison draw
+    for a DataFrame with MultiIndex columns (draw, run).
+    """
+
+    # Ensure draw is first level
+    if df.columns.names[0] != "draw":
+        df = df.swaplevel(0, 1, axis=1).sort_index(axis=1)
+
+    # Extract comparison values
+    comp_df = df.xs(comparison, level="draw", axis=1)
+
+    # Broadcast subtraction across draws
+    if scaled:
+        result = (df - comp_df) / comp_df
+    else:
+        result = df - comp_df
+
+    if drop_comparison:
+        result = result.drop(columns=comparison, level="draw")
+
+    return result
+
 
 # Define a function to create bar plots
 def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations=None,
-                                 xticklabels_horizontal_and_wrapped=False,
-                                 put_labels_in_legend=True,
+                                 xticklabels_wrapped=False,
+                                 put_labels_in_legend=True, scenarios_dict = None,
                                  offset=1e6):
     """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
      extent of the error bar."""
@@ -193,7 +209,7 @@ def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations
         # Update xticks label with substitute labels
         # Insert legend with updated labels that shows correspondence between substitute label and original label
         # Use all_manuscript_scenarios for the legend
-        xtick_legend = [f'{letter}: {cons_scenarios.get(label, label)}' for letter, label in
+        xtick_legend = [f'{letter}: {scenarios_dict.get(label, label)}' for letter, label in
                         zip(substitute_labels, xticks.values())]
         xtick_values = [letter for letter, label in zip(substitute_labels, xticks.values())]
 
@@ -201,12 +217,17 @@ def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations
         ax.legend(h, xtick_legend, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
         ax.set_xticklabels(xtick_values)
     else:
-        if not xticklabels_horizontal_and_wrapped:
-            # xticklabels will be vertical and not wrapped
-            ax.set_xticklabels(list(xticks.values()), rotation=90)
+        # Use scenarios_dict if provided, otherwise fall back to original labels
+        if scenarios_dict is not None:
+            labels = [scenarios_dict.get(label, label) for label in xticks.values()]
         else:
-            wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
-            ax.set_xticklabels(wrapped_labs)
+            labels = list(xticks.values())
+
+        if not xticklabels_wrapped:
+            ax.set_xticklabels(labels, rotation=90)
+        else:
+            wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in labels]
+            ax.set_xticklabels(wrapped_labs, rotation=90)
 
     # Extend ylim to accommodate data labels
     ymin, ymax = ax.get_ylim()
@@ -218,7 +239,13 @@ def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations
     ax.spines['right'].set_visible(False)
     # fig.tight_layout()
     fig.tight_layout(pad=2.0)
-    plt.subplots_adjust(left=0.15, right=0.5, top=0.88)
+
+    if put_labels_in_legend:
+        # Leave space on right for legend
+        plt.subplots_adjust(left=0.15, right=0.5, top=0.88)
+    else:
+        # Use full width of figure
+        plt.subplots_adjust(left=0.15, right=0.95, top=0.88)
 
     return fig, ax
 
@@ -231,6 +258,8 @@ def plot_stacked_mean_with_total_ci(
     title: str | None = None,
     figsize=(12, 6),
     legend_outside: bool = True,
+    xticklabels_wrapped: bool = False,
+    wrap_width: int = 20,
 ):
     """
     Plot stacked bars using mean values by disease group, with a confidence
@@ -324,16 +353,24 @@ def plot_stacked_mean_with_total_ci(
     if title:
         ax.set_title(title, pad=10)
 
+    # ---- X tick labels ----
+    rotation = 90
     if scenario_labels:
-        ax.set_xticks(x)
-        ax.set_xticklabels(
-            [scenario_labels.get(d, d) for d in draws],
-            rotation=45,
-            ha="right"
-        )
+        labels = [scenario_labels.get(d, d) for d in draws]
     else:
-        ax.set_xticks(x)
-        ax.set_xticklabels(draws, rotation=45)
+        labels = list(draws)
+
+    if xticklabels_wrapped:
+        labels = [
+            "\n".join(textwrap.wrap(str(l), wrap_width))
+            for l in labels
+        ]
+        ha = "center"
+    else:
+        ha = "right"
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=rotation, ha=ha)
 
     if legend_outside:
         ax.legend(
@@ -348,7 +385,7 @@ def plot_stacked_mean_with_total_ci(
     fig.tight_layout()
     return fig, ax
 
-#
+# Plot DALYs averted - Total
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
     Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
@@ -375,13 +412,13 @@ num_dalys = extract_results(
         do_scaling=True
     )
 
-# Get absolute DALYs averted
-num_dalys_averted = (-1.0 *
+num_dalys_averted = ((-1.0 *
                      pd.DataFrame(
                          find_difference_relative_to_comparison(
-                             num_dalys.loc[0],
+                             num_dalys,
                              comparison=0)  # sets the comparator to 0 which is the Actual scenario
-                     ).T.iloc[0].unstack(level='run'))
+                     ).T.unstack(level='run')))
+num_dalys_averted.columns = num_dalys_averted.columns.droplevel(0)
 
 # Plot DALYs
 num_dalys_averted_summarized = summarize_cost_data(num_dalys_averted, _metric=chosen_metric)
@@ -390,21 +427,23 @@ num_dalys_averted_subset_for_figure = num_dalys_averted_summarized[
     num_dalys_averted_summarized.index.get_level_values('draw').isin(list(cons_scenarios.keys()))]
 name_of_plot = f'Incremental DALYs averted compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_standard_bar_plot_with_ci(
-    (num_dalys_averted_subset_for_figure / 1e6),
+    (num_dalys_averted_subset_for_figure / 1e6).clip(0.0),
     annotations=[
         f"{row[chosen_metric] / 1e6:.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
         for _, row in num_dalys_averted_subset_for_figure.iterrows()
     ],
-    xticklabels_horizontal_and_wrapped=False,
-    put_labels_in_legend=True,
+    xticklabels_wrapped=True,
+    put_labels_in_legend=False,
     offset=0.05,
+    scenarios_dict=cons_scenarios_main
 )
 #ax.set_title(name_of_plot)
 ax.set_ylabel('DALYs \n(Millions)')
 ax.set_ylim(bottom=0)
-fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+fig.savefig(figurespath / 'dalys_averted_total.png', dpi=600)
 plt.close(fig)
 
+# Plot DALYs averted by disease group
 def get_num_dalys_by_disease(_df):
     """
     Return discounted total DALYs by disease over the TARGET_PERIOD.
@@ -499,6 +538,7 @@ disease_groups = {
         "Transport Injuries",
     ],
 }
+
 def aggregate_by_disease_group(df: pd.DataFrame,
                                disease_groups: dict) -> pd.DataFrame:
     """
@@ -540,36 +580,43 @@ num_dalys_by_group = aggregate_by_disease_group(
 )
 
 # Get absolute DALYs averted
-num_dalys_averted_by_group = {}
+num_dalys_by_group.columns.names = ["draw", "run"]
 
-for disease in num_dalys_by_group.index:
-    # Extract ONE disease → Series with index (draw, run)
-    ser = num_dalys_by_group.loc[disease]
+num_dalys_averted_by_group =  (-1.0 *
+                     pd.DataFrame(
+                         find_difference_relative_to_comparison(
+                             num_dalys_by_group,
+                             comparison=0,
+                             scaled=False,
+                             drop_comparison=True)  # sets the comparator to 0 which is the Actual scenario
+                     ))
 
-    # Name index levels correctly (optional but good hygiene)
-    ser.index.names = ["draw", "run"]
-
-    # Apply the existing function
-    num_dalys_averted_by_group[disease] = find_difference_relative_to_comparison(
-        ser,
-        comparison=0,
-        scaled=False,
-        drop_comparison=True
-    )
-
-num_dalys_averted_by_group = pd.concat(
-    num_dalys_averted_by_group,
-    names=["disease_group"]
+num_dalys_averted_by_group_long = (
+    num_dalys_averted_by_group
+        .stack(level=["draw", "run"])
 )
 
-# Plot DALYs
-num_dalys_averted_by_group_summarized = summarize(num_dalys_averted_by_group.unstack().unstack())
+num_dalys_averted_by_group_long.index.names = ["disease_group", "draw", "run"]
+
+summaries = {}
+
+for group in num_dalys_averted_by_group_long.index.get_level_values("disease_group").unique():
+    ser = num_dalys_averted_by_group_long.xs(group, level="disease_group")
+    df_wide = ser.unstack("run")
+    summaries[group] = summarize_cost_data(df_wide)
+
+num_dalys_averted_by_group_summarized = pd.concat(summaries, names=["disease_group"])
+
+num_dalys_averted_by_group_summarized = num_dalys_averted_by_group_summarized.unstack()
+num_dalys_averted_by_group_summarized.columns = num_dalys_averted_by_group_summarized.columns.swaplevel("stat", "draw")
 num_dalys_averted_by_group_summarized  = (
     num_dalys_averted_by_group_summarized
     .loc[:, num_dalys_averted_by_group_summarized.columns
           .get_level_values("draw")
           .isin(main_analysis_subset)]
 )
+
+# Plot DALYs averted by disease group
 disease_colors = {
     "HIV/AIDS": "#e41a1c",
     "Malaria": "#377eb8",
@@ -586,7 +633,184 @@ fig, ax = plot_stacked_mean_with_total_ci(
     colors=disease_colors,
     scenario_labels=cons_scenarios_main,
     ylabel="DALYs averted",
-    title=""
+    title="",
+    xticklabels_wrapped=True,
 )
 fig.savefig(figurespath / "dalys_averted_by_disease_group.png",
             dpi=300, bbox_inches="tight")
+
+# TODO  add figures for service count (Count of successful HSIs)
+# TODO  add figures for Maximum ability to pay
+
+def set_param_names_as_column_index_level_0(_df):
+    """Set the columns index (level 0) as the param_names."""
+    ordered_param_names_no_prefix = {i: x for i, x in enumerate(cons_scenarios)}
+    names_of_cols_level0 = [ordered_param_names_no_prefix.get(col) for col in _df.columns.levels[0]]
+    assert len(names_of_cols_level0) == len(_df.columns.levels[0])
+    _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
+    return _df
+
+# Plot number of services delivered total
+def get_num_treatments_total(_df):
+    """Return the number of treatments in total of all treatments (total within the TARGET_PERIOD)"""
+    _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
+    _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
+    _df = _df.groupby(level=0).sum().sum()
+    return pd.Series(_df)
+
+num_treatments_total = extract_results(
+    results_folder,
+    module='tlo.methods.healthsystem.summary',
+    key='HSI_Event_non_blank_appt_footprint',
+    custom_generate_series=get_num_treatments_total,
+    do_scaling=True
+).pipe(set_param_names_as_column_index_level_0)
+
+num_incremental_treatments = (
+                     pd.DataFrame(
+                         find_difference_relative_to_comparison(
+                             num_treatments_total,
+                             comparison=0)  # sets the comparator to 0 which is the Actual scenario
+                     ).T.unstack(level='run'))
+num_incremental_treatments.columns = num_incremental_treatments.columns.droplevel(0)
+
+# Plot DALYs
+num_incremental_treatments_summarized = summarize_cost_data(num_incremental_treatments, _metric=chosen_metric)
+num_incremental_treatments_summarized = num_incremental_treatments_summarized[
+    num_incremental_treatments_summarized.index.isin(main_analysis_subset)]
+num_incremental_treatments_summarized = num_incremental_treatments_summarized[
+    num_incremental_treatments_summarized.index.get_level_values('draw').isin(list(cons_scenarios.keys()))]
+name_of_plot = f'Incremental services delivered compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_standard_bar_plot_with_ci(
+    (num_incremental_treatments_summarized / 1e6).clip(0.0),
+    annotations=[
+        f"{row[chosen_metric] / 1e6:.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
+        for _, row in num_incremental_treatments_summarized.iterrows()
+    ],
+    xticklabels_wrapped=True,
+    put_labels_in_legend=False,
+    offset=0.05,
+    scenarios_dict=cons_scenarios_main
+)
+#ax.set_title(name_of_plot)
+ax.set_ylabel('Incremental services selivered \n(Millions)')
+ax.set_ylim(bottom=0)
+fig.savefig(figurespath / 'incremental_services_delivered_total.png', dpi=600)
+plt.close(fig)
+
+
+# Plot number of services delivered by disease group
+def get_num_treatments_by_disease_group(_df):
+    """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
+    _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
+    _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
+    _df = _df.rename(index=disease_groups)
+    _df = _df.groupby(level=0).sum()
+    return _df
+
+
+num_treatments_by_disease_group = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event_non_blank_appt_footprint',
+        custom_generate_series=get_num_treatments_by_disease_group,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+num_incremental_treatments_by_disease_group  = pd.DataFrame(
+                         find_difference_relative_to_comparison(
+                             num_treatments_by_disease_group,
+                             comparison=0)  # sets the comparator to 0 which is the Actual scenario
+                     )
+
+# Recategorize above TREATMENT_IDs into disease groups (as used to classify DALYs averted)
+service_to_group = {
+    # --- HIV / TB / Malaria ---
+    "Hiv*": "HIV/AIDS",
+    "Tb*": "HIV/AIDS",  # TB grouped with HIV/AIDS in DALYs
+    "Malaria*": "Malaria",
+
+    # --- RMNCH ---
+    "AntenatalCare*": "RMNCH",
+    "DeliveryCare*": "RMNCH",
+    "PostnatalCare*": "RMNCH",
+    "Contraception*": "RMNCH",
+    "Diarrhoea*": "RMNCH",
+    "Undernutrition*": "RMNCH",
+    "Alri*": "RMNCH",
+    "Measles*": "RMNCH",
+    "Epi*": "RMNCH",
+
+    # --- Cardiometabolic ---
+    "CardioMetabolicDisorders*": "Cardiometabolic",
+
+    # --- Cancer ---
+    "BladderCancer*": "Cancer",
+    "BreastCancer*": "Cancer",
+    "CervicalCancer*": "Cancer",
+    "OesophagealCancer*": "Cancer",
+    "ProstateCancer*": "Cancer",
+    "OtherAdultCancer*": "Cancer",
+
+    # --- Mental & Neurological ---
+    "Depression*": "Mental & Neurological",
+    "Epilepsy*": "Mental & Neurological",
+
+    # --- Other ---
+    "Copd*": "Other",
+    "Inpatient*": "Other",
+
+    # --- Injuries ---
+    "Rti*": "Injuries",
+}
+
+# Map services to DALY groups
+num_incremental_treatments_by_disease_group['disease_group'] = (
+    num_incremental_treatments_by_disease_group.index.map(service_to_group))
+
+# Check if any services are unmapped
+assert (num_incremental_treatments_by_disease_group['disease_group'].isna().sum() == 0)
+
+# Aggregate
+num_incremental_treatments_by_disease_group = (num_incremental_treatments_by_disease_group
+                           .set_index("disease_group", append=True)
+                           .groupby(level="disease_group")
+                           .sum())
+
+num_incremental_treatments_by_disease_group_long = (
+    num_incremental_treatments_by_disease_group
+        .stack(level=["draw", "run"])
+)
+
+num_incremental_treatments_by_disease_group_long.index.names = ["disease_group", "draw", "run"]
+
+summaries = {}
+
+for group in num_incremental_treatments_by_disease_group_long.index.get_level_values("disease_group").unique():
+    ser = num_incremental_treatments_by_disease_group_long.xs(group, level="disease_group")
+    df_wide = ser.unstack("run")
+    summaries[group] = summarize_cost_data(df_wide)
+
+num_incremental_treatments_by_disease_group_summarized = pd.concat(summaries, names=["disease_group"])
+
+num_incremental_treatments_by_disease_group_summarized = num_incremental_treatments_by_disease_group_summarized.unstack()
+num_incremental_treatments_by_disease_group_summarized.columns = num_incremental_treatments_by_disease_group_summarized.columns.swaplevel("stat", "draw")
+num_incremental_treatments_by_disease_group_summarized  = (
+    num_incremental_treatments_by_disease_group_summarized
+    .loc[:, num_incremental_treatments_by_disease_group_summarized.columns
+          .get_level_values("draw")
+          .isin(main_analysis_subset)]
+)
+
+
+fig, ax = plot_stacked_mean_with_total_ci(
+    summary_df=num_incremental_treatments_by_disease_group_summarized,
+    colors=disease_colors,
+    scenario_labels=cons_scenarios_main,
+    ylabel="Incremental services delivered",
+    title="",
+    xticklabels_wrapped=True,
+)
+fig.savefig(figurespath / "incremental_services_delivered_by_disease_group.png",
+            dpi=300, bbox_inches="tight")
+
