@@ -46,29 +46,29 @@ cyclone_freddy_months_thumbwe = range((2023 - min_year_for_analysis) * 12 + 3, (
 # # data is from 2011 - 2024 - for facility
 if ANC:
     monthly_reporting_by_facility = pd.read_csv(
-        "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv", index_col=0)
+        "/Users/rem76/Desktop/Climate_Change_Health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv", index_col=0)
 elif Inpatient:
     monthly_reporting_by_facility = pd.read_csv(
-        "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_Inpatient_by_smaller_facility_lm.csv",
+        "/Users/rem76/Desktop/Climate_Change_Health/Data/monthly_reporting_Inpatient_by_smaller_facility_lm.csv",
         index_col=0)
 
 ### Try combine weather variables ##
 if use_all_weather:
     if ANC:
         weather_data_monthly_original = pd.read_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
+            "/Users/rem76/Desktop/Climate_Change_Health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
             index_col=0)
 
         weather_data_five_day_cumulative_original = pd.read_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv",
+            "/Users/rem76/Desktop/Climate_Change_Health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv",
             index_col=0)
     if Inpatient:
         weather_data_monthly_original = pd.read_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm.csv",
+            "/Users/rem76/Desktop/Climate_Change_Health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm.csv",
             index_col=0)
 
         weather_data_five_day_cumulative_original = pd.read_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facility_five_day_cumulative_inpatient.csv",
+            "/Users/rem76/Desktop/Climate_Change_Health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facility_five_day_cumulative_inpatient.csv",
             index_col=0)
 ##############################################################################################
 ########################## STEP 0: Tidy data ##########################
@@ -188,11 +188,11 @@ above_below_X = lag_12_month > percentile_90
 # Prepare additional facility info
 if ANC:
     expanded_facility_info = pd.read_csv(
-        "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv",
+        "/Users/rem76/Desktop/Climate_Change_Health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv",
         index_col=0)
 elif Inpatient:
     expanded_facility_info = pd.read_csv(
-        "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days.csv",
+        "/Users/rem76/Desktop/Climate_Change_Health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days.csv",
         index_col=0)
 
 expanded_facility_info = expanded_facility_info.drop(columns=zero_sum_columns)
@@ -273,7 +273,7 @@ X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 #
 # # Compute the correlation matrix
 # correlation_matrix = df_combined.corr()
-# correlation_matrix.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/correlation_matrix_of_predictors.csv')
+# correlation_matrix.to_csv('/Users/rem76/Desktop/Climate_Change_Health/Data/correlation_matrix_of_predictors.csv')
 
 # Display the correlation matrix
 
@@ -308,7 +308,7 @@ rescaled_coefficients_df_reset = rescaled_coefficients_df.reset_index(drop=True)
 
 # Include confidence intervals in results
 results_df = pd.concat([coefficient_names, coefficients_df, conf_int_df, p_values_df], axis=1)
-results_df.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_{service}.csv')
+results_df.to_csv(f'/Users/rem76/Desktop/Climate_Change_Health/Data/results_of_model_historical_{service}.csv')
 y_weather = np.exp(y_pred)
 
 print("ANC prediction", results.summary())
@@ -451,7 +451,7 @@ results_weather_df = pd.concat([coefficient_names_weather.rename('coefficient_na
                                 conf_int_weather_df,
                                 p_values_weather_df, ], axis=1)
 results_weather_df.to_csv(
-    f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_weather_model_historical_{service}.csv')
+    f'/Users/rem76/Desktop/Climate_Change_Health/Data/results_of_weather_model_historical_{service}.csv')
 print("All predictors", results_of_weather_model.summary())
 #
 X_filtered = X_weather_standardized[mask_all_data]
@@ -537,7 +537,7 @@ ax.legend(loc='upper left')
 
 plt.tight_layout()
 plt.savefig(
-    f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/{service}_disruptions_difference_historical_models.png')
+    f'/Users/rem76/Desktop/Climate_Change_Health/Results/{service}_disruptions/{service}_disruptions_difference_historical_models.png')
 # plt.show()
 
 ## save historical predictions
@@ -561,7 +561,7 @@ full_data_weather_predictions_historical = pd.DataFrame({
     'Difference_in_Expectation': np.exp(matched_y_pred_weather) - np.exp(matched_y_pred),
 })
 full_data_weather_predictions_historical.to_csv(
-    f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
+    f'/Users/rem76/Desktop/Climate_Change_Health/Data/results_of_model_historical_predictions_{service}.csv')
 
 ############## LR #########################################
 
@@ -601,19 +601,18 @@ def get_weather_data(ssp_scenario, model_type):
     weather_data_prediction_monthly_original = weather_data_prediction_monthly_original.drop(
         weather_data_prediction_monthly_original.columns[0], axis=1
     )  # first column are date/months
-    weather_data_prediction_monthly_df = weather_data_prediction_monthly_original.drop(columns=zero_sum_columns)
+    weather_data_prediction_monthly_df = weather_data_prediction_monthly_original.drop(
+        columns=zero_sum_columns, errors='ignore')
     weather_data_prediction_five_day_cumulative_df = weather_data_prediction_five_day_cumulative_original.drop(
-        columns=zero_sum_columns)
+        columns=zero_sum_columns, errors='ignore')
 
     return weather_data_prediction_five_day_cumulative_df, weather_data_prediction_monthly_df
-
-
 model_types = ['lowest', 'mean', 'highest']
 # Configuration and constants
 min_year_for_analysis = 2025
 absolute_min_year = 2024
 max_year_for_analysis = 2071
-data_path = "/Users/rem76/Desktop/Climate_change_health/Data/"
+data_path = "/Users/rem76/Desktop/Climate_Change_Health/Data/"
 
 # Define SSP scenario
 ssp_scenarios = ["ssp126", "ssp245", "ssp585"]
@@ -855,7 +854,7 @@ for ssp_scenario in ssp_scenarios:
 
         # Add facility level information
         facility_info_with_levels = pd.read_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/"
+            "/Users/rem76/Desktop/Climate_Change_Health/Data/"
             "facilities_with_lat_long_region.csv"
         )
         facility_info_with_levels = facility_info_with_levels.drop_duplicates(subset='Fname', keep='first')
@@ -948,5 +947,5 @@ for ssp_scenario in ssp_scenarios:
 
         # Save to CSV
         X_basis_weather_filtered.to_csv(
-            f'/Users/rem76/Desktop/Climate_change_health/Data/X_basis_weather_filtered_predictions_{ssp_scenario}_{model_type}_{service}.csv',
+            f'/Users/rem76/Desktop/Climate_Change_Health/Data/X_basis_weather_filtered_predictions_{ssp_scenario}_{model_type}_{service}.csv',
             index=False)
