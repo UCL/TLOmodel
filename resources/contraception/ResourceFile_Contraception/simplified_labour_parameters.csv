@@ -1,3 +1,2 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:51abe8f3bdeea948ae1842c12463bd26434fb20ab31490d7967ddcde7d6ced62
-size 171
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference,Notes
+prob_live_birth,0.73,local,0,1,vague prior,,For use in SimplifiedPregnancyAndLabour Module

@@ -1,3 +1,19 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:77104e90fa4f985d7f28105c2070ed1bb2eb13dc4dec7af9993f4868bcf8553b
-size 761
+parameter_name,value
+baseline_odds_of_healthcareseeking_adults,1.27
+odds_ratio_adults_sex_Female,1.28
+odds_ratio_adults_age_35to59,0.93
+odds_ratio_adults_age_60plus,0.94
+odds_ratio_adults_setting_urban,1.67
+odds_ratio_adults_region_Central,0.60
+odds_ratio_adults_region_Southern,0.68
+odds_ratio_adults_wealth_higher,1.56
+baseline_odds_of_healthcareseeking_children,2.17
+odds_ratio_children_sex_Female,1.12
+odds_ratio_children_age_5to14,0.50
+odds_ratio_children_setting_urban,1.75
+odds_ratio_children_region_Central,0.43
+odds_ratio_children_region_Southern,0.56
+odds_ratio_children_wealth_higher,1.90
+max_days_delay_to_generic_HSI_after_symptoms,4
+force_any_symptom_to_lead_to_healthcareseeking,0
+prob_non_emergency_care_seeking_by_level,"[0.14,0.66,0.08,0.12]"

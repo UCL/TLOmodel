@@ -1,3 +1,9 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:97e8dc97188f7ffd640b7a95219d88c303c7a2715d6c83080d4810b300f62577
-size 179
+prop_pulm,0.8
+prop_pulm_hiv,0.5
+prop_pulm_1yr,0.7
+prop_pulm_1_2yr,0.74
+prop_pulm_2_5yr,0.91
+prop_pulm_5_10yr,0.89
+prop_pulm_10yr,0.99
+rr_tbm_bcg,0.27
+rr_miliary_bcg,0.23
