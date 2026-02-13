@@ -24,7 +24,7 @@ jobs:
         run: |
           set -eo pipefail
 
-          lfs_paths=$(git lfs ls-files --name-only | grep -E "\.csv$ || true")
+          lfs_paths=$(git lfs ls-files --name-only | grep -E "\.csv$" || true)
 
           if [[ -z "${lfs_paths}" ]]; then
             echo "No CSV files are tracked by Git LFS."
