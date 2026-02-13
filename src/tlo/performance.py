@@ -52,21 +52,21 @@ class Magpie(Module):
         super().__init__()
         self.options = MagpieOptions(**kwargs)
 
-    def read_parameters(self, data_folder: str | Path) -> None:
+    def read_parameters(self, data_folder):
         pass
 
-    def initialise_simulation(self, sim: Simulation) -> None:
+    def initialise_simulation(self, sim: Simulation):
         if self.options.log_perf:
             event = LogPerfProfile(self, self.options.log_perf_freq, self.options.log_pop_hash)
             sim.schedule_event(event, sim.start_date)
 
         if self.options.save_sim:
-            sim.schedule_event(SaveSimulation(self, self.options.save_sim_freq, 6), sim.start_date)
+            sim.schedule_event(SaveSimulation(self, self.options.save_sim_freq), sim.start_date)
 
-    def on_birth(self, mother_id: int, child_id: int) -> None:
+    def on_birth(self, mother_id, child_id):
         pass
 
-    def on_simulation_end(self) -> None:
+    def on_simulation_end(self):
         if self.options.save_sim_on_end:
             self.sim.save_to_pickle(Path(make_pickle_filename(self.sim.date)))
 
