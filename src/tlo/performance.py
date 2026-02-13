@@ -1,12 +1,11 @@
 """A module to collect metrics, checkpoints, hashes and a variety of other information about the simulation as it runs,
 for debugging and performance monitoring purposes."""
 import datetime
+import time
 from pathlib import Path
 
-import time
-
-from tlo import Module, Simulation, DateOffset, logging
-from tlo.events import RegularEvent, PopulationScopeEventMixin
+from tlo import DateOffset, Module, Simulation, logging
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import hash_dataframe
 
 try:
