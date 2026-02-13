@@ -23,8 +23,9 @@ def register_modules(sim):
     """Defines sim variable and registers all modules that can be called when running the full suite of pregnancy
     modules"""
 
-    sim.register(*fullmodel(),
+    sim.register(*fullmodel(module_kwargs={'SymptomManager':{'always_refer_to_properties':True}}),
                   mnh_cohort_module.MaternalNewbornHealthCohort())
+
 
 def test_run_sim_with_mnh_cohort(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=12345, resourcefilepath=resourcefilepath,

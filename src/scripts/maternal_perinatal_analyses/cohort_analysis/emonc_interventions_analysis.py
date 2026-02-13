@@ -12,18 +12,18 @@ class EmoncScenario(BaseScenario):
         self.start_date = Date(2025, 1, 1)
         self.end_date = Date(2026, 1, 2)
         self.pop_size = 20_000
-        self.number_of_draws = 1
+        self.number_of_draws = 9
         self.runs_per_draw = 20
 
     def log_configuration(self):
         return {
-            'filename': 'block_intervention_big_run', 'directory': './outputs',
+            'filename': 'emonc_interventions', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.demography.detail": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
-                "tlo.methods.healthsystem.summary": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,  # TODO: will this work with new cons output
                 "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.labour": logging.INFO,
                 "tlo.methods.labour.detail": logging.INFO,
@@ -35,7 +35,8 @@ class EmoncScenario(BaseScenario):
         }
 
     def modules(self):
-        return [*fullmodel(module_kwargs={'Schisto': {'mda_execute': False}}),
+        return [*fullmodel(module_kwargs={'SymptomManager':{'always_refer_to_properties':True},
+                                          'Schisto': {'mda_execute': False}}),
                  mnh_cohort_module.MaternalNewbornHealthCohort()]
 
     def draw_parameters(self, draw_number, rng):
@@ -43,8 +44,7 @@ class EmoncScenario(BaseScenario):
             return {'PregnancySupervisor': {
                     'analysis_year': 2025}}        # TODO: 2025?
 
-        else: # TODO: can this handle lists? should we just call it 'emergency interventions' and add other ones?
-
+        else:
             interventions_for_analysis = [['abx_for_prom', 'sepsis_treatment', 'neo_sepsis_treatment'],   # TODO: PAC?
                                           'anti_htn_mgso4', # TODO: drop HTN?
                                           ['pph_treatment_uterotonics', 'amtsl'],
