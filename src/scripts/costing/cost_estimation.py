@@ -567,16 +567,63 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     # Get list of cadres which were utilised in each run to get the count of staff used in the simulation
     # Note that we still cost the full staff count for any cadre-Facility_Level combination that was ever used in a run, and
     # not the amount of time which was used
-    def get_capacity_used_by_officer_type_and_facility_level(_df: pd.Series) -> pd.Series:
-        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
-        _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
-        _df.index.name = 'year'
-        return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # expanded flattened axis
+    def get_capacity_used_by_officer_type_and_facility_level(
+        _df: pd.DataFrame
+    ) -> pd.Series:
+        """
+        Parse logging output and return a Series indexed by:
+            (year, OfficerType, FacilityLevel)
+
+        Collapses (sums) across clinics.
+        Uses facility_id_levels_dict to map FacilityID → FacilityLevel.
+        """
+
+        # ---- 1. Set year index ----
+        _df = _df.set_axis(_df["date"].dt.year).drop(columns=["date"])
+        _df.index.name = "year"
+
+        # ---- 2. Unflatten logging columns ----
+        _df = unflatten_flattened_multi_index_in_logging(_df)
+
+        # Expect columns like:
+        # ('Clinic', 'facID_and_officer')
+
+        col_df = _df.columns.to_frame(index=False)
+
+        # ---- 3. Extract OfficerType ----
+        col_df["OfficerType"] = (
+            col_df["facID_and_officer"]
+            .str.split("_Officer_")
+            .str[-1]
+        )
+
+        # ---- 4. Extract FacilityID ----
+        col_df["FacilityID"] = (
+            col_df["facID_and_officer"]
+            .str.split("_Officer_")
+            .str[0]
+            .str.replace("FacilityID_", "", regex=False)
+            .astype(int)
+        )
+
+        # ---- 5. Map to FacilityLevel ----
+        col_df["FacilityLevel"] = col_df["FacilityID"].map(facility_id_levels_dict)
+
+        # ---- 6. Rebuild MultiIndex (drop clinic level) ----
+        _df.columns = pd.MultiIndex.from_frame(
+            col_df[["OfficerType", "FacilityLevel"]]
+        )
+
+        # ---- 7. Collapse across clinics ----
+        _df = _df.groupby(level=["OfficerType", "FacilityLevel"], axis=1).sum()
+
+        # ---- 8. Return stacked format ----
+        return _df.stack(["OfficerType", "FacilityLevel"])
 
     annual_capacity_used_by_cadre_and_level = extract_results(
         Path(results_folder),
         module='tlo.methods.healthsystem.summary',
-        key='Capacity_By_OfficerType_And_FacilityLevel',
+        key='Capacity_By_FacID_and_Officer',
         custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
         do_scaling=False,
     )
