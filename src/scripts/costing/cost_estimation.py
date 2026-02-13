@@ -477,21 +477,63 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         return merged_df
 
     # Get available staff count for each year and draw
-    def get_staff_count_by_facid_and_officer_type(_df: pd.Series) -> pd.Series:
-        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
-        _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
-        _df.index.name = 'year'
+    def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
+        """
+        Convert logged staff dictionary output into tidy format,
+        summing staff counts across all clinic columns.
 
-        def change_to_standard_flattened_index_format(col):
-            parts = col.split("_", 3)  # Split by "_" only up to 3 parts
-            if len(parts) > 2:
-                return parts[0] + "=" + parts[1] + "|" + parts[2] + "=" + parts[
-                    3]  # Rejoin with "I" at the second occurrence
-            return col  # If there's no second underscore, return the string as it is
+        Returns pd.Series indexed by:
+        (year, FacilityID, Officer)
+        """
 
-        _df.columns = [change_to_standard_flattened_index_format(col) for col in _df.columns]
+        df = _df.copy()
+        df["year"] = df["date"].dt.year
+        df = df.drop(columns=["date"])
 
-        return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # expanded flattened axis
+        clinic_cols = df.columns.difference(["year"])
+
+        long_frames = []
+
+        for clinic in clinic_cols:
+            expanded = df[[clinic, "year"]].copy()
+            expanded = expanded[expanded[clinic].notna()]
+
+            expanded_dict = expanded[clinic].apply(pd.Series)
+            expanded_dict["year"] = expanded["year"].values
+
+            long_frames.append(expanded_dict)
+
+        # Combine all clinics
+        combined = pd.concat(long_frames, ignore_index=True)
+
+        # Melt to long format
+        long_df = (
+            combined
+            .melt(id_vars=["year"],
+                  var_name="facility_officer",
+                  value_name="count")
+            .dropna(subset=["count"])
+        )
+
+        # Split FacilityID and Officer
+        parts = long_df["facility_officer"].str.split("_Officer_", expand=True)
+
+        long_df["FacilityID"] = (
+            parts[0]
+            .str.replace("FacilityID_", "", regex=False)
+            .astype(int)
+        )
+        long_df["Officer"] = parts[1]
+
+        # SUM ACROSS CLINICS HERE
+        result = (
+            long_df
+            .groupby(["year", "FacilityID", "Officer"])["count"]
+            .sum()
+            .sort_index()
+        )
+
+        return result
 
     # Staff count by Facility ID
     available_staff_count_by_facid_and_officertype = extract_results(
