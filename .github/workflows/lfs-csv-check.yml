@@ -1,7 +1,6 @@
 name: No CSV files tracked by Git LFS
 on:
   push:
-  pull_request:
   schedule:
   - cron: 0 0 * * *
 jobs:
