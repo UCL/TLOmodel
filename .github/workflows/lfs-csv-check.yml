@@ -1,0 +1,36 @@
+name: No CSV files tracked by Git LFS
+on:
+  push:
+  pull_request:
+  schedule:
+  - cron: 0 0 * * *
+jobs:
+  no-csv-in-lfs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install Git LFS
+        run: |
+         sudo apt-get update
+         sudo apt-get install -y git-lfs
+         git lfs install --local
+
+      - name: Fail if any .csv files are tracked by Git LFS
+        shell: bash
+        run: |
+          set -eo pipefail
+
+          lfs_paths="$(git lfs ls-files --name-only | grep -E "\.csv$ || true")
+
+          if [[ -z "${lfs_paths}" ]]; then
+            echo "No CSV files are tracked by Git LFS."
+            exit 0
+          fi
+
+          echo "ERROR: CSV files tracked by Git LFS:"
+          printf '%s\n' "${lfs_paths}"
+          exit 1
