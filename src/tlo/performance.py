@@ -2,6 +2,7 @@
 for debugging and performance monitoring purposes."""
 import datetime
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 from tlo import DateOffset, Module, Simulation, logging
@@ -14,6 +15,16 @@ except ImportError:
     psutil = None
 
 logger = logging.getLogger(__name__)
+
+@dataclass
+class MagpieOptions:
+    log_perf: bool = False
+    log_perf_freq: int = 1
+    log_pop_hash: bool = False
+    save_sim: bool = False
+    save_sim_freq: int = 6
+    save_sim_on_end: bool = False
+
 
 class Magpie(Module):
     """
@@ -39,30 +50,29 @@ class Magpie(Module):
     """
     def __init__(self, **kwargs):
         super().__init__()
-        self.kwargs = kwargs
+        self.options = MagpieOptions(**kwargs)
 
     def read_parameters(self, data_folder: str | Path) -> None:
         pass
 
     def initialise_simulation(self, sim: Simulation) -> None:
-        if self.kwargs.get('log_perf', False):
-            event = LogPerfProfile(self, self.kwargs.get('log_perf_freq', 1), self.kwargs.get('log_pop_hash', False))
+        if self.options.log_perf:
+            event = LogPerfProfile(self, self.options.log_perf_freq, self.options.log_pop_hash)
             sim.schedule_event(event, sim.start_date)
 
-        if self.kwargs.get('save_sim', False):
-            sim.schedule_event(SaveSimulation(self, self.kwargs.get('save_sim_freq', 6)), sim.start_date)
+        if self.options.save_sim:
+            sim.schedule_event(SaveSimulation(self, self.options.save_sim_freq, 6), sim.start_date)
 
     def on_birth(self, mother_id: int, child_id: int) -> None:
         pass
 
     def on_simulation_end(self) -> None:
-        if self.kwargs.get('save_sim_on_end', False):
+        if self.options.save_sim_on_end:
             self.sim.save_to_pickle(Path(make_pickle_filename(self.sim.date)))
 
 class SaveSimulation(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module, frequency_months):
         super().__init__(module, frequency=DateOffset(months=frequency_months))
-        self.time = time.time()
 
     def apply(self, population):
         self.sim.save_to_pickle(Path(make_pickle_filename(self.sim.date)))
@@ -94,7 +104,7 @@ def profile_statistics(sim, do_hash):
     df = sim.population.props
     sim_queue_size = len(sim.event_queue)
 
-    # not great, but...
+    # not great, but...hardcoded for now
     if "HealthSystem" in sim.modules:
         hsi_queue_size = len(sim.modules["HealthSystem"].HSI_EVENT_QUEUE)
     else:
