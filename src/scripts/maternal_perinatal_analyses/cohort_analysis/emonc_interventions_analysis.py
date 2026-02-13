@@ -11,7 +11,7 @@ class EmoncScenario(BaseScenario):
         self.seed = 537184
         self.start_date = Date(2025, 1, 1)
         self.end_date = Date(2026, 1, 2)
-        self.pop_size = 20_000
+        self.pop_size = 30_000
         self.number_of_draws = 9
         self.runs_per_draw = 20
 
@@ -35,30 +35,29 @@ class EmoncScenario(BaseScenario):
         }
 
     def modules(self):
-        return [*fullmodel(module_kwargs={'SymptomManager':{'always_refer_to_properties':True},
-                                          'Schisto': {'mda_execute': False}}),
+        return [*fullmodel(module_kwargs={'SymptomManager':{'always_refer_to_properties':True}}),
                  mnh_cohort_module.MaternalNewbornHealthCohort()]
 
     def draw_parameters(self, draw_number, rng):
-        if draw_number == 0:
+        if draw_number == 1:
             return {'PregnancySupervisor': {
-                    'analysis_year': 2025}}        # TODO: 2025?
+                    'analysis_year': 2025}}
 
         else:
-            interventions_for_analysis = [['abx_for_prom', 'sepsis_treatment', 'neo_sepsis_treatment'],   # TODO: PAC?
-                                          'anti_htn_mgso4', # TODO: drop HTN?
+            interventions_for_analysis = [['sepsis_treatment', 'neo_sepsis_treatment'],   # TODO: abx for prom HTN?PAC?
+                                          ['anti_htn_mgso4'], # TODO: drop HTN?
                                           ['pph_treatment_uterotonics', 'amtsl'],
                                           ['pph_treatment_mrrp'],
-                                          'post_abortion_care_core',   # TODO: retained products?
-                                          'neo_resus'
-                                          'blood_transfusion',
-                                          'caesarean_section_oth_surg']
+                                          ['post_abortion_care_core'],   # TODO: retained products?
+                                          ['neo_resus'],
+                                          ['blood_transfusion'],
+                                          ['caesarean_section_oth_surg']]
 
-        return {'PregnancySupervisor': {
-                'analysis_year': 2025,
-                'interventions_analysis': True,
-                'interventions_under_analysis': [interventions_for_analysis[draw_number]],
-                'intervention_analysis_availability': 1.0}}
+            return {'PregnancySupervisor': {
+                    'analysis_year': 2025,
+                    'interventions_analysis': True,
+                    'interventions_under_analysis': interventions_for_analysis[draw_number-1],
+                    'intervention_analysis_availability': 1.0}}
 
 
 if __name__ == '__main__':
