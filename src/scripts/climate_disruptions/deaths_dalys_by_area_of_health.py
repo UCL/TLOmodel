@@ -39,8 +39,8 @@ scenario_colours = [
 ]
 
 climate_sensitivity_analysis = False
-parameter_sensitivity_analysis = False
-main_text = True
+parameter_sensitivity_analysis = True  # Changed to True
+main_text = False  # Changed to False
 if climate_sensitivity_analysis:
     scenario_names = [
         "Baseline",
@@ -57,13 +57,12 @@ if climate_sensitivity_analysis:
     suffix = "climate_SA"
     scenarios_of_interest = range(len(scenario_names))
 if parameter_sensitivity_analysis:
-    scenario_names = range(0, 9, 1)
-    scenarios_of_interest = scenario_names
-
+    num_draws = 200  # Number of parameter scan draws
+    scenario_names = [f"Draw_{i}" for i in range(num_draws)]
+    scenarios_of_interest = range(num_draws)
     suffix = "parameter_SA"
 if main_text:
     scenario_names = ["No disruptions", "Baseline", "Worst case"]
-
     suffix = "main_text"
     scenarios_of_interest = [0, 1, 2]
 
@@ -113,10 +112,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_dalys_lower_1000 = []
     all_draws_dalys_upper_1000 = []
 
-    for draw in range(len(scenario_names)):
-        if draw not in scenarios_of_interest:
-            continue
-        make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
+    for draw in scenarios_of_interest:
+        print(f"Processing draw {draw}...")
 
         all_years_data_dalys_mean = {}
         all_years_data_dalys_upper = {}
@@ -163,7 +160,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             all_years_data_population_lower[target_year] = result_data_population['lower']
             all_years_data_population_upper[target_year] = result_data_population['upper']
 
-        # Convert the accumulated data into a DataFrame for plotting
+        # Convert the accumulated data into a DataFrame
         df_all_years_DALYS_mean = pd.DataFrame(all_years_data_dalys_mean)
         df_all_years_DALYS_lower = pd.DataFrame(all_years_data_dalys_lower)
         df_all_years_DALYS_upper = pd.DataFrame(all_years_data_dalys_upper)
@@ -172,51 +169,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_data_population_lower = pd.DataFrame(all_years_data_population_lower)
         df_all_years_data_population_upper = pd.DataFrame(all_years_data_population_upper)
 
-        # Plotting - Line plot
-        fig, ax = plt.subplots(1, 1, figsize=(15, 10))
-        for i, condition in enumerate(df_all_years_DALYS_mean.index):
-            ax.plot(
-                df_all_years_DALYS_mean.columns,
-                df_all_years_DALYS_mean.loc[condition],
-                marker="o",
-                label=condition,
-                color=[get_color_cause_of_death_or_daly_label(_label) for _label in df_all_years_DALYS_mean.index][i],
-            )
-        ax.set_title("DALYs by Cause")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Number of DALYs")
-        ax.legend(title="Condition", bbox_to_anchor=(1.0, 1), loc="upper left")
-        ax.grid(False)
-
-        fig.savefig(make_graph_file_name("Trend_DALYs_by_condition_All_Years"))
-        plt.close(fig)
-
-        # NORMALIZED DALYS - TO 2020
-        fig, ax = plt.subplots(1, 1, figsize=(15, 10))
-
-        df_DALY_normalized_mean = df_all_years_DALYS_mean.div(df_all_years_DALYS_mean.iloc[:, 0], axis=0)
-        df_DALY_normalized_mean.to_csv(output_folder / f"cause_of_dalys_normalized_2020_{draw}.csv")
-
-        for i, condition in enumerate(df_DALY_normalized_mean.index):
-            ax.plot(
-                df_DALY_normalized_mean.columns,
-                df_DALY_normalized_mean.loc[condition],
-                marker="o",
-                label=condition,
-                color=[get_color_cause_of_death_or_daly_label(_label) for _label in df_DALY_normalized_mean.index][i],
-            )
-        ax.set_title("DALYs by Cause (Normalized to 2020)")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Fold change in DALYs compared to 2020")
-        ax.legend(title="Condition", bbox_to_anchor=(1.0, 1), loc="upper left")
-        ax.grid(False)
-
-        fig.tight_layout()
-        fig.savefig(make_graph_file_name("Trend_DALYs_by_condition_All_Years_Normalized"))
-        plt.close(fig)
-
-        ## BARPLOTS STACKED PER 1000
-        fig, ax = plt.subplots(1, 1, figsize=(15, 10))
+        # Calculate per 1000 rates
         df_daly_per_1000_mean = df_all_years_DALYS_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
         df_daly_per_1000_lower = (
             df_all_years_DALYS_lower.div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
@@ -225,45 +178,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             df_all_years_DALYS_upper.div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
         )
 
-        # DALYs (Stacked bar plot)
-        df_daly_per_1000_mean.T.plot.bar(
-            stacked=True,
-            ax=ax,
-            color=[get_color_cause_of_death_or_daly_label(_label) for _label in df_daly_per_1000_mean.index],
-            label=[label for label in df_daly_per_1000_mean.index],
-        )
-        ax.axhline(0.0, color="black")
-        ax.set_title("DALYs by Cause")
-        ax.set_ylabel("Number of DALYs per 1000 people")
-        ax.set_xlabel("Year")
-        ax.grid(False)
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.legend(title="Condition", bbox_to_anchor=(1.05, 1), loc="upper left")
-
-        fig.tight_layout()
-        fig.savefig(make_graph_file_name("Trend_DALYs_by_condition_All_Years_Stacked_Rate"))
-        plt.close(fig)
-
-        # save cause of DALYs to csv
-        df_all_years_DALYS_mean.to_csv(output_folder / f"dalys_by_cause_rate_{draw}.csv")
-
-        normalized_DALYs.append(pd.Series(df_DALY_normalized_mean.iloc[:, -1], name=f"Draw {draw}"))
-        print(df_all_years_DALYS_mean)
+        # Store data for cross-draw comparisons
         all_years_data_dalys_mean = df_all_years_DALYS_mean.sum()
-        print(all_years_data_dalys_mean)
         all_years_data_dalys_lower = df_all_years_DALYS_lower.sum()
         all_years_data_dalys_upper = df_all_years_DALYS_upper.sum()
+
         all_draws_dalys_mean.append(pd.Series(all_years_data_dalys_mean, name=f"Draw {draw}"))
         all_draws_dalys_lower.append(pd.Series(all_years_data_dalys_lower, name=f"Draw {draw}"))
         all_draws_dalys_upper.append(pd.Series(all_years_data_dalys_upper, name=f"Draw {draw}"))
 
-        print(df_daly_per_1000_mean)
         all_draws_dalys_mean_1000.append(pd.Series(df_daly_per_1000_mean.mean(axis=1), name=f"Draw {draw}"))
-        print(all_draws_dalys_mean_1000)
         all_draws_dalys_lower_1000.append(pd.Series(df_daly_per_1000_lower.mean(axis=1), name=f"Draw {draw}"))
         all_draws_dalys_upper_1000.append(pd.Series(df_daly_per_1000_upper.mean(axis=1), name=f"Draw {draw}"))
 
+    # Concatenate all draws
     df_dalys_all_draws_mean = pd.concat(all_draws_dalys_mean, axis=1)
     df_dalys_all_draws_lower = pd.concat(all_draws_dalys_lower, axis=1)
     df_dalys_all_draws_upper = pd.concat(all_draws_dalys_upper, axis=1)
@@ -272,117 +200,166 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_dalys_all_draws_lower_1000 = pd.concat(all_draws_dalys_lower_1000, axis=1)
     df_dalys_all_draws_upper_1000 = pd.concat(all_draws_dalys_upper_1000, axis=1)
 
-    # Compute mean, lower, and upper total DALYs for each draw
-    total_dalys_mean = df_dalys_all_draws_mean.sum(axis=0)
-    total_dalys_lower = df_dalys_all_draws_lower.sum(axis=0)
-    total_dalys_upper = df_dalys_all_draws_upper.sum(axis=0)
+    # Save summary data to CSV
+    df_dalys_all_draws_mean.to_csv(output_folder / f"dalys_by_cause_all_draws_{suffix}.csv")
+    df_dalys_all_draws_mean_1000.to_csv(output_folder / f"dalys_per_1000_by_cause_all_draws_{suffix}.csv")
 
-    # Baseline reference (first draw)
-    baseline_mean = total_dalys_mean.iloc[0]
-    baseline_lower = total_dalys_lower.iloc[0]
-    baseline_upper = total_dalys_upper.iloc[0]
+    # ============================================================================
+    # SUMMARY FIGURES FOR ALL DRAWS
+    # ============================================================================
 
-    # Compute percentage change relative to baseline
-    mean_change = ((total_dalys_mean - baseline_mean) / baseline_mean) * 100
-    lower_change = ((total_dalys_lower - baseline_upper) / baseline_upper) * 100
-    upper_change = ((total_dalys_upper - baseline_lower) / baseline_lower) * 100
+    # 1. Total DALYs distribution across draws (box plot by cause)
+    fig, ax = plt.subplots(1, 1, figsize=(16, 10))
 
-    # Drop baseline (since change = 0)
-    mean_change = mean_change.iloc[1:]
-    lower_change = lower_change.iloc[1:]
-    upper_change = upper_change.iloc[1:]
+    # Prepare data for box plot
+    box_data = []
+    box_labels = []
+    box_colors = []
 
-    # Compute CI error bars
-    yerr_lower = mean_change - lower_change
-    yerr_upper = upper_change - mean_change
-    yerr = np.vstack([yerr_lower, yerr_upper])
+    for condition in df_dalys_all_draws_mean.index:
+        box_data.append(df_dalys_all_draws_mean.loc[condition].values)
+        box_labels.append(condition)
+        box_colors.append(get_color_cause_of_death_or_daly_label(condition))
 
-    # Plot with CI error bars
-    if main_text:
-        fig, ax = plt.subplots(figsize=(12, 6))
-        mean_change.plot(
-            kind="bar",
-            color=scenario_colours[1: len(mean_change) + 1],
-            ax=ax,
-            yerr=yerr,
-            capsize=5,
-            error_kw=dict(linewidth=1, alpha=0.8),
-        )
+    bp = ax.boxplot(box_data, labels=box_labels, patch_artist=True, showfliers=True)
 
-        ax.set_title("Percentage Change in Total DALYs (with 95% CI)")
-        ax.set_xlabel("Scenario")
-        ax.set_ylabel("Percentage change in DALYs")
-        ax.set_xticklabels(scenario_names[1:], rotation=45, ha="right")
-        ax.axhline(0, color="black", linewidth=1)
-        ax.grid(axis="y", linestyle="--", alpha=0.5)
+    # Color the boxes
+    for patch, color in zip(bp['boxes'], box_colors):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)
 
-        fig.tight_layout()
-        fig.savefig(output_folder / f"relative_change_in_total_DALYs_across_draws_with_CI_{suffix}.png")
-        plt.close(fig)
-
-    # Plotting as bar charts
-    dalys_totals_mean = df_dalys_all_draws_mean.sum()
-    dalys_totals_lower = df_dalys_all_draws_lower.sum()
-    dalys_totals_upper = df_dalys_all_draws_upper.sum()
-    dalys_totals_err = np.array([dalys_totals_mean - dalys_totals_lower, dalys_totals_upper - dalys_totals_mean])
-
-    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
-    width = 0.35
-
-    # Total DALYs
-    x = np.arange(len(dalys_totals_mean.index))
-    ax.bar(x, dalys_totals_mean.values, width, color=scenario_colours, yerr=dalys_totals_err, capsize=6)
-    ax.set_title(f"Total DALYs ({min_year}-{max_year})")
-    ax.set_xlabel("Scenario")
+    ax.set_title(
+        f"Distribution of Total DALYs Across {len(scenarios_of_interest)} Parameter Draws ({min_year}-{max_year})")
     ax.set_ylabel("Total DALYs")
-    ax.set_xticks(x)
-    if climate_sensitivity_analysis:
-        ax.set_xticks(ax.get_xticks(), labels=scenario_names, rotation=45, ha='right')
-    else:
-        ax.set_xticklabels(scenario_names)
-    ax.grid(False)
+    ax.set_xlabel("Cause")
+    ax.tick_params(axis='x', rotation=45)
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+    ax.grid(axis='y', alpha=0.3)
 
     fig.tight_layout()
-    fig.savefig(output_folder / f"total_dalys_all_draws_{suffix}.png")
+    fig.savefig(output_folder / f"total_dalys_distribution_by_cause_{suffix}.png", dpi=300)
     plt.close(fig)
 
-    # Scatter plot across all causes
-    fig, ax = plt.subplots(1, 1, figsize=(12, 8))
-    x_positions = np.arange(len(df_dalys_all_draws_mean_1000.columns))
-    jitter_strength = 0.05
+    # 2. Total DALYs per 1000 distribution (box plot by cause)
+    fig, ax = plt.subplots(1, 1, figsize=(16, 10))
 
-    # DALYs
-    for i, condition in enumerate(df_dalys_all_draws_mean_1000.index):
-        colour = get_color_cause_of_death_or_daly_label(condition)
-        y_means = df_dalys_all_draws_mean_1000.loc[condition].values
-        y_lower = df_dalys_all_draws_lower_1000.loc[condition].values
-        y_upper = df_dalys_all_draws_upper_1000.loc[condition].values
+    box_data = []
+    box_labels = []
+    box_colors = []
 
-        jitter = np.random.uniform(-jitter_strength, jitter_strength, size=len(x_positions))
-        x_jittered = x_positions + jitter
-        ax.scatter(x_jittered, y_means, color=colour, s=50)
-        ax.errorbar(
-            x_jittered,
-            y_means,
-            yerr=[y_means - y_lower, y_upper - y_means],
-            fmt="none",
-            ecolor=colour,
-            capsize=3,
-            alpha=0.7,
-        )
-        ax.plot(x_jittered, y_means, color=colour, linestyle="-", alpha=0.5)
+    for condition in df_dalys_all_draws_mean_1000.index:
+        box_data.append(df_dalys_all_draws_mean_1000.loc[condition].values)
+        box_labels.append(condition)
+        box_colors.append(get_color_cause_of_death_or_daly_label(condition))
 
-    ax.set_title(f"DALYs per 1,000 ({max_year})")
-    ax.set_xticks(x_positions)
-    ax.set_xticklabels(df_dalys_all_draws_mean_1000.columns)
-    ax.set_xlabel("Draw")
+    bp = ax.boxplot(box_data, labels=box_labels, patch_artist=True, showfliers=True)
+
+    for patch, color in zip(bp['boxes'], box_colors):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)
+
+    ax.set_title(
+        f"Distribution of DALYs per 1,000 Across {len(scenarios_of_interest)} Parameter Draws (Mean {min_year}-{max_year})")
     ax.set_ylabel("DALYs per 1,000")
-    ax.legend(df_dalys_all_draws_mean_1000.index, title="Cause", bbox_to_anchor=(1.0, 1), loc="upper left")
-    ax.grid(False)
+    ax.set_xlabel("Cause")
+    ax.tick_params(axis='x', rotation=45)
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+    ax.grid(axis='y', alpha=0.3)
 
-    plt.tight_layout()
-    fig.savefig(output_folder / f"dalys_per_1000_all_cause_all_draws_{max_year}_{suffix}.png")
+    fig.tight_layout()
+    fig.savefig(output_folder / f"dalys_per_1000_distribution_by_cause_{suffix}.png", dpi=300)
     plt.close(fig)
+
+    # 3. Overall total DALYs distribution (all causes summed)
+    total_dalys_all_draws = df_dalys_all_draws_mean.sum(axis=0)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+
+    # Histogram
+    ax1.hist(total_dalys_all_draws.values, bins=30, color='steelblue', alpha=0.7, edgecolor='black')
+    ax1.axvline(total_dalys_all_draws.mean(), color='red', linestyle='--', linewidth=2,
+                label=f'Mean: {total_dalys_all_draws.mean():.0f}')
+    ax1.axvline(total_dalys_all_draws.median(), color='orange', linestyle='--', linewidth=2,
+                label=f'Median: {total_dalys_all_draws.median():.0f}')
+    ax1.set_title(f"Distribution of Total DALYs Across {len(scenarios_of_interest)} Draws")
+    ax1.set_xlabel("Total DALYs")
+    ax1.set_ylabel("Frequency")
+    ax1.legend()
+    ax1.grid(axis='y', alpha=0.3)
+
+    # Box plot
+    ax2.boxplot([total_dalys_all_draws.values], labels=['All Draws'], patch_artist=True)
+    ax2.set_title("Total DALYs Summary")
+    ax2.set_ylabel("Total DALYs")
+    ax2.grid(axis='y', alpha=0.3)
+
+    fig.tight_layout()
+    fig.savefig(output_folder / f"total_dalys_overall_distribution_{suffix}.png", dpi=300)
+    plt.close(fig)
+
+    # 4. Summary statistics table
+    summary_stats = pd.DataFrame({
+        'Mean': df_dalys_all_draws_mean.mean(axis=1),
+        'Median': df_dalys_all_draws_mean.median(axis=1),
+        'Std': df_dalys_all_draws_mean.std(axis=1),
+        'Min': df_dalys_all_draws_mean.min(axis=1),
+        'Max': df_dalys_all_draws_mean.max(axis=1),
+        'Q25': df_dalys_all_draws_mean.quantile(0.25, axis=1),
+        'Q75': df_dalys_all_draws_mean.quantile(0.75, axis=1),
+    })
+    summary_stats.to_csv(output_folder / f"summary_statistics_dalys_{suffix}.csv")
+
+    summary_stats_1000 = pd.DataFrame({
+        'Mean': df_dalys_all_draws_mean_1000.mean(axis=1),
+        'Median': df_dalys_all_draws_mean_1000.median(axis=1),
+        'Std': df_dalys_all_draws_mean_1000.std(axis=1),
+        'Min': df_dalys_all_draws_mean_1000.min(axis=1),
+        'Max': df_dalys_all_draws_mean_1000.max(axis=1),
+        'Q25': df_dalys_all_draws_mean_1000.quantile(0.25, axis=1),
+        'Q75': df_dalys_all_draws_mean_1000.quantile(0.75, axis=1),
+    })
+    summary_stats_1000.to_csv(output_folder / f"summary_statistics_dalys_per_1000_{suffix}.csv")
+
+    # 5. Stacked area chart showing contribution of each cause (mean across draws)
+    fig, ax = plt.subplots(1, 1, figsize=(14, 8))
+
+    mean_dalys_by_cause = df_dalys_all_draws_mean_1000.mean(axis=1).sort_values(ascending=False)
+    colors_sorted = [get_color_cause_of_death_or_daly_label(label) for label in mean_dalys_by_cause.index]
+
+    ax.barh(range(len(mean_dalys_by_cause)), mean_dalys_by_cause.values, color=colors_sorted)
+    ax.set_yticks(range(len(mean_dalys_by_cause)))
+    ax.set_yticklabels(mean_dalys_by_cause.index)
+    ax.set_xlabel("Mean DALYs per 1,000 (across all parameter draws)")
+    ax.set_title(f"Mean DALYs per 1,000 by Cause (Average across {len(scenarios_of_interest)} draws)")
+    ax.grid(axis='x', alpha=0.3)
+
+    fig.tight_layout()
+    fig.savefig(output_folder / f"mean_dalys_per_1000_by_cause_{suffix}.png", dpi=300)
+    plt.close(fig)
+
+    # 6. Coefficient of variation (CV) plot - shows which causes have most variability
+    cv_by_cause = (df_dalys_all_draws_mean_1000.std(axis=1) / df_dalys_all_draws_mean_1000.mean(axis=1)) * 100
+    cv_by_cause = cv_by_cause.sort_values(ascending=False)
+
+    fig, ax = plt.subplots(1, 1, figsize=(14, 8))
+    colors_cv = [get_color_cause_of_death_or_daly_label(label) for label in cv_by_cause.index]
+
+    ax.barh(range(len(cv_by_cause)), cv_by_cause.values, color=colors_cv, alpha=0.7)
+    ax.set_yticks(range(len(cv_by_cause)))
+    ax.set_yticklabels(cv_by_cause.index)
+    ax.set_xlabel("Coefficient of Variation (%)")
+    ax.set_title(f"Parameter Uncertainty by Cause (CV across {len(scenarios_of_interest)} draws)")
+    ax.grid(axis='x', alpha=0.3)
+
+    fig.tight_layout()
+    fig.savefig(output_folder / f"cv_by_cause_{suffix}.png", dpi=300)
+    plt.close(fig)
+
+    print(f"Summary figures saved to {output_folder}")
+    print(f"\nSummary Statistics:")
+    print(f"Total DALYs - Mean: {total_dalys_all_draws.mean():.0f}, Median: {total_dalys_all_draws.median():.0f}")
+    print(f"Total DALYs - Range: {total_dalys_all_draws.min():.0f} to {total_dalys_all_draws.max():.0f}")
+    print(f"Total DALYs - Std: {total_dalys_all_draws.std():.0f}")
 
 
 if __name__ == "__main__":
