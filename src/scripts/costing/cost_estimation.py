@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import squarify
 
+from scripts.consumables_analyses.manuscript.analysis_improved_consumable_availability import suspended_results_folder
 from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
@@ -282,6 +283,7 @@ def clean_equipment_name(name: str, equipment_drop_list = None) -> str:
 
 def estimate_input_cost_of_scenarios(results_folder: Path,
                                      resourcefilepath: Path,
+                                     suspended_results_folder: Path = None,
                                      _draws: Optional[list[int]] = None,
                                      _runs: Optional[list[int]] = None,
                                      summarize: bool = False,
@@ -298,6 +300,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         Path to the directory containing simulation output files.
     resourcefilepath : Path, optional
         Path to the resource files
+    suspended_results_folder: Path, optional
+        Path to the directory containing suspended simulation output files (using the suspend and resume functionality),
+        This is used to extract the scaling_factor to scale result to actual population size. If None, then the
+        'scaling_factor' is obtained from the results_folder.
     _draws : list, optional
         Specific draws to include in the cost estimation. Defaults to all available draws.
     _runs : list, optional
@@ -538,6 +544,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     # Staff count by Facility ID
     available_staff_count_by_facid_and_officertype = extract_results(
         Path(results_folder),
+        suspended_results_folder=suspended_results_folder,
         module='tlo.methods.healthsystem.summary',
         key='number_of_hcw_staff',
         custom_generate_series=get_staff_count_by_facid_and_officer_type,
@@ -622,6 +629,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
     annual_capacity_used_by_cadre_and_level = extract_results(
         Path(results_folder),
+        suspended_results_folder=suspended_results_folder,
         module='tlo.methods.healthsystem.summary',
         key='Capacity_By_FacID_and_Officer',
         custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
@@ -830,6 +838,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
         cons_req = extract_results(
             results_folder,
+            suspended_results_folder=suspended_results_folder,
             module='tlo.methods.healthsystem.summary',
             key='Consumables',
             custom_generate_series=get_counts_of_items_requested,

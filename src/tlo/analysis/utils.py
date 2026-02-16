@@ -299,6 +299,7 @@ def extract_results(results_folder: Path,
                     index: str = None,
                     custom_generate_series=None,
                     do_scaling: bool = False,
+                    suspended_results_folder: Path = None,
                     ) -> pd.DataFrame:
     """Utility function to unpack results.
 
@@ -311,16 +312,18 @@ def extract_results(results_folder: Path,
      `custom_generate_series`.
 
     Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
+    If the suspend-and-resume functionality is used, scaling factor may be avaialble in the folder where the log of the suspended run are stored.
 
     Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
     """
 
-    def get_multiplier(_draw, _run):
+
+    def get_multiplier(results_folder, _draw, _run):
         """Helper function to get the multiplier from the simulation.
         Note that if the scaling factor cannot be found a `KeyError` is thrown."""
         return load_pickled_dataframes(
-            results_folder, _draw, _run, 'tlo.methods.population'
-        )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+            results_folder, _draw, _run, 'tlo.methods.demography'
+    )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
 
     if custom_generate_series is None:
         # If there is no `custom_generate_series` provided, it implies that function required selects the specified
@@ -356,7 +359,10 @@ def extract_results(results_folder: Path,
                     'Custom command does not generate a pd.Series'
                 )
                 if do_scaling:
-                    res[draw_run] = output_from_eval * get_multiplier(draw, run)
+                    if suspended_results_folder is not None:
+                        res[draw_run] = output_from_eval * get_multiplier(suspended_results_folder, 0, 0)
+                    else:
+                        res[draw_run] = output_from_eval * get_multiplier(results_folder, draw, run)
                 else:
                     res[draw_run] = output_from_eval
 
