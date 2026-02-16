@@ -70,7 +70,11 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
         for line in log_file:
             # only parse lines that are json log lines (old-style logging is not supported)
             if line.startswith('{'):
-                log_data_json = json.loads(line)
+                try:
+                    log_data_json = json.loads(line)
+                except json.JSONDecodeError:
+                    # Skip malformed or partial JSON log lines
+                    continue
                 uuid = log_data_json['uuid']
                 # if this is a header line (only header lines have a `type` key)
                 if 'type' in log_data_json:
@@ -386,7 +390,7 @@ def check_info_value_changes(df):
             prev_info = row["Info"]
 
     return problems
-    
+
 def remove_events_for_individual_after_death(df):
     rows_to_drop = []
 
@@ -430,8 +434,8 @@ def reconstruct_individual_histories(df):
     if len(problems)>0:
         print("Values didn't change but were still detected")
         print(problems)
-        
-    
+
+
 
     return df_final
 
@@ -643,10 +647,9 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
         print(f"Opening {logfile}")
         outputs = parse_log_file(logfile)
         for key, output in outputs.items():
-            if key.startswith("tlo."):
-                print(f" - Writing {key}.pickle")
-                with open(logfile.parent / f"{key}.pickle", "wb") as f:
-                    pickle.dump(output, f)
+            print(f" - Writing {key}.pickle")
+            with open(logfile.parent / f"{key}.pickle", "wb") as f:
+                pickle.dump(output, f)
 
     def uncompress_and_save_logfile(compressed_file) -> Path:
         """Uncompress and save a log file and return its path."""
@@ -662,13 +665,21 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
         for run_folder in run_folders:
             # Find the original log-file written by the simulation
             if compressed_file_name_prefix is None:
-                logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+                logfile = [Path(run_folder) / x for x in os.listdir(run_folder) if x.endswith('.log')][0]
             else:
-                compressed_file_name = [
-                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)
-                ][0]
-                logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
+                logfiles = [
+                    Path(run_folder) / x
+                    for x in os.listdir(run_folder)
+                    if x.endswith(".log.gz")
+                    and not x.startswith("stdout")
+                    and not x.startswith("stderr")
+                ]
 
+                for compressed_log in logfiles:
+                    logfile = uncompress_and_save_logfile(compressed_log)
+                    turn_log_into_pickles(logfile)
+
+            logfile = Path(logfile).resolve()
             turn_log_into_pickles(logfile)
 
 
