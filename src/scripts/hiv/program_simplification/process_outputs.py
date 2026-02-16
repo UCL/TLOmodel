@@ -1290,8 +1290,8 @@ KEEP_APPT_TYPES = [
 
 
 TREATMENT_TO_APPT_SPEC = {
-    "PharmDispensing": ("Hiv_Test_Selftest",      "1a",  1.0),
-    "ConWithDCSA":     ("Hiv_Prevention_Prep",    "0",   1.0),
+    "PharmDispensing": ("Hiv_Prevention_Prep",      "1a",  1.0),
+    "ConWithDCSA":     ("Hiv_Test_Selftest",    "0",   1.0),
     "IPAdmission":     ("Hiv_PalliativeCare",     "2",   2.0),
     "InpatientDays":   ("Hiv_PalliativeCare",     "2",  17.0),
 }
