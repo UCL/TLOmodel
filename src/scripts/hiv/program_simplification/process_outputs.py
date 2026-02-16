@@ -1905,9 +1905,6 @@ cons_dispensed = cons_dispensed.apply(pd.to_numeric, errors="coerce")
 cons_dispensed.to_excel(results_folder / f'cons_dispensed_{target_period()}.xlsx')
 
 
-# cons_dispensed_summary = compute_summary_statistics(
-#     cons_dispensed, central_measure = 'median').reset_index()
-
 # Add consumable name and unit cost
 cons_dict = \
     pd.read_csv(resourcefilepath / 'healthsystem/consumables/ResourceFile_Consumables_Items_and_Packages.csv',
@@ -1973,52 +1970,178 @@ cons_costed = apply_unit_costs(
     cons_dispensed,
     cons_costs_by_item_code,
     on_missing="warn_nan"
-)
+).pipe(set_param_names_as_column_index_level_0)
+cons_costed.to_excel(results_folder / f'cons_costed_{target_period()}.xlsx')
+
+
+# todo select only cons used for HIV
+# ignore generic items such as gloves
+# get total of cons for every draw/run
+# get total costs cons+HRH for every draw/run
+
+
+
+
+def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> int:
+    return int(pd.unique(lookup_df.loc[lookup_df["Intervention_Pkg"] == package, "Item_Code"])[0])
+    # return int(pd.unique(lookup_df.loc[lookup_df["Intervention_Pkg"] == package, "Item_Code"]))
+
+
+def get_item_code_from_item_name(lookup_df: pd.DataFrame, item: str) -> int:
+    """Helper function to provide the item_code (an int) when provided with the name of the item"""
+    return int(pd.unique(lookup_df.loc[lookup_df["Items"] == item, "Item_Code"])[0])
 
 
 
 
 
+## HIV consumables
+# this is same as cons_dict but in df format not dict
+items_list = pd.read_csv(
+    resourcefilepath / "healthsystem/consumables/ResourceFile_Consumables_Items_and_Packages.csv")
+
+hiv_item_codes_dict = dict()
+
+# diagnostics
+hiv_item_codes_dict["HIV test"] = get_item_code_from_item_name(
+    items_list, "Test, HIV EIA Elisa")
+hiv_item_codes_dict["Viral load"] = get_item_codes_from_package_name(
+    items_list, "Viral Load")
+hiv_item_codes_dict["VMMC"] = get_item_code_from_item_name(
+    items_list, "male circumcision kit, consumables (10 procedures)_1_IDA")
+
+# treatment
+hiv_item_codes_dict["Adult PrEP"] = get_item_code_from_item_name(
+    items_list, "Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg")
+hiv_item_codes_dict["Infant PrEP"] = get_item_code_from_item_name(
+    items_list, "Nevirapine, oral solution, 10 mg/ml")
+hiv_item_codes_dict['First-line ART regimen: adult'] = get_item_code_from_item_name(
+    items_list, "First-line ART regimen: adult")
+hiv_item_codes_dict['First-line ART regimen: adult: cotrimoxazole'] = get_item_code_from_item_name(
+    items_list, "Cotrimoxizole, 960mg pppy")
+
+# ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
+hiv_item_codes_dict['First line ART regimen: older child'] = get_item_code_from_item_name(
+    items_list, "First line ART regimen: older child")
+
+# ART for younger children aged (age < "ART_age_cutoff_younger_child"):
+hiv_item_codes_dict['First line ART regimen: young child'] = get_item_code_from_item_name(
+    items_list, "First line ART regimen: young child")
+hiv_item_codes_dict['First line ART regimen: young child: cotrimoxazole'] = get_item_code_from_item_name(
+    items_list, "Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml")
 
 
 
 
-
-#
-# cons_dispensed[idx['item_name']] = cons_dispensed[idx['item']].map(cons_dict)
-# cons_dispensed[idx['unit_cost']] = cons_dispensed[idx['item']].map(cons_costs_by_item_code)
-
-
-
-
-
-# Calculate cost
-cols = cons_dispensed.columns
-stat_cols = [
-    c for c in cols
-    if isinstance(c[0], int) and c[1] in {"lower", "central", "upper"}
+# todo need to add self-tests
+num_selftests = treatment_by_year_hiv.loc[
+    treatment_by_year_hiv.index.get_level_values("treatment_id") == "Hiv_Test_Selftest"
 ]
-cons_cost_summary = cons_dispensed_summary.copy()
-cons_cost_summary.loc[:, stat_cols] = (
-    cons_cost_summary.loc[:, stat_cols]
-    .mul(cons_cost_summary[idx['unit_cost']], axis=0)
-)
-#cons_cost_summary = cons_cost_summary.groupby([idx['year'], idx['TREATMENT_ID']])[stat_cols].sum()
-# Get cost dataframes ready for merge
-cons_cost_summary = cons_cost_summary.rename(
-    columns={0: 'cons_cost_actual', 1: 'cons_cost_perfect'},
-    level=0
-)
-cons_dispensed_summary = cons_dispensed_summary.rename(
-    columns={0: 'cons_dispensed_actual', 1: 'cons_dispensed_perfect'},
-    level=0
-)
-cons_dispensed_summary = cons_dispensed_summary.drop([idx['item_name'], idx['unit_cost']], axis=1)
-cons_cost_summary = cons_cost_summary.merge(cons_dispensed_summary, on = [idx['year'], idx['TREATMENT_ID'], idx['item']],
-                                            how = 'left', validate = '1:1')
-cons_cost_summary.set_index([idx['year'], idx['TREATMENT_ID']], inplace = True)
 
-#cons_cost_summary.to_csv(figurespath / 'sample_output_v2.csv')
+selftests_costs = num_selftests * 3.14
+# costs from mihpsa, cons only
+# drop additional index treatment_id
+selftests_costs = selftests_costs.droplevel("treatment_id")
+
+
+
+# todo need to add tdf tests
+def get_num_tdf(_df):
+    """Return total number of TDF tests per year (from column n_tdf_tests_performed)."""
+
+    years_needed = [i.year for i in TARGET_PERIOD]
+
+    # ensure datetime
+    df = _df.copy()
+    df["date"] = pd.to_datetime(df["date"])
+
+    # extract year from date
+    df["year"] = df["date"].dt.year
+
+    assert set(df["year"].unique()).issuperset(years_needed), "Some years are not recorded."
+
+    return (
+        df.loc[df["year"].between(*years_needed)]
+        .groupby("year")["n_tdf_tests_performed"]
+        .sum()
+    )
+
+
+
+# num tdf tests
+num_tdf_year = extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="hiv_program_coverage",
+        custom_generate_series=get_num_tdf,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+
+tdf_costs = num_tdf_year * 6.86
+# https://pmc.ncbi.nlm.nih.gov/articles/PMC12260116/?utm_source=chatgpt.com
+# South Africa costs
+
+
+
+
+
+# 'HIV test': 196,
+#  'Viral load': 190,
+#  'VMMC': 197,
+#  'Adult PrEP': 1191,
+#  'Infant PrEP': 198,
+#  'First-line ART regimen: adult': 2671,
+#  'First-line ART regimen: adult: cotrimoxazole': 204,
+#  'First line ART regimen: older child': 2672,
+#  'First line ART regimen: young child': 2673,
+#  'First line ART regimen: young child: cotrimoxazole': 202
+
+
+
+# select hiv item codes
+# extract item codes (dict values)
+hiv_item_codes = set(map(str, hiv_item_codes_dict.values()))
+
+# filter rows where index level "item" is in that set
+cons_costed_hiv = cons_costed.loc[
+    cons_costed.index.get_level_values("item").isin(hiv_item_codes)
+]
+
+# add on the self-tests and tdf tests
+cons_costed_hiv = (
+    cons_costed_hiv
+    .add(selftests_costs, fill_value=0)
+    .add(tdf_costs, fill_value=0)
+)
+
+
+cons_costed_hiv.to_excel(results_folder / f'cons_costed_hiv_{target_period()}.xlsx')
+
+# sum across items, keeping only year
+cons_summed_by_year = cons_costed_hiv.groupby(level="year").sum()
+cons_summed_by_year.to_excel(results_folder / f'cons_summed_by_year_{target_period()}.xlsx')
+
+
+# total costs by year / draw / run
+total_cons_hrh_costs_year_draw_run = cons_summed_by_year + total_costs_by_year
+total_cons_hrh_costs_year_draw_run.to_excel(results_folder / f'total_cons_hrh_costs_year_draw_run_{target_period()}.xlsx')
+
+
+
+
+
+
+
+
+
+
+
+
+
+# todo this has the HRH costs for every draw/run
+total_costs_by_year
+
 
 
 
