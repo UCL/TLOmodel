@@ -46,8 +46,12 @@ path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('consumables_costing-2026-01-29T121903Z.py', outputfilepath)[0] # Dec 2025 runs
-#create_pickles_locally(scenario_output_dir = "./outputs/consumables_costing-2026-01-29T121903Z") # from .log files
+results_folder = get_scenario_outputs('consumables_impact-2026-02-14T203020Z.py', outputfilepath)[0] # Dec 2025 runs
+suspended_results_folder = get_scenario_outputs('consumables_impact-2026-02-13T183325Z.py', outputfilepath)[0]
+#create_pickles_locally(scenario_output_dir = "./outputs/consumables_impact-2026-02-14T203020Z") # from .log files
+scaling_factor =  load_pickled_dataframes(
+            suspended_results_folder, draw = 0, run = 0, name = 'tlo.methods.demography'
+            )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
@@ -57,11 +61,11 @@ info = get_scenario_info(results_folder)
 # Declare default parameters for cost analysis
 # ------------------------------------------------------------------------------------------------------------------
 # Period relevant for costing
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2012, 12, 31))  # This is the period that is costed
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2029, 12, 31))  # TODO change to 2040
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
-list_of_years_for_plot = list(range(2010, 2012))
-number_of_years_costed = relevant_period_for_costing[1] - 2010 + 1
+list_of_years_for_plot = list(range(2025, 2030))
+number_of_years_costed = relevant_period_for_costing[1] - 2025 + 1
 
 discount_rate_health = 0
 chosen_metric = 'mean'
@@ -438,7 +442,7 @@ def plot_percentage_change_with_ci(
     fig, ax = plt.subplots(figsize=figsize)
 
     # Slight horizontal jitter to prevent overlap
-    jitter_strength = 0.08
+    jitter_strength = 0.15
     offsets = np.linspace(
         -jitter_strength, jitter_strength, len(disease_groups)
     )
@@ -528,7 +532,8 @@ num_dalys = extract_results(
         module='tlo.methods.healthburden',
         key='dalys_stacked',
         custom_generate_series=get_num_dalys,
-        do_scaling=True
+        do_scaling=True,
+        suspended_results_folder = suspended_results_folder,
     )
 
 num_dalys_averted = ((-1.0 *
@@ -603,9 +608,9 @@ num_dalys_by_disease = extract_results(
     module='tlo.methods.healthburden',
     key='dalys_stacked',
     custom_generate_series=get_num_dalys_by_disease,
-    do_scaling=True
+    do_scaling=True,
+    suspended_results_folder = suspended_results_folder,
 )
-
 disease_groups = {
     # --- HIV / TB / Malaria ---
     "HIV/AIDS": [
@@ -782,7 +787,8 @@ num_treatments_total = extract_results(
     module='tlo.methods.healthsystem.summary',
     key='HSI_Event_non_blank_appt_footprint',
     custom_generate_series=get_num_treatments_total,
-    do_scaling=True
+    do_scaling=True,
+    suspended_results_folder = suspended_results_folder,
 ).pipe(set_param_names_as_column_index_level_0)
 
 num_incremental_treatments = (
@@ -835,9 +841,9 @@ num_treatments_by_disease_group = extract_results(
         module='tlo.methods.healthsystem.summary',
         key='HSI_Event_non_blank_appt_footprint',
         custom_generate_series=get_num_treatments_by_disease_group,
-        do_scaling=True
+        do_scaling=True,
+    suspended_results_folder = suspended_results_folder,
     ).pipe(set_param_names_as_column_index_level_0)
-
 
 # Recategorize above TREATMENT_IDs into disease groups (as used to classify DALYs averted)
 service_to_group = {
@@ -875,6 +881,7 @@ service_to_group = {
     # --- Other ---
     "Copd*": "Other",
     "Inpatient*": "Other",
+    "Schisto*": "Other",
 
     # --- Injuries ---
     "Rti*": "Injuries",
@@ -938,3 +945,380 @@ fig, ax = plot_percentage_change_with_ci(
 fig.savefig(figurespath / "incremental_services_delivered_by_disease_group.png",
             dpi=300, bbox_inches="tight")
 
+
+# Plot Maximum Ability to Pay
+#Cmax_HSS = (∆DALYs averted × λ) − ∆C_input
+chosen_cet = 65
+chosen_discount_rate = 0
+input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = list(cons_scenarios_main.keys()),
+                                               _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
+                                               _discount_rate = chosen_discount_rate, summarize = False)
+total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
+total_input_cost = total_input_cost.to_frame().T
+
+incremental_scenario_cost = (pd.DataFrame(
+        find_difference_relative_to_comparison(
+            total_input_cost,
+            comparison=0)  # sets the comparator to draw 0 which is the Actual scenario
+    ).T.unstack(level='run'))
+
+#incremental_scenario_cost = incremental_scenario_cost[
+    #incremental_scenario_cost.index.get_level_values('draw').isin(list(cons_scenarios_main.keys()))]
+
+def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
+    monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year).clip(lower=0.0)
+    return monetary_value_of_incremental_health
+
+max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted,
+                                                                                      _chosen_value_of_life_year=chosen_cet) - incremental_scenario_cost).clip(
+        lower=0.0)  # monetary value - change in costs
+max_ability_to_pay_for_implementation = max_ability_to_pay_for_implementation[
+    max_ability_to_pay_for_implementation.index.get_level_values('draw').isin(list(cons_scenarios_main.keys()))]
+
+max_ability_to_pay_for_implementation_summarized = summarize_cost_data(
+    max_ability_to_pay_for_implementation, _metric=chosen_metric)
+
+def reformat_with_draw_as_index_and_stat_as_column(_df):
+    df = _df.copy()
+    df.index = df.index.set_names(["stat", "draw"])
+    formatted = df.unstack("stat")
+    formatted.columns = formatted.columns.droplevel(0)
+    return formatted
+
+max_ability_to_pay_for_implementation_summarized = reformat_with_draw_as_index_and_stat_as_column(
+    max_ability_to_pay_for_implementation_summarized)
+
+# Plot Maximum ability to pay
+name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_standard_bar_plot_with_ci(
+    (max_ability_to_pay_for_implementation_summarized / 1e6),
+    annotations=[
+        f"{row[chosen_metric] / 1e6 :.2f} ({row['lower'] / 1e6 :.2f}- \n {row['upper']/ 1e6:.2f})"
+        for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
+    ],
+    xticklabels_wrapped=True,
+    put_labels_in_legend=False,
+    offset=3, scenarios_dict = cons_scenarios_main
+)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Maximum ability to pay \n(USD, millions)')
+ax.set_ylim(bottom=0)
+fig.tight_layout()
+fig.savefig(figurespath / 'max_ability_to_pay.png', dpi = 300, bbox_inches = "tight")
+plt.close(fig)
+
+#incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost, _metric=chosen_metric)
+
+# Plot incremental costs
+incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost,
+                                                           _metric=chosen_metric)
+incremental_scenario_cost_summarized = reformat_with_draw_as_index_and_stat_as_column(
+    incremental_scenario_cost_summarized)
+incremental_scenario_cost_summarized = incremental_scenario_cost_summarized[
+    incremental_scenario_cost_summarized.index.get_level_values('draw').isin(list(cons_scenarios_main.keys()))]
+
+name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_standard_bar_plot_with_ci(
+    (incremental_scenario_cost_summarized / 1e6),
+    annotations=[
+        f"{row[chosen_metric] / 1e6 :.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
+        for _, row in incremental_scenario_cost_summarized.iterrows()
+    ],
+    xticklabels_wrapped=True,
+    put_labels_in_legend=False,
+    offset=3, scenarios_dict = cons_scenarios_main
+)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Incremental Cost \n(USD, millions)')
+ax.set_ylim(bottom=0)
+fig.tight_layout()
+fig.savefig(figurespath / 'incremental_scenario_cost.png', dpi = 300, bbox_inches = "tight")
+plt.close(fig)
+
+
+# Plot instances of consumable unavailability during the simulation
+
+item_to_program_df = pd.read_csv(
+    resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Item_Designations.csv'
+)[['Item_Code', 'item_category']]
+
+item_to_program_map = dict(
+    zip(
+        item_to_program_df['Item_Code'].astype(str),
+        item_to_program_df['item_category']
+    )
+)
+
+# Plot the proportion of instances that a consumable was not available when requested
+def get_percentage_unavailable_by_program(_df):
+    """
+    Compute percentage of times consumables were unavailable
+    by disease program within TARGET_PERIOD.
+    """
+
+    # Restrict to target period
+    _df = _df.loc[
+        pd.to_datetime(_df.date).between(*TARGET_PERIOD),
+        ['Item_Available', 'Item_NotAvailable']
+    ]
+
+    # ---- Sum dictionaries across rows ----
+    available = (
+        _df['Item_Available']
+        .apply(pd.Series)
+        .sum()
+    )
+
+    not_available = (
+        _df['Item_NotAvailable']
+        .apply(pd.Series)
+        .sum()
+    )
+
+    # Align indices
+    total = available.add(not_available, fill_value=0)
+
+    # % unavailable per item
+    pct_unavailable = (
+        not_available / total.replace(0, np.nan)
+    )
+
+    # Map items to program
+    pct_unavailable.index = pct_unavailable.index.astype(str)
+    pct_unavailable = pct_unavailable.rename(index=item_to_program_map)
+
+    # Aggregate to program level
+    pct_unavailable = (
+        pct_unavailable
+        .groupby(level=0)
+        .mean()
+    )
+
+    return pct_unavailable
+
+pct_unavailable_by_program = extract_results(
+    results_folder,
+    module='tlo.methods.healthsystem.summary',
+    key='Consumables',
+    custom_generate_series=get_percentage_unavailable_by_program,
+    do_scaling=False,
+    suspended_results_folder = suspended_results_folder,
+)
+
+pct_unavailable_by_program_long = (
+    pct_unavailable_by_program
+        .stack(level=["draw", "run"])
+)
+
+pct_unavailable_by_program_long.index.names = ["disease_group", "draw", "run"]
+
+summaries = {}
+
+for group in pct_unavailable_by_program_long.index.get_level_values("disease_group").unique():
+    ser = pct_unavailable_by_program_long.xs(group, level="disease_group")
+    df_wide = ser.unstack("run")
+    summaries[group] = summarize_cost_data(df_wide)
+
+pct_unavailable_by_program_summarized = pd.concat(summaries, names=["disease_group"])
+
+pct_unavailable_by_program_summarized = pct_unavailable_by_program_summarized.unstack()
+pct_unavailable_by_program_summarized.columns = pct_unavailable_by_program_summarized.columns.swaplevel("stat", "draw")
+pct_unavailable_by_program_summarized  = (
+    pct_unavailable_by_program_summarized
+    .loc[:, pct_unavailable_by_program_summarized.columns
+          .get_level_values("draw")
+          .isin(main_analysis_subset)]
+)
+
+fig, ax = plot_percentage_change_with_ci(
+    summary_df=pct_unavailable_by_program_summarized,
+    colors=disease_colors,
+    scenario_labels=cons_scenarios_main,
+    ylabel="% instances of consumables being unavailable",
+    title="",
+    xticklabels_wrapped=True,
+)
+fig.savefig(figurespath / "pct_unavailable_by_program.png",
+            dpi=300, bbox_inches="tight")
+
+
+def compute_delta_from_baseline(summary_df, baseline_draw=0):
+    """
+    Convert absolute % unavailable to change relative to baseline.
+    Negative = improvement.
+    """
+    mean_df = summary_df.xs("mean", level="stat", axis=1)
+    baseline = mean_df[baseline_draw]
+    delta_mean = mean_df.subtract(baseline, axis=0)
+
+    return delta_mean
+
+delta_mean = compute_delta_from_baseline(pct_unavailable_by_program_summarized)
+def plot_heatmap_delta(delta_mean, scenario_labels=None, figsize=(12, 6), baseline_draw = 0):
+
+    df = delta_mean.copy()
+    df = df.drop(columns=baseline_draw)
+
+    if scenario_labels:
+        df = df.rename(columns=scenario_labels)
+
+    plt.figure(figsize=figsize)
+
+    sns.heatmap(
+        df,
+        cmap="RdBu_r",          # blue = reduction (good), red = increase (bad)
+        center=0,
+        linewidths=0.5,
+        cbar_kws={"label": "Change in % unavailable (vs baseline)"}
+    )
+
+    plt.xlabel("Scenario")
+    plt.ylabel("Disease group")
+    plt.title("Change in consumable unavailability relative to baseline")
+
+    plt.tight_layout()
+
+plot_heatmap_delta(delta_mean, scenario_labels=cons_scenarios_main, baseline_draw = 0)
+plt.savefig(figurespath / "pct_change_in_availability_by_scenario_and_program_heatmap.png",
+            dpi=300, bbox_inches="tight")
+
+
+def compute_national_summary(summary_df, baseline_draw=0):
+
+    mean_df = summary_df.xs("mean", level="stat", axis=1)
+    lower_df = summary_df.xs("lower", level="stat", axis=1)
+    upper_df = summary_df.xs("upper", level="stat", axis=1)
+
+    baseline = mean_df[baseline_draw]
+
+    delta_mean = mean_df.subtract(baseline, axis=0)
+    delta_lower = lower_df.subtract(baseline, axis=0)
+    delta_upper = upper_df.subtract(baseline, axis=0)
+
+    national_mean = delta_mean.mean(axis=0)
+    national_lower = delta_lower.mean(axis=0)
+    national_upper = delta_upper.mean(axis=0)
+
+    return delta_mean, national_mean, national_lower, national_upper
+
+delta_mean, nat_mean, nat_lower, nat_upper = compute_national_summary(
+    pct_unavailable_by_program_summarized
+)
+
+def plot_change_in_cons_unavailability_by_scenario(
+    nat_mean,
+    nat_lower,
+    nat_upper,
+    scenario_labels =cons_scenarios_main,
+    figsize=(14, 6),
+    wrap_width=20,
+):
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    draws = nat_mean.index
+    x = np.arange(len(draws))
+
+    # Map draw → scenario name
+    labels = [
+        "\n".join(textwrap.wrap(scenario_labels.get(d, str(d)), wrap_width))
+        for d in draws
+    ]
+
+    # CI
+    yerr = np.vstack([
+        nat_mean - nat_lower,
+        nat_upper - nat_mean
+    ])
+
+    ax.errorbar(
+        x,
+        nat_mean,
+        yerr=yerr,
+        fmt="o",
+        capsize=4,
+        color="black"
+    )
+
+    ax.axhline(0, linestyle="--", color="black", linewidth=1)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha="right")
+
+    ax.set_ylabel(
+        "Change in consumable unavailability \n across consumables (percentage points)"
+    )
+    ax.set_xlabel("Scenario")
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    fig.tight_layout()
+
+def plot_change_in_cons_unavailability_by_program(
+    delta_mean,
+    figsize=(14, 6),
+    wrap_width=20,
+):
+    """
+    Plot distribution of programme-specific change in consumable
+    unavailability across scenarios.
+
+    Parameters
+    ----------
+    delta_mean : pd.DataFrame
+        Index = disease_group
+        Columns = draw (scenarios)
+        Values = change in percentage points
+    """
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Transpose so each box represents a programme
+    data_to_plot = delta_mean.T
+
+    sns.boxplot(
+        data=data_to_plot,
+        showfliers=False,
+        ax=ax
+    )
+
+    # Wrap programme names
+    wrapped_labels = [
+        "\n".join(textwrap.wrap(str(label), wrap_width))
+        for label in delta_mean.index
+    ]
+
+    ax.set_xticklabels(
+        wrapped_labels,
+        rotation=45,
+        ha="right"
+    )
+
+    ax.axhline(0, linestyle="--", color="black", linewidth=1)
+
+    ax.set_ylabel(
+        "Change in consumable unavailability \n across scenarios (percentage points)"
+    )
+    ax.set_xlabel("Disease programme")
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    fig.tight_layout()
+
+
+plot_change_in_cons_unavailability_by_program(
+    delta_mean,
+)
+plt.savefig(figurespath / "change_in_cons_unavailability_by_program.png",
+            dpi=300, bbox_inches="tight")
+
+plot_change_in_cons_unavailability_by_scenario(
+    nat_mean,
+    nat_lower,
+    nat_upper,
+    scenario_labels=cons_scenarios_main
+)
+plt.savefig(figurespath / "change_in_cons_unavailability_by_scenario.png",
+            dpi=300, bbox_inches="tight")
