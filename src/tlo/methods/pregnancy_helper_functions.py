@@ -291,7 +291,11 @@ def check_int_deliverable(self, int_name, hsi_event,
     def log_cons_when_forcing_intervention_delivery():
         # add consumable use to HS logger...
 
-        final_cons = cons.update(alt_con) if alt_con is not None else cons
+        if cons is None and opt_cons is None:
+            final_cons = {}
+        else:
+            final_cons = {**(cons or {}), **(opt_cons or {})}
+
         items_not_available = {}
 
         logger_hs.info(
@@ -325,8 +329,8 @@ def check_int_deliverable(self, int_name, hsi_event,
         will_run = passes_dx_gate()
         if will_run:
             c[f"{int_name}_deliv"] += 1
-
-            log_cons_when_forcing_intervention_delivery()
+            if cons is not None and opt_cons is not None:
+                log_cons_when_forcing_intervention_delivery()
 
         return will_run
 
