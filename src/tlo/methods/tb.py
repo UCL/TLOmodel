@@ -1021,10 +1021,6 @@ class Tb(Module):
             strain="mdr",
             incidence=incidence_year * p['prop_mdr2010'])
 
-        self.send_for_screening_general(
-            population
-        )  # send some baseline population for screening
-
     def initialise_simulation(self, sim):
         """
         * 1) Schedule the regular TB events
@@ -1059,6 +1055,11 @@ class Tb(Module):
             sim.schedule_event(
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
             )
+
+        # 5) send some baseline population for screening
+        self.send_for_screening_general(
+            sim.population.props
+        )
 
     def update_parameters_for_program_scaleup(self):
         """ options for program scale-up are 'target' or 'max' """
