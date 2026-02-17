@@ -75,14 +75,14 @@ cons_scenarios = {
     0:  "Baseline availability – Default health system",
     1:  "Baseline availability – Perfect health system",
 
-    2:  "Non-therapeutic consumables – Default health system",
-    3:  "Non-therapeutic consumables – Perfect health system",
+    2:  "Non-therapeutic consumables (NTC) – Default health system",
+    3:  "Non-therapeutic consumables (NTC) – Perfect health system",
 
-    4:  "Vital medicines – Default health system",
-    5:  "Vital medicines – Perfect health system",
+    4:  "NTC + Vital medicines (VM) – Default health system",
+    5:  "NTC + Vital medicines (VM) – Perfect health system",
 
-    6:  "Pharmacist-managed stocks – Default health system",
-    7:  "Pharmacist-managed stocks – Perfect health system",
+    6:  "NTC + VM + Pharmacist-managed stocks – Default health system",
+    7:  "NTC + VM + Pharmacist-managed stocks – Perfect health system",
 
     8:  "75th percentile facility – Default health system",
     9:  "75th percentile facility – Perfect health system",
@@ -544,6 +544,19 @@ num_dalys_averted = ((-1.0 *
                      ).T.unstack(level='run')))
 num_dalys_averted.columns = num_dalys_averted.columns.droplevel(0)
 
+num_dalys_averted_percent = ((-1.0 *
+                     pd.DataFrame(
+                         find_difference_relative_to_comparison(
+                             num_dalys,
+                             comparison=0, scaled = True)  # sets the comparator to 0 which is the Actual scenario
+                     ).T.unstack(level='run')))
+num_dalys_averted_percent.columns = num_dalys_averted_percent.columns.droplevel(0)
+num_dalys_averted_percent = num_dalys_averted_percent[
+    num_dalys_averted_percent.index.isin(main_analysis_subset)
+]
+num_dalys_averted_percent = summarize_cost_data(num_dalys_averted_percent, _metric=chosen_metric)
+
+
 # Plot DALYs
 num_dalys_averted_summarized = summarize_cost_data(num_dalys_averted, _metric=chosen_metric)
 num_dalys_averted_summarized = num_dalys_averted_summarized[num_dalys_averted_summarized.index.isin(main_analysis_subset)]
@@ -553,8 +566,9 @@ name_of_plot = f'Incremental DALYs averted compared to baseline {relevant_period
 fig, ax = do_standard_bar_plot_with_ci(
     (num_dalys_averted_subset_for_figure / 1e6).clip(0.0),
     annotations=[
-        f"{row[chosen_metric] / 1e6:.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
-        for _, row in num_dalys_averted_subset_for_figure.iterrows()
+        f"{row[chosen_metric]*100:.1f}% "
+        f"({row['lower']*100:.1f}–{row['upper']*100:.1f}%)"
+        for _, row in num_dalys_averted_percent.iterrows()
     ],
     xticklabels_wrapped=True,
     put_labels_in_legend=False,
