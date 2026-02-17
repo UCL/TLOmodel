@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import datetime
 from pathlib import Path
+import math
 
 # import lacroix
 from typing import Iterable, Sequence, Optional, Tuple, Union, Dict
@@ -1479,6 +1480,29 @@ minutes_all_years_summed_by_cadre.to_excel(results_folder / "minutes_all_years_s
 hours_all_years_cadre = minutes_all_years_summed_by_cadre / 60
 hours_all_years_cadre.to_excel(results_folder / "hours_all_years_cadre.xlsx")
 
+summary_total_hcw_time = compute_summary_statistics(hours_all_years_cadre,
+                                                    central_measure='mean')
+summary_total_hcw_time.to_excel(results_folder / "summary_total_hcw_time_cadre.xlsx")
+
+summary_hcw_all_cadres_full = hours_all_years_cadre.sum(axis=0).to_frame().T
+summary_hcw_all_cadres = compute_summary_statistics(
+    summary_hcw_all_cadres_full,
+    central_measure='mean'
+)
+
+summary_hcw_all_cadres.to_excel(results_folder / "summary_hcw_all_cadres.xlsx")
+
+
+
+total_hrh_diff_from_statusquo = compute_summary_statistics(
+    find_difference_relative_to_comparison_series_dataframe(
+        summary_hcw_all_cadres_full,
+        comparison="Status Quo"
+    ), central_measure='mean',
+)
+total_hrh_diff_from_statusquo.to_excel(results_folder / "total_hrh_diff_from_statusquo.xlsx")
+
+
 
 ################################
 # add costs to HCW time
@@ -1828,7 +1852,7 @@ plot_cost_vs_outcomes(
     epi_df=epi_df,
     scenario_colours=scenario_colours,
     figsize=(10, 11),
-    ylabel="New HIV infections (difference)",
+    ylabel="HIV AIDS deaths (difference)",
     exclude_scenarios=["Program Scale-up"]
 )
 
@@ -2129,6 +2153,139 @@ total_cons_hrh_costs_year_draw_run.to_excel(results_folder / f'total_cons_hrh_co
 
 
 
+################################
+# construct the fiscal envelopes
+################################
+
+annual_total_costs_summary = compute_summary_statistics(
+    total_cons_hrh_costs_year_draw_run,
+    central_measure='mean'
+)
+annual_total_costs_summary.to_excel(results_folder / f'annual_total_costs_summary_{target_period()}.xlsx')
+
+
+# apply the contraction for future funding scenarios
+
+def apply_compound_contraction(
+    baseline_runs_df: pd.DataFrame,
+    base_year: int = 2025,
+    rates: dict[str, float] | None = None,
+    draw: str | None = "Status quo",
+) -> pd.DataFrame:
+    """
+    Apply compound contraction to each run and return dataframe.
+    """
+
+    if rates is None:
+        rates = {
+            "constant": 0.00,
+            "mild_2pc": 0.02,
+            "severe_6pc": 0.06,
+        }
+
+    df = baseline_runs_df.copy()
+
+    # --- select draw if provided ---
+    if draw is not None:
+        df = df.xs(draw, axis=1, level="draw")
+
+    if base_year not in df.index:
+        raise KeyError(f"{base_year} not found in index")
+
+    years = df.index.to_numpy()
+    t = years - base_year
+
+    # multipliers per year
+    def multipliers(rate):
+        return (1.0 - rate) ** np.maximum(t, 0)
+
+    base_vals = df.loc[base_year]   # Series indexed by run
+
+    scenario_frames = []
+
+    for scen_name, rate in rates.items():
+
+        m = multipliers(rate)
+
+        # projection matrix: years x runs
+        proj = pd.DataFrame(
+            np.outer(m, base_vals.to_numpy()),
+            index=df.index,
+            columns=df.columns,
+        )
+
+        # keep historical years unchanged
+        proj.loc[proj.index < base_year] = df.loc[df.index < base_year]
+
+        # add scenario level
+        proj.columns = pd.MultiIndex.from_product(
+            [[scen_name], proj.columns],
+            names=["scenario", "run"]
+        )
+
+        scenario_frames.append(proj)
+
+    out = pd.concat(scenario_frames, axis=1)
+
+    return out
+
+
+
+
+rates = {
+    "constant": 0.00,
+    "moderate_2pc": 0.02,
+    "severe_6pc": 0.06,
+}
+
+scen_runs = apply_compound_contraction(
+    baseline_runs_df=total_cons_hrh_costs_year_draw_run,
+    base_year=2025,
+    rates=rates,
+    draw="Status Quo",
+)
+scen_runs.columns.names = ["draw", "run"]
+
+
+summary_contract_funding = compute_summary_statistics(
+    scen_runs,
+    central_measure='mean'
+)
+summary_contract_funding.to_excel(results_folder / f'summary_contract_funding_{target_period()}.xlsx')
+
+
+####################################
+# plot funding trajectories
+
+
+
+def plot_shaded_draws(df, ax=None, alpha=0.2):
+    """
+    df columns: MultiIndex ('draw','stat')
+    stat must include 'lower' and 'upper'
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    x = df.index
+    for draw in df.columns.get_level_values('draw').unique():
+        lower = df[(draw, 'lower')]
+        upper = df[(draw, 'upper')]
+        ax.fill_between(x, lower, upper, alpha=alpha)
+
+    ax.yaxis.grid(True, alpha=0.3)
+    ax.set_axisbelow(True)
+    return ax
+
+
+plot_shaded_draws(summary_contract_funding)
+plt.show()
+
+
+
+summary_total_costs_by_year = compute_summary_statistics(
+    total_cons_hrh_costs_year_draw_run,
+    central_measure='mean')
 
 
 
@@ -2138,39 +2295,120 @@ total_cons_hrh_costs_year_draw_run.to_excel(results_folder / f'total_cons_hrh_co
 
 
 
+def plot_funding_and_program_by_program(
+    df_funding,
+    df_program,
+    ncols=5,
+    a_fund=0.8,          # clearer funding
+    a_prog=0.30,          # programme band
+    lw=2.2,               # programme line weight
+    stat_central="central",
+    fund_colours=("0.85", "#fddbc7", "#d1e5f0"),  # cycle funding colours (grey / warm / cool)
+    prog_colour="#1b5e9a",                        # programme colour that pops
+):
+    """
+    df_funding: MultiIndex columns (group, stat), stat includes {'lower','upper'}
+    df_program: MultiIndex columns (programme, stat), stat includes {'lower', stat_central, 'upper'}
 
-# todo this has the HRH costs for every draw/run
-total_costs_by_year
+    One subplot per programme:
+      - funding bands (all groups) as background, colour-cycled
+      - programme band + central line on top
+    Shared y-axis across all panels, with y tick labels shown only on leftmost column.
+    """
+
+    if df_funding.columns.nlevels != 2 or df_program.columns.nlevels != 2:
+        raise ValueError("Both inputs must have 2-level MultiIndex columns: (name, stat).")
+
+    programs = df_program.columns.get_level_values(0).unique()
+    fund_groups = list(df_funding.columns.get_level_values(0).unique())
+
+    n = len(programs)
+    nrows = math.ceil(n / ncols)
+
+    fig, axes = plt.subplots(
+        nrows, ncols,
+        figsize=(4.2 * ncols, 3.2 * nrows),
+        sharex=True,
+        sharey=True
+    )
+    axes = axes.ravel()
+
+    # Global y-limits
+    ymin = min(
+        df_funding.xs("lower", level=1, axis=1).min().min(),
+        df_program.xs("lower", level=1, axis=1).min().min()
+    )
+    ymax = max(
+        df_funding.xs("upper", level=1, axis=1).max().max(),
+        df_program.xs("upper", level=1, axis=1).max().max()
+    )
+
+    # Plot
+    for i, p in enumerate(programs):
+        ax = axes[i]
+
+        # Funding background (colour-cycled, slightly clearer)
+        for k, g in enumerate(fund_groups):
+            c = fund_colours[k % len(fund_colours)]
+            ax.fill_between(
+                df_funding.index,
+                df_funding[(g, "lower")],
+                df_funding[(g, "upper")],
+                color=c,
+                alpha=a_fund,
+                linewidth=0,
+                zorder=1
+            )
+
+        # Programme overlay (pop out)
+        ax.fill_between(
+            df_program.index,
+            df_program[(p, "lower")],
+            df_program[(p, "upper")],
+            color=prog_colour,
+            alpha=a_prog,
+            linewidth=0,
+            zorder=3
+        )
+        ax.plot(
+            df_program.index,
+            df_program[(p, stat_central)],
+            color=prog_colour,
+            lw=lw,
+            zorder=4
+        )
+
+        ax.set_title(str(p))
+        ax.set_ylim(ymin, ymax)
+
+        # Clean styling
+        ax.grid(False)
+        ax.yaxis.grid(True, alpha=0.18)
+        ax.set_axisbelow(True)
+
+        # Keep y tick labels on leftmost column only
+        if (i % ncols) != 0:
+            ax.tick_params(axis="y", labelleft=False)
+        else:
+            ax.tick_params(axis="y", labelleft=True)
+
+    # Turn off unused panels
+    for j in range(n, len(axes)):
+        axes[j].axis("off")
+
+    fig.tight_layout(pad=1.2)
+    return fig, axes
 
 
+# ---- call ----
+fig, axes = plot_funding_and_program_by_program(
+    summary_contract_funding,
+    summary_total_costs_by_year,
+    ncols=5,
+    stat_central="central",
+)
+plt.show()
 
-
-
-
-
-
-
-
-
-#
-# # todo costing scripts throwing errors
-# # todo perhaps my logs files out of date compared with costing scripts
-# # todo get consumables item codes + quantities and assign costs
-#
-#
-# # Estimate standard input costs of scenario
-# # -----------------------------------------------------------------------------------------------------------------------
-# # Standard 3% discount rate
-# input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-#                                                _years=list_of_relevant_years_for_costing,
-#                                                cost_only_used_staff=False,
-#                                                _discount_rate=discount_rate,
-#                                                summarize=True)
-#
-# # Undiscounted costs
-# input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-#                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
-#                                                _discount_rate=0, summarize=False)
 
 
 
