@@ -1,3 +1,33 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:7d0bcfc339f0aa0201c249eb4aa9e62a57cbc2a0ab59534e7c19a67d5037aa50
-size 4957
+﻿R0,gamma_alpha,District,SCH_spp,SurveyYear,mean_prevalence2010,mean_worm_burden2010,mean_prevalence2019,min_prevalence,max_prevalence,Endemicity2022,classification2019,mean_prevalence2022,prop_susceptible,mean_worm_burden2022,equilibrium,param_label
+1.66,0.24,Balaka,S.mansoni,2018,1.111111095,0.011437473,1.0305958,0,3.7037036,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,75.9,calibration data
+1.66,0.24,Blantyre,S.mansoni,2018,3.992503059,0.044406682,0.729166656,0,6.6666665,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Blantyre City,S.mansoni,2018,3.992503059,0.044406682,0.729166656,0,6.6666665,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Chikwawa,S.mansoni,2017,2.16199755,0.022883303,0,0,0,High prevalence (50% and above),zero,50,0.658761528,4.070254266,,calibration data
+1.66,0.24,Chiradzulu,S.mansoni,2018,7.827216467,0.097054383,5.106732386,0,44.827587,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Chitipa,S.mansoni,2017,0,0,0,0,0,Moderate prevalence (10%-49%),zero,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Dedza,S.mansoni,2017,0,0,5.666666605,0,26.666666,High prevalence (50% and above),low,50,0.658761528,4.070254266,,calibration data
+1.66,0.24,Dowa,S.mansoni,2019,4.444444333,0.050053526,10,10,10,Moderate prevalence (10%-49%),moderate,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Karonga,S.mansoni,2017,0,0,1.598959329,0,17.857143,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Kasungu,S.mansoni,2017,0,0,0.192837465,0,3.3333333,High prevalence (50% and above),low,50,0.658761528,4.070254266,,calibration data
+1.66,0.24,Likoma,S.mansoni,2015,0,0,0.510204071,0,3.5714285,High prevalence (50% and above),low,50,0.658761528,4.070254266,,calibration data
+1.66,0.24,Lilongwe,S.mansoni,2018,8.216748133,0.103054857,1.043429744,0,10.344828,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Lilongwe City,S.mansoni,2018,8.216748133,0.103054857,1.043429744,0,10.344828,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Machinga,S.mansoni,2017,0,0,0,0,0,High prevalence (50% and above),zero,50,0.658761528,4.070254266,,calibration data
+1.66,0.24,Mangochi,S.mansoni,2019,7.581699307,0.093339155,0,0,0,High prevalence (50% and above),zero,50,0.658761528,4.070254266,,calibration data
+1.66,0.24,Mchinji,S.mansoni,2017,0,0,0,0,0,Moderate prevalence (10%-49%),zero,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Mulanje,S.mansoni,2017,0,0,0.492610829,0,3.4482758,High prevalence (50% and above),low,50,0.658761528,4.070254266,,calibration data
+1.66,0.24,Mwanza,S.mansoni,2019,6,0.070583599,0,0,0,Moderate prevalence (10%-49%),zero,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Mzimba,S.mansoni,2018,1.242885,0.012838341,0.298507452,0,16.666666,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Mzuzu City,S.mansoni,0,0,0,0,0,0,0,zero,0,0,0,,calibration data
+1.66,0.24,Neno,S.mansoni,2018,3.333333255,0.036412796,0.526315779,0,6.6666665,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Nkhata Bay,S.mansoni,2019,3.111111047,0.033780813,1.777777753,0,13.333333,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Nkhotakota,S.mansoni,2019,2.025827236,0.021364272,1.428571421,0,10,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Nsanje,S.mansoni,2017,0,0,0,0,0,High prevalence (50% and above),zero,50,0.658761528,4.070254266,,calibration data
+1.66,0.24,Ntcheu,S.mansoni,2018,1.695526633,0.017724618,1.060606045,0,10,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Ntchisi,S.mansoni,2018,7.751527778,0.095903593,0.328407219,0,6.8965516,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Phalombe,S.mansoni,2017,0,0,0,0,0,High prevalence (50% and above),zero,50,0.658761528,4.070254266,,calibration data
+1.66,0.24,Rumphi,S.mansoni,2017,0,0,0.19841269,0,4.1666665,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Salima,S.mansoni,2019,9.374999875,0.121696654,2.499999975,0,10,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Thyolo,S.mansoni,2017,0.357142865,0.003604623,2.810987315,0,27.586206,Moderate prevalence (10%-49%),low,34.5,0.454545455,1.159176466,,calibration data
+1.66,0.24,Zomba,S.mansoni,2019,9.169343886,0.118296606,0,0,0,High prevalence (50% and above),zero,50,0.658761528,4.070254266,,calibration data
+1.66,0.24,Zomba City,S.mansoni,2019,9.169343886,0.118296606,0,0,0,High prevalence (50% and above),zero,50,0.658761528,4.070254266,,calibration data
