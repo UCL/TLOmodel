@@ -508,6 +508,238 @@ def plot_percentage_change_with_ci(
     fig.tight_layout()
     return fig, ax
 
+
+def plot_change_in_cons_unavailability_by_scenario(
+    nat_mean,
+    nat_lower,
+    nat_upper,
+    scenario_labels =cons_scenarios_main,
+    figsize=(14, 6),
+    wrap_width=20,
+):
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    draws = nat_mean.index
+    x = np.arange(len(draws))
+
+    # Map draw → scenario name
+    labels = [
+        "\n".join(textwrap.wrap(scenario_labels.get(d, str(d)), wrap_width))
+        for d in draws
+    ]
+
+    # CI
+    yerr = np.vstack([
+        nat_mean - nat_lower,
+        nat_upper - nat_mean
+    ])
+
+    ax.errorbar(
+        x,
+        nat_mean,
+        yerr=yerr,
+        fmt="o",
+        capsize=4,
+        color="black"
+    )
+
+    ax.axhline(0, linestyle="--", color="black", linewidth=1)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha="right")
+
+    ax.set_ylabel(
+        "Change in consumable unavailability \n across consumables (percentage points)"
+    )
+    ax.set_xlabel("Scenario")
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    fig.tight_layout()
+
+def plot_change_in_cons_unavailability_by_program(
+    delta_mean,
+    figsize=(14, 6),
+    wrap_width=20,
+):
+    """
+    Plot distribution of programme-specific change in consumable
+    unavailability across scenarios.
+
+    Parameters
+    ----------
+    delta_mean : pd.DataFrame
+        Index = disease_group
+        Columns = draw (scenarios)
+        Values = change in percentage points
+    """
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Transpose so each box represents a programme
+    data_to_plot = delta_mean.T
+
+    sns.boxplot(
+        data=data_to_plot,
+        showfliers=False,
+        ax=ax
+    )
+
+    # Wrap programme names
+    wrapped_labels = [
+        "\n".join(textwrap.wrap(str(label), wrap_width))
+        for label in delta_mean.index
+    ]
+
+    ax.set_xticklabels(
+        wrapped_labels,
+        rotation=45,
+        ha="right"
+    )
+
+    ax.axhline(0, linestyle="--", color="black", linewidth=1)
+
+    ax.set_ylabel(
+        "Change in consumable unavailability \n across scenarios (percentage points)"
+    )
+    ax.set_xlabel("Disease programme")
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    fig.tight_layout()
+
+
+def plot_heatmap_delta(delta_mean, scenario_labels=None, figsize=(12, 6), baseline_draw = 0):
+
+    df = delta_mean.copy()
+    df = df.drop(columns=baseline_draw)
+
+    if scenario_labels:
+        df = df.rename(columns=scenario_labels)
+
+    plt.figure(figsize=figsize)
+
+    sns.heatmap(
+        df,
+        cmap="RdBu_r",          # blue = reduction (good), red = increase (bad)
+        center=0,
+        linewidths=0.5,
+        cbar_kws={"label": "Change in % unavailable (vs baseline)"}
+    )
+
+    plt.xlabel("Scenario")
+    plt.ylabel("Disease group")
+    plt.title("Change in consumable unavailability relative to baseline")
+
+    plt.tight_layout()
+
+
+def aggregate_by_disease_group(df: pd.DataFrame,
+                               disease_groups: dict) -> pd.DataFrame:
+    """
+    Aggregate disease-level rows into disease-group rows.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Index: disease names
+        Columns: MultiIndex (draw, run)
+        Values: DALYs
+
+    disease_groups : dict
+        Mapping {group_name: [list of disease names]}
+
+    Returns
+    -------
+    pd.DataFrame
+        Index: disease groups
+        Columns: same as df (draw, run)
+        Values: summed DALYs per group
+    """
+    grouped_rows = {}
+
+    for group_name, diseases in disease_groups.items():
+        # Select diseases that actually exist in the index
+        present = [d for d in diseases if d in df.index]
+
+        if not present:
+            continue
+
+        grouped_rows[group_name] = df.loc[present].sum(axis=0)
+
+    return pd.DataFrame.from_dict(grouped_rows, orient="index")
+
+def summarize_aggregated_results_for_figure(
+    df,
+    main_analysis_subset,
+    chosen_metric="mean"
+):
+    """
+    Prepare a draw/run DataFrame for plotting:
+    - drop redundant column level if present
+    - restrict to main_analysis_subset
+    - summarize across runs
+    """
+
+    # If columns have extra level (e.g. ('mean', run)), drop first level
+    if isinstance(df.columns, pd.MultiIndex) and df.columns.nlevels > 1:
+        df = df.copy()
+        df.columns = df.columns.droplevel(0)
+
+    # Restrict to subset of draws
+    df = df[df.index.isin(main_analysis_subset)]
+
+    # Summarize across runs
+    summarized = summarize_cost_data(df, _metric=chosen_metric)
+
+    return summarized
+
+def summarize_disaggregated_results_for_figure(
+    df_grouped,
+    main_analysis_subset,
+    chosen_metric="mean"
+):
+    """
+    Summarize grouped (e.g., disease_group) results
+    from wide draw/run format into MultiIndex columns (draw, stat).
+    """
+
+    # Ensure long format: index = (group, draw, run)
+    df_long = df_grouped.stack(level=["draw", "run"])
+    df_long.index.names = ["group", "draw", "run"]
+
+    summaries = {}
+
+    for group in df_long.index.get_level_values("group").unique():
+        ser = df_long.xs(group, level="group")
+        df_wide = ser.unstack("run")
+        summaries[group] = summarize_cost_data(df_wide, _metric=chosen_metric)
+
+    result = pd.concat(summaries, names=["group"])
+
+    # Reformat columns to (draw, stat)
+    result = result.unstack()
+    result.columns = result.columns.swaplevel("stat", "draw")
+
+    # Restrict draws
+    result = result.loc[
+        :,
+        result.columns.get_level_values("draw").isin(main_analysis_subset)
+    ]
+
+    return result
+
+def set_param_names_as_column_index_level_0(_df):
+    """Set the columns index (level 0) as the param_names."""
+    ordered_param_names_no_prefix = {i: x for i, x in enumerate(cons_scenarios)}
+    names_of_cols_level0 = [ordered_param_names_no_prefix.get(col) for col in _df.columns.levels[0]]
+    assert len(names_of_cols_level0) == len(_df.columns.levels[0])
+    _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
+    return _df
+
 # Plot DALYs averted - Total
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
@@ -542,7 +774,12 @@ num_dalys_averted = ((-1.0 *
                              num_dalys,
                              comparison=0)  # sets the comparator to 0 which is the Actual scenario
                      ).T.unstack(level='run')))
-num_dalys_averted.columns = num_dalys_averted.columns.droplevel(0)
+
+num_dalys_averted_summarized = summarize_aggregated_results_for_figure(
+    num_dalys_averted,
+    main_analysis_subset,
+    chosen_metric
+)
 
 num_dalys_averted_percent = ((-1.0 *
                      pd.DataFrame(
@@ -550,25 +787,21 @@ num_dalys_averted_percent = ((-1.0 *
                              num_dalys,
                              comparison=0, scaled = True)  # sets the comparator to 0 which is the Actual scenario
                      ).T.unstack(level='run')))
-num_dalys_averted_percent.columns = num_dalys_averted_percent.columns.droplevel(0)
-num_dalys_averted_percent = num_dalys_averted_percent[
-    num_dalys_averted_percent.index.isin(main_analysis_subset)
-]
-num_dalys_averted_percent = summarize_cost_data(num_dalys_averted_percent, _metric=chosen_metric)
 
+num_dalys_averted_percent_summarized = summarize_aggregated_results_for_figure(
+    num_dalys_averted_percent,
+    main_analysis_subset,
+    chosen_metric
+)
 
 # Plot DALYs
-num_dalys_averted_summarized = summarize_cost_data(num_dalys_averted, _metric=chosen_metric)
-num_dalys_averted_summarized = num_dalys_averted_summarized[num_dalys_averted_summarized.index.isin(main_analysis_subset)]
-num_dalys_averted_subset_for_figure = num_dalys_averted_summarized[
-    num_dalys_averted_summarized.index.get_level_values('draw').isin(list(cons_scenarios.keys()))]
 name_of_plot = f'Incremental DALYs averted compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_standard_bar_plot_with_ci(
-    (num_dalys_averted_subset_for_figure / 1e6).clip(0.0),
+    (num_dalys_averted_summarized / 1e6).clip(0.0),
     annotations=[
         f"{row[chosen_metric]*100:.1f}% "
         f"({row['lower']*100:.1f}–{row['upper']*100:.1f}%)"
-        for _, row in num_dalys_averted_percent.iterrows()
+        for _, row in num_dalys_averted_percent_summarized.iterrows()
     ],
     xticklabels_wrapped=True,
     put_labels_in_legend=False,
@@ -677,41 +910,6 @@ disease_groups = {
     ],
 }
 
-def aggregate_by_disease_group(df: pd.DataFrame,
-                               disease_groups: dict) -> pd.DataFrame:
-    """
-    Aggregate disease-level rows into disease-group rows.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Index: disease names
-        Columns: MultiIndex (draw, run)
-        Values: DALYs
-
-    disease_groups : dict
-        Mapping {group_name: [list of disease names]}
-
-    Returns
-    -------
-    pd.DataFrame
-        Index: disease groups
-        Columns: same as df (draw, run)
-        Values: summed DALYs per group
-    """
-    grouped_rows = {}
-
-    for group_name, diseases in disease_groups.items():
-        # Select diseases that actually exist in the index
-        present = [d for d in diseases if d in df.index]
-
-        if not present:
-            continue
-
-        grouped_rows[group_name] = df.loc[present].sum(axis=0)
-
-    return pd.DataFrame.from_dict(grouped_rows, orient="index")
-
 num_dalys_by_group = aggregate_by_disease_group(
     num_dalys_by_disease,
     disease_groups
@@ -729,29 +927,10 @@ num_dalys_averted_by_group =  (-1.0 *
                              drop_comparison=True)  # sets the comparator to 0 which is the Actual scenario
                      ))
 
-num_dalys_averted_by_group_long = (
-    num_dalys_averted_by_group
-        .stack(level=["draw", "run"])
-)
-
-num_dalys_averted_by_group_long.index.names = ["disease_group", "draw", "run"]
-
-summaries = {}
-
-for group in num_dalys_averted_by_group_long.index.get_level_values("disease_group").unique():
-    ser = num_dalys_averted_by_group_long.xs(group, level="disease_group")
-    df_wide = ser.unstack("run")
-    summaries[group] = summarize_cost_data(df_wide)
-
-num_dalys_averted_by_group_summarized = pd.concat(summaries, names=["disease_group"])
-
-num_dalys_averted_by_group_summarized = num_dalys_averted_by_group_summarized.unstack()
-num_dalys_averted_by_group_summarized.columns = num_dalys_averted_by_group_summarized.columns.swaplevel("stat", "draw")
-num_dalys_averted_by_group_summarized  = (
-    num_dalys_averted_by_group_summarized
-    .loc[:, num_dalys_averted_by_group_summarized.columns
-          .get_level_values("draw")
-          .isin(main_analysis_subset)]
+num_dalys_averted_by_group_summarized = summarize_disaggregated_results_for_figure(
+    num_dalys_averted_by_group,
+    main_analysis_subset,
+    chosen_metric
 )
 
 # Plot DALYs averted by disease group
@@ -780,14 +959,6 @@ fig.savefig(figurespath / "dalys_averted_by_disease_group.png",
 # TODO  add figures for service count (Count of successful HSIs)
 # TODO  add figures for Maximum ability to pay
 
-def set_param_names_as_column_index_level_0(_df):
-    """Set the columns index (level 0) as the param_names."""
-    ordered_param_names_no_prefix = {i: x for i, x in enumerate(cons_scenarios)}
-    names_of_cols_level0 = [ordered_param_names_no_prefix.get(col) for col in _df.columns.levels[0]]
-    assert len(names_of_cols_level0) == len(_df.columns.levels[0])
-    _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
-    return _df
-
 # Plot number of services delivered total
 def get_num_treatments_total(_df):
     """Return the number of treatments in total of all treatments (total within the TARGET_PERIOD)"""
@@ -812,14 +983,14 @@ num_incremental_treatments = (
                              comparison=0,
                              scaled = True)  # sets the comparator to 0 which is the Actual scenario
                      ).T.unstack(level='run'))
-num_incremental_treatments.columns = num_incremental_treatments.columns.droplevel(0)
+
+num_incremental_treatments_summarized = summarize_aggregated_results_for_figure(
+    num_incremental_treatments,
+    main_analysis_subset,
+    chosen_metric
+)
 
 # Plot DALYs
-num_incremental_treatments_summarized = summarize_cost_data(num_incremental_treatments, _metric=chosen_metric)
-num_incremental_treatments_summarized = num_incremental_treatments_summarized[
-    num_incremental_treatments_summarized.index.isin(main_analysis_subset)]
-num_incremental_treatments_summarized = num_incremental_treatments_summarized[
-    num_incremental_treatments_summarized.index.get_level_values('draw').isin(list(cons_scenarios.keys()))]
 name_of_plot = f'Incremental services delivered compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 yaxis_scaling_factor = 1/100
 fig, ax = do_standard_bar_plot_with_ci(
@@ -922,31 +1093,11 @@ num_incremental_treatments_by_disease_group  = pd.DataFrame(
                              scaled = True)  # sets the comparator to 0 which is the Actual scenario
                      )
 
-num_incremental_treatments_by_disease_group_long = (
-    num_incremental_treatments_by_disease_group
-        .stack(level=["draw", "run"])
+num_incremental_treatments_by_disease_group_summarized = summarize_disaggregated_results_for_figure(
+    num_incremental_treatments_by_disease_group,
+    main_analysis_subset,
+    chosen_metric
 )
-
-num_incremental_treatments_by_disease_group_long.index.names = ["disease_group", "draw", "run"]
-
-summaries = {}
-
-for group in num_incremental_treatments_by_disease_group_long.index.get_level_values("disease_group").unique():
-    ser = num_incremental_treatments_by_disease_group_long.xs(group, level="disease_group")
-    df_wide = ser.unstack("run")
-    summaries[group] = summarize_cost_data(df_wide)
-
-num_incremental_treatments_by_disease_group_summarized = pd.concat(summaries, names=["disease_group"])
-
-num_incremental_treatments_by_disease_group_summarized = num_incremental_treatments_by_disease_group_summarized.unstack()
-num_incremental_treatments_by_disease_group_summarized.columns = num_incremental_treatments_by_disease_group_summarized.columns.swaplevel("stat", "draw")
-num_incremental_treatments_by_disease_group_summarized  = (
-    num_incremental_treatments_by_disease_group_summarized
-    .loc[:, num_incremental_treatments_by_disease_group_summarized.columns
-          .get_level_values("draw")
-          .isin(main_analysis_subset)]
-)
-
 
 fig, ax = plot_percentage_change_with_ci(
     summary_df=num_incremental_treatments_by_disease_group_summarized,
@@ -958,7 +1109,6 @@ fig, ax = plot_percentage_change_with_ci(
 )
 fig.savefig(figurespath / "incremental_services_delivered_by_disease_group.png",
             dpi=300, bbox_inches="tight")
-
 
 # Plot Maximum Ability to Pay
 #Cmax_HSS = (∆DALYs averted × λ) − ∆C_input
@@ -972,7 +1122,6 @@ max_ability_to_pay = (get_monetary_value_of_incremental_health(num_dalys_averted
                                                                _chosen_value_of_life_year=chosen_cet)).clip(lower=0.0)
 max_ability_to_pay = max_ability_to_pay[
     max_ability_to_pay.index.get_level_values('draw').isin(list(cons_scenarios_main.keys()))]
-
 max_ability_to_pay_summarized = summarize_cost_data(
     max_ability_to_pay, _metric=chosen_metric)
 
@@ -1005,37 +1154,7 @@ fig.tight_layout()
 fig.savefig(figurespath / 'max_ability_to_pay.png', dpi = 300, bbox_inches = "tight")
 plt.close(fig)
 
-#incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost, _metric=chosen_metric)
-
-# Plot incremental costs
-incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost,
-                                                           _metric=chosen_metric)
-incremental_scenario_cost_summarized = reformat_with_draw_as_index_and_stat_as_column(
-    incremental_scenario_cost_summarized)
-incremental_scenario_cost_summarized = incremental_scenario_cost_summarized[
-    incremental_scenario_cost_summarized.index.get_level_values('draw').isin(list(cons_scenarios_main.keys()))]
-
-name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_standard_bar_plot_with_ci(
-    (incremental_scenario_cost_summarized / 1e6),
-    annotations=[
-        f"{row[chosen_metric] / 1e6 :.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
-        for _, row in incremental_scenario_cost_summarized.iterrows()
-    ],
-    xticklabels_wrapped=True,
-    put_labels_in_legend=False,
-    offset=3, scenarios_dict = cons_scenarios_main
-)
-ax.set_title(name_of_plot)
-ax.set_ylabel('Incremental Cost \n(USD, millions)')
-ax.set_ylim(bottom=0)
-fig.tight_layout()
-fig.savefig(figurespath / 'incremental_scenario_cost.png', dpi = 300, bbox_inches = "tight")
-plt.close(fig)
-
-
 # Plot instances of consumable unavailability during the simulation
-
 item_to_program_df = pd.read_csv(
     resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Item_Designations.csv'
 )[['Item_Code', 'item_category']]
@@ -1103,29 +1222,10 @@ pct_unavailable_by_program = extract_results(
     suspended_results_folder = suspended_results_folder,
 )
 
-pct_unavailable_by_program_long = (
-    pct_unavailable_by_program
-        .stack(level=["draw", "run"])
-)
-
-pct_unavailable_by_program_long.index.names = ["disease_group", "draw", "run"]
-
-summaries = {}
-
-for group in pct_unavailable_by_program_long.index.get_level_values("disease_group").unique():
-    ser = pct_unavailable_by_program_long.xs(group, level="disease_group")
-    df_wide = ser.unstack("run")
-    summaries[group] = summarize_cost_data(df_wide)
-
-pct_unavailable_by_program_summarized = pd.concat(summaries, names=["disease_group"])
-
-pct_unavailable_by_program_summarized = pct_unavailable_by_program_summarized.unstack()
-pct_unavailable_by_program_summarized.columns = pct_unavailable_by_program_summarized.columns.swaplevel("stat", "draw")
-pct_unavailable_by_program_summarized  = (
-    pct_unavailable_by_program_summarized
-    .loc[:, pct_unavailable_by_program_summarized.columns
-          .get_level_values("draw")
-          .isin(main_analysis_subset)]
+pct_unavailable_by_program_summarized = summarize_disaggregated_results_for_figure(
+    pct_unavailable_by_program,
+    main_analysis_subset,
+    chosen_metric
 )
 
 fig, ax = plot_percentage_change_with_ci(
@@ -1152,29 +1252,7 @@ def compute_delta_from_baseline(summary_df, baseline_draw=0):
     return delta_mean
 
 delta_mean = compute_delta_from_baseline(pct_unavailable_by_program_summarized)
-def plot_heatmap_delta(delta_mean, scenario_labels=None, figsize=(12, 6), baseline_draw = 0):
 
-    df = delta_mean.copy()
-    df = df.drop(columns=baseline_draw)
-
-    if scenario_labels:
-        df = df.rename(columns=scenario_labels)
-
-    plt.figure(figsize=figsize)
-
-    sns.heatmap(
-        df,
-        cmap="RdBu_r",          # blue = reduction (good), red = increase (bad)
-        center=0,
-        linewidths=0.5,
-        cbar_kws={"label": "Change in % unavailable (vs baseline)"}
-    )
-
-    plt.xlabel("Scenario")
-    plt.ylabel("Disease group")
-    plt.title("Change in consumable unavailability relative to baseline")
-
-    plt.tight_layout()
 
 plot_heatmap_delta(delta_mean, scenario_labels=cons_scenarios_main, baseline_draw = 0)
 plt.savefig(figurespath / "pct_change_in_availability_by_scenario_and_program_heatmap.png",
@@ -1202,109 +1280,6 @@ def compute_national_summary(summary_df, baseline_draw=0):
 delta_mean, nat_mean, nat_lower, nat_upper = compute_national_summary(
     pct_unavailable_by_program_summarized
 )
-
-def plot_change_in_cons_unavailability_by_scenario(
-    nat_mean,
-    nat_lower,
-    nat_upper,
-    scenario_labels =cons_scenarios_main,
-    figsize=(14, 6),
-    wrap_width=20,
-):
-
-    fig, ax = plt.subplots(figsize=figsize)
-
-    draws = nat_mean.index
-    x = np.arange(len(draws))
-
-    # Map draw → scenario name
-    labels = [
-        "\n".join(textwrap.wrap(scenario_labels.get(d, str(d)), wrap_width))
-        for d in draws
-    ]
-
-    # CI
-    yerr = np.vstack([
-        nat_mean - nat_lower,
-        nat_upper - nat_mean
-    ])
-
-    ax.errorbar(
-        x,
-        nat_mean,
-        yerr=yerr,
-        fmt="o",
-        capsize=4,
-        color="black"
-    )
-
-    ax.axhline(0, linestyle="--", color="black", linewidth=1)
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=45, ha="right")
-
-    ax.set_ylabel(
-        "Change in consumable unavailability \n across consumables (percentage points)"
-    )
-    ax.set_xlabel("Scenario")
-
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-
-    fig.tight_layout()
-
-def plot_change_in_cons_unavailability_by_program(
-    delta_mean,
-    figsize=(14, 6),
-    wrap_width=20,
-):
-    """
-    Plot distribution of programme-specific change in consumable
-    unavailability across scenarios.
-
-    Parameters
-    ----------
-    delta_mean : pd.DataFrame
-        Index = disease_group
-        Columns = draw (scenarios)
-        Values = change in percentage points
-    """
-
-    fig, ax = plt.subplots(figsize=figsize)
-
-    # Transpose so each box represents a programme
-    data_to_plot = delta_mean.T
-
-    sns.boxplot(
-        data=data_to_plot,
-        showfliers=False,
-        ax=ax
-    )
-
-    # Wrap programme names
-    wrapped_labels = [
-        "\n".join(textwrap.wrap(str(label), wrap_width))
-        for label in delta_mean.index
-    ]
-
-    ax.set_xticklabels(
-        wrapped_labels,
-        rotation=45,
-        ha="right"
-    )
-
-    ax.axhline(0, linestyle="--", color="black", linewidth=1)
-
-    ax.set_ylabel(
-        "Change in consumable unavailability \n across scenarios (percentage points)"
-    )
-    ax.set_xlabel("Disease programme")
-
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-
-    fig.tight_layout()
-
 
 plot_change_in_cons_unavailability_by_program(
     delta_mean,
