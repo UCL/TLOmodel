@@ -963,34 +963,18 @@ fig.savefig(figurespath / "incremental_services_delivered_by_disease_group.png",
 # Plot Maximum Ability to Pay
 #Cmax_HSS = (∆DALYs averted × λ) − ∆C_input
 chosen_cet = 65
-chosen_discount_rate = 0
-input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = list(cons_scenarios_main.keys()),
-                                               _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
-                                               _discount_rate = chosen_discount_rate, summarize = False)
-total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
-total_input_cost = total_input_cost.to_frame().T
-
-incremental_scenario_cost = (pd.DataFrame(
-        find_difference_relative_to_comparison(
-            total_input_cost,
-            comparison=0)  # sets the comparator to draw 0 which is the Actual scenario
-    ).T.unstack(level='run'))
-
-#incremental_scenario_cost = incremental_scenario_cost[
-    #incremental_scenario_cost.index.get_level_values('draw').isin(list(cons_scenarios_main.keys()))]
 
 def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
     monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year).clip(lower=0.0)
     return monetary_value_of_incremental_health
 
-max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted,
-                                                                                      _chosen_value_of_life_year=chosen_cet) - incremental_scenario_cost).clip(
-        lower=0.0)  # monetary value - change in costs
-max_ability_to_pay_for_implementation = max_ability_to_pay_for_implementation[
-    max_ability_to_pay_for_implementation.index.get_level_values('draw').isin(list(cons_scenarios_main.keys()))]
+max_ability_to_pay = (get_monetary_value_of_incremental_health(num_dalys_averted,
+                                                               _chosen_value_of_life_year=chosen_cet)).clip(lower=0.0)
+max_ability_to_pay = max_ability_to_pay[
+    max_ability_to_pay.index.get_level_values('draw').isin(list(cons_scenarios_main.keys()))]
 
-max_ability_to_pay_for_implementation_summarized = summarize_cost_data(
-    max_ability_to_pay_for_implementation, _metric=chosen_metric)
+max_ability_to_pay_summarized = summarize_cost_data(
+    max_ability_to_pay, _metric=chosen_metric)
 
 def reformat_with_draw_as_index_and_stat_as_column(_df):
     df = _df.copy()
@@ -999,16 +983,16 @@ def reformat_with_draw_as_index_and_stat_as_column(_df):
     formatted.columns = formatted.columns.droplevel(0)
     return formatted
 
-max_ability_to_pay_for_implementation_summarized = reformat_with_draw_as_index_and_stat_as_column(
-    max_ability_to_pay_for_implementation_summarized)
+max_ability_to_pay_summarized = reformat_with_draw_as_index_and_stat_as_column(
+    max_ability_to_pay_summarized)
 
 # Plot Maximum ability to pay
 name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_standard_bar_plot_with_ci(
-    (max_ability_to_pay_for_implementation_summarized / 1e6),
+    (max_ability_to_pay_summarized / 1e6),
     annotations=[
         f"{row[chosen_metric] / 1e6 :.2f} ({row['lower'] / 1e6 :.2f}- \n {row['upper']/ 1e6:.2f})"
-        for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
+        for _, row in max_ability_to_pay_summarized.iterrows()
     ],
     xticklabels_wrapped=True,
     put_labels_in_legend=False,
