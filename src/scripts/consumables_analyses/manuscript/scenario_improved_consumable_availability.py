@@ -12,9 +12,14 @@ or locally using:
 ```
 tlo scenario-run src/scripts/consumables_analyses/manuscript/scenario_improved_consumable_availability.py
 
-# TODO Pending actions
-# Private market substitution - derive percentage from TLM data
-# Don't run sensitivity analyses yet (can be added later) - only run the HR one --> 24 scenarios
+To use the suspend-resume feature
+1. First remove all the consumable scenario apart from 'default'
+2. In terminal - tlo scenario-run src/scripts/consumables_analyses/manuscript/scenario_improved_consumable_availability.py --suspend-date 2025-12-31
+When the program terminates, there will be two output files: the log file and a file named suspended_simulation.pickle
+3. To resume the scenario run,
+tlo scenario-run src/scripts/consumables_analyses/manuscript/scenario_improved_consumable_availability.py --resume-simulation outputs/consumables_impact-2026-02-13T183325Z
+
+# TODO add private market substitution scenarios
  ```
 
 """
@@ -52,9 +57,9 @@ class ConsumablesImpact(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2028, 1, 1) # TODO change to 2041
+        self.end_date = Date(2030, 1, 1) # TODO change to 2041
         # Run until 2040 even though analysis maybe focused on years until 2030
-        self.pop_size = 5_000 # TODO change to 100_000
+        self.pop_size = 10_000 # TODO change to 100_000
 
 
         # Build cartesian product of scenarios
@@ -67,11 +72,11 @@ class ConsumablesImpact(BaseScenario):
         self.number_of_draws = len(self.SCENARIOS)
         self.scenarios = list(range(self.number_of_draws))
 
-        self.runs_per_draw = 1 #TODO change to 5
+        self.runs_per_draw = 2 #TODO change to 5
 
     def log_configuration(self):
         return {
-            'filename': 'consumables_costing',
+            'filename': 'consumables_impact',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
