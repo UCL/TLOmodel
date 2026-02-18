@@ -20,4 +20,4 @@ min_risk_factors_for_scheduled_weight_loss,2,local,1,4,vague prior
 bmi_threshold_weight_loss_advice,2,local,1,4,vague prior
 tests_per_year,2,local,1,4,vague prior
 pr_bmi_reduction,0.1,local,0.05,0.2,vague prior
-probability_of_seeking_further_med_appointment_if_unavailable,	0.8,	local,	0,	1,	design decision
+probability_of_seeking_further_med_appointment_if_unavailable,0.8,local,0,1,design decision
