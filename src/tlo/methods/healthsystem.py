@@ -809,10 +809,7 @@ class HealthSystem(Module):
         # Read in climate disruption files
         # Parameters for climate-mediated disruptions
         path_to_resourcefiles_for_climate = resourcefilepath / "climate_change_impacts"
-        self.parameters["projected_precip_disruptions"] = pd.read_csv(
-            path_to_resourcefiles_for_climate
-            / f'ResourceFile_Precipitation_Disruptions_{self.parameters["climate_ssp"]}_{self.parameters["climate_model_ensemble_model"]}.csv'
-        )
+        self.parameters["projected_precip_disruptions"] = 0
 
 
     def validate_clinic_configuration(self, clinic_capabilities_df: pd.DataFrame):
@@ -2695,10 +2692,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             facility_used = self.sim.population.props.at[item.hsi_event.target, f"level_{fac_level}"]
             if (1 == 1):  # avoid indenting
                 prob_disruption = 0.1
-                prob_disruption = pd.DataFrame(prob_disruption)
-                prob_disruption = min(
-                    float(prob_disruption.iloc[0]) * self.module.parameters["scale_factor_prob_disruption"], 1
-                )  # use data on defecit of HSIs from ANC paper as prior, then scale
+                # prob_disruption = pd.DataFrame(prob_disruption)
+                # prob_disruption = min(
+                #    float(prob_disruption.iloc[0]) * self.module.parameters["scale_factor_prob_disruption"], 1
+                # )  # use data on defecit of HSIs from ANC paper as prior, then scale
                 if np.random.binomial(1, prob_disruption) == 1:
                     climate_disrupted = True
                     # determine whether "supply side" or "demand side" disruption. If demand, then the required footprint
