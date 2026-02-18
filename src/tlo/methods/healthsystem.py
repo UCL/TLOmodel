@@ -3254,7 +3254,6 @@ class HealthSystemSummaryCounter:
         self._weather_delayed_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._weather_delayed_appts_by_level = {_level: defaultdict(int) for _level in ("0", "1a", "1b", "2", "3", "4")}
 
-        self._sum_of_daily_frac_time_used_by_facID_and_officer = Counter()
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
         #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
