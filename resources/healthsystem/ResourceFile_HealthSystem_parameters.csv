@@ -1,3 +1,28 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:2fe77b4b99b249abde5abb086a00852009fe3ba4ce2d7d7226c2bca33814922c
-size 1319
+parameter_name,value
+policy_name,Naive
+year_mode_switch,2100
+scale_to_effective_capabilities,FALSE
+Service_Availability,"[""*""]"
+use_funded_or_actual_staffing,funded_plus
+mode_appt_constraints,1
+mode_appt_constraints_postSwitch,1
+data_source_for_cons_availability_estimates,original
+cons_availability,default
+beds_availability,default
+equip_availability,default
+equip_availability_postSwitch,default
+year_equip_availability_switch,2100
+tclose_overwrite,0
+tclose_days_offset_overwrite,7
+HR_scaling_by_level_and_officer_type_mode,default
+year_HR_scaling_by_level_and_officer_type,2100
+HR_scaling_by_district_mode,default
+year_HR_scaling_by_district,2100
+yearly_HR_scaling_mode,no_scaling
+year_cons_availability_switch,2100
+cons_availability_postSwitch,default
+use_funded_or_actual_staffing_postSwitch,funded_plus
+year_use_funded_or_actual_staffing_switch,2100
+cons_override_treatment_ids,[]
+cons_override_treatment_ids_prob_avail,1.0
+clinic_configuration_name,Default

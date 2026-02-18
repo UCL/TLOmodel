@@ -1,3 +1,26 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:bd430087a6ec5e50ae26e6c1e0a286bee063cf3762d0588a0cd3c28a855218a9
-size 990
+﻿Year,Cumulative Inflation Rate (Base 2023),Exchange Rate (LCU per USD)
+1990,,2.728881667
+2000,,59.54380833
+2011,1.35,166.1318
+2012,1.33,248.3148
+2013,1.31,364.4058333
+2014,1.29,424.8966667
+2015,1.29,499.6058333
+2016,1.27,718.005
+2017,1.243,730.2725
+2018,1.213,732.3333333
+2019,1.192,745.5406679
+2020,1.177,749.5274939
+2021,1.124,799.525
+2022,1.041,934.1089
+2023,1,1136.6458
+2024,0.988,"1,732.64"
+,,
+,,
+,,
+,,
+,,
+,,
+,,
+,Source: https://www.usinflationcalculator.com/,"Source: World Development Indicators (https://databank.worldbank.org/) until 2020, https://www.exchangerates.org.uk/USD-MWK-spot-exchange-rates-history-2024.html from 2021"
+,"GHCC Guidance - For non-tradable local goods, it is preferable to inflate local currency and then convert. Conversely, for tradable and often globally purchased and priced goods (where current prices are not available), it is preferable to inflate using the US dollar GDP deflator and then convert into local currency. ",

@@ -1,3 +1,25 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:637d0f8fd3b043578f7dbd843db4045e14b5cb763ea788c0875474746de0eac6
-size 1075
+Unnamed: 0,Unnamed: 1,Unnamed: 2
+,,
+,Name:,Lifestyle
+,,
+,Link to Python Code on GitHub:,https://github.com/UCL/TLOmodel/blob/feature/tamuri-andrew-lifestyle/src/tlo/methods/lifestyle.py
+,Link to Issue Discussion on GitHub: ,
+,,
+,Type of Module:,AddlModules
+,,
+,Author:,Andrew
+,,
+,Major Amendments Revision History:,1st complete version: 12 Dec 2018    updated with new properties 24 March 2019   updated 21 August 2019
+,,
+,Other Aspects of the Model Addressed:,These individual characteristics are used by all modules
+,Diseases:,various diseases will be affected 
+,Interventions:,This (and below) cannot be specified here at this point as it depends on structure of other methods 
+,Lifestyle Elements:,
+,P-variables:,"li_urban, li_wealth, li_low_ex, li_bmi, li_tob, li_ex_alc, li_in_ed, li_ed_lev, li_mar_stat, li_high_salt, li_high_sugar"
+,H-variables:,
+,E-variables:,"li_unimproved_sanitation, li_no_clean_drinking_water, li_no_access_handwashing, li_wood_burn_stove"
+,,
+,Proccessed,
+,Completed by author:,2019-08-21 00:00:00
+,Coded in main framework:, 
+,Reviwed by Team:,

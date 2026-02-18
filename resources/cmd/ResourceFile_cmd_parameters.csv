@@ -1,3 +1,3 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:96f8cb9e460d283a69163ef26fdcfbca41e6793f9d23f81f3e52b4b68557f427
-size 173
+parameter_name,value
+prob_care_provided_given_seek_emergency_care,0.5
+prob_ckd_patient_gets_dialysis,0.02
