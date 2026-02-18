@@ -260,7 +260,6 @@ def check_int_deliverable(self, int_name, hsi_event,
     l_params = self.sim.modules["Labour"].current_parameters
     c = self.sim.modules["PregnancySupervisor"].mnh_outcome_counter
 
-    print(int_name)
     assert int_name in p_params["all_interventions"]
     c[f"{int_name}_req"] += 1
 

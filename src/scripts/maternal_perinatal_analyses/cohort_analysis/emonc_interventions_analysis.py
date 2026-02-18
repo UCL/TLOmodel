@@ -11,7 +11,7 @@ class EmoncScenario(BaseScenario):
         self.seed = 537184
         self.start_date = Date(2025, 1, 1)
         self.end_date = Date(2026, 1, 2)
-        self.pop_size = 30_000
+        self.pop_size = 40_000
         self.number_of_draws = 9
         self.runs_per_draw = 20
 
@@ -56,7 +56,7 @@ class EmoncScenario(BaseScenario):
             return {'PregnancySupervisor': {
                     'analysis_year': 2025,
                     'interventions_analysis': True,
-                    'interventions_under_analysis': interventions_for_analysis[draw_number-1],
+                    'interventions_under_analysis': interventions_for_analysis[draw_number-2],
                     'intervention_analysis_availability': 1.0}}
 
 

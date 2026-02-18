@@ -100,7 +100,7 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-scenario = 'testing_scenario_501572'
+scenario = 'testing_scenario_514796'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
 # Create a folder to store graphs (if it hasn't already been created when ran previously)
@@ -327,66 +327,66 @@ get_diff_plots(neo_deaths_2, 'NMR (demog log)')
 get_diff_plots(mat_dalys_diffs, 'Maternal DALYs')
 get_diff_plots(neo_dalys_diffs, 'neonatal DALYs')
 
-
-def get_tornado_plot(data, outcome):
-    grouped_data = {}
-    data.pop('baseline', None)
-
-    for key in data.keys():
-        base_key = key.rsplit('_', 1)[0] if key.endswith('_max') or key.endswith('_min') else key
-
-        if base_key not in grouped_data:
-            grouped_data[base_key] = {'min': None, 'max': None}
-        if 'min' in key:
-            grouped_data[base_key]['min'] = data[key]
-        elif 'max' in key:
-            grouped_data[base_key]['max'] = data[key]
-
-    # Prepare data for plotting
-    categories = list(grouped_data.keys())
-    min_values = [np.mean(grouped_data[cat]['min']) for cat in categories]
-    max_values = [np.mean(grouped_data[cat]['max']) for cat in categories]
-
-    # Extracting uncertainty intervals (first and third values in each array)
-    min_lower = [grouped_data[cat]['min'][0] for cat in categories]
-    min_upper = [grouped_data[cat]['min'][2] for cat in categories]
-    max_lower = [grouped_data[cat]['max'][0] for cat in categories]
-    max_upper = [grouped_data[cat]['max'][2] for cat in categories]
-
-    # Calculate error bars (distance from mean to bounds)
-    min_errors = [np.abs(np.array(min_values) - np.array(min_lower)),
-                  np.abs(np.array(min_upper) - np.array(min_values))]
-    max_errors = [np.abs(np.array(max_values) - np.array(max_lower)),
-                  np.abs(np.array(max_upper) - np.array(max_values))]
-
-    # Plotting
-    plt.figure(figsize=(10, 6))
-    y_positions = np.arange(len(categories))
-
-    bars_min = plt.barh(y_positions, min_values, color='lightcoral', edgecolor='black', alpha=0.7, label='Min Effect')
-    bars_max = plt.barh(y_positions, max_values, color='skyblue', edgecolor='black', alpha=0.7, label='Max Effect')
-
-    # Add error bars for uncertainty intervals
-    plt.errorbar(min_values, y_positions, xerr=min_errors, fmt='none', ecolor='darkred', capsize=5, alpha=0.9,
-                 label='Uncertainty (Min)')
-    plt.errorbar(max_values, y_positions, xerr=max_errors, fmt='none', ecolor='navy', capsize=5, alpha=0.9,
-                 label='Uncertainty (Max)')
-
-    # Central zero line
-    plt.axvline(0, color='black', linewidth=1, linestyle='--')
-
-    # Add labels
-    plt.yticks(y_positions, categories)
-    plt.xlabel(f'Difference in {outcome} from Status Quo')
-    plt.title(f'Tornado Plot showing current and potential impact of interventions on {outcome}')
-    plt.legend()
-
-    plt.savefig(f'{g_path}/{outcome}_tornado.png', bbox_inches='tight')
-    plt.show()
-
-
-get_tornado_plot(mat_deaths_2, 'MMR')
-get_tornado_plot(neo_deaths_2, 'NMR')
-
-get_tornado_plot(mat_dalys_diffs, 'Maternal DALYs')
-get_tornado_plot(neo_dalys_diffs, 'Neonatal DALYs')
+#
+# def get_tornado_plot(data, outcome):
+#     grouped_data = {}
+#     data.pop('baseline', None)
+#
+#     for key in data.keys():
+#         base_key = key.rsplit('_', 1)[0] if key.endswith('_max') or key.endswith('_min') else key
+#
+#         if base_key not in grouped_data:
+#             grouped_data[base_key] = {'min': None, 'max': None}
+#         if 'min' in key:
+#             grouped_data[base_key]['min'] = data[key]
+#         elif 'max' in key:
+#             grouped_data[base_key]['max'] = data[key]
+#
+#     # Prepare data for plotting
+#     categories = list(grouped_data.keys())
+#     min_values = [np.mean(grouped_data[cat]['min']) for cat in categories]
+#     max_values = [np.mean(grouped_data[cat]['max']) for cat in categories]
+#
+#     # Extracting uncertainty intervals (first and third values in each array)
+#     min_lower = [grouped_data[cat]['min'][0] for cat in categories]
+#     min_upper = [grouped_data[cat]['min'][2] for cat in categories]
+#     max_lower = [grouped_data[cat]['max'][0] for cat in categories]
+#     max_upper = [grouped_data[cat]['max'][2] for cat in categories]
+#
+#     # Calculate error bars (distance from mean to bounds)
+#     min_errors = [np.abs(np.array(min_values) - np.array(min_lower)),
+#                   np.abs(np.array(min_upper) - np.array(min_values))]
+#     max_errors = [np.abs(np.array(max_values) - np.array(max_lower)),
+#                   np.abs(np.array(max_upper) - np.array(max_values))]
+#
+#     # Plotting
+#     plt.figure(figsize=(10, 6))
+#     y_positions = np.arange(len(categories))
+#
+#     bars_min = plt.barh(y_positions, min_values, color='lightcoral', edgecolor='black', alpha=0.7, label='Min Effect')
+#     bars_max = plt.barh(y_positions, max_values, color='skyblue', edgecolor='black', alpha=0.7, label='Max Effect')
+#
+#     # Add error bars for uncertainty intervals
+#     plt.errorbar(min_values, y_positions, xerr=min_errors, fmt='none', ecolor='darkred', capsize=5, alpha=0.9,
+#                  label='Uncertainty (Min)')
+#     plt.errorbar(max_values, y_positions, xerr=max_errors, fmt='none', ecolor='navy', capsize=5, alpha=0.9,
+#                  label='Uncertainty (Max)')
+#
+#     # Central zero line
+#     plt.axvline(0, color='black', linewidth=1, linestyle='--')
+#
+#     # Add labels
+#     plt.yticks(y_positions, categories)
+#     plt.xlabel(f'Difference in {outcome} from Status Quo')
+#     plt.title(f'Tornado Plot showing current and potential impact of interventions on {outcome}')
+#     plt.legend()
+#
+#     plt.savefig(f'{g_path}/{outcome}_tornado.png', bbox_inches='tight')
+#     plt.show()
+#
+#
+# get_tornado_plot(mat_deaths_2, 'MMR')
+# get_tornado_plot(neo_deaths_2, 'NMR')
+#
+# get_tornado_plot(mat_dalys_diffs, 'Maternal DALYs')
+# get_tornado_plot(neo_dalys_diffs, 'Neonatal DALYs')
