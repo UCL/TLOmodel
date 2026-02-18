@@ -29,7 +29,10 @@ clinic_configuration_name,Default
 climate_ssp,ssp245
 climate_model_ensemble_model,mean
 services_affected_precip,none
-scale_factor_delay_in_seeking_care_weather,1
-rescaling_prob_seeking_after_disruption,1
-rescaling_prob_disruption,1
-scale_factor_severity_disruption_and_delay,1
+delay_in_seeking_care_weather,4
+prop_supply_side_disruptions, 0.5
+scale_factor_appointment_urgency, 1
+scale_factor_prob_disruption, 1
+scale_factor_reseeking_healthcare_post_disruption, 1
+scale_factor_severity_disruption_and_delay, 1
+year_effective_climate_disruptions, 2025
