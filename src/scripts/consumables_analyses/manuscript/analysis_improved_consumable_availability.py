@@ -115,10 +115,21 @@ main_analysis_subset = [
     if "Default health system" in v
 ]
 
+perfect_analysis_subset = [
+    k for k, v in cons_scenarios.items()
+    if "Perfect health system" in v
+]
+
 cons_scenarios_main = {
     k: v.replace(" – Default health system", "")
     for k, v in cons_scenarios.items()
     if k in main_analysis_subset
+}
+
+cons_scenarios_perfect = {
+    k: v.replace(" – Perfect health system", "")
+    for k, v in cons_scenarios.items()
+    if k in perfect_analysis_subset
 }
 
 # Dict to assign DALY causes to disease groups
@@ -129,6 +140,9 @@ disease_groups = {
     ],
     "Malaria": [
         "Malaria",
+    ],
+    "TB (non-AIDS)": [
+        "TB (non-AIDS)",
     ],
 
     # --- MNCH ---
@@ -920,7 +934,7 @@ def get_num_treatments_by_disease_group(_df):
     return _df
 
 def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
-    monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year).clip(lower=0.0)
+    monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year)
     return monetary_value_of_incremental_health
 
 def get_percentage_unavailable_by_program(_df):
@@ -969,24 +983,24 @@ def get_percentage_unavailable_by_program(_df):
 
     return pct_unavailable
 
-def compute_delta_unavailability_from_baseline(summary_df, baseline_draw=0):
+def compute_delta_unavailability_from_baseline(summary_df, comparator_draw=0):
     """
     Convert absolute % unavailable to change relative to baseline.
     Negative = improvement.
     """
     mean_df = summary_df.xs("mean", level="stat", axis=1)
-    baseline = mean_df[baseline_draw]
+    baseline = mean_df[comparator_draw]
     delta_mean = mean_df.subtract(baseline, axis=0)
 
     return delta_mean
 
-def compute_national_unavailability_summary(summary_df, baseline_draw=0):
+def compute_national_unavailability_summary(summary_df, comparator_draw=0):
 
     mean_df = summary_df.xs("mean", level="stat", axis=1)
     lower_df = summary_df.xs("lower", level="stat", axis=1)
     upper_df = summary_df.xs("upper", level="stat", axis=1)
 
-    baseline = mean_df[baseline_draw]
+    baseline = mean_df[comparator_draw]
 
     delta_mean = mean_df.subtract(baseline, axis=0)
     delta_lower = lower_df.subtract(baseline, axis=0)
@@ -998,217 +1012,6 @@ def compute_national_unavailability_summary(summary_df, baseline_draw=0):
 
     return delta_mean, national_mean, national_lower, national_upper
 
-# ----------------------------
-# 1) DALYs averted - Total
-# ----------------------------
-num_dalys = extract_results(
-        results_folder,
-        module='tlo.methods.healthburden',
-        key='dalys_stacked',
-        custom_generate_series=get_num_dalys,
-        do_scaling=True,
-        suspended_results_folder = suspended_results_folder,
-    )
-
-num_dalys_averted = ((-1.0 *
-                     pd.DataFrame(
-                         find_difference_relative_to_comparison(
-                             num_dalys,
-                             comparison=0)  # sets the comparator to 0 which is the Actual scenario
-                     ).T.unstack(level='run')))
-
-num_dalys_averted_summarized = summarize_aggregated_results_for_figure(
-    num_dalys_averted,
-    main_analysis_subset,
-    chosen_metric
-)
-
-num_dalys_averted_percent = ((-1.0 *
-                     pd.DataFrame(
-                         find_difference_relative_to_comparison(
-                             num_dalys,
-                             comparison=0, scaled = True)  # sets the comparator to 0 which is the Actual scenario
-                     ).T.unstack(level='run')))
-
-num_dalys_averted_percent_summarized = summarize_aggregated_results_for_figure(
-    num_dalys_averted_percent,
-    main_analysis_subset,
-    chosen_metric
-)
-
-# Plot DALYs
-name_of_plot = f'Incremental DALYs averted compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_standard_bar_plot_with_ci(
-    (num_dalys_averted_summarized / 1e6).clip(0.0),
-    annotations=[
-        f"{row[chosen_metric]*100:.1f}% "
-        f"({row['lower']*100:.1f}–{row['upper']*100:.1f}%)"
-        for _, row in num_dalys_averted_percent_summarized.iterrows()
-    ],
-    xticklabels_wrapped=True,
-    put_labels_in_legend=False,
-    offset=0.05,
-    scenarios_dict=cons_scenarios_main
-)
-#ax.set_title(name_of_plot)
-ax.set_ylabel('DALYs \n(Millions)')
-ax.set_ylim(bottom=0)
-fig.savefig(figurespath / 'dalys_averted_total.png', dpi=600)
-plt.close(fig)
-
-# --------------------------------------------
-# 2) DALYs averted by disease group
-# --------------------------------------------
-num_dalys_by_disease = extract_results(
-    results_folder,
-    module='tlo.methods.healthburden',
-    key='dalys_stacked',
-    custom_generate_series=get_num_dalys_by_disease,
-    do_scaling=True,
-    suspended_results_folder = suspended_results_folder,
-)
-
-num_dalys_by_group = aggregate_by_disease_group(
-    num_dalys_by_disease,
-    disease_groups
-)
-
-# Get absolute DALYs averted
-num_dalys_by_group.columns.names = ["draw", "run"]
-
-num_dalys_averted_by_group =  (-1.0 *
-                     pd.DataFrame(
-                         find_difference_relative_to_comparison(
-                             num_dalys_by_group,
-                             comparison=0,
-                             scaled=True,
-                             drop_comparison=True)  # sets the comparator to 0 which is the Actual scenario
-                     ))
-
-num_dalys_averted_by_group_summarized = summarize_disaggregated_results_for_figure(
-    num_dalys_averted_by_group,
-    main_analysis_subset,
-    chosen_metric
-)
-
-# Plot DALYs averted by disease group
-fig, ax = plot_percentage_change_with_ci(
-    summary_df=num_dalys_averted_by_group_summarized,
-    colors=disease_colors,
-    scenario_labels=cons_scenarios_main,
-    ylabel="DALYs averted \n (% relative to Baseline)",
-    title="",
-    xticklabels_wrapped=True,
-)
-fig.savefig(figurespath / "dalys_averted_by_disease_group.png",
-            dpi=300, bbox_inches="tight")
-
-# --------------------------------------------
-# 3) Total number of services delivered
-# --------------------------------------------
-num_treatments_total = extract_results(
-    results_folder,
-    module='tlo.methods.healthsystem.summary',
-    key='HSI_Event_non_blank_appt_footprint',
-    custom_generate_series=get_num_treatments_total,
-    do_scaling=True,
-    suspended_results_folder = suspended_results_folder,
-).pipe(set_param_names_as_column_index_level_0)
-
-num_incremental_treatments = (
-                     pd.DataFrame(
-                         find_difference_relative_to_comparison(
-                             num_treatments_total,
-                             comparison=0,
-                             scaled = True)  # sets the comparator to 0 which is the Actual scenario
-                     ).T.unstack(level='run'))
-
-num_incremental_treatments_summarized = summarize_aggregated_results_for_figure(
-    num_incremental_treatments,
-    main_analysis_subset,
-    chosen_metric
-)
-
-# Plot DALYs
-name_of_plot = f'Incremental services delivered compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-yaxis_scaling_factor = 1/100
-fig, ax = do_standard_bar_plot_with_ci(
-    (num_incremental_treatments_summarized / yaxis_scaling_factor).clip(0.0),
-    annotations=[
-        f"{row[chosen_metric] / yaxis_scaling_factor:.2f} ({row['lower'] / yaxis_scaling_factor :.2f}- {row['upper'] / yaxis_scaling_factor:.2f})"
-        for _, row in num_incremental_treatments_summarized.iterrows()
-    ],
-    xticklabels_wrapped=True,
-    put_labels_in_legend=False,
-    offset=0.05,
-    scenarios_dict=cons_scenarios_main
-)
-#ax.set_title(name_of_plot)
-ax.set_ylabel('Additional services delivered \n(% relative to Baseline)')
-ax.set_ylim(bottom=0)
-fig.savefig(figurespath / 'incremental_services_delivered_total.png', dpi=600)
-plt.close(fig)
-
-# ----------------------------------------------------------
-# 4) Total number of services delivered by disease group
-# ----------------------------------------------------------
-num_treatments_by_disease_group = extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem.summary',
-        key='HSI_Event_non_blank_appt_footprint',
-        custom_generate_series=get_num_treatments_by_disease_group,
-        do_scaling=True,
-    suspended_results_folder = suspended_results_folder,
-    ).pipe(set_param_names_as_column_index_level_0)
-
-# Map services to DALY groups
-num_treatments_by_disease_group['disease_group'] = (
-    num_treatments_by_disease_group.index.map(service_to_group))
-
-# Check if any services are unmapped
-assert (num_treatments_by_disease_group['disease_group'].isna().sum() == 0)
-
-# Aggregate
-num_treatments_by_disease_group = (num_treatments_by_disease_group
-                           .set_index("disease_group", append=True)
-                           .groupby(level="disease_group")
-                           .sum())
-
-
-num_incremental_treatments_by_disease_group  = pd.DataFrame(
-                         find_difference_relative_to_comparison(
-                             num_treatments_by_disease_group,
-                             comparison=0,
-                             scaled = True)  # sets the comparator to 0 which is the Actual scenario
-                     )
-
-num_incremental_treatments_by_disease_group_summarized = summarize_disaggregated_results_for_figure(
-    num_incremental_treatments_by_disease_group,
-    main_analysis_subset,
-    chosen_metric
-)
-
-fig, ax = plot_percentage_change_with_ci(
-    summary_df=num_incremental_treatments_by_disease_group_summarized,
-    colors=disease_colors,
-    scenario_labels=cons_scenarios_main,
-    ylabel="Additional services delivered \n (% relative to Baseline)",
-    title="",
-    xticklabels_wrapped=True,
-)
-fig.savefig(figurespath / "incremental_services_delivered_by_disease_group.png",
-            dpi=300, bbox_inches="tight")
-
-# ----------------------------------------------------------
-# 5) Maximum ability to pay
-# ----------------------------------------------------------
-max_ability_to_pay = (get_monetary_value_of_incremental_health(num_dalys_averted,
-                                                               _chosen_value_of_life_year=chosen_cet)).clip(lower=0.0)
-max_ability_to_pay = max_ability_to_pay[
-    max_ability_to_pay.index.get_level_values('draw').isin(list(cons_scenarios_main.keys()))]
-max_ability_to_pay_summarized = summarize_cost_data(
-    max_ability_to_pay, _metric=chosen_metric)
-
 def reformat_with_draw_as_index_and_stat_as_column(_df):
     df = _df.copy()
     df.index = df.index.set_names(["stat", "draw"])
@@ -1216,90 +1019,368 @@ def reformat_with_draw_as_index_and_stat_as_column(_df):
     formatted.columns = formatted.columns.droplevel(0)
     return formatted
 
-max_ability_to_pay_summarized = reformat_with_draw_as_index_and_stat_as_column(
-    max_ability_to_pay_summarized)
 
-# Plot Maximum ability to pay
-name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_standard_bar_plot_with_ci(
-    (max_ability_to_pay_summarized / 1e6),
-    annotations=[
-        f"{row[chosen_metric] / 1e6 :.2f} ({row['lower'] / 1e6 :.2f}- \n {row['upper']/ 1e6:.2f})"
-        for _, row in max_ability_to_pay_summarized.iterrows()
-    ],
-    xticklabels_wrapped=True,
-    put_labels_in_legend=False,
-    offset=3, scenarios_dict = cons_scenarios_main
-)
-ax.set_title(name_of_plot)
-ax.set_ylabel('Maximum ability to pay \n(USD, millions)')
-ax.set_ylim(bottom=0)
-fig.tight_layout()
-fig.savefig(figurespath / 'max_ability_to_pay.png', dpi = 300, bbox_inches = "tight")
-plt.close(fig)
+def generate_all_consumable_figures(
+    scenario_dict: dict,
+    results_folder: Path,
+    suspended_results_folder: Path,
+    comparator_draw: int,
+    figurespath: Path,
+):
+    """
+    Generate all consumables impact figures for a given scenario set.
 
-# ----------------------------------------------------------
-# 6) Consumable unavailability
-# ----------------------------------------------------------
-item_to_program_df = pd.read_csv(
-    resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Item_Designations.csv'
-)[['Item_Code', 'item_category']]
+    Parameters
+    ----------
+    scenario_dict : dict
+        Mapping {draw: scenario_name}
 
-item_to_program_map = dict(
-    zip(
-        item_to_program_df['Item_Code'].astype(str),
-        item_to_program_df['item_category']
+    results_folder : Path
+        Folder containing model results
+
+    suspended_results_folder : Path
+        Folder containing suspended results (if applicable)
+
+    figurespath : Path
+        Output folder for figures
+    """
+    figurespath.mkdir(parents=True, exist_ok=True)
+    scenario_subset = list(scenario_dict.keys())
+
+    # --------------------------------------------------
+    # 1) TOTAL DALYs AVERTED
+    # --------------------------------------------------
+    num_dalys = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=get_num_dalys,
+        do_scaling=True,
+        suspended_results_folder=suspended_results_folder,
     )
+
+    # Absolute
+    num_dalys_averted = (
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_dalys,
+                comparison=comparator_draw,
+                scaled=False
+            )
+        ).T.unstack(level='run')
+    )
+
+    num_dalys_averted_summarized = summarize_aggregated_results_for_figure(
+        num_dalys_averted,
+        scenario_subset,
+        chosen_metric
+    )
+
+    # Percentage
+    num_dalys_averted_percent = (
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_dalys,
+                comparison=comparator_draw,
+                scaled=True
+            )
+        ).T.unstack(level='run')
+    )
+
+    num_dalys_averted_percent_summarized = summarize_aggregated_results_for_figure(
+        num_dalys_averted_percent,
+        scenario_subset,
+        chosen_metric
+    )
+
+    fig, ax = do_standard_bar_plot_with_ci(
+        (num_dalys_averted_summarized / 1e6).clip(0.0),
+        annotations=[
+            f"{row[chosen_metric]*100:.1f}% "
+            f"({row['lower']*100:.1f}–{row['upper']*100:.1f}%)"
+            for _, row in num_dalys_averted_percent_summarized.iterrows()
+        ],
+        xticklabels_wrapped=True,
+        put_labels_in_legend=False,
+        offset=0.05,
+        scenarios_dict=scenario_dict
+    )
+    ax.set_ylabel('DALYs (Millions)')
+    ax.set_ylim(bottom=0)
+    fig.savefig(figurespath / 'dalys_averted_total.png', dpi=600)
+    plt.close(fig)
+
+
+    # --------------------------------------------------
+    # 2) DALYs BY DISEASE GROUP
+    # --------------------------------------------------
+    num_dalys_by_disease = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=get_num_dalys_by_disease,
+        do_scaling=True,
+        suspended_results_folder=suspended_results_folder,
+    )
+
+    num_dalys_by_group = aggregate_by_disease_group(
+        num_dalys_by_disease,
+        disease_groups
+    )
+
+    num_dalys_by_group.columns.names = ["draw", "run"]
+
+    num_dalys_averted_by_group = (
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_dalys_by_group,
+                comparison=comparator_draw,
+                scaled=True,
+                drop_comparison=True
+            )
+        )
+    )
+
+    num_dalys_averted_by_group_summarized = summarize_disaggregated_results_for_figure(
+        num_dalys_averted_by_group,
+        scenario_subset,
+        chosen_metric
+    )
+
+    fig, ax = plot_percentage_change_with_ci(
+        summary_df=num_dalys_averted_by_group_summarized,
+        colors=disease_colors,
+        scenario_labels=scenario_dict,
+        ylabel="DALYs averted (% relative to baseline)",
+        xticklabels_wrapped=True,
+    )
+    fig.savefig(figurespath / "dalys_averted_by_disease_group.png",
+                dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+
+    # --------------------------------------------------
+    # 3) TOTAL SERVICES DELIVERED
+    # --------------------------------------------------
+    num_treatments_total = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event_non_blank_appt_footprint',
+        custom_generate_series=get_num_treatments_total,
+        do_scaling=True,
+        suspended_results_folder=suspended_results_folder,
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    num_incremental_treatments = (
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_treatments_total,
+                comparison = comparator_draw,
+                scaled=True
+            )
+        ).T.unstack(level='run')
+    )
+
+    num_incremental_treatments_summarized = summarize_aggregated_results_for_figure(
+        num_incremental_treatments,
+        scenario_subset,
+        chosen_metric
+    )
+
+    fig, ax = do_standard_bar_plot_with_ci(
+        num_incremental_treatments_summarized.clip(0.0),
+        annotations=[
+            f"{row[chosen_metric]*100:.1f}% "
+            f"({row['lower']*100:.1f}–{row['upper']*100:.1f}%)"
+            for _, row in num_incremental_treatments_summarized.iterrows()
+        ],
+        xticklabels_wrapped=True,
+        put_labels_in_legend=False,
+        offset=0.05,
+        scenarios_dict=scenario_dict
+    )
+    ax.set_ylabel('Additional services delivered (% relative to baseline)')
+    ax.set_ylim(bottom=0)
+    fig.savefig(figurespath / 'incremental_services_delivered_total.png', dpi=600)
+    plt.close(fig)
+
+
+    # --------------------------------------------------
+    # 4) SERVICES BY DISEASE GROUP
+    # --------------------------------------------------
+    num_treatments_by_disease_group = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event_non_blank_appt_footprint',
+        custom_generate_series=get_num_treatments_by_disease_group,
+        do_scaling=True,
+        suspended_results_folder=suspended_results_folder,
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    num_treatments_by_disease_group['disease_group'] = (
+        num_treatments_by_disease_group.index.map(service_to_group)
+    )
+
+    num_treatments_by_disease_group = (
+        num_treatments_by_disease_group
+        .set_index("disease_group", append=True)
+        .groupby(level="disease_group")
+        .sum()
+    )
+
+    num_incremental_by_group = pd.DataFrame(
+        find_difference_relative_to_comparison(
+            num_treatments_by_disease_group,
+            comparison=comparator_draw,
+            scaled=True
+        )
+    )
+
+    summarized = summarize_disaggregated_results_for_figure(
+        num_incremental_by_group,
+        scenario_subset,
+        chosen_metric
+    )
+
+    fig, ax = plot_percentage_change_with_ci(
+        summary_df=summarized,
+        colors=disease_colors,
+        scenario_labels=scenario_dict,
+        ylabel="Additional services (% relative to baseline)",
+        xticklabels_wrapped=True,
+    )
+    fig.savefig(figurespath / "incremental_services_delivered_by_disease_group.png",
+                dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+
+    # --------------------------------------------------
+    # 5) MAXIMUM ABILITY TO PAY
+    # --------------------------------------------------
+    max_ability_to_pay = (
+        get_monetary_value_of_incremental_health(
+            num_dalys_averted,
+            _chosen_value_of_life_year=chosen_cet
+        )
+    )
+
+    max_ability_to_pay = max_ability_to_pay[
+        max_ability_to_pay.index.get_level_values('draw').isin(scenario_subset)
+    ]
+
+    max_ability_to_pay_summarized = summarize_cost_data(
+        max_ability_to_pay,
+        _metric=chosen_metric
+    ).clip(lower=0.0)
+
+    max_ability_to_pay_summarized = reformat_with_draw_as_index_and_stat_as_column(
+        max_ability_to_pay_summarized
+    )
+
+    fig, ax = do_standard_bar_plot_with_ci(
+        (max_ability_to_pay_summarized / 1e6),
+        annotations=[
+            f"{row[chosen_metric] / 1e6 :.2f} "
+            f"({row['lower'] / 1e6 :.2f}–{row['upper'] / 1e6:.2f})"
+            for _, row in max_ability_to_pay_summarized.iterrows()
+        ],
+        xticklabels_wrapped=True,
+        put_labels_in_legend=False,
+        offset=3,
+        scenarios_dict=scenario_dict
+    )
+    ax.set_ylabel('Maximum ability to pay (USD millions)')
+    ax.set_ylim(bottom=0)
+    fig.savefig(figurespath / 'max_ability_to_pay.png',
+                dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+
+    # --------------------------------------------------
+    # 6) CONSUMABLE UNAVAILABILITY
+    # --------------------------------------------------
+    item_to_program_df = pd.read_csv(
+        resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Item_Designations.csv'
+    )[['Item_Code', 'item_category']]
+
+    item_to_program_map = dict(
+        zip(
+            item_to_program_df['Item_Code'].astype(str),
+            item_to_program_df['item_category']
+        )
+    )
+
+    # Plot the proportion of instances that a consumable was not available when requested
+    pct_unavailable_by_program = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Consumables',
+        custom_generate_series=get_percentage_unavailable_by_program,
+        do_scaling=False,
+        suspended_results_folder=suspended_results_folder,
+    )
+
+    pct_unavailable_by_program_summarized = summarize_disaggregated_results_for_figure(
+        pct_unavailable_by_program,
+        scenario_dict,
+        chosen_metric
+    )
+
+    fig, ax = plot_percentage_change_with_ci(
+        summary_df=pct_unavailable_by_program_summarized,
+        colors=disease_colors,
+        scenario_labels=scenario_dict,
+        ylabel="% instances of consumables being unavailable",
+        title="",
+        xticklabels_wrapped=True,
+    )
+    fig.savefig(figurespath / "pct_unavailable_by_program.png",
+                dpi=300, bbox_inches="tight")
+
+    delta_mean = compute_delta_unavailability_from_baseline(pct_unavailable_by_program_summarized,
+                                                            comparator_draw = comparator_draw)
+
+    plot_heatmap_delta(delta_mean, scenario_labels=scenario_dict, baseline_draw=comparator_draw)
+    plt.savefig(figurespath / "pct_change_in_availability_by_scenario_and_program_heatmap.png",
+                dpi=300, bbox_inches="tight")
+
+    delta_mean, nat_mean, nat_lower, nat_upper = compute_national_unavailability_summary(
+        pct_unavailable_by_program_summarized,
+        comparator_draw = comparator_draw
+    )
+
+    plot_change_in_cons_unavailability_by_program(
+        delta_mean,
+    )
+    plt.savefig(figurespath / "change_in_cons_unavailability_by_program.png",
+                dpi=300, bbox_inches="tight")
+
+    plot_change_in_cons_unavailability_by_scenario(
+        nat_mean,
+        nat_lower,
+        nat_upper,
+        scenario_labels=scenario_dict
+    )
+    plt.savefig(figurespath / "change_in_cons_unavailability_by_scenario.png",
+                dpi=300, bbox_inches="tight")
+
+    print("✓ All figures generated.")
+
+generate_all_consumable_figures(
+    scenario_dict=cons_scenarios_main,
+    results_folder=results_folder,
+    suspended_results_folder=suspended_results_folder,
+    figurespath=figurespath / "main",
+    comparator_draw=0,
 )
 
-# Plot the proportion of instances that a consumable was not available when requested
-pct_unavailable_by_program = extract_results(
-    results_folder,
-    module='tlo.methods.healthsystem.summary',
-    key='Consumables',
-    custom_generate_series=get_percentage_unavailable_by_program,
-    do_scaling=False,
-    suspended_results_folder = suspended_results_folder,
+generate_all_consumable_figures(
+    scenario_dict=cons_scenarios_perfect,
+    results_folder=results_folder,
+    suspended_results_folder=suspended_results_folder,
+    figurespath=figurespath / "perfect",
+    comparator_draw=1,
 )
-
-pct_unavailable_by_program_summarized = summarize_disaggregated_results_for_figure(
-    pct_unavailable_by_program,
-    main_analysis_subset,
-    chosen_metric
-)
-
-fig, ax = plot_percentage_change_with_ci(
-    summary_df=pct_unavailable_by_program_summarized,
-    colors=disease_colors,
-    scenario_labels=cons_scenarios_main,
-    ylabel="% instances of consumables being unavailable",
-    title="",
-    xticklabels_wrapped=True,
-)
-fig.savefig(figurespath / "pct_unavailable_by_program.png",
-            dpi=300, bbox_inches="tight")
-
-delta_mean = compute_delta_unavailability_from_baseline(pct_unavailable_by_program_summarized)
-
-plot_heatmap_delta(delta_mean, scenario_labels=cons_scenarios_main, baseline_draw = 0)
-plt.savefig(figurespath / "pct_change_in_availability_by_scenario_and_program_heatmap.png",
-            dpi=300, bbox_inches="tight")
-
-delta_mean, nat_mean, nat_lower, nat_upper = compute_national_unavailability_summary(
-    pct_unavailable_by_program_summarized
-)
-
-plot_change_in_cons_unavailability_by_program(
-    delta_mean,
-)
-plt.savefig(figurespath / "change_in_cons_unavailability_by_program.png",
-            dpi=300, bbox_inches="tight")
-
-plot_change_in_cons_unavailability_by_scenario(
-    nat_mean,
-    nat_lower,
-    nat_upper,
-    scenario_labels=cons_scenarios_main
-)
-plt.savefig(figurespath / "change_in_cons_unavailability_by_scenario.png",
-            dpi=300, bbox_inches="tight")
