@@ -5,7 +5,7 @@
     "--resume-simulation",
     "${AZ_BATCH_NODE_MOUNTS_DIR}/mnt/rm916@ic.ac.uk/climate_scenario_runs_lhs_param_scan-2026-01-22T172056Z/0"
   ],
-  "runs_per_draw": 1,
+  "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
