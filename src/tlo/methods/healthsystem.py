@@ -1931,14 +1931,14 @@ class HealthSystem(Module):
     def record_hsi_event(
         self, hsi_event, actual_appt_footprint=None, did_run=True, priority=None, clinic=None
     ):
-        """
-        Record the processing of an HSI event.
-        It will also record the actual appointment footprint.
-        :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
-        :param actual_appt_footprint: The actual Appointment Footprint (if individual event)
-        """
+        real_facility_id = None
+        if hsi_event.target is not None and hsi_event.facility_info is not None:
+            fac_level = hsi_event.facility_info.level
+            try:
+                real_facility_id = self.sim.population.props.at[hsi_event.target, f"level_{fac_level}"]
+            except (KeyError, TypeError):
+                real_facility_id = None
 
-        # HSI-Event
         self.write_to_hsi_log(
             event_details=hsi_event.as_namedtuple(actual_appt_footprint),
             person_id=hsi_event.target,
@@ -1946,8 +1946,8 @@ class HealthSystem(Module):
             did_run=did_run,
             priority=priority,
             clinic=clinic,
+            real_facility_id=real_facility_id,
         )
-
     def write_to_hsi_log(
         self,
         event_details: HSIEventDetails,
@@ -1956,10 +1956,8 @@ class HealthSystem(Module):
         did_run: bool,
         priority: int,
         clinic: str,
+        real_facility_id: Optional[str] = None,
     ):
-        """Write the log `HSI_Event` and add to the summary counter."""
-        # Debug logger gives simple line-list for every HSI event
-
         hsi_record = {
             "Event_Name": event_details.event_name,
             "TREATMENT_ID": event_details.treatment_id,
@@ -1970,6 +1968,7 @@ class HealthSystem(Module):
             "did_run": did_run,
             "Facility_Level": event_details.facility_level if event_details.facility_level is not None else -99,
             "Facility_ID": facility_id if facility_id is not None else -99,
+            "RealFacility_ID": real_facility_id if real_facility_id is not None else "unknown",
             "Equipment": sorted(event_details.equipment),
             "Clinic": clinic if clinic is not None else "None",
         }
@@ -2016,22 +2015,15 @@ class HealthSystem(Module):
                 event_details=hsi_event.as_namedtuple(), person_id=-1, facility_id=-1, priority=priority, clinic=clinic
             )
 
-    def call_and_record_weather_cancelled_hsi_event(self, hsi_event, priority=None):
-        """
-        Record the fact that an HSI event was cancelled because of weather impacts.
-        If this is an individual-level HSI_Event, it will also record the actual appointment footprint
-        :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
-        """
-        # Invoke never ran function here
+    def call_and_record_weather_cancelled_hsi_event(self, hsi_event, priority=None, real_facility_id=None):
         hsi_event.never_ran()
-
         if hsi_event.facility_info is not None:
-            # Fully-defined HSI Event
             self.write_to_weather_cancelled_hsi_log(
                 event_details=hsi_event.as_namedtuple(),
                 person_id=hsi_event.target,
                 facility_id=hsi_event.facility_info.id,
                 priority=priority,
+                real_facility_id=real_facility_id,
             )
         else:
             self.write_to_weather_cancelled_hsi_log(
@@ -2039,27 +2031,21 @@ class HealthSystem(Module):
                 person_id=-1,
                 facility_id=-1,
                 priority=priority,
+                real_facility_id=real_facility_id,
             )
 
-    def call_and_record_weather_delayed_hsi_event(self, hsi_event, priority=None):
-        """
-        Record the fact that an HSI event was DELAYED because of weather impacts.
-        If this is an individual-level HSI_Event, it will also record the actual appointment footprint
-        :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
-        """
-        #Invoke did not run function here
+    def call_and_record_weather_delayed_hsi_event(self, hsi_event, priority=None, real_facility_id=None):
         if "HSI_CardioMetabolicDisorders_Refill_Medication" in hsi_event.as_namedtuple():
             hsi_event.did_not_run_weather_event()
         else:
             hsi_event.did_not_run()
-
         if hsi_event.facility_info is not None:
-            # Fully-defined HSI Event
             self.write_to_weather_delayed_hsi_log(
                 event_details=hsi_event.as_namedtuple(),
                 person_id=hsi_event.target,
                 facility_id=hsi_event.facility_info.id,
                 priority=priority,
+                real_facility_id=real_facility_id,
             )
         else:
             self.write_to_weather_delayed_hsi_log(
@@ -2067,6 +2053,7 @@ class HealthSystem(Module):
                 person_id=-1,
                 facility_id=-1,
                 priority=priority,
+                real_facility_id=real_facility_id,
             )
     def write_to_never_ran_hsi_log(
         self, event_details: HSIEventDetails, person_id: int, facility_id: Optional[int], priority: int, clinic: str
@@ -2097,14 +2084,15 @@ class HealthSystem(Module):
             appt_footprint=event_details.appt_footprint,
             level=event_details.facility_level,
         )
+
     def write_to_weather_cancelled_hsi_log(
         self,
         event_details: HSIEventDetails,
         person_id: int,
         facility_id: Optional[int],
         priority: int,
+        real_facility_id: Optional[str] = None,
     ):
-        """Write the log `HSI_Event` and add to the summary counter."""
         logger_summary.info(
             key="Weather_cancelled_HSI_Event_full_info",
             data={
@@ -2115,6 +2103,7 @@ class HealthSystem(Module):
                 "priority": priority,
                 "Facility_Level": event_details.facility_level if event_details.facility_level is not None else "-99",
                 "Facility_ID": facility_id if facility_id is not None else -99,
+                "RealFacility_ID": real_facility_id if real_facility_id is not None else "unknown",
             },
             description="record of each HSI event that was cancelled due to weather",
         )
@@ -2136,8 +2125,8 @@ class HealthSystem(Module):
         person_id: int,
         facility_id: Optional[int],
         priority: int,
+        real_facility_id: Optional[str] = None,
     ):
-        """Write the log `HSI_Event` and add to the summary counter."""
         logger_summary.info(
             key="Weather_delayed_HSI_Event_full_info",
             data={
@@ -2148,6 +2137,7 @@ class HealthSystem(Module):
                 "priority": priority,
                 "Facility_Level": event_details.facility_level if event_details.facility_level is not None else "-99",
                 "Facility_ID": facility_id if facility_id is not None else -99,
+                "RealFacility_ID": real_facility_id if real_facility_id is not None else "unknown",
             },
             description="record of each HSI event that was delayed due to weather",
         )
@@ -2162,6 +2152,7 @@ class HealthSystem(Module):
             appt_footprint=event_details.appt_footprint,
             level=event_details.facility_level,
         )
+
     def log_current_capabilities_and_usage(self):
         for clinic_name in self._clinic_names:
             self.log_clinic_current_capabilities_and_usage(clinic_name)
@@ -2696,26 +2687,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # First, check for climate disruption
         if (
-            year >= self.module.parameters["year_effective_climate_disruptions"]
+            year >= 2010  # so starts immediately
             and self.module.parameters["services_affected_precip"] != "none"
             and self.module.parameters["services_affected_precip"] is not None
         ):
             fac_level = item.hsi_event.facility_info.level
             facility_used = self.sim.population.props.at[item.hsi_event.target, f"level_{fac_level}"]
-            if (
-                facility_used
-                in self.module.parameters["projected_precip_disruptions"]["RealFacility_ID"].values
-            ):
-                prob_disruption = self.module.parameters["projected_precip_disruptions"].loc[
-                    (self.module.parameters["projected_precip_disruptions"]["RealFacility_ID"] == facility_used)
-                    & (self.module.parameters["projected_precip_disruptions"]["year"] == year)
-                    & (self.module.parameters["projected_precip_disruptions"]["month"] == month)
-                    & (
-                        self.module.parameters["projected_precip_disruptions"]["service"]
-                        == self.module.parameters["services_affected_precip"]
-                    ),
-                    "disruption",
-                ]
+            if (1 == 1):  # avoid indenting
+                prob_disruption = 0.1
                 prob_disruption = pd.DataFrame(prob_disruption)
                 prob_disruption = min(
                     float(prob_disruption.iloc[0]) * self.module.parameters["scale_factor_prob_disruption"], 1
@@ -2760,7 +2739,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             hsi_event=item.hsi_event
                         )
                         self.module.call_and_record_weather_delayed_hsi_event(
-                            hsi_event=item.hsi_event, priority=item.priority
+                            hsi_event=item.hsi_event, priority=item.priority, real_facility_id=facility_used
                         )
 
                     else:
@@ -2823,12 +2802,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 hsi_event=item.hsi_event,
                             )
                             self.module.call_and_record_weather_delayed_hsi_event(
-                                hsi_event=item.hsi_event, priority=item.priority
+                                hsi_event=item.hsi_event, priority=item.priority, real_facility_id=facility_used
                             )
 
                         else:
                             self.module.call_and_record_weather_cancelled_hsi_event(
-                                hsi_event=item.hsi_event, priority=item.priority
+                                hsi_event=item.hsi_event, priority=item.priority, real_facility_id=facility_used,
                             )
 
         return climate_disrupted
@@ -3262,22 +3241,15 @@ class HealthSystemSummaryCounter:
         self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str
     ) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
-
-        # Count the treatment_id:
         self._treatment_ids[treatment_id] += 1
-
-        # Count each type of appointment:
         for appt_type, number in appt_footprint:
             self._appts[appt_type] += number
             self._appts_by_level[level][appt_type] += number
-
-        # Count the non-blank appointment footprints
         if len(appt_footprint):
             self._no_blank_appt_treatment_ids[treatment_id] += 1
             for appt_type, number in appt_footprint:
                 self._no_blank_appt_appts[appt_type] += number
                 self._no_blank_appt_by_level[level][appt_type] += number
-
     def record_never_ran_hsi_event(
         self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str
     ) -> None:

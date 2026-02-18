@@ -493,141 +493,176 @@ class Demography(Module):
         _df.prob = _df.prob / _df.prob.sum()  # Rescale `prob` so that it sums to 1.0
         return _df.reset_index(drop=True)
 
-    def assign_closest_facility_level(self):
-        """Function that assigns an individual coordinates,
-        and then the facilities at which they recieve care at each level."""
-        # Load district polygons from shapefile
+    def assign_closest_facility_level(self, use_fictional_facilities: bool = False):
+        """
+        Assigns individuals coordinates and the facilities at which they receive care at each level.
+
+        Parameters
+        ----------
+        use_fictional_facilities : bool
+            If True, assigns equal numbers of individuals to each district and uses one
+            fictional facility per level per district (located at the district centroid).
+            This mode is intended for validation experiments where a uniform disruption
+            probability is applied, allowing expected disruption counts to be computed
+            analytically before comparing to model output.
+
+            If False (default), uses real worldpop-weighted coordinate sampling and
+            real facility locations from facility_info.
+        """
         worldpop_gdf = self.parameters["worldpop_gdf"]
-        print(worldpop_gdf["ADM2_EN"].unique())
-        worldpop_gdf["Z_prop"] = pd.to_numeric(
-            worldpop_gdf["Z_prop"], errors="coerce"
-        )  # even when saved as numeric, read in as string
-
-        # Vectorized coordinate assignment - generate all random samples at once
-        # to avoid TLO simulation framework interfering with per-call randomness
-        import secrets
-        import time
-        import hashlib
-
-        # Create unique seed for this run using timestamp + OS entropy
-        run_seed = secrets.token_bytes(16) + int(time.time() * 1e9).to_bytes(8, 'big')
+        worldpop_gdf["Z_prop"] = pd.to_numeric(worldpop_gdf["Z_prop"], errors="coerce")
 
         df = self.sim.population.props.copy()
-        unique_districts = df["district_of_residence"].unique()
+        districts = worldpop_gdf["ADM2_EN"].unique()
+        n_districts = len(districts)
 
-        # Pre-sample coordinates for each district all at once
-        district_to_coords = {}
-        for district in unique_districts:
-            subset = worldpop_gdf[worldpop_gdf["ADM2_EN"] == district]
-            if subset.empty:
-                district_to_coords[district] = None
-                continue
-
-            # How many individuals in this district?
-            n_needed = (df["district_of_residence"] == district).sum()
-
-            # Generate n_needed weighted samples with hash-based mixing
-            weights = subset["Z_prop"].values
-            cumsum = np.cumsum(weights / weights.sum())
-
-            coords = []
-            for i in range(n_needed):
-                # Hash combination of: run_seed + district + counter for unique value per individual
-                h = hashlib.sha256(run_seed + district.encode() + i.to_bytes(4, 'big')).digest()
-                r = int.from_bytes(h[:4], 'big') / (2 ** 32)  # Convert to [0, 1)
-                idx = np.searchsorted(cumsum, r)
-                coords.append(subset.iloc[idx]["geometry"])
-
-            district_to_coords[district] = coords
-
-        # ═══════════════════════════════════════════════════════════════════════
-        # OPTIMIZED: O(n) assignment using cumcount instead of O(n²) loop
-        # ═══════════════════════════════════════════════════════════════════════
-        print(f"\nAssigning coordinates to {len(df)} individuals...")
-
-        # Add sequential index within each district group (FAST - one groupby operation)
-        df['_seq_idx'] = df.groupby('district_of_residence', dropna=False).cumcount()
-
-        # Vectorized coordinate assignment
-        def get_coord(row):
-            district = row['district_of_residence']
-            seq = row['_seq_idx']
-            coords = district_to_coords.get(district)
-            return coords[seq] if coords and seq < len(coords) else None
-
-        df["coordinate_of_residence"] = df.apply(get_coord, axis=1)
-        df.drop('_seq_idx', axis=1, inplace=True)
-
-        # Verify assignment
-        coords_check = [(p.x, p.y) if p else (None, None) for p in df["coordinate_of_residence"]]
-        unique_check = set([c for c in coords_check if c[0] is not None])
-        print(f"Assigned {len(coords_check)} individuals to {len(unique_check)} unique coordinates")
-
-        # ═══════════════════════════════════════════════════════════════════════
-
-        facility_info = self.parameters["facilities_info"]
         facility_levels_types = {
             "level_0": ["Health Post"],
-
-            "level_1a": [
-                "Dispensary",
-                "Clinic",  # Add this
-            ],
-
-            "level_1b": [
-                "Health Centre",  # Add this
-                "Rural/Community Hospital",  # Add this
-            ],
-
+            "level_1a": ["Dispensary", "Clinic"],
+            "level_1b": ["Health Centre", "Rural/Community Hospital"],
             "level_2": ["District Hospital"],
-
-            "level_3": ["Central Hospital"],  # Use the actual CSV value
-
-            "level_4": ["Other Hospital", "Maternity"],  # Add these
+            "level_3": ["Central Hospital"],
+            "level_4": ["Other Hospital", "Maternity"],
         }
-        individual_coords = np.array(
-            [(point.x, point.y) if point else (np.nan, np.nan) for point in df["coordinate_of_residence"]]
-        )
 
-        # Stash actual coordinates for plotting BEFORE dropping the column
-        individual_coords_for_plot = individual_coords[~np.isnan(individual_coords[:, 0])]
+        # ── Dissolve worldpop geometry to one polygon per district ───────────────
+        districts_gdf = worldpop_gdf.dissolve(by="ADM2_EN").reset_index()
 
-        for level, facility_types in facility_levels_types.items():
-            relevant_facilities = facility_info[facility_info["Ftype"].isin(facility_types)]
-            if not relevant_facilities.empty:
-                facility_coords = list(
-                    zip(relevant_facilities["A109__Longitude"], relevant_facilities["A109__Latitude"])
+        # ════════════════════════════════════════════════════════════════════════
+        # BRANCH A  –  fictional facilities, equal district populations
+        # ════════════════════════════════════════════════════════════════════════
+        if use_fictional_facilities:
+
+            # 1. Assign individuals to districts in round-robin order so every
+            #    district receives exactly floor(N/n_districts) or ceil(N/n_districts)
+            #    individuals – i.e. as equal as possible.
+            n_individuals = len(df)
+            district_assignments = np.resize(districts, n_individuals)  # round-robin
+            df["district_of_residence"] = district_assignments
+
+            # 2. Build one fictional facility per level per district, placed at the
+            #    district centroid.  Name format: "FIC_{level}_{district}"
+            fictional_rows = []
+            for _, dist_row in districts_gdf.iterrows():
+                district_name = dist_row["ADM2_EN"]
+                centroid = dist_row["geometry"].centroid
+                for level in facility_levels_types:
+                    fictional_rows.append({
+                        "Level": level,
+                        "Fname": f"FIC_{level}_{district_name}",
+                        "Ftype": f"Fictional_{level}",
+                        "District": district_name,
+                        "Longitude": centroid.x,
+                        "Latitude": centroid.y,
+                    })
+
+            facilities_df = pd.DataFrame(fictional_rows)
+
+            # 3. Assign every individual to their district's fictional facility at
+            #    each level (no spatial KD-tree needed – it's a direct lookup).
+            for level in facility_levels_types:
+                district_to_fname = {
+                    row["District"]: row["Fname"]
+                    for _, row in facilities_df[facilities_df["Level"] == level].iterrows()
+                }
+                df[level] = (
+                    df["district_of_residence"]
+                    .map(district_to_fname)
+                    .astype("category")
                 )
-                facility_tree = cKDTree(facility_coords)
-                distances, indices = facility_tree.query(individual_coords, k=1, workers=-1)
-                df[level] = relevant_facilities.iloc[indices].reset_index(drop=True)["Fname"].astype("category")
-        df.drop("coordinate_of_residence", inplace=True, axis=1)
 
-        rows = []
-        for level, facility_types in facility_levels_types.items():
-            relevant_facilities = facility_info[facility_info["Ftype"].isin(facility_types)]
-            for _, row in relevant_facilities.iterrows():
-                rows.append({
-                    'Level': level,
-                    'Fname': row['Fname'],
-                    'Ftype': row['Ftype'],
-                    'District': row.get('District', np.nan),
-                    'Longitude': row.get('A109__Longitude', np.nan),
-                    'Latitude': row.get('A109__Latitude', np.nan),
-                })
+            print(
+                f"[Fictional mode] Assigned {n_individuals} individuals equally across "
+                f"{n_districts} districts.\n"
+                f"Created {len(facilities_df)} fictional facilities "
+                f"({len(facility_levels_types)} levels × {n_districts} districts)."
+            )
 
-        facilities_df = pd.DataFrame(rows).drop_duplicates().sort_values(['Level', 'Fname'])
+        # ════════════════════════════════════════════════════════════════════════
+        # BRANCH B  –  real worldpop-weighted coordinates + real facilities
+        # ════════════════════════════════════════════════════════════════════════
+        else:
+            import secrets, time, hashlib
+
+            run_seed = secrets.token_bytes(16) + int(time.time() * 1e9).to_bytes(8, "big")
+            unique_districts = df["district_of_residence"].unique()
+
+            # Pre-sample coordinates per district
+            district_to_coords = {}
+            for district in unique_districts:
+                subset = worldpop_gdf[worldpop_gdf["ADM2_EN"] == district]
+                if subset.empty:
+                    district_to_coords[district] = None
+                    continue
+                n_needed = (df["district_of_residence"] == district).sum()
+                weights = subset["Z_prop"].values
+                cumsum = np.cumsum(weights / weights.sum())
+                coords = []
+                for i in range(n_needed):
+                    h = hashlib.sha256(
+                        run_seed + district.encode() + i.to_bytes(4, "big")
+                    ).digest()
+                    r = int.from_bytes(h[:4], "big") / (2 ** 32)
+                    coords.append(subset.iloc[np.searchsorted(cumsum, r)]["geometry"])
+                district_to_coords[district] = coords
+
+            print(f"\nAssigning coordinates to {len(df)} individuals...")
+            df["_seq_idx"] = df.groupby("district_of_residence", dropna=False).cumcount()
+
+            def get_coord(row):
+                coords = district_to_coords.get(row["district_of_residence"])
+                seq = row["_seq_idx"]
+                return coords[seq] if coords and seq < len(coords) else None
+
+            df["coordinate_of_residence"] = df.apply(get_coord, axis=1)
+            df.drop("_seq_idx", axis=1, inplace=True)
+
+            # Facility assignment via KD-tree
+            facility_info = self.parameters["facilities_info"]
+            individual_coords = np.array([
+                (p.x, p.y) if p else (np.nan, np.nan)
+                for p in df["coordinate_of_residence"]
+            ])
+            individual_coords_for_plot = individual_coords[~np.isnan(individual_coords[:, 0])]
+
+            rows = []
+            for level, facility_types in facility_levels_types.items():
+                relevant = facility_info[facility_info["Ftype"].isin(facility_types)]
+                if relevant.empty:
+                    continue
+                fac_coords = list(zip(relevant["A109__Longitude"], relevant["A109__Latitude"]))
+                tree = cKDTree(fac_coords)
+                _, indices = tree.query(individual_coords, k=1, workers=-1)
+                df[level] = (
+                    relevant.iloc[indices]
+                    .reset_index(drop=True)["Fname"]
+                    .astype("category")
+                )
+                for _, row in relevant.iterrows():
+                    rows.append({
+                        "Level": level,
+                        "Fname": row["Fname"],
+                        "Ftype": row["Ftype"],
+                        "District": row.get("District", np.nan),
+                        "Longitude": row.get("A109__Longitude", np.nan),
+                        "Latitude": row.get("A109__Latitude", np.nan),
+                    })
+
+            df.drop("coordinate_of_residence", axis=1, inplace=True)
+            facilities_df = (
+                pd.DataFrame(rows)
+                .drop_duplicates()
+                .sort_values(["Level", "Fname"])
+            )
+
+        # ── Shared: save facilities CSV ──────────────────────────────────────────
         facilities_df.to_csv(
-            '/Users/rem76/Desktop/Climate_Change_Health/unique_facilities_by_level.csv',
-            index=False
+            "/Users/rem76/Desktop/Climate_Change_Health/unique_facilities_by_level.csv",
+            index=False,
         )
+        print(f"Saved {len(facilities_df)} facility rows to CSV.")
 
-        # Save population coordinates for verification
-        pop_coords_df = pd.DataFrame(individual_coords_for_plot, columns=["lon", "lat"])
-        pop_coords_df.to_csv('/Users/rem76/Desktop/Climate_Change_Health/population_coordinates.csv', index=False)
-        print(f"Saved {len(pop_coords_df)} coordinates ({len(pop_coords_df.drop_duplicates())} unique)")
-
-        # ── Plot population locations and facilities ───────────────────────────
+        # ── Shared: diagnostic plot ──────────────────────────────────────────────
         import matplotlib.pyplot as plt
         from matplotlib.lines import Line2D
 
@@ -636,9 +671,9 @@ class Demography(Module):
             "level_2": "#e76f51", "level_3": "#c0392b", "level_4": "#8e44ad",
         }
         LEVEL_LABELS = {
-            "level_0": "Level 0 – Health post / VHC",
-            "level_1a": "Level 1a – Health centre",
-            "level_1b": "Level 1b – Community / rural hospital",
+            "level_0": "Level 0 – Health post",
+            "level_1a": "Level 1a – Dispensary / Clinic",
+            "level_1b": "Level 1b – Health centre / Rural hospital",
             "level_2": "Level 2 – District hospital",
             "level_3": "Level 3 – Central hospital",
             "level_4": "Level 4 – Specialist",
@@ -648,69 +683,77 @@ class Demography(Module):
             "level_2": 90, "level_3": 140, "level_4": 160,
         }
 
-        districts = worldpop_gdf.dissolve(by="ADM2_EN").reset_index()
-
-        # Subsample for plotting
-        rng = np.random.default_rng(42)
-        n_plot = min(10_000, len(individual_coords_for_plot))
-        if n_plot < len(individual_coords_for_plot):
-            idx = rng.choice(len(individual_coords_for_plot), n_plot, replace=False)
-            pop_plot = individual_coords_for_plot[idx]
+        # For the fictional branch we plot district centroids instead of pop coords
+        if use_fictional_facilities:
+            centroids = np.array([
+                (r.geometry.centroid.x, r.geometry.centroid.y)
+                for _, r in districts_gdf.iterrows()
+            ])
+            pop_coords_for_plot = centroids  # one dot per district centroid
         else:
-            pop_plot = individual_coords_for_plot
+            pop_coords_for_plot = individual_coords_for_plot
+
+        lon_min, lon_max = pop_coords_for_plot[:, 0].min(), pop_coords_for_plot[:, 0].max()
+        lat_min, lat_max = pop_coords_for_plot[:, 1].min(), pop_coords_for_plot[:, 1].max()
+        lon_buf = (lon_max - lon_min) * 0.05
+        lat_buf = (lat_max - lat_min) * 0.05
+
+        rng = np.random.default_rng(42)
+        n_plot = min(10_000, len(pop_coords_for_plot))
+        pop_plot = (
+            pop_coords_for_plot[rng.choice(len(pop_coords_for_plot), n_plot, replace=False)]
+            if n_plot < len(pop_coords_for_plot)
+            else pop_coords_for_plot
+        )
 
         fig, axes = plt.subplots(1, 2, figsize=(16, 11), facecolor="#f5f0eb",
                                  gridspec_kw={"wspace": 0.05})
-
-        lon_min, lon_max = individual_coords_for_plot[:, 0].min(), individual_coords_for_plot[:, 0].max()
-        lat_min, lat_max = individual_coords_for_plot[:, 1].min(), individual_coords_for_plot[:, 1].max()
-        lon_buffer = (lon_max - lon_min) * 0.05
-        lat_buffer = (lat_max - lat_min) * 0.05
-
         for ax in axes:
             ax.set_facecolor("#dce9f0")
-            for _, row in districts.iterrows():
+            for _, row in districts_gdf.iterrows():
                 c = row.geometry.centroid
-                ax.text(c.x, c.y, row["ADM2_EN"], fontsize=5.5,
-                        ha="center", va="center", color="#333333", alpha=0.6, zorder=3)
-            ax.set_xlim(lon_min - lon_buffer, lon_max + lon_buffer)
-            ax.set_ylim(lat_min - lat_buffer, lat_max + lat_buffer)
+                ax.text(c.x, c.y, row["ADM2_EN"], fontsize=5.5, ha="center", va="center",
+                        color="#333333", alpha=0.6, zorder=3)
+            ax.set_xlim(lon_min - lon_buf, lon_max + lon_buf)
+            ax.set_ylim(lat_min - lat_buf, lat_max + lat_buf)
             ax.axis("off")
 
-        # Panel A – population
-        axes[0].scatter(pop_plot[:, 0], pop_plot[:, 1], s=1.5, alpha=0.2, color="#2c7bb6",
-                        linewidths=0, zorder=10, rasterized=True)
-        axes[0].set_title(f"(A)  Population locations\n({n_plot:,} individuals)",
+        mode_label = "fictional" if use_fictional_facilities else "real worldpop-weighted"
+        axes[0].scatter(pop_plot[:, 0], pop_plot[:, 1], s=1.5, alpha=0.2,
+                        color="#2c7bb6", linewidths=0, zorder=10, rasterized=True)
+        axes[0].set_title(f"(A) Population locations – {mode_label}\n({n_plot:,} points)",
                           fontsize=11, pad=8, color="#222222")
 
-        # Panel B – facilities
-        for level in list(LEVEL_COLOURS.keys()):
-            subset = facilities_df[facilities_df["Level"] == level].dropna(subset=["Longitude", "Latitude"])
+        for level in LEVEL_COLOURS:
+            subset = facilities_df[facilities_df["Level"] == level].dropna(
+                subset=["Longitude", "Latitude"])
             if subset.empty:
                 continue
-            axes[1].scatter(subset["Longitude"], subset["Latitude"], s=LEVEL_SIZES[level],
-                            color=LEVEL_COLOURS[level], edgecolors="#222222", linewidths=0.4,
-                            alpha=0.85, zorder=3)
+            axes[1].scatter(subset["Longitude"], subset["Latitude"],
+                            s=LEVEL_SIZES[level], color=LEVEL_COLOURS[level],
+                            edgecolors="#222222", linewidths=0.4, alpha=0.85, zorder=3)
 
-        axes[1].set_title("(B)  Health facilities in model\nby level of care",
+        axes[1].set_title("(B) Health facilities in model\nby level of care",
                           fontsize=11, pad=8, color="#222222")
-
         legend_handles = [
-            Line2D([0], [0], marker="o", color="w", markerfacecolor=LEVEL_COLOURS[lvl],
+            Line2D([0], [0], marker="o", color="w",
+                   markerfacecolor=LEVEL_COLOURS[lvl],
                    markeredgecolor="#222222", markeredgewidth=0.4,
-                   markersize=np.sqrt(LEVEL_SIZES[lvl]) * 0.9, label=LEVEL_LABELS[lvl])
-            for lvl in LEVEL_COLOURS if not facilities_df[facilities_df["Level"] == lvl].empty
+                   markersize=np.sqrt(LEVEL_SIZES[lvl]) * 0.9,
+                   label=LEVEL_LABELS[lvl])
+            for lvl in LEVEL_COLOURS
+            if not facilities_df[facilities_df["Level"] == lvl].empty
         ]
         axes[1].legend(handles=legend_handles, loc="lower left", fontsize=7.5,
-                       framealpha=0.85, edgecolor="#aaaaaa", title="Facility level", title_fontsize=8)
+                       framealpha=0.85, edgecolor="#aaaaaa",
+                       title="Facility level", title_fontsize=8)
 
         fig.suptitle("TLO Model – Malawi: Population placement & health facilities",
                      fontsize=14, y=0.97, color="#111111", fontweight="bold")
-
-        plt.savefig('/Users/rem76/Desktop/Climate_Change_Health/malawi_population_facilities.png',
+        plt.savefig("/Users/rem76/Desktop/Climate_Change_Health/malawi_population_facilities.png",
                     dpi=180, bbox_inches="tight")
         plt.close()
-        print("Map saved")
+        print("Map saved.")
 
         self.sim.population.props = df
 
