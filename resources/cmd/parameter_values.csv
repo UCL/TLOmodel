@@ -1,6 +1,6 @@
 parameter_name,value,param_label,prior_min,prior_max,prior_note
 prob_care_provided_given_seek_emergency_care,0.5,local,0,1,vague prior
-prob_ckd_patient_gets_dialysis,0.02,local,0.0,1.0,vague prior
+prob_ckd_patient_gets_dialysis,0.02,local,0,1,vague prior
 interval_between_polls,3,undetermined,1,12,design decision
 emergency_care_symptom_max_days,3,local,1,7,vague prior
 community_testing_schedule_buffer_days,2,undetermined,1,5,design decision
@@ -20,3 +20,4 @@ min_risk_factors_for_scheduled_weight_loss,2,local,1,4,vague prior
 bmi_threshold_weight_loss_advice,2,local,1,4,vague prior
 tests_per_year,2,local,1,4,vague prior
 pr_bmi_reduction,0.1,local,0.05,0.2,vague prior
+probability_of_seeking_further_med_appointment_if_unavailable,0.8,local,0,1,design decision
