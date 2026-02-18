@@ -26,3 +26,10 @@ year_use_funded_or_actual_staffing_switch,2100
 cons_override_treatment_ids,[]
 cons_override_treatment_ids_prob_avail,1.0
 clinic_configuration_name,Default
+climate_ssp,ssp245
+climate_model_ensemble_model,mean
+services_affected_precip,none
+scale_factor_delay_in_seeking_care_weather,1
+rescaling_prob_seeking_after_disruption,1
+rescaling_prob_disruption,1
+scale_factor_severity_disruption_and_delay,1
