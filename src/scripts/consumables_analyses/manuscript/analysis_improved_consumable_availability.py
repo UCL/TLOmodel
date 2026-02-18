@@ -69,6 +69,7 @@ number_of_years_costed = relevant_period_for_costing[1] - 2025 + 1
 
 discount_rate_health = 0
 chosen_metric = 'mean'
+chosen_cet = 65
 
 # Scenarios
 cons_scenarios = {
@@ -120,6 +121,112 @@ cons_scenarios_main = {
     if k in main_analysis_subset
 }
 
+# Dict to assign DALY causes to disease groups
+disease_groups = {
+    # --- HIV / TB / Malaria ---
+    "HIV/AIDS": [
+        "AIDS",
+    ],
+    "Malaria": [
+        "Malaria",
+    ],
+
+    # --- MNCH ---
+    "RMNCH": [
+        "Maternal Disorders",
+        "Neonatal Disorders",
+        "Congenital birth defects",
+        "Childhood Diarrhoea",
+        "Childhood Undernutrition",
+        "Lower respiratory infections",
+        "Measles",
+    ],
+
+    # --- NCDs ---
+    "Cardiometabolic": [
+        "Heart Disease",
+        "Stroke",
+        "Diabetes",
+        "Kidney Disease",
+    ],
+    "Cancer": [
+        "Cancer (Bladder)",
+        "Cancer (Breast)",
+        "Cancer (Cervix)",
+        "Cancer (Oesophagus)",
+        "Cancer (Prostate)",
+        "Cancer (Other)",
+    ],
+    "Mental & Neurological": [
+        "Depression / Self-harm",
+        "Epilepsy",
+        "Lower Back Pain",
+    ],
+    "Other": [
+        "COPD",
+        "Schistosomiasis",
+        "Other",
+    ],
+
+    # --- Injuries ---
+    "Injuries": [
+        "Transport Injuries",
+    ],
+}
+# Dict to assign colours to disease groups
+disease_colors = {
+    "HIV/AIDS": "#e41a1c",
+    "Malaria": "#377eb8",
+    "RMNCH": "#4daf4a",
+    "Cardiometabolic": "#984ea3",
+    "Cancer": "#ff7f00",
+    "Mental & Neurological": "#a65628",
+    "Injuries": "#f781bf",
+    "Other": "#999999",
+}
+# Dict to recategorize above TREATMENT_IDs into disease groups (as used to classify DALYs averted)
+service_to_group = {
+    # --- HIV / TB / Malaria ---
+    "Hiv*": "HIV/AIDS",
+    "Tb*": "HIV/AIDS",  # TB grouped with HIV/AIDS in DALYs
+    "Malaria*": "Malaria",
+
+    # --- RMNCH ---
+    "AntenatalCare*": "RMNCH",
+    "DeliveryCare*": "RMNCH",
+    "PostnatalCare*": "RMNCH",
+    "Contraception*": "RMNCH",
+    "Diarrhoea*": "RMNCH",
+    "Undernutrition*": "RMNCH",
+    "Alri*": "RMNCH",
+    "Measles*": "RMNCH",
+    "Epi*": "RMNCH",
+
+    # --- Cardiometabolic ---
+    "CardioMetabolicDisorders*": "Cardiometabolic",
+
+    # --- Cancer ---
+    "BladderCancer*": "Cancer",
+    "BreastCancer*": "Cancer",
+    "CervicalCancer*": "Cancer",
+    "OesophagealCancer*": "Cancer",
+    "ProstateCancer*": "Cancer",
+    "OtherAdultCancer*": "Cancer",
+
+    # --- Mental & Neurological ---
+    "Depression*": "Mental & Neurological",
+    "Epilepsy*": "Mental & Neurological",
+
+    # --- Other ---
+    "Copd*": "Other",
+    "Inpatient*": "Other",
+    "Schisto*": "Other",
+
+    # --- Injuries ---
+    "Rti*": "Injuries",
+}
+
+
 # Function to get incremental values
 def find_difference_relative_to_comparison(
     df: pd.DataFrame,
@@ -150,6 +257,9 @@ def find_difference_relative_to_comparison(
 
     return result
 
+# ----------------------------
+# Define utility functions
+# ----------------------------
 
 # Define a function to create bar plots
 def do_standard_bar_plot_with_ci(_df: pd.DataFrame, set_colors=None, annotations=None,
@@ -740,7 +850,7 @@ def set_param_names_as_column_index_level_0(_df):
     _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
     return _df
 
-# Plot DALYs averted - Total
+# Functions to extract results
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
     Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
@@ -759,6 +869,138 @@ def get_num_dalys(_df):
 
     return pd.Series(discounted_values.sum())
 
+def get_num_dalys_by_disease(_df):
+    """
+    Return discounted total DALYs by disease over the TARGET_PERIOD.
+    Output: Series indexed by disease name.
+    """
+    years_needed = relevant_period_for_costing
+    assert set(_df.year.unique()).issuperset(years_needed), \
+        "Some years are not recorded."
+
+    # Keep only years of interest
+    _df = _df.loc[_df.year.between(*years_needed)]
+
+    # Drop non-disease columns
+    disease_cols = _df.columns.difference(
+        ['date', 'sex', 'age_range', 'year']
+    )
+
+    # Sum by year × disease
+    by_year_disease = (
+        _df[['year'] + list(disease_cols)]
+        .groupby('year')
+        .sum()
+    )
+
+    # Discounting
+    initial_year = by_year_disease.index.min()
+    discount_factors = (1 + discount_rate_health) ** (
+        by_year_disease.index - initial_year
+    )
+
+    discounted = by_year_disease.div(discount_factors, axis=0)
+
+    # Sum over time → total DALYs by disease
+    return discounted.sum()
+
+def get_num_treatments_total(_df):
+    """Return the number of treatments in total of all treatments (total within the TARGET_PERIOD)"""
+    _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
+    _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
+    _df = _df.groupby(level=0).sum().sum()
+    return pd.Series(_df)
+
+def get_num_treatments_by_disease_group(_df):
+    """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
+    _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
+    _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
+    _df = _df.rename(index=disease_groups)
+    _df = _df.groupby(level=0).sum()
+    return _df
+
+def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
+    monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year).clip(lower=0.0)
+    return monetary_value_of_incremental_health
+
+def get_percentage_unavailable_by_program(_df):
+    """
+    Compute percentage of times consumables were unavailable
+    by disease program within TARGET_PERIOD.
+    """
+
+    # Restrict to target period
+    _df = _df.loc[
+        pd.to_datetime(_df.date).between(*TARGET_PERIOD),
+        ['Item_Available', 'Item_NotAvailable']
+    ]
+
+    # ---- Sum dictionaries across rows ----
+    available = (
+        _df['Item_Available']
+        .apply(pd.Series)
+        .sum()
+    )
+
+    not_available = (
+        _df['Item_NotAvailable']
+        .apply(pd.Series)
+        .sum()
+    )
+
+    # Align indices
+    total = available.add(not_available, fill_value=0)
+
+    # % unavailable per item
+    pct_unavailable = (
+        not_available / total.replace(0, np.nan)
+    )
+
+    # Map items to program
+    pct_unavailable.index = pct_unavailable.index.astype(str)
+    pct_unavailable = pct_unavailable.rename(index=item_to_program_map)
+
+    # Aggregate to program level
+    pct_unavailable = (
+        pct_unavailable
+        .groupby(level=0)
+        .mean()
+    )
+
+    return pct_unavailable
+
+def compute_delta_unavailability_from_baseline(summary_df, baseline_draw=0):
+    """
+    Convert absolute % unavailable to change relative to baseline.
+    Negative = improvement.
+    """
+    mean_df = summary_df.xs("mean", level="stat", axis=1)
+    baseline = mean_df[baseline_draw]
+    delta_mean = mean_df.subtract(baseline, axis=0)
+
+    return delta_mean
+
+def compute_national_unavailability_summary(summary_df, baseline_draw=0):
+
+    mean_df = summary_df.xs("mean", level="stat", axis=1)
+    lower_df = summary_df.xs("lower", level="stat", axis=1)
+    upper_df = summary_df.xs("upper", level="stat", axis=1)
+
+    baseline = mean_df[baseline_draw]
+
+    delta_mean = mean_df.subtract(baseline, axis=0)
+    delta_lower = lower_df.subtract(baseline, axis=0)
+    delta_upper = upper_df.subtract(baseline, axis=0)
+
+    national_mean = delta_mean.mean(axis=0)
+    national_lower = delta_lower.mean(axis=0)
+    national_upper = delta_upper.mean(axis=0)
+
+    return delta_mean, national_mean, national_lower, national_upper
+
+# ----------------------------
+# 1) DALYs averted - Total
+# ----------------------------
 num_dalys = extract_results(
         results_folder,
         module='tlo.methods.healthburden',
@@ -814,42 +1056,9 @@ ax.set_ylim(bottom=0)
 fig.savefig(figurespath / 'dalys_averted_total.png', dpi=600)
 plt.close(fig)
 
-# Plot DALYs averted by disease group
-def get_num_dalys_by_disease(_df):
-    """
-    Return discounted total DALYs by disease over the TARGET_PERIOD.
-    Output: Series indexed by disease name.
-    """
-    years_needed = relevant_period_for_costing
-    assert set(_df.year.unique()).issuperset(years_needed), \
-        "Some years are not recorded."
-
-    # Keep only years of interest
-    _df = _df.loc[_df.year.between(*years_needed)]
-
-    # Drop non-disease columns
-    disease_cols = _df.columns.difference(
-        ['date', 'sex', 'age_range', 'year']
-    )
-
-    # Sum by year × disease
-    by_year_disease = (
-        _df[['year'] + list(disease_cols)]
-        .groupby('year')
-        .sum()
-    )
-
-    # Discounting
-    initial_year = by_year_disease.index.min()
-    discount_factors = (1 + discount_rate_health) ** (
-        by_year_disease.index - initial_year
-    )
-
-    discounted = by_year_disease.div(discount_factors, axis=0)
-
-    # Sum over time → total DALYs by disease
-    return discounted.sum()
-
+# --------------------------------------------
+# 2) DALYs averted by disease group
+# --------------------------------------------
 num_dalys_by_disease = extract_results(
     results_folder,
     module='tlo.methods.healthburden',
@@ -858,57 +1067,6 @@ num_dalys_by_disease = extract_results(
     do_scaling=True,
     suspended_results_folder = suspended_results_folder,
 )
-disease_groups = {
-    # --- HIV / TB / Malaria ---
-    "HIV/AIDS": [
-        "AIDS",
-    ],
-    "Malaria": [
-        "Malaria",
-    ],
-
-    # --- MNCH ---
-    "RMNCH": [
-        "Maternal Disorders",
-        "Neonatal Disorders",
-        "Congenital birth defects",
-        "Childhood Diarrhoea",
-        "Childhood Undernutrition",
-        "Lower respiratory infections",
-        "Measles",
-    ],
-
-    # --- NCDs ---
-    "Cardiometabolic": [
-        "Heart Disease",
-        "Stroke",
-        "Diabetes",
-        "Kidney Disease",
-    ],
-    "Cancer": [
-        "Cancer (Bladder)",
-        "Cancer (Breast)",
-        "Cancer (Cervix)",
-        "Cancer (Oesophagus)",
-        "Cancer (Prostate)",
-        "Cancer (Other)",
-    ],
-    "Mental & Neurological": [
-        "Depression / Self-harm",
-        "Epilepsy",
-        "Lower Back Pain",
-    ],
-    "Other": [
-        "COPD",
-        "Schistosomiasis",
-        "Other",
-    ],
-
-    # --- Injuries ---
-    "Injuries": [
-        "Transport Injuries",
-    ],
-}
 
 num_dalys_by_group = aggregate_by_disease_group(
     num_dalys_by_disease,
@@ -934,17 +1092,6 @@ num_dalys_averted_by_group_summarized = summarize_disaggregated_results_for_figu
 )
 
 # Plot DALYs averted by disease group
-disease_colors = {
-    "HIV/AIDS": "#e41a1c",
-    "Malaria": "#377eb8",
-    "RMNCH": "#4daf4a",
-    "Cardiometabolic": "#984ea3",
-    "Cancer": "#ff7f00",
-    "Mental & Neurological": "#a65628",
-    "Injuries": "#f781bf",
-    "Other": "#999999",
-}
-
 fig, ax = plot_percentage_change_with_ci(
     summary_df=num_dalys_averted_by_group_summarized,
     colors=disease_colors,
@@ -956,17 +1103,9 @@ fig, ax = plot_percentage_change_with_ci(
 fig.savefig(figurespath / "dalys_averted_by_disease_group.png",
             dpi=300, bbox_inches="tight")
 
-# TODO  add figures for service count (Count of successful HSIs)
-# TODO  add figures for Maximum ability to pay
-
-# Plot number of services delivered total
-def get_num_treatments_total(_df):
-    """Return the number of treatments in total of all treatments (total within the TARGET_PERIOD)"""
-    _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
-    _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
-    _df = _df.groupby(level=0).sum().sum()
-    return pd.Series(_df)
-
+# --------------------------------------------
+# 3) Total number of services delivered
+# --------------------------------------------
 num_treatments_total = extract_results(
     results_folder,
     module='tlo.methods.healthsystem.summary',
@@ -1010,17 +1149,9 @@ ax.set_ylim(bottom=0)
 fig.savefig(figurespath / 'incremental_services_delivered_total.png', dpi=600)
 plt.close(fig)
 
-
-# Plot number of services delivered by disease group
-def get_num_treatments_by_disease_group(_df):
-    """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
-    _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
-    _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
-    _df = _df.rename(index=disease_groups)
-    _df = _df.groupby(level=0).sum()
-    return _df
-
-
+# ----------------------------------------------------------
+# 4) Total number of services delivered by disease group
+# ----------------------------------------------------------
 num_treatments_by_disease_group = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
@@ -1029,48 +1160,6 @@ num_treatments_by_disease_group = extract_results(
         do_scaling=True,
     suspended_results_folder = suspended_results_folder,
     ).pipe(set_param_names_as_column_index_level_0)
-
-# Recategorize above TREATMENT_IDs into disease groups (as used to classify DALYs averted)
-service_to_group = {
-    # --- HIV / TB / Malaria ---
-    "Hiv*": "HIV/AIDS",
-    "Tb*": "HIV/AIDS",  # TB grouped with HIV/AIDS in DALYs
-    "Malaria*": "Malaria",
-
-    # --- RMNCH ---
-    "AntenatalCare*": "RMNCH",
-    "DeliveryCare*": "RMNCH",
-    "PostnatalCare*": "RMNCH",
-    "Contraception*": "RMNCH",
-    "Diarrhoea*": "RMNCH",
-    "Undernutrition*": "RMNCH",
-    "Alri*": "RMNCH",
-    "Measles*": "RMNCH",
-    "Epi*": "RMNCH",
-
-    # --- Cardiometabolic ---
-    "CardioMetabolicDisorders*": "Cardiometabolic",
-
-    # --- Cancer ---
-    "BladderCancer*": "Cancer",
-    "BreastCancer*": "Cancer",
-    "CervicalCancer*": "Cancer",
-    "OesophagealCancer*": "Cancer",
-    "ProstateCancer*": "Cancer",
-    "OtherAdultCancer*": "Cancer",
-
-    # --- Mental & Neurological ---
-    "Depression*": "Mental & Neurological",
-    "Epilepsy*": "Mental & Neurological",
-
-    # --- Other ---
-    "Copd*": "Other",
-    "Inpatient*": "Other",
-    "Schisto*": "Other",
-
-    # --- Injuries ---
-    "Rti*": "Injuries",
-}
 
 # Map services to DALY groups
 num_treatments_by_disease_group['disease_group'] = (
@@ -1110,14 +1199,9 @@ fig, ax = plot_percentage_change_with_ci(
 fig.savefig(figurespath / "incremental_services_delivered_by_disease_group.png",
             dpi=300, bbox_inches="tight")
 
-# Plot Maximum Ability to Pay
-#Cmax_HSS = (∆DALYs averted × λ) − ∆C_input
-chosen_cet = 65
-
-def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
-    monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year).clip(lower=0.0)
-    return monetary_value_of_incremental_health
-
+# ----------------------------------------------------------
+# 5) Maximum ability to pay
+# ----------------------------------------------------------
 max_ability_to_pay = (get_monetary_value_of_incremental_health(num_dalys_averted,
                                                                _chosen_value_of_life_year=chosen_cet)).clip(lower=0.0)
 max_ability_to_pay = max_ability_to_pay[
@@ -1154,7 +1238,9 @@ fig.tight_layout()
 fig.savefig(figurespath / 'max_ability_to_pay.png', dpi = 300, bbox_inches = "tight")
 plt.close(fig)
 
-# Plot instances of consumable unavailability during the simulation
+# ----------------------------------------------------------
+# 6) Consumable unavailability
+# ----------------------------------------------------------
 item_to_program_df = pd.read_csv(
     resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Item_Designations.csv'
 )[['Item_Code', 'item_category']]
@@ -1167,52 +1253,6 @@ item_to_program_map = dict(
 )
 
 # Plot the proportion of instances that a consumable was not available when requested
-def get_percentage_unavailable_by_program(_df):
-    """
-    Compute percentage of times consumables were unavailable
-    by disease program within TARGET_PERIOD.
-    """
-
-    # Restrict to target period
-    _df = _df.loc[
-        pd.to_datetime(_df.date).between(*TARGET_PERIOD),
-        ['Item_Available', 'Item_NotAvailable']
-    ]
-
-    # ---- Sum dictionaries across rows ----
-    available = (
-        _df['Item_Available']
-        .apply(pd.Series)
-        .sum()
-    )
-
-    not_available = (
-        _df['Item_NotAvailable']
-        .apply(pd.Series)
-        .sum()
-    )
-
-    # Align indices
-    total = available.add(not_available, fill_value=0)
-
-    # % unavailable per item
-    pct_unavailable = (
-        not_available / total.replace(0, np.nan)
-    )
-
-    # Map items to program
-    pct_unavailable.index = pct_unavailable.index.astype(str)
-    pct_unavailable = pct_unavailable.rename(index=item_to_program_map)
-
-    # Aggregate to program level
-    pct_unavailable = (
-        pct_unavailable
-        .groupby(level=0)
-        .mean()
-    )
-
-    return pct_unavailable
-
 pct_unavailable_by_program = extract_results(
     results_folder,
     module='tlo.methods.healthsystem.summary',
@@ -1239,45 +1279,13 @@ fig, ax = plot_percentage_change_with_ci(
 fig.savefig(figurespath / "pct_unavailable_by_program.png",
             dpi=300, bbox_inches="tight")
 
-
-def compute_delta_from_baseline(summary_df, baseline_draw=0):
-    """
-    Convert absolute % unavailable to change relative to baseline.
-    Negative = improvement.
-    """
-    mean_df = summary_df.xs("mean", level="stat", axis=1)
-    baseline = mean_df[baseline_draw]
-    delta_mean = mean_df.subtract(baseline, axis=0)
-
-    return delta_mean
-
-delta_mean = compute_delta_from_baseline(pct_unavailable_by_program_summarized)
-
+delta_mean = compute_delta_unavailability_from_baseline(pct_unavailable_by_program_summarized)
 
 plot_heatmap_delta(delta_mean, scenario_labels=cons_scenarios_main, baseline_draw = 0)
 plt.savefig(figurespath / "pct_change_in_availability_by_scenario_and_program_heatmap.png",
             dpi=300, bbox_inches="tight")
 
-
-def compute_national_summary(summary_df, baseline_draw=0):
-
-    mean_df = summary_df.xs("mean", level="stat", axis=1)
-    lower_df = summary_df.xs("lower", level="stat", axis=1)
-    upper_df = summary_df.xs("upper", level="stat", axis=1)
-
-    baseline = mean_df[baseline_draw]
-
-    delta_mean = mean_df.subtract(baseline, axis=0)
-    delta_lower = lower_df.subtract(baseline, axis=0)
-    delta_upper = upper_df.subtract(baseline, axis=0)
-
-    national_mean = delta_mean.mean(axis=0)
-    national_lower = delta_lower.mean(axis=0)
-    national_upper = delta_upper.mean(axis=0)
-
-    return delta_mean, national_mean, national_lower, national_upper
-
-delta_mean, nat_mean, nat_lower, nat_upper = compute_national_summary(
+delta_mean, nat_mean, nat_lower, nat_upper = compute_national_unavailability_summary(
     pct_unavailable_by_program_summarized
 )
 
