@@ -567,24 +567,35 @@ class Demography(Module):
 
         facility_info = self.parameters["facilities_info"]
         facility_levels_types = {
-            "level_0": ["Health Post"],
-
+            "level_0": [
+                "Health Post",
+                "Village Health Committee",
+                "Community Health Station",
+                "Village Clinic",
+                "Mobile Clinic",
+                "Outreach Clinic",
+            ],
             "level_1a": [
                 "Dispensary",
-                "Clinic",  # Add this
+                "Rural Health Centre",
+                "Urban Health Centre",
+                "Private Clinic",
+                "Special Clinic",
+                "Antenatal Clinic",
+                "Maternity Clinic",
+                "Maternity Facility",
             ],
-
-            "level_1b": [
-                "Health Centre",  # Add this
-                "Rural/Community Hospital",  # Add this
+            "level_1b": ["Community Hospital", "Rural Hospital", "CHAM Hospital"],
+            "level_2": ["District Hospital", "District Health Office"],
+            "level_3": [
+                "Kamuzu Central Hospital",
+                "Mzuzu Central Hospital",
+                "Zomba Central Hospital",
+                "Queen Elizabeth Central Hospital",
             ],
-
-            "level_2": ["District Hospital"],
-
-            "level_3": ["Central Hospital"],  # Use the actual CSV value
-
-            "level_4": ["Other Hospital", "Maternity"],  # Add these
+            "level_4": ["Zomba Mental Hospital"],
         }
+
         individual_coords = np.array(
             [(point.x, point.y) if point else (np.nan, np.nan) for point in df["coordinate_of_residence"]]
         )
@@ -677,7 +688,7 @@ class Demography(Module):
             ax.set_ylim(lat_min - lat_buffer, lat_max + lat_buffer)
             ax.axis("off")
 
-        # Panel A – population
+        # Panel A – population (one dot per grid cell)
         axes[0].scatter(pop_plot[:, 0], pop_plot[:, 1], s=1.5, alpha=0.2, color="#2c7bb6",
                         linewidths=0, zorder=10, rasterized=True)
         axes[0].set_title(f"(A)  Population locations\n({n_plot:,} individuals)",
