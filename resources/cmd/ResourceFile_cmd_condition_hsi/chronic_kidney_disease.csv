@@ -1,3 +1,10 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:7e23bc0a9ac148f2bbaca76035df0e89044835932571ad1e7ae9b03329415a0f
-size 698
+parameter_name,value,param_label,prior_min,prior_max,prior_note,
+test_item_code,47,universal,0,1,vague prior,
+pr_assessed_in_generic_appt_level1,1.00,local,0.00,1.00,vague prior,
+medication_item_code,2070,undetermined,NA,NA,definition,Dianeal + Dextrose 1.5% intraperitoneal dialysis soln. with minicap_2L_CMST
+medication_item_code_second,2071,undetermined,NA,NA,definition,second line
+medication_item_code_third,282,undetermined,NA,NA,definition,third line
+pr_assessed_other_symptoms,0.00,local,0.00,1.00,vague prior,
+pr_treatment_works,0.00,local,0.00,1.00,vague prior,
+pr_diagnosed,0.02,local,0.00,1.00,vague prior,
+pr_seeking_further_appt_if_drug_not_available,0.8,local,0.00,1.00,vague prior,

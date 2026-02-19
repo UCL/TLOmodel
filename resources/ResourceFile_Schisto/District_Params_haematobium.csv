@@ -1,3 +1,33 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:dac49e0c4ae4b35cd5e1bafc1935a28b9832f8b670d38cb31c908bde5a954300
-size 2939
+District,Region,Reservoir,Mean_worm_burden,R0,gamma_alpha,prop_susceptible,Prevalence,Reference_prevalence,param_label
+Balaka,Southern,0,0.243196363,1.6,0.24,1,0.154602381,"2011 SCI / MoH, ESPEN",calibration data
+Blantyre,Southern,1.872164061,0.64576811,1.6,0.24,1,0.269039535,"rural, 2011 SCI / MoH. ESPEN",calibration data
+Blantyre City,Southern,0,0.162304999,1.6,0.24,1,0.1166,2011 SCI / MoH,calibration data
+Chikwawa,Southern,0,0.372114422,1.6,0.24,1,0.20125,"2008 WFP / MoH, ESPEN",calibration data
+Chiradzulu,Southern,2.812221701,1.152520705,1.6,0.24,1,0.34425,"2010 MoH, ESPEN",calibration data
+Chitipa,Northern,0,0.445357549,1.6,0.24,1,0.222625,"2010 MoH, ESPEN",calibration data
+Dedza,Central,0,0.293609335,1.6,0.24,1,0.1745,"2010 MoH, ESPEN",calibration data
+Dowa,Central,0,0,1.6,0.0689,1,0,ESPEN,calibration data
+Karonga,Northern,0,0.258116143,1.6,0.24,1,0.16075,2010 COM,calibration data
+Kasungu,Central,0,0.363186976,1.6,0.24,1,0.198428571,"2008 WFP/MoH, 2010 MoH, ESPEN",calibration data
+Likoma,Northern,0,0.731112179,1.6,0.24,1,0.285,ESPEN,calibration data
+Lilongwe,Central,0,0.520488402,1.6,0.24,1,0.241791803,"2008 WFP / MoH, Jemu SK et al, 2011 SCI/MoH, , ESPEN",calibration data
+Lilongwe City,Central,0,0.223915877,1.6,0.24,1,0.1463,2011 SCI / MoH,calibration data
+Machinga,Southern,0,0.307289525,1.6,0.24,1,0.1795,"2010 MoH, ESPEN",calibration data
+Mangochi,Southern,0,0.258322282,1.6,0.24,1,0.160833333,ESPEN,calibration data
+Mchinji,Central,0,0.337462336,1.6,0.24,1,0.19,"2010 MoH, ESPEN",calibration data
+Mulanje,Southern,3.049999876,1.300971773,1.6,0.24,1,0.36,"2010 MoH, ESPEN",calibration data
+Mwanza,Southern,0,0.394527999,1.6,0.24,1,0.208114286,"2011 SCI / MoH, ESPEN",calibration data
+Mzimba,Northern,0,0.159890096,1.6,0.24,1,0.115322581,"2010 MoH, ESPEN",calibration data
+Mzuzu City,Northern,0,0.076377257,1.6,0.0689,1,0.0501,2011 SCI / MoH,calibration data
+Neno,Southern,0,0.235995197,1.6,0.0689,1,0.0974,"2011 SCI / MoH, ESPEN",calibration data
+Nkhata Bay,Northern,0,0.039311684,1.6,0.0689,1,0.030625,ESPEN,calibration data
+Nkhotakota,Central,2.199947464,0.808087305,1.6,0.24,1,0.297970588,"2010 MoH, ESPEN",calibration data
+Nsanje,Southern,2.390172767,0.909307881,1.6,0.24,1,0.313333333,"2008 WFP / MoH, ESPEN",calibration data
+Ntcheu,Central,0,0.28437904,1.6,0.24,1,0.171035714,"2008 WFP/MoH, 2010 MoH, ESPEN",calibration data
+Ntchisi,Central,0,0.315706619,1.6,0.24,1,0.1825,ESPEN,calibration data
+Phalombe,Southern,5.317231221,3.141129345,1.6,0.24,1,0.47,ESPEN,calibration data
+Rumphi,Northern,0,0,1.6,0.0689,1,0,ESPEN,calibration data
+Salima,Central,0,0.114684668,1.6,0.0689,1,0.065294118,ESPEN,calibration data
+Thyolo,Southern,0,0.285935085,1.6,0.24,1,0.171625,"2010 MoH, ESPEN",calibration data
+Zomba,Southern,0,0.245633127,1.6,0.0689,1,0.099333333,ESPEN,calibration data
+Zomba City,Southern,0,0.245633127,1.6,0.0689,1,0.099333333,ESPEN copy from Zomba,calibration data

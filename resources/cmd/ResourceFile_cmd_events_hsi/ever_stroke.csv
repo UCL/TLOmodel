@@ -1,3 +1,6 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:69cd6c66093439ee8c4211acc82106094a37ee3cc2074112991cf4a2898ba7db
-size 463
+parameter_name,value,param_label,prior_min,prior_max,prior_note,
+sensitivity_of_assessment,1,universal,0,1,vague prior,
+medication_item_code,226,undetermined,,,definition,Aspirin 300mg_1000_CMST
+pr_assessed_other_symptoms,0,local,0,1,vague prior,
+emergency_medication_item_code,234,undetermined,,,definition,"Simvastatin, 15 mg"
+pr_treatment_works,0.59,local,0,1,vague prior,"Hong et al., Statins in Acute Ischemic Stroke: A Systematic Review, J Stroke 2015"
