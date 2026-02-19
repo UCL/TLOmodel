@@ -2133,7 +2133,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                (sum(df.loc[injured_index, 'rt_imm_death']) == 0)
         selected_for_rti_inj = df.loc[injured_index, RTI.INJURY_COLUMNS]
 
-        daly_change = selected_for_rti_inj.applymap(
+        daly_change = selected_for_rti_inj.astype('str').applymap(
             lambda code: self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][1]
         ).sum(axis=1, numeric_only=True)
         df.loc[injured_index, 'rt_disability'] += daly_change
@@ -2287,7 +2287,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
 
         def draw_days(_mean, _sd):
-            return int(self.rng.normal(_mean, _sd, 1))
+            return int(self.rng.normal(_mean, _sd))
 
         # Create the length of stays required for each ISS score boundaries and check that they are >=0
         rt_iss_score = df.at[person_id, 'rt_ISS_score']
@@ -3804,9 +3804,9 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             codes = ['133', '133a', '133b', '133c', '133d' '134', '134a', '134b', '135']
             _, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
             if counts > 0:
-                self.icu_days = int(self.module.rng.normal(mean_tbi_icu_days, sd_tbi_icu_days, 1))
+                self.icu_days = int(self.module.rng.normal(mean_tbi_icu_days, sd_tbi_icu_days))
             else:
-                self.icu_days = int(self.module.rng.normal(mean_icu_days, sd_icu_days, 1))
+                self.icu_days = int(self.module.rng.normal(mean_icu_days, sd_icu_days))
             # if the number of ICU days is less than zero make it zero
             if self.icu_days < 0:
                 self.icu_days = 0

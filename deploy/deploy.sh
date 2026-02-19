@@ -2,10 +2,14 @@
 
 set -e
 
+if [[ -z "$IMAGE_TAG" ]]; then
+    echo "Must provide IMAGE_TAG in environment" 1>&2
+    exit 1
+fi
+
 REGISTRY_NAME="tlob1acr"
 REGISTRY_URL="${REGISTRY_NAME}.azurecr.io"
 IMAGE_NAME="tlo"
-IMAGE_TAG="1.3"
 IMAGE_FULL_NAME="${IMAGE_NAME}:${IMAGE_TAG}"
 
 # Documentation at
@@ -17,7 +21,7 @@ az acr login --name "${REGISTRY_NAME}"
 echo "done"
 # Build the image
 echo "Building docker image ${IMAGE_FULL_NAME}..."
-docker build --tag "${IMAGE_FULL_NAME}" .
+docker build --platform linux/amd64 --tag "${IMAGE_FULL_NAME}" .
 # Tag the image
 echo -n "Tagging ${REGISTRY_URL}/${IMAGE_FULL_NAME}..."
 docker tag "${IMAGE_FULL_NAME}" "${REGISTRY_URL}/${IMAGE_FULL_NAME}"

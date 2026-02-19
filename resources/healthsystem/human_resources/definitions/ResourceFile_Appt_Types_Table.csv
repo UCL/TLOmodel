@@ -1,3 +1,51 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:895a995e466ada2422e17aaa5f35e62911c0fc55c924750cf0c740b7bbb48aa1
-size 2437
+Appt_Type_Code,Appt_Cat,Appt_Type
+InpatientDays,GENERAL_INPATIENT_AND_OUTPATIENT_CARE,Inpatient Admissions (Ongoing Monitoring)
+IPAdmission,GENERAL_INPATIENT_AND_OUTPATIENT_CARE,Inpatient Admissions and Discharge Process
+Under5OPD,GENERAL_INPATIENT_AND_OUTPATIENT_CARE,Under 5 Outpatient Visit
+Over5OPD,GENERAL_INPATIENT_AND_OUTPATIENT_CARE,Over 5 Outpatient visit
+NormalDelivery,RMNCH,Normal Deliveries
+CompDelivery,RMNCH,Complicated Deliveries
+Csection,RMNCH,Caesarean Sections
+FamPlan,RMNCH,Family Planning
+AntenatalFirst,RMNCH,Antenatal Care - First Visit
+ANCSubsequent,RMNCH,Antenatal Care - Followup Visit
+EPI,RMNCH,EPI
+STI,RMNCH,STI
+U5Malnutr,Nutrition,Treatment of U5 Severe Malnutirion
+AccidentsandEmerg,Misc,Accidents and Emergencies
+MajorSurg,Misc,Major Surgical Procedures
+MinorSurg,Misc,Minor Surgical Procedures
+TBNew,TB,TB Program - New Patient
+TBFollowUp,TB,TB Program - Follow-up Patient
+VCTNegative,HIV,Voluntary Counseling and Testing Program - For HIV-Negative
+VCTPositive,HIV,Voluntary Counseling and Testing Program - For HIV-Positive
+MaleCirc,HIV,Male Circumscisions
+NewAdult,HIV,HIV/AIDS Program - New Adult
+EstMedCom,HIV,HIV/AIDS Program - Established Medically Complex
+EstNonCom,HIV,HIV/AIDS Program - Established Non Medically Complex
+PMTCT,HIV,HIV/AIDS Program - PMTCT
+Peds,HIV,HIV/AIDS Program - Pediatric
+LabHaem,LABORATORY,Laboratory - Haematology
+LabPOC,LABORATORY,Laboratory - POC
+LabParasit,LABORATORY,Laboratory - Parasitology
+LabBiochem,LABORATORY,Laboratory - Biochemistry
+LabMicrobio,LABORATORY,Laboratory - Microbiology
+LabMolec,LABORATORY,Laboratory - Molecular
+LabTBMicro,LABORATORY,Laboratory - TB Microscopy
+LabSero,LABORATORY,Laboratory - Serology
+LabCyto,LABORATORY,Laboratory - Cytology
+LabTrans,LABORATORY,Laboratory - Blood Transfusion Lab Analysis
+Ultrasound,RADIOGRAPHY,Ultrasound
+Mammography,RADIOGRAPHY,Mammography
+MRI,RADIOGRAPHY,MRI
+Tomography,RADIOGRAPHY,Tomography
+Radiotherapy,RADIOGRAPHY,Radiotherapy
+DiagRadio,RADIOGRAPHY,Diagnostic Radiography Procedures
+DentAccidEmerg,DENTAL,Dental Accidents and Emergencies
+DentSurg,DENTAL,Dental Surgical Procedures
+DentalU5,DENTAL,Dental under 5 outpatient visits
+DentalO5,DENTAL,Dental over 5 outpatient visits
+MentOPD,Mental_Health,Mental Health OPD
+MentClinic,Mental_Health,Mental Health Clinic Visit
+ConWithDCSA,ConWithDCSA,ConWithDCSA
+PharmDispensing,PharmDispensing,PharmDispensing

@@ -1,3 +1,22 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e01e9a4405690ee0e76f2444cd2592935d7e2aaad438187513249d3bb24a0728
-size 1310
+parameter_name,value,param_label,prior_min,prior_max,prior_note
+prob_care_provided_given_seek_emergency_care,0.5,local,0,1,vague prior
+prob_ckd_patient_gets_dialysis,0.02,local,0.0,1.0,vague prior
+interval_between_polls,3,undetermined,1,12,design decision
+emergency_care_symptom_max_days,3,local,1,7,vague prior
+community_testing_schedule_buffer_days,2,undetermined,1,5,design decision
+community_testing_deadline_buffer_days,1,undetermined,1,5,design decision
+symptom_onset_buffer_days,1,undetermined,1,5,design decision
+event_buffer_days,1,undetermined,1,5,design decision
+death_outcome_delay_days,7,local,1,14,vague prior
+weight_loss_min_wait_months,6,local,1,12,vague prior
+weight_loss_max_wait_months,12,local,6,18,vague prior
+medication_refill_interval_months,1,local,1,6,vague prior
+medication_refill_deadline_window_days,7,local,1,14,vague prior
+retry_appointment_start_delay_days,1,local,1,7,vague prior
+retry_appointment_deadline_days,15,local,7,30,vague prior
+min_age_for_assessment_years,5,local,1,10,vague prior
+bmi_threshold_for_risk_score,3,local,2,5,vague prior
+min_risk_factors_for_scheduled_weight_loss,2,local,1,4,vague prior
+bmi_threshold_weight_loss_advice,2,local,1,4,vague prior
+tests_per_year,2,local,1,4,vague prior
+pr_bmi_reduction,0.1,local,0.05,0.2,vague prior

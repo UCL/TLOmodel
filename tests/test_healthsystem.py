@@ -292,7 +292,7 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
 
 
 @pytest.mark.slow
-def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
+def test_rescaling_capabilities_based_on_load_factors(tmpdir, seed):
     # Capabilities should increase when a HealthSystem that has low capabilities changes mode with
     # the option `scale_to_effective_capabilities` set to `True`.
 
@@ -305,10 +305,16 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
             "directory": tmpdir,
             "custom_levels": {
                 "tlo.methods.healthsystem": logging.DEBUG,
+                "tlo.methods.healthsystem.summary": logging.INFO,
             },
         },
         resourcefilepath=resourcefilepath,
     )
+
+    n_sim_initial_population = 1000
+    n_pop_2010 = 14.6e6
+    # Ensure capabilities are much smaller (1/1000) than expected given initial pop size
+    small_capabilities = (n_sim_initial_population / n_pop_2010) / 10000
 
     # Register the core modules
     # Set the year in which mode is changed to start_date + 1 year, and mode after that still 1.
@@ -318,7 +324,8 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
         simplified_births.SimplifiedBirths(),
         enhanced_lifestyle.Lifestyle(),
         healthsystem.HealthSystem(
-            capabilities_coefficient=0.0000001,  # This will mean that capabilities are
+            capabilities_coefficient=small_capabilities,
+            # This will mean that capabilities are
             # very close to 0 everywhere.
             # (If the value was 0, then it would
             # be interpreted as the officers NEVER
@@ -341,108 +348,41 @@ def test_rescaling_capabilities_based_on_squeeze_factors(tmpdir, seed):
     hs_params["scale_to_effective_capabilities"] = True
 
     # Run the simulation
-    sim.make_initial_population(n=popsize)
+    sim.make_initial_population(n=n_sim_initial_population)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+    output = parse_log_file(sim.log_filepath, level=logging.INFO)
+    pd.set_option("display.max_columns", None)
+    summary = output["tlo.methods.healthsystem.summary"]
+    capacity_by_officer_and_level = summary["Capacity_By_FacID_and_Officer"]
 
-    # Do the checks
-    assert len(output["tlo.methods.healthsystem"]["HSI_Event"]) > 0
-    hsi_events = output["tlo.methods.healthsystem"]["HSI_Event"]
-    hsi_events["date"] = pd.to_datetime(hsi_events["date"]).dt.year
+    # Filter rows for the two years
+    row_2010 = capacity_by_officer_and_level.loc[capacity_by_officer_and_level["date"] == "2010-12-31"].squeeze()
+    row_2011 = capacity_by_officer_and_level.loc[capacity_by_officer_and_level["date"] == "2011-12-31"].squeeze()
 
-    # Check that all squeeze factors were high in 2010, but not all were high in 2011
-    # thanks to rescaling of capabilities
-    assert (
-        hsi_events.loc[
-            (hsi_events["Person_ID"] >= 0)
-            & (hsi_events["Number_By_Appt_Type_Code"] != {})
-            & (hsi_events["date"] == 2010),
-            "Squeeze_Factor",
-        ]
-        >= 100.0
-    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
+    # Dictionary to store results
+    results = {}
 
-    assert not (
-        hsi_events.loc[
-            (hsi_events["Person_ID"] >= 0)
-            & (hsi_events["Number_By_Appt_Type_Code"] != {})
-            & (hsi_events["date"] == 2011),
-            "Squeeze_Factor",
-        ]
-        >= 100.0
-    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
+    # Check that load has significantly reduced in second year, thanks to the significant
+    # rescaling of capabilities.
+    # (There is some degeneracy here, in that load could also be reduced due to declining demand.
+    # However it is extremely unlikely that demand for care would have dropped by a factor of 10
+    # in second year, hence this is a fair test).
+    for col in capacity_by_officer_and_level.columns:
+        if col == "date":
+            continue  # skip the date column
+        if not (capacity_by_officer_and_level[col] == 0).any() and ("GenericClinic" in col):
+            ratio = row_2010[col] / row_2011[col]
 
+            results[col] = ratio > 10
+            if not results[col]:
+                print(f"Load for {col} did not reduce sufficiently: ratio={ratio}")
 
-@pytest.mark.slow
-def test_run_in_mode_1_with_almost_no_capacity(tmpdir, seed):
-    # Events should run but (for those with non-blank footprints) with high squeeze factors
-    # (Mode 1 -> elastic constraints)
-
-    # Establish the simulation object
-    sim = Simulation(
-        start_date=start_date,
-        seed=seed,
-        log_config={
-            "filename": "log",
-            "directory": tmpdir,
-            "custom_levels": {
-                "tlo.methods.healthsystem": logging.DEBUG,
-            },
-        },
-        resourcefilepath=resourcefilepath,
-    )
-
-    # Define the service availability
-    service_availability = ["*"]
-
-    # Register the core modules
-    sim.register(
-        demography.Demography(),
-        simplified_births.SimplifiedBirths(),
-        enhanced_lifestyle.Lifestyle(),
-        healthsystem.HealthSystem(
-            service_availability=service_availability,
-            capabilities_coefficient=0.0000001,  # This will mean that capabilities are
-            # very close to 0 everywhere.
-            # (If the value was 0, then it would
-            # be interpreted as the officers NEVER
-            # being available at a facility,
-            # which would mean the HSIs should not
-            # run (as opposed to running with
-            # a very high squeeze factor)).
-            mode_appt_constraints=1,
-        ),
-        symptommanager.SymptomManager(),
-        healthseekingbehaviour.HealthSeekingBehaviour(),
-        mockitis.Mockitis(),
-        chronicsyndrome.ChronicSyndrome(),
-    )
-
-    # Run the simulation
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-    check_dtypes(sim)
-
-    # read the results
-    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
-
-    # Do the checks
-    assert len(output["tlo.methods.healthsystem"]["HSI_Event"]) > 0
-    hsi_events = output["tlo.methods.healthsystem"]["HSI_Event"]
-    # assert hsi_events['did_run'].all()
-    assert (
-        hsi_events.loc[
-            (hsi_events["Person_ID"] >= 0) & (hsi_events["Number_By_Appt_Type_Code"] != {}), "Squeeze_Factor"
-        ]
-        >= 100.0
-    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
-    assert (hsi_events.loc[hsi_events["Person_ID"] < 0, "Squeeze_Factor"] == 0.0).all()
-
-    # Check that some Mockitis cures occurred (though health system)
-    assert any(sim.population.props["mi_status"] == "P")
+    # Ensure that this test is not passing because issue in results
+    assert len(results) > 0
+    assert all(results.values())
 
 
 @pytest.mark.slow
@@ -909,7 +849,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     )
     detailed_treatment_id_mean_squeeze_factors = (
         detailed_hsi_event.assign(
-            treatment_id_hsi_name=lambda df: df["TREATMENT_ID"] + ":" + df["Event_Name"],
+            treatment_id_hsi_name=lambda df: df["TREATMENT_ID"],
             year=lambda df: df.date.dt.year,
         )
         .groupby(by=["treatment_id_hsi_name", "year"])["Squeeze_Factor"]
@@ -925,16 +865,22 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     )
 
     #  - Average fraction of HCW time used (year by year)
-    assert (
-        summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year)["average_Frac_Time_Used_Overall"]
-        .round(4)
-        .to_dict()
-        == detailed_capacity.set_index(pd.to_datetime(detailed_capacity.date).dt.year)["Frac_Time_Used_Overall"]
-        .groupby(level=0)
-        .mean()
-        .round(4)
-        .to_dict()
-    )
+    summary_capacity_indexed = summary_capacity.set_index(pd.to_datetime(summary_capacity.date).dt.year)
+    for clinic in sim.modules["HealthSystem"]._clinic_names:
+        summary_clinic_capacity = summary_capacity_indexed["average_Frac_Time_Used_Overall"].apply(
+            lambda x: x.get(clinic, None)
+        )
+        detailed_clinic_capacity = detailed_capacity[detailed_capacity["Clinic"] == clinic]
+        assert (
+            summary_clinic_capacity.round(4).to_dict()
+            == detailed_clinic_capacity.set_index(pd.to_datetime(detailed_clinic_capacity.date).dt.year)[
+                "Frac_Time_Used_Overall"
+            ]
+            .groupby(level=0)
+            .mean()
+            .round(4)
+            .to_dict()
+        )
 
     #  - Consumables (total over entire period of log that are available / not available)  # add _Item_
     assert (
@@ -1218,7 +1164,7 @@ def test_summary_logger_for_hsi_event_squeeze_factors(seed, tmpdir):
         .dropna()
         .to_dict()
         == detailed_hsi_event.assign(
-            treatment_id_hsi_name=lambda df: df["TREATMENT_ID"] + ":" + df["Event_Name"],
+            treatment_id_hsi_name=lambda df: df["TREATMENT_ID"],
             year=lambda df: df.date.dt.year,
         )
         .groupby(by=["treatment_id_hsi_name", "year"])["Squeeze_Factor"]
@@ -1312,14 +1258,18 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
         "use_funded_or_actual_staffing_postSwitch": "actual",
     }
     parameters_to_change = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing"]
-    
-    initial_parameters = {"cons_availability" : test_parameters["cons_availability"],
-                      "equip_availability": test_parameters["equip_availability"],
-                      "use_funded_or_actual_staffing": test_parameters["use_funded_or_actual_staffing"]}
-    
-    new_parameters = {"cons_availability" : test_parameters["cons_availability_postSwitch"],
-                      "equip_availability": test_parameters["equip_availability_postSwitch"],
-                      "use_funded_or_actual_staffing": test_parameters["use_funded_or_actual_staffing_postSwitch"]}
+
+    initial_parameters = {
+        "cons_availability": test_parameters["cons_availability"],
+        "equip_availability": test_parameters["equip_availability"],
+        "use_funded_or_actual_staffing": test_parameters["use_funded_or_actual_staffing"],
+    }
+
+    new_parameters = {
+        "cons_availability": test_parameters["cons_availability_postSwitch"],
+        "equip_availability": test_parameters["equip_availability_postSwitch"],
+        "use_funded_or_actual_staffing": test_parameters["use_funded_or_actual_staffing_postSwitch"],
+    }
 
     class CheckHealthSystemParameters(RegularEvent, PopulationScopeEventMixin):
         def __init__(self, module):
@@ -1367,12 +1317,9 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             sim.schedule_event(CheckHealthSystemParameters(self), sim.date)
             sim.schedule_event(
                 HealthSystemChangeParameters(hs, parameters_to_change=parameters_to_change),
-                    sim.date + pd.DateOffset(days=2)
+                sim.date + pd.DateOffset(days=2),
             )
-            sim.modules["HealthSystem"].schedule_hsi_event(HSI_Dummy(self, 0),
-                                                            topen=sim.date,
-                                                            tclose=None,
-                                                            priority=0)
+            sim.modules["HealthSystem"].schedule_hsi_event(HSI_Dummy(self, 0), topen=sim.date, tclose=None, priority=0)
 
     sim = Simulation(
         start_date=start_date,
@@ -1397,9 +1344,9 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     sim.make_initial_population(n=100)
     # In order to ensure that parameter switch relies on values stored in module parameters,
     # rathen than instance variables, overwrite 'postSwitch' parameters here
-    for k,v in test_parameters.items():
+    for k, v in test_parameters.items():
         if k not in initial_parameters:
-            sim.modules['HealthSystem'].parameters[k] = test_parameters[k]
+            sim.modules["HealthSystem"].parameters[k] = test_parameters[k]
 
     sim.simulate(end_date=start_date + pd.DateOffset(days=7))
 
@@ -2143,8 +2090,8 @@ def test_mode_2_clinics(seed, tmpdir):
 
         return sim
 
-    def schedule_hsi_events(notherclinic, nclinic1, sim):
-        for i in range(0, notherclinic):
+    def schedule_hsi_events(ngenericclinic, nclinic1, sim):
+        for i in range(0, ngenericclinic):
             hsi = DummyHSIEvent(
                 module=sim.modules["DummyModuleGenericClinic"],
                 person_id=i,
@@ -2156,7 +2103,7 @@ def test_mode_2_clinics(seed, tmpdir):
                 hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
             )
 
-        for i in range(notherclinic, notherclinic + nclinic1):
+        for i in range(ngenericclinic, ngenericclinic + nclinic1):
             hsi = DummyHSIEvent(
                 module=sim.modules["DummyModuleClinic1"],
                 person_id=i,
@@ -2897,3 +2844,184 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
         == {"Dummy": 1}
         # recorded in both the usual and the 'non-blank' logger
     )
+
+
+def test_clinics_rescaling_factor(seed, tmpdir):
+    """Test that rescaling factor for clinics is computed correctly."""
+
+    # Create a dummy HSI event class
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id, appt_type, level, treatment_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = treatment_id
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+            self.ACCEPTED_FACILITY_LEVEL = level
+
+        def apply(self, person_id, squeeze_factor):
+            self.this_hsi_event_ran = True
+
+    def create_simulation(tmpdir: Path, tot_population) -> Simulation:
+        class DummyModuleGenericClinic(Module):
+            METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                pass
+
+        class DummyModuleClinic1(Module):
+            METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+            def read_parameters(self, data_folder):
+                pass
+
+            def initialise_population(self, population):
+                pass
+
+            def initialise_simulation(self, sim):
+                pass
+
+        log_config = {
+            "filename": "log",
+            "directory": tmpdir,
+            "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+        }
+        start_date = Date(2010, 1, 1)
+        sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+
+        sim.register(
+            demography.Demography(),
+            healthsystem.HealthSystem(
+                capabilities_coefficient=1.0,
+                mode_appt_constraints=1,
+                ignore_priority=False,
+                randomise_queue=True,
+                policy_name="",
+                use_funded_or_actual_staffing="funded_plus",
+            ),
+            DummyModuleGenericClinic(),
+            DummyModuleClinic1(),
+        )
+        sim.make_initial_population(n=tot_population)
+
+        sim.modules["HealthSystem"]._clinic_names = ["Clinic1", "GenericClinic"]
+
+        # Get any level 0 facility
+        district, fac_info = next(iter(sim.modules["HealthSystem"]._facilities_for_each_district["0"].items()))
+        fac_id = fac_info.id
+        col = "district_of_residence"
+        s = sim.population.props[col]
+
+        ## Not specifying the dtype explicitly here made the col a string rather than a category
+        ## and that caused problems later on.
+        sim.population.props[col] = pd.Series(district, index=s.index, dtype=s.dtype)
+
+        ## Even though we don't use the split specified here in this test, we do need
+        ## to include Clinic1 as a column in the _clinic_configuration object, and
+        ## explicitly call setup_daily_capabilities as this function populates several
+        ## key objects.
+        sim.modules["HealthSystem"]._clinic_configuration = pd.DataFrame(
+            [{"Facility_ID": fac_id, "Officer_Type_Code": "DCSA", "Clinic1": 0, "GenericClinic": 1.0}]
+        )
+        sim.modules["HealthSystem"]._clinic_mapping = pd.DataFrame(
+            [{"Treatment": "DummyHSIEvent", "Clinic": "Clinic1"}]
+        )
+        sim.modules["HealthSystem"].setup_daily_capabilities("funded_plus")
+
+        sim.simulate(end_date=sim.start_date + pd.DateOffset(years=1))
+
+        return sim
+
+    def schedule_hsi_events(ngenericclinic, nclinic1, sim):
+        for i in range(0, ngenericclinic):
+            hsi = DummyHSIEvent(
+                module=sim.modules["DummyModuleGenericClinic"],
+                person_id=i,
+                appt_type="ConWithDCSA",
+                level="0",
+                treatment_id="DummyHSIEventGenericClinic",
+            )
+            sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+            )
+
+        for i in range(ngenericclinic, ngenericclinic + nclinic1):
+            hsi = DummyHSIEvent(
+                module=sim.modules["DummyModuleClinic1"],
+                person_id=i,
+                appt_type="ConWithDCSA",
+                level="0",
+                treatment_id="DummyHSIEvent",
+            )
+            sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+            )
+
+        return sim
+
+    tot_population = 100
+    sim = create_simulation(tmpdir, tot_population)
+
+    # Schedule an identical appointment for all individuals, assigning clinic as follows:
+    # 10 HSIs have clinic_eligibility=GenericClinic and 90 clinic_eligibility=Clinic1
+    nevents_generic_clinic = 10
+    nevents_clinic1 = 90
+    sim = schedule_hsi_events(nevents_generic_clinic, nevents_clinic1, sim)
+
+    ## This hsi is only created to get the expected officer type and minutes needed
+    ## for an appointment of type ConWithDCSA
+    ## therefore the treatment_id is not important
+    ## ConWithDCSA needs 10 mins of officer type DCSA at level 0
+    hsi1 = DummyHSIEvent(
+        module=sim.modules["DummyModuleGenericClinic"],
+        person_id=0,  # Ensures call is on officers in first district
+        appt_type="ConWithDCSA",
+        level="0",
+        treatment_id="DummyHSIEventGenericClinic",
+    )
+    hsi1.initialise()
+
+    # Now adjust capabilities available.
+    # GenericClinic has exactly the capability than needed to run all the appointments;
+    # Clinic1  has less capability than needed to run all the appointments;
+    # This will ensure rescaling factor for GenericClinic is 1 (it cannot be less than 1)
+    # and that for Clinic1 > 1
+
+    ## We will use this key to query capabilities later
+    fac_id_off_type = next(iter(hsi1.expected_time_requests))
+
+    hs = sim.modules["HealthSystem"]
+
+    hs._daily_capabilities["Clinic1"] = {}
+    for k, v in hsi1.expected_time_requests.items():
+        hs._daily_capabilities["GenericClinic"][k] = v * nevents_generic_clinic
+        hs._daily_capabilities["Clinic1"][k] = v * (nevents_clinic1 / 2)
+
+    # Run healthsystemscheduler
+    hs.healthsystemscheduler.apply(sim.population)
+
+    # Record capabilities before rescaling
+    genericclinic_capabilities_before = hs._daily_capabilities["GenericClinic"][fac_id_off_type]
+    clinic1_capabilities_before = hs._daily_capabilities["Clinic1"][fac_id_off_type]
+
+    # Now trigger rescaling of capabilities
+    hs._rescale_capabilities_to_capture_effective_capability()
+
+    # Record capabilities after rescaling
+    genericclinic_capabilities_after = hs._daily_capabilities["GenericClinic"][fac_id_off_type]
+    clinic1_capabilities_after = hs._daily_capabilities["Clinic1"][fac_id_off_type]
+
+    # Expect no change in GenericClinic capabilities and Clinic1 capabilities to be rescaled by 2
+    assert np.isclose(
+        genericclinic_capabilities_before,
+        genericclinic_capabilities_after,
+    ), "Expected no change in GenericClinic capabilities after rescaling"
+
+    assert np.isclose(
+        clinic1_capabilities_before * 2,
+        clinic1_capabilities_after,
+    ), "Expected Clinic1 capabilities to be rescaled by factor of 2"

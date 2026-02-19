@@ -1,3 +1,22 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:b57383afdf893256ad6465a077180890393124236cc7969fedc3199244780484
-size 2081
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference,Notes
+rr_fail_under25,2.2,universal,0.01,1,vague prior,,From Guttmacher analysis.
+days_between_appts_for_maintenance,"[4383, 1461, 91, 91, 91, 91]",local,"[0, 0, 0, 0, 0, 0]","[1, 1, 1, 1, 1, 1]",vague prior,,"for sorted(states_that_may_require_HSI_to_maintain_on):  ['IUD', 'implant', 'injections', 'male_condom', 'other_modern', 'pill']"
+scaling_factor_on_monthly_risk_of_pregnancy,"[1.227, 0.7191, 0.6632, 0.84945, 0.86135, 0.645, 0.941]",undetermined,"[0, 0, 0, 0, 0, 0, 0]","[1, 1, 1, 1, 1, 1, 1]",calibration,,From Calibration to 2010 WPP age-specific fertility rate
+max_number_of_runs_of_hsi_if_consumable_not_available,1000,undetermined,1,10000,design decision,,
+max_days_delay_between_decision_to_change_method_and_hsi_scheduled,7,undetermined,1,21,design decision,,
+use_interventions,0,scenario,0,1,design decision,,
+interventions_start_date,"2023, 1, 1",undetermined,"2010, 1, 1","2030, 1, 1",design decision,,
+min_age_contraception,15,universal,10,20,vague prior,,
+max_age_contraception,50,universal,40,55,vague prior,,
+sterilization_age_limit,30,local,25,35,vague prior,,
+polling_frequency_months,1,undetermined,1,12,design decision,,
+min_simulation_year,2010,scenario,,,scenario,,
+max_simulation_year,2101,scenario,,,scenario,,
+transition_year,2020,undetermined,2015,2025,calibration,,
+initiation_trend_rate_pre_transition,0.05,undetermined,0.01,0.1,calibration,,
+initiation_trend_rate_post_transition,0.01,undetermined,0.005,0.05,calibration,,
+discontinuation_trend_rate_pre_transition,-0.05,undetermined,-0.1,-0.01,calibration,,
+discontinuation_trend_rate_post_transition,-0.01,undetermined,-0.05,-0.005,calibration,,
+age_modification_factors,"[1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]",undetermined,"[0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]","[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]",calibration,,
+reference_year,2010,undetermined,2000,2020,design decision,,
+age_ranges,"[""15-19"", ""20-24"", ""25-29"", ""30-34"", ""35-39"", ""40-44"", ""45-49""]",undetermined,,,design decision,,

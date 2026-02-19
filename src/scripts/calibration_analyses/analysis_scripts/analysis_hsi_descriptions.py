@@ -703,70 +703,54 @@ def table_2_relative_frequency_of_cons_use(results_folder: Path, output_folder: 
         index=False
     )
 
-def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcefilepath: Path):
-    """ 'Figure 7': Squeeze Factors for the HSIs"""
+def figure7_capacity_stats(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    """ 'Figure 7': Capacity by Facility ID and Officer"""
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig7_{stub}.png"  # noqa: E731
 
-    def get_mean_squeeze_factor_by_hsi(_df):
+    def get_capacity_by_facid_and_officer(_df):
         """Get the counts of the short TREATMENT_IDs occurring"""
         return _df \
-            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'squeeze_factor'] \
-            .apply(pd.Series) \
-            .mean()
+            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD)].drop(columns=['date']).mean()  # find average during TARGET_PERIOD
 
-    squeeze_factor_by_hsi = summarize(
+    capacity = summarize(
         extract_results(
             results_folder,
             module='tlo.methods.healthsystem.summary',
-            key='HSI_Event',
-            custom_generate_series=get_mean_squeeze_factor_by_hsi,
+            key='Capacity_By_FacID_and_Officer',
+            custom_generate_series=get_capacity_by_facid_and_officer,
             do_scaling=False,
         ),
         only_mean=True,
         collapse_columns=True,
     )
 
-    # Index by Treatment_ID / HSI:
-    squeeze_factor_by_hsi.index = squeeze_factor_by_hsi.index.str.split(':', expand=True)
-    squeeze_factor_by_hsi = squeeze_factor_by_hsi.reset_index().rename(columns={
-        'level_0': '_TREATMENT_ID',
-        'level_1': 'HSI',
-        'mean': 'squeeze_factor',
-    })
+    capacity.index = unflatten_flattened_multi_index_in_logging(capacity.index)
+    capacity.name = 'Capacity'
 
-    # Add in short TREATMENT_ID
-    squeeze_factor_by_hsi['TREATMENT_ID'] = squeeze_factor_by_hsi['_TREATMENT_ID'].map(lambda x: x.split('_')[0] + "*")
+    # make a graph for each clinic shows that valye of 'Capacity'
+    clinics = capacity.index.get_level_values('clinic')
+    fac_id_and_officers = capacity.index.get_level_values('facID_and_officer')
 
-    # Could Sort to collect the same TREATMENT_ID together
-    # squeeze_factor_by_hsi = squeeze_factor_by_hsi.sort_values('TREATMENT_ID',
-    #                                                           key=order_of_short_treatment_ids,
-    #                                                           ascending=False).reset_index(drop=True)
-    # But, we sort by the value of squeeze_factor
-    sorted_squeeze_factors = squeeze_factor_by_hsi.sort_values(['squeeze_factor']).reset_index(drop=True)
+    # Extract FacilityID and Officer from fac_id_and_officers
+    officers = fac_id_and_officers.map(lambda x: x.split('_')[3])
 
-    fig, ax = plt.subplots(figsize=(7.2, 10.5))
-    name_of_plot = 'Average Squeeze Factors for each Health System Interaction Event'
-    for i, row in sorted_squeeze_factors.iterrows():
-        ax.plot(
-            row['squeeze_factor'],
-            i,
-            marker='.',
-            markersize=10,
-            color=get_color_short_treatment_id(row['TREATMENT_ID'])
-        )
-    # ax.set_xscale('log')
-    ax.set_xlabel('Average Squeeze Factor')
-    ax.set_ylabel('Health System Interaction Event')
-    ax.set_yticks(sorted_squeeze_factors.index)
-    ax.set_yticklabels(sorted_squeeze_factors['HSI'].str.replace('HSI_', ''), fontsize=6)
-    ax.grid(axis='x', which='both')
-    ax.grid(axis='y')
-    ax.set_xlim([0, 60])
-    ax.axvline(0.0, color='black', linewidth=2)
-    fig.suptitle(name_of_plot, fontsize=12, weight='bold')
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    plt.close(fig)
+    # Find mean capacity for each Officer, across the Facility IDs but within each clinic
+    capacity_by_clinic_and_officer = capacity.groupby(by=[clinics, officers]).mean()
+
+    for clinic in clinics.unique():
+        fig, ax = plt.subplots()
+        name_of_plot = f'Capacity of {clinic} (Average Across Facilities)'
+        capacity_by_clinic_and_officer.loc[clinic].plot.bar(ax=ax)
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('Capacity')
+        ax.set_xlabel('Officer')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.set_xticks(range(len(capacity_by_clinic_and_officer.loc[clinic])))
+        ax.set_xticklabels(capacity_by_clinic_and_officer.loc[clinic].index, rotation=90, fontsize=6)
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+        plt.close(fig)
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -804,7 +788,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
     )
 
-    figure7_squeeze_factors(
+    figure7_capacity_stats(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
     )
 

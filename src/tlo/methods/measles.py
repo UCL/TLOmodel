@@ -501,18 +501,24 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
 
         # for non-complicated measles
-        item_codes = [self.module.consumables['vit_A']]
+        # vitamin A give 200,000 IU per day for 2 days
+        drugs_available = [self.get_consumables(
+            item_codes={self.module.consumables['vit_A']: 2})]
 
         # for measles with severe diarrhoea
+        # 1 sachet ORS makes 1 litre solution
         if "diarrhoea" in symptoms:
-            item_codes.append(self.module.consumables['severe_diarrhoea'])
+            drugs_available.append(bool(self.get_consumables(
+                item_codes={self.module.consumables['severe_diarrhoea']: 1})))
 
         # for measles with pneumonia
+        # assume 8 litres/min for 2 days (2880 mins * 8 litres)
         if "respiratory_symptoms" in symptoms:
-            item_codes.append(self.module.consumables['severe_pneumonia'])
+            drugs_available.append(bool(self.get_consumables(
+                item_codes={self.module.consumables['severe_pneumonia']: 23040})))
 
         # request the treatment
-        if self.get_consumables(item_codes):
+        if all(drugs_available):
             logger.debug(key="HSI_Measles_Treatment",
                          data=f"HSI_Measles_Treatment: giving required measles treatment to person {person_id}")
 

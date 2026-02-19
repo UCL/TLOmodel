@@ -1,3 +1,7 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:09d500eb4252c846e2cebde4a2f571c1e380575f52f0b2b9f42ba2019e75b380
-size 413
+parameter_name,value,param_label,prior_min,prior_max,prior_note,
+sensitivity_of_assessment,1,universal,0,1,vague prior,
+medication_item_code,226,universal,NA,NA,definition,Aspirin 300mg_1000_CMST
+pr_assessed_other_symptoms,0,local,0,1,vague prior,
+pr_treatment_works,0,local,0,1,vague prior,
+pr_diagnosed,0.05,local,0,1,vague prior,
+pr_seeking_further_appt_if_drug_not_available,0.8,local,0,1,vague prior,
