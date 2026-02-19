@@ -1,3 +1,37 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1059bb79f56507411f7586ca3be8e29ea2d01d540da5deb162b40576130a1e3e
-size 4021
+﻿parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
+climate_ssp,ssp245,scenario,NA,NA,Structural assumption,
+climate_model_ensemble_model,mean,scenario,NA,NA,Structural assumption,
+year_effective_climate_disruptions,2025,scenario,NA,NA,Structural assumption,
+services_affected_precip,none,scenario,NA,NA,Structural assumption,
+delay_in_seeking_care_weather,28,undetermined,0,,Structural assumption,"None, uncertainty analysis"
+scale_factor_reseeking_healthcare_post_disruption,1,undetermined,0,,Structural assumption,
+scale_factor_prob_disruption,1,undetermined,0,,Structural assumption,
+scale_factor_severity_disruption_and_delay,1,undetermined,0,,Structural assumption,
+prop_supply_side_disruptions,0.3,undetermined,0,,Structural assumption,
+baseline_coef_year,0.002102417,local,0.00205256,0.002152274,95% confidence interval,"Murray-Watson et al, 2025'"
+baseline_coef_month,0.0047,local,,,95% confidence interval,"Murray-Watson et al, 2025'"
+baseline_coef_altitude,0.0000551,local,1.28E-06,0.00010902,95% confidence interval,"Murray-Watson et al, 2025'"
+baseline_coef_min_distance,3.023354283,local,2.760548389,3.286160177,95% confidence interval,"Murray-Watson et al, 2025'"
+baseline_coef_urban,1.302601059,local,1.255023345,1.350178772,95% confidence interval,"Murray-Watson et al, 2025'"
+baseline_coef_central_west,0.12713551,local,0.072699365,0.181571655,95% confidence interval,"Murray-Watson et al, 2025'"
+baseline_coef_northern,-0.582897987,local,-0.63408374,-0.531712235,95% confidence interval,"Murray-Watson et al, 2025'"
+baseline_coef_south_east,0.108568778,local,0.054119891,0.163017665,95% confidence interval,"Murray-Watson et al, 2025'"
+baseline_coef_south_west,0.047290058,local,-0.012948704,0.107528819,95% confidence interval,"Murray-Watson et al, 2025'"
+baseline_coef_government,0.263573318,local,0.197132521,0.330014115,95% confidence interval,"Murray-Watson et al, 2025'"
+baseline_coef_private,-1.83913218,local,-2.011993238,-1.666271123,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_year,0.002138682,local,0.002092911,0.002184453,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_month,0.0048,local,,,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_altitude,0.0000402,local,-1.08E-05,9.12E-05,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_min_distance,3.013236002,local,2.752061982,3.274410021,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_urban,1.300494948,local,1.252983312,1.348006584,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_central_west,0.10664008,local,0.058978636,0.154301524,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_northern,-0.584470779,local,-0.629405521,-0.539536038,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_south_east,0.08240437,local,0.040770555,0.124038185,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_south_west,0,local,-0.012948704,0.107528819,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_government,0.261964142,local,0.195516568,0.328411715,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_private,-1.820902432,local,-1.992445895,-1.649358968,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_precip_monthly,-0.000439395,local,-0.000713725,-0.000165064,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_precip_5day,0.000551989,local,-6.46E-05,0.001168602,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_lag_4month,-0.000148841,local,-0.000281277,-1.64E-05,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_lag_9month,-0.000330814,local,-0.000670456,8.83E-06,95% confidence interval,"Murray-Watson et al, 2025'"
+precipitation_coef_lag_1_5day,0.000322579,local,3.18E-06,0.000641975,95% confidence interval,"Murray-Watson et al, 2025'"
