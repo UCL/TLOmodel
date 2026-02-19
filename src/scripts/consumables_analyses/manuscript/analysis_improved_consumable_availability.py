@@ -671,7 +671,7 @@ def plot_change_in_cons_unavailability_by_scenario(
     ax.axhline(0, linestyle="--", color="black", linewidth=1)
 
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=45, ha="right")
+    ax.set_xticklabels(labels, rotation=90, ha="right")
 
     ax.set_ylabel(
         "Change in consumable unavailability \n across consumables (percentage points)"
@@ -705,6 +705,25 @@ def plot_change_in_cons_unavailability_by_program(
     # Transpose so each box represents a programme
     data_to_plot = delta_mean.T
 
+    # Clean item category names
+    clean_category_names = {
+        'cancer': 'Cancer',
+        'cardiometabolicdisorders': 'Cardiometabolic Disorders',
+        'contraception': 'Contraception',
+        'general': 'General',
+        'hiv': 'HIV',
+        'malaria': 'Malaria',
+        'ncds': 'Non-communicable Diseases',
+        'neonatal_health': 'Neonatal Health',
+        'other_childhood_illnesses': 'Other Childhood Illnesses',
+        'reproductive_health': 'Reproductive Health',
+        'road_traffic_injuries': 'Road Traffic Injuries',
+        'tb': 'Tuberculosis',
+        'undernutrition': 'Undernutrition',
+        'epi': 'Expanded programme on immunization'
+    }
+    delta_mean.index = delta_mean.index.map(clean_category_names)
+
     sns.boxplot(
         data=data_to_plot,
         showfliers=False,
@@ -719,7 +738,7 @@ def plot_change_in_cons_unavailability_by_program(
 
     ax.set_xticklabels(
         wrapped_labels,
-        rotation=45,
+        rotation=90,
         ha="right"
     )
 
@@ -735,30 +754,68 @@ def plot_change_in_cons_unavailability_by_program(
 
     fig.tight_layout()
 
-
-def plot_heatmap_delta(delta_mean, scenario_labels=None, figsize=(12, 6), baseline_draw = 0):
+def plot_heatmap_delta(delta_mean,
+                       scenario_labels=None,
+                       figsize=(12, 6),
+                       baseline_draw=0,
+                       wrap_xticks=True,
+                       wrap_width=20):
 
     df = delta_mean.copy()
+
+    # Clean item category names
+    clean_category_names = {
+        'cancer': 'Cancer',
+        'cardiometabolicdisorders': 'Cardiometabolic Disorders',
+        'contraception': 'Contraception',
+        'general': 'General',
+        'hiv': 'HIV',
+        'malaria': 'Malaria',
+        'ncds': 'Non-communicable Diseases',
+        'neonatal_health': 'Neonatal Health',
+        'other_childhood_illnesses': 'Other Childhood Illnesses',
+        'reproductive_health': 'Reproductive Health',
+        'road_traffic_injuries': 'Road Traffic Injuries',
+        'tb': 'Tuberculosis',
+        'undernutrition': 'Undernutrition',
+        'epi': 'Expanded programme on immunization'
+    }
+    df.index = df.index.map(clean_category_names)
+
+    # Drop baseline
     df = df.drop(columns=baseline_draw)
 
+    # Rename scenarios if provided
     if scenario_labels:
         df = df.rename(columns=scenario_labels)
 
-    plt.figure(figsize=figsize)
+    fig, ax = plt.subplots(figsize=figsize)
 
     sns.heatmap(
         df,
         cmap="RdBu_r",          # blue = reduction (good), red = increase (bad)
         center=0,
         linewidths=0.5,
-        cbar_kws={"label": "Change in % unavailable (vs baseline)"}
+        cbar_kws={"label": "Change in % unavailable (vs baseline)"},
+        ax=ax
     )
 
-    plt.xlabel("Scenario")
-    plt.ylabel("Disease group")
-    plt.title("Change in consumable unavailability relative to baseline")
+    # Wrap x tick labels
+    if wrap_xticks:
+        wrapped_labels = [
+            "\n".join(textwrap.wrap(label.get_text(), wrap_width))
+            for label in ax.get_xticklabels()
+        ]
+        ax.set_xticklabels(wrapped_labels, rotation=90, ha="center")
+    else:
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+
+    ax.set_xlabel("Scenario")
+    ax.set_ylabel("Disease group")
+    ax.set_title("Change in consumable unavailability relative to baseline")
 
     plt.tight_layout()
+    return fig, ax
 
 
 def aggregate_by_disease_group(df: pd.DataFrame,

@@ -124,7 +124,7 @@ def generate_heatmap(
     figurespath: Optional[Path] = None,
     filename: str = "heatmap_consumable_availability.png",
     figsize: tuple[int, int] = (10, 8),
-    cmap: str = "RdYlGn",
+    cmap: str = "RdBu_r",
     annot: bool = True,
     fmt: Optional[str] = None,              # None -> auto choose
     font_scale: float = 0.75,
@@ -222,7 +222,12 @@ def generate_heatmap(
     ylab = (ylabel or row.replace("_", " ").title())
     ax.set_xlabel(xlab)
     ax.set_ylabel(ylab)
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+    wrapped_xticklabels = [
+        "\n".join(textwrap.wrap(label.get_text(), 20))  # adjust width as needed
+        for label in ax.get_xticklabels()
+    ]
+
+    ax.set_xticklabels(wrapped_xticklabels, rotation=90)
     ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
 
     # 6) Save (optional)
@@ -348,9 +353,9 @@ def generate_detail_availability_table_by_scenario(
 tlo_availability_df = pd.read_csv(consumable_resourcefilepath / "ResourceFile_Consumables_availability_small_original.csv")
 scenario_names_dict={
         'available_prop': 'Actual',
-        'available_prop_scenario1': 'Non-therapeutic consumables',
-        'available_prop_scenario2': 'Vital medicines',
-        'available_prop_scenario3': 'Pharmacist- managed',
+        'available_prop_scenario1': 'Non-therapeutic consumables (NTC)',
+        'available_prop_scenario2':  'NTC + Vital medicines (VM)',
+        'available_prop_scenario3': 'NTC + VM + Pharmacist- managed',
         'available_prop_scenario4': 'Level 1b',
         'available_prop_scenario5': 'CHAM',
         'available_prop_scenario6': '75th percentile facility',
@@ -363,10 +368,10 @@ scenario_names_dict={
         'available_prop_scenario13': 'HIV moved to Govt supply chain (Avg by Facility_ID)',
         'available_prop_scenario14': 'HIV moved to Govt supply chain (Avg by Facility_ID times 1.25)',
         'available_prop_scenario15': 'HIV moved to Govt supply chain (Avg by Facility_ID times 0.75)',
-        'available_prop_scenario16': 'Redistribution (District pooling)',
-        'available_prop_scenario17': 'Redistribution (Neighbourhood pooling)',
-        'available_prop_scenario18': 'Redistribution (Pairwise exchanges - large radius)',
-        'available_prop_scenario19': 'Redistribution (Pairwise exchanges - small radius)'
+        'available_prop_scenario16': 'District pooling',
+        'available_prop_scenario17': 'Neighbourhood pooling',
+        'available_prop_scenario18': 'Pairwise exchange (Large radius)',
+        'available_prop_scenario19': 'Redistribution (Small radius)'
     }
 
 tlo_availability_df = prepare_availability_dataset_for_plots(
@@ -389,7 +394,7 @@ _ = generate_heatmap(
     figurespath = outputfilepath / 'manuscript',
     filename="heatmap_program_and_level_actual.png",
     figsize=(10, 8),
-    cmap="RdYlGn",
+    cmap="RdBu",
     round_decimals=4,
     cbar_label="Proportion of days on which consumable is available",
     xlabel="Facility Level",
@@ -397,11 +402,11 @@ _ = generate_heatmap(
 )
 
 # Figure 3: Comparison of consumable availability across modelled scenarios
-scenario_cols = ['Actual', 'Non-therapeutic consumables', 'Vital medicines', 'Pharmacist- managed',
+scenario_cols = ['Actual', 'Non-therapeutic consumables (NTC)', 'NTC + Vital medicines (VM)', 'NTC + VM + Pharmacist- managed',
                  '75th percentile facility', '90th percentile facility', 'Best facility',
-                 'Redistribution (District pooling)', 'Redistribution (Neighbourhood pooling)',
-                 'Redistribution (Pairwise exchanges - large radius)',
-                 'Redistribution (Pairwise exchanges - small radius)',]
+                 'District pooling', 'Neighbourhood pooling',
+                 'Pairwise exchange (Large radius)',
+                 'Redistribution (Small radius)',]
 for level in ['1a', '1b']:
     _ = generate_heatmap(
         df=tlo_availability_df,
@@ -412,7 +417,7 @@ for level in ['1a', '1b']:
         figurespath=outputfilepath / 'manuscript',
         filename=f"scenarios_heatmap_{level}.png",
         figsize=(10, 8),
-        cmap="RdYlGn",
+        cmap="RdBu",
         round_decimals=4,
         cbar_label="Proportion of days on which consumable is available",
         xlabel="Facility Level",
