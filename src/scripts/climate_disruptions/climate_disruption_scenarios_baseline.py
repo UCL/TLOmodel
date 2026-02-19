@@ -87,7 +87,7 @@ class ClimateDisruptionScenario(BaseScenario):
         return fullmodel()
 
     def draw_parameters(self, draw_number, rng):
-        return self._parameter_grid[0]
+        return self._parameter_grid  # [0]
 
 if __name__ == "__main__":
     from tlo.cli import scenario_run
