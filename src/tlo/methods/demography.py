@@ -656,10 +656,23 @@ class Demography(Module):
             )
 
         # ── Shared: save facilities CSV ──────────────────────────────────────────
-        facilities_df.to_csv(
-            "/Users/rem76/Desktop/Climate_Change_Health/unique_facilities_by_level.csv",
-            index=False,
-        )
+        for level in ["0", "1a", "1b", "2", "3", "4"]:
+            col = f"level_{level}"
+            if col in self.sim.population.props.columns:
+                counts = (
+                    self.sim.population.props
+                    .loc[self.sim.population.props.is_alive, col]
+                    .value_counts()
+                    .to_dict()
+                )
+                logger.info(
+                    key="facility_assignment_counts",
+                    data={
+                        "facility_level": level,
+                        "counts_by_facility_id": counts,
+                    },
+                    description=f"Number of people assigned to each facility at level {level}",
+                )
         print(f"Saved {len(facilities_df)} facility rows to CSV.")
 
         # ── Shared: diagnostic plot ──────────────────────────────────────────────
