@@ -63,8 +63,8 @@ class ClimateDisruptionScenario(BaseScenario):
         self.end_date = Date(2041, 1, 1)
         self.pop_size = 100_000
         self.runs_per_draw = 5
-        self._parameter_grid = full_grid
-        self.number_of_draws = len(self._parameter_grid)
+        self._parameter_grid = full_grid[0]
+        self.number_of_draws = 1  # len(self._parameter_grid)
 
         #with open("selected_parameter_combinations_baseline.json", "w") as f:
         #    json.dump(self._parameter_grid, f, indent=2)
