@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from scripts.nurses_analyses.nurses_scenario_analyses import StaffingScenario
 from tlo.analysis.utils import (
     extract_results,
     get_scenario_info,
@@ -16,6 +17,18 @@ from tlo.analysis.utils import (
     make_age_grp_types,
     summarize,
 )
+
+
+# Rename draw numbers to scenario names
+def set_param_names_as_column_index_level_0(_df, param_names):
+    """Set column index level 0 (draw numbers) to scenario names."""
+    ordered_param_names = {i: x for i, x in enumerate(param_names)}
+    names_of_cols_level0 = [
+        ordered_param_names.get(col)
+        for col in _df.columns.levels[0]
+    ]
+    _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
+    return _df
 
 
 def extract_total_deaths(results_folder):
@@ -31,56 +44,35 @@ def extract_total_deaths(results_folder):
     )
 
 
-# def plot_summarized_total_deaths(summarized_total_deaths, param_strings):
-#     fig, ax = plt.subplots()
-#     # number_of_draws = len(param_strings)
-#     number_of_draws = len(
-#         summarized_total_deaths.columns.get_level_values(0).unique()
-#     )
-#
-#     statistic_values = {
-#         s: np.array(
-#             [summarized_total_deaths[(d, s)].values[0] for d in range(number_of_draws)]
-#         )
-#         for s in ["mean", "lower", "upper"]
-#     }
-#     ax.bar(
-#         param_strings,
-#         statistic_values["mean"],
-#         yerr=[
-#             statistic_values["mean"] - statistic_values["lower"],
-#             statistic_values["upper"] - statistic_values["mean"]
-#         ]
-#     )
-#     ax.set_ylabel("Total number of deaths")
-#     fig.tight_layout()
-#     return fig, ax
-
 def plot_summarized_total_deaths(summarized_total_deaths):
     fig, ax = plt.subplots()
 
-    # Get actual draw IDs from the dataframe
-    draw_ids = summarized_total_deaths.columns.get_level_values(0).unique()
+    scenario_names = summarized_total_deaths.columns.get_level_values(0).unique()
 
     means = np.array([
-        summarized_total_deaths[(d, "mean")].values[0] for d in draw_ids
+        summarized_total_deaths[(s, "mean")].values[0]
+        for s in scenario_names
     ])
     lowers = np.array([
-        summarized_total_deaths[(d, "lower")].values[0] for d in draw_ids
+        summarized_total_deaths[(s, "lower")].values[0]
+        for s in scenario_names
     ])
     uppers = np.array([
-        summarized_total_deaths[(d, "upper")].values[0] for d in draw_ids
+        summarized_total_deaths[(s, "upper")].values[0]
+        for s in scenario_names
     ])
 
     ax.bar(
-        draw_ids,
+        scenario_names,
         means,
-        yerr=[means - lowers, uppers - means]
+        yerr=[means - lowers, uppers - means],
+        capsize=5
     )
 
     ax.set_ylabel("Total number of deaths")
-    ax.set_xlabel("Scenario draw")
+    ax.set_xticklabels(scenario_names, rotation=45, ha="right")
     fig.tight_layout()
+
     return fig, ax
 
 
@@ -108,35 +100,41 @@ def extract_deaths_by_age(results_folder):
     )
 
 
-def plot_summarized_deaths_by_age(deaths_summarized_by_age, param_strings):
+def plot_summarized_deaths_by_age(deaths_summarized_by_age):
     fig, ax = plt.subplots()
-    for i, param in enumerate(param_strings):
-        central_values = deaths_summarized_by_age[(i, "mean")].values
-        lower_values = deaths_summarized_by_age[(i, "lower")].values
-        upper_values = deaths_summarized_by_age[(i, "upper")].values
+
+    scenario_names = deaths_summarized_by_age.columns.get_level_values(0).unique()
+
+    for i, scenario in enumerate(scenario_names):
+        central_values = deaths_summarized_by_age[(scenario, "mean")].values
+        lower_values = deaths_summarized_by_age[(scenario, "lower")].values
+        upper_values = deaths_summarized_by_age[(scenario, "upper")].values
+
         ax.plot(
-            deaths_summarized_by_age.index, central_values,
-            color=f"C{i}",
-            label=param
+            deaths_summarized_by_age.index,
+            central_values,
+            label=scenario
         )
+
         ax.fill_between(
-            deaths_summarized_by_age.index, lower_values, upper_values,
-            alpha=0.5,
-            color=f"C{i}",
-            label="_"
+            deaths_summarized_by_age.index,
+            lower_values,
+            upper_values,
+            alpha=0.3
         )
+
     ax.set(xlabel="Age-Group", ylabel="Total deaths")
     ax.set_xticks(deaths_summarized_by_age.index)
-    ax.set_xticklabels(labels=deaths_summarized_by_age.index, rotation=90)
+    ax.set_xticklabels(deaths_summarized_by_age.index, rotation=90)
     ax.legend()
     fig.tight_layout()
     return fig, ax
 
 
 if __name__ == "__main__":
-    # Parse command line arguments
+
     parser = argparse.ArgumentParser(
-        "Analyse scenario results for testing nurses scenario"
+        "Analyse scenario results for nurses scenario"
     )
     parser.add_argument(
         "--scenario-outputs-folder",
@@ -147,61 +145,53 @@ if __name__ == "__main__":
     parser.add_argument(
         "--show-figures",
         action="store_true",
-        help="Whether to interactively show generated Matplotlib figures",
+        help="Whether to interactively show figures",
     )
     parser.add_argument(
         "--save-figures",
         action="store_true",
-        help="Whether to save generated Matplotlib figures to results folder",
+        help="Whether to save figures to results folder",
     )
     args = parser.parse_args()
 
-    # Find results_folder associated with a given batch_file and get most recent
-    # results_folder = get_scenario_outputs(
-    #     "scenario_impact_of_consumables_availability.py", args.scenario_outputs_folder
-    # )[-1]
+    # results_folder = args.scenario_outputs_folder
 
     results_folder = Path(
         './outputs/wamulwafu@kuhes.ac.mw/nurses_scenario_outputs-2026-02-09T110530Z'
     )
 
-    # Load log (useful for checking what can be extracted)
+    # Load log (optional, but useful)
     log = load_pickled_dataframes(results_folder)
 
-    # Get basic information about the results
     scenario_info = get_scenario_info(results_folder)
 
-    # # Get the parameters that have varied over the set of simulations
-    # params = extract_params(results_folder)
-    #
-    # # Create a list of strings summarizing the parameter values in the different draws
-    # param_strings = [f"{row.module_param}={row.value}" for _, row in params.iterrows()]
+    # Get scenario names directly from Scenario class
 
-    number_of_draws = scenario_info["number_of_draws"]
-    param_strings = [f"Draw {i}" for i in range(number_of_draws)]
+    param_names = tuple(StaffingScenario()._scenarios.keys())
 
-    # We first look at total deaths in the scenario runs
-    total_deaths = extract_total_deaths(results_folder)
+    # Total deaths
+    total_deaths = extract_total_deaths(results_folder).pipe(
+        set_param_names_as_column_index_level_0,
+        param_names=param_names
+    )
 
-    # Compute and print the difference between the deaths across the scenario draws
-    # mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(
-    #     total_deaths, scenario_info
-    # )
-    # print(f"Mean difference in total deaths = {mean_deaths_difference_by_run:.3g}")
+    summarized_total_deaths = summarize(total_deaths)
 
-    # Plot the total deaths across the six scenario draws
-    # fig_1, ax_1 = plot_summarized_total_deaths(summarize(total_deaths), param_strings)
-    fig_1, ax_1 = plot_summarized_total_deaths(summarize(total_deaths))
+    fig_1, ax_1 = plot_summarized_total_deaths(summarized_total_deaths)
 
-    # Age breakdown
-    deaths_by_age = extract_deaths_by_age(results_folder)
+    # Deaths by age
+    deaths_by_age = extract_deaths_by_age(results_folder).pipe(
+        set_param_names_as_column_index_level_0,
+        param_names=param_names
+    )
 
-    # Plot the deaths by age across the six scenario draws as a line plot
-    fig_2, ax_2 = plot_summarized_deaths_by_age(summarize(deaths_by_age), param_strings)
+    summarized_deaths_by_age = summarize(deaths_by_age)
+
+    fig_2, ax_2 = plot_summarized_deaths_by_age(summarized_deaths_by_age)
 
     if args.show_figures:
         plt.show()
 
     if args.save_figures:
-        fig_1.savefig(results_folder / "total_deaths_across_scenario_draws.pdf")
-        fig_2.savefig(results_folder / "death_by_age_across_scenario_draws.pdf")
+        fig_1.savefig(results_folder / "total_deaths_across_scenarios.pdf")
+        fig_2.savefig(results_folder / "deaths_by_age_across_scenarios.pdf")
