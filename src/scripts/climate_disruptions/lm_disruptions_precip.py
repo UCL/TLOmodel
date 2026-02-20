@@ -248,36 +248,6 @@ scaler = StandardScaler()
 X_continuous_scaled = scaler.fit_transform(X_continuous)
 X_continuous_scaled = X_continuous
 X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
-# Create column names
-# continuous_columns = ['Year', 'Month', 'Altitude', 'Minimum_Distance']
-# categorical_columns = [
-#     f'Resid_{i}' for i in range(resid_encoded.shape[1])
-# ] + [
-#     f'Zone_{i}' for i in range(zone_encoded.shape[1])
-# ] + [
-#     f'Dist_{i}' for i in range(dist_encoded.shape[1])
-# ] + [
-#     f'Owner_{i}' for i in range(owner_encoded.shape[1])
-# ] + [
-#     f'Ftype_{i}' for i in range(ftype_encoded.shape[1])
-# ] + [
-#     f'Facility_{i}' for i in range(facility_encoded.shape[1])
-# ]
-#
-# # Combine into a DataFrame
-# columns = continuous_columns + categorical_columns
-# df_combined = pd.DataFrame(X_ANC_standardized, columns=columns)
-#
-# # Standardize the continuous variables
-# df_combined[continuous_columns] = (df_combined[continuous_columns] - df_combined[continuous_columns].mean()) / df_combined[continuous_columns].std()
-#
-# # Compute the correlation matrix
-# correlation_matrix = df_combined.corr()
-# correlation_matrix.to_csv('/Users/rem76/Desktop/Climate_Change_Health/Data/correlation_matrix_of_predictors.csv')
-
-# Display the correlation matrix
-
-# results, y_pred, mask_ANC_data, selected_features = build_model(X_ANC_standardized , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold, feature_selection = feature_selection)
 
 included, results, y_pred, mask_ANC_data = stepwise_selection(X_ANC_standardized, y, poisson=poisson, log_y=log_y)
 coefficients = results.params
@@ -422,8 +392,6 @@ if use_percentile_mask_threshold:
     )
     print(X_weather_standardized[:, 0])
 
-# results_of_weather_model, y_pred_weather, mask_all_data, selected_features = build_model(X_weather_standardized, y, poisson = poisson, log_y=log_y,
-#                                                                  X_mask_mm=mask_threshold, feature_selection =  feature_selection)
 included_weather, results_of_weather_model, y_pred_weather, mask_all_data = stepwise_selection(X_weather_standardized,
                                                                                                y, poisson=poisson,
                                                                                                log_y=log_y)
@@ -607,6 +575,7 @@ def get_weather_data(ssp_scenario, model_type):
         columns=zero_sum_columns, errors='ignore')
 
     return weather_data_prediction_five_day_cumulative_df, weather_data_prediction_monthly_df
+
 model_types = ['lowest', 'mean', 'highest']
 # Configuration and constants
 min_year_for_analysis = 2025
@@ -624,6 +593,10 @@ for ssp_scenario in ssp_scenarios:
         weather_data_prediction_five_day_cumulative_df, weather_data_prediction_monthly_df = get_weather_data(
             ssp_scenario,
             model_type)
+
+        # ── FIX 1: define prediction_facilities from the CMIP6 columns ──────────
+        prediction_facilities = weather_data_prediction_monthly_df.columns
+
         lag_1_month_prediction = weather_data_prediction_monthly_df.shift(1).values
         lag_2_month_prediction = weather_data_prediction_monthly_df.shift(2).values
         lag_3_month_prediction = weather_data_prediction_monthly_df.shift(3).values
@@ -666,42 +639,64 @@ for ssp_scenario in ssp_scenarios:
             (weather_data_prediction_monthly_flattened, weather_data_prediction_five_day_cumulative_flattened)).T
         num_facilities = len(weather_data_prediction_monthly.columns)
 
-        missing_facility = [col for col in expanded_facility_info.index if
-                            col not in weather_data_prediction_monthly.columns]
-        expanded_facility_info = expanded_facility_info.drop(missing_facility)
+        # ── FIX 2: reload expanded_facility_info fresh each iteration, drop
+        #           facilities not in CMIP6, then reindex to match CMIP6 column
+        #           order before any repeat_info calls ───────────────────────────
+        if ANC:
+            expanded_facility_info_pred = pd.read_csv(
+                "/Users/rem76/Desktop/Climate_Change_Health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv",
+                index_col=0)
+        elif Inpatient:
+            expanded_facility_info_pred = pd.read_csv(
+                "/Users/rem76/Desktop/Climate_Change_Health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days.csv",
+                index_col=0)
+
+        expanded_facility_info_pred = expanded_facility_info_pred.drop(columns=zero_sum_columns, errors='ignore')
+        # drop facilities absent from CMIP6 file
+        missing_facility = [col for col in expanded_facility_info_pred.columns
+                            if col not in prediction_facilities]
+        expanded_facility_info_pred = expanded_facility_info_pred.drop(columns=missing_facility, errors='ignore')
+        # reindex columns to match CMIP6 column order exactly
+        expanded_facility_info_pred = expanded_facility_info_pred.reindex(columns=prediction_facilities)
+        # transpose so facilities are rows (matches original usage)
+        expanded_facility_info_pred = expanded_facility_info_pred.T.reindex(
+            columns=expanded_facility_info_pred.index)
+
         year_range_prediction = range(min_year_for_analysis, max_year_for_analysis)
         month_repeated_prediction = [m for _ in year_range_prediction for m in range(1, 13)]
         year_flattened_prediction = np.repeat(year_range_prediction, 12 * num_facilities)
         month_repeated_prediction = [m for m in range(1, 13) for _ in range(num_facilities)]
         month_flattened_prediction = month_repeated_prediction * len(year_range_prediction)
 
-        facility_flattened_prediction = repeat_info(monthly_reporting_by_facility.columns, num_facilities,
+        # ── FIX 1 (continued): use prediction_facilities for facility names ─────
+        facility_flattened_prediction = repeat_info(prediction_facilities, num_facilities,
                                                     year_range_prediction, historical=False)
+
         # Encode facilities and create above/below average weather data
         facility_encoded_prediction = pd.get_dummies(facility_flattened_prediction, drop_first=True)
 
-        # Load and preprocess facility information
-        zone_info_prediction = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range_prediction,
-                                           historical=False)
+        # Load and preprocess facility information — all drawn from aligned expanded_facility_info_pred
+        zone_info_prediction = repeat_info(expanded_facility_info_pred["Zonename"], num_facilities,
+                                           year_range_prediction, historical=False)
         zone_encoded_prediction = pd.get_dummies(zone_info_prediction, drop_first=True)
-        dist_info_prediction = repeat_info(expanded_facility_info["Dist"], num_facilities, year_range_prediction,
-                                           historical=False)
+        dist_info_prediction = repeat_info(expanded_facility_info_pred["Dist"], num_facilities,
+                                           year_range_prediction, historical=False)
         dist_encoded_prediction = pd.get_dummies(dist_info_prediction, drop_first=True)
-        resid_info_prediction = repeat_info(expanded_facility_info['Resid'], num_facilities, year_range_prediction,
-                                            historical=False)
+        resid_info_prediction = repeat_info(expanded_facility_info_pred['Resid'], num_facilities,
+                                            year_range_prediction, historical=False)
         resid_encoded_prediction = pd.get_dummies(resid_info_prediction, drop_first=True)
-        owner_info_prediction = repeat_info(expanded_facility_info['A105'], num_facilities, year_range_prediction,
-                                            historical=False)
+        owner_info_prediction = repeat_info(expanded_facility_info_pred['A105'], num_facilities,
+                                            year_range_prediction, historical=False)
         owner_encoded_prediction = pd.get_dummies(owner_info_prediction, drop_first=True)
-        ftype_info_prediction = repeat_info(expanded_facility_info['Ftype'], num_facilities, year_range_prediction,
-                                            historical=False)
+        ftype_info_prediction = repeat_info(expanded_facility_info_pred['Ftype'], num_facilities,
+                                            year_range_prediction, historical=False)
         ftype_encoded_prediction = pd.get_dummies(ftype_info_prediction, drop_first=True)
-        altitude_prediction = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'], num_facilities,
-                                                             year_range_prediction, historical=False)]
+        altitude_prediction = [float(x) for x in repeat_info(expanded_facility_info_pred['A109__Altitude'],
+                                                             num_facilities, year_range_prediction,
+                                                             historical=False)]
         minimum_distance_prediction = [float(x) for x in
-                                       repeat_info(expanded_facility_info['minimum_distance'], num_facilities,
+                                       repeat_info(expanded_facility_info_pred['minimum_distance'], num_facilities,
                                                    year_range_prediction, historical=False)]
-        # minimum_distance_prediction = np.nan_to_num(minimum_distance_prediction, nan=np.nan, posinf=np.nan, neginf=np.nan) # just in case
 
         altitude_prediction = np.array(altitude_prediction)
         altitude_prediction = np.where(altitude_prediction < 0, np.nan, altitude_prediction)
@@ -801,7 +796,6 @@ for ssp_scenario in ssp_scenarios:
 
         # Plotting results
         fig, axs = plt.subplots(1, 2, figsize=(14, 6))
-        # axs[0].scatter(data_weather_predictions['Year_Month'], data_weather_predictions['difference_in_expectation'], color='#9AC4F8', alpha=0.1, label ='Predictions from weather model')
         axs[0].scatter(data_weather_predictions_grouped['Year_Month'],
                        data_weather_predictions_grouped['difference_in_expectation'], color='red', alpha=0.7,
                        label='Mean of predictions')
@@ -811,7 +805,6 @@ for ssp_scenario in ssp_scenarios:
         axs[0].set_xticklabels(xticks, rotation=45, ha='right')
         axs[0].set_ylabel(f'Difference Predicted {service} visits due to rainfall')
         axs[0].legend(loc='upper left')
-        # plt.show()
 
         fig, axs = plt.subplots(1, 2, figsize=(14, 6))
 
@@ -823,7 +816,6 @@ for ssp_scenario in ssp_scenarios:
         axs[0].set_ylabel(f'Difference in of {service} visits between weather and non-weather model')
 
         plt.tight_layout()
-        # plt.show()
 
         facility_names = np.tile(weather_data_prediction_monthly.columns.values, 12 * len(year_range_prediction))
 

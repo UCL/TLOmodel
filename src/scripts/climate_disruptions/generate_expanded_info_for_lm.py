@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from netCDF4 import Dataset
 from scipy.spatial.distance import cdist
+from collections import defaultdict
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
@@ -24,10 +25,10 @@ else:
     reporting_data = pd.read_csv(
         '/Users/rem76/Desktop/Climate_Change_Health/Data/Reporting_Rate/Reporting_Rate_by_smaller_facilities_2011_2024.csv')
 
-# drop NAs
+# Drop NAs
 reporting_data = reporting_data.dropna(subset=reporting_data.columns[3:], how='all')
 
-### now aggregate over months
+### Aggregate over months
 monthly_reporting_data_by_facility = {}
 if ANC:
     months = set(col.split("HMIS Total Antenatal Visits ")[1] for col in reporting_data.columns if
@@ -38,7 +39,6 @@ elif Inpatient:
 else:
     months = set(col.split(" - Reporting rate ")[1] for col in reporting_data.columns if " - Reporting rate " in col)
 
-# put in order
 months = [date.strip() for date in months]
 dates = pd.to_datetime(months, format='%B %Y', errors='coerce')
 months = dates.sort_values().strftime('%B %Y').tolist()
@@ -46,7 +46,6 @@ months = dates.sort_values().strftime('%B %Y').tolist()
 for month in months:
     columns_of_interest_all_metrics = [reporting_data.columns[1]] + reporting_data.columns[
         reporting_data.columns.str.endswith(month)].tolist()
-    print(columns_of_interest_all_metrics)
     data_of_interest_by_month = reporting_data[columns_of_interest_all_metrics]
     numeric_data = data_of_interest_by_month.select_dtypes(include='number')
     monthly_mean_by_facility = numeric_data.mean(axis=1)
@@ -77,108 +76,109 @@ pr_data = weather_monthly_all_grids.variables['tp'][:]
 lat_data = weather_monthly_all_grids.variables['latitude'][:]
 long_data = weather_monthly_all_grids.variables['longitude'][:]
 grid = 0
-regridded_weather_data = {}
 days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 for polygon in malawi_grid["geometry"]:
-    month = 0
     minx, miny, maxx, maxy = polygon.bounds
     index_for_x_min = ((long_data - minx) ** 2).argmin()
     index_for_y_min = ((lat_data - miny) ** 2).argmin()
-    index_for_x_max = ((long_data - maxx) ** 2).argmin()
-    index_for_y_max = ((lat_data - maxy) ** 2).argmin()
 
-    precip_data_for_grid = pr_data[:, index_for_y_min, index_for_x_min]
-    precip_data_for_grid = precip_data_for_grid * multiplier
-    precip_data_monthly = []
-    for i in range(len(precip_data_for_grid)):
-        month = i % 12
-        precip_total_for_month = precip_data_for_grid[i] * days_in_month[month]
-        precip_data_monthly.append(precip_total_for_month)
+    precip_data_for_grid = pr_data[:, index_for_y_min, index_for_x_min] * multiplier
+    precip_data_monthly = [precip_data_for_grid[i] * days_in_month[i % 12]
+                           for i in range(len(precip_data_for_grid))]
     weather_by_grid[grid] = precip_data_monthly
     grid += 1
 
-############### NOW HAVE LAT/LONG OF FACILITIES #####################
+############### FACILITY LAT/LONG #####################
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_Change_Health/Data/facilities_with_districts.shp")
 facilities_with_lat_long = pd.read_csv(
     "/Users/rem76/Desktop/Climate_Change_Health/Data/facilities_with_lat_long_region.csv")
 
 
 def clean_name(name):
-    """Standardize facility names for better matching"""
+    """Standardize facility names for matching - never used for display, only for keying."""
     name = str(name).lower().strip()
-    name = re.sub(r'\s+', ' ', name)  # Multiple spaces to single
-
-    # Remove parenthetical suffixes first (e.g., (COM), (MOH), (CHAM))
+    name = re.sub(r'\s+', ' ', name)
     name = re.sub(r'\s*\([^)]*\)', '', name)
-
-    # Standardize common abbreviations
     name = name.replace('pvt', 'private')
     name = name.replace('hc', 'health centre')
     name = name.replace('h/c', 'health centre')
     name = name.replace('dist', 'district')
-
-    # Remove common punctuation
     name = name.replace('.', '').replace(',', '')
-
     return name.strip()
 
 
-# CREATE THE CLEANED MAPPING HERE (maps cleaned name -> original name)
-facilities_clean = {clean_name(f): f for f in facilities_with_lat_long['Fname']}
-print(f"\nTotal facilities in reference dataset: {len(facilities_clean)}")
+# -----------------------------------------------------------------------
+# Build normalized lookups ONCE upfront
+# -----------------------------------------------------------------------
+facilities_with_lat_long['Fname_clean'] = facilities_with_lat_long['Fname'].apply(clean_name)
 
+# If there are duplicate cleaned names, keep the first occurrence
+facilities_with_lat_long_deduped = facilities_with_lat_long.drop_duplicates(subset='Fname_clean', keep='first')
+
+# Dict: cleaned name -> original Fname string
+facilities_clean = dict(zip(facilities_with_lat_long_deduped['Fname_clean'],
+                            facilities_with_lat_long_deduped['Fname']))
+
+# Dict: cleaned name -> full row (as a Series) for direct metadata access
+facilities_row_lookup = {row['Fname_clean']: row
+                         for _, row in facilities_with_lat_long_deduped.iterrows()}
+
+print(f"Total facilities in reference dataset: {len(facilities_clean)}")
+
+# -----------------------------------------------------------------------
+# Matching loop
+# -----------------------------------------------------------------------
 weather_data_by_facility = {}
 facilities_with_location = []
-facility_name_mapping = {}  # maps reporting name -> original name
+facility_name_mapping = {}  # reporting name -> original Fname
+matched_facility_rows = {}  # reporting name -> row Series
 unmatched_facilities = []
-match_stats = {'exact': 0, 'fuzzy': 0, 'special_case': 0, 'failed': 0}
+match_stats = {'exact': 0, 'fuzzy': 0, 'special_case': 0, 'failed': 0, 'duplicate': 0}
+
+# Guard: track which original facility names have already been claimed
+# so that two different reporting names cannot map to the same original
+already_matched_originals = {}  # original Fname -> first reporting name that claimed it
 
 print("\n" + "=" * 80)
 print("MATCHING FACILITIES")
 print("=" * 80)
 
 for reporting_facility in monthly_reporting_by_facility["facility"]:
-    # Clean the reporting facility name before matching
     reporting_facility_clean = clean_name(reporting_facility)
-    original_facility_name = None
-    match_type = None
+    matched_clean_key = None
+    is_exact = False
 
-    # Try exact matching first
-    if reporting_facility_clean in facilities_clean.keys():
-        original_facility_name = facilities_clean[reporting_facility_clean]
-        match_type = 'exact'
-        match_stats['exact'] += 1
-        print(f"✓ EXACT: '{reporting_facility}' -> '{original_facility_name}'")
+    # 1. Exact match on cleaned name
+    if reporting_facility_clean in facilities_clean:
+        matched_clean_key = reporting_facility_clean
+        is_exact = True
+        print(f"✓ EXACT: '{reporting_facility}' -> '{facilities_clean[matched_clean_key]}'")
 
-    # Fall back to fuzzy matching
+    # 2. Fuzzy match
     else:
-        matching_facility_name = difflib.get_close_matches(
-            reporting_facility_clean,
-            facilities_clean.keys(),
-            n=1,
-            cutoff=0.7
-        )
+        close = difflib.get_close_matches(
+            reporting_facility_clean, facilities_clean.keys(), n=1, cutoff=0.7)
+        if close:
+            matched_clean_key = close[0]
+            print(f"≈ FUZZY: '{reporting_facility}' -> '{facilities_clean[matched_clean_key]}'")
 
-        if matching_facility_name:
-            original_facility_name = facilities_clean[matching_facility_name[0]]
-            match_type = 'fuzzy'
-            match_stats['fuzzy'] += 1
-            print(f"≈ FUZZY: '{reporting_facility}' -> '{original_facility_name}'")
+    # If matched, check for duplicates before accepting
+    if matched_clean_key is not None:
+        original_facility_name = facilities_clean[matched_clean_key]
 
-    # If we found a match (either exact or fuzzy), get the location data
-    if original_facility_name:
-        # Look up lat/long using the ORIGINAL facility name
-        facility_data = facilities_with_lat_long[facilities_with_lat_long['Fname'] == original_facility_name]
-
-        if len(facility_data) == 0:
-            print(f"  ⚠ Warning: Matched name not found in dataset: {original_facility_name}")
+        # Duplicate guard: skip if this original has already been claimed
+        if original_facility_name in already_matched_originals:
+            prior = already_matched_originals[original_facility_name]
+            print(f"  ⚠ DUPLICATE SKIPPED: '{reporting_facility}' would duplicate "
+                  f"'{prior}' -> '{original_facility_name}'")
             unmatched_facilities.append(reporting_facility)
-            match_stats['failed'] += 1
+            match_stats['duplicate'] += 1
             continue
 
-        lat_for_facility = facility_data["A109__Latitude"].iloc[0]
-        long_for_facility = facility_data["A109__Longitude"].iloc[0]
+        facility_row = facilities_row_lookup[matched_clean_key]
+        lat_for_facility = facility_row["A109__Latitude"]
+        long_for_facility = facility_row["A109__Longitude"]
 
         if pd.isna(lat_for_facility) or pd.isna(long_for_facility):
             print(f"  ⚠ No lat/long for: {reporting_facility}")
@@ -186,192 +186,169 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
             match_stats['failed'] += 1
             continue
 
+        # Accept the match
+        already_matched_originals[original_facility_name] = reporting_facility
         facilities_with_location.append(reporting_facility)
         facility_name_mapping[reporting_facility] = original_facility_name
+        matched_facility_rows[reporting_facility] = facility_row
 
-        # Find nearest grid point
+        if is_exact:
+            match_stats['exact'] += 1
+        else:
+            match_stats['fuzzy'] += 1
+
+        # Find nearest grid point and extract precipitation
         index_for_x = ((long_data - long_for_facility) ** 2).argmin()
         index_for_y = ((lat_data - lat_for_facility) ** 2).argmin()
 
         precip_data_for_facility = pr_data[:, index_for_y, index_for_x]
-        precip_data_monthly_for_facility = []
-
-        # Convert from daily means to monthly totals
-        for i in range(len(precip_data_for_facility)):
-            month = i % 12
-            precip_total_for_month = precip_data_for_facility[i] * days_in_month[month] * multiplier
-            precip_data_monthly_for_facility.append(precip_total_for_month)
-
+        precip_data_monthly_for_facility = [
+            precip_data_for_facility[i] * days_in_month[i % 12] * multiplier
+            for i in range(len(precip_data_for_facility))
+        ]
         weather_data_by_facility[reporting_facility] = precip_data_monthly_for_facility
 
-    # Handle special cases not in facilities file
+    # Special cases not in facilities file
     elif reporting_facility == "Central East Zone":
-        grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[0]
-        weather_data_by_facility[reporting_facility] = weather_by_grid[grid]
+        grid_idx = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[0]
+        weather_data_by_facility[reporting_facility] = weather_by_grid[grid_idx]
         facilities_with_location.append(reporting_facility)
-        facility_name_mapping[reporting_facility] = reporting_facility  # Special case maps to itself
+        facility_name_mapping[reporting_facility] = reporting_facility
         match_stats['special_case'] += 1
         print(f"★ SPECIAL: '{reporting_facility}' -> Grid-based (Nkhotakota)")
 
     elif reporting_facility == "Central Hospital":
-        grid = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[0]
-        weather_data_by_facility[reporting_facility] = weather_by_grid[grid]
+        grid_idx = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[0]
+        weather_data_by_facility[reporting_facility] = weather_by_grid[grid_idx]
         facilities_with_location.append(reporting_facility)
-        facility_name_mapping[reporting_facility] = reporting_facility  # Special case maps to itself
+        facility_name_mapping[reporting_facility] = reporting_facility
         match_stats['special_case'] += 1
         print(f"★ SPECIAL: '{reporting_facility}' -> Grid-based (Lilongwe City)")
 
     else:
         unmatched_facilities.append(reporting_facility)
         match_stats['failed'] += 1
-
-        # Show closest matches for debugging
-        close = difflib.get_close_matches(reporting_facility_clean, facilities_clean.keys(), n=3, cutoff=0.5)
+        close = difflib.get_close_matches(reporting_facility_clean, facilities_clean.keys(), n=3, cutoff=0.4)
         if close:
             print(f"✗ FAILED: '{reporting_facility}'")
-            print(f"    Closest candidates (cutoff=0.5): {[facilities_clean[c] for c in close]}")
+            print(f"    Closest candidates: {[facilities_clean[c] for c in close]}")
         else:
             print(f"✗ FAILED: '{reporting_facility}' (no close matches found)")
 
-# Print summary statistics
 print("\n" + "=" * 80)
 print("MATCHING SUMMARY")
 print("=" * 80)
-print(f"Total facilities to match: {len(monthly_reporting_by_facility['facility'])}")
-print(f"Successfully matched: {len(facilities_with_location)}")
-print(f"  - Exact matches: {match_stats['exact']}")
-print(f"  - Fuzzy matches: {match_stats['fuzzy']}")
-print(f"  - Special cases: {match_stats['special_case']}")
-print(f"Failed to match: {match_stats['failed']}")
+print(f"Total facilities to match:     {len(monthly_reporting_by_facility['facility'])}")
+print(f"Successfully matched:          {len(facilities_with_location)}")
+print(f"  - Exact matches:             {match_stats['exact']}")
+print(f"  - Fuzzy matches:             {match_stats['fuzzy']}")
+print(f"  - Special cases:             {match_stats['special_case']}")
+print(f"Duplicate originals skipped:   {match_stats['duplicate']}")
+print(f"Failed to match:               {match_stats['failed']}")
 
 if unmatched_facilities:
-    print(f"\nUnmatched facilities ({len(unmatched_facilities)}):")
-    for facility in unmatched_facilities:
-        print(f"  - {facility}")
-
+    print(f"\nUnmatched/skipped facilities ({len(unmatched_facilities)}):")
+    for f in unmatched_facilities:
+        print(f"  - {f}")
 print("=" * 80 + "\n")
 
-### Get data ready for linear regression between reporting and weather data
+# Hard assertion: no duplicate IDs should survive to the output
+assert len(facilities_with_location) == len(set(facilities_with_location)), \
+    "ERROR: Duplicate facility IDs in facilities_with_location!"
+print("✓ No duplicate facility IDs confirmed.")
+
+### Prepare dataframes for regression
 weather_df = pd.DataFrame.from_dict(weather_data_by_facility, orient='index').T
 weather_df.columns = facilities_with_location
+
 monthly_reporting_by_facility = monthly_reporting_by_facility.set_index('facility').T
 monthly_reporting_by_facility.index.name = "date"
-
 monthly_reporting_by_facility = monthly_reporting_by_facility.loc[:,
                                 monthly_reporting_by_facility.columns.isin(facilities_with_location)]
 monthly_reporting_by_facility = monthly_reporting_by_facility[facilities_with_location]
 
-# NOW BUILD expanded_facility_info using the ORIGINAL facility names
-# Separate regular facilities from special cases
-regular_facilities = [f for f in facilities_with_location
-                      if f in facility_name_mapping and facility_name_mapping[f] != f]
-special_case_facilities = [f for f in facilities_with_location if f not in regular_facilities]
+# -----------------------------------------------------------------------
+# Build expanded_facility_info directly from matched rows
+# -----------------------------------------------------------------------
+additional_rows = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude", "Ftype",
+                   'A109__Latitude', 'A109__Longitude']
 
-print(f"\nBuilding expanded facility info:")
-print(f"  Regular facilities: {len(regular_facilities)}")
+regular_facilities = [f for f in facilities_with_location if f in matched_facility_rows]
+special_case_facilities = [f for f in facilities_with_location if f not in matched_facility_rows]
+
+print(f"Building expanded facility info:")
+print(f"  Regular facilities:      {len(regular_facilities)}")
 print(f"  Special case facilities: {len(special_case_facilities)}")
 
-# Get the original facility names for the matched regular facilities
-original_facility_names = [facility_name_mapping[f] for f in regular_facilities]
-
-included_facilities_with_lat_long = facilities_with_lat_long[
-    facilities_with_lat_long["Fname"].isin(original_facility_names)
-].copy()  # Use .copy() to avoid SettingWithCopyWarning
-
-additional_rows = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude", "Ftype", 'A109__Latitude',
-                   'A109__Longitude']
-expanded_facility_info = included_facilities_with_lat_long[["Fname"] + additional_rows].copy()
-expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Blanytyre", "Blantyre")
-expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Nkhatabay", "Nkhata Bay")
-
-expanded_facility_info.columns = ["Fname"] + additional_rows
-expanded_facility_info.set_index("Fname", inplace=True)
-
-# minimum distances between facilities
-coordinates = expanded_facility_info[['A109__Latitude', 'A109__Longitude']].values
-distances = cdist(coordinates, coordinates, metric='euclidean')
-np.fill_diagonal(distances, np.inf)
-expanded_facility_info['minimum_distance'] = np.nanmin(distances, axis=1)
-
-# Calculate average precipitation
-if baseline:
-    average_precipitation_by_facility = {
-        facility: np.mean(precipitation)
-        for facility, precipitation in weather_data_by_facility.items()
-    }
-else:
-    average_precipitation_by_facility = {
-        facility: np.mean(precipitation)
-        for facility, precipitation in weather_data_by_facility.items()
-    }
-
-average_precipitation_df = pd.DataFrame.from_dict(
-    average_precipitation_by_facility, orient='index', columns=['average_precipitation']
-)
-
-# Add average precipitation for each original facility name
-for orig_name in expanded_facility_info.index:
-    # Find the reporting name that corresponds to this original name
-    reporting_name = None
-    for rep, orig in facility_name_mapping.items():
-        if orig == orig_name:
-            reporting_name = rep
-            break
-
-    if reporting_name and reporting_name in average_precipitation_df.index:
-        expanded_facility_info.loc[orig_name, 'average_precipitation'] = average_precipitation_df.loc[
-            reporting_name, 'average_precipitation']
-
-# Transpose
-expanded_facility_info = expanded_facility_info.T
-
-# Create column mapping: original name -> reporting name
-# Build this carefully to avoid duplicates
-column_rename = {}
+records = []
 for rep_name in regular_facilities:
-    orig_name = facility_name_mapping[rep_name]
-    if orig_name in expanded_facility_info.columns:
-        # Check if we're about to create a duplicate
-        if rep_name in column_rename.values():
-            print(f"WARNING: Duplicate reporting name detected: {rep_name}")
-        column_rename[orig_name] = rep_name
+    row = matched_facility_rows[rep_name]
+    record = {'reporting_name': rep_name}
+    for col in additional_rows:
+        record[col] = row.get(col, np.nan)
+    records.append(record)
 
-# Debug: Check for duplicate values in column_rename
-if len(column_rename.values()) != len(set(column_rename.values())):
-    print("ERROR: Duplicate values in column_rename!")
-    print(f"column_rename: {column_rename}")
+expanded_facility_info = pd.DataFrame(records).set_index('reporting_name').T
+expanded_facility_info.index.name = None
 
-print(f"\nRenaming {len(column_rename)} columns from original to reporting names")
-expanded_facility_info = expanded_facility_info.rename(columns=column_rename)
+# Fix known district name typos
+if 'Dist' in expanded_facility_info.index:
+    expanded_facility_info.loc['Dist'] = expanded_facility_info.loc['Dist'].replace(
+        {"Blanytyre": "Blantyre", "Nkhatabay": "Nkhata Bay"})
 
-print(f"After rename, columns: {list(expanded_facility_info.columns)}")
-print(f"Number of unique columns: {len(set(expanded_facility_info.columns))}")
+# Add average precipitation
+average_precipitation_by_facility = {
+    facility: np.mean(precipitation)
+    for facility, precipitation in weather_data_by_facility.items()
+}
+average_precipitation_df = pd.DataFrame.from_dict(
+    average_precipitation_by_facility, orient='index', columns=['average_precipitation'])
 
-# Check for duplicates before adding special cases
-if len(expanded_facility_info.columns) != len(set(expanded_facility_info.columns)):
-    print("ERROR: Duplicate columns detected after rename!")
-    duplicates = [col for col in expanded_facility_info.columns if list(expanded_facility_info.columns).count(col) > 1]
-    print(f"Duplicate columns: {set(duplicates)}")
-    # Remove duplicate columns, keeping the first occurrence
-    expanded_facility_info = expanded_facility_info.loc[:, ~expanded_facility_info.columns.duplicated()]
+precip_row = {
+    rep_name: average_precipitation_df.loc[rep_name, 'average_precipitation']
+    if rep_name in average_precipitation_df.index else np.nan
+    for rep_name in facilities_with_location
+}
+expanded_facility_info.loc['average_precipitation'] = precip_row
 
-# For special case facilities, add empty columns with NaN values
-for special_facility in special_case_facilities:
-    if special_facility not in expanded_facility_info.columns:
-        expanded_facility_info[special_facility] = np.nan
-        # Add average precipitation for special cases
-        if special_facility in average_precipitation_df.index:
-            expanded_facility_info.loc['average_precipitation', special_facility] = average_precipitation_df.loc[
-                special_facility, 'average_precipitation']
+# Minimum distance between facilities
+coords = expanded_facility_info.loc[
+    ['A109__Latitude', 'A109__Longitude'], regular_facilities].T.values.astype(float)
+distances = cdist(coords, coords, metric='euclidean')
+np.fill_diagonal(distances, np.inf)
+min_distances = np.nanmin(distances, axis=1)
 
-# Now reindex to include all facilities in the correct order
-print(f"\nReindexing with {len(facilities_with_location)} facilities")
+min_dist_row = dict(zip(regular_facilities, min_distances))
+for sf in special_case_facilities:
+    min_dist_row[sf] = np.nan
+expanded_facility_info.loc['minimum_distance'] = min_dist_row
+
+# Add empty columns for special case facilities
+for sf in special_case_facilities:
+    if sf not in expanded_facility_info.columns:
+        expanded_facility_info[sf] = np.nan
+        if sf in average_precipitation_df.index:
+            expanded_facility_info.loc['average_precipitation', sf] = \
+                average_precipitation_df.loc[sf, 'average_precipitation']
+
+# Reindex to preserve original facility order
 expanded_facility_info = expanded_facility_info.reindex(columns=facilities_with_location)
 
 print(f"\nFinal expanded_facility_info shape: {expanded_facility_info.shape}")
-print(f"Columns: {list(expanded_facility_info.columns)[:5]}... (showing first 5)")
 
+# Sanity check: any regular facilities still missing lat/long?
+missing_meta = [col for col in regular_facilities
+                if pd.isna(expanded_facility_info.loc['A109__Latitude', col])]
+if missing_meta:
+    print(f"\n⚠ WARNING: {len(missing_meta)} regular facilities have missing metadata:")
+    for f in missing_meta:
+        print(f"  - {f}")
+else:
+    print("✓ All regular facilities have metadata populated correctly.")
+
+# -----------------------------------------------------------------------
 # Save CSVs
+# -----------------------------------------------------------------------
 if baseline:
     if baseline_all_years:
         if ANC:
