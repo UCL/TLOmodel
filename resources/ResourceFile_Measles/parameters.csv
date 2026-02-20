@@ -1,3 +1,22 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:74f90b3dfd2ac370aa8f379a7ac83785e7db018bd504ff21fea627970153b6a7
-size 2542
+﻿parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
+beta_baseline,0.00216,local,0,1,vague prior,https://pubmed.ncbi.nlm.nih.gov/18256664/
+beta_scale,1,local,0,5,vague prior,https://pubmed.ncbi.nlm.nih.gov/18256664/
+phase_shift,5,local,0,11,vague prior,https://pubmed.ncbi.nlm.nih.gov/18256664/
+period,12,local,6,23,vague prior,https://pubmed.ncbi.nlm.nih.gov/18256664/
+vaccine_efficacy_1,0.85,universal,0,1,vague prior,"Strebel, P. M., M. J. Papania, P. A. Gastañaduy and J. L. Goodson (2018). 37 - Measles Vaccines. Plotkin's Vaccines (Seventh Edition). S. A. Plotkin, W. A. Orenstein, P. A. Offit and K. M. Edwards, Elsevier: 579-618.e521."
+vaccine_efficacy_2,0.99,universal,0,1,vague prior,"Strebel, P. M., M. J. Papania, P. A. Gastañaduy and J. L. Goodson (2018). 37 - Measles Vaccines. Plotkin's Vaccines (Seventh Edition). S. A. Plotkin, W. A. Orenstein, P. A. Offit and K. M. Edwards, Elsevier: 579-618.e521."
+odds_ratio_health_seeking_in_children_rash,2.5,local,0,100,vague prior,Missing
+odds_ratio_health_seeking_in_adults_rash,2.5,local,0,100,vague prior,Missing
+odds_ratio_health_seeking_in_children_otitis_media,2.5,local,0,100,vague prior,Missing
+odds_ratio_health_seeking_in_adults_otitis_media,2.5,local,0,100,vague prior,Missing
+reduction_in_death_risk_measle_treated,0.6,universal,0.2,0.6,"Studiy results vary, parameter set by modelers",Unknown 
+maternal_immunity_age_threshold,0.5,universal,0,5,vague prior,"Strebel, P. M., M. J. Papania, P. A. Gastañaduy and J. L. Goodson (2018). 37 - Measles Vaccines. Plotkin's Vaccines (Seventh Edition). S. A. Plotkin, W. A. Orenstein, P. A. Offit and K. M. Edwards, Elsevier: 579-618.e521."
+death_timing_min_days,3,universal,0,100,vague prior,https://www.nature.com/articles/nrmicro1550
+death_timing_max_days,7,universal,0,100,vague prior,https://www.nature.com/articles/nrmicro1551
+natural_resolution_min_days,7,universal,0,100,vague prior,https://www.nature.com/articles/nrmicro1552
+natural_resolution_max_days,14,universal,0,100,vague prior,https://www.nature.com/articles/nrmicro1553
+symptom_onset_min_days,7,universal,0,100,vague prior,https://www.nature.com/articles/nrmicro1554
+symptom_onset_max_days,21,universal,0,100,vague prior,https://www.nature.com/articles/nrmicro1555
+sympt_resolution_after_treatment,7,universal,1,100,vague prior,Missing
+age_min_symptoms_constant_rate,30,universal,10,100,vague prior,https://pubmed.ncbi.nlm.nih.gov/15106083/
+main_polling_event_frequency_months,1,undetermined,1,12,design decision,N/A

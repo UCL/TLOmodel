@@ -1,3 +1,55 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:5d1d2e16f36c4f7cf4085593c2effaaa599c663354c976b360113471cab5f4a8
-size 4276
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
+init_prev_cin_hpv_cc_stage_hiv,"[0.90, 0.06, 0.005, 0.005, 0.005, 0.005  ,0.005  ,0.005, 0.005 , 0.005]",local,"[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]","[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]",vague prior,N/A
+init_prev_cin_hpv_cc_stage_nhiv,"[0.97,0.026,0.0005,0.0005,0.0005,0.0005,0.0005,0.0005, 0.0005, 0.0005]",local,"[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]","[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]",vague prior,N/A
+r_hpv,0.0002,undetermined,0,1,calibration,N/A
+r_cin1_hpv,0.001,undetermined,0,1,calibration,N/A
+prob_revert_from_cin1,0.01,undetermined,0,1,calibration,N/A
+r_cin2_cin1,0.05,undetermined,0,1,calibration,N/A
+r_cin3_cin2,0.05,undetermined,0,1,calibration,N/A
+r_stage1_cin3,0.05,undetermined,0,1,calibration,N/A
+r_stage2a_stage1,0.05,undetermined,0,1,calibration,N/A
+r_stage2b_stage2a,0.05,undetermined,0,1,calibration,N/A
+r_stage3_stage2b,0.05,undetermined,0,1,calibration,N/A
+r_stage4_stage3,0.1,undetermined,0,1,calibration,N/A
+rr_hpv_age50plus,0.1,universal,0.01,100,vague prior,Missing
+rr_progress_cc_hiv,30,universal,0.01,100,vague prior,Missing
+rr_hpv_vaccinated,0.5,universal,0.01,100,vague prior,Missing
+prob_cure_stage1,0.8,universal,0,1,vague prior,Missing
+prob_cure_stage2a,0.7,universal,0,1,vague prior,Missing
+prob_cure_stage2b,0.2,universal,0,1,vague prior,Missing
+prob_cure_stage3,0.05,universal,0,1,vague prior,Missing
+r_death_cervical_cancer,0.1,universal,0,1,vague prior,Missing
+p_vaginal_bleeding_if_no_cc,0.00001,universal,0,1, vague prior,Missing
+r_vaginal_bleeding_cc_stage1,0.1,universal,0,1,vague prior,Missing
+rr_vaginal_bleeding_cc_stage2a,2,universal,0.01,100,vague prior,Missing
+rr_vaginal_bleeding_cc_stage2b,3,universal,0.01,100,vague prior,Missing
+rr_vaginal_bleeding_cc_stage3,5,universal,0.01,100,vague prior,Missing
+rr_vaginal_bleeding_cc_stage4,10,universal,0.01,100,vague prior,Missing
+prob_referral_biopsy_given_vaginal_bleeding,0.8,local,0,1,vague prior,Missing
+prob_via_screen,0.03,local,0,1,vague prior,Missing
+prob_xpert_screen,0.03,local,0,1,vague prior,Missing
+sensitivity_of_biopsy_for_cervical_cancer,0.85,universal,0,1,vague prior,Missing
+sensitivity_of_via_for_cin_cc,0.75,universal,0,1,vague prior,Mustafa et al 2016
+sensitivity_of_xpert_for_hpv_cin_cc,0.75,universal,0,1,vague prior,Mustafa et al 2016
+prob_thermoabl_successful,0.85,universal,0,1,vague prior,https://www.imrpress.com/journal/CEOG/51/3/10.31083/j.ceog5103072/htm
+prob_cryotherapy_successful,0.85,universal,0,1,vague prior,https://www.imrpress.com/journal/CEOG/51/3/10.31083/j.ceog5103072/htm
+transition_screening_method_year,2024,local,2000,2100,vague prior,personal communication: Dr Lameck Chinula
+transition_to_thermo_year,2024,local,2000,2100,vague prior,personal communication: Dr Lameck Chinula
+screening_min_age_hv_neg,30,local,10,100,vague prior,Malawi National Cervical Cancer Strategic Plan 2022-2026
+screening_max_age_hv_neg,50,local,10,100,vague prior,Malawi National Cervical Cancer Strategic Plan 2022-2027
+screening_min_age_hv_pos,25,local,10,100,vague prior,Malawi National Cervical Cancer Strategic Plan 2022-2028
+screening_max_age_hv_pos,50,local,10,100,vague prior,Malawi National Cervical Cancer Strategic Plan 2022-2029
+yrs_between_screen_hv_pos,3,local,1,10,vague prior,Missing
+yrs_between_screen_hv_neg,5,local,1,10,vague prior,Missing
+palliative_care_bed_days,15,local,1,50,vague prior,Missing
+stage_1_3_daly_wt,607,universal,N/A,N/A,definition,N/A
+stage_1_3_treated_daly_wt,608,universal,N/A,N/A,definition,N/A
+stage4_daly_wt,609,universal,N/A,N/A,definition,N/A
+min_yrs_between_screening_if_cin_treated,1,local,1,10,vague prior,Missing
+death_timing_spread_days,90,undetermined,1,365,design feature ,N/A
+initial_post_treatment_check_months,3,local,1,36,vague prior,Missing
+months_to_next_appt_treated_less_than_12_mo_ago,3,local,1,36,vague prior,Missing
+months_to_next_appt_treated_12_to_36_mo_ago,6,local,1,36,vague prior,Missing
+months_to_next_appt_treated_36_to_60_mo_ago,12,local,1,36,vague prior,Missing
+palliative_care_interval_months,1,local,0.5,12,vague prior,Missing
+main_polling_frequency_months,1,undetermined,1,12,design decision,N/A

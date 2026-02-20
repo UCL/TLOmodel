@@ -1,3 +1,194 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e032db75b3d46695817614ee0686e2afd626d1796950911e197c4b1586f9416f
-size 6894
+Appt_Type_Code,Facility_Level,Officer_Category,HR_Scenario,Fail_District_Or_CenHos
+MentClinic,2,Mental,actual,Balaka
+MentClinic,2,Mental,actual,Blantyre
+MentClinic,2,Mental,actual,Blantyre City
+MentClinic,2,Mental,actual,Chikwawa
+MentClinic,2,Mental,actual,Chiradzulu
+MentClinic,2,Mental,actual,Chitipa
+MentClinic,2,Mental,actual,Dedza
+MentClinic,2,Mental,actual,Dowa
+MentClinic,2,Mental,actual,Karonga
+MentClinic,2,Mental,actual,Kasungu
+MentClinic,2,Mental,actual,Likoma
+MentClinic,2,Mental,actual,Machinga
+MentClinic,2,Mental,actual,Mangochi
+MentClinic,2,Mental,actual,Mchinji
+MentClinic,2,Mental,actual,Mulanje
+MentClinic,2,Mental,actual,Mwanza
+MentClinic,2,Mental,actual,Neno
+MentClinic,2,Mental,actual,Nkhata Bay
+MentClinic,2,Mental,actual,Nkhotakota
+MentClinic,2,Mental,actual,Nsanje
+MentClinic,2,Mental,actual,Ntcheu
+MentClinic,2,Mental,actual,Ntchisi
+MentClinic,2,Mental,actual,Phalombe
+MentClinic,2,Mental,actual,Rumphi
+MentClinic,2,Mental,actual,Salima
+MentClinic,2,Mental,actual,Thyolo
+MentClinic,2,Mental,actual,Zomba
+MentClinic,2,Mental,actual,Zomba City
+MentClinic,3,Mental,actual,Referral Hospital_Northern
+MentClinic,1b,Mental,actual,Balaka
+MentClinic,1b,Mental,actual,Blantyre
+MentClinic,1b,Mental,actual,Blantyre City
+MentClinic,1b,Mental,actual,Chikwawa
+MentClinic,1b,Mental,actual,Chiradzulu
+MentClinic,1b,Mental,actual,Chitipa
+MentClinic,1b,Mental,actual,Dedza
+MentClinic,1b,Mental,actual,Dowa
+MentClinic,1b,Mental,actual,Karonga
+MentClinic,1b,Mental,actual,Kasungu
+MentClinic,1b,Mental,actual,Likoma
+MentClinic,1b,Mental,actual,Machinga
+MentClinic,1b,Mental,actual,Mangochi
+MentClinic,1b,Mental,actual,Mchinji
+MentClinic,1b,Mental,actual,Mulanje
+MentClinic,1b,Mental,actual,Mwanza
+MentClinic,1b,Mental,actual,Neno
+MentClinic,1b,Mental,actual,Nkhata Bay
+MentClinic,1b,Mental,actual,Nkhotakota
+MentClinic,1b,Mental,actual,Nsanje
+MentClinic,1b,Mental,actual,Ntcheu
+MentClinic,1b,Mental,actual,Ntchisi
+MentClinic,1b,Mental,actual,Phalombe
+MentClinic,1b,Mental,actual,Rumphi
+MentClinic,1b,Mental,actual,Salima
+MentClinic,1b,Mental,actual,Thyolo
+MentClinic,1b,Mental,actual,Zomba
+MentClinic,1b,Mental,actual,Zomba City
+MentOPD,2,Mental,actual,Balaka
+MentOPD,2,Mental,actual,Blantyre
+MentOPD,2,Mental,actual,Blantyre City
+MentOPD,2,Mental,actual,Chikwawa
+MentOPD,2,Mental,actual,Chiradzulu
+MentOPD,2,Mental,actual,Chitipa
+MentOPD,2,Mental,actual,Dedza
+MentOPD,2,Mental,actual,Dowa
+MentOPD,2,Mental,actual,Karonga
+MentOPD,2,Mental,actual,Kasungu
+MentOPD,2,Mental,actual,Likoma
+MentOPD,2,Mental,actual,Machinga
+MentOPD,2,Mental,actual,Mangochi
+MentOPD,2,Mental,actual,Mchinji
+MentOPD,2,Mental,actual,Mulanje
+MentOPD,2,Mental,actual,Mwanza
+MentOPD,2,Mental,actual,Neno
+MentOPD,2,Mental,actual,Nkhata Bay
+MentOPD,2,Mental,actual,Nkhotakota
+MentOPD,2,Mental,actual,Nsanje
+MentOPD,2,Mental,actual,Ntcheu
+MentOPD,2,Mental,actual,Ntchisi
+MentOPD,2,Mental,actual,Phalombe
+MentOPD,2,Mental,actual,Rumphi
+MentOPD,2,Mental,actual,Salima
+MentOPD,2,Mental,actual,Thyolo
+MentOPD,2,Mental,actual,Zomba
+MentOPD,2,Mental,actual,Zomba City
+MentOPD,3,Mental,actual,Referral Hospital_Northern
+MentOPD,1b,Mental,actual,Balaka
+MentOPD,1b,Mental,actual,Blantyre
+MentOPD,1b,Mental,actual,Blantyre City
+MentOPD,1b,Mental,actual,Chikwawa
+MentOPD,1b,Mental,actual,Chiradzulu
+MentOPD,1b,Mental,actual,Chitipa
+MentOPD,1b,Mental,actual,Dedza
+MentOPD,1b,Mental,actual,Dowa
+MentOPD,1b,Mental,actual,Karonga
+MentOPD,1b,Mental,actual,Kasungu
+MentOPD,1b,Mental,actual,Likoma
+MentOPD,1b,Mental,actual,Machinga
+MentOPD,1b,Mental,actual,Mangochi
+MentOPD,1b,Mental,actual,Mchinji
+MentOPD,1b,Mental,actual,Mulanje
+MentOPD,1b,Mental,actual,Mwanza
+MentOPD,1b,Mental,actual,Neno
+MentOPD,1b,Mental,actual,Nkhata Bay
+MentOPD,1b,Mental,actual,Nkhotakota
+MentOPD,1b,Mental,actual,Nsanje
+MentOPD,1b,Mental,actual,Ntcheu
+MentOPD,1b,Mental,actual,Ntchisi
+MentOPD,1b,Mental,actual,Phalombe
+MentOPD,1b,Mental,actual,Rumphi
+MentOPD,1b,Mental,actual,Salima
+MentOPD,1b,Mental,actual,Thyolo
+MentOPD,1b,Mental,actual,Zomba
+MentOPD,1b,Mental,actual,Zomba City
+MentClinic,2,Mental,funded,Balaka
+MentClinic,2,Mental,funded,Blantyre
+MentClinic,2,Mental,funded,Blantyre City
+MentClinic,2,Mental,funded,Chikwawa
+MentClinic,2,Mental,funded,Chiradzulu
+MentClinic,2,Mental,funded,Chitipa
+MentClinic,2,Mental,funded,Dedza
+MentClinic,2,Mental,funded,Dowa
+MentClinic,2,Mental,funded,Karonga
+MentClinic,2,Mental,funded,Kasungu
+MentClinic,2,Mental,funded,Likoma
+MentClinic,2,Mental,funded,Lilongwe
+MentClinic,2,Mental,funded,Lilongwe City
+MentClinic,2,Mental,funded,Machinga
+MentClinic,2,Mental,funded,Mangochi
+MentClinic,2,Mental,funded,Mchinji
+MentClinic,2,Mental,funded,Mulanje
+MentClinic,2,Mental,funded,Mwanza
+MentClinic,2,Mental,funded,Mzimba
+MentClinic,2,Mental,funded,Mzuzu City
+MentClinic,2,Mental,funded,Neno
+MentClinic,2,Mental,funded,Nkhata Bay
+MentClinic,2,Mental,funded,Nkhotakota
+MentClinic,2,Mental,funded,Nsanje
+MentClinic,2,Mental,funded,Ntcheu
+MentClinic,2,Mental,funded,Ntchisi
+MentClinic,2,Mental,funded,Phalombe
+MentClinic,2,Mental,funded,Rumphi
+MentClinic,2,Mental,funded,Salima
+MentClinic,2,Mental,funded,Thyolo
+MentClinic,2,Mental,funded,Zomba
+MentClinic,2,Mental,funded,Zomba City
+MentClinic,1b,Mental,funded,Balaka
+MentClinic,1b,Mental,funded,Machinga
+MentClinic,1b,Mental,funded,Mwanza
+MentClinic,1b,Mental,funded,Neno
+MentClinic,1b,Mental,funded,Nkhata Bay
+MentClinic,1b,Mental,funded,Ntchisi
+MentClinic,1b,Mental,funded,Salima
+MentOPD,2,Mental,funded,Balaka
+MentOPD,2,Mental,funded,Blantyre
+MentOPD,2,Mental,funded,Blantyre City
+MentOPD,2,Mental,funded,Chikwawa
+MentOPD,2,Mental,funded,Chiradzulu
+MentOPD,2,Mental,funded,Chitipa
+MentOPD,2,Mental,funded,Dedza
+MentOPD,2,Mental,funded,Dowa
+MentOPD,2,Mental,funded,Karonga
+MentOPD,2,Mental,funded,Kasungu
+MentOPD,2,Mental,funded,Likoma
+MentOPD,2,Mental,funded,Lilongwe
+MentOPD,2,Mental,funded,Lilongwe City
+MentOPD,2,Mental,funded,Machinga
+MentOPD,2,Mental,funded,Mangochi
+MentOPD,2,Mental,funded,Mchinji
+MentOPD,2,Mental,funded,Mulanje
+MentOPD,2,Mental,funded,Mwanza
+MentOPD,2,Mental,funded,Mzimba
+MentOPD,2,Mental,funded,Mzuzu City
+MentOPD,2,Mental,funded,Neno
+MentOPD,2,Mental,funded,Nkhata Bay
+MentOPD,2,Mental,funded,Nkhotakota
+MentOPD,2,Mental,funded,Nsanje
+MentOPD,2,Mental,funded,Ntcheu
+MentOPD,2,Mental,funded,Ntchisi
+MentOPD,2,Mental,funded,Phalombe
+MentOPD,2,Mental,funded,Rumphi
+MentOPD,2,Mental,funded,Salima
+MentOPD,2,Mental,funded,Thyolo
+MentOPD,2,Mental,funded,Zomba
+MentOPD,2,Mental,funded,Zomba City
+MentOPD,1b,Mental,funded,Balaka
+MentOPD,1b,Mental,funded,Machinga
+MentOPD,1b,Mental,funded,Mwanza
+MentOPD,1b,Mental,funded,Neno
+MentOPD,1b,Mental,funded,Nkhata Bay
+MentOPD,1b,Mental,funded,Ntchisi
+MentOPD,1b,Mental,funded,Salima
+ConWithDCSA,0,DCSA,funded,Likoma
