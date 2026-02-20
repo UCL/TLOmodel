@@ -1,3 +1,10 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:9c676e4dde332f210831076cff711d73c280aed3638beba226f6418e1413dacb
-size 317
+Officer_Category,L0_factor,L1a_factor,L1b_factor,L2_factor,L3_factor,L4_factor,L5_factor
+Clinical,1,1,1,1,1,1,1
+DCSA,1,1,1,1,1,1,1
+Dental,1,1,1,1,1,1,1
+Laboratory,1,1,1,1,1,1,1
+Mental,1,1,1,1,1,1,1
+Nursing_and_Midwifery,2,2,2,2,2,2,2
+Nutrition,1,1,1,1,1,1,1
+Pharmacy,1,1,1,1,1,1,1
+Radiography,1,1,1,1,1,1,1
