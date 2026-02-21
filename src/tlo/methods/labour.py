@@ -1206,7 +1206,42 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         """
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        person = df.loc[[person_id]]
+        person = df.loc[[person_id], [
+            'ac_iv_anti_htn_treatment',
+            'ac_mag_sulph_treatment',
+            'ac_received_abx_for_prom',
+            'ac_total_anc_visits_current_pregnancy',
+            'age_years',
+            'is_alive',
+            'la_antepartum_haem',
+            'la_eclampsia_treatment',
+            'la_has_had_hysterectomy',
+            'la_maternal_hypertension_treatment',
+            'la_obstructed_labour',
+            'la_parity',
+            'la_placental_abruption',
+            'la_postpartum_haem_treatment',
+            'la_previous_cs_delivery',
+            'la_sepsis',
+            'la_sepsis_treatment',
+            'la_uterine_rupture',
+            'la_uterine_rupture_treatment',
+            'li_bmi',
+            'li_ed_lev',
+            'li_mar_stat',
+            'li_urban',
+            'li_wealth',
+            'nc_hypertension',
+            'pn_htn_disorders',
+            'ps_antepartum_haemorrhage',
+            'ps_chorioamnionitis',
+            'ps_htn_disorders',
+            'ps_multiple_pregnancy',
+            'ps_placenta_praevia',
+            'ps_placental_abruption',
+            'ps_premature_rupture_of_membranes',
+            'un_HAZ_category',
+        ]]
 
         # We define specific external variables used as predictors in the equations defined below
         has_rbt = mni[person_id]['received_blood_transfusion']
@@ -2707,7 +2742,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, mother_id):
         df = self.sim.population.props
-        person = df.loc[mother_id]
+        person = df.loc[mother_id, ['is_alive', 'la_intrapartum_still_birth', 'ps_multiple_pregnancy', 'is_pregnant']]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.current_parameters
 
@@ -2747,6 +2782,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
             else:
                 self.sim.do_birth(mother_id)
 
+        # refresh the reference to the dataframe as the do_birth function might have changed the underlying object
         df = self.sim.population.props
 
         # If the mother survived labour but experienced a stillbirth we reset all the relevant pregnancy variables now
@@ -2787,7 +2823,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
             else:
                 # We use a linear model to determine if women without complications will receive any postnatal care
                 prob_pnc = self.module.la_linear_models['postnatal_check'].predict(
-                    df.loc[[mother_id]],
+                    df.loc[[mother_id], ['age_years', 'li_urban', 'li_wealth', 'la_parity', 'ac_total_anc_visits_current_pregnancy']],
                     mode_of_delivery=pd.Series(mni[mother_id]['mode_of_delivery'], index=df.loc[[mother_id]].index),
                     delivery_setting=pd.Series(mni[mother_id]['delivery_setting'], index=df.loc[[mother_id]].index)
                 )[mother_id]
