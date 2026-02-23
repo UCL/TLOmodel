@@ -1226,7 +1226,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # we determine if she will go into labour post term (42+ weeks)
 
         if self.rng.random_sample() < self.la_linear_models['post_term_labour'].predict(
-            df.loc[[individual_id], 'li_bmi'])[individual_id]:
+            df.loc[[individual_id], ['li_bmi']])[individual_id]:
 
             df.at[individual_id, 'la_due_date_current_pregnancy'] = \
                 (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(
