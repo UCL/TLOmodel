@@ -73,6 +73,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # Finally define a dictionary which will hold the required consumables for each intervention
         self.item_codes_lab_consumables = dict()
 
+        # Stores the list of fields used in linear models equations
+        self._linear_model_fields = []
+
     INIT_DEPENDENCIES = {'Demography'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'Stunting'}
@@ -1066,6 +1069,54 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             pregnancy_helper_functions.scale_linear_model_at_initialisation(
                 self, model=model[0], parameter_key=model[1])
 
+        # Set the person properties required for the models
+        self._linear_model_fields = [
+            # demography
+            'age_years',
+            'is_alive',
+            # lifestyle
+            'li_bmi',
+            'li_ed_lev',
+            'li_mar_stat',
+            'li_urban',
+            'li_wealth',
+            # care of women
+            'ac_iv_anti_htn_treatment',
+            'ac_mag_sulph_treatment',
+            'ac_received_abx_for_prom',
+            'ac_total_anc_visits_current_pregnancy',
+            # labour
+            'la_antepartum_haem',
+            'la_eclampsia_treatment',
+            'la_has_had_hysterectomy',
+            'la_maternal_hypertension_treatment',
+            'la_obstructed_labour',
+            'la_parity',
+            'la_placental_abruption',
+            'la_postpartum_haem_treatment',
+            'la_previous_cs_delivery',
+            'la_sepsis',
+            'la_sepsis_treatment',
+            'la_uterine_rupture',
+            'la_uterine_rupture_treatment',
+            # postnatal supervisor
+            'pn_htn_disorders',
+            # pregnancy supervisor
+            'ps_antepartum_haemorrhage',
+            'ps_chorioamnionitis',
+            'ps_htn_disorders',
+            'ps_multiple_pregnancy',
+            'ps_placenta_praevia',
+            'ps_placental_abruption',
+            'ps_premature_rupture_of_membranes',
+        ]
+
+        if "CardioMetabolicDisorders" in self.sim.modules:
+            self._linear_model_fields += ['nc_hypertension']
+
+        if "Stunting" in self.sim.modules:
+            self._linear_model_fields += ['un_HAZ_category']
+
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
 
@@ -1206,42 +1257,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         """
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        person = df.loc[[person_id], [
-            'ac_iv_anti_htn_treatment',
-            'ac_mag_sulph_treatment',
-            'ac_received_abx_for_prom',
-            'ac_total_anc_visits_current_pregnancy',
-            'age_years',
-            'is_alive',
-            'la_antepartum_haem',
-            'la_eclampsia_treatment',
-            'la_has_had_hysterectomy',
-            'la_maternal_hypertension_treatment',
-            'la_obstructed_labour',
-            'la_parity',
-            'la_placental_abruption',
-            'la_postpartum_haem_treatment',
-            'la_previous_cs_delivery',
-            'la_sepsis',
-            'la_sepsis_treatment',
-            'la_uterine_rupture',
-            'la_uterine_rupture_treatment',
-            'li_bmi',
-            'li_ed_lev',
-            'li_mar_stat',
-            'li_urban',
-            'li_wealth',
-            'nc_hypertension',
-            'pn_htn_disorders',
-            'ps_antepartum_haemorrhage',
-            'ps_chorioamnionitis',
-            'ps_htn_disorders',
-            'ps_multiple_pregnancy',
-            'ps_placenta_praevia',
-            'ps_placental_abruption',
-            'ps_premature_rupture_of_membranes',
-            'un_HAZ_category',
-        ]]
+        person = df.loc[
+            [person_id],
+            self._linear_model_fields
+        ]
 
         # We define specific external variables used as predictors in the equations defined below
         has_rbt = mni[person_id]['received_blood_transfusion']
