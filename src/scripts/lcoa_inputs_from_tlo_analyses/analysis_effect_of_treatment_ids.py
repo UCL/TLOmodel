@@ -9,6 +9,8 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 from matplotlib import pyplot as plt
 
 from scripts.calibration_analyses.analysis_scripts import plot_legends
@@ -39,7 +41,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2010, 1, 1), Date(2015, 12, 31))
+    TARGET_PERIOD = (Date(2026, 1, 1), Date(2041, 1, 1))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -50,6 +52,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         """Returns the target period as a string of the form YYYY-YYYY"""
         return "-".join(str(t.year) for t in TARGET_PERIOD)
 
+    def get_periods_within_target_period(period_length_years: int) -> list[tuple[str, tuple[int, int]]]:
+        """Return chunks within TARGET_PERIOD as [(label, (start_year, end_year)), ...]."""
+        if period_length_years <= 0:
+            raise ValueError("period_length_years must be a positive integer.")
+        start_year, end_year = TARGET_PERIOD[0].year, TARGET_PERIOD[1].year
+        periods = []
+        for chunk_start in range(start_year, end_year + 1, period_length_years):
+            chunk_end = min(chunk_start + period_length_years - 1, end_year)
+            periods.append((f"{chunk_start}-{chunk_end}", (chunk_start, chunk_end)))
+        return periods
+
+    period_length_years_for_bar_plots = 5
+    periods_for_bar_plots = get_periods_within_target_period(period_length_years=period_length_years_for_bar_plots)
+    period_labels_for_bar_plots = [label for label, _ in periods_for_bar_plots]
+
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
         e = EffectOfEachTreatment()
@@ -57,10 +74,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def format_scenario_name(_sn: str) -> str:
         """Return a reformatted scenario name ready for plotting.
+
         - Remove prefix of "No "
         - Remove suffix of "*"
         """
-
         if _sn == "Nothing":
             return "Nothing"
             # In the scenario called "Nothing", all interventions are off. (So, the difference relative to "Nothing"
@@ -137,6 +154,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # %% Quantify the health gains associated with all interventions combined.
 
+
     def get_num_deaths_by_cause_label(_df):
         """Return total number of Deaths by label (total by age-group within the TARGET_PERIOD)"""
         return _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)].groupby(_df["label"]).size()
@@ -149,14 +167,68 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sum()
         )
 
+    def make_get_num_deaths_by_cause_label_and_period(period_length_years: int):
+        """Create helper to summarize deaths by cause label and period chunk + overall period."""
+
+        periods = get_periods_within_target_period(period_length_years=period_length_years)
+        period_lookup = {
+            year: period_label
+            for period_label, (start_year, end_year) in periods
+            for year in range(start_year, end_year + 1)
+        }
+
+        def _get_num_deaths_by_cause_label_and_period(_df):
+            _df_in_target = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)].copy()
+            _df_in_target["year"] = pd.to_datetime(_df_in_target["date"]).dt.year
+            _df_in_target["period"] = _df_in_target["year"].map(period_lookup)
+
+            chunked = _df_in_target.groupby(["label", "period"]).size()
+            overall = _df_in_target.groupby("label").size()
+            overall.index = pd.MultiIndex.from_arrays(
+                [overall.index, np.repeat(target_period(), len(overall.index))], names=["label", "period"]
+            )
+            return pd.concat([chunked, overall]).sort_index()
+
+        return _get_num_deaths_by_cause_label_and_period
+
+    def make_get_num_dalys_by_cause_label_and_period(period_length_years: int):
+        """Create helper to summarize DALYS by cause label and period chunk + overall period."""
+        periods = get_periods_within_target_period(period_length_years=period_length_years)
+        period_lookup = {
+            year: period_label
+            for period_label, (period_start, period_end) in periods
+            for year in range(period_start, period_end + 1)
+        }
+
+        def _get_num_dalys_by_cause_label_and_period(_df):
+            start_year, end_year = TARGET_PERIOD[0].year, TARGET_PERIOD[1].year
+            _df_in_target = _df.loc[_df.year.between(start_year, end_year)].copy()
+            _df_in_target["period"] = _df_in_target["year"].map(period_lookup)
+
+            melted = (
+                _df_in_target.drop(columns=["date", "sex", "age_range"])
+                .melt(id_vars=["year", "period"], var_name="label", value_name="dalys")
+            )
+            chunked = melted.groupby(["label", "period"])["dalys"].sum()
+            overall = melted.groupby("label")["dalys"].sum()
+            overall.index = pd.MultiIndex.from_arrays(
+                [overall.index, np.repeat(target_period(), len(overall.index))], names=["label", "period"]
+            )
+            return pd.concat([chunked, overall]).sort_index()
+
+        return _get_num_dalys_by_cause_label_and_period
+
+
     num_deaths_by_cause_label = summarize(
         extract_results(
             results_folder,
             module="tlo.methods.demography",
             key="death",
-            custom_generate_series=get_num_deaths_by_cause_label,
+            custom_generate_series=make_get_num_deaths_by_cause_label_and_period(
+                period_length_years=period_length_years_for_bar_plots
+            ),
             do_scaling=True,
-        ).pipe(set_param_names_as_column_index_level_0)[["Nothing"]]
+        ).pipe(set_param_names_as_column_index_level_0)[["Nothing", "Contraception_Routine"]]
     )
 
     num_dalys_by_cause_label = summarize(
@@ -164,53 +236,52 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             results_folder,
             module="tlo.methods.healthburden",
             key="dalys_stacked_by_age_and_time",
-            custom_generate_series=get_num_dalys_by_cause_label,
+            custom_generate_series=make_get_num_dalys_by_cause_label_and_period(
+                period_length_years=period_length_years_for_bar_plots
+            ),
             do_scaling=True,
-        ).pipe(set_param_names_as_column_index_level_0)[["Nothing"]]
+        ).pipe(set_param_names_as_column_index_level_0)[["Nothing", "Contraception_Routine"]]
     )
 
     # Plots.....
     def do_bar_plot_with_ci(_df, _ax):
-        """Make a vertical bar plot for each Cause-of-Death Label for the _df onto axis _ax"""
-        _df_sorted = _df.reindex(index=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0).sort_index(
-            axis=0, key=order_of_cause_of_death_or_daly_label
-        )  # include all labels and sort
+        """Make vertical bars by cause, decomposed into period chunks, with overall-period CI."""
+        _df_nothing = _df["Contraception_Routine"]
+        _df_nothing = _df_nothing.reindex(
+            pd.MultiIndex.from_product(
+                [CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), period_labels_for_bar_plots + [target_period()]],
+                names=["label", "period"],
+            ),
+            fill_value=0.0,
+        )
+        _df_nothing = _df_nothing.sort_index(axis=0, level=0, key=order_of_cause_of_death_or_daly_label)
 
-        for i, cause_label in enumerate(_df_sorted.index):
-            # plot bar for one cause
+        cause_labels = list(_df_nothing.index.get_level_values("label").unique())
+
+        for i, cause_label in enumerate(cause_labels):
             color = get_color_cause_of_death_or_daly_label(cause_label)
-            one_cause = _df_sorted.loc[cause_label]
+            one_cause = _df_nothing.xs(cause_label, level="label")
 
-            mean_deaths = one_cause.loc[(slice(None), "mean")]
-            lower_bar = mean_deaths["Nothing"]
-            full_height_of_bar = mean_deaths["Nothing"]
-            upper_bar = full_height_of_bar - lower_bar
-            lower_bar_yerr = np.array(
-                [
-                    one_cause.loc[("Nothing", "mean")] - one_cause.loc[("Nothing", "lower")],
-                    one_cause.loc[("Nothing", "upper")] - one_cause.loc[("Nothing", "mean")],
-                ]
-            ).reshape(2, 1)
-            full_height_bar_yerr = np.array(
-                [
-                    one_cause.loc[("Nothing", "mean")] - one_cause.loc[("Nothing", "lower")],
-                    one_cause.loc[("Nothing", "upper")] - one_cause.loc[("Nothing", "mean")],
-                ]
-            ).reshape(2, 1)
+            bottom = 0.0
+            for j, period_label in enumerate(period_labels_for_bar_plots):
+                chunk_height = one_cause.loc[period_label, "mean"] if period_label in one_cause.index else 0.0
+                _ax.bar(i, chunk_height, bottom=bottom, color=color, alpha=0.9 if j % 2 == 0 else 0.35)
+                bottom += chunk_height
 
-            (lb,) = ax.bar(i, lower_bar, yerr=lower_bar_yerr, bottom=0, label="No TREATMENT_IDs", color=color)
-            (ub,) = _ax.bar(
-                i,
-                upper_bar,
-                yerr=full_height_bar_yerr,
-                bottom=lower_bar,
-                label="No TREATMENT_IDs",
-                color=color,
-                alpha=0.5,
-            )
-        _ax.set_xticks(range(len(_df_sorted.index)))
-        _ax.set_xticklabels(_df_sorted.index, rotation=90)
-        _ax.legend([lb, ub], ["All Services Available", "No Services Available"], loc="upper right")
+            mean_value = one_cause.loc[target_period(), "mean"]
+            lower_value = one_cause.loc[target_period(), "lower"]
+            upper_value = one_cause.loc[target_period(), "upper"]
+            overall_yerr = np.array([[mean_value - lower_value], [upper_value - mean_value]])
+            _ax.errorbar(i, mean_value, yerr=overall_yerr, fmt="none", ecolor="black", capsize=2, linewidth=1.2)
+
+        _ax.set_xticks(range(len(cause_labels)))
+        _ax.set_xticklabels(cause_labels, rotation=90)
+        chunk_legend_handles = [
+            Patch(facecolor="grey", alpha=0.9 if i % 2 == 0 else 0.35, label=period_label)
+            for i, period_label in enumerate(period_labels_for_bar_plots)
+        ]
+        ci_legend_handle = Line2D([0], [0], color="black", marker="|", markersize=8, linewidth=1.2, label="95% CI")
+        _ax.legend(handles=chunk_legend_handles + [ci_legend_handle], loc="upper right")
 
     fig, ax = plt.subplots()
     name_of_plot = f"Deaths With No Services, {target_period()}"
@@ -421,12 +492,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
+    parser.add_argument("outputs_folder", type=Path)
     args = parser.parse_args()
 
-    apply(results_folder=args.results_folder, output_folder=args.results_folder, resourcefilepath=Path("./resources"))
+    apply(results_folder=args.results_folder, output_folder=args.outputs_folder, resourcefilepath=Path("./resources"))
 
     # Plot the legends
-    plot_legends.apply(results_folder=None, output_folder=args.results_folder, resourcefilepath=Path("./resources"))
+    plot_legends.apply(results_folder=None, output_folder=args.outputs_folder, resourcefilepath=Path("./resources"))
 
     with zipfile.ZipFile(args.results_folder / f"images_{args.results_folder.parts[-1]}.zip", mode="w") as archive:
         for filename in sorted(glob.glob(str(args.results_folder / "*.png"))):
