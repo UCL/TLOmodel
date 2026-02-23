@@ -1981,8 +1981,8 @@ class HealthSystem(Module):
                 event_details_key = self._hsi_event_details.setdefault(event_details, len(self._hsi_event_details))
                 self._hsi_event_counts_log_period[event_details_key] += 1
 
-                if facility_id is not None and facility_id != -99:
-                    facility_key = f"{facility_id}:{event_details.treatment_id}"
+                if real_facility_id is not None and real_facility_id != 'unknown':
+                    facility_key = f"{real_facility_id}:{event_details.treatment_id}"
                     self._hsi_event_counts_by_facility_monthly[facility_key] += 1
             # Do logging for 'summary logger'
             self._summary_counter.record_hsi_event(
