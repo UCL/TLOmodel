@@ -2337,20 +2337,18 @@ class HealthSystem(Module):
         self._weather_delayed_hsi_event_counts_log_period.clear()
 
     def _write_hsi_event_counts_by_facility_to_log_and_reset(self):
-            """Write monthly HSI event counts broken down by facility_id to log and reset counter."""
-            logger_summary.info(
-                key="hsi_event_counts_by_facility_monthly",
-                description=(
-                    "Monthly counts of HSI events by facility_id and treatment_id. "
-                    "Keys are in format 'facility_id:treatment_id'."
-                ),
-                data={
-                    "date": str(self.sim.date),
-                    "counts": dict(self._hsi_event_counts_by_facility_monthly)
-                },
-            )
-            self._hsi_event_counts_by_facility_monthly.clear()
-
+        """Write monthly HSI event counts broken down by facility_id to log and reset counter."""
+        logger_summary.info(
+            key="hsi_event_counts_by_facility_monthly",
+            description=(
+                "Monthly counts of HSI events by facility_id and treatment_id. "
+                "Keys are in format 'facility_id:treatment_id'."
+            ),
+            data={
+                "counts": dict(self._hsi_event_counts_by_facility_monthly)
+            },
+        )
+        self._hsi_event_counts_by_facility_monthly.clear()
 
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
