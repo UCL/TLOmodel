@@ -7,7 +7,7 @@ from typing import Optional
 from tlo import Module, logging
 from tlo.methods import Metadata
 from tlo.events import IndividualScopeEventMixin
-
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -50,9 +50,11 @@ class MaternalNewbornHealthCohort(Module):
         """
 
         # Read in excel sheet with cohort
-        all_preg_df = pd.read_excel(Path(f'{self.sim.resourcefilepath}/maternal cohort') /
-                                    'ResourceFile_All2025PregnanciesCohortModel.xlsx')
-        all_preg_df = all_preg_df.drop(columns=['Unnamed: 0'])
+        all_preg_df = read_csv_files(Path(f'{self.sim.resourcefilepath}/maternal cohort'),
+                                              files='ResourceFile_All2025PregnanciesCohortModel')
+        # all_preg_df2 = pd.read_excel(Path(f'{self.sim.resourcefilepath}/maternal cohort') /
+        #                             'ResourceFile_All2025PregnanciesCohortModel.xlsx')
+        # all_preg_df = all_preg_df.drop(columns=['Unnamed: 0'])
 
         # Select rows equal to the desired population size
         if len(self.sim.population.props) <= len(all_preg_df):
@@ -99,6 +101,10 @@ class MaternalNewbornHealthCohort(Module):
 
         # Set the dtypes and index of the cohort dataframe
         props_dtypes = self.sim.population.props.dtypes.to_dict()
+        for c, d in props_dtypes.items():
+            if c in preg_pop.columns and "datetime" in str(d):
+                preg_pop[c] = pd.to_datetime(preg_pop[c], format="mixed", dayfirst=True, errors="raise")
+
         common_dtypes = {col: props_dtypes[col] for col in preg_pop.columns if col in props_dtypes}
         preg_pop_final = preg_pop.astype(common_dtypes)
         preg_pop_final.index.name = 'person'
