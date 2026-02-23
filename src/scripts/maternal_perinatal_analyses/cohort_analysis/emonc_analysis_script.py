@@ -100,7 +100,7 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-scenario = 'testing_scenario_514796'
+scenario = 'testing_scenario_522676'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
 # Create a folder to store graphs (if it hasn't already been created when ran previously)
@@ -116,9 +116,8 @@ int_analysis = ['baseline',
                 'mrrp',
                 'rpc',
                 'neonatal_resus',
-                'blood_transfusion',
-                'surgery']
-
+                'blood_transfusion']
+#  todo: add surgery
 
 info = get_scenario_info(results_folder)
 draws = [x for x in range(info['number_of_draws'])]
