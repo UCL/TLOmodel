@@ -1226,7 +1226,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # we determine if she will go into labour post term (42+ weeks)
 
         if self.rng.random_sample() < self.la_linear_models['post_term_labour'].predict(
-           df.loc[[individual_id]])[individual_id]:
+            df.loc[[individual_id], 'li_bmi'])[individual_id]:
 
             df.at[individual_id, 'la_due_date_current_pregnancy'] = \
                 (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(
@@ -2508,12 +2508,16 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # been admitted antenatally for delivery will be delivering in hospital and that is scheduled accordingly
 
             if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] == 'none':
+                individual = df.loc[
+                    [individual_id],
+                    ['age_years', 'li_urban', 'la_parity', 'li_ed_lev', 'li_wealth', 'li_mar_stat']
+                ]
 
                 # Here we calculate this womans predicted risk of home birth and health centre birth
                 pred_hb_delivery = self.module.la_linear_models['probability_delivery_at_home'].predict(
-                    df.loc[[individual_id]])[individual_id]
+                    individual)[individual_id]
                 pred_hc_delivery = self.module.la_linear_models['probability_delivery_health_centre'].predict(
-                    df.loc[[individual_id]])[individual_id]
+                    individual)[individual_id]
                 pred_hp_delivery = params['probability_delivery_hospital']
 
                 # The denominator is calculated
