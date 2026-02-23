@@ -2841,7 +2841,10 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
 
             else:
                 # We use a linear model to determine if women without complications will receive any postnatal care
-                mother = df.loc[[mother_id], ['age_years', 'li_urban', 'li_wealth', 'la_parity', 'ac_total_anc_visits_current_pregnancy']]
+                mother = df.loc[
+                    [mother_id],
+                    ['age_years', 'li_urban', 'li_wealth', 'la_parity', 'ac_total_anc_visits_current_pregnancy']
+                ]
                 prob_pnc = self.module.la_linear_models['postnatal_check'].predict(
                     mother,
                     mode_of_delivery=pd.Series(mni[mother_id]['mode_of_delivery'], index=mother.index),
