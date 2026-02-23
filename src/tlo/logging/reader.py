@@ -53,6 +53,8 @@ class LogData:
                     output_logs[module][key] = self.parse_logged_dataframe(data['values'], data['dates'])
                 else:
                     output_logs[module][key] = pd.DataFrame(data['values'], columns=data['header']['columns'].keys())
+                    if 'date' in output_logs[module][key].columns:
+                        output_logs[module][key] = output_logs[module][key].drop(columns='date')
                     output_logs[module][key].insert(
                         0, "date", pd.Series(data["dates"], dtype=np.dtype('datetime64[ns]'))
                     )
