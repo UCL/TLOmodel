@@ -1303,7 +1303,11 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         :returns True/False if labour can proceed
         """
         df = self.sim.population.props
-        person = df.loc[individual_id]
+        person = df.loc[
+            individual_id,
+            ['is_alive', 'is_pregnant', 'la_currently_in_labour', 'la_due_date_current_pregnancy',
+             'ac_admitted_for_immediate_delivery', 'ps_gestational_age_in_weeks']
+        ]
 
         # If the mother has died OR has lost her pregnancy OR is already in labour then the labour events wont run
         if not person.is_alive or not person.is_pregnant or person.la_currently_in_labour:
@@ -1313,8 +1317,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             return False
 
         # If she is alive, pregnant, not in labour AND her due date is today then the event will run
-        if person.is_alive and person.is_pregnant and (person.la_due_date_current_pregnancy == self.sim.date) \
-           and not person.la_currently_in_labour:
+        if person.la_due_date_current_pregnancy == self.sim.date:
 
             # If the woman in not currently an inpatient then we assume this is her normal labour
             if person.ac_admitted_for_immediate_delivery == 'none':
@@ -1332,11 +1335,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                                                  f'at gestation {person.ps_gestational_age_in_weeks}')
             return True
 
-        # If she is alive, pregnant, not in labour BUT her due date is not today, however shes been admitted then we
+        # If she is alive, pregnant, not in labour BUT her due date is not today, however she's been admitted then we
         # labour can progress as she requires early delivery
-        if person.is_alive and person.is_pregnant and not person.la_currently_in_labour and \
-            (person.la_due_date_current_pregnancy != self.sim.date) and (person.ac_admitted_for_immediate_delivery !=
-                                                                         'none'):
+        if person.ac_admitted_for_immediate_delivery != 'none':
             logger.debug(key='message', data=f'person {individual_id} has just reached LabourOnsetEvent on '
                                              f'{self.sim.date}- they have been admitted for delivery due to '
                                              f'complications in the antenatal period and will now progress into the '
