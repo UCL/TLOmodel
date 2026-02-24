@@ -42,6 +42,7 @@ from scripts.costing.cost_estimation import load_unit_cost_assumptions
 
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 # outputspath = Path("./outputs")
+resourcefilepath = Path("./resources")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
 results_folder = get_scenario_outputs("hiv_program_simplification", outputspath)[-1]
@@ -1484,23 +1485,23 @@ summary_total_hcw_time = compute_summary_statistics(hours_all_years_cadre,
                                                     central_measure='mean')
 summary_total_hcw_time.to_excel(results_folder / "summary_total_hcw_time_cadre.xlsx")
 
-summary_hcw_all_cadres_full = hours_all_years_cadre.sum(axis=0).to_frame().T
-summary_hcw_all_cadres = compute_summary_statistics(
-    summary_hcw_all_cadres_full,
+summary_hcw_time_all_cadres_full = hours_all_years_cadre.sum(axis=0).to_frame().T
+summary_hcw_time_all_cadres = compute_summary_statistics(
+    summary_hcw_time_all_cadres_full,
     central_measure='mean'
 )
 
-summary_hcw_all_cadres.to_excel(results_folder / "summary_hcw_all_cadres.xlsx")
+summary_hcw_time_all_cadres.to_excel(results_folder / "summary_hcw_time_all_cadres.xlsx")
 
 
 
-total_hrh_diff_from_statusquo = compute_summary_statistics(
+summary_hrh_time_diff_from_statusquo = compute_summary_statistics(
     find_difference_relative_to_comparison_series_dataframe(
-        summary_hcw_all_cadres_full,
+        summary_hcw_time_all_cadres_full,
         comparison="Status Quo"
     ), central_measure='mean',
 )
-total_hrh_diff_from_statusquo.to_excel(results_folder / "total_hrh_diff_from_statusquo.xlsx")
+summary_hrh_time_diff_from_statusquo.to_excel(results_folder / "summary_hrh_time_diff_from_statusquo.xlsx")
 
 
 
@@ -1509,12 +1510,12 @@ total_hrh_diff_from_statusquo.to_excel(results_folder / "total_hrh_diff_from_sta
 ################################
 
 # read in the HRH cost sheet
-hcw_costs = pd.read_csv("resources/ResourceFile_HIV/hrh_costs.csv")
+hrh_costs = pd.read_csv("resources/ResourceFile_HIV/hrh_costs.csv")
 
 
-def hcw_time_costs_by_facility(
+def hrh_time_costs_by_facility(
     minutes_by_appt_and_cadre: pd.DataFrame,
-    hcw_costs: pd.DataFrame,
+    hrh_costs: pd.DataFrame,
     minutes_to_hours: bool = True,
     fill_missing_cost: float | None = None
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -1534,7 +1535,7 @@ def hcw_time_costs_by_facility(
     hours_yfc = mins_yfc / 60 if minutes_to_hours else mins_yfc.copy()
 
     # --- 3) prep cost lookup keyed on (facility_level, cadre) ---
-    costs = hcw_costs.copy()
+    costs = hrh_costs.copy()
     costs["Facility_Level"] = costs["Facility_Level"].astype(str).str.strip()
     costs["Officer_Category"] = costs["Officer_Category"].astype(str).str.strip()
 
@@ -1565,54 +1566,97 @@ def hcw_time_costs_by_facility(
 
 
 # --- usage ---
-hours_by_year_fac_cadre, costs_by_year_fac_cadre = hcw_time_costs_by_facility(
+hours_by_year_fac_cadre, hrh_costs_by_year_fac_cadre = hrh_time_costs_by_facility(
     minutes_by_appt_and_cadre=minutes_by_appt_and_cadre,
-    hcw_costs=hcw_costs,
+    hrh_costs=hrh_costs,
     minutes_to_hours=True,
     fill_missing_cost=None   # or 0.0 if you want unmapped costs to contribute zero
 )
 
 hours_by_year_fac_cadre.to_excel(results_folder / "hours_by_year_fac_cadre.xlsx")
-costs_by_year_fac_cadre.to_excel(results_folder / "costs_by_year_fac_cadre.xlsx")
+hrh_costs_by_year_fac_cadre.to_excel(results_folder / "hrh_costs_by_year_fac_cadre.xlsx")
 
 
 # get the costs for all hcw by year
-total_costs_by_year = (
-    costs_by_year_fac_cadre
+hrh_costs_by_year = (
+    hrh_costs_by_year_fac_cadre
     .groupby(level="year")
     .sum()
 )
-total_costs_by_year.to_excel(results_folder / "total_costs_by_year.xlsx")
+hrh_costs_by_year.to_excel(results_folder / "total_costs_by_year.xlsx")
 
 # get total costs across all the years
-total_costs_all_years = costs_by_year_fac_cadre.sum()
-total_costs_all_years.to_excel(results_folder / "total_costs_all_years.xlsx")
+hrh_costs_all_years = hrh_costs_by_year_fac_cadre.sum()
+hrh_costs_all_years.to_excel(results_folder / "hrh_costs_all_years.xlsx")
 
 
 # total_costs_all_years is a Series with MultiIndex (e.g. run, draw) or (draw, run)
-total_costs_all_years_df = total_costs_all_years.to_frame().T
+hrh_costs_all_years_df = hrh_costs_all_years.to_frame().T
 
 
-cost_diff_from_statusquo = compute_summary_statistics(
+summary_hrh_total_costs = compute_summary_statistics(
+        hrh_costs_all_years_df,
+        central_measure='mean',
+)
+
+
+
+
+hrh_cost_diff_from_statusquo = compute_summary_statistics(
     find_difference_relative_to_comparison_series_dataframe(
-        total_costs_all_years_df,
+        hrh_costs_all_years_df,
         comparison="Status Quo"
     ), central_measure='mean',
 )
 
-cost_diff_from_statusquo.to_excel(results_folder / "cost_diff_from_statusquo.xlsx")
+hrh_cost_diff_from_statusquo.to_excel(results_folder / "hrh_cost_diff_from_statusquo.xlsx")
 
 
-pc_cost_diff_from_statusquo = 100.0 * compute_summary_statistics(
+pc_hrh_cost_diff_from_statusquo = 100.0 * compute_summary_statistics(
     pd.DataFrame(
         find_difference_relative_to_comparison_series_dataframe(
-            total_costs_all_years_df,
+            hrh_costs_all_years_df,
             comparison='Status Quo',
         scaled=True)
     ), only_central=True
 )
-pc_cost_diff_from_statusquo.to_excel(results_folder / "pc_cost_diff_from_statusquo.xlsx")
+pc_hrh_cost_diff_from_statusquo.to_excel(results_folder / "pc_hrh_cost_diff_from_statusquo.xlsx")
 
+
+# format output for table
+def format_cost_table(df):
+    # divide and round
+    df_fmt = (df / 1_000_000).round(2)
+
+    draws = df_fmt.columns.get_level_values(0).unique()
+
+    formatted = {}
+
+    for d in draws:
+        central = df_fmt[(d, "central")]
+        lower   = df_fmt[(d, "lower")]
+        upper   = df_fmt[(d, "upper")]
+
+        formatted[d] = (
+            central.map("{:.2f}".format)
+            + " ("
+            + lower.map("{:.2f}".format)
+            + " to "
+            + upper.map("{:.2f}".format)
+            + ")"
+        )
+
+    return pd.DataFrame(formatted)
+
+hrh_cost_diff_from_statusquo_table = format_cost_table(hrh_cost_diff_from_statusquo)
+
+hrh_cost_diff_from_statusquo_table.to_excel(results_folder / "hrh_cost_diff_from_statusquo_table.xlsx")
+
+
+
+hrh_costs_all_years_table = format_cost_table(summary_hrh_total_costs)
+
+hrh_costs_all_years_table.to_excel(results_folder / "hrh_costs_all_years_table.xlsx")
 
 
 
@@ -1696,7 +1740,6 @@ def plot_cadre_hours_vs_outcomes(
     plt.show()
 
 
-# todo update this with the new dfs
 num_hcw_hours_diff = compute_summary_statistics(
     find_difference_relative_to_comparison_series_dataframe(
         hours_all_years_cadre,
@@ -1838,7 +1881,7 @@ def plot_cost_vs_outcomes(
 
 
 plot_cost_vs_outcomes(
-    num_hcw_hours_diff_edit=cost_diff_from_statusquo,
+    num_hcw_hours_diff_edit=hrh_cost_diff_from_statusquo,
     epi_df=infect_ci,
     scenario_colours=scenario_colours,
     figsize=(10, 11),
@@ -1848,7 +1891,7 @@ plot_cost_vs_outcomes(
 
 
 plot_cost_vs_outcomes(
-    num_hcw_hours_diff_edit=cost_diff_from_statusquo,
+    num_hcw_hours_diff_edit=hrh_cost_diff_from_statusquo,
     epi_df=epi_df,
     scenario_colours=scenario_colours,
     figsize=(10, 11),
@@ -1862,13 +1905,12 @@ plot_cost_vs_outcomes(
 ####################################################################################
 
 
-resourcefilepath = Path("./resources")
 
 # Period relevant for costing
-relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
-list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0],  relevant_period_for_costing[1] + 1))
-list_of_years_for_plot = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1]+1))
-number_of_years_costed = relevant_period_for_costing[1] - relevant_period_for_costing[0] + 1
+# relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
+# list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0],  relevant_period_for_costing[1] + 1))
+# list_of_years_for_plot = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1]+1))
+# number_of_years_costed = relevant_period_for_costing[1] - relevant_period_for_costing[0] + 1
 #
 # # Costing parameters
 # Scenarios
@@ -1998,13 +2040,6 @@ cons_costed = apply_unit_costs(
 cons_costed.to_excel(results_folder / f'cons_costed_{target_period()}.xlsx')
 
 
-# todo select only cons used for HIV
-# ignore generic items such as gloves
-# get total of cons for every draw/run
-# get total costs cons+HRH for every draw/run
-
-
-
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> int:
     return int(pd.unique(lookup_df.loc[lookup_df["Intervention_Pkg"] == package, "Item_Code"])[0])
@@ -2057,7 +2092,7 @@ hiv_item_codes_dict['First line ART regimen: young child: cotrimoxazole'] = get_
 
 
 
-# todo need to add self-tests
+# need to add self-tests
 num_selftests = treatment_by_year_hiv.loc[
     treatment_by_year_hiv.index.get_level_values("treatment_id") == "Hiv_Test_Selftest"
 ]
@@ -2069,7 +2104,7 @@ selftests_costs = selftests_costs.droplevel("treatment_id")
 
 
 
-# todo need to add tdf tests
+# need to add tdf tests
 def get_num_tdf(_df):
     """Return total number of TDF tests per year (from column n_tdf_tests_performed)."""
 
@@ -2132,11 +2167,24 @@ cons_costed_hiv = cons_costed.loc[
     cons_costed.index.get_level_values("item").isin(hiv_item_codes)
 ]
 
+# add index to align with hiv cons
+selftests_costs.index = pd.MultiIndex.from_product(
+    [selftests_costs.index, [0]],
+    names=["year", "item"]
+)
+
+tdf_costs.index = pd.MultiIndex.from_product(
+    [tdf_costs.index, [1]],
+    names=["year", "item"]
+)
+
+
 # add on the self-tests and tdf tests
 cons_costed_hiv = (
-    cons_costed_hiv
-    .add(selftests_costs, fill_value=0)
-    .add(tdf_costs, fill_value=0)
+    cons_costed_hiv.fillna(0)
+    .add(selftests_costs.fillna(0), fill_value=0)
+    .add(tdf_costs.fillna(0), fill_value=0)
+    .fillna(0)
 )
 
 
@@ -2148,8 +2196,8 @@ cons_summed_by_year.to_excel(results_folder / f'cons_summed_by_year_{target_peri
 
 
 # total costs by year / draw / run
-total_cons_hrh_costs_year_draw_run = cons_summed_by_year + total_costs_by_year
-total_cons_hrh_costs_year_draw_run.to_excel(results_folder / f'total_cons_hrh_costs_year_draw_run_{target_period()}.xlsx')
+cons_hrh_costs_year_draw_run = cons_summed_by_year + hrh_costs_by_year
+cons_hrh_costs_year_draw_run.to_excel(results_folder / f'cons_hrh_costs_year_draw_run_{target_period()}.xlsx')
 
 
 
@@ -2157,11 +2205,15 @@ total_cons_hrh_costs_year_draw_run.to_excel(results_folder / f'total_cons_hrh_co
 # construct the fiscal envelopes
 ################################
 
-annual_total_costs_summary = compute_summary_statistics(
-    total_cons_hrh_costs_year_draw_run,
+summary_total_costs_year = compute_summary_statistics(
+    cons_hrh_costs_year_draw_run,
     central_measure='mean'
 )
-annual_total_costs_summary.to_excel(results_folder / f'annual_total_costs_summary_{target_period()}.xlsx')
+summary_total_costs_year.to_excel(results_folder / f'summary_total_costs_year_{target_period()}.xlsx')
+
+summary_total_costs_year_table = format_cost_table(summary_total_costs_year)
+summary_total_costs_year_table.to_excel(results_folder / f'summary_total_costs_year_table.xlsx')
+
 
 
 # apply the contraction for future funding scenarios
@@ -2239,7 +2291,7 @@ rates = {
 }
 
 scen_runs = apply_compound_contraction(
-    baseline_runs_df=total_cons_hrh_costs_year_draw_run,
+    baseline_runs_df=cons_hrh_costs_year_draw_run,
     base_year=2025,
     rates=rates,
     draw="Status Quo",
@@ -2280,16 +2332,6 @@ def plot_shaded_draws(df, ax=None, alpha=0.2):
 
 plot_shaded_draws(summary_contract_funding)
 plt.show()
-
-
-
-summary_total_costs_by_year = compute_summary_statistics(
-    total_cons_hrh_costs_year_draw_run,
-    central_measure='mean')
-
-
-
-
 
 
 
@@ -2403,12 +2445,220 @@ def plot_funding_and_program_by_program(
 # ---- call ----
 fig, axes = plot_funding_and_program_by_program(
     summary_contract_funding,
-    summary_total_costs_by_year,
+    summary_total_costs_year,
     ncols=5,
     stat_central="central",
 )
 plt.show()
 
 
+# get the first year crossing threshold
 
 
+def first_crossing_year_constant_funding(
+    df_funding,
+    df_program,
+    funding_draw="constant",
+    funding_stat="upper",
+    program_stat="central",
+):
+    """
+    For each programme:
+        find first year where program central value
+        crosses above funding upper bound (draw='constant').
+
+    Returns Series indexed by programme.
+    """
+
+    # Extract funding upper bound for selected draw
+    funding_upper = df_funding[(funding_draw, funding_stat)].astype(float)
+
+    programs = df_program.columns.get_level_values(0).unique()
+    years = df_program.index
+
+    out = {}
+
+    for p in programs:
+        central = df_program[(p, program_stat)].astype(float)
+
+        above = central > funding_upper
+
+        # true crossing = first time becomes True
+        crossed = above & (~above.shift(1, fill_value=False))
+
+        if crossed.any():
+            out[p] = years[crossed.to_numpy().argmax()]
+        else:
+            out[p] = np.nan
+
+    return pd.Series(out, name="first_year_crossing")
+
+
+# ---- call ----
+cross_years = first_crossing_year_constant_funding(
+    summary_contract_funding,
+    summary_total_costs_year,
+    funding_draw="constant",
+    funding_stat="upper",
+    program_stat="central",
+)
+
+cross_years
+cross_years.to_excel(results_folder / 'year_crossing_funding_threshold.xlsx')
+
+
+cross_years = first_crossing_year_constant_funding(
+    summary_contract_funding,
+    summary_total_costs_year,
+    funding_draw="moderate_2pc",
+    funding_stat="upper",
+    program_stat="central",
+)
+
+cross_years
+cross_years.to_excel(results_folder / 'year_crossing_funding_threshold_moderate_2pc.xlsx')
+
+
+
+cross_years = first_crossing_year_constant_funding(
+    summary_contract_funding,
+    summary_total_costs_year,
+    funding_draw="severe_6pc",
+    funding_stat="upper",
+    program_stat="central",
+)
+
+cross_years
+cross_years.to_excel(results_folder / 'year_crossing_funding_threshold_severe_6pc.xlsx')
+
+
+
+################################
+#  ratios DALYs per $ saved
+################################
+
+# total DALYs by run
+dalys_diff = find_difference_relative_to_comparison_series_dataframe(
+        daly_by_cause,
+        comparison='Status Quo'
+    )
+aids_dalys_diff = dalys_diff.loc['AIDS']
+# series multiindex run/draw
+
+# total hrh costs per run
+hrh_cost_diff = find_difference_relative_to_comparison_series_dataframe(
+        hrh_costs_all_years_df,
+        comparison="Status Quo"
+    )
+# df column names=['run', 'draw']
+hrh_cost_series = hrh_cost_diff.iloc[0]
+hrh_cost_series.index = hrh_cost_series.index.set_names(['run', 'draw'])
+
+
+total_cost_diff = find_difference_relative_to_comparison_series_dataframe(
+        cons_hrh_costs_year_draw_run,
+        comparison="Status Quo"
+    )
+total_cost_diff_sum = total_cost_diff.sum(axis=0)
+
+
+
+
+def dalys_per_usd_saved(
+    aids_dalys_diff: pd.Series,
+    cost_diff: pd.Series,
+    eps: float = 1e-9,
+    per_million: bool = False,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Compute ΔAIDS DALYs per USD saved, for each scenario × run, then summarise across runs.
+
+    Inputs
+    ------
+    aids_dalys_diff : pd.Series
+        MultiIndex index = (run, scenario) OR (run, draw) where "draw" is actually scenario name.
+        Values are ΔAIDS DALYs vs Status Quo.
+    cost_diff : pd.Series
+        MultiIndex index = (run, scenario) OR (run, draw) matching aids_dalys_diff.
+        Values are Δcost vs Status Quo (negative = cost saving).
+
+    Returns
+    -------
+    ratio_wide : pd.DataFrame
+        Index = scenario; columns = run.
+        Values = ΔDALYs / (USD saved), where USD saved = -Δcost.
+        Only defined when USD saved > 0; otherwise NaN.
+        If per_million=True, values are DALYs per $1,000,000 saved.
+    summary_by_run : pd.DataFrame
+        Index = scenario; columns = mean, p2_5, p97_5, n_valid across runs.
+    """
+    # --- Harmonise index level names
+    def _standardise_index(s: pd.Series) -> pd.Series:
+        s = s.copy()
+        names = list(s.index.names)
+
+        # Common case in your outputs: ['run', 'draw'] but draw is scenario name
+        if names == ["run", "draw"]:
+            s.index = s.index.set_names(["run", "scenario"])
+            return s
+
+        # If unnamed, assume (run, scenario)
+        if all(n is None for n in names) and s.index.nlevels == 2:
+            s.index = s.index.set_names(["run", "scenario"])
+            return s
+
+        # If already correct
+        if names == ["run", "scenario"]:
+            return s
+
+        raise ValueError(f"Unexpected index names/structure: {s.index.names} (nlevels={s.index.nlevels})")
+
+    aids = _standardise_index(aids_dalys_diff)
+    cost = _standardise_index(cost_diff)
+
+    # Align (inner join on index)
+    aids, cost = aids.align(cost, join="inner")
+
+    # --- Reshape to scenario × run
+    dalys_wide = aids.unstack("run")     # index=scenario, columns=run
+    cost_wide  = cost.unstack("run")     # index=scenario, columns=run
+
+    # --- Compute savings and ratio
+    usd_saved = -cost_wide  # positive if saving money
+
+    ratio_wide = dalys_wide / usd_saved
+    ratio_wide = ratio_wide.mask(usd_saved <= eps)  # undefined if not saving or tiny denom
+
+    if per_million:
+        ratio_wide = ratio_wide * 1_000_000
+
+    # --- Summary across runs
+    def _p(row: pd.Series, q: float) -> float:
+        x = row.to_numpy()
+        x = x[~np.isnan(x)]
+        return np.nan if x.size == 0 else float(np.percentile(x, q))
+
+    summary_by_run = pd.DataFrame({
+        "mean": ratio_wide.mean(axis=1, skipna=True),
+        "p2_5": ratio_wide.apply(lambda r: _p(r, 2.5), axis=1),
+        "p97_5": ratio_wide.apply(lambda r: _p(r, 97.5), axis=1),
+        "n_valid": ratio_wide.notna().sum(axis=1),
+    })
+
+    return ratio_wide, summary_by_run
+
+
+
+tmp = dalys_per_usd_saved(
+    aids_dalys_diff=aids_dalys_diff,
+    cost_diff=hrh_cost_series)
+
+tmp[1].to_excel(results_folder / "dalys_per_hrh_usd_saved.xlsx")
+
+
+
+tmp = dalys_per_usd_saved(
+    aids_dalys_diff=aids_dalys_diff,
+    cost_diff=total_cost_diff_sum)
+
+tmp[1].to_excel(results_folder / "dalys_per_total_usd_saved.xlsx")
