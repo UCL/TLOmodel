@@ -9,12 +9,12 @@ from tlo import Date
 from tlo.analysis.utils import extract_results, summarize, get_color_short_treatment_id
 
 min_year = 2025
-max_year = 2027
+max_year = 2029
+spacing_of_years = 1
 PREFIX_ON_FILENAME = "1"
 climate_sensitivity_analysis = False
-parameter_sensitivity_analysis = True
-main_text = False
-mode_2 = False
+parameter_sensitivity_analysis = False
+main_text = True
 
 if climate_sensitivity_analysis:
     scenario_names = [
@@ -29,31 +29,23 @@ if climate_sensitivity_analysis:
         "SSP 5.85 Low",
         "SSP 5.85 Mean",
     ]
+
     suffix = "climate_SA"
     scenarios_of_interest = range(len(scenario_names))
 if parameter_sensitivity_analysis:
-    num_draws = 200  # Total number of parameter scan draws
-    scenario_names_all = range(num_draws)
+    scenario_names_all = range(0, 10, 1)
     scenario_names = scenario_names_all
     suffix = "parameter_SA"
-
-    # Specify draws to skip (e.g., corrupted data, failed runs)
-    skip_draws = [140]
-
-    scenarios_of_interest = [i for i in range(num_draws) if i not in skip_draws]
-
-    print(f"\nConfiguration:")
-    print(f"Total draws: {num_draws}")
-    print(f"Draws to skip: {skip_draws if skip_draws else 'None'}")
-    print(f"Draws to process: {len(scenarios_of_interest)}")
+    scenarios_of_interest = [0, 1, 2, 3, 4, 7, 8, 9]  # range(0, 10, 1)
 
 if main_text:
     scenario_names = [
         "Baseline",
         "SSP 2.45 Mean",
+        "Worst Case"
     ]
     suffix = "main_text"
-    scenarios_of_interest = [0, 1]
+    scenarios_of_interest = [0, 1, 2]
 
 precipitation_files = {
     "Baseline": "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
@@ -70,14 +62,17 @@ precipitation_files = {
 
 scenario_colours = [
     "#823038",  # Baseline
+
     # SSP 1.26 (Teal)
     "#00566f",  # High
     "#0081a7",  # Low
     "#5ab4c6",  # Mean
+
     # SSP 2.45 (Purple/Lavender - more distinct)
     "#5b3f8c",  # High
     "#8e7cc3",  # Low
     "#c7b7ec",  # Mean
+
     # SSP 5.85 (Coral)
     "#c65a52",  # High
     "#f07167",  # Low
@@ -87,510 +82,377 @@ scenario_colours = [
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the healthcare system utilization across scenarios.
-    - FACILITY-LEVEL AVERAGING: Calculates disruption % for each facility, then averages
-    - This gives equal weight to each facility regardless of volume
-    - Optimized for parameter sensitivity analysis with 200 draws.
+    - We estimate the healthcare system impact through total treatments and never-ran appointments.
+    - Now includes weather-delayed and weather-cancelled appointments.
+    - Refactored to extract results once per draw instead of per year.
     """
 
     TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
 
-    # ========================================================================
-    # FACILITY-LEVEL HELPER FUNCTIONS
-    # ========================================================================
-
-    def get_hsi_counts_by_facility(_df):
-        """Get HSI counts by facility"""
+    # Simplified helper functions that just sum counts
+    def sum_event_counts(_df, column_name):
+        """Generic function to sum event counts from a column of dictionaries"""
         _df["date"] = pd.to_datetime(_df["date"])
         _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
 
-        if len(_df) == 0:
-            return pd.Series(dtype=int)
+        total = {}
+        for d in _df[column_name]:
+            for k, v in d.items():
+                total[k] = total.get(k, 0) + v
+        return pd.Series(sum(total.values()), name="total")
 
-        facility_totals = {}
-        for _, row in _df.iterrows():
-            counts_dict = row['hsi_event_key_to_counts']
-            for key, value in counts_dict.items():
-                if ':' in key:
-                    facility_id, _ = key.split(':', 1)
-                    facility_totals[facility_id] = facility_totals.get(facility_id, 0) + value
+    def get_num_treatments_total(_df):
+        return sum_event_counts(_df, "hsi_event_key_to_counts")
 
-        return pd.Series(facility_totals)
+    def get_num_treatments_never_ran(_df):
+        return sum_event_counts(_df, "never_ran_hsi_event_key_to_counts")
 
-    def get_never_ran_by_facility(_df):
-        """Get never-ran counts by facility"""
+    def get_num_treatments_total_delayed(_df):
+        """Count total number of delayed HSI events from full info logger"""
+        _df["date"] = pd.to_datetime(_df["date"])
+        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
+        print(pd.Series(len(_df), name="total"))
+        # Each row is one delayed event
+        return pd.Series(len(_df), name="total")
+
+    def get_num_treatments_total_cancelled(_df):
+        """Count total number of cancelled HSI events from full info logger"""
         _df["date"] = pd.to_datetime(_df["date"])
         _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
 
-        if len(_df) == 0:
-            return pd.Series(dtype=int)
+        # Each row is one cancelled event
+        return pd.Series(len(_df), name="total")
 
-        facility_totals = {}
-        for _, row in _df.iterrows():
-            counts_dict = row['never_ran_hsi_event_key_to_counts']
-            for key, value in counts_dict.items():
-                if ':' in key:
-                    facility_id, _ = key.split(':', 1)
-                    facility_totals[facility_id] = facility_totals.get(facility_id, 0) + value
-
-        return pd.Series(facility_totals)
-
-    def get_delayed_by_facility(_df):
-        """Count delayed HSIs by facility"""
+    def get_population_total(_df):
+        """Returns the total population across the entire period"""
         _df["date"] = pd.to_datetime(_df["date"])
-        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
+        filtered_df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
+        numeric_df = filtered_df.drop(columns=["female", "male"], errors="ignore")
+        # Get the mean population across years
+        population_mean = numeric_df.sum(numeric_only=True).mean()
+        return pd.Series(population_mean, name="population")
 
-        if len(_df) == 0:
-            return pd.Series(dtype=int)
+    # Storage for all draws
+    all_draws_treatments_mean = []
+    all_draws_treatments_lower = []
+    all_draws_treatments_upper = []
 
-        return _df.groupby('Facility_ID').size()
+    all_draws_never_ran_mean = []
+    all_draws_never_ran_lower = []
+    all_draws_never_ran_upper = []
 
-    def get_cancelled_by_facility(_df):
-        """Count cancelled HSIs by facility"""
-        _df["date"] = pd.to_datetime(_df["date"])
-        _df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
+    all_draws_weather_delayed_mean = []
+    all_draws_weather_delayed_lower = []
+    all_draws_weather_delayed_upper = []
 
-        if len(_df) == 0:
-            return pd.Series(dtype=int)
+    all_draws_weather_cancelled_mean = []
+    all_draws_weather_cancelled_lower = []
+    all_draws_weather_cancelled_upper = []
 
-        return _df.groupby('Facility_ID').size()
+    baseline_treatments_total = None
+    baseline_never_ran_total = None
+    baseline_population = None
 
-    # ========================================================================
-    # STEP 1: Extract baseline facility-level data ONCE (as denominator)
-    # ========================================================================
-
-    print("Extracting baseline facility-level data...")
-
-    baseline_hsi_by_facility = summarize(
-        extract_results(
-            results_folder,
-            module='tlo.methods.healthsystem.summary',
-            key='hsi_event_counts',
-            custom_generate_series=get_hsi_counts_by_facility,
-            do_scaling=False,
-        ),
-        only_mean=True,
-        collapse_columns=False,
-    )[0]  # Draw 0 is baseline
-
-    # Fix index to be int
-    baseline_hsi_by_facility.index = pd.Index(
-        [int(x) for x in baseline_hsi_by_facility.index],
-        name='Facility_ID'
-    )
-
-    print(f"Baseline data: {len(baseline_hsi_by_facility)} facilities")
-
-    # ========================================================================
-    # STEP 2: Process each draw - calculate facility-level proportions
-    # ========================================================================
-
-    # Storage for all draws - NOW storing percentages (facility-averaged)
-    all_draws_pct_delayed = []
-    all_draws_pct_cancelled = []
-    all_draws_pct_disrupted = []
-
-    # Also store absolute totals for reporting
-    all_draws_total_treatments = []
-    all_draws_total_delayed = []
-    all_draws_total_cancelled = []
-    all_draws_total_never_ran = []
-
-    processed_draws = []
-
-    print(f"\nProcessing {len(scenarios_of_interest)} draws...")
-    if parameter_sensitivity_analysis and skip_draws:
-        print(f"Skipping draws: {skip_draws}")
-
-    for idx, draw in enumerate(scenarios_of_interest):
-        if idx % 10 == 0:
-            print(f"Processing draw {idx}/{len(scenarios_of_interest)} (draw number: {draw})...")
-
-        try:
-            # Check if this is baseline
-            is_baseline = (draw == 0 and parameter_sensitivity_analysis) or \
-                          (climate_sensitivity_analysis and scenario_names[idx] == 'Baseline') or \
-                          (main_text and scenario_names[idx] == 'Baseline')
-
-            if is_baseline:
-                # Baseline: no weather disruptions
-                pct_delayed = 0.0
-                pct_cancelled = 0.0
-                pct_disrupted = 0.0
-
-                # Total counts
-                total_treatments = baseline_hsi_by_facility.sum()
-                total_delayed = 0
-                total_cancelled = 0
-
-                # Get never-ran
-                never_ran_by_facility = summarize(
-                    extract_results(
-                        results_folder,
-                        module='tlo.methods.healthsystem.summary',
-                        key='never_ran_hsi_event_counts',
-                        custom_generate_series=get_never_ran_by_facility,
-                        do_scaling=False,
-                    ),
-                    only_mean=True,
-                    collapse_columns=False,
-                )[draw]
-                never_ran_by_facility.index = pd.Index([int(x) for x in never_ran_by_facility.index])
-                total_never_ran = never_ran_by_facility.sum()
-
-            else:
-                # Get delayed counts by facility
-                delayed_by_facility = summarize(
-                    extract_results(
-                        results_folder,
-                        module='tlo.methods.healthsystem.summary',
-                        key='Weather_delayed_HSI_Event_full_info',
-                        custom_generate_series=get_delayed_by_facility,
-                        do_scaling=False,
-                    ),
-                    only_mean=True,
-                    collapse_columns=False,
-                )[draw]
-
-                # Get cancelled counts by facility
-                cancelled_by_facility = summarize(
-                    extract_results(
-                        results_folder,
-                        module='tlo.methods.healthsystem.summary',
-                        key='Weather_cancelled_HSI_Event_full_info',
-                        custom_generate_series=get_cancelled_by_facility,
-                        do_scaling=False,
-                    ),
-                    only_mean=True,
-                    collapse_columns=False,
-                )[draw]
-
-                # Get HSI counts for this draw
-                hsi_by_facility = summarize(
-                    extract_results(
-                        results_folder,
-                        module='tlo.methods.healthsystem.summary',
-                        key='hsi_event_counts',
-                        custom_generate_series=get_hsi_counts_by_facility,
-                        do_scaling=False,
-                    ),
-                    only_mean=True,
-                    collapse_columns=False,
-                )[draw]
-                hsi_by_facility.index = pd.Index([int(x) for x in hsi_by_facility.index])
-
-                # Get never-ran
-                never_ran_by_facility = summarize(
-                    extract_results(
-                        results_folder,
-                        module='tlo.methods.healthsystem.summary',
-                        key='never_ran_hsi_event_counts',
-                        custom_generate_series=get_never_ran_by_facility,
-                        do_scaling=False,
-                    ),
-                    only_mean=True,
-                    collapse_columns=False,
-                )[draw]
-                never_ran_by_facility.index = pd.Index([int(x) for x in never_ran_by_facility.index])
-
-                # ============================================================
-                # KEY CHANGE: FACILITY-LEVEL CALCULATION
-                # ============================================================
-
-                # Align facility data (ensures same facilities in same order)
-                baseline_aligned, delayed_aligned = baseline_hsi_by_facility.align(
-                    delayed_by_facility, fill_value=0
-                )
-                baseline_aligned, cancelled_aligned = baseline_hsi_by_facility.align(
-                    cancelled_by_facility, fill_value=0
-                )
-
-                # Calculate proportion for EACH FACILITY (avoiding division by zero)
-                delayed_proportions = np.where(
-                    baseline_aligned > 0,
-                    delayed_aligned / baseline_aligned,
-                    0
-                )
-                cancelled_proportions = np.where(
-                    baseline_aligned > 0,
-                    cancelled_aligned / baseline_aligned,
-                    0
-                )
-                disrupted_proportions = np.where(
-                    baseline_aligned > 0,
-                    (delayed_aligned + cancelled_aligned) / baseline_aligned,
-                    0
-                )
-
-                # AVERAGE across facilities (equal weight per facility)
-                pct_delayed = np.mean(delayed_proportions) * 100
-                pct_cancelled = np.mean(cancelled_proportions) * 100
-                pct_disrupted = np.mean(disrupted_proportions) * 100
-
-                # Total counts (still useful for absolute reporting)
-                total_treatments = hsi_by_facility.sum()
-                total_delayed = delayed_by_facility.sum()
-                total_cancelled = cancelled_by_facility.sum()
-                total_never_ran = never_ran_by_facility.sum()
-
-            # Store results (FIX FOR BROADCASTING ERROR - ensure all are scalars)
-            all_draws_pct_delayed.append(float(pct_delayed))
-            all_draws_pct_cancelled.append(float(pct_cancelled))
-            all_draws_pct_disrupted.append(float(pct_disrupted))
-
-            all_draws_total_treatments.append(float(total_treatments))
-            all_draws_total_delayed.append(float(total_delayed))
-            all_draws_total_cancelled.append(float(total_cancelled))
-            all_draws_total_never_ran.append(float(total_never_ran))
-
-            processed_draws.append(draw)
-
-        except Exception as e:
-            print(f"\nWARNING: Error processing draw {draw}: {e}")
-            print(f"Skipping draw {draw} and continuing...")
-            import traceback
-            traceback.print_exc()
+    for draw in range(len(scenario_names)):
+        print(draw)
+        if draw not in scenarios_of_interest:
             continue
+        print(draw)
 
-    print(f"\nAll draws processed.")
-    print(f"Successfully processed: {len(processed_draws)} draws")
-    if len(processed_draws) < len(scenarios_of_interest):
-        failed_draws = [d for d in scenarios_of_interest if d not in processed_draws]
-        print(f"Failed draws: {failed_draws}")
-        print(f"\nTo skip these draws in future runs, add to skip_draws list:")
-        print(f"skip_draws = {failed_draws}")
+        print(f"Processing draw {draw}...")
+        make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"
 
-    print("Creating summary statistics and figures...")
+        # Extract all results ONCE per draw
+        print(f"  Extracting total treatments...")
+        num_treatments_total = summarize(
+            extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key="hsi_event_counts",
+                custom_generate_series=get_num_treatments_total,
+                do_scaling=False,
+            ),
+            only_mean=False,
+            collapse_columns=True,
+        )[draw]
 
-    # Convert to arrays with explicit dtype (FIX FOR BROADCASTING ERROR)
-    pct_delayed_values = np.array(all_draws_pct_delayed, dtype=float)
-    pct_cancelled_values = np.array(all_draws_pct_cancelled, dtype=float)
-    pct_disrupted_values = np.array(all_draws_pct_disrupted, dtype=float)
+        print(f"  Extracting population...")
+        population_data = summarize(
+            extract_results(
+                results_folder,
+                module="tlo.methods.demography",
+                key="population",
+                custom_generate_series=get_population_total,
+                do_scaling=False,
+            ),
+            only_mean=False,
+            collapse_columns=True,
+        )[draw]
 
-    total_treatments_values = np.array(all_draws_total_treatments, dtype=float)
-    total_delayed_values = np.array(all_draws_total_delayed, dtype=float)
-    total_cancelled_values = np.array(all_draws_total_cancelled, dtype=float)
-    total_never_ran_values = np.array(all_draws_total_never_ran, dtype=float)
+        print(f"  Extracting never-ran appointments...")
+        num_never_ran_appts = summarize(
+            extract_results(
+                results_folder,
+                module="tlo.methods.healthsystem.summary",
+                key="never_ran_hsi_event_counts",
+                custom_generate_series=get_num_treatments_never_ran,
+                do_scaling=False,
+            ),
+            only_mean=False,
+            collapse_columns=True,
+        )[draw]
 
-    # Create comprehensive summary DataFrame
-    summary_df = pd.DataFrame({
-        'Draw': processed_draws,
-        'total_treatments': total_treatments_values,
-        'total_delayed': total_delayed_values,
-        'total_cancelled': total_cancelled_values,
-        'total_never_ran': total_never_ran_values,
-        'pct_delayed_facility_avg': pct_delayed_values,
-        'pct_cancelled_facility_avg': pct_cancelled_values,
-        'pct_disrupted_facility_avg': pct_disrupted_values,
+        if scenario_names[draw] == 'Baseline':
+            # Baseline: no weather disruptions
+            num_weather_delayed = {"mean": pd.Series([0]), "lower": pd.Series([0]), "upper": pd.Series([0])}
+            num_weather_cancelled = {"mean": pd.Series([0]), "lower": pd.Series([0]), "upper": pd.Series([0])}
+
+            # Store baseline values
+            baseline_treatments_total = num_treatments_total["mean"].values[0]
+            baseline_never_ran_total = num_never_ran_appts["mean"].values[0]
+            baseline_population = population_data["mean"].values[0]
+        elif main_text:
+            num_weather_delayed = summarize(
+                extract_results(
+                    results_folder,
+                    module="tlo.methods.healthsystem.summary",
+                    key="Weather_delayed_HSI_Event_full_info",
+                    custom_generate_series=get_num_treatments_total_delayed,
+                    do_scaling=False,
+                ),
+                only_mean=False,
+                collapse_columns=True,
+            )[draw]
+
+            print(f"  Extracting weather-cancelled appointments...")
+            num_weather_cancelled = summarize(
+                extract_results(
+                    results_folder,
+                    module="tlo.methods.healthsystem.summary",
+                    key="Weather_cancelled_HSI_Event_full_info",
+                    custom_generate_series=get_num_treatments_total_cancelled,
+                    do_scaling=False,
+                ),
+                only_mean=False,
+                collapse_columns=True,
+            )[draw]
+
+        else:
+            print(f"  Extracting weather-delayed appointments...")
+            num_weather_delayed = summarize(
+                extract_results(
+                    results_folder,
+                    module="tlo.methods.healthsystem.summary",
+                    key="Weather_delayed_HSI_Event_full_info",
+                    custom_generate_series=get_num_treatments_total_delayed,
+                    do_scaling=False,
+                ),
+                only_mean=False,
+                collapse_columns=True,
+            )[draw]
+
+            print(f"  Extracting weather-cancelled appointments...")
+            num_weather_cancelled = summarize(
+                extract_results(
+                    results_folder,
+                    module="tlo.methods.healthsystem.summary",
+                    key="Weather_cancelled_HSI_Event_full_info",
+                    custom_generate_series=get_num_treatments_total_cancelled,
+                    do_scaling=False,
+                ),
+                only_mean=False,
+                collapse_columns=True,
+            )[draw]
+
+            print(num_weather_cancelled)
+        # Store results
+        all_draws_treatments_mean.append(num_treatments_total["mean"])
+        all_draws_treatments_lower.append(num_treatments_total["lower"])
+        all_draws_treatments_upper.append(num_treatments_total["upper"])
+
+        all_draws_never_ran_mean.append(num_never_ran_appts["mean"])
+        all_draws_never_ran_lower.append(num_never_ran_appts["lower"])
+        all_draws_never_ran_upper.append(num_never_ran_appts["upper"])
+
+        all_draws_weather_delayed_mean.append(num_weather_delayed["mean"])
+        all_draws_weather_delayed_lower.append(num_weather_delayed["lower"])
+        all_draws_weather_delayed_upper.append(num_weather_delayed["upper"])
+
+        all_draws_weather_cancelled_mean.append(num_weather_cancelled["mean"])
+        all_draws_weather_cancelled_lower.append(num_weather_cancelled["lower"])
+        all_draws_weather_cancelled_upper.append(num_weather_cancelled["upper"])
+
+        # Save individual draw data
+        pd.DataFrame({
+            "treatments_mean": num_treatments_total["mean"].values[0],
+            "never_ran_mean": num_never_ran_appts["mean"].values[0],
+            "weather_delayed_mean": num_weather_delayed["mean"].values[0],
+            "weather_cancelled_mean": num_weather_cancelled["mean"].values[0],
+            "population": population_data["mean"].values[0],
+        }, index=[0]).to_csv(output_folder / f"summary_draw_{draw}.csv", index=False)
+
+        print(f"Draw {draw} complete.")
+
+    # Combine all draws
+    print("\nCombining all draws...")
+
+    def series_to_value(series_list):
+        """Convert list of Series to array of values"""
+        return np.array([s.values[0] if len(s.values) > 0 else 0 for s in series_list])
+
+    treatments_mean_values = series_to_value(all_draws_treatments_mean)
+    treatments_lower_values = series_to_value(all_draws_treatments_lower)
+    treatments_upper_values = series_to_value(all_draws_treatments_upper)
+
+    never_ran_mean_values = series_to_value(all_draws_never_ran_mean)
+    never_ran_lower_values = series_to_value(all_draws_never_ran_lower)
+    never_ran_upper_values = series_to_value(all_draws_never_ran_upper)
+
+    weather_delayed_mean_values = series_to_value(all_draws_weather_delayed_mean)
+    weather_delayed_lower_values = series_to_value(all_draws_weather_delayed_lower)
+    weather_delayed_upper_values = series_to_value(all_draws_weather_delayed_upper)
+
+    weather_cancelled_mean_values = series_to_value(all_draws_weather_cancelled_mean)
+    weather_cancelled_lower_values = series_to_value(all_draws_weather_cancelled_lower)
+    weather_cancelled_upper_values = series_to_value(all_draws_weather_cancelled_upper)
+
+    # Create summary DataFrames
+    print(scenarios_of_interest)
+    print(treatments_mean_values)
+    print(never_ran_mean_values)
+    print(weather_delayed_mean_values)
+    print(weather_cancelled_mean_values)
+    summary_df = pd.DataFrame({'Scenario': [scenario_names[i] if climate_sensitivity_analysis
+                                            else f"Draw {draw}" if parameter_sensitivity_analysis
+    else f"Draw {i}"
+                                            for i, draw in enumerate(scenarios_of_interest)],
+                               'treatments_mean': treatments_mean_values,
+                               'treatments_lower': treatments_lower_values,
+                               'treatments_upper': treatments_upper_values,
+                               'never_ran_mean': never_ran_mean_values,
+                               'never_ran_lower': never_ran_lower_values,
+                               'never_ran_upper': never_ran_upper_values,
+                               'weather_delayed_mean': weather_delayed_mean_values,
+                               'weather_delayed_lower': weather_delayed_lower_values,
+                               'weather_delayed_upper': weather_delayed_upper_values,
+                               'weather_cancelled_mean': weather_cancelled_mean_values,
+                               'weather_cancelled_lower': weather_cancelled_lower_values,
+                               'weather_cancelled_upper': weather_cancelled_upper_values,
     })
 
-    summary_df.to_csv(output_folder / f"summary_all_draws_facility_level_{suffix}.csv", index=False)
+    summary_df.to_csv(output_folder / "summary_all_draws.csv", index=False)
 
-    # Summary statistics
-    summary_stats = pd.DataFrame({
-        'Metric': [
-            'Total Treatments', 'Total Delayed', 'Total Cancelled', 'Total Never Ran',
-            '% Delayed (facility-avg)', '% Cancelled (facility-avg)', '% Disrupted (facility-avg)'
-        ],
-        'Mean': [
-            total_treatments_values.mean(), total_delayed_values.mean(),
-            total_cancelled_values.mean(), total_never_ran_values.mean(),
-            pct_delayed_values.mean(), pct_cancelled_values.mean(), pct_disrupted_values.mean()
-        ],
-        'Median': [
-            np.median(total_treatments_values), np.median(total_delayed_values),
-            np.median(total_cancelled_values), np.median(total_never_ran_values),
-            np.median(pct_delayed_values), np.median(pct_cancelled_values),
-            np.median(pct_disrupted_values)
-        ],
-        'Std': [
-            total_treatments_values.std(), total_delayed_values.std(),
-            total_cancelled_values.std(), total_never_ran_values.std(),
-            pct_delayed_values.std(), pct_cancelled_values.std(), pct_disrupted_values.std()
-        ],
-        'Min': [
-            total_treatments_values.min(), total_delayed_values.min(),
-            total_cancelled_values.min(), total_never_ran_values.min(),
-            pct_delayed_values.min(), pct_cancelled_values.min(), pct_disrupted_values.min()
-        ],
-        'Max': [
-            total_treatments_values.max(), total_delayed_values.max(),
-            total_cancelled_values.max(), total_never_ran_values.max(),
-            pct_delayed_values.max(), pct_cancelled_values.max(), pct_disrupted_values.max()
-        ],
+    # Calculate error bars
+    treatments_err = np.array([
+        treatments_mean_values - treatments_lower_values,
+        treatments_upper_values - treatments_mean_values
+    ])
+
+    weather_delayed_err = np.array([
+        weather_delayed_mean_values - weather_delayed_lower_values,
+        weather_delayed_upper_values - weather_delayed_mean_values
+    ])
+
+    weather_cancelled_err = np.array([
+        weather_cancelled_mean_values - weather_cancelled_lower_values,
+        weather_cancelled_upper_values - weather_cancelled_mean_values
+    ])
+
+    # Create main visualization
+    print("\nCreating visualizations...")
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+    width = 0.35
+
+    # Panel A: Total treatments
+    x = np.arange(len(treatments_mean_values))
+    axes[0].bar(x, treatments_mean_values, width, color=scenario_colours[:len(x)],
+                yerr=treatments_err, capsize=6)
+    axes[0].text(-0.0, 1.05, "(A)", transform=axes[0].transAxes, fontsize=14, va="top", ha="right")
+    axes[0].set_title(f"Total Health System Interactions ({min_year}–{max_year})")
+    axes[0].set_xlabel("Scenario")
+    axes[0].set_ylabel("Total HSIs")
+    axes[0].set_xticks(x)
+    if climate_sensitivity_analysis:
+        axes[0].set_xticklabels(scenario_names, rotation=45, ha='right')
+    else:
+        axes[0].set_xticklabels([f"Draw {i}" for i in scenarios_of_interest])
+    axes[0].grid(False)
+
+    # Panel B: Weather disruptions (excluding baseline)
+    if len(x) > 1:
+        x_weather = np.arange(len(weather_delayed_mean_values[1:]))
+        bar_width = width / 2
+
+        axes[1].bar(
+            x_weather - bar_width / 2,
+            weather_delayed_mean_values[1:],
+            bar_width,
+            label="Weather Delayed",
+            color="#FEB95F",
+            yerr=weather_delayed_err[:, 1:],
+            capsize=6,
+        )
+        axes[1].bar(
+            x_weather + bar_width / 2,
+            weather_cancelled_mean_values[1:],
+            bar_width,
+            label="Weather Cancelled",
+            color="#f07167",
+            yerr=weather_cancelled_err[:, 1:],
+            capsize=6,
+        )
+        axes[1].text(-0.0, 1.05, "(B)", transform=axes[1].transAxes, fontsize=14, va="top", ha="right")
+        axes[1].set_title(f"Weather-Disrupted Health System Interactions ({min_year}–{max_year})")
+        axes[1].set_xlabel("Scenario")
+        axes[1].set_ylabel("Total Weather-Disrupted HSIs")
+        axes[1].set_xticks(x_weather)
+        if climate_sensitivity_analysis:
+            axes[1].set_xticklabels(scenario_names[1:], rotation=45, ha='right')
+        else:
+            axes[1].set_xticklabels([f"Draw {i}" for i in list(scenarios_of_interest)[1:]])
+        axes[1].grid(False)
+        axes[1].legend(loc='upper left', frameon=False)
+
+    fig.tight_layout()
+    fig.savefig(output_folder / f"treatments_and_weather_disruptions_{suffix}.png", dpi=300)
+    plt.close(fig)
+
+    # Calculate percentages
+    print("\nCalculating disruption percentages...")
+
+    # Percentage calculations (excluding baseline where appropriate)
+    total_potential_hsis = treatments_mean_values + weather_cancelled_mean_values
+
+    pct_delayed = (weather_delayed_mean_values / total_potential_hsis * 100)
+    pct_cancelled = (weather_cancelled_mean_values / total_potential_hsis * 100)
+    pct_disrupted = ((weather_delayed_mean_values + weather_cancelled_mean_values) / total_potential_hsis * 100)
+
+    percentage_df = pd.DataFrame({
+        'Scenario': summary_df['Scenario'],
+        'pct_delayed': pct_delayed,
+        'pct_cancelled': pct_cancelled,
+        'pct_disrupted': pct_disrupted,
     })
 
-    summary_stats.to_csv(output_folder / f"summary_statistics_facility_level_{suffix}.csv", index=False)
+    percentage_df.to_csv(output_folder / "percentage_disruptions_by_scenario.csv", index=False)
 
-    # ============================================================================
-    # SUMMARY FIGURES
-    # ============================================================================
+    # Calculate differences from baseline (if baseline exists)
+    if baseline_treatments_total is not None:
+        print("\nCalculating differences from baseline...")
 
-    print("Creating summary visualizations...")
+        diff_df = pd.DataFrame({
+            'Scenario': summary_df['Scenario'],
+            'treatments_diff': treatments_mean_values - baseline_treatments_total,
+            'treatments_pct_change': ((treatments_mean_values - baseline_treatments_total) /
+                                      baseline_treatments_total * 100),
+            'never_ran_diff': never_ran_mean_values - baseline_never_ran_total,
+            'never_ran_pct_change': ((never_ran_mean_values - baseline_never_ran_total) /
+                                     baseline_never_ran_total * 100),
+        })
 
-    # 1. Distribution of absolute counts (box plots)
-    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-
-    bp1 = axes[0, 0].boxplot([total_treatments_values], labels=['Total Treatments'], patch_artist=True)
-    bp1['boxes'][0].set_facecolor('#823038')
-    bp1['boxes'][0].set_alpha(0.7)
-    axes[0, 0].set_ylabel('Number of HSIs')
-    axes[0, 0].set_title(
-        f'Total Health System Interactions ({min_year}–{max_year})\nAcross {len(processed_draws)} Parameter Draws')
-    axes[0, 0].grid(axis='y', alpha=0.3)
-    axes[0, 0].text(-0.05, 1.05, "(A)", transform=axes[0, 0].transAxes, fontsize=14, va="top", ha="right")
-
-    bp2 = axes[0, 1].boxplot([total_delayed_values], labels=['Weather Delayed'], patch_artist=True)
-    bp2['boxes'][0].set_facecolor('#FEB95F')
-    bp2['boxes'][0].set_alpha(0.7)
-    axes[0, 1].set_ylabel('Number of HSIs')
-    axes[0, 1].set_title(f'Total Weather-Delayed Appointments ({min_year}–{max_year})')
-    axes[0, 1].grid(axis='y', alpha=0.3)
-    axes[0, 1].text(-0.05, 1.05, "(B)", transform=axes[0, 1].transAxes, fontsize=14, va="top", ha="right")
-
-    bp3 = axes[1, 0].boxplot([total_cancelled_values], labels=['Weather Cancelled'], patch_artist=True)
-    bp3['boxes'][0].set_facecolor('#f07167')
-    bp3['boxes'][0].set_alpha(0.7)
-    axes[1, 0].set_ylabel('Number of HSIs')
-    axes[1, 0].set_title(f'Total Weather-Cancelled Appointments ({min_year}–{max_year})')
-    axes[1, 0].grid(axis='y', alpha=0.3)
-    axes[1, 0].text(-0.05, 1.05, "(C)", transform=axes[1, 0].transAxes, fontsize=14, va="top", ha="right")
-
-    bp4 = axes[1, 1].boxplot([total_never_ran_values], labels=['Never Ran'], patch_artist=True)
-    bp4['boxes'][0].set_facecolor('#5b3f8c')
-    bp4['boxes'][0].set_alpha(0.7)
-    axes[1, 1].set_ylabel('Number of HSIs')
-    axes[1, 1].set_title(f'Total Never-Ran Appointments ({min_year}–{max_year})')
-    axes[1, 1].grid(axis='y', alpha=0.3)
-    axes[1, 1].text(-0.05, 1.05, "(D)", transform=axes[1, 1].transAxes, fontsize=14, va="top", ha="right")
-
-    fig.tight_layout()
-    fig.savefig(output_folder / f"distributions_absolute_counts_{suffix}.png", dpi=300)
-    plt.close(fig)
-
-    # 2. Histograms of absolute counts
-    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-
-    axes[0, 0].hist(total_treatments_values, bins=30, color='#823038', alpha=0.7, edgecolor='black')
-    axes[0, 0].axvline(total_treatments_values.mean(), color='red', linestyle='--', linewidth=2,
-                       label=f'Mean: {total_treatments_values.mean():.0f}')
-    axes[0, 0].set_xlabel('Total HSIs')
-    axes[0, 0].set_ylabel('Frequency')
-    axes[0, 0].set_title('Distribution of Total Treatments')
-    axes[0, 0].legend()
-    axes[0, 0].grid(axis='y', alpha=0.3)
-    axes[0, 0].text(-0.05, 1.05, "(A)", transform=axes[0, 0].transAxes, fontsize=14, va="top", ha="right")
-
-    axes[0, 1].hist(total_never_ran_values, bins=30, color='#5b3f8c', alpha=0.7, edgecolor='black')
-    axes[0, 1].axvline(total_never_ran_values.mean(), color='red', linestyle='--', linewidth=2,
-                       label=f'Mean: {total_never_ran_values.mean():.0f}')
-    axes[0, 1].set_xlabel('Never Ran HSIs')
-    axes[0, 1].set_ylabel('Frequency')
-    axes[0, 1].set_title('Distribution of Never-Ran Appointments')
-    axes[0, 1].legend()
-    axes[0, 1].grid(axis='y', alpha=0.3)
-    axes[0, 1].text(-0.05, 1.05, "(B)", transform=axes[0, 1].transAxes, fontsize=14, va="top", ha="right")
-
-    axes[1, 0].hist(total_delayed_values, bins=30, color='#FEB95F', alpha=0.7, edgecolor='black')
-    axes[1, 0].axvline(total_delayed_values.mean(), color='red', linestyle='--', linewidth=2,
-                       label=f'Mean: {total_delayed_values.mean():.0f}')
-    axes[1, 0].set_xlabel('Weather Delayed HSIs')
-    axes[1, 0].set_ylabel('Frequency')
-    axes[1, 0].set_title('Distribution of Weather-Delayed Appointments')
-    axes[1, 0].legend()
-    axes[1, 0].grid(axis='y', alpha=0.3)
-    axes[1, 0].text(-0.05, 1.05, "(C)", transform=axes[1, 0].transAxes, fontsize=14, va="top", ha="right")
-
-    axes[1, 1].hist(total_cancelled_values, bins=30, color='#f07167', alpha=0.7, edgecolor='black')
-    axes[1, 1].axvline(total_cancelled_values.mean(), color='red', linestyle='--', linewidth=2,
-                       label=f'Mean: {total_cancelled_values.mean():.0f}')
-    axes[1, 1].set_xlabel('Weather Cancelled HSIs')
-    axes[1, 1].set_ylabel('Frequency')
-    axes[1, 1].set_title('Distribution of Weather-Cancelled Appointments')
-    axes[1, 1].legend()
-    axes[1, 1].grid(axis='y', alpha=0.3)
-    axes[1, 1].text(-0.05, 1.05, "(D)", transform=axes[1, 1].transAxes, fontsize=14, va="top", ha="right")
-
-    fig.tight_layout()
-    fig.savefig(output_folder / f"histograms_absolute_counts_{suffix}.png", dpi=300)
-    plt.close(fig)
-
-    # 3. Percentage disruptions (FACILITY-AVERAGED)
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-
-    axes[0].hist(pct_delayed_values, bins=30, color='#FEB95F', alpha=0.7, edgecolor='black')
-    axes[0].axvline(pct_delayed_values.mean(), color='red', linestyle='--', linewidth=2,
-                    label=f'Mean: {pct_delayed_values.mean():.2f}%')
-    axes[0].set_xlabel('% Delayed (facility-averaged)')
-    axes[0].set_ylabel('Frequency')
-    axes[0].set_title('Distribution of % Appointments Delayed\n(averaged across facilities)')
-    axes[0].legend()
-    axes[0].grid(axis='y', alpha=0.3)
-    axes[0].text(-0.05, 1.05, "(A)", transform=axes[0].transAxes, fontsize=14, va="top", ha="right")
-
-    axes[1].hist(pct_cancelled_values, bins=30, color='#f07167', alpha=0.7, edgecolor='black')
-    axes[1].axvline(pct_cancelled_values.mean(), color='red', linestyle='--', linewidth=2,
-                    label=f'Mean: {pct_cancelled_values.mean():.2f}%')
-    axes[1].set_xlabel('% Cancelled (facility-averaged)')
-    axes[1].set_ylabel('Frequency')
-    axes[1].set_title('Distribution of % Appointments Cancelled\n(averaged across facilities)')
-    axes[1].legend()
-    axes[1].grid(axis='y', alpha=0.3)
-    axes[1].text(-0.05, 1.05, "(B)", transform=axes[1].transAxes, fontsize=14, va="top", ha="right")
-
-    axes[2].hist(pct_disrupted_values, bins=30, color='#c65a52', alpha=0.7, edgecolor='black')
-    axes[2].axvline(pct_disrupted_values.mean(), color='red', linestyle='--', linewidth=2,
-                    label=f'Mean: {pct_disrupted_values.mean():.2f}%')
-    axes[2].set_xlabel('% Disrupted (facility-averaged)')
-    axes[2].set_ylabel('Frequency')
-    axes[2].set_title('Distribution of % Total Appointments Disrupted\n(averaged across facilities)')
-    axes[2].legend()
-    axes[2].grid(axis='y', alpha=0.3)
-    axes[2].text(-0.05, 1.05, "(C)", transform=axes[2].transAxes, fontsize=14, va="top", ha="right")
-
-    fig.tight_layout()
-    fig.savefig(output_folder / f"percentage_disruptions_facility_averaged_{suffix}.png", dpi=300)
-    plt.close(fig)
-
-    # 4. Coefficient of variation
-    cv_data = pd.DataFrame({
-        'Metric': ['Total Treatments', 'Weather Delayed', 'Weather Cancelled', 'Never Ran',
-                   '% Delayed (fac-avg)', '% Cancelled (fac-avg)', '% Disrupted (fac-avg)'],
-        'CV': [
-            (total_treatments_values.std() / total_treatments_values.mean()) * 100,
-            (total_delayed_values.std() / total_delayed_values.mean()) * 100,
-            (total_cancelled_values.std() / total_cancelled_values.mean()) * 100,
-            (total_never_ran_values.std() / total_never_ran_values.mean()) * 100,
-            (pct_delayed_values.std() / pct_delayed_values.mean()) * 100,
-            (pct_cancelled_values.std() / pct_cancelled_values.mean()) * 100,
-            (pct_disrupted_values.std() / pct_disrupted_values.mean()) * 100,
-        ]
-    })
-
-    fig, ax = plt.subplots(figsize=(10, 8))
-    colors = ['#823038', '#FEB95F', '#f07167', '#5b3f8c', '#FEB95F', '#f07167', '#c65a52']
-    ax.barh(cv_data['Metric'], cv_data['CV'], color=colors, alpha=0.7)
-    ax.set_xlabel('Coefficient of Variation (%)')
-    ax.set_title(f'Parameter Uncertainty Across Metrics\n(CV across {len(processed_draws)} draws)')
-    ax.grid(axis='x', alpha=0.3)
-
-    fig.tight_layout()
-    fig.savefig(output_folder / f"cv_by_metric_{suffix}.png", dpi=300)
-    plt.close(fig)
+        diff_df.to_csv(output_folder / "differences_from_baseline.csv", index=False)
 
     print("\nAnalysis complete!")
-    print(f"\nSummary Statistics (n={len(processed_draws)} draws):")
-    print(
-        f"Total Treatments - Mean: {total_treatments_values.mean():.0f}, Range: {total_treatments_values.min():.0f} to {total_treatments_values.max():.0f}")
-    print(
-        f"Weather Delayed - Mean: {total_delayed_values.mean():.0f}, Range: {total_delayed_values.min():.0f} to {total_delayed_values.max():.0f}")
-    print(
-        f"Weather Cancelled - Mean: {total_cancelled_values.mean():.0f}, Range: {total_cancelled_values.min():.0f} to {total_cancelled_values.max():.0f}")
-    print(
-        f"\n% Delayed (facility-averaged) - Mean: {pct_delayed_values.mean():.2f}%, Range: {pct_delayed_values.min():.2f}% to {pct_delayed_values.max():.2f}%")
-    print(
-        f"% Cancelled (facility-averaged) - Mean: {pct_cancelled_values.mean():.2f}%, Range: {pct_cancelled_values.min():.2f}% to {pct_cancelled_values.max():.2f}%")
-    print(
-        f"% Disrupted (facility-averaged) - Mean: {pct_disrupted_values.mean():.2f}%, Range: {pct_disrupted_values.min():.2f}% to {pct_disrupted_values.max():.2f}%")
 
 
 if __name__ == "__main__":
