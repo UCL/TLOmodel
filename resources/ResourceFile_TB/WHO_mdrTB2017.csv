@@ -1,3 +1,23 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:79a899213defc36589ab63f2063a8a7582a2ccc4726ebddbc0c8c2a39fccda5d
-size 2436
+variable,definition,value
+year,,2017
+source_rr_new,Method used to estimate proportion of new TB patients with rifampicin-resistant TB,Survey
+source_drs_coverage_new,Indicates whether national or subnational data from drug resistance surveys or surveillance was used to estimate the proportion of new TB cases with MDR-TB,National
+source_drs_year_new,"Year of drug resistance surveillance, survey or model used to estimate proportion of new TB cases with MDR-TB",2011
+e_rr_pct_new,Estimated percentage of new TB cases with rifampicin resistant TB,0.75
+e_rr_pct_new_hi,Estimated percentage of new TB cases with rifampicin resistant TB: high bound,0.16
+e_rr_pct_new_lo,Estimated percentage of new TB cases with rifampicin resistant TB: low bound,1.8
+e_mdr_pct_rr_new,Estimated percentage of new rifampicin resistant TB cases that have MDR-TB,56
+source_rr_ret,Method used to estimate proportion of previously treated TB patients with rifampicin-resistant TB,Survey
+source_drs_coverage_ret,Indicates whether national or subnational data from drug resistance surveys or surveillance was used to estimate the proportion of previously treated TB cases with MDR-TB,National
+source_drs_year_ret,"Year of drug resistance surveillance, survey or model used to estimate proportion of previously treated TB cases with MDR-TB",2011
+e_rr_pct_ret,Estimated percentage of previously treated TB cases with rifampicin resistant TB,6.4
+e_rr_pct_ret_hi,Estimated percentage of previously treated TB cases with rifampicin resistant TB: high bound,4
+e_rr_pct_ret_lo,Estimated percentage of previously treated TB cases with rifampicin resistant TB: low bound,9.2
+e_mdr_pct_rr_ret,Estimated percentage of previously treated rifampicin resistant TB cases that have MDR-TB,76
+e_inc_rr_num,Estimated incidence of rifampicin resistant TB (absolute number),330
+e_inc_rr_num_hi,Estimated incidence of rifampicin resistant TB (absolute number): high bound,90
+e_inc_rr_num_lo,Estimated incidence of rifampicin resistant TB (absolute number): low bound,710
+e_mdr_pct_rr,Estimated percentage of rifampicin resistant TB cases that have MDR-TB,63
+e_rr_in_notified_pulm,Estimated number of RR-TB cases among notified pulmonary TB cases,180
+e_rr_in_notified_pulm_hi,Estimated number of RR-TB cases among notified pulmonary TB cases: high bound,83
+e_rr_in_notified_pulm_lo,Estimated number of RR-TB cases among notified pulmonary TB cases: low bound,270

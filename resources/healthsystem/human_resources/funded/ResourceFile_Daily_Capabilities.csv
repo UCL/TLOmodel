@@ -1,3 +1,1198 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4a9aa79441c1adef3b57f230b6901dc54830293fb69db252dce31e1e561a4fae
-size 102157
+Facility_ID,Facility_Name,Facility_Level,District,Region,Officer_Category,Total_Mins_Per_Day,Staff_Count
+0.0,Facility_Level_0_Balaka,0,Balaka,Southern,Clinical,0.0,0.0
+0.0,Facility_Level_0_Balaka,0,Balaka,Southern,DCSA,13957.006256830322,250.0
+0.0,Facility_Level_0_Balaka,0,Balaka,Southern,Dental,0.0,0.0
+0.0,Facility_Level_0_Balaka,0,Balaka,Southern,Laboratory,0.0,0.0
+0.0,Facility_Level_0_Balaka,0,Balaka,Southern,Mental,0.0,0.0
+0.0,Facility_Level_0_Balaka,0,Balaka,Southern,Nursing_and_Midwifery,0.0,0.0
+0.0,Facility_Level_0_Balaka,0,Balaka,Southern,Nutrition,0.0,0.0
+0.0,Facility_Level_0_Balaka,0,Balaka,Southern,Pharmacy,0.0,0.0
+0.0,Facility_Level_0_Balaka,0,Balaka,Southern,Radiography,0.0,0.0
+1.0,Facility_Level_1a_Balaka,1a,Balaka,Southern,Clinical,9786.977112682858,47.02872739727982
+1.0,Facility_Level_1a_Balaka,1a,Balaka,Southern,DCSA,0.0,0.0
+1.0,Facility_Level_1a_Balaka,1a,Balaka,Southern,Dental,2327.321544301442,11.393343419062028
+1.0,Facility_Level_1a_Balaka,1a,Balaka,Southern,Laboratory,5012.0240236950995,24.912294540522687
+1.0,Facility_Level_1a_Balaka,1a,Balaka,Southern,Mental,0.0,0.0
+1.0,Facility_Level_1a_Balaka,1a,Balaka,Southern,Nursing_and_Midwifery,31874.933125682845,150.4802720399622
+1.0,Facility_Level_1a_Balaka,1a,Balaka,Southern,Nutrition,110.79066481157902,0.5423728813559322
+1.0,Facility_Level_1a_Balaka,1a,Balaka,Southern,Pharmacy,4132.096249931831,20.636105188343993
+1.0,Facility_Level_1a_Balaka,1a,Balaka,Southern,Radiography,0.0,0.0
+2.0,Facility_Level_1b_Balaka,1b,Balaka,Southern,Clinical,6469.996130920753,31.878124718472385
+2.0,Facility_Level_1b_Balaka,1b,Balaka,Southern,DCSA,0.0,0.0
+2.0,Facility_Level_1b_Balaka,1b,Balaka,Southern,Dental,719.736008057105,3.523449319213313
+2.0,Facility_Level_1b_Balaka,1b,Balaka,Southern,Laboratory,1340.353750319166,5.956972094755557
+2.0,Facility_Level_1b_Balaka,1b,Balaka,Southern,Mental,0.0,0.0
+2.0,Facility_Level_1b_Balaka,1b,Balaka,Southern,Nursing_and_Midwifery,13637.565362452207,66.2458870952188
+2.0,Facility_Level_1b_Balaka,1b,Balaka,Southern,Nutrition,0.0,0.0
+2.0,Facility_Level_1b_Balaka,1b,Balaka,Southern,Pharmacy,1207.1611893733086,5.690051296313463
+2.0,Facility_Level_1b_Balaka,1b,Balaka,Southern,Radiography,439.26679382147904,2.1310710498409335
+3.0,Facility_Level_2_Balaka,2,Balaka,Southern,Clinical,13915.906517812344,75.09314788424778
+3.0,Facility_Level_2_Balaka,2,Balaka,Southern,DCSA,0.0,0.0
+3.0,Facility_Level_2_Balaka,2,Balaka,Southern,Dental,629.807636075732,3.0832072617246595
+3.0,Facility_Level_2_Balaka,2,Balaka,Southern,Laboratory,1308.8800963671436,6.130733364721756
+3.0,Facility_Level_2_Balaka,2,Balaka,Southern,Mental,0.0,0.0
+3.0,Facility_Level_2_Balaka,2,Balaka,Southern,Nursing_and_Midwifery,22371.03051051133,109.273840864819
+3.0,Facility_Level_2_Balaka,2,Balaka,Southern,Nutrition,93.4796234347698,0.4576271186440678
+3.0,Facility_Level_2_Balaka,2,Balaka,Southern,Pharmacy,1447.5799481659592,7.673843515342543
+3.0,Facility_Level_2_Balaka,2,Balaka,Southern,Radiography,584.2163599575989,2.868928950159067
+4.0,Facility_Level_0_Blantyre,0,Blantyre,Southern,Clinical,0.0,0.0
+4.0,Facility_Level_0_Blantyre,0,Blantyre,Southern,DCSA,6978.503128415161,125.0
+4.0,Facility_Level_0_Blantyre,0,Blantyre,Southern,Dental,0.0,0.0
+4.0,Facility_Level_0_Blantyre,0,Blantyre,Southern,Laboratory,0.0,0.0
+4.0,Facility_Level_0_Blantyre,0,Blantyre,Southern,Mental,0.0,0.0
+4.0,Facility_Level_0_Blantyre,0,Blantyre,Southern,Nursing_and_Midwifery,0.0,0.0
+4.0,Facility_Level_0_Blantyre,0,Blantyre,Southern,Nutrition,0.0,0.0
+4.0,Facility_Level_0_Blantyre,0,Blantyre,Southern,Pharmacy,0.0,0.0
+4.0,Facility_Level_0_Blantyre,0,Blantyre,Southern,Radiography,0.0,0.0
+5.0,Facility_Level_1a_Blantyre,1a,Blantyre,Southern,Clinical,7669.839916699164,36.691295009205206
+5.0,Facility_Level_1a_Blantyre,1a,Blantyre,Southern,DCSA,0.0,0.0
+5.0,Facility_Level_1a_Blantyre,1a,Blantyre,Southern,Dental,2121.9696433336676,10.388048411497731
+5.0,Facility_Level_1a_Blantyre,1a,Blantyre,Southern,Laboratory,4246.187684216741,21.106302221316486
+5.0,Facility_Level_1a_Blantyre,1a,Blantyre,Southern,Mental,0.0,0.0
+5.0,Facility_Level_1a_Blantyre,1a,Blantyre,Southern,Nursing_and_Midwifery,25443.97440532923,120.11776263765937
+5.0,Facility_Level_1a_Blantyre,1a,Blantyre,Southern,Nutrition,55.39533240578951,0.2711864406779661
+5.0,Facility_Level_1a_Blantyre,1a,Blantyre,Southern,Pharmacy,3814.8989001543496,19.062366737739872
+5.0,Facility_Level_1a_Blantyre,1a,Blantyre,Southern,Radiography,0.0,0.0
+6.0,Facility_Level_1b_Blantyre,1b,Blantyre,Southern,Clinical,4965.425898579811,24.50095368227345
+6.0,Facility_Level_1b_Blantyre,1b,Blantyre,Southern,DCSA,0.0,0.0
+6.0,Facility_Level_1b_Blantyre,1b,Blantyre,Southern,Dental,656.2298896991251,3.212556732223903
+6.0,Facility_Level_1b_Blantyre,1b,Blantyre,Southern,Laboratory,1135.0194189579165,5.044528224984716
+6.0,Facility_Level_1b_Blantyre,1b,Blantyre,Southern,Mental,204.27028824634883,1.0
+6.0,Facility_Level_1b_Blantyre,1b,Blantyre,Southern,Nursing_and_Midwifery,10747.74265672934,51.88090416401473
+6.0,Facility_Level_1b_Blantyre,1b,Blantyre,Southern,Nutrition,0.0,0.0
+6.0,Facility_Level_1b_Blantyre,1b,Blantyre,Southern,Pharmacy,1051.4456822395928,4.958219384444238
+6.0,Facility_Level_1b_Blantyre,1b,Blantyre,Southern,Radiography,381.7672040439089,1.8307529162248146
+7.0,Facility_Level_2_Blantyre,2,Blantyre,Southern,Clinical,10705.123590712712,57.30775130852134
+7.0,Facility_Level_2_Blantyre,2,Blantyre,Southern,DCSA,0.0,0.0
+7.0,Facility_Level_2_Blantyre,2,Blantyre,Southern,Dental,490.1250789087886,2.3993948562783665
+7.0,Facility_Level_2_Blantyre,2,Blantyre,Southern,Laboratory,1035.1077785433718,4.849169553698798
+7.0,Facility_Level_2_Blantyre,2,Blantyre,Southern,Mental,0.0,0.0
+7.0,Facility_Level_2_Blantyre,2,Blantyre,Southern,Nursing_and_Midwifery,17000.4969695679,82.50133319832591
+7.0,Facility_Level_2_Blantyre,2,Blantyre,Southern,Nutrition,46.7398117173849,0.2288135593220339
+7.0,Facility_Level_2_Blantyre,2,Blantyre,Southern,Pharmacy,1221.8201106213005,6.47941387781589
+7.0,Facility_Level_2_Blantyre,2,Blantyre,Southern,Radiography,341.85377989465826,1.6692470837751856
+8.0,Facility_Level_0_Blantyre City,0,Blantyre City,Southern,Clinical,0.0,0.0
+8.0,Facility_Level_0_Blantyre City,0,Blantyre City,Southern,DCSA,6978.503128415161,125.0
+8.0,Facility_Level_0_Blantyre City,0,Blantyre City,Southern,Dental,0.0,0.0
+8.0,Facility_Level_0_Blantyre City,0,Blantyre City,Southern,Laboratory,0.0,0.0
+8.0,Facility_Level_0_Blantyre City,0,Blantyre City,Southern,Mental,0.0,0.0
+8.0,Facility_Level_0_Blantyre City,0,Blantyre City,Southern,Nursing_and_Midwifery,0.0,0.0
+8.0,Facility_Level_0_Blantyre City,0,Blantyre City,Southern,Nutrition,0.0,0.0
+8.0,Facility_Level_0_Blantyre City,0,Blantyre City,Southern,Pharmacy,0.0,0.0
+8.0,Facility_Level_0_Blantyre City,0,Blantyre City,Southern,Radiography,0.0,0.0
+9.0,Facility_Level_1a_Blantyre City,1a,Blantyre City,Southern,Clinical,7669.839916699164,36.691295009205206
+9.0,Facility_Level_1a_Blantyre City,1a,Blantyre City,Southern,DCSA,0.0,0.0
+9.0,Facility_Level_1a_Blantyre City,1a,Blantyre City,Southern,Dental,2121.9696433336676,10.388048411497731
+9.0,Facility_Level_1a_Blantyre City,1a,Blantyre City,Southern,Laboratory,4246.187684216741,21.106302221316486
+9.0,Facility_Level_1a_Blantyre City,1a,Blantyre City,Southern,Mental,0.0,0.0
+9.0,Facility_Level_1a_Blantyre City,1a,Blantyre City,Southern,Nursing_and_Midwifery,25443.97440532923,120.11776263765937
+9.0,Facility_Level_1a_Blantyre City,1a,Blantyre City,Southern,Nutrition,55.39533240578951,0.2711864406779661
+9.0,Facility_Level_1a_Blantyre City,1a,Blantyre City,Southern,Pharmacy,3814.8989001543496,19.062366737739872
+9.0,Facility_Level_1a_Blantyre City,1a,Blantyre City,Southern,Radiography,0.0,0.0
+10.0,Facility_Level_1b_Blantyre City,1b,Blantyre City,Southern,Clinical,4965.425898579811,24.50095368227345
+10.0,Facility_Level_1b_Blantyre City,1b,Blantyre City,Southern,DCSA,0.0,0.0
+10.0,Facility_Level_1b_Blantyre City,1b,Blantyre City,Southern,Dental,656.2298896991251,3.212556732223903
+10.0,Facility_Level_1b_Blantyre City,1b,Blantyre City,Southern,Laboratory,1135.0194189579165,5.044528224984716
+10.0,Facility_Level_1b_Blantyre City,1b,Blantyre City,Southern,Mental,204.27028824634883,1.0
+10.0,Facility_Level_1b_Blantyre City,1b,Blantyre City,Southern,Nursing_and_Midwifery,10747.74265672934,51.88090416401473
+10.0,Facility_Level_1b_Blantyre City,1b,Blantyre City,Southern,Nutrition,0.0,0.0
+10.0,Facility_Level_1b_Blantyre City,1b,Blantyre City,Southern,Pharmacy,1051.4456822395928,4.958219384444238
+10.0,Facility_Level_1b_Blantyre City,1b,Blantyre City,Southern,Radiography,381.7672040439089,1.8307529162248146
+11.0,Facility_Level_2_Blantyre City,2,Blantyre City,Southern,Clinical,10705.123590712712,57.30775130852134
+11.0,Facility_Level_2_Blantyre City,2,Blantyre City,Southern,DCSA,0.0,0.0
+11.0,Facility_Level_2_Blantyre City,2,Blantyre City,Southern,Dental,490.1250789087886,2.3993948562783665
+11.0,Facility_Level_2_Blantyre City,2,Blantyre City,Southern,Laboratory,1035.1077785433718,4.849169553698798
+11.0,Facility_Level_2_Blantyre City,2,Blantyre City,Southern,Mental,0.0,0.0
+11.0,Facility_Level_2_Blantyre City,2,Blantyre City,Southern,Nursing_and_Midwifery,17000.4969695679,82.50133319832591
+11.0,Facility_Level_2_Blantyre City,2,Blantyre City,Southern,Nutrition,46.7398117173849,0.2288135593220339
+11.0,Facility_Level_2_Blantyre City,2,Blantyre City,Southern,Pharmacy,1221.8201106213005,6.47941387781589
+11.0,Facility_Level_2_Blantyre City,2,Blantyre City,Southern,Radiography,341.85377989465826,1.6692470837751856
+12.0,Facility_Level_0_Chikwawa,0,Chikwawa,Southern,Clinical,0.0,0.0
+12.0,Facility_Level_0_Chikwawa,0,Chikwawa,Southern,DCSA,13957.006256830322,250.0
+12.0,Facility_Level_0_Chikwawa,0,Chikwawa,Southern,Dental,0.0,0.0
+12.0,Facility_Level_0_Chikwawa,0,Chikwawa,Southern,Laboratory,0.0,0.0
+12.0,Facility_Level_0_Chikwawa,0,Chikwawa,Southern,Mental,0.0,0.0
+12.0,Facility_Level_0_Chikwawa,0,Chikwawa,Southern,Nursing_and_Midwifery,0.0,0.0
+12.0,Facility_Level_0_Chikwawa,0,Chikwawa,Southern,Nutrition,0.0,0.0
+12.0,Facility_Level_0_Chikwawa,0,Chikwawa,Southern,Pharmacy,0.0,0.0
+12.0,Facility_Level_0_Chikwawa,0,Chikwawa,Southern,Radiography,0.0,0.0
+13.0,Facility_Level_1a_Chikwawa,1a,Chikwawa,Southern,Clinical,12321.588175942317,58.97923903580755
+13.0,Facility_Level_1a_Chikwawa,1a,Chikwawa,Southern,DCSA,0.0,0.0
+13.0,Facility_Level_1a_Chikwawa,1a,Chikwawa,Southern,Dental,2738.02534623699,13.40393343419062
+13.0,Facility_Level_1a_Chikwawa,1a,Chikwawa,Southern,Laboratory,5570.851042230045,27.690591554640452
+13.0,Facility_Level_1a_Chikwawa,1a,Chikwawa,Southern,Mental,0.0,0.0
+13.0,Facility_Level_1a_Chikwawa,1a,Chikwawa,Southern,Nursing_and_Midwifery,42354.76172897085,199.95389014252927
+13.0,Facility_Level_1a_Chikwawa,1a,Chikwawa,Southern,Nutrition,332.3719944347371,1.6271186440677967
+13.0,Facility_Level_1a_Chikwawa,1a,Chikwawa,Southern,Pharmacy,5223.015182370589,26.091910576985203
+13.0,Facility_Level_1a_Chikwawa,1a,Chikwawa,Southern,Radiography,0.0,0.0
+14.0,Facility_Level_1b_Chikwawa,1b,Chikwawa,Southern,Clinical,8102.767192170739,40.34579029898771
+14.0,Facility_Level_1b_Chikwawa,1b,Chikwawa,Southern,DCSA,0.0,0.0
+14.0,Facility_Level_1b_Chikwawa,1b,Chikwawa,Southern,Dental,846.7482447730647,4.145234493192133
+14.0,Facility_Level_1b_Chikwawa,1b,Chikwawa,Southern,Laboratory,1488.6441574260712,6.616171127804755
+14.0,Facility_Level_1b_Chikwawa,1b,Chikwawa,Southern,Mental,408.54057649269765,2.0
+14.0,Facility_Level_1b_Chikwawa,1b,Chikwawa,Southern,Nursing_and_Midwifery,18044.446589017873,87.47088661304943
+14.0,Facility_Level_1b_Chikwawa,1b,Chikwawa,Southern,Nutrition,0.0,0.0
+14.0,Facility_Level_1b_Chikwawa,1b,Chikwawa,Southern,Pharmacy,1538.9081353089778,7.255522570658846
+14.0,Facility_Level_1b_Chikwawa,1b,Chikwawa,Southern,Radiography,902.1009014319726,4.344432661717922
+15.0,Facility_Level_2_Chikwawa,2,Chikwawa,Southern,Clinical,17418.199288198724,93.67497066520473
+15.0,Facility_Level_2_Chikwawa,2,Chikwawa,Southern,DCSA,0.0,0.0
+15.0,Facility_Level_2_Chikwawa,2,Chikwawa,Southern,Dental,704.9024621632703,3.4508320726172466
+15.0,Facility_Level_2_Chikwawa,2,Chikwawa,Southern,Laboratory,1428.9031381197008,6.693237317554795
+15.0,Facility_Level_2_Chikwawa,2,Chikwawa,Southern,Mental,0.0,0.0
+15.0,Facility_Level_2_Chikwawa,2,Chikwawa,Southern,Nursing_and_Midwifery,29250.005863527258,142.5752232444213
+15.0,Facility_Level_2_Chikwawa,2,Chikwawa,Southern,Nutrition,280.4388703043094,1.3728813559322033
+15.0,Facility_Level_2_Chikwawa,2,Chikwawa,Southern,Pharmacy,1820.4452193890374,9.65256685235595
+15.0,Facility_Level_2_Chikwawa,2,Chikwawa,Southern,Radiography,950.9429398101865,4.655567338282078
+16.0,Facility_Level_0_Chiradzulu,0,Chiradzulu,Southern,Clinical,0.0,0.0
+16.0,Facility_Level_0_Chiradzulu,0,Chiradzulu,Southern,DCSA,13957.006256830322,250.0
+16.0,Facility_Level_0_Chiradzulu,0,Chiradzulu,Southern,Dental,0.0,0.0
+16.0,Facility_Level_0_Chiradzulu,0,Chiradzulu,Southern,Laboratory,0.0,0.0
+16.0,Facility_Level_0_Chiradzulu,0,Chiradzulu,Southern,Mental,0.0,0.0
+16.0,Facility_Level_0_Chiradzulu,0,Chiradzulu,Southern,Nursing_and_Midwifery,0.0,0.0
+16.0,Facility_Level_0_Chiradzulu,0,Chiradzulu,Southern,Nutrition,0.0,0.0
+16.0,Facility_Level_0_Chiradzulu,0,Chiradzulu,Southern,Pharmacy,0.0,0.0
+16.0,Facility_Level_0_Chiradzulu,0,Chiradzulu,Southern,Radiography,0.0,0.0
+17.0,Facility_Level_1a_Chiradzulu,1a,Chiradzulu,Southern,Clinical,11218.404286217063,53.72066534416075
+17.0,Facility_Level_1a_Chiradzulu,1a,Chiradzulu,Southern,DCSA,0.0,0.0
+17.0,Facility_Level_1a_Chiradzulu,1a,Chiradzulu,Southern,Dental,2327.321544301442,11.393343419062028
+17.0,Facility_Level_1a_Chiradzulu,1a,Chiradzulu,Southern,Laboratory,4962.753939275006,24.656108796019762
+17.0,Facility_Level_1a_Chiradzulu,1a,Chiradzulu,Southern,Mental,0.0,0.0
+17.0,Facility_Level_1a_Chiradzulu,1a,Chiradzulu,Southern,Nursing_and_Midwifery,37278.05549049848,175.98886670909758
+17.0,Facility_Level_1a_Chiradzulu,1a,Chiradzulu,Southern,Nutrition,110.79066481157902,0.5423728813559322
+17.0,Facility_Level_1a_Chiradzulu,1a,Chiradzulu,Southern,Pharmacy,4282.796610501405,21.3909026297086
+17.0,Facility_Level_1a_Chiradzulu,1a,Chiradzulu,Southern,Radiography,0.0,0.0
+18.0,Facility_Level_1b_Chiradzulu,1b,Chiradzulu,Southern,Clinical,7438.545628225171,37.20015290346806
+18.0,Facility_Level_1b_Chiradzulu,1b,Chiradzulu,Southern,DCSA,0.0,0.0
+18.0,Facility_Level_1b_Chiradzulu,1b,Chiradzulu,Southern,Dental,719.736008057105,3.523449319213313
+18.0,Facility_Level_1b_Chiradzulu,1b,Chiradzulu,Southern,Laboratory,1351.8339230332072,6.005333689381109
+18.0,Facility_Level_1b_Chiradzulu,1b,Chiradzulu,Southern,Mental,408.54057649269765,2.0
+18.0,Facility_Level_1b_Chiradzulu,1b,Chiradzulu,Southern,Nursing_and_Midwifery,15991.296968148023,77.77881926363092
+18.0,Facility_Level_1b_Chiradzulu,1b,Chiradzulu,Southern,Nutrition,0.0,0.0
+18.0,Facility_Level_1b_Chiradzulu,1b,Chiradzulu,Southern,Pharmacy,1320.8785662597047,6.2267621519730545
+18.0,Facility_Level_1b_Chiradzulu,1b,Chiradzulu,Southern,Radiography,763.5344080878178,3.6615058324496292
+19.0,Facility_Level_2_Chiradzulu,2,Chiradzulu,Southern,Clinical,15966.6200022224,86.07918175237117
+19.0,Facility_Level_2_Chiradzulu,2,Chiradzulu,Southern,DCSA,0.0,0.0
+19.0,Facility_Level_2_Chiradzulu,2,Chiradzulu,Southern,Dental,629.807636075732,3.0832072617246595
+19.0,Facility_Level_2_Chiradzulu,2,Chiradzulu,Southern,Laboratory,1353.6458954316058,6.33855751459913
+19.0,Facility_Level_2_Chiradzulu,2,Chiradzulu,Southern,Mental,0.0,0.0
+19.0,Facility_Level_2_Chiradzulu,2,Chiradzulu,Southern,Nursing_and_Midwifery,26423.468653988002,129.2323140272715
+19.0,Facility_Level_2_Chiradzulu,2,Chiradzulu,Southern,Nutrition,93.4796234347698,0.4576271186440678
+19.0,Facility_Level_2_Chiradzulu,2,Chiradzulu,Southern,Pharmacy,1581.0376084480451,8.382335218318346
+19.0,Facility_Level_2_Chiradzulu,2,Chiradzulu,Southern,Radiography,683.7075597893165,3.338494167550371
+20.0,Facility_Level_0_Chitipa,0,Chitipa,Northern,Clinical,0.0,0.0
+20.0,Facility_Level_0_Chitipa,0,Chitipa,Northern,DCSA,13957.006256830322,250.0
+20.0,Facility_Level_0_Chitipa,0,Chitipa,Northern,Dental,0.0,0.0
+20.0,Facility_Level_0_Chitipa,0,Chitipa,Northern,Laboratory,0.0,0.0
+20.0,Facility_Level_0_Chitipa,0,Chitipa,Northern,Mental,0.0,0.0
+20.0,Facility_Level_0_Chitipa,0,Chitipa,Northern,Nursing_and_Midwifery,0.0,0.0
+20.0,Facility_Level_0_Chitipa,0,Chitipa,Northern,Nutrition,0.0,0.0
+20.0,Facility_Level_0_Chitipa,0,Chitipa,Northern,Pharmacy,0.0,0.0
+20.0,Facility_Level_0_Chitipa,0,Chitipa,Northern,Radiography,0.0,0.0
+21.0,Facility_Level_1a_Chitipa,1a,Chitipa,Northern,Clinical,9146.856125601844,43.99862135894618
+21.0,Facility_Level_1a_Chitipa,1a,Chitipa,Northern,DCSA,0.0,0.0
+21.0,Facility_Level_1a_Chitipa,1a,Chitipa,Northern,Dental,1779.716475054044,8.712556732223904
+21.0,Facility_Level_1a_Chitipa,1a,Chitipa,Northern,Laboratory,3590.3214351476904,17.838459132976816
+21.0,Facility_Level_1a_Chitipa,1a,Chitipa,Northern,Mental,0.0,0.0
+21.0,Facility_Level_1a_Chitipa,1a,Chitipa,Northern,Nursing_and_Midwifery,28418.45228246761,134.16366034060442
+21.0,Facility_Level_1a_Chitipa,1a,Chitipa,Northern,Nutrition,110.79066481157902,0.5423728813559322
+21.0,Facility_Level_1a_Chitipa,1a,Chitipa,Northern,Pharmacy,3380.806022671498,16.88408606319054
+21.0,Facility_Level_1a_Chitipa,1a,Chitipa,Northern,Radiography,0.0,0.0
+22.0,Facility_Level_1b_Chitipa,1b,Chitipa,Northern,Clinical,6193.825629971064,30.930768490286326
+22.0,Facility_Level_1b_Chitipa,1b,Chitipa,Northern,DCSA,0.0,0.0
+22.0,Facility_Level_1b_Chitipa,1b,Chitipa,Northern,Dental,550.3863591024921,2.6944024205748867
+22.0,Facility_Level_1b_Chitipa,1b,Chitipa,Northern,Laboratory,975.3678189089238,4.333155309445338
+22.0,Facility_Level_1b_Chitipa,1b,Chitipa,Northern,Mental,204.27028824634883,1.0
+22.0,Facility_Level_1b_Chitipa,1b,Chitipa,Northern,Nursing_and_Midwifery,12239.676258881245,59.64703272965727
+22.0,Facility_Level_1b_Chitipa,1b,Chitipa,Northern,Nutrition,0.0,0.0
+22.0,Facility_Level_1b_Chitipa,1b,Chitipa,Northern,Pharmacy,1003.5998721135462,4.73059532939481
+22.0,Facility_Level_1b_Chitipa,1b,Chitipa,Northern,Radiography,832.8176547598953,4.002969247083776
+23.0,Facility_Level_2_Chitipa,2,Chitipa,Northern,Clinical,13263.924601665294,72.0706101507675
+23.0,Facility_Level_2_Chitipa,2,Chitipa,Northern,DCSA,0.0,0.0
+23.0,Facility_Level_2_Chitipa,2,Chitipa,Northern,Dental,529.6812012923477,2.5930408472012103
+23.0,Facility_Level_2_Chitipa,2,Chitipa,Northern,Laboratory,1031.205391517981,4.828385557577845
+23.0,Facility_Level_2_Chitipa,2,Chitipa,Northern,Mental,0.0,0.0
+23.0,Facility_Level_2_Chitipa,2,Chitipa,Northern,Nursing_and_Midwifery,20446.57964444205,100.18930692973828
+23.0,Facility_Level_2_Chitipa,2,Chitipa,Northern,Nutrition,93.4796234347698,0.4576271186440678
+23.0,Facility_Level_2_Chitipa,2,Chitipa,Northern,Pharmacy,1204.4962701900504,6.385318607414649
+23.0,Facility_Level_2_Chitipa,2,Chitipa,Northern,Radiography,817.3252497997515,3.997030752916225
+24.0,Facility_Level_0_Dedza,0,Dedza,Central,Clinical,0.0,0.0
+24.0,Facility_Level_0_Dedza,0,Dedza,Central,DCSA,13957.006256830322,250.0
+24.0,Facility_Level_0_Dedza,0,Dedza,Central,Dental,0.0,0.0
+24.0,Facility_Level_0_Dedza,0,Dedza,Central,Laboratory,0.0,0.0
+24.0,Facility_Level_0_Dedza,0,Dedza,Central,Mental,0.0,0.0
+24.0,Facility_Level_0_Dedza,0,Dedza,Central,Nursing_and_Midwifery,0.0,0.0
+24.0,Facility_Level_0_Dedza,0,Dedza,Central,Nutrition,0.0,0.0
+24.0,Facility_Level_0_Dedza,0,Dedza,Central,Pharmacy,0.0,0.0
+24.0,Facility_Level_0_Dedza,0,Dedza,Central,Radiography,0.0,0.0
+25.0,Facility_Level_1a_Dedza,1a,Dedza,Central,Clinical,13694.411303338165,65.82801952361244
+25.0,Facility_Level_1a_Dedza,1a,Dedza,Central,DCSA,0.0,0.0
+25.0,Facility_Level_1a_Dedza,1a,Dedza,Central,Dental,3833.235484731786,18.765506807866867
+25.0,Facility_Level_1a_Dedza,1a,Dedza,Central,Laboratory,7502.110564892305,37.28653823180116
+25.0,Facility_Level_1a_Dedza,1a,Dedza,Central,Mental,0.0,0.0
+25.0,Facility_Level_1a_Dedza,1a,Dedza,Central,Nursing_and_Midwifery,49051.693362700375,231.56732531003493
+25.0,Facility_Level_1a_Dedza,1a,Dedza,Central,Nutrition,110.79066481157902,0.5423728813559322
+25.0,Facility_Level_1a_Dedza,1a,Dedza,Central,Pharmacy,5972.093834043386,29.821961620469082
+25.0,Facility_Level_1a_Dedza,1a,Dedza,Central,Radiography,0.0,0.0
+26.0,Facility_Level_1b_Dedza,1b,Dedza,Central,Clinical,9221.265011179812,45.98034951605324
+26.0,Facility_Level_1b_Dedza,1b,Dedza,Central,DCSA,0.0,0.0
+26.0,Facility_Level_1b_Dedza,1b,Dedza,Central,Dental,1185.4475426822905,5.803328290468986
+26.0,Facility_Level_1b_Dedza,1b,Dedza,Central,Laboratory,2013.4006686572593,8.947548540789724
+26.0,Facility_Level_1b_Dedza,1b,Dedza,Central,Mental,612.8108647390465,3.0
+26.0,Facility_Level_1b_Dedza,1b,Dedza,Central,Nursing_and_Midwifery,20752.85672718661,100.2561669463249
+26.0,Facility_Level_1b_Dedza,1b,Dedza,Central,Nutrition,0.0,0.0
+26.0,Facility_Level_1b_Dedza,1b,Dedza,Central,Pharmacy,1815.3136076195997,8.55609761750255
+26.0,Facility_Level_1b_Dedza,1b,Dedza,Central,Radiography,1157.085269026234,5.533404029692472
+27.0,Facility_Level_2_Dedza,2,Dedza,Central,Clinical,19763.53100064072,107.19163096033432
+27.0,Facility_Level_2_Dedza,2,Dedza,Central,DCSA,0.0,0.0
+27.0,Facility_Level_2_Dedza,2,Dedza,Central,Dental,905.1553317300389,4.431164901664145
+27.0,Facility_Level_2_Dedza,2,Dedza,Central,Laboratory,1871.3666837858832,8.76591322740912
+27.0,Facility_Level_2_Dedza,2,Dedza,Central,Mental,0.0,0.0
+27.0,Facility_Level_2_Dedza,2,Dedza,Central,Nursing_and_Midwifery,32978.62941653649,160.17650774364017
+27.0,Facility_Level_2_Dedza,2,Dedza,Central,Nutrition,93.4796234347698,0.4576271186440678
+27.0,Facility_Level_2_Dedza,2,Dedza,Central,Pharmacy,2192.422870422733,11.621940762028368
+27.0,Facility_Level_2_Dedza,2,Dedza,Central,Radiography,916.8164496314691,4.466595970307529
+28.0,Facility_Level_0_Dowa,0,Dowa,Central,Clinical,0.0,0.0
+28.0,Facility_Level_0_Dowa,0,Dowa,Central,DCSA,13957.006256830322,250.0
+28.0,Facility_Level_0_Dowa,0,Dowa,Central,Dental,0.0,0.0
+28.0,Facility_Level_0_Dowa,0,Dowa,Central,Laboratory,0.0,0.0
+28.0,Facility_Level_0_Dowa,0,Dowa,Central,Mental,0.0,0.0
+28.0,Facility_Level_0_Dowa,0,Dowa,Central,Nursing_and_Midwifery,0.0,0.0
+28.0,Facility_Level_0_Dowa,0,Dowa,Central,Nutrition,0.0,0.0
+28.0,Facility_Level_0_Dowa,0,Dowa,Central,Pharmacy,0.0,0.0
+28.0,Facility_Level_0_Dowa,0,Dowa,Central,Radiography,0.0,0.0
+29.0,Facility_Level_1a_Dowa,1a,Dowa,Central,Clinical,13242.258787718509,63.49063351838901
+29.0,Facility_Level_1a_Dowa,1a,Dowa,Central,DCSA,0.0,0.0
+29.0,Facility_Level_1a_Dowa,1a,Dowa,Central,Dental,3148.7291481725388,15.414523449319214
+29.0,Facility_Level_1a_Dowa,1a,Dowa,Central,Laboratory,6257.067294293702,31.09941638616192
+29.0,Facility_Level_1a_Dowa,1a,Dowa,Central,Mental,0.0,0.0
+29.0,Facility_Level_1a_Dowa,1a,Dowa,Central,Nursing_and_Midwifery,46567.68647768111,219.84174477810566
+29.0,Facility_Level_1a_Dowa,1a,Dowa,Central,Nutrition,332.3719944347371,1.6271186440677967
+29.0,Facility_Level_1a_Dowa,1a,Dowa,Central,Pharmacy,5711.132672531052,28.52852620016799
+29.0,Facility_Level_1a_Dowa,1a,Dowa,Central,Radiography,0.0,0.0
+30.0,Facility_Level_1b_Dowa,1b,Dowa,Central,Clinical,8831.780861970816,44.15057553136195
+30.0,Facility_Level_1b_Dowa,1b,Dowa,Central,DCSA,0.0,0.0
+30.0,Facility_Level_1b_Dowa,1b,Dowa,Central,Dental,973.7604814890245,4.7670196671709535
+30.0,Facility_Level_1b_Dowa,1b,Dowa,Central,Laboratory,1676.8772094882124,7.45226031777264
+30.0,Facility_Level_1b_Dowa,1b,Dowa,Central,Mental,612.8108647390465,3.0
+30.0,Facility_Level_1b_Dowa,1b,Dowa,Central,Nursing_and_Midwifery,19772.342488475864,95.68784354568072
+30.0,Facility_Level_1b_Dowa,1b,Dowa,Central,Nutrition,0.0,0.0
+30.0,Facility_Level_1b_Dowa,1b,Dowa,Central,Pharmacy,1678.5074070329092,7.913280857148476
+30.0,Facility_Level_1b_Dowa,1b,Dowa,Central,Radiography,1295.651762370389,6.216330858960764
+31.0,Facility_Level_2_Dowa,2,Dowa,Central,Clinical,18944.815441767038,102.35879095024902
+31.0,Facility_Level_2_Dowa,2,Dowa,Central,DCSA,0.0,0.0
+31.0,Facility_Level_2_Dowa,2,Dowa,Central,Dental,779.9972882508085,3.8184568835098336
+31.0,Facility_Level_2_Dowa,2,Dowa,Central,Laboratory,1590.1233900765135,7.448323296065439
+31.0,Facility_Level_2_Dowa,2,Dowa,Central,Mental,0.0,0.0
+31.0,Facility_Level_2_Dowa,2,Dowa,Central,Nursing_and_Midwifery,31744.78516586968,154.47041167621362
+31.0,Facility_Level_2_Dowa,2,Dowa,Central,Nutrition,280.4388703043094,1.3728813559322033
+31.0,Facility_Level_2_Dowa,2,Dowa,Central,Pharmacy,1991.3390073791568,10.558192942683533
+31.0,Facility_Level_2_Dowa,2,Dowa,Central,Radiography,1184.0518296523392,5.783669141039237
+32.0,Facility_Level_0_Karonga,0,Karonga,Northern,Clinical,0.0,0.0
+32.0,Facility_Level_0_Karonga,0,Karonga,Northern,DCSA,13957.006256830322,250.0
+32.0,Facility_Level_0_Karonga,0,Karonga,Northern,Dental,0.0,0.0
+32.0,Facility_Level_0_Karonga,0,Karonga,Northern,Laboratory,0.0,0.0
+32.0,Facility_Level_0_Karonga,0,Karonga,Northern,Mental,0.0,0.0
+32.0,Facility_Level_0_Karonga,0,Karonga,Northern,Nursing_and_Midwifery,0.0,0.0
+32.0,Facility_Level_0_Karonga,0,Karonga,Northern,Nutrition,0.0,0.0
+32.0,Facility_Level_0_Karonga,0,Karonga,Northern,Pharmacy,0.0,0.0
+32.0,Facility_Level_0_Karonga,0,Karonga,Northern,Radiography,0.0,0.0
+33.0,Facility_Level_1a_Karonga,1a,Karonga,Northern,Clinical,11301.478134923156,54.17594371262612
+33.0,Facility_Level_1a_Karonga,1a,Karonga,Northern,DCSA,0.0,0.0
+33.0,Facility_Level_1a_Karonga,1a,Karonga,Northern,Dental,2738.02534623699,13.40393343419062
+33.0,Facility_Level_1a_Karonga,1a,Karonga,Northern,Laboratory,5546.216000019997,27.562498682388988
+33.0,Facility_Level_1a_Karonga,1a,Karonga,Northern,Mental,0.0,0.0
+33.0,Facility_Level_1a_Karonga,1a,Karonga,Northern,Nursing_and_Midwifery,39544.33871760833,186.68473837489634
+33.0,Facility_Level_1a_Karonga,1a,Karonga,Northern,Nutrition,110.79066481157902,0.5423728813559322
+33.0,Facility_Level_1a_Karonga,1a,Karonga,Northern,Pharmacy,5223.015182370589,26.091910576985203
+33.0,Facility_Level_1a_Karonga,1a,Karonga,Northern,Radiography,0.0,0.0
+34.0,Facility_Level_1b_Karonga,1b,Karonga,Northern,Clinical,7431.126889606876,36.79796035354492
+34.0,Facility_Level_1b_Karonga,1b,Karonga,Northern,DCSA,0.0,0.0
+34.0,Facility_Level_1b_Karonga,1b,Karonga,Northern,Dental,846.7482447730647,4.145234493192133
+34.0,Facility_Level_1b_Karonga,1b,Karonga,Northern,Laboratory,1494.3842437830913,6.640351925117531
+34.0,Facility_Level_1b_Karonga,1b,Karonga,Northern,Mental,204.27028824634883,1.0
+34.0,Facility_Level_1b_Karonga,1b,Karonga,Northern,Nursing_and_Midwifery,16763.35036548116,81.06169839341163
+34.0,Facility_Level_1b_Karonga,1b,Karonga,Northern,Nutrition,0.0,0.0
+34.0,Facility_Level_1b_Karonga,1b,Karonga,Northern,Pharmacy,1451.3341908643624,6.842479092397976
+34.0,Facility_Level_1b_Karonga,1b,Karonga,Northern,Radiography,1109.9506414482048,5.368822905620361
+35.0,Facility_Level_2_Karonga,2,Karonga,Northern,Clinical,15984.509050515924,86.02609593382894
+35.0,Facility_Level_2_Karonga,2,Karonga,Northern,DCSA,0.0,0.0
+35.0,Facility_Level_2_Karonga,2,Karonga,Northern,Dental,704.9024621632703,3.4508320726172466
+35.0,Facility_Level_2_Karonga,2,Karonga,Northern,Laboratory,1451.286037651932,6.797149392493483
+35.0,Facility_Level_2_Karonga,2,Karonga,Northern,Mental,0.0,0.0
+35.0,Facility_Level_2_Karonga,2,Karonga,Northern,Nursing_and_Midwifery,26790.260678923034,130.25356323169203
+35.0,Facility_Level_2_Karonga,2,Karonga,Northern,Nutrition,93.4796234347698,0.4576271186440678
+35.0,Facility_Level_2_Karonga,2,Karonga,Northern,Pharmacy,1709.8255000905758,9.06561033061682
+35.0,Facility_Level_2_Karonga,2,Karonga,Northern,Radiography,1351.7960098414915,6.631177094379639
+36.0,Facility_Level_0_Kasungu,0,Kasungu,Central,Clinical,0.0,0.0
+36.0,Facility_Level_0_Kasungu,0,Kasungu,Central,DCSA,13957.006256830322,250.0
+36.0,Facility_Level_0_Kasungu,0,Kasungu,Central,Dental,0.0,0.0
+36.0,Facility_Level_0_Kasungu,0,Kasungu,Central,Laboratory,0.0,0.0
+36.0,Facility_Level_0_Kasungu,0,Kasungu,Central,Mental,0.0,0.0
+36.0,Facility_Level_0_Kasungu,0,Kasungu,Central,Nursing_and_Midwifery,0.0,0.0
+36.0,Facility_Level_0_Kasungu,0,Kasungu,Central,Nutrition,0.0,0.0
+36.0,Facility_Level_0_Kasungu,0,Kasungu,Central,Pharmacy,0.0,0.0
+36.0,Facility_Level_0_Kasungu,0,Kasungu,Central,Radiography,0.0,0.0
+37.0,Facility_Level_1a_Kasungu,1a,Kasungu,Central,Clinical,14205.167865096177,68.00856298791192
+37.0,Facility_Level_1a_Kasungu,1a,Kasungu,Central,DCSA,0.0,0.0
+37.0,Facility_Level_1a_Kasungu,1a,Kasungu,Central,Dental,3970.136752043636,19.4357034795764
+37.0,Facility_Level_1a_Kasungu,1a,Kasungu,Central,Laboratory,8060.93758342725,40.064835245918914
+37.0,Facility_Level_1a_Kasungu,1a,Kasungu,Central,Mental,0.0,0.0
+37.0,Facility_Level_1a_Kasungu,1a,Kasungu,Central,Nursing_and_Midwifery,55962.96144392237,264.19062807382977
+37.0,Facility_Level_1a_Kasungu,1a,Kasungu,Central,Nutrition,332.3719944347371,1.6271186440677967
+37.0,Facility_Level_1a_Kasungu,1a,Kasungu,Central,Pharmacy,7553.341832230144,37.73635071396265
+37.0,Facility_Level_1a_Kasungu,1a,Kasungu,Central,Radiography,0.0,0.0
+38.0,Facility_Level_1b_Kasungu,1b,Kasungu,Central,Clinical,9269.58084149119,45.86749842478752
+38.0,Facility_Level_1b_Kasungu,1b,Kasungu,Central,DCSA,0.0,0.0
+38.0,Facility_Level_1b_Kasungu,1b,Kasungu,Central,Dental,1227.7849549209438,6.010590015128593
+38.0,Facility_Level_1b_Kasungu,1b,Kasungu,Central,Laboratory,2161.691075764164,9.60674757383892
+38.0,Facility_Level_1b_Kasungu,1b,Kasungu,Central,Mental,408.54057649269765,2.0
+38.0,Facility_Level_1b_Kasungu,1b,Kasungu,Central,Nursing_and_Midwifery,23427.542161924106,112.5808598044321
+38.0,Facility_Level_1b_Kasungu,1b,Kasungu,Central,Nutrition,0.0,0.0
+38.0,Facility_Level_1b_Kasungu,1b,Kasungu,Central,Pharmacy,2038.6677813391102,9.612121141890771
+38.0,Facility_Level_1b_Kasungu,1b,Kasungu,Central,Radiography,1364.9350090424664,6.55779427359491
+39.0,Facility_Level_2_Kasungu,2,Kasungu,Central,Clinical,19959.077609032727,107.12393858730057
+39.0,Facility_Level_2_Kasungu,2,Kasungu,Central,DCSA,0.0,0.0
+39.0,Facility_Level_2_Kasungu,2,Kasungu,Central,Dental,930.186940425885,4.553706505295008
+39.0,Facility_Level_2_Kasungu,2,Kasungu,Central,Laboratory,1991.3897255384406,9.328417180242159
+39.0,Facility_Level_2_Kasungu,2,Kasungu,Central,Mental,0.0,0.0
+39.0,Facility_Level_2_Kasungu,2,Kasungu,Central,Nursing_and_Midwifery,36080.75710207261,174.2285121217381
+39.0,Facility_Level_2_Kasungu,2,Kasungu,Central,Nutrition,280.4388703043094,1.3728813559322033
+39.0,Facility_Level_2_Kasungu,2,Kasungu,Central,Pharmacy,2386.0485179812204,12.651528144146573
+39.0,Facility_Level_2_Kasungu,2,Kasungu,Central,Radiography,1317.6695196627743,6.44220572640509
+40.0,Facility_Level_0_Likoma,0,Likoma,Northern,Clinical,0.0,0.0
+40.0,Facility_Level_0_Likoma,0,Likoma,Northern,DCSA,0.0,0.0
+40.0,Facility_Level_0_Likoma,0,Likoma,Northern,Dental,0.0,0.0
+40.0,Facility_Level_0_Likoma,0,Likoma,Northern,Laboratory,0.0,0.0
+40.0,Facility_Level_0_Likoma,0,Likoma,Northern,Mental,0.0,0.0
+40.0,Facility_Level_0_Likoma,0,Likoma,Northern,Nursing_and_Midwifery,0.0,0.0
+40.0,Facility_Level_0_Likoma,0,Likoma,Northern,Nutrition,0.0,0.0
+40.0,Facility_Level_0_Likoma,0,Likoma,Northern,Pharmacy,0.0,0.0
+40.0,Facility_Level_0_Likoma,0,Likoma,Northern,Radiography,0.0,0.0
+41.0,Facility_Level_1a_Likoma,1a,Likoma,Northern,Clinical,749.0677208517096,3.6552969216058457
+41.0,Facility_Level_1a_Likoma,1a,Likoma,Northern,DCSA,0.0,0.0
+41.0,Facility_Level_1a_Likoma,1a,Likoma,Northern,Dental,273.80253462369905,1.340393343419062
+41.0,Facility_Level_1a_Likoma,1a,Likoma,Northern,Laboratory,406.80274279618527,2.0196763244625906
+41.0,Facility_Level_1a_Likoma,1a,Likoma,Northern,Mental,0.0,0.0
+41.0,Facility_Level_1a_Likoma,1a,Likoma,Northern,Nursing_and_Midwifery,3564.8345906074,16.828489941946806
+41.0,Facility_Level_1a_Likoma,1a,Likoma,Northern,Nutrition,0.0,0.0
+41.0,Facility_Level_1a_Likoma,1a,Likoma,Northern,Pharmacy,375.64511363016646,1.8760095625767268
+41.0,Facility_Level_1a_Likoma,1a,Likoma,Northern,Radiography,0.0,0.0
+42.0,Facility_Level_1b_Likoma,1b,Likoma,Northern,Clinical,601.1526922485025,3.2023462079840006
+42.0,Facility_Level_1b_Likoma,1b,Likoma,Northern,DCSA,0.0,0.0
+42.0,Facility_Level_1b_Likoma,1b,Likoma,Northern,Dental,84.67482447730647,0.4145234493192133
+42.0,Facility_Level_1b_Likoma,1b,Likoma,Northern,Laboratory,114.08784850868906,0.5064896734432865
+42.0,Facility_Level_1b_Likoma,1b,Likoma,Northern,Mental,204.27028824634883,1.0
+42.0,Facility_Level_1b_Likoma,1b,Likoma,Northern,Nursing_and_Midwifery,1465.7916925384372,6.979671739088507
+42.0,Facility_Level_1b_Likoma,1b,Likoma,Northern,Nutrition,0.0,0.0
+42.0,Facility_Level_1b_Likoma,1b,Likoma,Northern,Pharmacy,101.78065862988119,0.47972798345932677
+42.0,Facility_Level_1b_Likoma,1b,Likoma,Northern,Radiography,393.5508609384162,1.8718981972428421
+43.0,Facility_Level_2_Likoma,2,Likoma,Northern,Clinical,1253.9841096661755,7.142356870410153
+43.0,Facility_Level_2_Likoma,2,Likoma,Northern,DCSA,0.0,0.0
+43.0,Facility_Level_2_Likoma,2,Likoma,Northern,Dental,50.06321739169215,0.24508320726172467
+43.0,Facility_Level_2_Likoma,2,Likoma,Northern,Laboratory,101.20873108053372,0.47383400209412313
+43.0,Facility_Level_2_Likoma,2,Likoma,Northern,Mental,0.0,0.0
+43.0,Facility_Level_2_Likoma,2,Likoma,Northern,Nursing_and_Midwifery,2133.944764954435,10.191838318964686
+43.0,Facility_Level_2_Likoma,2,Likoma,Northern,Nutrition,0.0,0.0
+43.0,Facility_Level_2_Likoma,2,Likoma,Northern,Pharmacy,121.5418389879543,0.6442624539639464
+43.0,Facility_Level_2_Likoma,2,Likoma,Northern,Radiography,233.10888984215262,1.128101802757158
+44.0,Facility_Level_0_Lilongwe,0,Lilongwe,Central,Clinical,0.0,0.0
+44.0,Facility_Level_0_Lilongwe,0,Lilongwe,Central,DCSA,58986.15553882395,1056.5689097896106
+44.0,Facility_Level_0_Lilongwe,0,Lilongwe,Central,Dental,0.0,0.0
+44.0,Facility_Level_0_Lilongwe,0,Lilongwe,Central,Laboratory,0.0,0.0
+44.0,Facility_Level_0_Lilongwe,0,Lilongwe,Central,Mental,0.0,0.0
+44.0,Facility_Level_0_Lilongwe,0,Lilongwe,Central,Nursing_and_Midwifery,0.0,0.0
+44.0,Facility_Level_0_Lilongwe,0,Lilongwe,Central,Nutrition,0.0,0.0
+44.0,Facility_Level_0_Lilongwe,0,Lilongwe,Central,Pharmacy,0.0,0.0
+44.0,Facility_Level_0_Lilongwe,0,Lilongwe,Central,Radiography,0.0,0.0
+45.0,Facility_Level_1a_Lilongwe,1a,Lilongwe,Central,Clinical,17036.104809713106,81.82167417526661
+45.0,Facility_Level_1a_Lilongwe,1a,Lilongwe,Central,DCSA,0.0,0.0
+45.0,Facility_Level_1a_Lilongwe,1a,Lilongwe,Central,Dental,3956.2122371421033,19.36753637107974
+45.0,Facility_Level_1a_Lilongwe,1a,Lilongwe,Central,Laboratory,8785.116904737974,43.668246329053005
+45.0,Facility_Level_1a_Lilongwe,1a,Lilongwe,Central,Mental,0.0,0.0
+45.0,Facility_Level_1a_Lilongwe,1a,Lilongwe,Central,Nursing_and_Midwifery,49453.53979389968,233.47632226734697
+45.0,Facility_Level_1a_Lilongwe,1a,Lilongwe,Central,Nutrition,350.8669072606556,1.7176600193441351
+45.0,Facility_Level_1a_Lilongwe,1a,Lilongwe,Central,Pharmacy,7292.6973528201725,36.450734762360725
+45.0,Facility_Level_1a_Lilongwe,1a,Lilongwe,Central,Radiography,0.0,0.0
+46.0,Facility_Level_1b_Lilongwe,1b,Lilongwe,Central,Clinical,12072.82027920431,62.50259320552283
+46.0,Facility_Level_1b_Lilongwe,1b,Lilongwe,Central,DCSA,0.0,0.0
+46.0,Facility_Level_1b_Lilongwe,1b,Lilongwe,Central,Dental,1223.4787279649393,5.989508990604795
+46.0,Facility_Level_1b_Lilongwe,1b,Lilongwe,Central,Laboratory,2341.4081607609146,10.406469172610183
+46.0,Facility_Level_1b_Lilongwe,1b,Lilongwe,Central,Mental,10674.029194320257,52.25443840098487
+46.0,Facility_Level_1b_Lilongwe,1b,Lilongwe,Central,Nursing_and_Midwifery,21668.5660551029,106.46413080946157
+46.0,Facility_Level_1b_Lilongwe,1b,Lilongwe,Central,Nutrition,0.0,0.0
+46.0,Facility_Level_1b_Lilongwe,1b,Lilongwe,Central,Pharmacy,2153.7761661541754,10.158862916270554
+46.0,Facility_Level_1b_Lilongwe,1b,Lilongwe,Central,Radiography,1749.3648418877765,8.39389076380485
+47.0,Facility_Level_2_Lilongwe,2,Lilongwe,Central,Clinical,25610.973702072595,140.699942079128
+47.0,Facility_Level_2_Lilongwe,2,Lilongwe,Central,DCSA,0.0,0.0
+47.0,Facility_Level_2_Lilongwe,2,Lilongwe,Central,Dental,965.962207380378,4.728843414640082
+47.0,Facility_Level_2_Lilongwe,2,Lilongwe,Central,Laboratory,2654.630156830559,12.430933372317549
+47.0,Facility_Level_2_Lilongwe,2,Lilongwe,Central,Mental,0.0,0.0
+47.0,Facility_Level_2_Lilongwe,2,Lilongwe,Central,Nursing_and_Midwifery,37867.793595035284,186.95846746645552
+47.0,Facility_Level_2_Lilongwe,2,Lilongwe,Central,Nutrition,296.0439530011782,1.4492756413216141
+47.0,Facility_Level_2_Lilongwe,2,Lilongwe,Central,Pharmacy,2482.129057187227,13.166312916434737
+47.0,Facility_Level_2_Lilongwe,2,Lilongwe,Central,Radiography,1604.2507501308164,7.836654497107115
+48.0,Facility_Level_0_Lilongwe City,0,Lilongwe City,Central,Clinical,0.0,0.0
+48.0,Facility_Level_0_Lilongwe City,0,Lilongwe City,Central,DCSA,90018.84325909657,1612.4310902103894
+48.0,Facility_Level_0_Lilongwe City,0,Lilongwe City,Central,Dental,0.0,0.0
+48.0,Facility_Level_0_Lilongwe City,0,Lilongwe City,Central,Laboratory,0.0,0.0
+48.0,Facility_Level_0_Lilongwe City,0,Lilongwe City,Central,Mental,0.0,0.0
+48.0,Facility_Level_0_Lilongwe City,0,Lilongwe City,Central,Nursing_and_Midwifery,0.0,0.0
+48.0,Facility_Level_0_Lilongwe City,0,Lilongwe City,Central,Nutrition,0.0,0.0
+48.0,Facility_Level_0_Lilongwe City,0,Lilongwe City,Central,Pharmacy,0.0,0.0
+48.0,Facility_Level_0_Lilongwe City,0,Lilongwe City,Central,Radiography,0.0,0.0
+49.0,Facility_Level_1a_Lilongwe City,1a,Lilongwe City,Central,Clinical,25998.82014012133,124.86815584942335
+49.0,Facility_Level_1a_Lilongwe City,1a,Lilongwe City,Central,DCSA,0.0,0.0
+49.0,Facility_Level_1a_Lilongwe City,1a,Lilongwe City,Central,Dental,6037.580276622912,29.556820663716024
+49.0,Facility_Level_1a_Lilongwe City,1a,Lilongwe City,Central,Laboratory,13406.977526106704,66.64216350067652
+49.0,Facility_Level_1a_Lilongwe City,1a,Lilongwe City,Central,Mental,0.0,0.0
+49.0,Facility_Level_1a_Lilongwe City,1a,Lilongwe City,Central,Nursing_and_Midwifery,75471.10684954647,356.30849759417396
+49.0,Facility_Level_1a_Lilongwe City,1a,Lilongwe City,Central,Nutrition,535.4584112319766,2.6213230315033225
+49.0,Facility_Level_1a_Lilongwe City,1a,Lilongwe City,Central,Pharmacy,11129.394244170744,55.6275103755859
+49.0,Facility_Level_1a_Lilongwe City,1a,Lilongwe City,Central,Radiography,0.0,0.0
+50.0,Facility_Level_1b_Lilongwe City,1b,Lilongwe City,Central,Clinical,18424.34561943318,95.38528303224984
+50.0,Facility_Level_1b_Lilongwe City,1b,Lilongwe City,Central,DCSA,0.0,0.0
+50.0,Facility_Level_1b_Lilongwe City,1b,Lilongwe City,Central,Dental,1867.1523654567468,9.14059690954649
+50.0,Facility_Level_1b_Lilongwe City,1b,Lilongwe City,Central,Laboratory,3573.225823988133,15.881325181690148
+50.0,Facility_Level_1b_Lilongwe City,1b,Lilongwe City,Central,Mental,16289.648854197787,79.74556159901513
+50.0,Facility_Level_1b_Lilongwe City,1b,Lilongwe City,Central,Nursing_and_Midwifery,33068.42484555281,162.47503870200444
+50.0,Facility_Level_1b_Lilongwe City,1b,Lilongwe City,Central,Nutrition,0.0,0.0
+50.0,Facility_Level_1b_Lilongwe City,1b,Lilongwe City,Central,Pharmacy,3286.8804102447557,15.503452974630672
+50.0,Facility_Level_1b_Lilongwe City,1b,Lilongwe City,Central,Radiography,2669.7077995059612,12.809926839588577
+51.0,Facility_Level_2_Lilongwe City,2,Lilongwe City,Central,Clinical,39084.937920429235,214.72235165840937
+51.0,Facility_Level_2_Lilongwe City,2,Lilongwe City,Central,DCSA,0.0,0.0
+51.0,Facility_Level_2_Lilongwe City,2,Lilongwe City,Central,Dental,1474.156092155432,7.216693650412868
+51.0,Facility_Level_2_Lilongwe City,2,Lilongwe City,Central,Laboratory,4051.234290753465,18.9708624436526
+51.0,Facility_Level_2_Lilongwe City,2,Lilongwe City,Central,Mental,0.0,0.0
+51.0,Facility_Level_2_Lilongwe City,2,Lilongwe City,Central,Nursing_and_Midwifery,57790.08557280298,285.31754316055753
+51.0,Facility_Level_2_Lilongwe City,2,Lilongwe City,Central,Nutrition,451.79303447698027,2.2117413078309283
+51.0,Facility_Level_2_Lilongwe City,2,Lilongwe City,Central,Pharmacy,3787.9801541011057,20.09312605471741
+51.0,Facility_Level_2_Lilongwe City,2,Lilongwe City,Central,Radiography,2448.249008689224,11.959527899499463
+52.0,Facility_Level_0_Machinga,0,Machinga,Southern,Clinical,0.0,0.0
+52.0,Facility_Level_0_Machinga,0,Machinga,Southern,DCSA,13957.006256830322,250.0
+52.0,Facility_Level_0_Machinga,0,Machinga,Southern,Dental,0.0,0.0
+52.0,Facility_Level_0_Machinga,0,Machinga,Southern,Laboratory,0.0,0.0
+52.0,Facility_Level_0_Machinga,0,Machinga,Southern,Mental,0.0,0.0
+52.0,Facility_Level_0_Machinga,0,Machinga,Southern,Nursing_and_Midwifery,0.0,0.0
+52.0,Facility_Level_0_Machinga,0,Machinga,Southern,Nutrition,0.0,0.0
+52.0,Facility_Level_0_Machinga,0,Machinga,Southern,Pharmacy,0.0,0.0
+52.0,Facility_Level_0_Machinga,0,Machinga,Southern,Radiography,0.0,0.0
+53.0,Facility_Level_1a_Machinga,1a,Machinga,Southern,Clinical,10421.642906251582,50.113292611568596
+53.0,Facility_Level_1a_Machinga,1a,Machinga,Southern,DCSA,0.0,0.0
+53.0,Facility_Level_1a_Machinga,1a,Machinga,Southern,Dental,2464.2228116132915,12.063540090771559
+53.0,Facility_Level_1a_Machinga,1a,Machinga,Southern,Laboratory,5443.461808701331,27.060063737236742
+53.0,Facility_Level_1a_Machinga,1a,Machinga,Southern,Mental,0.0,0.0
+53.0,Facility_Level_1a_Machinga,1a,Machinga,Southern,Nursing_and_Midwifery,34251.263705393314,161.69794258327065
+53.0,Facility_Level_1a_Machinga,1a,Machinga,Southern,Nutrition,553.9533240578951,2.711864406779661
+53.0,Facility_Level_1a_Machinga,1a,Machinga,Southern,Pharmacy,4696.66970817085,23.46110357304387
+53.0,Facility_Level_1a_Machinga,1a,Machinga,Southern,Radiography,0.0,0.0
+54.0,Facility_Level_1b_Machinga,1b,Machinga,Southern,Clinical,6890.298172871724,33.86379788825265
+54.0,Facility_Level_1b_Machinga,1b,Machinga,Southern,DCSA,0.0,0.0
+54.0,Facility_Level_1b_Machinga,1b,Machinga,Southern,Dental,762.0734202957583,3.73071104387292
+54.0,Facility_Level_1b_Machinga,1b,Machinga,Southern,Laboratory,1448.7015124708346,6.439280970886067
+54.0,Facility_Level_1b_Machinga,1b,Machinga,Southern,Mental,0.0,0.0
+54.0,Facility_Level_1b_Machinga,1b,Machinga,Southern,Nursing_and_Midwifery,14598.614121157243,70.78259947154237
+54.0,Facility_Level_1b_Machinga,1b,Machinga,Southern,Nutrition,0.0,0.0
+54.0,Facility_Level_1b_Machinga,1b,Machinga,Southern,Pharmacy,1323.4100997927005,6.239083731539928
+54.0,Facility_Level_1b_Machinga,1b,Machinga,Southern,Radiography,439.26679382147904,2.1310710498409335
+55.0,Facility_Level_2_Machinga,2,Machinga,Southern,Clinical,14823.860570318895,80.02290950017874
+55.0,Facility_Level_2_Machinga,2,Machinga,Southern,DCSA,0.0,0.0
+55.0,Facility_Level_2_Machinga,2,Machinga,Southern,Dental,654.8392447715783,3.205748865355522
+55.0,Facility_Level_2_Machinga,2,Machinga,Southern,Laboratory,1387.7059279154457,6.500655291877191
+55.0,Facility_Level_2_Machinga,2,Machinga,Southern,Mental,0.0,0.0
+55.0,Facility_Level_2_Machinga,2,Machinga,Southern,Nursing_and_Midwifery,23694.09048093396,115.51945794518699
+55.0,Facility_Level_2_Machinga,2,Machinga,Southern,Nutrition,467.398117173849,2.288135593220339
+55.0,Facility_Level_2_Machinga,2,Machinga,Southern,Pharmacy,1565.4457201189969,8.2998126954162
+55.0,Facility_Level_2_Machinga,2,Machinga,Southern,Radiography,584.2163599575989,2.868928950159067
+56.0,Facility_Level_0_Mangochi,0,Mangochi,Southern,Clinical,0.0,0.0
+56.0,Facility_Level_0_Mangochi,0,Mangochi,Southern,DCSA,13957.006256830322,250.0
+56.0,Facility_Level_0_Mangochi,0,Mangochi,Southern,Dental,0.0,0.0
+56.0,Facility_Level_0_Mangochi,0,Mangochi,Southern,Laboratory,0.0,0.0
+56.0,Facility_Level_0_Mangochi,0,Mangochi,Southern,Mental,0.0,0.0
+56.0,Facility_Level_0_Mangochi,0,Mangochi,Southern,Nursing_and_Midwifery,0.0,0.0
+56.0,Facility_Level_0_Mangochi,0,Mangochi,Southern,Nutrition,0.0,0.0
+56.0,Facility_Level_0_Mangochi,0,Mangochi,Southern,Pharmacy,0.0,0.0
+56.0,Facility_Level_0_Mangochi,0,Mangochi,Southern,Radiography,0.0,0.0
+57.0,Facility_Level_1a_Mangochi,1a,Mangochi,Southern,Clinical,16092.799665265466,77.42563615864361
+57.0,Facility_Level_1a_Mangochi,1a,Mangochi,Southern,DCSA,0.0,0.0
+57.0,Facility_Level_1a_Mangochi,1a,Mangochi,Southern,Dental,5339.149425162132,26.13767019667171
+57.0,Facility_Level_1a_Mangochi,1a,Mangochi,Southern,Laboratory,10551.024124624455,52.43907893719739
+57.0,Facility_Level_1a_Mangochi,1a,Mangochi,Southern,Mental,0.0,0.0
+57.0,Facility_Level_1a_Mangochi,1a,Mangochi,Southern,Nursing_and_Midwifery,62660.909240776964,295.8100156222878
+57.0,Facility_Level_1a_Mangochi,1a,Mangochi,Southern,Nutrition,110.79066481157902,0.5423728813559322
+57.0,Facility_Level_1a_Mangochi,1a,Mangochi,Southern,Pharmacy,8565.59322100281,42.7818052594172
+57.0,Facility_Level_1a_Mangochi,1a,Mangochi,Southern,Radiography,0.0,0.0
+58.0,Facility_Level_1b_Mangochi,1b,Mangochi,Southern,Clinical,10771.661593154986,53.30937471502378
+58.0,Facility_Level_1b_Mangochi,1b,Mangochi,Southern,DCSA,0.0,0.0
+58.0,Facility_Level_1b_Mangochi,1b,Mangochi,Southern,Dental,1651.1590773074763,8.08320726172466
+58.0,Facility_Level_1b_Mangochi,1b,Mangochi,Southern,Laboratory,2834.7379941022573,12.597324019873088
+58.0,Facility_Level_1b_Mangochi,1b,Mangochi,Southern,Mental,612.8108647390465,3.0
+58.0,Facility_Level_1b_Mangochi,1b,Mangochi,Southern,Nursing_and_Midwifery,26208.607963535498,125.8899496615171
+58.0,Facility_Level_1b_Mangochi,1b,Mangochi,Southern,Nutrition,0.0,0.0
+58.0,Facility_Level_1b_Mangochi,1b,Mangochi,Southern,Pharmacy,2379.035299185563,11.2143938691635
+58.0,Facility_Level_1b_Mangochi,1b,Mangochi,Southern,Radiography,1897.0523633250373,9.112619300106045
+59.0,Facility_Level_2_Mangochi,2,Mangochi,Southern,Clinical,23122.305453181147,125.2649891263326
+59.0,Facility_Level_2_Mangochi,2,Mangochi,Southern,DCSA,0.0,0.0
+59.0,Facility_Level_2_Mangochi,2,Mangochi,Southern,Dental,1180.5030273843458,5.779122541603631
+59.0,Facility_Level_2_Mangochi,2,Mangochi,Southern,Laboratory,2553.8763129571807,11.963597042929525
+59.0,Facility_Level_2_Mangochi,2,Mangochi,Southern,Mental,0.0,0.0
+59.0,Facility_Level_2_Mangochi,2,Mangochi,Southern,Nursing_and_Midwifery,40257.445083043305,194.3000347161951
+59.0,Facility_Level_2_Mangochi,2,Mangochi,Southern,Nutrition,93.4796234347698,0.4576271186440678
+59.0,Facility_Level_2_Mangochi,2,Mangochi,Southern,Pharmacy,2830.2160590007056,15.003800871419301
+59.0,Facility_Level_2_Mangochi,2,Mangochi,Southern,Radiography,1818.0137895257967,8.887380699893956
+60.0,Facility_Level_0_Mchinji,0,Mchinji,Central,Clinical,0.0,0.0
+60.0,Facility_Level_0_Mchinji,0,Mchinji,Central,DCSA,13957.006256830322,250.0
+60.0,Facility_Level_0_Mchinji,0,Mchinji,Central,Dental,0.0,0.0
+60.0,Facility_Level_0_Mchinji,0,Mchinji,Central,Laboratory,0.0,0.0
+60.0,Facility_Level_0_Mchinji,0,Mchinji,Central,Mental,0.0,0.0
+60.0,Facility_Level_0_Mchinji,0,Mchinji,Central,Nursing_and_Midwifery,0.0,0.0
+60.0,Facility_Level_0_Mchinji,0,Mchinji,Central,Nutrition,0.0,0.0
+60.0,Facility_Level_0_Mchinji,0,Mchinji,Central,Pharmacy,0.0,0.0
+60.0,Facility_Level_0_Mchinji,0,Mchinji,Central,Radiography,0.0,0.0
+61.0,Facility_Level_1a_Mchinji,1a,Mchinji,Central,Clinical,11893.905462890401,57.253973939973456
+61.0,Facility_Level_1a_Mchinji,1a,Mchinji,Central,DCSA,0.0,0.0
+61.0,Facility_Level_1a_Mchinji,1a,Mchinji,Central,Dental,3011.827880860689,14.744326777609682
+61.0,Facility_Level_1a_Mchinji,1a,Mchinji,Central,Laboratory,5800.994467077423,28.823554317196404
+61.0,Facility_Level_1a_Mchinji,1a,Mchinji,Central,Mental,0.0,0.0
+61.0,Facility_Level_1a_Mchinji,1a,Mchinji,Central,Nursing_and_Midwifery,44729.39870347287,211.1616400509171
+61.0,Facility_Level_1a_Mchinji,1a,Mchinji,Central,Nutrition,110.79066481157902,0.5423728813559322
+61.0,Facility_Level_1a_Mchinji,1a,Mchinji,Central,Pharmacy,5598.660296000757,27.96792013956193
+61.0,Facility_Level_1a_Mchinji,1a,Mchinji,Central,Radiography,0.0,0.0
+62.0,Facility_Level_1b_Mchinji,1b,Mchinji,Central,Clinical,8142.642621837549,40.87149586227387
+62.0,Facility_Level_1b_Mchinji,1b,Mchinji,Central,DCSA,0.0,0.0
+62.0,Facility_Level_1b_Mchinji,1b,Mchinji,Central,Dental,931.4230692503712,4.559757942511347
+62.0,Facility_Level_1b_Mchinji,1b,Mchinji,Central,Laboratory,1574.2695336935644,6.994132238954906
+62.0,Facility_Level_1b_Mchinji,1b,Mchinji,Central,Mental,612.8108647390465,3.0
+62.0,Facility_Level_1b_Mchinji,1b,Mchinji,Central,Nursing_and_Midwifery,18884.402575318483,91.1345831163571
+62.0,Facility_Level_1b_Mchinji,1b,Mchinji,Central,Nutrition,0.0,0.0
+62.0,Facility_Level_1b_Mchinji,1b,Mchinji,Central,Pharmacy,1553.1148494942433,7.322207075857302
+62.0,Facility_Level_1b_Mchinji,1b,Mchinji,Central,Radiography,1758.4858699808824,8.429692470837752
+63.0,Facility_Level_2_Mchinji,2,Mchinji,Central,Clinical,17404.817089325104,94.87453019775268
+63.0,Facility_Level_2_Mchinji,2,Mchinji,Central,DCSA,0.0,0.0
+63.0,Facility_Level_2_Mchinji,2,Mchinji,Central,Dental,754.9656795549625,3.6959152798789714
+63.0,Facility_Level_2_Mchinji,2,Mchinji,Central,Laboratory,1533.680458060442,7.18231344384869
+63.0,Facility_Level_2_Mchinji,2,Mchinji,Central,Mental,0.0,0.0
+63.0,Facility_Level_2_Mchinji,2,Mchinji,Central,Nursing_and_Midwifery,29826.291787347443,144.7037768327258
+63.0,Facility_Level_2_Mchinji,2,Mchinji,Central,Nutrition,93.4796234347698,0.4576271186440678
+63.0,Facility_Level_2_Mchinji,2,Mchinji,Central,Pharmacy,1831.36733907853,9.709872784580767
+63.0,Facility_Level_2_Mchinji,2,Mchinji,Central,Radiography,1550.7784095049267,7.570307529162248
+64.0,Facility_Level_0_Mulanje,0,Mulanje,Southern,Clinical,0.0,0.0
+64.0,Facility_Level_0_Mulanje,0,Mulanje,Southern,DCSA,13957.006256830322,250.0
+64.0,Facility_Level_0_Mulanje,0,Mulanje,Southern,Dental,0.0,0.0
+64.0,Facility_Level_0_Mulanje,0,Mulanje,Southern,Laboratory,0.0,0.0
+64.0,Facility_Level_0_Mulanje,0,Mulanje,Southern,Mental,0.0,0.0
+64.0,Facility_Level_0_Mulanje,0,Mulanje,Southern,Nursing_and_Midwifery,0.0,0.0
+64.0,Facility_Level_0_Mulanje,0,Mulanje,Southern,Nutrition,0.0,0.0
+64.0,Facility_Level_0_Mulanje,0,Mulanje,Southern,Pharmacy,0.0,0.0
+64.0,Facility_Level_0_Mulanje,0,Mulanje,Southern,Radiography,0.0,0.0
+65.0,Facility_Level_1a_Mulanje,1a,Mulanje,Southern,Clinical,13310.370138384587,63.66708102013729
+65.0,Facility_Level_1a_Mulanje,1a,Mulanje,Southern,DCSA,0.0,0.0
+65.0,Facility_Level_1a_Mulanje,1a,Mulanje,Southern,Dental,3422.531682796238,16.754916792738275
+65.0,Facility_Level_1a_Mulanje,1a,Mulanje,Southern,Laboratory,7046.037737676026,35.01067616283564
+65.0,Facility_Level_1a_Mulanje,1a,Mulanje,Southern,Mental,0.0,0.0
+65.0,Facility_Level_1a_Mulanje,1a,Mulanje,Southern,Nursing_and_Midwifery,49266.70725227625,232.5811611602924
+65.0,Facility_Level_1a_Mulanje,1a,Mulanje,Southern,Nutrition,110.79066481157902,0.5423728813559322
+65.0,Facility_Level_1a_Mulanje,1a,Mulanje,Southern,Pharmacy,5936.077425591645,29.649738321380113
+65.0,Facility_Level_1a_Mulanje,1a,Mulanje,Southern,Radiography,0.0,0.0
+66.0,Facility_Level_1b_Mulanje,1b,Mulanje,Southern,Clinical,8681.74810441526,43.0898016782472
+66.0,Facility_Level_1b_Mulanje,1b,Mulanje,Southern,DCSA,0.0,0.0
+66.0,Facility_Level_1b_Mulanje,1b,Mulanje,Southern,Dental,1058.4353059663308,5.181543116490166
+66.0,Facility_Level_1b_Mulanje,1b,Mulanje,Southern,Laboratory,1910.7929928626113,8.48942046197199
+66.0,Facility_Level_1b_Mulanje,1b,Mulanje,Southern,Mental,408.54057649269765,2.0
+66.0,Facility_Level_1b_Mulanje,1b,Mulanje,Southern,Nursing_and_Midwifery,20767.569132717137,100.14478582036297
+66.0,Facility_Level_1b_Mulanje,1b,Mulanje,Southern,Nutrition,0.0,0.0
+66.0,Facility_Level_1b_Mulanje,1b,Mulanje,Southern,Pharmacy,1754.1446332210098,8.26934146320908
+66.0,Facility_Level_1b_Mulanje,1b,Mulanje,Southern,Radiography,763.5344080878178,3.6615058324496292
+67.0,Facility_Level_2_Mulanje,2,Mulanje,Southern,Clinical,18688.023878240285,100.2431173016155
+67.0,Facility_Level_2_Mulanje,2,Mulanje,Southern,DCSA,0.0,0.0
+67.0,Facility_Level_2_Mulanje,2,Mulanje,Southern,Dental,830.0605056425007,4.063540090771559
+67.0,Facility_Level_2_Mulanje,2,Mulanje,Southern,Laboratory,1814.923751769812,8.499903375192371
+67.0,Facility_Level_2_Mulanje,2,Mulanje,Southern,Mental,0.0,0.0
+67.0,Facility_Level_2_Mulanje,2,Mulanje,Southern,Nursing_and_Midwifery,32650.843167704355,158.27405301934465
+67.0,Facility_Level_2_Mulanje,2,Mulanje,Southern,Nutrition,93.4796234347698,0.4576271186440678
+67.0,Facility_Level_2_Mulanje,2,Mulanje,Southern,Pharmacy,2090.0429053834864,11.080920215410806
+67.0,Facility_Level_2_Mulanje,2,Mulanje,Southern,Radiography,683.7075597893165,3.338494167550371
+68.0,Facility_Level_0_Mwanza,0,Mwanza,Southern,Clinical,0.0,0.0
+68.0,Facility_Level_0_Mwanza,0,Mwanza,Southern,DCSA,13957.006256830322,250.0
+68.0,Facility_Level_0_Mwanza,0,Mwanza,Southern,Dental,0.0,0.0
+68.0,Facility_Level_0_Mwanza,0,Mwanza,Southern,Laboratory,0.0,0.0
+68.0,Facility_Level_0_Mwanza,0,Mwanza,Southern,Mental,0.0,0.0
+68.0,Facility_Level_0_Mwanza,0,Mwanza,Southern,Nursing_and_Midwifery,0.0,0.0
+68.0,Facility_Level_0_Mwanza,0,Mwanza,Southern,Nutrition,0.0,0.0
+68.0,Facility_Level_0_Mwanza,0,Mwanza,Southern,Pharmacy,0.0,0.0
+68.0,Facility_Level_0_Mwanza,0,Mwanza,Southern,Radiography,0.0,0.0
+69.0,Facility_Level_1a_Mwanza,1a,Mwanza,Southern,Clinical,7180.202587741891,34.51401903837646
+69.0,Facility_Level_1a_Mwanza,1a,Mwanza,Southern,DCSA,0.0,0.0
+69.0,Facility_Level_1a_Mwanza,1a,Mwanza,Southern,Dental,821.4076038710972,4.021180030257186
+69.0,Facility_Level_1a_Mwanza,1a,Mwanza,Southern,Laboratory,1786.451146014143,8.87304027321982
+69.0,Facility_Level_1a_Mwanza,1a,Mwanza,Southern,Mental,0.0,0.0
+69.0,Facility_Level_1a_Mwanza,1a,Mwanza,Southern,Nursing_and_Midwifery,18265.039805522865,86.23361347374106
+69.0,Facility_Level_1a_Mwanza,1a,Mwanza,Southern,Nutrition,110.79066481157902,0.5423728813559322
+69.0,Facility_Level_1a_Mwanza,1a,Mwanza,Southern,Pharmacy,1990.6979446811285,9.940653873489694
+69.0,Facility_Level_1a_Mwanza,1a,Mwanza,Southern,Radiography,0.0,0.0
+70.0,Facility_Level_1b_Mwanza,1b,Mwanza,Southern,Clinical,4843.210722075944,24.181158870522506
+70.0,Facility_Level_1b_Mwanza,1b,Mwanza,Southern,DCSA,0.0,0.0
+70.0,Facility_Level_1b_Mwanza,1b,Mwanza,Southern,Dental,254.0244734319194,1.2435703479576399
+70.0,Facility_Level_1b_Mwanza,1b,Mwanza,Southern,Laboratory,490.55395263297225,2.1786680533790577
+70.0,Facility_Level_1b_Mwanza,1b,Mwanza,Southern,Mental,0.0,0.0
+70.0,Facility_Level_1b_Mwanza,1b,Mwanza,Southern,Nursing_and_Midwifery,8133.377017141548,40.26289803082026
+70.0,Facility_Level_1b_Mwanza,1b,Mwanza,Southern,Nutrition,0.0,0.0
+70.0,Facility_Level_1b_Mwanza,1b,Mwanza,Southern,Pharmacy,634.2958506880718,2.9897136985878063
+70.0,Facility_Level_1b_Mwanza,1b,Mwanza,Southern,Radiography,439.26679382147904,2.1310710498409335
+71.0,Facility_Level_2_Mwanza,2,Mwanza,Southern,Clinical,10376.606510088037,56.30482209110103
+71.0,Facility_Level_2_Mwanza,2,Mwanza,Southern,DCSA,0.0,0.0
+71.0,Facility_Level_2_Mwanza,2,Mwanza,Southern,Dental,354.45994042142524,1.735249621785174
+71.0,Facility_Level_2_Mwanza,2,Mwanza,Southern,Laboratory,629.9390560560537,2.948291673401123
+71.0,Facility_Level_2_Mwanza,2,Mwanza,Southern,Mental,0.0,0.0
+71.0,Facility_Level_2_Mwanza,2,Mwanza,Southern,Nursing_and_Midwifery,14793.505225363533,73.50348849543867
+71.0,Facility_Level_2_Mwanza,2,Mwanza,Southern,Nutrition,93.4796234347698,0.4576271186440678
+71.0,Facility_Level_2_Mwanza,2,Mwanza,Southern,Pharmacy,767.6808632403981,4.0696324279225
+71.0,Facility_Level_2_Mwanza,2,Mwanza,Southern,Radiography,584.2163599575989,2.868928950159067
+72.0,Facility_Level_0_Mzimba,0,Mzimba,Northern,Clinical,0.0,0.0
+72.0,Facility_Level_0_Mzimba,0,Mzimba,Northern,DCSA,10672.22935309514,191.16258094160293
+72.0,Facility_Level_0_Mzimba,0,Mzimba,Northern,Dental,0.0,0.0
+72.0,Facility_Level_0_Mzimba,0,Mzimba,Northern,Laboratory,0.0,0.0
+72.0,Facility_Level_0_Mzimba,0,Mzimba,Northern,Mental,0.0,0.0
+72.0,Facility_Level_0_Mzimba,0,Mzimba,Northern,Nursing_and_Midwifery,0.0,0.0
+72.0,Facility_Level_0_Mzimba,0,Mzimba,Northern,Nutrition,0.0,0.0
+72.0,Facility_Level_0_Mzimba,0,Mzimba,Northern,Pharmacy,0.0,0.0
+72.0,Facility_Level_0_Mzimba,0,Mzimba,Northern,Radiography,0.0,0.0
+73.0,Facility_Level_1a_Mzimba,1a,Mzimba,Northern,Clinical,21420.899714826395,102.77459633401092
+73.0,Facility_Level_1a_Mzimba,1a,Mzimba,Northern,DCSA,0.0,0.0
+73.0,Facility_Level_1a_Mzimba,1a,Mzimba,Northern,Dental,5862.169508946116,28.698101712552404
+73.0,Facility_Level_1a_Mzimba,1a,Mzimba,Northern,Laboratory,11797.363947166792,58.6373105336593
+73.0,Facility_Level_1a_Mzimba,1a,Mzimba,Northern,Mental,0.0,0.0
+73.0,Facility_Level_1a_Mzimba,1a,Mzimba,Northern,Nursing_and_Midwifery,77572.08385529522,366.20446630209153
+73.0,Facility_Level_1a_Mzimba,1a,Mzimba,Northern,Nutrition,423.5805885923495,2.073627996654676
+73.0,Facility_Level_1a_Mzimba,1a,Mzimba,Northern,Pharmacy,9970.680646399625,49.81212437523574
+73.0,Facility_Level_1a_Mzimba,1a,Mzimba,Northern,Radiography,0.0,0.0
+74.0,Facility_Level_1b_Mzimba,1b,Mzimba,Northern,Clinical,14167.656451689909,70.22697714397138
+74.0,Facility_Level_1b_Mzimba,1b,Mzimba,Northern,DCSA,0.0,0.0
+74.0,Facility_Level_1b_Mzimba,1b,Mzimba,Northern,Dental,1812.905694640221,8.875033712459773
+74.0,Facility_Level_1b_Mzimba,1b,Mzimba,Northern,Laboratory,3161.943097729206,14.052289415549703
+74.0,Facility_Level_1b_Mzimba,1b,Mzimba,Northern,Mental,13745.190099821739,67.28922849144422
+74.0,Facility_Level_1b_Mzimba,1b,Mzimba,Northern,Nursing_and_Midwifery,32550.625869264317,156.6078309154237
+74.0,Facility_Level_1b_Mzimba,1b,Mzimba,Northern,Nutrition,0.0,0.0
+74.0,Facility_Level_1b_Mzimba,1b,Mzimba,Northern,Pharmacy,2851.4666267646894,13.44437628437895
+74.0,Facility_Level_1b_Mzimba,1b,Mzimba,Northern,Radiography,1787.5520052915854,8.52516187057322
+75.0,Facility_Level_2_Mzimba,2,Mzimba,Northern,Clinical,30450.07771725212,164.20921930300526
+75.0,Facility_Level_2_Mzimba,2,Mzimba,Northern,DCSA,0.0,0.0
+75.0,Facility_Level_2_Mzimba,2,Mzimba,Northern,Dental,1228.0592928891072,6.011933029673285
+75.0,Facility_Level_2_Mzimba,2,Mzimba,Northern,Laboratory,2764.4169004349765,12.95123631262911
+75.0,Facility_Level_2_Mzimba,2,Mzimba,Northern,Mental,0.0,0.0
+75.0,Facility_Level_2_Mzimba,2,Mzimba,Northern,Nursing_and_Midwifery,50489.33548532428,244.13197752019573
+75.0,Facility_Level_2_Mzimba,2,Mzimba,Northern,Nutrition,357.3961216247949,1.7496236221773827
+75.0,Facility_Level_2_Mzimba,2,Mzimba,Northern,Pharmacy,3356.2822251283646,17.796433659624945
+75.0,Facility_Level_2_Mzimba,2,Mzimba,Northern,Radiography,1235.7843593169673,6.003194280988604
+76.0,Facility_Level_0_Mzuzu City,0,Mzuzu City,Northern,Clinical,0.0,0.0
+76.0,Facility_Level_0_Mzuzu City,0,Mzuzu City,Northern,DCSA,3284.7769037351827,58.83741905839708
+76.0,Facility_Level_0_Mzuzu City,0,Mzuzu City,Northern,Dental,0.0,0.0
+76.0,Facility_Level_0_Mzuzu City,0,Mzuzu City,Northern,Laboratory,0.0,0.0
+76.0,Facility_Level_0_Mzuzu City,0,Mzuzu City,Northern,Mental,0.0,0.0
+76.0,Facility_Level_0_Mzuzu City,0,Mzuzu City,Northern,Nursing_and_Midwifery,0.0,0.0
+76.0,Facility_Level_0_Mzuzu City,0,Mzuzu City,Northern,Nutrition,0.0,0.0
+76.0,Facility_Level_0_Mzuzu City,0,Mzuzu City,Northern,Pharmacy,0.0,0.0
+76.0,Facility_Level_0_Mzuzu City,0,Mzuzu City,Northern,Radiography,0.0,0.0
+77.0,Facility_Level_1a_Mzuzu City,1a,Mzuzu City,Northern,Clinical,6593.081380890937,31.632717884830498
+77.0,Facility_Level_1a_Mzuzu City,1a,Mzuzu City,Northern,DCSA,0.0,0.0
+77.0,Facility_Level_1a_Mzuzu City,1a,Mzuzu City,Northern,Dental,1804.3014605174558,8.83291190318133
+77.0,Facility_Level_1a_Mzuzu City,1a,Mzuzu City,Northern,Laboratory,3631.079068533409,18.047820840942784
+77.0,Facility_Level_1a_Mzuzu City,1a,Mzuzu City,Northern,Mental,0.0,0.0
+77.0,Facility_Level_1a_Mzuzu City,1a,Mzuzu City,Northern,Nursing_and_Midwifery,23875.70403446998,112.71309237792161
+77.0,Facility_Level_1a_Mzuzu City,1a,Mzuzu City,Northern,Nutrition,130.37273546554565,0.6382364101249852
+77.0,Facility_Level_1a_Mzuzu City,1a,Mzuzu City,Northern,Pharmacy,3068.8491053009798,15.331540417682781
+77.0,Facility_Level_1a_Mzuzu City,1a,Mzuzu City,Northern,Radiography,0.0,0.0
+78.0,Facility_Level_1b_Mzuzu City,1b,Mzuzu City,Northern,Clinical,4360.625053383905,21.614973302157754
+78.0,Facility_Level_1b_Mzuzu City,1b,Mzuzu City,Northern,DCSA,0.0,0.0
+78.0,Facility_Level_1b_Mzuzu City,1b,Mzuzu City,Northern,Dental,557.98939072436,2.7316228684781994
+78.0,Facility_Level_1b_Mzuzu City,1b,Mzuzu City,Northern,Laboratory,973.2060017369813,4.325116542160256
+78.0,Facility_Level_1b_Mzuzu City,1b,Mzuzu City,Northern,Mental,4230.595265856957,20.710771508555773
+78.0,Facility_Level_1b_Mzuzu City,1b,Mzuzu City,Northern,Nursing_and_Midwifery,10018.670000422657,48.20190504862575
+78.0,Facility_Level_1b_Mzuzu City,1b,Mzuzu City,Northern,Nutrition,0.0,0.0
+78.0,Facility_Level_1b_Mzuzu City,1b,Mzuzu City,Northern,Pharmacy,877.6452798638447,4.13800858686056
+78.0,Facility_Level_1b_Mzuzu City,1b,Mzuzu City,Northern,Radiography,550.1858465498972,2.6239367508477778
+79.0,Facility_Level_2_Mzuzu City,2,Mzuzu City,Northern,Clinical,9372.14790774366,50.54151603202419
+79.0,Facility_Level_2_Mzuzu City,2,Mzuzu City,Northern,DCSA,0.0,0.0
+79.0,Facility_Level_2_Mzuzu City,2,Mzuzu City,Northern,Dental,377.98108232462187,1.8503967736550053
+79.0,Facility_Level_2_Mzuzu City,2,Mzuzu City,Northern,Laboratory,850.8524776231974,3.986226355058851
+79.0,Facility_Level_2_Mzuzu City,2,Mzuzu City,Northern,Mental,0.0,0.0
+79.0,Facility_Level_2_Mzuzu City,2,Mzuzu City,Northern,Nursing_and_Midwifery,15539.977412407461,75.14072783574171
+79.0,Facility_Level_2_Mzuzu City,2,Mzuzu City,Northern,Nutrition,110.00199554905414,0.5385119710429563
+79.0,Facility_Level_2_Mzuzu City,2,Mzuzu City,Northern,Pharmacy,1033.0211215261443,5.4775166762170215
+79.0,Facility_Level_2_Mzuzu City,2,Mzuzu City,Northern,Radiography,380.3587598409597,1.8477070975904009
+80.0,Facility_Level_0_Neno,0,Neno,Southern,Clinical,0.0,0.0
+80.0,Facility_Level_0_Neno,0,Neno,Southern,DCSA,13957.006256830322,250.0
+80.0,Facility_Level_0_Neno,0,Neno,Southern,Dental,0.0,0.0
+80.0,Facility_Level_0_Neno,0,Neno,Southern,Laboratory,0.0,0.0
+80.0,Facility_Level_0_Neno,0,Neno,Southern,Mental,0.0,0.0
+80.0,Facility_Level_0_Neno,0,Neno,Southern,Nursing_and_Midwifery,0.0,0.0
+80.0,Facility_Level_0_Neno,0,Neno,Southern,Nutrition,0.0,0.0
+80.0,Facility_Level_0_Neno,0,Neno,Southern,Pharmacy,0.0,0.0
+80.0,Facility_Level_0_Neno,0,Neno,Southern,Radiography,0.0,0.0
+81.0,Facility_Level_1a_Neno,1a,Neno,Southern,Clinical,8740.994186599095,42.055519559291554
+81.0,Facility_Level_1a_Neno,1a,Neno,Southern,DCSA,0.0,0.0
+81.0,Facility_Level_1a_Neno,1a,Neno,Southern,Dental,1779.716475054044,8.712556732223904
+81.0,Facility_Level_1a_Neno,1a,Neno,Southern,Laboratory,3742.3457108864495,18.59707982263199
+81.0,Facility_Level_1a_Neno,1a,Neno,Southern,Mental,0.0,0.0
+81.0,Facility_Level_1a_Neno,1a,Neno,Southern,Nursing_and_Midwifery,25610.061597355234,120.90641333487628
+81.0,Facility_Level_1a_Neno,1a,Neno,Southern,Nutrition,110.79066481157902,0.5423728813559322
+81.0,Facility_Level_1a_Neno,1a,Neno,Southern,Pharmacy,3005.1609090413317,15.008076500613814
+81.0,Facility_Level_1a_Neno,1a,Neno,Southern,Radiography,0.0,0.0
+82.0,Facility_Level_1b_Neno,1b,Neno,Southern,Clinical,5848.394892825709,28.933300331082812
+82.0,Facility_Level_1b_Neno,1b,Neno,Southern,DCSA,0.0,0.0
+82.0,Facility_Level_1b_Neno,1b,Neno,Southern,Dental,550.3863591024921,2.6944024205748867
+82.0,Facility_Level_1b_Neno,1b,Neno,Southern,Laboratory,1009.5703775071398,4.485864669051249
+82.0,Facility_Level_1b_Neno,1b,Neno,Southern,Mental,0.0,0.0
+82.0,Facility_Level_1b_Neno,1b,Neno,Southern,Nursing_and_Midwifery,11103.89136222984,54.28546355763852
+82.0,Facility_Level_1b_Neno,1b,Neno,Southern,Nutrition,0.0,0.0
+82.0,Facility_Level_1b_Neno,1b,Neno,Southern,Pharmacy,901.819213483665,4.250867345935483
+82.0,Facility_Level_1b_Neno,1b,Neno,Southern,Radiography,577.8332871656339,2.813997879109226
+83.0,Facility_Level_2_Neno,2,Neno,Southern,Clinical,12555.204579803403,68.01118010962563
+83.0,Facility_Level_2_Neno,2,Neno,Southern,DCSA,0.0,0.0
+83.0,Facility_Level_2_Neno,2,Neno,Southern,Dental,529.6812012923477,2.5930408472012103
+83.0,Facility_Level_2_Neno,2,Neno,Southern,Laboratory,1050.0197021900049,4.917055508316761
+83.0,Facility_Level_2_Neno,2,Neno,Southern,Mental,0.0,0.0
+83.0,Facility_Level_2_Neno,2,Neno,Southern,Nursing_and_Midwifery,18882.963315760753,92.80812310748519
+83.0,Facility_Level_2_Neno,2,Neno,Southern,Nutrition,93.4796234347698,0.4576271186440678
+83.0,Facility_Level_2_Neno,2,Neno,Southern,Pharmacy,1082.954431202096,5.741056153450702
+83.0,Facility_Level_2_Neno,2,Neno,Southern,Radiography,851.4517399784689,4.186002120890774
+84.0,Facility_Level_0_Nkhata Bay,0,Nkhata Bay,Northern,Clinical,0.0,0.0
+84.0,Facility_Level_0_Nkhata Bay,0,Nkhata Bay,Northern,DCSA,13957.006256830322,250.0
+84.0,Facility_Level_0_Nkhata Bay,0,Nkhata Bay,Northern,Dental,0.0,0.0
+84.0,Facility_Level_0_Nkhata Bay,0,Nkhata Bay,Northern,Laboratory,0.0,0.0
+84.0,Facility_Level_0_Nkhata Bay,0,Nkhata Bay,Northern,Mental,0.0,0.0
+84.0,Facility_Level_0_Nkhata Bay,0,Nkhata Bay,Northern,Nursing_and_Midwifery,0.0,0.0
+84.0,Facility_Level_0_Nkhata Bay,0,Nkhata Bay,Northern,Nutrition,0.0,0.0
+84.0,Facility_Level_0_Nkhata Bay,0,Nkhata Bay,Northern,Pharmacy,0.0,0.0
+84.0,Facility_Level_0_Nkhata Bay,0,Nkhata Bay,Northern,Radiography,0.0,0.0
+85.0,Facility_Level_1a_Nkhata Bay,1a,Nkhata Bay,Northern,Clinical,12524.519145443694,59.95078993563487
+85.0,Facility_Level_1a_Nkhata Bay,1a,Nkhata Bay,Northern,DCSA,0.0,0.0
+85.0,Facility_Level_1a_Nkhata Bay,1a,Nkhata Bay,Northern,Dental,3285.630415484389,16.084720121028745
+85.0,Facility_Level_1a_Nkhata Bay,1a,Nkhata Bay,Northern,Laboratory,6847.745254129336,34.04152055824543
+85.0,Facility_Level_1a_Nkhata Bay,1a,Nkhata Bay,Northern,Mental,0.0,0.0
+85.0,Facility_Level_1a_Nkhata Bay,1a,Nkhata Bay,Northern,Nursing_and_Midwifery,45592.84147219329,215.23682472178825
+85.0,Facility_Level_1a_Nkhata Bay,1a,Nkhata Bay,Northern,Nutrition,332.3719944347371,1.6271186440677967
+85.0,Facility_Level_1a_Nkhata Bay,1a,Nkhata Bay,Northern,Pharmacy,6426.406491339645,32.10832202623247
+85.0,Facility_Level_1a_Nkhata Bay,1a,Nkhata Bay,Northern,Radiography,0.0,0.0
+86.0,Facility_Level_1b_Nkhata Bay,1b,Nkhata Bay,Northern,Clinical,8036.457564252212,39.306906823730536
+86.0,Facility_Level_1b_Nkhata Bay,1b,Nkhata Bay,Northern,DCSA,0.0,0.0
+86.0,Facility_Level_1b_Nkhata Bay,1b,Nkhata Bay,Northern,Dental,1016.0978937276776,4.9742813918305595
+86.0,Facility_Level_1b_Nkhata Bay,1b,Nkhata Bay,Northern,Laboratory,1819.427530238097,8.087278553509062
+86.0,Facility_Level_1b_Nkhata Bay,1b,Nkhata Bay,Northern,Mental,0.0,0.0
+86.0,Facility_Level_1b_Nkhata Bay,1b,Nkhata Bay,Northern,Nursing_and_Midwifery,19185.437742249454,92.43509035854115
+86.0,Facility_Level_1b_Nkhata Bay,1b,Nkhata Bay,Northern,Nutrition,0.0,0.0
+86.0,Facility_Level_1b_Nkhata Bay,1b,Nkhata Bay,Northern,Pharmacy,1733.3258054494663,8.17293719151279
+86.0,Facility_Level_1b_Nkhata Bay,1b,Nkhata Bay,Northern,Radiography,577.8332871656339,2.813997879109226
+87.0,Facility_Level_2_Nkhata Bay,2,Nkhata Bay,Northern,Clinical,17361.870896067507,92.74230324063458
+87.0,Facility_Level_2_Nkhata Bay,2,Nkhata Bay,Northern,DCSA,0.0,0.0
+87.0,Facility_Level_2_Nkhata Bay,2,Nkhata Bay,Northern,Dental,805.0288969466546,3.9409984871406962
+87.0,Facility_Level_2_Nkhata Bay,2,Nkhata Bay,Northern,Laboratory,1894.0533533587345,8.871200888245504
+87.0,Facility_Level_2_Nkhata Bay,2,Nkhata Bay,Northern,Mental,0.0,0.0
+87.0,Facility_Level_2_Nkhata Bay,2,Nkhata Bay,Northern,Nursing_and_Midwifery,30008.694885223787,145.3280849196706
+87.0,Facility_Level_2_Nkhata Bay,2,Nkhata Bay,Northern,Nutrition,280.4388703043094,1.3728813559322033
+87.0,Facility_Level_2_Nkhata Bay,2,Nkhata Bay,Northern,Pharmacy,2021.4230010173576,10.718740782254734
+87.0,Facility_Level_2_Nkhata Bay,2,Nkhata Bay,Northern,Radiography,851.4517399784689,4.186002120890774
+88.0,Facility_Level_0_Nkhotakota,0,Nkhotakota,Central,Clinical,0.0,0.0
+88.0,Facility_Level_0_Nkhotakota,0,Nkhotakota,Central,DCSA,13957.006256830322,250.0
+88.0,Facility_Level_0_Nkhotakota,0,Nkhotakota,Central,Dental,0.0,0.0
+88.0,Facility_Level_0_Nkhotakota,0,Nkhotakota,Central,Laboratory,0.0,0.0
+88.0,Facility_Level_0_Nkhotakota,0,Nkhotakota,Central,Mental,0.0,0.0
+88.0,Facility_Level_0_Nkhotakota,0,Nkhotakota,Central,Nursing_and_Midwifery,0.0,0.0
+88.0,Facility_Level_0_Nkhotakota,0,Nkhotakota,Central,Nutrition,0.0,0.0
+88.0,Facility_Level_0_Nkhotakota,0,Nkhotakota,Central,Pharmacy,0.0,0.0
+88.0,Facility_Level_0_Nkhotakota,0,Nkhotakota,Central,Radiography,0.0,0.0
+89.0,Facility_Level_1a_Nkhotakota,1a,Nkhotakota,Central,Clinical,12888.142618844962,61.887356748348054
+89.0,Facility_Level_1a_Nkhotakota,1a,Nkhotakota,Central,DCSA,0.0,0.0
+89.0,Facility_Level_1a_Nkhotakota,1a,Nkhotakota,Central,Dental,2874.9266135488397,14.074130105900151
+89.0,Facility_Level_1a_Nkhotakota,1a,Nkhotakota,Central,Laboratory,5698.240275758757,28.32111937204416
+89.0,Facility_Level_1a_Nkhotakota,1a,Nkhotakota,Central,Mental,0.0,0.0
+89.0,Facility_Level_1a_Nkhotakota,1a,Nkhotakota,Central,Nursing_and_Midwifery,42355.10045001254,199.9558742695134
+89.0,Facility_Level_1a_Nkhotakota,1a,Nkhotakota,Central,Nutrition,332.3719944347371,1.6271186440677967
+89.0,Facility_Level_1a_Nkhotakota,1a,Nkhotakota,Central,Pharmacy,5184.7871983313125,25.89771919622666
+89.0,Facility_Level_1a_Nkhotakota,1a,Nkhotakota,Central,Radiography,0.0,0.0
+90.0,Facility_Level_1b_Nkhotakota,1b,Nkhotakota,Central,Clinical,8673.101991677268,43.39223732188273
+90.0,Facility_Level_1b_Nkhotakota,1b,Nkhotakota,Central,DCSA,0.0,0.0
+90.0,Facility_Level_1b_Nkhotakota,1b,Nkhotakota,Central,Dental,889.0856570117179,4.35249621785174
+90.0,Facility_Level_1b_Nkhotakota,1b,Nkhotakota,Central,Laboratory,1528.5868023813075,6.793061284723443
+90.0,Facility_Level_1b_Nkhotakota,1b,Nkhotakota,Central,Mental,612.8108647390465,3.0
+90.0,Facility_Level_1b_Nkhotakota,1b,Nkhotakota,Central,Nursing_and_Midwifery,18068.665143498758,87.64548978765261
+90.0,Facility_Level_1b_Nkhotakota,1b,Nkhotakota,Central,Nutrition,0.0,0.0
+90.0,Facility_Level_1b_Nkhotakota,1b,Nkhotakota,Central,Pharmacy,1550.5833159612475,7.309885496290429
+90.0,Facility_Level_1b_Nkhotakota,1b,Nkhotakota,Central,Radiography,1434.2182557145438,6.899257688229056
+91.0,Facility_Level_2_Nkhotakota,2,Nkhotakota,Central,Clinical,18582.944904232027,100.72040592976921
+91.0,Facility_Level_2_Nkhotakota,2,Nkhotakota,Central,DCSA,0.0,0.0
+91.0,Facility_Level_2_Nkhotakota,2,Nkhotakota,Central,Dental,729.9340708591164,3.573373676248109
+91.0,Facility_Level_2_Nkhotakota,2,Nkhotakota,Central,Laboratory,1470.1003483239558,6.885819343232399
+91.0,Facility_Level_2_Nkhotakota,2,Nkhotakota,Central,Mental,0.0,0.0
+91.0,Facility_Level_2_Nkhotakota,2,Nkhotakota,Central,Nursing_and_Midwifery,29399.360672847746,143.398635942834
+91.0,Facility_Level_2_Nkhotakota,2,Nkhotakota,Central,Nutrition,280.4388703043094,1.3728813559322033
+91.0,Facility_Level_2_Nkhotakota,2,Nkhotakota,Central,Pharmacy,1846.959227407578,9.792395307482913
+91.0,Facility_Level_2_Nkhotakota,2,Nkhotakota,Central,Radiography,1451.2872096732092,7.100742311770944
+92.0,Facility_Level_0_Nsanje,0,Nsanje,Southern,Clinical,0.0,0.0
+92.0,Facility_Level_0_Nsanje,0,Nsanje,Southern,DCSA,13957.006256830322,250.0
+92.0,Facility_Level_0_Nsanje,0,Nsanje,Southern,Dental,0.0,0.0
+92.0,Facility_Level_0_Nsanje,0,Nsanje,Southern,Laboratory,0.0,0.0
+92.0,Facility_Level_0_Nsanje,0,Nsanje,Southern,Mental,0.0,0.0
+92.0,Facility_Level_0_Nsanje,0,Nsanje,Southern,Nursing_and_Midwifery,0.0,0.0
+92.0,Facility_Level_0_Nsanje,0,Nsanje,Southern,Nutrition,0.0,0.0
+92.0,Facility_Level_0_Nsanje,0,Nsanje,Southern,Pharmacy,0.0,0.0
+92.0,Facility_Level_0_Nsanje,0,Nsanje,Southern,Radiography,0.0,0.0
+93.0,Facility_Level_1a_Nsanje,1a,Nsanje,Southern,Clinical,12253.47682527624,58.80279153405928
+93.0,Facility_Level_1a_Nsanje,1a,Nsanje,Southern,DCSA,0.0,0.0
+93.0,Facility_Level_1a_Nsanje,1a,Nsanje,Southern,Dental,2738.02534623699,13.40393343419062
+93.0,Facility_Level_1a_Nsanje,1a,Nsanje,Southern,Laboratory,5496.945915599904,27.306312937886062
+93.0,Facility_Level_1a_Nsanje,1a,Nsanje,Southern,Mental,0.0,0.0
+93.0,Facility_Level_1a_Nsanje,1a,Nsanje,Southern,Nursing_and_Midwifery,41166.935160157314,194.3470389978592
+93.0,Facility_Level_1a_Nsanje,1a,Nsanje,Southern,Nutrition,110.79066481157902,0.5423728813559322
+93.0,Facility_Level_1a_Nsanje,1a,Nsanje,Southern,Pharmacy,4921.614461231442,24.582315694255993
+93.0,Facility_Level_1a_Nsanje,1a,Nsanje,Southern,Radiography,0.0,0.0
+94.0,Facility_Level_1b_Nsanje,1b,Nsanje,Southern,Clinical,8252.799949726297,41.40656415210246
+94.0,Facility_Level_1b_Nsanje,1b,Nsanje,Southern,DCSA,0.0,0.0
+94.0,Facility_Level_1b_Nsanje,1b,Nsanje,Southern,Dental,846.7482447730647,4.145234493192133
+94.0,Facility_Level_1b_Nsanje,1b,Nsanje,Southern,Laboratory,1505.8644164971324,6.688713519743084
+94.0,Facility_Level_1b_Nsanje,1b,Nsanje,Southern,Mental,612.8108647390465,3.0
+94.0,Facility_Level_1b_Nsanje,1b,Nsanje,Southern,Nursing_and_Midwifery,17588.14076414624,85.37713359949083
+94.0,Facility_Level_1b_Nsanje,1b,Nsanje,Southern,Nutrition,0.0,0.0
+94.0,Facility_Level_1b_Nsanje,1b,Nsanje,Southern,Pharmacy,1486.6212704254167,7.008187815861405
+94.0,Facility_Level_1b_Nsanje,1b,Nsanje,Southern,Radiography,1157.085269026234,5.533404029692472
+95.0,Facility_Level_2_Nsanje,2,Nsanje,Southern,Clinical,17674.99085172548,95.79064431383824
+95.0,Facility_Level_2_Nsanje,2,Nsanje,Southern,DCSA,0.0,0.0
+95.0,Facility_Level_2_Nsanje,2,Nsanje,Southern,Dental,704.9024621632703,3.4508320726172466
+95.0,Facility_Level_2_Nsanje,2,Nsanje,Southern,Laboratory,1496.0518367163947,7.004973542370857
+95.0,Facility_Level_2_Nsanje,2,Nsanje,Southern,Mental,0.0,0.0
+95.0,Facility_Level_2_Nsanje,2,Nsanje,Southern,Nursing_and_Midwifery,28737.83068763643,140.27582740265
+95.0,Facility_Level_2_Nsanje,2,Nsanje,Southern,Nutrition,93.4796234347698,0.4576271186440678
+95.0,Facility_Level_2_Nsanje,2,Nsanje,Southern,Pharmacy,1774.7693374217886,9.409496489882603
+95.0,Facility_Level_2_Nsanje,2,Nsanje,Southern,Radiography,916.8164496314691,4.466595970307529
+96.0,Facility_Level_0_Ntcheu,0,Ntcheu,Central,Clinical,0.0,0.0
+96.0,Facility_Level_0_Ntcheu,0,Ntcheu,Central,DCSA,13957.006256830322,250.0
+96.0,Facility_Level_0_Ntcheu,0,Ntcheu,Central,Dental,0.0,0.0
+96.0,Facility_Level_0_Ntcheu,0,Ntcheu,Central,Laboratory,0.0,0.0
+96.0,Facility_Level_0_Ntcheu,0,Ntcheu,Central,Mental,0.0,0.0
+96.0,Facility_Level_0_Ntcheu,0,Ntcheu,Central,Nursing_and_Midwifery,0.0,0.0
+96.0,Facility_Level_0_Ntcheu,0,Ntcheu,Central,Nutrition,0.0,0.0
+96.0,Facility_Level_0_Ntcheu,0,Ntcheu,Central,Pharmacy,0.0,0.0
+96.0,Facility_Level_0_Ntcheu,0,Ntcheu,Central,Radiography,0.0,0.0
+97.0,Facility_Level_1a_Ntcheu,1a,Ntcheu,Central,Clinical,14594.66422356205,70.11504231543192
+97.0,Facility_Level_1a_Ntcheu,1a,Ntcheu,Central,DCSA,0.0,0.0
+97.0,Facility_Level_1a_Ntcheu,1a,Ntcheu,Central,Dental,4517.741821291033,22.116490166414522
+97.0,Facility_Level_1a_Ntcheu,1a,Ntcheu,Central,Laboratory,9178.59162049714,45.621429274154444
+97.0,Facility_Level_1a_Ntcheu,1a,Ntcheu,Central,Mental,0.0,0.0
+97.0,Facility_Level_1a_Ntcheu,1a,Ntcheu,Central,Nursing_and_Midwifery,43649.248439968105,206.0626988948678
+97.0,Facility_Level_1a_Ntcheu,1a,Ntcheu,Central,Nutrition,110.79066481157902,0.5423728813559322
+97.0,Facility_Level_1a_Ntcheu,1a,Ntcheu,Central,Pharmacy,6986.556798403589,34.8893842475932
+97.0,Facility_Level_1a_Ntcheu,1a,Ntcheu,Central,Radiography,0.0,0.0
+98.0,Facility_Level_1b_Ntcheu,1b,Ntcheu,Central,Clinical,9664.966207254463,47.71972932099935
+98.0,Facility_Level_1b_Ntcheu,1b,Ntcheu,Central,DCSA,0.0,0.0
+98.0,Facility_Level_1b_Ntcheu,1b,Ntcheu,Central,Dental,1397.1346038755569,6.83963691376702
+98.0,Facility_Level_1b_Ntcheu,1b,Ntcheu,Central,Laboratory,2458.2718899779743,10.925145639937316
+98.0,Facility_Level_1b_Ntcheu,1b,Ntcheu,Central,Mental,408.54057649269765,2.0
+98.0,Facility_Level_1b_Ntcheu,1b,Ntcheu,Central,Nursing_and_Midwifery,18447.56223045256,89.07244112711913
+98.0,Facility_Level_1b_Ntcheu,1b,Ntcheu,Central,Nutrition,0.0,0.0
+98.0,Facility_Level_1b_Ntcheu,1b,Ntcheu,Central,Pharmacy,1995.2630259705777,9.404207786589357
+98.0,Facility_Level_1b_Ntcheu,1b,Ntcheu,Central,Radiography,1226.3685156983115,5.874867444326617
+99.0,Facility_Level_2_Ntcheu,2,Ntcheu,Central,Clinical,20778.612595073664,112.16522836356872
+99.0,Facility_Level_2_Ntcheu,2,Ntcheu,Central,DCSA,0.0,0.0
+99.0,Facility_Level_2_Ntcheu,2,Ntcheu,Central,Dental,1030.3133752092692,5.043872919818457
+99.0,Facility_Level_2_Ntcheu,2,Ntcheu,Central,Laboratory,2231.4358090435558,10.45342508590824
+99.0,Facility_Level_2_Ntcheu,2,Ntcheu,Central,Mental,0.0,0.0
+99.0,Facility_Level_2_Ntcheu,2,Ntcheu,Central,Nursing_and_Midwifery,29224.900891700796,141.86485997801307
+99.0,Facility_Level_2_Ntcheu,2,Ntcheu,Central,Nutrition,93.4796234347698,0.4576271186440678
+99.0,Facility_Level_2_Ntcheu,2,Ntcheu,Central,Pharmacy,2397.0767190859688,12.70640796581744
+99.0,Facility_Level_2_Ntcheu,2,Ntcheu,Central,Radiography,1050.434139641904,5.125132555673383
+100.0,Facility_Level_0_Ntchisi,0,Ntchisi,Central,Clinical,0.0,0.0
+100.0,Facility_Level_0_Ntchisi,0,Ntchisi,Central,DCSA,13957.006256830322,250.0
+100.0,Facility_Level_0_Ntchisi,0,Ntchisi,Central,Dental,0.0,0.0
+100.0,Facility_Level_0_Ntchisi,0,Ntchisi,Central,Laboratory,0.0,0.0
+100.0,Facility_Level_0_Ntchisi,0,Ntchisi,Central,Mental,0.0,0.0
+100.0,Facility_Level_0_Ntchisi,0,Ntchisi,Central,Nursing_and_Midwifery,0.0,0.0
+100.0,Facility_Level_0_Ntchisi,0,Ntchisi,Central,Nutrition,0.0,0.0
+100.0,Facility_Level_0_Ntchisi,0,Ntchisi,Central,Pharmacy,0.0,0.0
+100.0,Facility_Level_0_Ntchisi,0,Ntchisi,Central,Radiography,0.0,0.0
+101.0,Facility_Level_1a_Ntchisi,1a,Ntchisi,Central,Clinical,9329.369403550909,44.74580056801153
+101.0,Facility_Level_1a_Ntchisi,1a,Ntchisi,Central,DCSA,0.0,0.0
+101.0,Facility_Level_1a_Ntchisi,1a,Ntchisi,Central,Dental,1916.617742365893,9.382753403933433
+101.0,Facility_Level_1a_Ntchisi,1a,Ntchisi,Central,Laboratory,4173.783495892682,20.74484901934604
+101.0,Facility_Level_1a_Ntchisi,1a,Ntchisi,Central,Mental,0.0,0.0
+101.0,Facility_Level_1a_Ntchisi,1a,Ntchisi,Central,Nursing_and_Midwifery,29822.647625023797,140.7922838434685
+101.0,Facility_Level_1a_Ntchisi,1a,Ntchisi,Central,Nutrition,110.79066481157902,0.5423728813559322
+101.0,Facility_Level_1a_Ntchisi,1a,Ntchisi,Central,Pharmacy,3794.679120340942,18.95428700652581
+101.0,Facility_Level_1a_Ntchisi,1a,Ntchisi,Central,Radiography,0.0,0.0
+102.0,Facility_Level_1b_Ntchisi,1b,Ntchisi,Central,Clinical,6129.033524116556,30.271620653431732
+102.0,Facility_Level_1b_Ntchisi,1b,Ntchisi,Central,DCSA,0.0,0.0
+102.0,Facility_Level_1b_Ntchisi,1b,Ntchisi,Central,Dental,592.7237713411453,2.901664145234493
+102.0,Facility_Level_1b_Ntchisi,1b,Ntchisi,Central,Laboratory,1117.9181396588085,4.96817354518176
+102.0,Facility_Level_1b_Ntchisi,1b,Ntchisi,Central,Mental,0.0,0.0
+102.0,Facility_Level_1b_Ntchisi,1b,Ntchisi,Central,Nursing_and_Midwifery,12807.568707206949,62.32781731566664
+102.0,Facility_Level_1b_Ntchisi,1b,Ntchisi,Central,Nutrition,0.0,0.0
+102.0,Facility_Level_1b_Ntchisi,1b,Ntchisi,Central,Pharmacy,1093.7053500911575,5.155960387222555
+102.0,Facility_Level_1b_Ntchisi,1b,Ntchisi,Central,Radiography,439.26679382147904,2.1310710498409335
+103.0,Facility_Level_2_Ntchisi,2,Ntchisi,Central,Clinical,13188.8877340733,70.98257877855673
+103.0,Facility_Level_2_Ntchisi,2,Ntchisi,Central,DCSA,0.0,0.0
+103.0,Facility_Level_2_Ntchisi,2,Ntchisi,Central,Dental,554.7128099881938,2.7155824508320725
+103.0,Facility_Level_2_Ntchisi,2,Ntchisi,Central,Laboratory,1128.845533738307,5.286977435472196
+103.0,Facility_Level_2_Ntchisi,2,Ntchisi,Central,Mental,0.0,0.0
+103.0,Facility_Level_2_Ntchisi,2,Ntchisi,Central,Nursing_and_Midwifery,21228.38780878269,103.87989884086481
+103.0,Facility_Level_2_Ntchisi,2,Ntchisi,Central,Nutrition,93.4796234347698,0.4576271186440678
+103.0,Facility_Level_2_Ntchisi,2,Ntchisi,Central,Pharmacy,1299.5241011594642,6.889752606251633
+103.0,Facility_Level_2_Ntchisi,2,Ntchisi,Central,Radiography,584.2163599575989,2.868928950159067
+104.0,Facility_Level_0_Phalombe,0,Phalombe,Southern,Clinical,0.0,0.0
+104.0,Facility_Level_0_Phalombe,0,Phalombe,Southern,DCSA,13957.006256830322,250.0
+104.0,Facility_Level_0_Phalombe,0,Phalombe,Southern,Dental,0.0,0.0
+104.0,Facility_Level_0_Phalombe,0,Phalombe,Southern,Laboratory,0.0,0.0
+104.0,Facility_Level_0_Phalombe,0,Phalombe,Southern,Mental,0.0,0.0
+104.0,Facility_Level_0_Phalombe,0,Phalombe,Southern,Nursing_and_Midwifery,0.0,0.0
+104.0,Facility_Level_0_Phalombe,0,Phalombe,Southern,Nutrition,0.0,0.0
+104.0,Facility_Level_0_Phalombe,0,Phalombe,Southern,Pharmacy,0.0,0.0
+104.0,Facility_Level_0_Phalombe,0,Phalombe,Southern,Radiography,0.0,0.0
+105.0,Facility_Level_1a_Phalombe,1a,Phalombe,Southern,Clinical,10978.690044626503,52.688120281436866
+105.0,Facility_Level_1a_Phalombe,1a,Phalombe,Southern,DCSA,0.0,0.0
+105.0,Facility_Level_1a_Phalombe,1a,Phalombe,Southern,Dental,2327.321544301442,11.393343419062028
+105.0,Facility_Level_1a_Phalombe,1a,Phalombe,Southern,Laboratory,4962.753939275006,24.656108796019762
+105.0,Facility_Level_1a_Phalombe,1a,Phalombe,Southern,Mental,0.0,0.0
+105.0,Facility_Level_1a_Phalombe,1a,Phalombe,Southern,Nursing_and_Midwifery,34793.709884437536,164.2613020501842
+105.0,Facility_Level_1a_Phalombe,1a,Phalombe,Southern,Nutrition,110.79066481157902,0.5423728813559322
+105.0,Facility_Level_1a_Phalombe,1a,Phalombe,Southern,Pharmacy,3756.4511363016645,18.760095625767267
+105.0,Facility_Level_1a_Phalombe,1a,Phalombe,Southern,Radiography,0.0,0.0
+106.0,Facility_Level_1b_Phalombe,1b,Phalombe,Southern,Clinical,7365.107409632673,36.84344071024899
+106.0,Facility_Level_1b_Phalombe,1b,Phalombe,Southern,DCSA,0.0,0.0
+106.0,Facility_Level_1b_Phalombe,1b,Phalombe,Southern,Dental,719.736008057105,3.523449319213313
+106.0,Facility_Level_1b_Phalombe,1b,Phalombe,Southern,Laboratory,1351.8339230332072,6.005333689381109
+106.0,Facility_Level_1b_Phalombe,1b,Phalombe,Southern,Mental,408.54057649269765,2.0
+106.0,Facility_Level_1b_Phalombe,1b,Phalombe,Southern,Nursing_and_Midwifery,14986.564174956395,73.03589268838357
+106.0,Facility_Level_1b_Phalombe,1b,Phalombe,Southern,Nutrition,0.0,0.0
+106.0,Facility_Level_1b_Phalombe,1b,Phalombe,Southern,Pharmacy,1192.9544751880428,5.623366791115006
+106.0,Facility_Level_1b_Phalombe,1b,Phalombe,Southern,Radiography,763.5344080878178,3.6615058324496292
+107.0,Facility_Level_2_Phalombe,2,Phalombe,Southern,Clinical,15786.50416062215,85.46843900831414
+107.0,Facility_Level_2_Phalombe,2,Phalombe,Southern,DCSA,0.0,0.0
+107.0,Facility_Level_2_Phalombe,2,Phalombe,Southern,Dental,629.807636075732,3.0832072617246595
+107.0,Facility_Level_2_Phalombe,2,Phalombe,Southern,Laboratory,1353.6458954316058,6.33855751459913
+107.0,Facility_Level_2_Phalombe,2,Phalombe,Southern,Mental,0.0,0.0
+107.0,Facility_Level_2_Phalombe,2,Phalombe,Southern,Nursing_and_Midwifery,25040.269594000703,122.70280526143225
+107.0,Facility_Level_2_Phalombe,2,Phalombe,Southern,Nutrition,93.4796234347698,0.4576271186440678
+107.0,Facility_Level_2_Phalombe,2,Phalombe,Southern,Pharmacy,1436.6578284764662,7.616537583117725
+107.0,Facility_Level_2_Phalombe,2,Phalombe,Southern,Radiography,683.7075597893165,3.338494167550371
+108.0,Facility_Level_0_Rumphi,0,Rumphi,Northern,Clinical,0.0,0.0
+108.0,Facility_Level_0_Rumphi,0,Rumphi,Northern,DCSA,13957.006256830322,250.0
+108.0,Facility_Level_0_Rumphi,0,Rumphi,Northern,Dental,0.0,0.0
+108.0,Facility_Level_0_Rumphi,0,Rumphi,Northern,Laboratory,0.0,0.0
+108.0,Facility_Level_0_Rumphi,0,Rumphi,Northern,Mental,0.0,0.0
+108.0,Facility_Level_0_Rumphi,0,Rumphi,Northern,Nursing_and_Midwifery,0.0,0.0
+108.0,Facility_Level_0_Rumphi,0,Rumphi,Northern,Nutrition,0.0,0.0
+108.0,Facility_Level_0_Rumphi,0,Rumphi,Northern,Pharmacy,0.0,0.0
+108.0,Facility_Level_0_Rumphi,0,Rumphi,Northern,Radiography,0.0,0.0
+109.0,Facility_Level_1a_Rumphi,1a,Rumphi,Northern,Clinical,10858.832923831222,52.171847750074924
+109.0,Facility_Level_1a_Rumphi,1a,Rumphi,Northern,DCSA,0.0,0.0
+109.0,Facility_Level_1a_Rumphi,1a,Rumphi,Northern,Dental,2053.519009677743,10.052950075642965
+109.0,Facility_Level_1a_Rumphi,1a,Rumphi,Northern,Laboratory,4325.807771631442,21.503469709001216
+109.0,Facility_Level_1a_Rumphi,1a,Rumphi,Northern,Mental,0.0,0.0
+109.0,Facility_Level_1a_Rumphi,1a,Rumphi,Northern,Nursing_and_Midwifery,33389.51454188135,157.63267854732013
+109.0,Facility_Level_1a_Rumphi,1a,Rumphi,Northern,Nutrition,553.9533240578951,2.711864406779661
+109.0,Facility_Level_1a_Rumphi,1a,Rumphi,Northern,Pharmacy,3907.151496871238,19.514893067131872
+109.0,Facility_Level_1a_Rumphi,1a,Rumphi,Northern,Radiography,0.0,0.0
+110.0,Facility_Level_1b_Rumphi,1b,Rumphi,Northern,Clinical,7328.388300336423,36.66508461363946
+110.0,Facility_Level_1b_Rumphi,1b,Rumphi,Northern,DCSA,0.0,0.0
+110.0,Facility_Level_1b_Rumphi,1b,Rumphi,Northern,Dental,635.0611835797986,3.1089258698941
+110.0,Facility_Level_1b_Rumphi,1b,Rumphi,Northern,Laboratory,1152.1206982570243,5.120882904787671
+110.0,Facility_Level_1b_Rumphi,1b,Rumphi,Northern,Mental,408.54057649269765,2.0
+110.0,Facility_Level_1b_Rumphi,1b,Rumphi,Northern,Nursing_and_Midwifery,14418.671726630691,70.3551081023742
+110.0,Facility_Level_1b_Rumphi,1b,Rumphi,Northern,Nutrition,0.0,0.0
+110.0,Facility_Level_1b_Rumphi,1b,Rumphi,Northern,Pharmacy,1219.0979076298233,5.747034168513727
+110.0,Facility_Level_1b_Rumphi,1b,Rumphi,Northern,Radiography,763.5344080878178,3.6615058324496292
+111.0,Facility_Level_2_Rumphi,2,Rumphi,Northern,Clinical,15696.446239822024,85.1630676362856
+111.0,Facility_Level_2_Rumphi,2,Rumphi,Northern,DCSA,0.0,0.0
+111.0,Facility_Level_2_Rumphi,2,Rumphi,Northern,Dental,579.7444186840399,2.838124054462935
+111.0,Facility_Level_2_Rumphi,2,Rumphi,Northern,Laboratory,1147.6598444103308,5.375647386211113
+111.0,Facility_Level_2_Rumphi,2,Rumphi,Northern,Mental,0.0,0.0
+111.0,Facility_Level_2_Rumphi,2,Rumphi,Northern,Nursing_and_Midwifery,24258.461429660056,119.0122133503057
+111.0,Facility_Level_2_Rumphi,2,Rumphi,Northern,Nutrition,467.398117173849,2.288135593220339
+111.0,Facility_Level_2_Rumphi,2,Rumphi,Northern,Pharmacy,1459.4957694600907,7.738072764354399
+111.0,Facility_Level_2_Rumphi,2,Rumphi,Northern,Radiography,683.7075597893165,3.338494167550371
+112.0,Facility_Level_0_Salima,0,Salima,Central,Clinical,0.0,0.0
+112.0,Facility_Level_0_Salima,0,Salima,Central,DCSA,13957.006256830322,250.0
+112.0,Facility_Level_0_Salima,0,Salima,Central,Dental,0.0,0.0
+112.0,Facility_Level_0_Salima,0,Salima,Central,Laboratory,0.0,0.0
+112.0,Facility_Level_0_Salima,0,Salima,Central,Mental,0.0,0.0
+112.0,Facility_Level_0_Salima,0,Salima,Central,Nursing_and_Midwifery,0.0,0.0
+112.0,Facility_Level_0_Salima,0,Salima,Central,Nutrition,0.0,0.0
+112.0,Facility_Level_0_Salima,0,Salima,Central,Pharmacy,0.0,0.0
+112.0,Facility_Level_0_Salima,0,Salima,Central,Radiography,0.0,0.0
+113.0,Facility_Level_1a_Salima,1a,Salima,Central,Clinical,10078.437124402619,48.40109748961737
+113.0,Facility_Level_1a_Salima,1a,Salima,Central,DCSA,0.0,0.0
+113.0,Facility_Level_1a_Salima,1a,Salima,Central,Dental,2464.2228116132915,12.063540090771559
+113.0,Facility_Level_1a_Salima,1a,Salima,Central,Laboratory,5139.413257223812,25.542822357926397
+113.0,Facility_Level_1a_Salima,1a,Salima,Central,Mental,0.0,0.0
+113.0,Facility_Level_1a_Salima,1a,Salima,Central,Nursing_and_Midwifery,33603.173547290455,158.63857788964106
+113.0,Facility_Level_1a_Salima,1a,Salima,Central,Nutrition,110.79066481157902,0.5423728813559322
+113.0,Facility_Level_1a_Salima,1a,Salima,Central,Pharmacy,4395.268987031702,21.95150869031466
+113.0,Facility_Level_1a_Salima,1a,Salima,Central,Radiography,0.0,0.0
+114.0,Facility_Level_1b_Salima,1b,Salima,Central,Clinical,6634.5762177685765,32.65891983947216
+114.0,Facility_Level_1b_Salima,1b,Salima,Central,DCSA,0.0,0.0
+114.0,Facility_Level_1b_Salima,1b,Salima,Central,Dental,762.0734202957583,3.73071104387292
+114.0,Facility_Level_1b_Salima,1b,Salima,Central,Laboratory,1380.2963952744026,6.133862251674245
+114.0,Facility_Level_1b_Salima,1b,Salima,Central,Mental,0.0,0.0
+114.0,Facility_Level_1b_Salima,1b,Salima,Central,Nursing_and_Midwifery,14336.509914237688,69.54531427799958
+114.0,Facility_Level_1b_Salima,1b,Salima,Central,Nutrition,0.0,0.0
+114.0,Facility_Level_1b_Salima,1b,Salima,Central,Pharmacy,1271.1232349091395,5.991748976742487
+114.0,Facility_Level_1b_Salima,1b,Salima,Central,Radiography,439.26679382147904,2.1310710498409335
+115.0,Facility_Level_2_Salima,2,Salima,Central,Clinical,14278.596482514611,76.93998267091045
+115.0,Facility_Level_2_Salima,2,Salima,Central,DCSA,0.0,0.0
+115.0,Facility_Level_2_Salima,2,Salima,Central,Dental,654.8392447715783,3.205748865355522
+115.0,Facility_Level_2_Salima,2,Salima,Central,Laboratory,1350.0773065713984,6.323315390399359
+115.0,Facility_Level_2_Salima,2,Salima,Central,Mental,0.0,0.0
+115.0,Facility_Level_2_Salima,2,Salima,Central,Nursing_and_Midwifery,23333.25594354597,113.81610783235935
+115.0,Facility_Level_2_Salima,2,Salima,Central,Nutrition,93.4796234347698,0.4576271186440678
+115.0,Facility_Level_2_Salima,2,Salima,Central,Pharmacy,1519.7698381517482,8.056742332942852
+115.0,Facility_Level_2_Salima,2,Salima,Central,Radiography,584.2163599575989,2.868928950159067
+116.0,Facility_Level_0_Thyolo,0,Thyolo,Southern,Clinical,0.0,0.0
+116.0,Facility_Level_0_Thyolo,0,Thyolo,Southern,DCSA,13957.006256830322,250.0
+116.0,Facility_Level_0_Thyolo,0,Thyolo,Southern,Dental,0.0,0.0
+116.0,Facility_Level_0_Thyolo,0,Thyolo,Southern,Laboratory,0.0,0.0
+116.0,Facility_Level_0_Thyolo,0,Thyolo,Southern,Mental,0.0,0.0
+116.0,Facility_Level_0_Thyolo,0,Thyolo,Southern,Nursing_and_Midwifery,0.0,0.0
+116.0,Facility_Level_0_Thyolo,0,Thyolo,Southern,Nutrition,0.0,0.0
+116.0,Facility_Level_0_Thyolo,0,Thyolo,Southern,Pharmacy,0.0,0.0
+116.0,Facility_Level_0_Thyolo,0,Thyolo,Southern,Radiography,0.0,0.0
+117.0,Facility_Level_1a_Thyolo,1a,Thyolo,Southern,Clinical,13059.745509769444,62.74345430932367
+117.0,Facility_Level_1a_Thyolo,1a,Thyolo,Southern,DCSA,0.0,0.0
+117.0,Facility_Level_1a_Thyolo,1a,Thyolo,Southern,Dental,3285.630415484389,16.084720121028745
+117.0,Facility_Level_1a_Thyolo,1a,Thyolo,Southern,Laboratory,6663.870037089888,33.119092710624514
+117.0,Facility_Level_1a_Thyolo,1a,Thyolo,Southern,Mental,0.0,0.0
+117.0,Facility_Level_1a_Thyolo,1a,Thyolo,Southern,Nursing_and_Midwifery,45487.53621417635,214.74280362205636
+117.0,Facility_Level_1a_Thyolo,1a,Thyolo,Southern,Nutrition,332.3719944347371,1.6271186440677967
+117.0,Facility_Level_1a_Thyolo,1a,Thyolo,Southern,Pharmacy,5522.204327922202,27.57953737804484
+117.0,Facility_Level_1a_Thyolo,1a,Thyolo,Southern,Radiography,0.0,0.0
+118.0,Facility_Level_1b_Thyolo,1b,Thyolo,Southern,Clinical,8800.962969228842,43.99467634627297
+118.0,Facility_Level_1b_Thyolo,1b,Thyolo,Southern,DCSA,0.0,0.0
+118.0,Facility_Level_1b_Thyolo,1b,Thyolo,Southern,Dental,1016.0978937276776,4.9742813918305595
+118.0,Facility_Level_1b_Thyolo,1b,Thyolo,Southern,Laboratory,1790.9650579969016,7.958749991215926
+118.0,Facility_Level_1b_Thyolo,1b,Thyolo,Southern,Mental,612.8108647390465,3.0
+118.0,Facility_Level_1b_Thyolo,1b,Thyolo,Southern,Nursing_and_Midwifery,19335.50214360994,93.62570155644275
+118.0,Facility_Level_1b_Thyolo,1b,Thyolo,Southern,Nutrition,0.0,0.0
+118.0,Facility_Level_1b_Thyolo,1b,Thyolo,Southern,Pharmacy,1664.0391552433985,7.843976405381337
+118.0,Facility_Level_1b_Thyolo,1b,Thyolo,Southern,Radiography,1157.085269026234,5.533404029692472
+119.0,Facility_Level_2_Thyolo,2,Thyolo,Southern,Clinical,18855.57694813417,102.26186934440335
+119.0,Facility_Level_2_Thyolo,2,Thyolo,Southern,DCSA,0.0,0.0
+119.0,Facility_Level_2_Thyolo,2,Thyolo,Southern,Dental,805.0288969466546,3.9409984871406962
+119.0,Facility_Level_2_Thyolo,2,Thyolo,Southern,Laboratory,1691.3321211570474,7.922157298159561
+119.0,Facility_Level_2_Thyolo,2,Thyolo,Southern,Mental,0.0,0.0
+119.0,Facility_Level_2_Thyolo,2,Thyolo,Southern,Nursing_and_Midwifery,31143.39427022303,151.6314948215009
+119.0,Facility_Level_2_Thyolo,2,Thyolo,Southern,Nutrition,280.4388703043094,1.3728813559322033
+119.0,Facility_Level_2_Thyolo,2,Thyolo,Southern,Pharmacy,1995.0150744140728,10.576486216573821
+119.0,Facility_Level_2_Thyolo,2,Thyolo,Southern,Radiography,916.8164496314691,4.466595970307529
+120.0,Facility_Level_0_Zomba,0,Zomba,Southern,Clinical,0.0,0.0
+120.0,Facility_Level_0_Zomba,0,Zomba,Southern,DCSA,11994.209965230584,214.84209694612736
+120.0,Facility_Level_0_Zomba,0,Zomba,Southern,Dental,0.0,0.0
+120.0,Facility_Level_0_Zomba,0,Zomba,Southern,Laboratory,0.0,0.0
+120.0,Facility_Level_0_Zomba,0,Zomba,Southern,Mental,0.0,0.0
+120.0,Facility_Level_0_Zomba,0,Zomba,Southern,Nursing_and_Midwifery,0.0,0.0
+120.0,Facility_Level_0_Zomba,0,Zomba,Southern,Nutrition,0.0,0.0
+120.0,Facility_Level_0_Zomba,0,Zomba,Southern,Pharmacy,0.0,0.0
+120.0,Facility_Level_0_Zomba,0,Zomba,Southern,Radiography,0.0,0.0
+121.0,Facility_Level_1a_Zomba,1a,Zomba,Southern,Clinical,14572.887587439905,69.78883961329512
+121.0,Facility_Level_1a_Zomba,1a,Zomba,Southern,DCSA,0.0,0.0
+121.0,Facility_Level_1a_Zomba,1a,Zomba,Southern,Dental,3764.755884014089,18.430266664498042
+121.0,Facility_Level_1a_Zomba,1a,Zomba,Southern,Laboratory,8106.740043516383,40.28932547154615
+121.0,Facility_Level_1a_Zomba,1a,Zomba,Southern,Mental,0.0,0.0
+121.0,Facility_Level_1a_Zomba,1a,Zomba,Southern,Nursing_and_Midwifery,50974.440828477935,240.6447388658039
+121.0,Facility_Level_1a_Zomba,1a,Zomba,Southern,Nutrition,95.20999500070064,0.46609810862888645
+121.0,Facility_Level_1a_Zomba,1a,Zomba,Southern,Pharmacy,5940.222768131949,29.667948698967294
+121.0,Facility_Level_1a_Zomba,1a,Zomba,Southern,Radiography,0.0,0.0
+122.0,Facility_Level_1b_Zomba,1b,Zomba,Southern,Clinical,9557.956474733619,47.41774109458941
+122.0,Facility_Level_1b_Zomba,1b,Zomba,Southern,DCSA,0.0,0.0
+122.0,Facility_Level_1b_Zomba,1b,Zomba,Southern,Dental,1164.2698783519868,5.699653573445218
+122.0,Facility_Level_1b_Zomba,1b,Zomba,Southern,Laboratory,2181.2120436244118,9.692752412836217
+122.0,Facility_Level_1b_Zomba,1b,Zomba,Southern,Mental,1053.260569695251,5.156210326707057
+122.0,Facility_Level_1b_Zomba,1b,Zomba,Southern,Nursing_and_Midwifery,21588.027406056906,104.34274314046968
+122.0,Facility_Level_1b_Zomba,1b,Zomba,Southern,Nutrition,0.0,0.0
+122.0,Facility_Level_1b_Zomba,1b,Zomba,Southern,Pharmacy,1747.3908475465623,8.236923997702574
+122.0,Facility_Level_1b_Zomba,1b,Zomba,Southern,Radiography,1113.4421661583995,5.342118228200206
+123.0,Facility_Level_2_Zomba,2,Zomba,Southern,Clinical,20561.364611672794,110.52604205501044
+123.0,Facility_Level_2_Zomba,2,Zomba,Southern,DCSA,0.0,0.0
+123.0,Facility_Level_2_Zomba,2,Zomba,Southern,Dental,863.9073709578042,4.229236558945551
+123.0,Facility_Level_2_Zomba,2,Zomba,Southern,Laboratory,1988.432553891283,9.314340872748783
+123.0,Facility_Level_2_Zomba,2,Zomba,Southern,Mental,0.0,0.0
+123.0,Facility_Level_2_Zomba,2,Zomba,Southern,Nursing_and_Midwifery,34405.70389026562,167.19607711329402
+123.0,Facility_Level_2_Zomba,2,Zomba,Southern,Nutrition,80.33343328184117,0.39327027915562296
+123.0,Facility_Level_2_Zomba,2,Zomba,Southern,Pharmacy,2089.8382401347717,11.07912540704717
+123.0,Facility_Level_2_Zomba,2,Zomba,Southern,Radiography,1017.5367119016292,4.970302425213907
+124.0,Facility_Level_0_Zomba City,0,Zomba City,Southern,Clinical,0.0,0.0
+124.0,Facility_Level_0_Zomba City,0,Zomba City,Southern,DCSA,1962.7962915997375,35.157903053872644
+124.0,Facility_Level_0_Zomba City,0,Zomba City,Southern,Dental,0.0,0.0
+124.0,Facility_Level_0_Zomba City,0,Zomba City,Southern,Laboratory,0.0,0.0
+124.0,Facility_Level_0_Zomba City,0,Zomba City,Southern,Mental,0.0,0.0
+124.0,Facility_Level_0_Zomba City,0,Zomba City,Southern,Nursing_and_Midwifery,0.0,0.0
+124.0,Facility_Level_0_Zomba City,0,Zomba City,Southern,Nutrition,0.0,0.0
+124.0,Facility_Level_0_Zomba City,0,Zomba City,Southern,Pharmacy,0.0,0.0
+124.0,Facility_Level_0_Zomba City,0,Zomba City,Southern,Radiography,0.0,0.0
+125.0,Facility_Level_1a_Zomba City,1a,Zomba City,Southern,Clinical,2384.7848084571197,11.420616779688926
+125.0,Facility_Level_1a_Zomba City,1a,Zomba City,Southern,DCSA,0.0,0.0
+125.0,Facility_Level_1a_Zomba City,1a,Zomba City,Southern,Dental,616.0846699650956,3.016026830206951
+125.0,Facility_Level_1a_Zomba City,1a,Zomba City,Southern,Laboratory,1326.630044038182,6.593159437415713
+125.0,Facility_Level_1a_Zomba City,1a,Zomba City,Southern,Mental,0.0,0.0
+125.0,Facility_Level_1a_Zomba City,1a,Zomba City,Southern,Nursing_and_Midwifery,8341.728526892874,39.38038456955648
+125.0,Facility_Level_1a_Zomba City,1a,Zomba City,Southern,Nutrition,15.580669810878382,0.07627477272704575
+125.0,Facility_Level_1a_Zomba City,1a,Zomba City,Southern,Pharmacy,972.0896377806214,4.855020868778395
+125.0,Facility_Level_1a_Zomba City,1a,Zomba City,Southern,Radiography,0.0,0.0
+126.0,Facility_Level_1b_Zomba City,1b,Zomba City,Southern,Clinical,1564.114816921015,7.759691271563238
+126.0,Facility_Level_1b_Zomba City,1b,Zomba City,Southern,DCSA,0.0,0.0
+126.0,Facility_Level_1b_Zomba City,1b,Zomba City,Southern,Dental,190.52731328491672,0.9327216156621948
+126.0,Facility_Level_1b_Zomba City,1b,Zomba City,Southern,Laboratory,356.94513626403534,1.586173540938475
+126.0,Facility_Level_1b_Zomba City,1b,Zomba City,Southern,Mental,172.36115978284207,0.8437896732929435
+126.0,Facility_Level_1b_Zomba City,1b,Zomba City,Southern,Nursing_and_Midwifery,3532.7795876839473,17.075201275044595
+126.0,Facility_Level_1b_Zomba City,1b,Zomba City,Southern,Nutrition,0.0,0.0
+126.0,Facility_Level_1b_Zomba City,1b,Zomba City,Southern,Pharmacy,285.95232912231074,1.3479340384857674
+126.0,Facility_Level_1b_Zomba City,1b,Zomba City,Southern,Radiography,182.2095962119895,0.8742126307605577
+127.0,Facility_Level_2_Zomba City,2,Zomba City,Southern,Clinical,3364.7710292726715,18.08706918585284
+127.0,Facility_Level_2_Zomba City,2,Zomba City,Southern,DCSA,0.0,0.0
+127.0,Facility_Level_2_Zomba City,2,Zomba City,Southern,Dental,141.3743955556191,0.6920947572420437
+127.0,Facility_Level_2_Zomba City,2,Zomba City,Southern,Laboratory,325.3976755607825,1.5242482645146616
+127.0,Facility_Level_2_Zomba City,2,Zomba City,Southern,Mental,0.0,0.0
+127.0,Facility_Level_2_Zomba City,2,Zomba City,Southern,Nursing_and_Midwifery,5630.332318798437,27.360855035831307
+127.0,Facility_Level_2_Zomba City,2,Zomba City,Southern,Nutrition,13.146190152928632,0.06435683948844484
+127.0,Facility_Level_2_Zomba City,2,Zomba City,Southern,Pharmacy,341.9922412289532,1.813046989018802
+127.0,Facility_Level_2_Zomba City,2,Zomba City,Southern,Radiography,166.5151177507099,0.8133667158253295
+128.0,Referral Hospital_Southern,3,,Southern,Clinical,170795.67413285054,1085.0
+128.0,Referral Hospital_Southern,3,,Southern,DCSA,0.0,0.0
+128.0,Referral Hospital_Southern,3,,Southern,Dental,8375.081818100301,41.0
+128.0,Referral Hospital_Southern,3,,Southern,Laboratory,26954.671047227923,126.0
+128.0,Referral Hospital_Southern,3,,Southern,Mental,3268.324611941581,16.0
+128.0,Referral Hospital_Southern,3,,Southern,Nursing_and_Midwifery,352892.40760242776,1757.0
+128.0,Referral Hospital_Southern,3,,Southern,Nutrition,0.0,0.0
+128.0,Referral Hospital_Southern,3,,Southern,Pharmacy,9808.766673747316,52.0
+128.0,Referral Hospital_Southern,3,,Southern,Radiography,11527.668802565327,55.0
+129.0,Referral Hospital_Northern,3,,Northern,Clinical,58205.336283035955,376.0
+129.0,Referral Hospital_Northern,3,,Northern,DCSA,0.0,0.0
+129.0,Referral Hospital_Northern,3,,Northern,Dental,3268.324611941581,16.0
+129.0,Referral Hospital_Northern,3,,Northern,Laboratory,11979.843942505133,56.0
+129.0,Referral Hospital_Northern,3,,Northern,Mental,2042.7028824634883,10.0
+129.0,Referral Hospital_Northern,3,,Northern,Nursing_and_Midwifery,129088.58724070998,641.0
+129.0,Referral Hospital_Northern,3,,Northern,Nutrition,0.0,0.0
+129.0,Referral Hospital_Northern,3,,Northern,Pharmacy,4903.660091104346,26.0
+129.0,Referral Hospital_Northern,3,,Northern,Radiography,5243.114354026609,25.0
+130.0,Referral Hospital_Central,3,,Central,Clinical,100725.67347823706,635.0
+130.0,Referral Hospital_Central,3,,Central,DCSA,0.0,0.0
+130.0,Referral Hospital_Central,3,,Central,Dental,4289.676053173325,21.0
+130.0,Referral Hospital_Central,3,,Central,Laboratory,18825.501437371662,88.0
+130.0,Referral Hospital_Central,3,,Central,Mental,2451.243458956186,12.0
+130.0,Referral Hospital_Central,3,,Central,Nursing_and_Midwifery,196998.399746591,984.0
+130.0,Referral Hospital_Central,3,,Central,Nutrition,0.0,0.0
+130.0,Referral Hospital_Central,3,,Central,Pharmacy,7357.659873964456,39.0
+130.0,Referral Hospital_Central,3,,Central,Radiography,11694.655857781778,56.0
+131.0,Zomba Mental Hospital,4,,,Clinical,3370.099177884307,21.0
+131.0,Zomba Mental Hospital,4,,,DCSA,0.0,0.0
+131.0,Zomba Mental Hospital,4,,,Dental,0.0,0.0
+131.0,Zomba Mental Hospital,4,,,Laboratory,213.92032854209444,1.0
+131.0,Zomba Mental Hospital,4,,,Mental,27780.75920150344,136.0
+131.0,Zomba Mental Hospital,4,,,Nursing_and_Midwifery,14795.551340279279,72.0
+131.0,Zomba Mental Hospital,4,,,Nutrition,0.0,0.0
+131.0,Zomba Mental Hospital,4,,,Pharmacy,564.6492105076825,3.0
+131.0,Zomba Mental Hospital,4,,,Radiography,0.0,0.0
+132.0,Headquarter,5,,,Clinical,7792.8756109320575,49.0
+132.0,Headquarter,5,,,DCSA,0.0,0.0
+132.0,Headquarter,5,,,Dental,0.0,0.0
+132.0,Headquarter,5,,,Laboratory,10899.822017349034,51.0
+132.0,Headquarter,5,,,Mental,0.0,0.0
+132.0,Headquarter,5,,,Nursing_and_Midwifery,6081.067218864684,30.0
+132.0,Headquarter,5,,,Nutrition,3472.59490018793,17.0
+132.0,Headquarter,5,,,Pharmacy,2639.9316481389696,14.0
+132.0,Headquarter,5,,,Radiography,0.0,0.0

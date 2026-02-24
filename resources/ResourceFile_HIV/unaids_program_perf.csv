@@ -1,3 +1,9 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:6701b4eb8081951f3402853c40f2c4a0aa03d1a276f014758a4f6981a999e29d
-size 528
+year,percent_know_status,percent_know_status_lower,percent_know_status_upper,percent_know_status_on_art,percent_know_status_on_art_lower,percent_know_status_on_art_upper,percent_on_art_viral_suppr,percent_on_art_viral_suppr_lower,percent_on_art_viral_suppr_upper
+2015,78,74,85,78,74,85,88,83,95
+2016,82,77,88,85,80,92,86,81,93
+2017,89,84,95,87,82,94,93,88,95
+2018,88,83,95,93,88,95,90,85,95
+2019,90,85,95,93,87,95,92,86,95
+2020,91,86,95,94,89,95,94,88,95
+2021,92,88,98,96,91,98,93,89,98
+2022,94,89,98,98,93,98,94,89,98
