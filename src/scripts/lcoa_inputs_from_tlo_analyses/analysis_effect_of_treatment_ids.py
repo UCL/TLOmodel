@@ -31,8 +31,9 @@ from tlo.analysis.utils import (
     to_age_group,
 )
 
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2025, 12, 31))
+TARGET_PERIOD = (Date(2026, 1, 1), Date(2041, 1, 1))
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 5
+results_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z")
 
 
 def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
@@ -219,12 +220,13 @@ def make_get_num_dalys_by_cause_label_and_period(
 
 def do_bar_plot_with_ci(
     _df: pd.DataFrame,
+    _param,
     _ax,
     period_labels_for_bar_plots: list[str],
     target_period_label: str,
 ):
     """Make vertical bars by cause, decomposed into period chunks, with overall-period CI."""
-    _df_nothing = _df["Contraception_Routine"]
+    _df_nothing = _df[_param]
     _df_nothing = _df_nothing.reindex(
         pd.MultiIndex.from_product(
             [CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), period_labels_for_bar_plots + [target_period_label]],
@@ -329,14 +331,16 @@ def get_counts_of_hsi_by_short_treatment_id(
     target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
 ) -> pd.Series:
     """Get counts of short treatment ids occurring in target period."""
+    mask = pd.to_datetime(_df["date"]).between(*target_period_tuple)
     _counts_by_treatment_id = (
-        _df.loc[pd.to_datetime(_df["date"]).between(*target_period_tuple), "TREATMENT_ID"]
+        _df.loc[mask, "TREATMENT_ID"]
         .apply(pd.Series)
         .sum()
         .astype(int)
     )
-    _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split("_")[0] + "*")
-    return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
+    ##_short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split("_")[0] + "*")
+    ##return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
+    return _counts_by_treatment_id
 
 
 def get_counts_of_appts(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date] = TARGET_PERIOD) -> pd.Series:
@@ -371,8 +375,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             module="tlo.methods.demography",
             key="death",
             custom_generate_series=extract_deaths_total,
-            do_scaling=True,
-        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)[["Contraception_Routine"]]
+            do_scaling=False,
+            autodiscover=True,
+        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
 
     num_dalys_by_cause_label = summarize(
@@ -384,38 +389,42 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 period_length_years=PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS,
                 target_period_tuple=TARGET_PERIOD,
             ),
-            do_scaling=True,
-        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)[["Contraception_Routine"]]
+            do_scaling=False,
+            autodiscover=True,
+        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
 
-    fig, ax = plt.subplots()
-    name_of_plot = f"Deaths With No Services, {target_period_label}"
-    do_bar_plot_with_ci(num_deaths_by_cause_label / 1e3, ax, period_labels_for_bar_plots, target_period_label)
-    ax.set_title(name_of_plot)
-    ax.set_xlabel("Cause of Death")
-    ax.set_ylabel("Number of Deaths (/1000)")
-    ax.set_ylim(0, 500)
-    ax.grid(axis="y")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
-    plt.close(fig)
+    for param in param_names:
+        param_formatted = format_scenario_name(param)
 
-    fig, ax = plt.subplots()
-    name_of_plot = f"DALYS With No Services, {target_period_label}"
-    do_bar_plot_with_ci(num_dalys_by_cause_label / 1e6, ax, period_labels_for_bar_plots, target_period_label)
-    ax.set_title(name_of_plot)
-    ax.set_xlabel("Cause of Disability/Death")
-    ax.set_ylabel("Number of DALYS (/millions)")
-    ax.set_ylim(0, 30)
-    ax.set_yticks(np.arange(0, 35, 5))
-    ax.grid(axis="y")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
-    plt.close(fig)
+        fig, ax = plt.subplots()
+        name_of_plot = f"Deaths With {param_formatted}, {target_period_label}"
+        do_bar_plot_with_ci(num_deaths_by_cause_label / 1e3, param_formatted, ax, period_labels_for_bar_plots, target_period_label)
+        ax.set_title(name_of_plot)
+        ax.set_xlabel("Cause of Death")
+        ax.set_ylabel("Number of Deaths (/1000)")
+        ax.set_ylim(0, 500)
+        ax.grid(axis="y")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
+        plt.close(fig)
+
+        fig, ax = plt.subplots()
+        name_of_plot = f"DALYS With No Services, {target_period_label}"
+        do_bar_plot_with_ci(num_dalys_by_cause_label / 1e6, param_formatted, ax, period_labels_for_bar_plots, target_period_label)
+        ax.set_title(name_of_plot)
+        ax.set_xlabel("Cause of Disability/Death")
+        ax.set_ylabel("Number of DALYS (/millions)")
+        ax.set_ylim(0, 30)
+        ax.set_yticks(np.arange(0, 35, 5))
+        ax.grid(axis="y")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(" ", "_")))
+        plt.close(fig)
 
     num_deaths = (
         extract_results(
@@ -423,7 +432,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             module="tlo.methods.demography",
             key="death",
             custom_generate_series=lambda _df: get_num_deaths_by_cause_label(_df, TARGET_PERIOD),
-            do_scaling=True,
+            do_scaling=False,
+            autodiscover=True,
         )
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
         .sum()
@@ -435,7 +445,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             module="tlo.methods.healthburden",
             key="dalys_stacked_by_age_and_time",
             custom_generate_series=lambda _df: get_num_dalys_by_cause_label(_df, TARGET_PERIOD),
-            do_scaling=True,
+            do_scaling=False,
+            autodiscover=True,
         )
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
         .sum()
@@ -446,7 +457,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=lambda _df: get_total_num_death_by_agegrp_and_label(_df, TARGET_PERIOD),
-        do_scaling=True,
+        do_scaling=False,
+        autodiscover=True,
     ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
 
     total_num_dalys_by_agegrp_and_label = extract_results(
@@ -454,7 +466,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         module="tlo.methods.healthburden",
         key="dalys_stacked_by_age_and_time",
         custom_generate_series=lambda _df: get_total_num_dalys_by_agegrp_and_label(_df, TARGET_PERIOD),
-        do_scaling=True,
+        do_scaling=False,
+        autodiscover=True,
     ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
 
     counts_of_hsi_by_short_treatment_id = (
@@ -463,7 +476,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             module="tlo.methods.healthsystem.summary",
             key="HSI_Event",
             custom_generate_series=lambda _df: get_counts_of_hsi_by_short_treatment_id(_df, TARGET_PERIOD),
-            do_scaling=True,
+            do_scaling=False,
+            autodiscover=True,
         )
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
         .fillna(0.0)
@@ -498,7 +512,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             module="tlo.methods.healthsystem.summary",
             key="HSI_Event",
             custom_generate_series=lambda _df: get_counts_of_appts(_df, TARGET_PERIOD),
-            do_scaling=True,
+            do_scaling=False,
         )
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
         .fillna(0.0)

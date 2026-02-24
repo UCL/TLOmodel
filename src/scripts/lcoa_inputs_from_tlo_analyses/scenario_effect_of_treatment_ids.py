@@ -104,8 +104,6 @@ class EffectOfEachTreatment(BaseScenario):
         service_availability.update(
             {f"Only {treatment}": [treatment] for treatment in treatments}
         )
-        ## Temporary: for testing, only include one scenario with a single treatment ID available
-        service_availability = dict({"Only Contraception_Routine": ["Contraception_Routine"]})
         scenario_definitions = ScenarioDefinitions()
 
         scenarios = {
