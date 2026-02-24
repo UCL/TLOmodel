@@ -82,7 +82,6 @@ class Equipment:
         # - Data structures for quick look-ups for items and descriptors
         self._item_code_lookup = self.catalogue.set_index('Item_Description')['Item_Code'].to_dict()
         self._pkg_lookup = self._create_pkg_lookup()
-        self._all_item_descriptors = set(self._item_code_lookup.keys())
         self._all_item_codes = set(self._item_code_lookup.values())
         self._all_fac_ids = self.master_facilities_list['Facility_ID'].unique()
 
@@ -151,7 +150,7 @@ class Equipment:
                     warnings.warn(f'Unrecognised item code: "{item}".')
             else:
                 # assume item is a string descriptor
-                if item in self._all_item_descriptors:
+                if item in self._item_code_lookup:
                     matched_items.add(self._item_code_lookup[item])
                 else:
                     warnings.warn(f'Unrecognised item descriptor: "{item}".')
