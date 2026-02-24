@@ -99,13 +99,16 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
 
             def get_counts_of_hsi_by_treatment_id(_df):
                 """Get the counts of the short TREATMENT_IDs occurring"""
-                _counts_by_treatment_id = _df \
-                    .loc[pd.to_datetime(_df['date']).between(*target_period), 'TREATMENT_ID'] \
-                    .apply(pd.Series) \
-                    .sum() \
-                    .astype(int)
-                return _counts_by_treatment_id.groupby(level=0).sum()
 
+                mask = pd.to_datetime(_df['date']).between(*target_period)
+                subset = _df.loc[mask, 'TREATMENT_ID']
+
+                if subset.empty:
+                    return pd.Series(dtype=float)
+
+                counts = pd.DataFrame(subset.tolist()).sum()
+
+                return counts.groupby(level=0).sum()
             def get_counts_of_hsi_by_short_treatment_id(_df):
                 """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
                 print(_df)
