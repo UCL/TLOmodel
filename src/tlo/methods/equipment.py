@@ -139,34 +139,24 @@ class Equipment:
          item_codes or descriptors (including a mix of the two), and return as a set of item_code (integers). For any
          item_code/descriptor not recognised, a ``UserWarning`` is issued."""
 
-        def check_item_codes_recognised(item_codes: set[int]):
-            if not item_codes.issubset(self._all_item_codes):
-                warnings.warn(f'At least one item code was unrecognised: "{item_codes}".')
+        items = [items] if isinstance(items, (str, int)) else items
 
-        def check_item_descriptors_recognised(item_descriptors: set[str]):
-            if not item_descriptors.issubset(self._all_item_descriptors):
-                warnings.warn(f'At least one item descriptor was unrecognised "{item_descriptors}".')
+        matched_items = set()
 
-        # Make into a set if it is not one already
-        if isinstance(items, (str, int)):
-            items = set([items])
-        else:
-            items = set(items)
+        for item in items:
+            if isinstance(item, int):
+                if item in self._all_item_codes:
+                    matched_items.add(item)
+                else:
+                    warnings.warn(f'Unrecognised item code: "{item}".')
+            else:
+                # assume item is a string descriptor
+                if item in self._all_item_descriptors:
+                    matched_items.add(self._item_code_lookup[item])
+                else:
+                    warnings.warn(f'Unrecognised item descriptor: "{item}".')
 
-        # Separate integers (item codes) from strings (item descriptors)
-        item_codes = {i for i in items if isinstance(i, int)}
-        item_descriptors = {i for i in items if isinstance(i, str)}
-
-        # Check and convert item codes
-        check_item_codes_recognised(item_codes)
-        result = item_codes.intersection(self._all_item_codes)
-
-        # Check and convert item descriptors
-        check_item_descriptors_recognised(item_descriptors)
-        recognised_descriptors = item_descriptors.intersection(self._item_code_lookup.keys())
-        result.update(self._item_code_lookup[i] for i in recognised_descriptors)
-
-        return result
+        return matched_items
 
     def probability_all_equipment_available(
         self, facility_id: int, item_codes: Set[int]
