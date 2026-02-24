@@ -143,17 +143,12 @@ class Equipment:
         matched_items = set()
 
         for item in items:
-            if isinstance(item, int):
-                if item in self._all_item_codes:
-                    matched_items.add(item)
-                else:
-                    warnings.warn(f'Unrecognised item code: "{item}".')
+            if isinstance(item, int) and item in self._all_item_codes:
+                matched_items.add(item)
+            elif item in self._item_code_lookup:
+                matched_items.add(self._item_code_lookup[item])
             else:
-                # assume item is a string descriptor
-                if item in self._item_code_lookup:
-                    matched_items.add(self._item_code_lookup[item])
-                else:
-                    warnings.warn(f'Unrecognised item descriptor: "{item}".')
+                warnings.warn(f'Unrecognised item: "{item}".')
 
         return matched_items
 
