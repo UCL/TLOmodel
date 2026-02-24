@@ -136,7 +136,7 @@ class Equipment:
 
     def parse_items(self, items: Union[int, str, Iterable[int], Iterable[str]]) -> Set[int]:
         """Parse equipment items specified as an item_code (integer), an item descriptor (string), or an iterable of
-         item_codes or descriptors (but not a mix of the two), and return as a set of item_code (integers). For any
+         item_codes or descriptors (including a mix of the two), and return as a set of item_code (integers). For any
          item_code/descriptor not recognised, a ``UserWarning`` is issued."""
 
         def check_item_codes_recognised(item_codes: set[int]):
@@ -153,16 +153,20 @@ class Equipment:
         else:
             items = set(items)
 
-        items_are_ints = all(isinstance(element, int) for element in items)
+        # Separate integers (item codes) from strings (item descriptors)
+        item_codes = {i for i in items if isinstance(i, int)}
+        item_descriptors = {i for i in items if isinstance(i, str)}
 
-        if items_are_ints:
-            check_item_codes_recognised(items)
-            # In the return, any unrecognised item_codes are silently ignored.
-            return items.intersection(self._all_item_codes)
-        else:
-            check_item_descriptors_recognised(items)  # Warn for any unrecognised descriptors
-            # In the return, any unrecognised descriptors are silently ignored.
-            return set(self._item_code_lookup[i] for i in items if i in self._item_code_lookup)
+        # Check and convert item codes
+        check_item_codes_recognised(item_codes)
+        result = item_codes.intersection(self._all_item_codes)
+
+        # Check and convert item descriptors
+        check_item_descriptors_recognised(item_descriptors)
+        recognised_descriptors = item_descriptors.intersection(self._item_code_lookup.keys())
+        result.update(self._item_code_lookup[i] for i in recognised_descriptors)
+
+        return result
 
     def probability_all_equipment_available(
         self, facility_id: int, item_codes: Set[int]
