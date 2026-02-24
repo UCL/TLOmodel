@@ -1884,8 +1884,10 @@ class HealthSystem(Module):
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         """
         # Invoke never ran function here (if person is alive)
-        if self.sim.population.props.at['is_alive', hsi_event.target]:
-            hsi_event.never_ran()
+        if not self.sim.population.props.at['is_alive', hsi_event.target]:
+            return
+
+        hsi_event.never_ran()
 
         if hsi_event.facility_info is not None:
             # Fully-defined HSI Event
