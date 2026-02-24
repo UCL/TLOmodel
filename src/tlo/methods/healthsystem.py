@@ -1884,7 +1884,7 @@ class HealthSystem(Module):
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         """
         # Do nothing if person is not alive
-        if not self.sim.population.props.at['is_alive', hsi_event.target]:
+        if not self.sim.population.props.at[hsi_event.target, 'is_alive']:
             return
 
         # Invoke never ran function here
