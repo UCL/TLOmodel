@@ -1883,6 +1883,10 @@ class HealthSystem(Module):
         If this is an individual-level HSI_Event, it will also record the actual appointment footprint
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         """
+        # Do nothing if person is not alive
+        if not self.sim.population.props.at[hsi_event.target, 'is_alive']:
+            return
+
         # Invoke never ran function here
         hsi_event.never_ran()
 

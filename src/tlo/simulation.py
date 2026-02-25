@@ -138,6 +138,9 @@ class Simulation:
         # Whether simulation has been initialised
         self._initialised = False
 
+        # To allow for graceful termination
+        self._terminate = False
+
     def _configure_logging(
         self,
         filename: Optional[str] = None,
@@ -383,7 +386,7 @@ class Simulation:
         if self.show_progress_bar:
             progress_bar = self._initialise_progress_bar(to_date)
         while (
-            len(self.event_queue) > 0 and self.event_queue.date_of_next_event < to_date
+            len(self.event_queue) > 0 and self.event_queue.date_of_next_event < to_date and not self._terminate
         ):
             event, date = self.event_queue.pop_next_event_and_date()
             if self.show_progress_bar:
@@ -505,6 +508,9 @@ class Simulation:
         if log_config is not None:
             simulation._log_filepath = simulation._configure_logging(**log_config)
         return simulation
+
+    def terminate(self):
+        self._terminate = True
 
 
 class EventQueue:
