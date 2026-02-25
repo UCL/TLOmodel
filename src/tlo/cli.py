@@ -107,15 +107,16 @@ def parse_log(log_directory):
             with open(path / f"{key}.pickle", "wb") as f:
                 pickle.dump(output, f)
 
-@cli.command()
+@cli.command(context_settings=dict(ignore_unknown_options=True))
 @click.argument("scenario_file", type=click.Path(exists=True))
 @click.option("--asserts-on", type=bool, default=False, is_flag=True, help="Enable assertions in simulation run.")
 @click.option("--more-memory", type=bool, default=False, is_flag=True,
               help="Request machine wth more memory (for larger population sizes).")
 @click.option("--image-tag", type=str, help="Tag of the Docker image to use.")
 @click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
+@click.argument('scenario_args', nargs=-1, type=click.UNPROCESSED)
 @click.pass_context
-def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, image_tag=None):
+def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, image_tag=None, scenario_args=None):
     """Submit a scenario to the batch system.
 
     SCENARIO_FILE is path to file containing scenario class.
@@ -132,6 +133,24 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
 
     scenario = load_scenario(scenario_file)
 
+    config = load_config(ctx.obj['config_file'])
+
+    # Directory where the file share will be mounted, relative to
+    # ${AZ_BATCH_NODE_MOUNTS_DIR}.
+    file_share_mount_point = "mnt"
+
+    # if we have other scenario arguments, parse them
+    if scenario_args is not None:
+        # we rewrite the path to the simulation to resume
+        if '--resume-simulation' in scenario_args:
+            i = scenario_args.index('--resume-simulation')
+            path_to_job = (f"${{AZ_BATCH_NODE_MOUNTS_DIR}}/"
+                           f"{file_share_mount_point}/"
+                           f"{config['DEFAULT']['USERNAME']}/"
+                           f"{scenario_args[i+1]}")
+            scenario_args = scenario_args[:i + 1] + (path_to_job, ) + scenario_args[i + 2:]
+        scenario.parse_arguments(scenario_args)
+
     # get the commit we're going to submit to run on batch, and save the run config for that commit
     # it's the most recent commit on current branch
     repo = Repo(".")
@@ -139,8 +158,6 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
     run_json = scenario.save_draws(commit=commit.hexsha)
 
     print(">Setting up batch\r", end="")
-
-    config = load_config(ctx.obj['config_file'])
 
     # ID of the Batch job.
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
@@ -221,10 +238,6 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
     # Options for running the Docker container
     container_run_options = "--rm --workdir /TLOmodel"
 
-    # Directory where the file share will be mounted, relative to
-    # ${AZ_BATCH_NODE_MOUNTS_DIR}.
-    file_share_mount_point = "mnt"
-
     azure_file_share_configuration = batch_models.AzureFileShareConfiguration(
         account_name=config["STORAGE"]["NAME"],
         azure_file_url=azure_file_url,
@@ -253,6 +266,7 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
     git checkout {commit.hexsha}
     pip install -r requirements/base.txt
     env | grep "^AZ_" | while read line; do echo "$line"; done
+    echo "Container image name: {image_name}"
     {py_opt} tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
     tlo --config-file tlo.example.conf parse-log {working_dir}/{{draw_number}}/{{run_number}}
     cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.

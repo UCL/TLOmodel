@@ -7,8 +7,9 @@ disease modules.
 from __future__ import annotations
 
 import json
+import warnings
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Literal
 
 import numpy as np
 import pandas as pd
@@ -347,7 +348,9 @@ class Module:
             # For each parameter, raise error if the value can't be coerced
             parameter_value, prior_min, prior_max = resource.loc[parameter_name, ['value', 'prior_min', 'prior_max']]
             parameter_label = resource.at[parameter_name, 'param_label']
-            assert parameter_label in acceptable_labels, f'unrecognised parameter label {parameter_label}'
+            assert parameter_label in acceptable_labels, (
+                f'unrecognised parameter label for {parameter_name}: {parameter_label}'
+            )
 
             error_message = (
                 f"some values are not of type {parameter_definition.type_.name} and "
@@ -396,6 +399,22 @@ class Module:
                 prior_min=prior_min,
                 prior_max=prior_max
                 )
+
+    def declare_parameter_metadata(self,
+                                   parameter_name: str,
+                                   param_label: Optional[Literal["local", "universal", "undetermined"]] = None,
+                                   prior_min: Optional = None,
+                                   prior_max: Optional = None) -> None:
+        """Declare metadata for a parameter"""
+        if parameter_name not in self.PARAMETERS:
+            raise ValueError(f"Parameter {parameter_name} not declared in PARAMETERS dictionary")
+
+        if self.PARAMETERS[parameter_name].metadata != {}:
+            warnings.warn(f"Parameter {parameter_name} already has metadata declared")
+
+        self.PARAMETERS[parameter_name].metadata.update(
+            param_label=param_label, prior_min=prior_min, prior_max=prior_max)
+
 
     def read_parameters(self, data_folder: str | Path) -> None:
         """Read parameter values from file, if required.

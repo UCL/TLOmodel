@@ -354,7 +354,8 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
     )
 
     if data is not None:
-        sim.modules['HealthSystem'].parameters['availability_estimates'] = data
+        sim.modules['HealthSystem'].parameters['data_source_for_cons_availability_estimates'] = 'data'
+        sim.modules['HealthSystem'].parameters['availability_estimates'] = {'data' :data}
 
     sim.make_initial_population(n=100)
 
@@ -531,9 +532,13 @@ def test_outputs_to_log(tmpdir):
 
 def test_check_format_of_consumables_file():
     """Run the check on the file used by default for the Consumables data"""
+    path_to_file = resourcefilepath / 'healthsystem' / 'consumables'
     check_format_of_consumables_file(
-        pd.read_csv(
-            resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small.csv'),
+        pd.read_csv(path_to_file / 'ResourceFile_Consumables_availability_small.csv'),
+        fac_ids=fac_ids
+    )
+    check_format_of_consumables_file(
+        pd.read_csv(path_to_file / 'ResourceFile_Consumables_availability_small_original.csv'),
         fac_ids=fac_ids
     )
 
@@ -703,3 +708,61 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
             assert isinstance(comparison, bool), 'Comparison went wrong: {availability=}'
             assert not consumables._prob_item_codes_available.equals(default_consumables_availability),  \
                 f"No change in actual avaialbility when: {availability=}"
+
+
+def test_switch_between_different_cons_availability_databases(seed):
+    """Check that option to change consumable availability data source works as expected"""
+
+    # Import the 'raw' datasets for consumables availability
+    path_to_files = resourcefilepath / 'healthsystem' / 'consumables'
+    options_for_availability = {
+        'original': pd.read_csv(path_to_files / 'ResourceFile_Consumables_availability_small_original.csv'),
+        'updated': pd.read_csv(path_to_files / 'ResourceFile_Consumables_availability_small.csv'),
+    }
+
+    # Sample availability of the raw datasets, where we know they are different:
+    _facility_id = 2
+    _month = 1
+    def get_sample_availability(df):
+        return df.loc[
+            (df.Facility_ID == _facility_id) & (df.month == _month),
+            ['item_code', 'available_prop']
+        ].set_index('item_code')['available_prop'].to_dict()
+    sample_availability_in_raw_data = {k : get_sample_availability(v) for k, v in options_for_availability.items()}
+
+    # Confirm that the samples from these two raw datasets are different
+    assert sample_availability_in_raw_data['original'] != sample_availability_in_raw_data['updated']
+
+    # Use different options (swithced after module registration) and confirm that the live data being used in the
+    # module matches the intended raw data
+    for which_option in options_for_availability.keys():
+        sim = Simulation(
+            start_date=Date(2010, 1, 1),
+            seed=seed,
+            resourcefilepath=resourcefilepath
+        )
+
+
+        # Register the core modules
+        sim.register(
+            demography.Demography(),
+            healthsystem.HealthSystem(),
+        )
+
+        # Make the decision to switch following module registration
+        sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
+        sim.modules['HealthSystem'].parameters['data_source_for_cons_availability_estimates'] = which_option
+
+        # Initialise the simulation and capture the 'live' data being used in the Consumables module
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=sim.start_date)
+        hs = sim.modules['HealthSystem']
+        consumables_live_data = hs.consumables._availability_data
+
+        # check availability actually held by consumables class during simulation matches intended data source
+        sample_availability_in_live_data = consumables_live_data.loc[
+            (consumables_live_data.Facility_ID == _facility_id) & (consumables_live_data.month == _month),
+            ['item_code', 'available_prop']
+        ].set_index('item_code')['available_prop'].to_dict()
+
+        assert sample_availability_in_live_data == sample_availability_in_raw_data[which_option]
