@@ -2879,14 +2879,26 @@ class HealthSystemSummaryCounter:
         for facID_and_officer, fraction_time in fraction_time_used_by_facID_and_officer_in_this_clinic.items():
             self._sum_of_daily_frac_time_used_by_facID_and_officer[clinic][facID_and_officer] += fraction_time
 
-        for officer_type_facility_level, fraction_time in fraction_time_used_by_officer_type_and_level_in_this_clinic.items():
-            self._sum_of_daily_frac_time_used_by_officer_type_and_level[clinic][officer_type_facility_level] += fraction_time
+        for officer_type_facility_level, fraction_time in (
+            fraction_time_used_by_officer_type_and_level_in_this_clinic.items()
+        ):
+            self._sum_of_daily_frac_time_used_by_officer_type_and_level[clinic][
+                officer_type_facility_level
+            ] += fraction_time
 
-        for officer_district, fraction_time in fraction_time_used_by_officer_district_in_this_clinic.items():
-            self._sum_of_daily_frac_time_used_by_officer_district[clinic][officer_district] += fraction_time
+        for officer_district, fraction_time in (
+            fraction_time_used_by_officer_district_in_this_clinic.items()
+        ):
+            self._sum_of_daily_frac_time_used_by_officer_district[clinic][
+                officer_district
+            ] += fraction_time
 
-        for officer_level_district, fraction_time in fraction_time_used_by_officer_level_district_in_this_clinic.items():
-            self._sum_of_daily_frac_time_used_by_officer_level_district[clinic][officer_level_district] += fraction_time
+        for officer_level_district, fraction_time in (
+            fraction_time_used_by_officer_level_district_in_this_clinic.items()
+        ):
+            self._sum_of_daily_frac_time_used_by_officer_level_district[clinic][
+                officer_level_district
+            ] += fraction_time
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
@@ -2969,7 +2981,7 @@ class HealthSystemSummaryCounter:
             )
 
             # Log mean of 'fraction time used by officer type and facility level and district' from daily entries
-                # from the previous year.
+            # from the previous year.
             logger_summary.info(
                 key="Capacity_By_OfficerType_And_FacilityLevel_And_District",
                 description="The fraction of healthcare worker time that is used each day, averaged over this "
@@ -3032,7 +3044,9 @@ class HealthSystemSummaryCounter:
             # Return multiple in the form of a pd.Series with multiindex
             mean_frac_time_used = {
                 (_officer_type, _level): v / len(self._frac_time_used_overall[clinic])
-                for (_officer_type, _level), v in self._sum_of_daily_frac_time_used_by_officer_type_and_level[clinic].items()
+                for (_officer_type, _level), v in (
+                    self._sum_of_daily_frac_time_used_by_officer_type_and_level[clinic].items()
+                )
                 if (_officer_type == officer_type or officer_type is None) and (_level == level or level is None)
             }
             return pd.Series(
@@ -3045,13 +3059,13 @@ class HealthSystemSummaryCounter:
 
     def frac_time_used_by_officer_district(
         self,
-clinic: str,
+        clinic: str,
         officer_type: Optional[str] = None,
         district: Optional[str] = None,
     ) -> Union[float, pd.Series]:
         """Average fraction of time used by officer type and district since last reset.
-        If `officer_type` and/or `district` is not provided (left to default to `None`) then a pd.Series with a multi-index
-        is returned giving the result for all officer_types/levels."""
+        If `officer_type` and/or `district` is not provided (left to default to `None`) then a pd.Series with a
+        multi-index is returned giving the result for all officer_types/levels."""
 
         if (officer_type is not None) and (district is not None):
             return (
@@ -3063,7 +3077,9 @@ clinic: str,
             # Return multiple in the form of a pd.Series with multiindex
             mean_frac_time_used = {
                 (_officer_type, _district): v / len(self._frac_time_used_overall[clinic])
-                for (_officer_type, _district), v in self._sum_of_daily_frac_time_used_by_officer_district[clinic].items()
+                for (_officer_type, _district), v in (
+                    self._sum_of_daily_frac_time_used_by_officer_district[clinic].items()
+                )
                 if (_officer_type == officer_type or officer_type is None) and (
                     _district == district or district is None)
             }
@@ -3096,7 +3112,9 @@ clinic: str,
             # Return multiple in the form of a pd.Series with multiindex
             mean_frac_time_used = {
                 (_officer_type, _level, _district): v / len(self._frac_time_used_overall[clinic])
-                for (_officer_type, _level, _district), v in self._sum_of_daily_frac_time_used_by_officer_level_district[clinic].items()
+                for (_officer_type, _level, _district), v in (
+                    self._sum_of_daily_frac_time_used_by_officer_level_district[clinic].items()
+                )
                 if (_officer_type == officer_type or officer_type is None) and (_level == level or level is None) and (
                     _district == district or district is None)
             }
@@ -3312,7 +3330,9 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
                 total_cost_this_year = 365.25 * (daily_cost.Total_Cost_Per_Day + daily_cost.extra_budget_per_day)
                 total_capabilities_this_year = (365.25 * self.module._daily_capabilities[clinic])
                 logger_summary.info(key='HRScaling',
-                                    description='The HR scale up factor by office type given fractions of an extra budget',
+                                    description=(
+                                        'The HR scale up factor by office type given fractions of an extra budget'
+                                    ),
                                     data={
                                         'scale_up_factor': daily_cost.scale_up_factor.to_dict(),
                                         'total_hr_salary': total_cost_this_year.to_dict(),

@@ -770,13 +770,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ) < 1e-6).all()
 
     # Absolute Number of Deaths and DALYs and Services
-    num_deaths = extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='death',
-        custom_generate_series=get_num_deaths,
-        do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0)
+    # num_deaths = extract_results(
+    #     results_folder,
+    #     module='tlo.methods.demography',
+    #     key='death',
+    #     custom_generate_series=get_num_deaths,
+    #     do_scaling=True
+    # ).pipe(set_param_names_as_column_index_level_0)
 
     num_dalys = extract_results(
         results_folder,
