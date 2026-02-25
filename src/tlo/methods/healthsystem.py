@@ -3037,7 +3037,7 @@ class HealthSystemSummaryCounter:
             }
             return pd.Series(
                 index=pd.MultiIndex.from_tuples(
-                    [(clinic, key) for key in mean_frac_time_used.keys()],
+                    [(clinic, officer, level) for (officer, level) in mean_frac_time_used.keys()],
                     names=["clinic", "OfficerType", "FacilityLevel"]
                 ),
                 data=mean_frac_time_used.values()
@@ -3069,7 +3069,7 @@ clinic: str,
             }
             return pd.Series(
                 index=pd.MultiIndex.from_tuples(
-                    [(clinic, key) for key in mean_frac_time_used.keys()],
+                    [(clinic, officer, district) for (officer, district) in mean_frac_time_used.keys()],
                     names=["clinic", "OfficerType", "District"]
                 ),
                 data=mean_frac_time_used.values()
@@ -3102,7 +3102,7 @@ clinic: str,
             }
             return pd.Series(
                 index=pd.MultiIndex.from_tuples(
-                    [(clinic, key) for key in mean_frac_time_used.keys()],
+                    [(clinic, officer, level, district) for (officer, level, district) in mean_frac_time_used.keys()],
                     names=["clinic", "OfficerType", "FacilityLevel", "District"]
                 ),
                 data=mean_frac_time_used.values()
