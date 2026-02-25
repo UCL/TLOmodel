@@ -766,7 +766,7 @@ class HealthSystem(Module):
         }
         self.parameters["HR_budget_growth_rate"] = 0.042
         self.parameters["start_year_HR_expansion_by_officer_type"] = 2025
-        self.parameters["nd_year_HR_expansion_by_officer_type"] = 2035
+        self.parameters["end_year_HR_expansion_by_officer_type"] = 2035
 
     def validate_clinic_configuration(self, clinic_capabilities_df: pd.DataFrame):
         """Validate the contents of the clinics capabilities dataframe.
