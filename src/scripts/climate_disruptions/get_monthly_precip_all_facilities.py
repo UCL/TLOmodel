@@ -11,15 +11,9 @@ import pandas as pd
 from netCDF4 import Dataset
 from scipy.spatial import KDTree
 
-ANC = False
-Inpatient = True
-if ANC:
-    service = 'ANC'
-if Inpatient:
-    service = 'Inpatient'
 monthly_cumulative = False
 multiplier = 86400
-years = range(2015, 2100)
+years = range(2025, 2041)
 month_lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] * len(years)
 if monthly_cumulative:
     window_size = np.nan
@@ -119,7 +113,7 @@ for scenario in scenarios:
                                          :, non_na_lengths == modal_non_na_length
                                          ].dropna(axis=0)
     data_by_model_and_grid_same_length.to_csv(
-        Path(scenario_directory) / f"data_by_model_and_grid_modal_resolution_{service}.csv",
+        Path(scenario_directory) / f"data_by_model_and_grid_modal_resolution_all_facilities.csv",
         index=True
     )
 
@@ -163,20 +157,15 @@ for scenario in scenarios:
         first_model = next(iter(grid_precipitation_for_facility))
         n_timepoints = len(grid_precipitation_for_facility[first_model])
 
-        # CHANGED: compute p25, median, p75 across models at each time point
-        p25_all = []
-        median_all = []
-        p75_all = []
-        for t in range(n_timepoints):
-            per_model = [
-                precip_data[t]
-                for precip_data in grid_precipitation_for_facility.values()
-                if len(precip_data) == n_timepoints
-            ]
-            p25_all.append(np.percentile(per_model, 25))
-            median_all.append(np.median(per_model))
-            p75_all.append(np.percentile(per_model, 75))
-
+        # Stack all models into array of shape (n_models, n_timepoints)
+        model_array = np.array([
+            precip_data
+            for precip_data in grid_precipitation_for_facility.values()
+            if len(precip_data) == n_timepoints
+        ])
+        p25_all = np.percentile(model_array, 25, axis=0).tolist()
+        median_all = np.percentile(model_array, 50, axis=0).tolist()
+        p75_all = np.percentile(model_array, 75, axis=0).tolist()
         # CHANGED: compute rolling window for each of the three variants
         for daily_values, store in [
             (p25_all, cumulative_sum_lowest),
@@ -201,7 +190,7 @@ for scenario in scenarios:
     print(f"  Extracted data for {len(cumulative_sum_mean)} facilities")
 
     # CHANGED: save three files matching lowest/mean/highest naming convention
-    suffix = f"all_facilities_{service}"
+    suffix = f"all_facilities"
     for label, data in [("lowest", cumulative_sum_lowest),
                         ("mean", cumulative_sum_mean),
                         ("highest", cumulative_sum_highest)]:
