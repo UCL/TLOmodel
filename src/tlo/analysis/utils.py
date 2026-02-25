@@ -386,7 +386,7 @@ def check_info_value_changes(df):
             prev_info = row["Info"]
 
     return problems
-    
+
 def remove_events_for_individual_after_death(df):
     rows_to_drop = []
 
@@ -430,8 +430,8 @@ def reconstruct_individual_histories(df):
     if len(problems)>0:
         print("Values didn't change but were still detected")
         print(problems)
-        
-    
+
+
 
     return df_final
 
@@ -494,7 +494,7 @@ def compute_summary_statistics(
     results: pd.DataFrame,
     central_measure: Union[Literal["mean", "median"], None] = None,
     width_of_range: float = 0.95,
-    use_standard_error: bool = True,
+    use_standard_error: bool = False,
     only_central: bool = False,
     collapse_columns: bool = False,
 ) -> pd.DataFrame:
@@ -546,7 +546,6 @@ def compute_summary_statistics(
         stats["lower"] = stats['central'] - z_value * std_error
         stats["upper"] = stats['central'] + z_value * std_error
 
-    # summary = pd.concat(stats, axis=1).stack(level=1)  # move cause from column to index
     summary = pd.concat(stats, axis=1)
     summary.columns = summary.columns.swaplevel(1, 0)
     summary.columns.names = ['draw', 'stat']
