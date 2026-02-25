@@ -7,7 +7,7 @@ from tlo.analysis.utils import extract_results, summarize
 import geopandas as gpd
 
 min_year = 2025
-max_year = 2031
+max_year = 2029
 spacing_of_years = 1
 PREFIX_ON_FILENAME = "1"
 
@@ -48,8 +48,8 @@ district_colours = [
     "azure",
 ]
 
-vmin = -0.065
-vmax = 0.065
+vmin = -20
+vmax = 20
 climate_sensitivity_analysis = False
 parameter_sensitivity_analysis = False
 main_text = True
@@ -77,7 +77,7 @@ if main_text:
     scenario_names = ["No disruptions", "Baseline", "Worst case"]
 
     suffix = "main_text"
-    scenarios_of_interest = [0, 1, 2]
+    scenarios_of_interest = [0, 1]  # , 2]
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -88,16 +88,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
 
     # Definitions of general helper functions
-    def get_num_dalys_by_district(_df):
-        """Return total number of DALYs by district as a Series, within the TARGET PERIOD."""
+    def get_num_dalys_by_district(df):
+        df = df.set_index('district_of_residence')
+        df = df.select_dtypes(include='number')
+        df = df.stack()
+        df.index = df.index.set_names('cause', level=1)
+        return df
 
-        return (
-            _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]
-            .drop(columns=["date", "year"])
-            .groupby("district_of_residence")
-            .sum()
-            .sum(axis=1)
-        )
+    def get_num_dalys_by_district(_df):
+        """Sum the dalys by period, sex, age-group and label"""
+        _df["date"] = pd.to_datetime(_df["date"])
+
+        filtered_df = _df.loc[_df["date"].between(*TARGET_PERIOD)]
+        filtered_df = filtered_df.drop(columns=['date', 'year'])
+        filtered_df = filtered_df.groupby(by=["district_of_residence"]).sum().sum(axis=1)
+        return filtered_df
 
     def get_population_for_year(_df):
         """Returns the population per district in the year of interest"""
@@ -119,9 +124,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_scenarios_dalys_by_district_upper_per_1000 = {}
     all_scenarios_dalys_by_district_lower_per_1000 = {}
 
-    for draw in range(len(scenario_names)):
-        if draw not in scenarios_of_interest:
-            continue
+    for draw in scenarios_of_interest:
+        print(draw)
         scenario_name = scenario_names[draw]
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
@@ -143,11 +147,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     module="tlo.methods.healthburden",
                     key="dalys_by_district_stacked_by_age_and_time",
                     custom_generate_series=get_num_dalys_by_district,
-                    do_scaling=True,
+                    do_scaling=False,
                 ),
-                only_mean=True,
+                only_mean=False,
                 collapse_columns=True,
-            )[(draw,)]
+            )[draw]
 
             result_data_population = summarize(
                 extract_results(
@@ -155,17 +159,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     module="tlo.methods.demography",
                     key="population",
                     custom_generate_series=get_population_for_year,
-                    do_scaling=True,
+                    do_scaling=False,
                 ),
                 only_mean=True,
                 collapse_columns=True,
             )[draw]
-
-            all_years_data_dalys_mean_per_1000[target_year] = result_data_dalys["mean"] / result_data_population['mean']
-            all_years_data_dalys_lower_per_1000[target_year] = result_data_dalys["lower"] / result_data_population[
-                'lower']
-            all_years_data_dalys_upper_per_1000[target_year] = result_data_dalys["upper"] / result_data_population[
-                'upper']
+            all_years_data_dalys_mean_per_1000[target_year] = result_data_dalys[
+                "mean"]  # / result_data_population['mean']
+            all_years_data_dalys_lower_per_1000[target_year] = result_data_dalys[
+                "lower"]  # / result_data_population['lower']
+            all_years_data_dalys_upper_per_1000[target_year] = result_data_dalys[
+                "upper"]  #/ result_data_population['upper']
 
             all_years_data_dalys_mean[target_year] = result_data_dalys["mean"]
             all_years_data_dalys_lower[target_year] = result_data_dalys["lower"]
@@ -219,8 +223,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.tight_layout()
         fig.savefig(make_graph_file_name("Trend_DALYs_by_district_All_Years_Stacked"))
         plt.close(fig)
-
-        print("df_all_years_DALYS_mean", df_all_years_DALYS_mean)
 
         district_dalys_total_per_1000 = df_all_years_DALYS_mean_per_1000.mean(axis=1)
         district_dalys_upper_per_1000 = df_all_years_DALYS_upper_per_1000.mean(axis=1)
@@ -316,22 +318,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     malawi_admin2["ADM2_EN"] = malawi_admin2["ADM2_EN"].replace("Mzuzu City", "Mzuzu")
     malawi_admin2["ADM2_EN"] = malawi_admin2["ADM2_EN"].replace("Lilongwe City", "Lilongwe")
     malawi_admin2["ADM2_EN"] = malawi_admin2["ADM2_EN"].replace("Zomba City", "Zomba")
-    print(df_dalys_by_district_all_scenarios)
 
     # Create maps for each scenario
-    fig, axes = plt.subplots(1, 3, figsize=(18, 18))
+    fig, axes = plt.subplots(1, 2, figsize=(18, 18))
     axes = axes.flatten()
-    for i, scenario in enumerate(scenario_names[1:], start=1):
+    for i, scenario in enumerate(scenarios_of_interest[1:], start=1):
         i = i - 1
         difference_from_baseline_per_1000 = (
-            df_dalys_by_district_all_scenarios_per_1000[scenario]
-            - df_dalys_by_district_all_scenarios_per_1000["No disruptions"]
-        )
+                                                (df_dalys_by_district_all_scenarios_per_1000.iloc[:, scenario]
+                                                 - df_dalys_by_district_all_scenarios_per_1000.iloc[:, 0])
+                                                / df_dalys_by_district_all_scenarios_per_1000.iloc[:, 0]
+                                            ) * 100
+        print(difference_from_baseline_per_1000)
         malawi_admin2["DALY_Rate"] = malawi_admin2["ADM2_EN"].map(difference_from_baseline_per_1000)
-        print(malawi_admin2["DALY_Rate"])
         malawi_admin2.plot(
             column="DALY_Rate", ax=axes[i], legend=True, cmap="PiYG", edgecolor="black", vmin=vmin, vmax=vmax)
-        axes[i].set_title(f"DALYs per 1000 - {scenario}")
+        axes[i].set_title(f"Percentage Difference in \nDALYs: 2025-2029", fontsize=40)
         axes[i].axis("off")
         water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", alpha=0.6, edgecolor="#999999", linewidth=0.5, hatch="xxx")
         water_bodies.plot(ax=axes[i], facecolor="#7BDFF2", edgecolor="black", linewidth=1)
