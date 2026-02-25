@@ -351,7 +351,7 @@ class HealthSystem(Module):
         "tclose_overwrite": Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"
         ),
-        "tclose_days_offset_overwrite": Parameter(
+                "tclose_days_offset_overwrite": Parameter(
             Types.INT,
             "Offset in days from topen at which tclose will be set by the healthsystem for all HSIs"
             "if tclose_overwrite is set to True.",
@@ -1315,7 +1315,7 @@ class HealthSystem(Module):
 
         for clinic, clinic_cl in self._daily_capabilities.items():
             for facID_and_officer in clinic_cl.keys():
-                # extract facility ID and officer type from the key
+    # extract facility ID and officer type from the key
                 matches = re.match(pattern, facID_and_officer)
                 facility_id = int(matches.group(1))
                 officer_type = matches.group(2)
@@ -1333,9 +1333,9 @@ class HealthSystem(Module):
                     self._daily_capabilities_per_staff[clinic][facID_and_officer] *= rescaling_factor
 
                     if clinic == "GenericClinic":
-                        minute_salary.loc[(minute_salary.Facility_ID == facility_id)
+                                            minute_salary.loc[(minute_salary.Facility_ID == facility_id)
                                           & (minute_salary.Officer_Type_Code == officer_type),
-                                          'Minute_Salary_USD'] /= rescaling_factor
+                                            'Minute_Salary_USD'] /= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
@@ -2865,7 +2865,7 @@ class HealthSystemSummaryCounter:
         self,
         fraction_time_used_across_all_facilities_in_this_clinic: float,
         fraction_time_used_by_facID_and_officer_in_this_clinic: Dict[str, float],
-        fraction_time_used_by_officer_type_and_level_in_this_clinic: Dict[Tuple[str, int], float],
+         fraction_time_used_by_officer_type_and_level_in_this_clinic: Dict[Tuple[str, int], float],
         fraction_time_used_by_officer_district_in_this_clinic: Dict[Tuple[str, str], float],
         fraction_time_used_by_officer_level_district_in_this_clinic: Dict[Tuple[str, str, str], float],
         clinic: str
@@ -2967,7 +2967,7 @@ class HealthSystemSummaryCounter:
             )
 
             # Log mean of 'fraction time used by officer type and facility level and district' from daily entries
-            # from the previous year.
+                # from the previous year.
             logger_summary.info(
                 key="Capacity_By_OfficerType_And_FacilityLevel_And_District",
                 description="The fraction of healthcare worker time that is used each day, averaged over this "
@@ -3043,7 +3043,7 @@ class HealthSystemSummaryCounter:
 
     def frac_time_used_by_officer_district(
         self,
-        clinic: str,
+clinic: str,
         officer_type: Optional[str] = None,
         district: Optional[str] = None,
     ) -> Union[float, pd.Series]:
@@ -3232,7 +3232,7 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
             .set_index("District")
             .to_dict()
         )
-        # todo: can add entries for facilities at and beyond level 3,
+         # todo: can add entries for facilities at and beyond level 3,
         #  so that the district list would match the facility IDs fully.
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
