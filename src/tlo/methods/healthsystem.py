@@ -755,18 +755,18 @@ class HealthSystem(Module):
         assert all(2010 in sheet["year"].values for sheet in self.parameters["yearly_HR_scaling"].values())
 
         # Read in ResourceFile_Annual_Salary_Per_Cadre.csv
-        self.parameters['minute_salary'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'costing' / 'Minute_Salary_HR.csv')
+        self.parameters["minute_salary"] = pd.read_csv(
+            resourcefilepath / "costing" / "Minute_Salary_HR.csv")
 
         # Set default values for HR_expansion_by_officer_type, start_year_HR_expansion_by_officer_type,
         # end_year_HR_expansion_by_officer_type
-        self.parameters['HR_expansion_by_officer_type'] = {
-            'Clinical': 0, 'DCSA': 0, 'Nursing_and_Midwifery': 0, 'Pharmacy': 0,
-            'Dental': 0, 'Laboratory': 0, 'Mental': 0, 'Nutrition': 0, 'Radiography': 0
+        self.parameters["HR_expansion_by_officer_type"] = {
+            "Clinical": 0, "DCSA": 0, "Nursing_and_Midwifery": 0, "Pharmacy": 0,
+            "Dental": 0, "Laboratory": 0, "Mental": 0, "Nutrition": 0, "Radiography": 0
         }
-        self.parameters['HR_budget_growth_rate'] = 0.042
-        self.parameters['start_year_HR_expansion_by_officer_type'] = 2025
-        self.parameters['end_year_HR_expansion_by_officer_type'] = 2035
+        self.parameters["HR_budget_growth_rate"] = 0.042
+        self.parameters["start_year_HR_expansion_by_officer_type"] = 2025
+        self.parameters["nd_year_HR_expansion_by_officer_type"] = 2035
 
     def validate_clinic_configuration(self, clinic_capabilities_df: pd.DataFrame):
         """Validate the contents of the clinics capabilities dataframe.
