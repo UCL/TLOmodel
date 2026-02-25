@@ -3443,13 +3443,16 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         self.counter_for_drugs_not_available = 0
         self.type_of_prep = type_of_prep
 
+    def get_prep_column(self):
+        return 'hv_is_on_prep_oral' if self.type_of_prep == 'oral' else 'hv_is_on_prep_inj'
+
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for this person; or continue them on PrEP for 3 more months"""
 
         df = self.sim.population.props
         p = self.module.parameters
         person = df.loc[person_id]
-        prep_column = 'hv_is_on_prep_oral' if self.type_of_prep == 'oral' else 'hv_is_on_prep_inj'
+        prep_column = self.get_prep_column()
         days_on_prep_property = 'hv_days_on_oral_prep' if self.type_of_prep == 'oral' else 'hv_days_on_inj_prep'
 
         # Do not run if the person is not alive or is diagnosed with hiv
@@ -3525,7 +3528,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
     def never_ran(self):
         """This is called if this HSI was never run.
         Default the person to being off PrEP"""
-        prep_column = 'hv_is_on_prep_oral' if self.type_of_prep == 'oral' else 'hv_is_on_prep_inj'
+        prep_column = self.get_prep_column()
         self.sim.population.props.at[self.target, prep_column] = False
 
 
