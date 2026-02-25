@@ -2075,6 +2075,8 @@ class HealthSystem(Module):
         self._summary_counter.record_hs_status(
             fraction_time_used_across_all_facilities_in_this_clinic=fraction_time_used_overall,
             fraction_time_used_by_facID_and_officer_in_this_clinic=fraction_time_used_by_facID_and_officer.to_dict(),
+            fraction_time_used_by_officer_type_and_level_in_this_clinic=summary_by_officer[
+                "Fraction_Time_Used"].to_dict(),
             fraction_time_used_by_officer_district_in_this_clinic=summary_by_officer_district[
                 "Fraction_Time_Used"].to_dict(),
             fraction_time_used_by_officer_level_district_in_this_clinic=summary_by_officer_level_district[
