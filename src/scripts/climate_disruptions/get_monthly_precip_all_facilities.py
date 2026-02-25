@@ -124,7 +124,10 @@ for scenario in scenarios:
     )
 
     # ── Loop over ALL facilities in the lat/long file ─────────────────────────
-    cumulative_sum_window = {}
+    # CHANGED: three dicts instead of one, for lowest/mean/highest
+    cumulative_sum_lowest = {}  # p25 across models
+    cumulative_sum_mean = {}  # median across models
+    cumulative_sum_highest = {}  # p75 across models
     skipped = []
 
     # Pre-build KDTrees once per model (outside facility loop for efficiency)
@@ -160,45 +163,52 @@ for scenario in scenarios:
         first_model = next(iter(grid_precipitation_for_facility))
         n_timepoints = len(grid_precipitation_for_facility[first_model])
 
-        # Compute median across models at each time point (needed for rolling window)
-        median_all_timepoints = [
-            np.median([
+        # CHANGED: compute p25, median, p75 across models at each time point
+        p25_all = []
+        median_all = []
+        p75_all = []
+        for t in range(n_timepoints):
+            per_model = [
                 precip_data[t]
                 for precip_data in grid_precipitation_for_facility.values()
                 if len(precip_data) == n_timepoints
-            ])
-            for t in range(n_timepoints)
-        ]
-
-        # Rolling window max (5-day cumulative by default)
-        cumulative_sum_window[fname] = []
-        begin_day = 0
-        for month_idx, month_length in enumerate(month_lengths):
-            if monthly_cumulative:
-                window_size = month_length
-            days_for_grid = median_all_timepoints[begin_day: begin_day + month_length]
-            cumulative_sums = [
-                sum(days_for_grid[day: day + window_size])
-                for day in range(month_length - window_size + 1)
             ]
-            cumulative_sum_window[fname].append(max(cumulative_sums))
-            begin_day += month_length
+            p25_all.append(np.percentile(per_model, 25))
+            median_all.append(np.median(per_model))
+            p75_all.append(np.percentile(per_model, 75))
+
+        # CHANGED: compute rolling window for each of the three variants
+        for daily_values, store in [
+            (p25_all, cumulative_sum_lowest),
+            (median_all, cumulative_sum_mean),
+            (p75_all, cumulative_sum_highest),
+        ]:
+            store[fname] = []
+            begin_day = 0
+            for month_idx, month_length in enumerate(month_lengths):
+                if monthly_cumulative:
+                    window_size = month_length
+                days_for_grid = daily_values[begin_day: begin_day + month_length]
+                cumulative_sums = [
+                    sum(days_for_grid[day: day + window_size])
+                    for day in range(month_length - window_size + 1)
+                ]
+                store[fname].append(max(cumulative_sums))
+                begin_day += month_length
 
     if skipped:
         print(f"  Skipped {len(skipped)} facilities (missing coordinates or data): {skipped[:5]}")
-    print(f"  Extracted data for {len(cumulative_sum_window)} facilities")
+    print(f"  Extracted data for {len(cumulative_sum_mean)} facilities")
 
-    # ── Save ──────────────────────────────────────────────────────────────────
+    # CHANGED: save three files matching lowest/mean/highest naming convention
     suffix = f"all_facilities_{service}"
-    df_cumulative_sum = pd.DataFrame.from_dict(cumulative_sum_window, orient='index').T.astype(float)
+    for label, data in [("lowest", cumulative_sum_lowest),
+                        ("mean", cumulative_sum_mean),
+                        ("highest", cumulative_sum_highest)]:
+        df = pd.DataFrame.from_dict(data, orient='index').T.astype(float)
+        if monthly_cumulative:
+            df.to_csv(Path(scenario_directory) / f"{label}_monthly_prediction_weather_by_{suffix}.csv")
+        else:
+            df.to_csv(Path(scenario_directory) / f"{label}_window_prediction_weather_by_{suffix}.csv")
 
-    if monthly_cumulative:
-        df_cumulative_sum.to_csv(
-            Path(scenario_directory) / f"monthly_cumulative_sum_by_{suffix}.csv"
-        )
-    else:
-        df_cumulative_sum.to_csv(
-            Path(scenario_directory) / f"{window_size}day_cumulative_sum_by_{suffix}.csv"
-        )
-
-    print(f"  Saved outputs to {scenario_directory}")
+    print(f"  Saved lowest/mean/highest outputs to {scenario_directory}")
