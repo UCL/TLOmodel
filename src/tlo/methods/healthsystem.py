@@ -2865,7 +2865,7 @@ class HealthSystemSummaryCounter:
         self,
         fraction_time_used_across_all_facilities_in_this_clinic: float,
         fraction_time_used_by_facID_and_officer_in_this_clinic: Dict[str, float],
-         fraction_time_used_by_officer_type_and_level_in_this_clinic: Dict[Tuple[str, int], float],
+        fraction_time_used_by_officer_type_and_level_in_this_clinic: Dict[Tuple[str, int], float],
         fraction_time_used_by_officer_district_in_this_clinic: Dict[Tuple[str, str], float],
         fraction_time_used_by_officer_level_district_in_this_clinic: Dict[Tuple[str, str, str], float],
         clinic: str
