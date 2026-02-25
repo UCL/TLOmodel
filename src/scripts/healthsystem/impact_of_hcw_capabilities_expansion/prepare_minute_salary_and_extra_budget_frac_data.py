@@ -2,7 +2,6 @@
 We calculate the salary cost of current and funded plus HCW.
 """
 import itertools
-# import pickle
 from pathlib import Path
 
 import numpy as np

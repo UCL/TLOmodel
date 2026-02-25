@@ -13,7 +13,6 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-# import statsmodels.stats as ss
 from matplotlib import pyplot as plt
 
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_salary_and_extra_budget_frac_data import (
@@ -1062,24 +1061,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
     num_services_increased_percent.to_csv(output_folder / 'num_services_increased_percent.csv')
 
-    num_deaths_averted = summarize(
-        -1.0 *
-        pd.DataFrame(
-            find_difference_relative_to_comparison_series(
-                num_deaths.loc[0],
-                comparison='s_1')
-        ).T
-    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+    # num_deaths_averted = summarize(
+    #     -1.0 *
+    #     pd.DataFrame(
+    #         find_difference_relative_to_comparison_series(
+    #             num_deaths.loc[0],
+    #             comparison='s_1')
+    #     ).T
+    # ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
-    num_deaths_averted_percent = summarize(
-        -1.0 *
-        pd.DataFrame(
-            find_difference_relative_to_comparison_series(
-                num_deaths.loc[0],
-                comparison='s_1',
-                scaled=True)
-        ).T
-    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+    # num_deaths_averted_percent = summarize(
+    #     -1.0 *
+    #     pd.DataFrame(
+    #         find_difference_relative_to_comparison_series(
+    #             num_deaths.loc[0],
+    #             comparison='s_1',
+    #             scaled=True)
+    #     ).T
+    # ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_dalys_averted = summarize(
         -1.0 *
@@ -1141,14 +1140,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
-    num_dalys_by_cause_group_averted_percent = summarize(
-        -1.0 * find_difference_relative_to_comparison_dataframe(
-            num_dalys_by_cause_group,
-            comparison='s_1',
-            scaled=True
-        ),
-        only_mean=True
-    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+    # num_dalys_by_cause_group_averted_percent = summarize(
+    #     -1.0 * find_difference_relative_to_comparison_dataframe(
+    #         num_dalys_by_cause_group,
+    #         comparison='s_1',
+    #         scaled=True
+    #     ),
+    #     only_mean=True
+    # ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_dalys_by_cause_group_averted_percent_ci = summarize_by_cause(
         -1.0 * find_difference_relative_to_comparison_dataframe(
@@ -1257,14 +1256,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         by=['cause', 'draw'])
     num_treatments_group_increased_percent_ci.to_csv(output_folder / 'num_treatments_area_increased_percent_ci.csv')
 
-    num_treatments_increased_percent = summarize(
-        find_difference_relative_to_comparison_dataframe(
-            num_treatments,
-            comparison='s_1',
-            scaled=True
-        ),
-        only_mean=True
-    ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
+    # num_treatments_increased_percent = summarize(
+    #     find_difference_relative_to_comparison_dataframe(
+    #         num_treatments,
+    #         comparison='s_1',
+    #         scaled=True
+    #     ),
+    #     only_mean=True
+    # ).T.reindex(num_dalys_summarized.index).drop(['s_1'])
 
     num_treatments_total_increased = summarize(
         pd.DataFrame(
@@ -1835,7 +1834,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             & (rs_data_prediction.loc[i, 'dalys'] <= 1e6 * rs_data_prediction.loc[i, 'obs_ci_upper'])):
             rs_data_prediction.loc[i, 'within_PI'] = True
 
-    rs_test_result = rs_data_prediction['within_PI'].sum() / len(rs_data_prediction['within_PI'])
+    # rs_test_result = rs_data_prediction['within_PI'].sum() / len(rs_data_prediction['within_PI'])
 
 # make the above process as a function of alpha and plot test_result against alpha
     def func_rs_test_result(_alpha=0.05):
