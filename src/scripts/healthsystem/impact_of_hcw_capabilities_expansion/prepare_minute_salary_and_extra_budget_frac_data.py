@@ -53,7 +53,7 @@ Minute_Salary.drop(columns=['Facility_Level'], inplace=True)
 Minute_Salary = Minute_Salary.fillna(0.0)
 Minute_Salary.rename(columns={'Officer_Category': 'Officer_Type_Code'}, inplace=True)
 
-Minute_Salary.to_csv(resourcefilepath / 'costing' / 'Minute_Salary_HR.csv', index=False)
+Minute_Salary.to_csv(resourcefilepath / 'costing' / 'ResourceFile_Minute_Salary_HR.csv', index=False)
 
 # implement historical scaling to hr_current
 hr_current['Total_Mins_Per_Day'] *= integrated_historical_scaling

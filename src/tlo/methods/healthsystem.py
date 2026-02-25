@@ -754,9 +754,9 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet["year"].values for sheet in self.parameters["yearly_HR_scaling"].values())
 
-        # Read in ResourceFile_Annual_Salary_Per_Cadre.csv
+        # Read in ResourceFile_Minute_Salary_HR.csv
         self.parameters["minute_salary"] = pd.read_csv(
-            resourcefilepath / "costing" / "Minute_Salary_HR.csv")
+            resourcefilepath / "costing" / "ResourceFile_Minute_Salary_HR.csv")
 
         # Set default values for HR_expansion_by_officer_type, start_year_HR_expansion_by_officer_type,
         # end_year_HR_expansion_by_officer_type
