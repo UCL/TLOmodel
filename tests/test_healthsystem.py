@@ -3025,3 +3025,108 @@ def test_clinics_rescaling_factor(seed, tmpdir):
         clinic1_capabilities_before * 2,
         clinic1_capabilities_after,
     ), "Expected Clinic1 capabilities to be rescaled by factor of 2"
+
+
+
+def test_service_availability_switch(tmpdir, seed):
+    """Test that the service availability is updated in the year specified.
+    Simultaneously check that the switch triggers related behaviors:
+    1) compute and write to logs rescaling factors
+    2) clear hsi event queue of any events scheduled to run after the switch
+    that need one of the unavailable services.
+    """
+
+    class DummyModuleGenericClinic(Module):
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    # Create a dummy HSI event class
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id, appt_type, level, treatment_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = treatment_id
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+            self.ACCEPTED_FACILITY_LEVEL = level
+
+        def apply(self, person_id, squeeze_factor):
+            self.this_hsi_event_ran = True
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+    }
+    start_date = Date(2010, 1, 1)
+
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+
+    sim.register(
+        demography.Demography(),
+        healthsystem.HealthSystem(
+            capabilities_coefficient=1.0,
+            mode_appt_constraints=1,
+            ignore_priority=False,
+            randomise_queue=True,
+            policy_name="",
+            use_funded_or_actual_staffing="funded_plus",
+        ),
+        DummyModuleGenericClinic(),
+    )
+
+    hs_params = sim.modules["HealthSystem"].parameters
+    hs_params["Service_Availability"] = ["ThisEventShouldRun", "ThisEventShouldNotRunPostSwitch"]
+    year_service_availability_switch = 2011
+    hs_params["year_service_availability_switch"] = year_service_availability_switch
+    hs_params["service_availability_postSwitch"] = ["ThisEventShouldRun"]
+
+    sim.make_initial_population(n=popsize)
+    ## Schedule 10 events that should run; 10 events that have a treatment id that is not available
+    ## after service availability switch.
+    nevents_with_available_ids = 60
+    nevents_with_withdrawn_ids = 40
+    for i in range(0, nevents_with_available_ids):
+        hsi = DummyHSIEvent(
+            module=sim.modules["DummyModuleGenericClinic"],
+            person_id=i,
+            appt_type="ConWithDCSA",
+            level="0",
+            treatment_id="ThisEventShouldRun",
+        )
+        sim.modules["HealthSystem"].schedule_hsi_event(
+            hsi, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=1
+        )
+
+    for i in range(nevents_with_available_ids, nevents_with_available_ids + nevents_with_withdrawn_ids):
+        hsi = DummyHSIEvent(
+            module=sim.modules["DummyModuleGenericClinic"],
+            person_id=i,
+            appt_type="ConWithDCSA",
+            level="0",
+            treatment_id="ThisEventShouldNotRunPostSwitch",
+        )
+        ## These events open after service availability switch
+        topen = pd.Timestamp(year_service_availability_switch, 1, 1)
+        sim.modules["HealthSystem"].schedule_hsi_event(
+            hsi, topen=topen, tclose=topen + pd.DateOffset(days=1), priority=1
+        )
+
+    sim.simulate(end_date=end_date)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+    hsi_events = output["tlo.methods.healthsystem"]["HSI_Event"]
+    ## Expect nevents_with_available_ids rows in hsi_events['HSI_Event'] with did_run True and TREATMENT_ID ThisEventShouldRun
+    nevents_ran = hsi_events.groupby("TREATMENT_ID")["did_run"].value_counts()
+    assert nevents_ran.loc[("ThisEventShouldRun", True)] == nevents_with_available_ids
+    ## Expect nevents_with_withdrawn_ids rows in hsi_events['Never_ran_HSI_Event'] with TREATMENT_ID ThisEventShouldNotRunPostSwitch
+    never_ran_events = output["tlo.methods.healthsystem"]["Never_ran_HSI_Event"]
+    nevents_did_not_run = never_ran_events[never_ran_events["TREATMENT_ID"] == "ThisEventShouldNotRunPostSwitch"].shape[
+        0
+    ]
+    assert nevents_did_not_run == nevents_with_withdrawn_ids

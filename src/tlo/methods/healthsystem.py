@@ -255,12 +255,19 @@ class HealthSystem(Module):
             "Year in which the assumption for `equip_availability` changes (The change happens on 1st January of that "
             "year.)",
         ),
+
         # Service Availability
         "Service_Availability": Parameter(
             Types.LIST,
             "List of services to be available. NB. This parameter is over-ridden if an argument is provided"
             " to the module initialiser.",
         ),
+        "year_service_availability_switch": Parameter(Types.INT, "Year in which service availability changes."),
+        "service_availability_postSwitch": Parameter(
+            Types.LIST,
+            "List of services to be available after the switch in `year_service_availability_switch`.",
+        ),
+
         "policy_name": Parameter(Types.STRING, "Name of priority policy adopted"),
         "year_mode_switch": Parameter(Types.INT, "Year in which mode switch is enforced"),
         "scale_to_effective_capabilities": Parameter(
@@ -897,6 +904,12 @@ class HealthSystem(Module):
             Date(self.parameters["year_use_funded_or_actual_staffing_switch"], 1, 1),
         )
 
+        # Schedule service availability switch
+        sim.schedule_event(
+            HealthSystemChangeParameters(self,parameters_to_change=["service_availability"]),
+            Date(self.parameters["year_service_availability_switch"], 1, 1),
+        )
+
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
         sim.schedule_event(
@@ -1250,17 +1263,28 @@ class HealthSystem(Module):
 
         return capabilities_ex
 
+    def _compute_factors_for_effective_capabilities(self):
+        """Compute factor to rescale capabilities to capture effective capability.
+        Computation of these factors is split from the actual rescaling to facilitate
+        capturing them even when running the model in mode 1."""
+        self._rescaling_factors = defaultdict(dict)
+        for clinic, clinic_cl in self._daily_capabilities.items():
+            for facID_and_officer in clinic_cl.keys():
+                self._rescaling_factors[clinic][facID_and_officer] = self._summary_counter.frac_time_used_by_facID_and_officer(
+                    facID_and_officer=facID_and_officer, clinic=clinic
+                )
+        self._summary_counter._rescaling_factors = self._rescaling_factors
+
     def _rescale_capabilities_to_capture_effective_capability(self):
         # Notice that capabilities will only be expanded through this process
         # (i.e. won't reduce available capabilities if these were under-used in the last year).
         # Note: Currently relying on module variable rather than parameter for
         # scale_to_effective_capabilities, in order to facilitate testing. However
         # this may eventually come into conflict with the Switcher functions.
+        self._compute_factors_for_effective_capabilities()
         for clinic, clinic_cl in self._daily_capabilities.items():
             for facID_and_officer in clinic_cl.keys():
-                rescaling_factor = self._summary_counter.frac_time_used_by_facID_and_officer(
-                    facID_and_officer=facID_and_officer, clinic=clinic
-                )
+                rescaling_factor = self._rescaling_factors[clinic][facID_and_officer]
 
                 if rescaling_factor > 1 and rescaling_factor != float("inf"):
                     self._daily_capabilities[clinic][facID_and_officer] *= rescaling_factor
@@ -1572,6 +1596,13 @@ class HealthSystem(Module):
         """Add an event to the HSI_EVENT_QUEUE."""
         # Create HSIEventQueue Item, including a counter for the number of HSI_Events, to assist with sorting in the
         # queue (NB. the sorting is done ascending and by the order of the items in the tuple).
+
+
+        # First check that the service the HSI needs is available. If not, don't add to queue.
+        # Don't increment the counter; log and return.
+        if not self.is_treatment_id_allowed(hsi_event.TREATMENT_ID, self.service_availability):
+            self.schedule_to_call_never_ran_on_date(hsi_event=hsi_event, tdate=topen)
+
 
         self.hsi_event_queue_counter += 1
 
@@ -2101,6 +2132,12 @@ class HealthSystem(Module):
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
+
+        # If we are at the end of the year preceeding the service availability switch,
+        # compute rescaling factors.
+        if (self.sim.date.year == self.parameters['year_service_availability_switch'] - 1):
+            self._compute_factors_for_effective_capabilities()
+
         # If we are at the end of the year preceeding the mode switch, and if wanted
         # to rescale capabilities to capture effective availability as was recorded, on
         # average, in the past year, do so here.
@@ -2147,6 +2184,12 @@ class HealthSystem(Module):
                 if event.expected_time_requests:
                     ok_to_run = self.do_all_required_officers_have_nonzero_capabilities(
                                     event.expected_time_requests, clinic=clinic)
+
+                # Check here that the treatment id is allowed at this point as service availability might have changed
+                # since the event was scheduled
+                if not self.is_treatment_id_allowed(event.TREATMENT_ID, self.service_availability):
+                    ok_to_run = False
+
                 if ok_to_run:
 
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
@@ -2409,6 +2452,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Check the clinic for event's treatment-id
                 event_clinic = next_event_tuple.clinic_eligibility
                 capabilities_still_available = set_capabilities_still_available[event_clinic]
+
+                # Check here that the treatment id is allowed as service availability might have changed
+                # since the event was scheduled
+                if not self.module.is_treatment_id_allowed(event.TREATMENT_ID, self.module.service_availability):
+                    self.module.call_and_record_never_ran_hsi_event(hsi_event=event, priority=next_event_tuple.priority)
 
                 if self.sim.date > next_event_tuple.tclose:
                     # The event has expired (after tclose) having never been run. Call the 'never_ran' function
@@ -2730,6 +2778,7 @@ class HealthSystemSummaryCounter:
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ("0", "1a", "1b", "2", "3", "4")}
 
+        self._rescaling_factors = defaultdict(dict)
         self._frac_time_used_overall = defaultdict(list) # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_facID_and_officer = defaultdict(Counter)
 
@@ -2823,6 +2872,7 @@ class HealthSystemSummaryCounter:
                 "average_Frac_Time_Used_Overall": {
                     clinic: np.mean(values) for clinic, values in self._frac_time_used_overall.items()
                 },
+                "rescaling_factor_for_clinics": self._rescaling_factors,
                 # <-- leaving space here for additional summary measures that may be needed in the future.
             },
         )
@@ -2885,7 +2935,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         super().__init__(module)
         assert isinstance(module, HealthSystem)
 
-        self.supported_parameters = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing"]
+        self.supported_parameters = ["cons_availability", "equip_availability", "use_funded_or_actual_staffing", "service_availability"]
         if not all(param in self.supported_parameters for param in parameters_to_change):
             raise ValueError(
                 f"parameters_to_change can only contain the following values: {self.supported_parameters}. "
@@ -2905,6 +2955,21 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if "use_funded_or_actual_staffing" in self.parameters_to_change:
             self.module.use_funded_or_actual_staffing = p["use_funded_or_actual_staffing_postSwitch"]
+
+        if "service_availability" in self.parameters_to_change:
+            self.module.service_availability = p["service_availability_postSwitch"]
+            ## As part of the switching, clear the queue of any events currently scheduled
+            ## that might require one of the omitted services when they actually run.
+            retained_events = []
+            while len(self.module.HSI_EVENT_QUEUE) > 0:
+                next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
+                if self.module.is_treatment_id_allowed(next_event_tuple.hsi_event.TREATMENT_ID, self.module.service_availability):
+                    retained_events.append(next_event_tuple)
+                else:
+                    self.module.schedule_to_call_never_ran_on_date(hsi_event=next_event_tuple.hsi_event, tdate=next_event_tuple.topen)
+
+            self.module.HSI_EVENT_QUEUE = retained_events
+            hp.heapify(self.module.HSI_EVENT_QUEUE)
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
