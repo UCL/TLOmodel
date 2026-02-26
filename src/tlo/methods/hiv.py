@@ -3443,13 +3443,16 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         self.counter_for_drugs_not_available = 0
         self.type_of_prep = type_of_prep
 
+    def get_prep_column(self):
+        return 'hv_is_on_prep_oral' if self.type_of_prep == 'oral' else 'hv_is_on_prep_inj'
+
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for this person; or continue them on PrEP for 3 more months"""
 
         df = self.sim.population.props
         p = self.module.parameters
         person = df.loc[person_id]
-        property = 'hv_is_on_prep_oral' if self.type_of_prep == 'oral' else 'hv_is_on_prep_inj'
+        prep_column = self.get_prep_column()
         days_on_prep_property = 'hv_days_on_oral_prep' if self.type_of_prep == 'oral' else 'hv_days_on_inj_prep'
 
         # Do not run if the person is not alive or is diagnosed with hiv
@@ -3484,7 +3487,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             if self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['prep']: days_on_prep}
             ):
-                df.at[person_id, property] = True
+                df.at[person_id, prep_column] = True
 
                 if df.at[person_id, "li_is_sexworker"]:
                     df.at[person_id, f'{days_on_prep_property}_FSW'] += days_on_prep
@@ -3504,7 +3507,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
             else:
                 # If PrEP is not available, the person will default and not be on PrEP
-                df.at[person_id, property] = False
+                df.at[person_id, prep_column] = False
 
                 self.counter_for_drugs_not_available += (
                     1  # The current appointment is included in the count.
@@ -3525,7 +3528,8 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
     def never_ran(self):
         """This is called if this HSI was never run.
         Default the person to being off PrEP"""
-        self.sim.population.props.at[self.target, property] = False
+        prep_column = self.get_prep_column()
+        self.sim.population.props.at[self.target, prep_column] = False
 
 
 class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):

@@ -1549,6 +1549,15 @@ class HealthSystem(Module):
             hsi_event.initialise()
             clinic_eligibility = self.get_clinic_eligibility(hsi_event.TREATMENT_ID)
 
+            # Check we recognise requested officers
+            for officer in hsi_event.expected_time_requests:
+                if officer not in self._daily_capabilities[clinic_eligibility]:
+                    logger.warning(
+                        key="message",
+                        data=f"Unknown officer '{officer}' requested by "
+                             f"{hsi_event.__class__.__name__} at time of scheduling."
+                    )
+
             self._add_hsi_event_queue_item_to_hsi_event_queue(
                 clinic_eligibility=clinic_eligibility,
                 priority=priority,
@@ -1874,6 +1883,10 @@ class HealthSystem(Module):
         If this is an individual-level HSI_Event, it will also record the actual appointment footprint
         :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
         """
+        # Do nothing if person is not alive
+        if not self.sim.population.props.at[hsi_event.target, 'is_alive']:
+            return
+
         # Invoke never ran function here
         hsi_event.never_ran()
 
@@ -2105,26 +2118,13 @@ class HealthSystem(Module):
         # Record equipment usage for the year, for each facility
         self._record_general_equipment_usage_for_year()
 
-    def check_if_all_required_officers_have_nonzero_capabilities(self, expected_time_requests, clinic)-> bool:
+    def do_all_required_officers_have_nonzero_capabilities(self, expected_time_requests, clinic)-> bool:
         """Check if all officers required by the appt footprint are available to perform the HSI"""
-
-        ok_to_run = True
-
-        for officer in expected_time_requests.keys():
-            availability = self.capabilities_today[clinic][officer]
-
-            # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
-            if availability is None:
-                logger.warning(
-                    key="message",
-                    data=(f"Requested officer {officer} is not contemplated by health system. ")
-                )
-                availability = 0.0
-
-            if availability == 0.0:
-                ok_to_run = False
-
-        return ok_to_run
+        clinic_capabilities = self.capabilities_today[clinic]
+        for officer in expected_time_requests:
+            if clinic_capabilities.get(officer, 0.0) == 0.0:
+                return False
+        return True
 
     def run_individual_level_events_in_mode_1(
         self, _list_of_individual_hsi_event_tuples: List[HSIEventQueueItem]
@@ -2145,7 +2145,7 @@ class HealthSystem(Module):
                 # In this mode, all HSI Events run provided all required officers have non-zero capabilities
                 ok_to_run = True
                 if event.expected_time_requests:
-                    ok_to_run = self.check_if_all_required_officers_have_nonzero_capabilities(
+                    ok_to_run = self.do_all_required_officers_have_nonzero_capabilities(
                                     event.expected_time_requests, clinic=clinic)
                 if ok_to_run:
 

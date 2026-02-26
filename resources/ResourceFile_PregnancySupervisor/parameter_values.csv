@@ -1,3 +1,198 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:fffbcb2ae018646950fa06e584b004613e0ebe1c4f45b9bf56d6a4ba0fde6a46
-size 20419
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
+prob_ectopic_pregnancy,"[0.01, 0.01]",undetermined,"[0, 0]","[1,1]",calibration,"Institute of Health Metrics and Evaluation (2019) GBD Results Tool | GHDx, 2019. Available at: http://ghdx.healthdata.org/gbd-results-tool (Accessed: 6 July 2021)."
+prob_care_seeking_ectopic_pre_rupture,"[0.08, 0.08]",undetermined,"[0, 0]","[1,1]",calibration,"Flores, A. H. et al. (2015) ‘Frequency of utilisation of ultrasound in the diagnosis of ectopic pregnancy in Sub-Saharan Africa countries: A systematic review’, in African Journal of Emergency Medicine. African Federation for Emergency Medicine, pp. 31–36. doi: 10.1016/j.afjem.2014.08.001."
+prob_ectopic_pregnancy_death,"[0.02, 0.012]",undetermined,"[0, 0]","[1,1]",calibration,"Ministry of Health Malawi et al. (2010) Malawi 2010 EmONC Needs Assessment Final Report.
+
+Ministry of Health Malawi et al. (2015) Malawi Emergency Obstetric and Newborn Care Needs Assessment, 2014."
+,,,,,,
+prob_multiples,"[0.0399, 0.0399]",undetermined,"[0, 0]","[1,1]",calibration,"Monden, C. W. S. and Smits, J. (2017) ‘Mortality among twins and singletons in sub-Saharan Africa between 1995 and 2014: a pooled analysis of data from 90 Demographic and Health Surveys in 30 countries’, The Lancet Global Health. Elsevier Ltd, 5(7), pp. e673–e679. doi: 10.1016/S2214-109X(17)30197-3."
+,,,,,,
+prob_placenta_praevia,"[0.005,0.0058]",undetermined,"[0, 0]","[1,1]",calibration,"Senkoro, E. E. et al. (2017) ‘Frequency, Risk Factors, and Adverse Fetomaternal Outcomes of Placenta Previa in Northern Tanzania’, Journal of Pregnancy. Hindawi Limited, 2017. doi: 10.1155/2017/5936309."
+rr_placenta_praevia_previous_cs,"[1.47,1.47]",local,"[0.01, 0.01]","[100,100]",vague prior,"Yang, Q. et al. (2007) ‘Association of caesarean delivery for first birth with placenta praevia and placental abruption in second pregnancy’, BJOG: An International Journal of Obstetrics and Gynaecology. BJOG, 114(5), pp. 609–613. doi: 10.1111/j.1471-0528.2007.01295.x."
+,,,,,,
+prob_syphilis_during_pregnancy,"[0.028, 0.028]",undetermined,"[0, 0]","[1,1]",calibration,Malawi Integrated HIV Program Reports
+,,,,,,
+prob_previous_miscarriage_at_baseline,0.047,undetermined,0,1,calibration,"National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017"
+prob_spontaneous_abortion_per_month,"[[0.025, 0.037, 0.05, 0.037, 0.025], [0.025, 0.037, 0.05, 0.037, 0.025]]",undetermined,"[0, 0]","[1,1]",calibration,"Levandowski, B. A. et al. (2013) The Incidence of Induced Abortion in Malawi, Perspectives on Sexual and Reproductive Health. Available at: https://www.jstor.org/stable/41959960 (Accessed: 5 July 2021).
+
+Polis, C. B. et al. (2017) ‘Incidence of induced abortion in Malawi, 2015’, PLoS ONE. Public Library of Science, 12(4). doi: 10.1371/journal.pone.0173639."
+rr_spont_abortion_age_35,"[4, 4]",local,"[0.01, 0.01]","[100,100]",vague prior,"Dellicour, S. et al. (2016) ‘Weekly miscarriage rates in a community-based prospective cohort study in rural western Kenya’, BMJ Open, 6(4). doi: 10.1136/bmjopen-2016-011088."
+rr_spont_abortion_age_31_34,"[2.31, 2.31]",local,"[0.01, 0.01]","[100,100]",vague prior,"Dellicour, S. et al. (2016) ‘Weekly miscarriage rates in a community-based prospective cohort study in rural western Kenya’, BMJ Open, 6(4). doi: 10.1136/bmjopen-2016-011088."
+rr_spont_abortion_prev_sa,"[2.23, 2.23]",local,"[0.01, 0.01]","[100,100]",vague prior,"Dellicour, S. et al. (2016) ‘Weekly miscarriage rates in a community-based prospective cohort study in rural western Kenya’, BMJ Open, 6(4). doi: 10.1136/bmjopen-2016-011088."
+prob_complicated_sa,"[0.11, 0.11]",local,"[0, 0]","[1,1]",vague prior,"Levandowski, B. A. et al. (2013) The Incidence of Induced Abortion in Malawi, Perspectives on Sexual and Reproductive Health. Available at: https://www.jstor.org/stable/41959960 (Accessed: 5 July 2021).
+
+Polis, C. B. et al. (2017) ‘Incidence of induced abortion in Malawi, 2015’, PLoS ONE. Public Library of Science, 12(4). doi: 10.1371/journal.pone.0173639."
+prob_induced_abortion_per_month,"[0.038, 0.038]",undetermined,"[0, 0]","[1,1]",calibration,"Levandowski, B. A. et al. (2013) The Incidence of Induced Abortion in Malawi, Perspectives on Sexual and Reproductive Health. Available at: https://www.jstor.org/stable/41959960 (Accessed: 5 July 2021).
+
+Polis, C. B. et al. (2017) ‘Incidence of induced abortion in Malawi, 2015’, PLoS ONE. Public Library of Science, 12(4). doi: 10.1371/journal.pone.0173639."
+prob_complicated_ia,"[0.37 ,0.37]",local,"[0, 0]","[1,1]",vague prior,"Levandowski, B. A. et al. (2013) The Incidence of Induced Abortion in Malawi, Perspectives on Sexual and Reproductive Health. Available at: https://www.jstor.org/stable/41959960 (Accessed: 5 July 2021).
+
+Polis, C. B. et al. (2017) ‘Incidence of induced abortion in Malawi, 2015’, PLoS ONE. Public Library of Science, 12(4). doi: 10.1371/journal.pone.0173639."
+prob_haemorrhage_post_abortion,"[0.23, 0.23] ",local,"[0, 0]","[1,1]",vague prior,"The magnitude and severity of abortion-related morbidity in settings with limited access to abortion services: a systematic review and meta-regression’, BMJ Global Health. BMJ Publishing Group, 3(3), p. e000692. doi: 10.1136/bmjgh-2017-000692."
+prob_sepsis_post_abortion,"[0.137, 0.137]",local,"[0, 0]","[1,1]",vague prior,"Kalilani-Phiri, L. et al. (2015) ‘The severity of abortion complications in Malawi’, International Journal of Gynecology & Obstetrics. Elsevier Ireland Ltd, 128(2), pp. 160–164. doi: 10.1016/j.ijgo.2014.08.022."
+prob_injury_post_abortion,"[0.056, 0.056]",local,"[0, 0]","[1,1]",vague prior,"Kalilani-Phiri, L. et al. (2015) ‘The severity of abortion complications in Malawi’, International Journal of Gynecology & Obstetrics. Elsevier Ireland Ltd, 128(2), pp. 160–164. doi: 10.1016/j.ijgo.2014.08.022."
+prob_spontaneous_abortion_death,"[0.01, 0.005]",undetermined,"[0, 0]","[1,1]",calibration,"Ministry of Health Malawi et al. (2010) Malawi 2010 EmONC Needs Assessment Final Report.
+
+Ministry of Health Malawi et al. (2015) Malawi Emergency Obstetric and Newborn Care Needs Assessment, 2014."
+prob_induced_abortion_death,"[0.005, 0.0025]",undetermined,"[0, 0]","[1,1]",calibration,"Ministry of Health Malawi et al. (2010) Malawi 2010 EmONC Needs Assessment Final Report.
+
+Ministry of Health Malawi et al. (2015) Malawi Emergency Obstetric and Newborn Care Needs Assessment, 2014."
+,,,,,,
+baseline_prob_anaemia_per_month,"[0.1, 0.12]",undetermined,"[0, 0]","[1,1]",calibration,"National Statistical Office (NSO), ICF Macro. Malawi Demographic and Health Survey 2010. Zomba, Malawi, and Calverton, Maryland, USA: NSO and ICF Macro, 2011.
+
+National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017
+"
+rr_anaemia_maternal_malaria,"[1.45, 1.45]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_anaemia_hiv_no_art,"[4.19, 4.19]",local,"[0.01, 0.01]","[100,100]",vague prior,
+prob_mild_mod_sev_anaemia,"[[0.52,0.475, 0.005], [0.50, 0.46, 0.04]]",undetermined,"[0, 0]","[1,1]",calibration,"National Statistical Office (NSO), ICF Macro. Malawi Demographic and Health Survey 2010. Zomba, Malawi, and Calverton, Maryland, USA: NSO and ICF Macro, 2011.
+National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017"
+,,,,,,
+prob_gest_diab_per_month,"[0.0056, 0.0056]",undetermined,"[0, 0]","[1,1]",calibration,"Phiri, T. J., Kasiya, M. and Allain, T. (2019) Full Prevalence Of Gestational Diabetes In Urban Women In Blantyre, Malawi: A Cross Sectional Study And Comparison Of Who And IADPSG Criteria. doi: 10.21203/rs.2.13491/v1."
+rr_gest_diab_obesity,"[3.97, 3.97]",local,"[0.01, 0.01]","[100,100]",vague prior,"Santos, S. et al. (2019) ‘Impact of maternal body mass index and gestational weight gain on pregnancy complications: an individual participant data meta-analysis of European, North American and Australian cohorts’, BJOG: An International Journal of Obstetrics and Gynaecology. Blackwell Publishing Ltd, 126(8), pp. 984–995. doi: 10.1111/1471-0528.15661."
+,,,,,,
+prob_gest_htn_per_month,"[0.0073, 0.0073]",undetermined,"[0, 0]","[1,1]",calibration,
+rr_gest_htn_obesity,"[3.31, 3.31]",local,"[0.01, 0.01]","[100,100]",vague prior,
+prob_pre_eclampsia_per_month,"[0.0065,0.0065]",undetermined,"[0, 0]","[1,1]",calibration,
+rr_pre_eclampsia_obesity,"[3.2, 3.2]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_pre_eclampsia_multiple_pregnancy,"[4.07, 4.07]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_pre_eclampsia_chronic_htn,"[2.26, 2.26]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_pre_eclampsia_diabetes_mellitus,"[3.7, 3.7]",local,"[0.01, 0.01]","[100,100]",vague prior,
+probs_for_mgh_matrix,"[[0.918, 0.032, 0.05, 0, 0], [0.918, 0.032, 0.05, 0, 0]]",undetermined,"[0, 0]","[1,1]",calibration,
+probs_for_sgh_matrix,"[[0, 0.87, 0, 0.13, 0], [0, 0.87, 0, 0.13, 0]]",undetermined,"[0, 0]","[1,1]",calibration,
+probs_for_mpe_matrix,"[[0, 0, 0.78, 0.22, 0], [0, 0, 0.78, 0.22, 0]]",undetermined,"[0, 0]","[1,1]",calibration,
+probs_for_spe_matrix,"[[0, 0, 0, 0.16, 0.84], [0, 0, 0, 0.16, 0.84]]",undetermined,"[0, 0]","[1,1]",calibration,
+probs_for_ec_matrix,"[[0, 0, 0, 0, 1], [0, 0, 0, 0, 1]]",undetermined,"[0, 0]","[1,1]",calibration,
+prob_severe_pre_eclampsia_death,"[0.018, 0.018]",undetermined,"[0, 0]","[1,1]",calibration,
+prob_eclampsia_death,"[0.028, 0.03]",undetermined,"[0, 0]","[1,1]",calibration,
+prob_monthly_death_severe_htn,"[0.0001, 0.0001]",undetermined,"[0, 0]","[1,1]",calibration,
+,,,,,,
+prob_placental_abruption_per_month,"[0.0005, 0.0005]",undetermined,"[0, 0]","[1,1]",calibration,
+rr_placental_abruption_hypertension,"[2.2, 2.2]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_placental_abruption_previous_cs,"[1.3, 1.3]",local,"[0.01, 0.01]","[100,100]",vague prior,
+,,,,,,
+prob_aph_placenta_praevia,"[0.09, 0.09]",undetermined,"[0, 0]","[1,1]",calibration,
+prob_aph_placental_abruption,"[0.9, 0.9] ",undetermined,"[0, 0]","[1,1]",calibration,
+prob_mod_sev_aph,"[[0.8, 0.2], [0.8, 0.2]]",local,"[0, 0]","[1,1]",vague prior,
+prob_antepartum_haemorrhage_death,"[0.11, 0.04]",undetermined,"[0, 0]","[1,1]",calibration,
+,,,,,,
+prob_prom_per_month,"[0.0064, 0.0064]",undetermined,"[0, 0]","[1,1]",calibration,
+,,,,,,
+prob_chorioamnionitis,"[0.015, 0.013]",undetermined,"[0, 0]","[1,1]",calibration,
+prob_antenatal_sepsis_death,"[0.75, 0.49]",undetermined,"[0, 0]","[1,1]",calibration,
+,,,,,,
+baseline_prob_early_labour_onset,"[[0.0008, 0.0033,0.017, 0.04], [0.0008, 0.0033,0.017, 0.04]]",undetermined,"[0, 0]","[1,1]",calibration,
+rr_preterm_labour_post_prom,"[5.9, 5.9]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_preterm_labour_anaemia,"[4.58, 4.58]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_preterm_labour_malaria,"[3.08, 3.08]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_preterm_labour_multiple_pregnancy,"[3.44, 3.44]",local,"[0.01, 0.01]","[100,100]",vague prior,
+,,,,,,
+prob_still_birth_per_month,"[0.0031, 0.0026]",undetermined,"[0, 0]","[1,1]",calibration,
+rr_still_birth_ga_41,"[2.24, 2.24]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_ga_42,"[3.88, 3.88]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_ga_>42,"[6.94, 6.94]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_gest_diab,"[3.91, 3.91]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_diab_mellitus,"[3.52, 3.52]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_maternal_malaria,"[1.81, 1.81]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_maternal_syphilis,"[6.87, 6.87]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_pre_eclampsia,"[4.15, 4.15]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_eclampsia,"[4.15, 4.15]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_gest_htn,"[1.21, 1.21]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_chronic_htn,"[2.32, 2.23]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_aph,"[2.1, 2.1]",local,"[0.01, 0.01]","[100,100]",vague prior,
+rr_still_birth_chorio,"[2, 2]",local,"[0.01, 0.01]","[100,100]",vague prior,https://www.tandfonline.com/doi/full/10.1080/14767058.2020.1852206
+,,,,,,
+prob_seek_care_pregnancy_complication,"[0.782, 0.782]",undetermined,"[0, 0]","[1,1]",calibration,"Chinkhumba, J. et al. (2017) ‘Household costs and time to seek care for pregnancy related complications: The role of results-based financing’, PLOS ONE. Public Library of Science, 12(9), p. e0182326. doi: 10.1371/JOURNAL.PONE.0182326."
+prob_seek_care_pregnancy_loss,"[0.782, 0.782]",undetermined,"[0, 0]","[1,1]",calibration,"Chinkhumba, J. et al. (2017) ‘Household costs and time to seek care for pregnancy related complications: The role of results-based financing’, PLOS ONE. Public Library of Science, 12(9), p. e0182326. doi: 10.1371/JOURNAL.PONE.0182326."
+prob_seek_care_induction,"[0.2, 0.2]",undetermined,"[0, 0]","[1,1]",calibration,
+,,,,,,
+prob_anc1_months_2_to_4,"[[0.165, 0.165, 0.67], [0.165, 0.364, 0.471]] ",undetermined,"[0, 0]","[1,1]",calibration,"National Statistical Office (NSO), ICF Macro. Malawi Demographic and Health Survey 2010. Zomba, Malawi, and Calverton, Maryland, USA: NSO and ICF Macro, 2011.
+National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017"
+prob_anc1_months_5_to_9,"[[0.345, 0.245, 0.28, 0.015, 0.015, 0.1], [0.41, 0.25, 0.21, 0.015, 0.015, 0.1]]",undetermined,"[0, 0]","[1,1]",calibration,As above.
+odds_early_init_anc4,"[0.32, 0.58]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_20_24,"[1.26, 1.26]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_25_29,"[1.44, 1.44]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_30_34,"[1.49, 1.49]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_35_39,"[1.64, 1.64]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_40_44,"[1.51, 1.51]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_45_49,"[1.91, 1.91]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_2010,"[1.51, 1.51]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_2015,"[2.03, 2.03]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_parity_2_3,"[0.74, 0.74]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_parity_4_5,"[0.65, 0.65]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_parity_6+,"[0.61, 0.61]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_secondary_edu,"[1.24, 1.24]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_tertiary_edu,"[2.64, 2.64]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+aor_early_anc4_richest_wealth,"[1.32, 1.32]",undetermined,"[0.01, 0.01]","[100,100]",calibration,As above.
+prob_late_initiation_anc4,"[0.3, 0.29] ",undetermined,"[0, 0]","[1,1]",calibration,
+prob_early_initiation_anc_below4,"[0.115, 0.101]",undetermined,"[0, 0]","[1,1]",calibration,As above.
+prob_early_anc_at_facility_level_1_2,"[[0.5, 0.5], [0.5, 0.5]]",undetermined,"[0, 0]","[1,1]",calibration,
+,,,,,,
+treatment_effect_ectopic_pregnancy_treatment,"[0.1, 0.1]",universal,"[0, 0]","[1,1]",vague prior,
+treatment_effect_post_abortion_care,"[0.2, 0.2] ",universal,"[0, 0]","[1,1]",vague prior,
+treatment_effect_iron_folic_acid_anaemia,"[0.3, 0.3] ",universal,"[0, 0]","[1,1]",vague prior,
+treatment_effect_calcium_pre_eclamp,"[0.45, 0.45]",universal,"[0, 0]","[1,1]",vague prior,
+treatment_effect_gest_htn_calcium,"[0.65, 0.65]",universal,"[0, 0]","[1,1]",vague prior,
+treatment_effect_anti_htns_progression,"[0.49, 0.49]",universal,"[0, 0]","[1,1]",vague prior,
+prob_glycaemic_control_diet_exercise,"[0.5, 0.5]",local,"[0, 0]","[1,1]",vague prior,
+prob_glycaemic_control_orals,"[0.936, 0.936]",universal,"[0, 0]","[1,1]",vague prior,"Glibenclamide, metformin, and insulin for the treatment of gestational diabetes: a systematic review and meta-analysis."
+treatment_effect_gdm_case_management,"[0.9, 0.9]",universal,"[0, 0]","[1,1]",vague prior,
+treatment_effect_still_birth_food_sups,"[0.6, 0.6]",universal,"[0, 0]","[1,1]",vague prior,
+,,,,,,
+anc_service_structure,8,local,2,20,vague prior,
+ps_analysis_in_progress,FALSE,scenario,FALSE,TRUE,vague prior,
+alternative_anc_coverage,FALSE,scenario,FALSE,TRUE,vague prior,
+alternative_anc_quality,FALSE,scenario,FALSE,TRUE,vague prior,
+anc_availability_odds,9,scenario,0.01,100,vague prior,
+anc_availability_probability,0.9,scenario,0,1,vague prior,
+alternative_ip_anc_quality,FALSE,scenario,FALSE,TRUE,vague prior,
+ip_anc_availability_probability,0.9,scenario,0,1,vague prior,
+sens_analysis_min,FALSE,scenario,FALSE,TRUE,vague prior,
+sens_analysis_max,FALSE,scenario,FALSE,TRUE,vague prior,
+analysis_year,2023,scenario,NA,NA,NA,
+all_interventions,"[""urine_dipstick"", ""bp_measurement"", ""iron_folic_acid"", ""protein_supplement"", ""calcium_supplement"", ""hb_test"", ""syphilis_test"", ""syphilis_treatment"", ""gdm_test"", ""full_blood_count"", ""blood_transfusion"", ""anti_htn_mgso4"", ""abx_for_prom"", ""gdm_treatment_diet"", ""gdm_treatment_orals"", ""gdm_treatment_insulin"", ""post_abortion_care_core"", ""ectopic_pregnancy_treatment"", ""antenatal_corticosteroids"", ""birth_kit"", ""avd"", ""sepsis_treatment"", ""amtsl"", ""pph_treatment_uterotonics"", ""pph_treatment_mrrp"", ""caesarean_section_oth_surg"", ""fistula_treatment"", ""neo_resus"", ""kmc"", ""neo_sepsis_treatment""]",scenario,NA,NA,NA,
+interventions_under_analysis,[],scenario,NA,NA,NA,
+intervention_analysis_availability,1,scenario,0,1,vague prior,
+interventions_analysis,FALSE,scenario,FALSE,TRUE,vague prior,
+,,,,,,
+parameter_update_year,2015,undetermined,2010,2050,design decision,
+main_polling_frequency_weeks,1,undetermined,1,12,polling interval,
+hsi_event_window_days,1,undetermined,1,7,design decision,
+pregnancy_max_days,280,universal,250,300,vague prior,
+death_delay_days_after_abortion,7,undetermined,1,30,design decision,
+death_delay_days_after_ectopic_rupture,3,undetermined,1,14,design decision,
+ectopic_event_min_weeks,3,universal,1,10,vague prior,
+ectopic_event_max_weeks,5,universal,1,10,vague prior,
+ectopic_rupture_min_weeks,2,universal,1,10,vague prior,
+ectopic_rupture_max_weeks,4,universal,1,10,vague prior,
+week_anc_care_seeking_applied,8,local,4,12,vague prior,
+week_length_minus_one,6,local,2,12,vague prior,
+,,,,,,
+min_age_reproductive,14,universal,0,20,vague prior,
+max_age_reproductive,50,universal,0,100,vague prior,
+gestation_week_for_first_risk_application,3,universal,1,10,vague prior,
+gestation_week_ectopic_limit,9,universal,5,15,vague prior,
+gestation_week_min_for_glycemic_diabetes,20,universal,15,25,vague prior,
+preterm_labour_min_weeks,24,universal,20,30,vague prior,
+preterm_labour_gestation_22_max,27,undetermined,22,32,design decision,
+preterm_labour_gestation_27_max,31,undetermined,27,36,design decision,
+preterm_labour_gestation_31_max,35,undetermined,31,39,design decision,
+preterm_labour_gestation_35_max,37,undetermined,35,40,design decision,
+,,,,,,
+anc_month_2_min_week,5,local,1,10,vague prior,
+anc_month_2_max_week,8,local,5,15,vague prior,
+anc_month_3_min_week,9,local,5,15,vague prior,
+anc_month_3_max_week,13,local,10,20,vague prior,
+anc_month_4_min_week,14,local,10,20,vague prior,
+anc_month_4_max_week,17,local,15,25,vague prior,
+anc_month_5_min_week,18,local,15,25,vague prior,
+anc_month_5_max_week,22,local,20,30,vague prior,
+anc_month_6_min_week,23,local,20,30,vague prior,
+anc_month_6_max_week,27,local,25,35,vague prior,
+anc_month_7_min_week,28,local,25,35,vague prior,
+anc_month_7_max_week,31,local,30,40,vague prior,
+anc_month_8_min_week,32,local,30,40,vague prior,
+anc_month_8_max_week,35,local,33,42,vague prior,
+anc_month_9_min_week,36,local,33,42,vague prior,
+anc_month_9_max_week,40,local,38,44,vague prior,
+earliest_anc_care_seeking_month,2,local,0,5,vague prior,
+,,,,,,
