@@ -37,7 +37,7 @@ def get_table_one():
                'ps_prev_gest_diab': 'Previous Gestational Diabetes',
               }
 
-    all_preg_df = pd.read_excel(Path("./resources/maternal cohort") /
+    all_preg_df = pd.read_excel(Path("./resources/ResourceFile_MaternalCohort") /
                                         'ResourceFile_All2024PregnanciesCohortModel.xlsx')
     population = 40_000
 

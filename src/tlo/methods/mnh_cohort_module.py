@@ -50,7 +50,7 @@ class MaternalNewbornHealthCohort(Module):
         """
 
         # Read in excel sheet with cohort
-        all_preg_df = read_csv_files(Path(f'{self.sim.resourcefilepath}/maternal cohort'),
+        all_preg_df = read_csv_files(Path(f'{self.sim.resourcefilepath}/ResourceFile_MaternalCohort'),
                                               files='ResourceFile_All2025PregnanciesCohortModel')
 
         # Select rows equal to the desired population size
