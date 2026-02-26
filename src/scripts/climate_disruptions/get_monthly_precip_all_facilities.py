@@ -11,9 +11,9 @@ import pandas as pd
 from netCDF4 import Dataset
 from scipy.spatial import KDTree
 
-monthly_cumulative = False
+monthly_cumulative = True
 multiplier = 86400
-years = range(2025, 2041)
+years = range(2024, 2041)
 month_lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] * len(years)
 if monthly_cumulative:
     window_size = np.nan

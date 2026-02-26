@@ -504,14 +504,12 @@ with open(save_path, "wb") as f:
 
 print(f"Model bundle saved to: {save_path}")
 
-
 ############## ADD IN CMIP DATA ###########################
 
 def get_weather_data(ssp_scenario, model_type):
-    # ── FIX: point to all_facilities versions ────────────────────────────────
     weather_data_prediction_five_day_cumulative_original = pd.read_csv(
-        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/"
-        f"{model_type}_window_prediction_weather_by_all_facilities_{service}.csv",
+        f"{data_path}Precipitation_data/{ssp_scenario}/"
+        f"{model_type}_window_prediction_weather_by_all_facilities.csv",  # no _{service}
         dtype={'column_name': 'float64'}
     )
     weather_data_prediction_five_day_cumulative_original = (
@@ -519,24 +517,22 @@ def get_weather_data(ssp_scenario, model_type):
             weather_data_prediction_five_day_cumulative_original.columns[0], axis=1)
     )
     weather_data_prediction_monthly_original = pd.read_csv(
-        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/"
-        f"{model_type}_monthly_prediction_weather_by_all_facilities_{service}.csv",
+        f"{data_path}Precipitation_data/{ssp_scenario}/"
+        f"{model_type}_monthly_prediction_weather_by_all_facilities.csv",  # no _{service}
         dtype={'column_name': 'float64'}
     )
     weather_data_prediction_monthly_original = (
         weather_data_prediction_monthly_original.drop(
             weather_data_prediction_monthly_original.columns[0], axis=1)
     )
-    # no zero_sum_columns drop needed — all_facilities file is not tied to DHIS2 reporting
     return weather_data_prediction_five_day_cumulative_original, weather_data_prediction_monthly_original
-
 
 model_types = ['lowest', 'mean', 'highest']
 min_year_for_analysis = 2025
 absolute_min_year = 2024
-max_year_for_analysis = 2071
+max_year_for_analysis = 2040
 data_path = "/Users/rem76/Desktop/Climate_Change_Health/Data/"
-ssp_scenarios = ["ssp126", "ssp245", "ssp585"]
+ssp_scenarios = ["ssp2_4_5"]
 
 # ── FIX: load all_facilities expanded info once outside the loop ──────────────
 expanded_facility_info_all = pd.read_csv(
@@ -572,8 +568,11 @@ for ssp_scenario in ssp_scenarios:
 
         prediction_facilities = weather_data_prediction_monthly_df.columns
 
-        # ── FIX: subset expanded_facility_info to facilities present in this
-        #         weather file, in the same column order ─────────────────────
+        start_idx = (min_year_for_analysis - absolute_min_year) * 12
+        end_idx = (max_year_for_analysis - absolute_min_year) * 12
+
+        # subset expanded_facility_info to facilities present in this
+        #         weather file, in the same column order
         expanded_facility_info_pred = expanded_facility_info_all.reindex(prediction_facilities)
 
         lag_1_month_prediction = weather_data_prediction_monthly_df.shift(1).values
@@ -582,11 +581,11 @@ for ssp_scenario in ssp_scenarios:
         lag_4_month_prediction = weather_data_prediction_monthly_df.shift(4).values
         lag_9_month_prediction = weather_data_prediction_monthly_df.shift(9).values
 
-        lag_1_month_prediction = lag_1_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_2_month_prediction = lag_2_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_3_month_prediction = lag_3_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_4_month_prediction = lag_4_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_9_month_prediction = lag_9_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+        lag_1_month_prediction = lag_1_month_prediction[start_idx:end_idx].flatten()
+        lag_2_month_prediction = lag_2_month_prediction[start_idx:end_idx].flatten()
+        lag_3_month_prediction = lag_3_month_prediction[start_idx:end_idx].flatten()
+        lag_4_month_prediction = lag_4_month_prediction[start_idx:end_idx].flatten()
+        lag_9_month_prediction = lag_9_month_prediction[start_idx:end_idx].flatten()
 
         lag_1_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(1).values
         lag_2_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(2).values
@@ -594,19 +593,18 @@ for ssp_scenario in ssp_scenarios:
         lag_4_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(4).values
         lag_9_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(9).values
 
-        lag_1_5_day_prediction = lag_1_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_2_5_day_prediction = lag_2_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_3_5_day_prediction = lag_3_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_4_5_day_prediction = lag_4_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_9_5_day_prediction = lag_9_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+        lag_1_5_day_prediction = lag_1_5_day_prediction[start_idx:end_idx].flatten()
+        lag_2_5_day_prediction = lag_2_5_day_prediction[start_idx:end_idx].flatten()
+        lag_3_5_day_prediction = lag_3_5_day_prediction[start_idx:end_idx].flatten()
+        lag_4_5_day_prediction = lag_4_5_day_prediction[start_idx:end_idx].flatten()
+        lag_9_5_day_prediction = lag_9_5_day_prediction[start_idx:end_idx].flatten()
 
         lag_12_month = weather_data_prediction_monthly_df.shift(12).values
-        lag_12_month = lag_12_month[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+        lag_12_month = lag_12_month[start_idx:end_idx].flatten()
 
         weather_data_prediction_five_day_cumulative = weather_data_prediction_five_day_cumulative_df.iloc[
-                                                      (min_year_for_analysis - absolute_min_year) * 12:]
-        weather_data_prediction_monthly = weather_data_prediction_monthly_df.iloc[
-                                          (min_year_for_analysis - absolute_min_year) * 12:]
+                                                      start_idx:end_idx]
+        weather_data_prediction_monthly = weather_data_prediction_monthly_df.iloc[start_idx:end_idx]
         weather_data_prediction_monthly_flattened = weather_data_prediction_monthly.values.flatten()
         weather_data_prediction_five_day_cumulative_flattened = weather_data_prediction_five_day_cumulative.values.flatten()
         weather_data_prediction_flatten = np.vstack(
@@ -677,14 +675,12 @@ for ssp_scenario in ssp_scenarios:
             minimum_distance_prediction
         ])
 
-
         # Align one-hot encodings to training columns
         def align_dummies(df_enc, train_cols):
             for col in train_cols:
                 if col not in df_enc.columns:
                     df_enc[col] = 0
             return df_enc[train_cols]
-
 
         resid_encoded_prediction = align_dummies(resid_encoded_prediction, list(resid_encoded.columns))
         zone_encoded_prediction = align_dummies(zone_encoded_prediction, list(zone_encoded.columns))
