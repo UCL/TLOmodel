@@ -259,10 +259,7 @@ sdmetrics==0.24.0
     # via
     #   -c requirements/base.txt
     #   sdv
-sdv==1.24.1
-    # via
-    #   -c requirements/base.txt
-    #   tlo (pyproject.toml)
+
 six==1.16.0
     # via
     #   azure-core
