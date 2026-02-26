@@ -52,10 +52,7 @@ class MaternalNewbornHealthCohort(Module):
         # Read in excel sheet with cohort
         all_preg_df = read_csv_files(Path(f'{self.sim.resourcefilepath}/maternal cohort'),
                                               files='ResourceFile_All2025PregnanciesCohortModel')
-        # all_preg_df2 = pd.read_excel(Path(f'{self.sim.resourcefilepath}/maternal cohort') /
-        #                             'ResourceFile_All2025PregnanciesCohortModel.xlsx')
-        # all_preg_df = all_preg_df.drop(columns=['Unnamed: 0'])
-
+    
         # Select rows equal to the desired population size
         if len(self.sim.population.props) <= len(all_preg_df):
             preg_pop = all_preg_df.loc[0:(len(self.sim.population.props))-1]
