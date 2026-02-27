@@ -1333,8 +1333,8 @@ class HealthSystem(Module):
                     self._daily_capabilities_per_staff[clinic][facID_and_officer] *= rescaling_factor
 
                     if clinic == "GenericClinic":
-                        minute_salary.loc[(minute_salary.Facility_ID == facility_id)
-                                          & (minute_salary.Officer_Type_Code == officer_type),
+                        minute_salary.loc[(minute_salary["Facility_ID"] == facility_id)
+                                          & (minute_salary["Officer_Type_Code"] == officer_type),
                                           'Minute_Salary_USD'] /= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
