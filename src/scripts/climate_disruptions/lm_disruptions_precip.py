@@ -508,18 +508,16 @@ print(f"Model bundle saved to: {save_path}")
 
 def get_weather_data(ssp_scenario, model_type):
     weather_data_prediction_five_day_cumulative_original = pd.read_csv(
-        f"{data_path}Precipitation_data/{ssp_scenario}/"
-        f"{model_type}_window_prediction_weather_by_all_facilities.csv",  # no _{service}
-        dtype={'column_name': 'float64'}
+        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/"
+        f"{model_type}_window_prediction_weather_by_facility.csv", dtype={'column_name': 'float64'}
     )
     weather_data_prediction_five_day_cumulative_original = (
         weather_data_prediction_five_day_cumulative_original.drop(
             weather_data_prediction_five_day_cumulative_original.columns[0], axis=1)
     )
     weather_data_prediction_monthly_original = pd.read_csv(
-        f"{data_path}Precipitation_data/{ssp_scenario}/"
-        f"{model_type}_monthly_prediction_weather_by_all_facilities.csv",  # no _{service}
-        dtype={'column_name': 'float64'}
+        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/"
+        f"{model_type}_monthly_prediction_weather_by_facility.csv", dtype={'column_name': 'float64'}
     )
     weather_data_prediction_monthly_original = (
         weather_data_prediction_monthly_original.drop(
@@ -527,12 +525,15 @@ def get_weather_data(ssp_scenario, model_type):
     )
     return weather_data_prediction_five_day_cumulative_original, weather_data_prediction_monthly_original
 
-model_types = ['lowest', 'mean', 'highest']
+
+model_types = ['lowest', 'mean', 'highest']  # was 'median', now 'mean'
+
+# Change 3: update the scenario list
+ssp_scenarios = ["ssp245"]  # was "ssp2_4_5"
 min_year_for_analysis = 2025
 absolute_min_year = 2024
-max_year_for_analysis = 2040
+max_year_for_analysis = 2041
 data_path = "/Users/rem76/Desktop/Climate_Change_Health/Data/"
-ssp_scenarios = ["ssp2_4_5"]
 
 # ── FIX: load all_facilities expanded info once outside the loop ──────────────
 expanded_facility_info_all = pd.read_csv(
@@ -618,7 +619,7 @@ for ssp_scenario in ssp_scenarios:
         month_repeated_prediction = [m for m in range(1, 13) for _ in range(num_facilities)]
         month_flattened_prediction = month_repeated_prediction * len(year_range_prediction)
 
-        facility_flattened_prediction = repeat_info(prediction_facilities, num_facilities,
+        facility_flattened_prediction = repeat_info(list(prediction_facilities), num_facilities,
                                                     year_range_prediction, historical=False)
 
         zone_info_prediction = repeat_info(expanded_facility_info_pred["Zonename"], num_facilities,
