@@ -1067,22 +1067,6 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             pregnancy_helper_functions.scale_linear_model_at_initialisation(
                 self, model=model[0], parameter_key=model[1])
 
-        def unregister_properties_from_models(module_name, property_name):
-            """If `module_name` is not registered in sim, then remove `property_name` from linear model's properties"""
-            # if module is not registered
-            if module_name not in self.sim.modules:
-                # iterate over each of the linear models
-                for name, lm_model in self.la_linear_models.items():
-                    # if the `person_properties` lists the `property_name`
-                    if property_name in lm_model.predict.person_properties:
-                        # remove it from the list of properties used by the linear model
-                        properties = list(lm_model.predict.person_properties)
-                        properties.remove(property_name)
-                        lm_model.predict.__func__.person_properties = tuple(properties)
-
-        unregister_properties_from_models("CardioMetabolicDisorders", 'nc_hypertension')
-        unregister_properties_from_models("Stunting", 'un_HAZ_category')
-
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
 
@@ -1226,6 +1210,16 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
         # we only need those properties required to evaluate the function
         person_properties = eq.predict.person_properties
+
+        # if the simulation is running without stunting or cardio metabolic disorders modules
+        # then we need to remove the properties
+        if "Stunting" not in self.sim.modules and "un_HAZ_category" in person_properties:
+            person_properties = list(person_properties)
+            person_properties.remove("un_HAZ_category")
+
+        if "CardioMetabolicDisorders" not in self.sim.modules and "nc_hypertension" in person_properties:
+            person_properties = list(person_properties)
+            person_properties.remove("nc_hypertension")
 
         if not person_properties:
             # we do need to pass a valid dataframe, despite not actually needing any properties :(
