@@ -36,11 +36,13 @@ from tlo.methods import (
     symptommanager,
     tb,
     wasting,
+    weather_disruptions
 )
 
 
 def fullmodel(
     use_simplified_births: bool = False,
+    use_weather_disruptions: bool = False,
     module_kwargs: Optional[Dict[str, Dict]] = {},
 ) -> List[Module]:
     """Return a list of modules that should be registered in a run of the full model.
@@ -116,6 +118,8 @@ def fullmodel(
         copd.Copd,
         depression.Depression,
         epilepsy.Epilepsy,
+        # Climate-change related modules
+        weather_disruptions.WeatherDisruptions
     ]
     return [
         module_class(
