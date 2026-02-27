@@ -2792,11 +2792,11 @@ def test_HR_expansion_by_officer_type(seed, tmpdir):
         return caps
 
     def get_capabilities_after_update(end_year, HR_expansion_by_officer_type) -> pd.Series:
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
         sim.register(
-            demography.Demography(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+            demography.Demography(),
+            healthsystem.HealthSystem(),
+            simplified_births.SimplifiedBirths(),
 
         )
         params = sim.modules['HealthSystem'].parameters

@@ -3282,63 +3282,68 @@ class HRExpansionByOfficerType(Event, PopulationScopeEventMixin):
         minute_salary_by_officer_facility_id = self.module.parameters['minute_salary']
 
         for clinic, clinic_cl in self.module._daily_capabilities.items():
-            if clinic == "GenericClinic":
-                # get current daily minutes and format it to be consistent with minute salary
-                daily_minutes = pd.DataFrame(self.module._daily_capabilities[clinic]).reset_index().rename(
-                    columns={'index': 'facilityid_officer'})
-                daily_minutes[['Facility_ID', 'Officer_Type_Code']] = daily_minutes.facilityid_officer.str.split(
-                    pat='_', n=3, expand=True)[[1, 3]]
-                daily_minutes['Facility_ID'] = daily_minutes['Facility_ID'].astype(int)
+            if clinic != "GenericClinic":
+                continue
 
-                # get daily cost per officer type per facility id
-                daily_cost = minute_salary_by_officer_facility_id.merge(
-                    daily_minutes, on=['Facility_ID', 'Officer_Type_Code'], how='outer')
-                daily_cost['Total_Cost_Per_Day'] = daily_cost['Minute_Salary_USD'] * daily_cost['Total_Minutes_Per_Day']
+            # get current daily minutes and format it to be consistent with minute salary
+            daily_minutes = (
+                pd.Series(clinic_cl, name="Total_Minutes_Per_Day")
+                .rename_axis("facilityid_officer")
+                .reset_index()
+            )
+            daily_minutes[['Facility_ID', 'Officer_Type_Code']] = daily_minutes.facilityid_officer.str.split(
+                pat='_', n=3, expand=True)[[1, 3]]
+            daily_minutes['Facility_ID'] = daily_minutes['Facility_ID'].astype(int)
 
-                # get daily cost per officer type
-                daily_cost = daily_cost.groupby('Officer_Type_Code').agg({'Total_Cost_Per_Day': 'sum'})
+            # get daily cost per officer type per facility id
+            daily_cost = minute_salary_by_officer_facility_id.merge(
+                daily_minutes, on=['Facility_ID', 'Officer_Type_Code'], how='outer')
+            daily_cost['Total_Cost_Per_Day'] = daily_cost['Minute_Salary_USD'] * daily_cost['Total_Minutes_Per_Day']
 
-                # get daily extra budget for this year
-                daily_extra_budget = (self.module.parameters['HR_budget_growth_rate']
-                                      * daily_cost.Total_Cost_Per_Day.sum())
+            # get daily cost per officer type
+            daily_cost = daily_cost.groupby('Officer_Type_Code').agg({'Total_Cost_Per_Day': 'sum'})
 
-                # get proportional daily extra budget for each officer type
-                extra_budget_fraction = pd.Series(self.module.parameters['HR_expansion_by_officer_type'])
-                assert set(extra_budget_fraction.index) == set(daily_cost.index), \
-                    "Input officer types do not match the defined officer types"
-                daily_cost = daily_cost.reindex(index=extra_budget_fraction.index)
-                daily_cost['extra_budget_per_day'] = daily_extra_budget * extra_budget_fraction
+            # get daily extra budget for this year
+            daily_extra_budget = (self.module.parameters['HR_budget_growth_rate']
+                                  * daily_cost.Total_Cost_Per_Day.sum())
 
-                # get the scale up factor for each officer type, assumed to be the same for each facility id of that
-                # officer type (note "cost = available minutes * minute salary", thus we could directly calculate
-                # scale up factor using cost)
-                daily_cost['scale_up_factor'] = (
-                    (daily_cost.extra_budget_per_day + daily_cost.Total_Cost_Per_Day) / daily_cost.Total_Cost_Per_Day
-                )
+            # get proportional daily extra budget for each officer type
+            extra_budget_fraction = pd.Series(self.module.parameters['HR_expansion_by_officer_type'])
+            assert set(extra_budget_fraction.index) == set(daily_cost.index), \
+                "Input officer types do not match the defined officer types"
+            daily_cost = daily_cost.reindex(index=extra_budget_fraction.index)
+            daily_cost['extra_budget_per_day'] = daily_extra_budget * extra_budget_fraction
 
-                # scale up the daily minutes per cadre per facility id
-                pattern = r"FacilityID_(\w+)_Officer_(\w+)"
-                for officer in clinic_cl.keys():
-                    matches = re.match(pattern, officer)
-                    # Extract officer type
-                    officer_type = matches.group(2)
-                    self.module._daily_capabilities[clinic][officer] *= daily_cost.loc[officer_type, 'scale_up_factor']
+            # get the scale up factor for each officer type, assumed to be the same for each facility id of that
+            # officer type (note "cost = available minutes * minute salary", thus we could directly calculate
+            # scale up factor using cost)
+            daily_cost['scale_up_factor'] = (
+                (daily_cost.extra_budget_per_day + daily_cost.Total_Cost_Per_Day) / daily_cost.Total_Cost_Per_Day
+            )
 
-                # save the scale up factor, updated cost and updated capabilities into logger
-                # note that cost and capabilities are on the actual scale,
-                # not normalised by the self.capabilities_coefficient parameter
-                total_cost_this_year = 365.25 * (daily_cost.Total_Cost_Per_Day + daily_cost.extra_budget_per_day)
-                total_capabilities_this_year = (365.25 * self.module._daily_capabilities[clinic])
-                logger_summary.info(key='HRScaling',
-                                    description=(
-                                        'The HR scale up factor by office type given fractions of an extra budget'
-                                    ),
-                                    data={
-                                        'scale_up_factor': daily_cost.scale_up_factor.to_dict(),
-                                        'total_hr_salary': total_cost_this_year.to_dict(),
-                                        'total_hr_capabilities': total_capabilities_this_year.to_dict()
-                                    }
-                                    )
+            # scale up the daily minutes per cadre per facility id
+            pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+            for officer in clinic_cl.keys():
+                matches = re.match(pattern, officer)
+                # Extract officer type
+                officer_type = matches.group(2)
+                clinic_cl[officer] *= daily_cost.loc[officer_type, 'scale_up_factor']
+
+            # save the scale up factor, updated cost and updated capabilities into logger
+            # note that cost and capabilities are on the actual scale,
+            # not normalised by the self.capabilities_coefficient parameter
+            total_cost_this_year = 365.25 * (daily_cost.Total_Cost_Per_Day + daily_cost.extra_budget_per_day)
+            total_capabilities_this_year = 365.25 * pd.Series(clinic_cl)
+            logger_summary.info(key='HRScaling',
+                                description=(
+                                    'The HR scale up factor by office type given fractions of an extra budget'
+                                ),
+                                data={
+                                    'scale_up_factor': daily_cost.scale_up_factor.to_dict(),
+                                    'total_hr_salary': total_cost_this_year.to_dict(),
+                                    'total_hr_capabilities': total_capabilities_this_year.to_dict()
+                                }
+                                )
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
