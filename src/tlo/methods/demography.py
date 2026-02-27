@@ -496,11 +496,14 @@ class Demography(Module):
     def assign_closest_facility_level(self):
         """
         Assigns individuals coordinates and the facilities at which they receive care at each level.
-
         Uses worldpop-weighted coordinate sampling and real facility locations via KD-tree
         nearest-neighbor matching, restricted to facilities within each individual's district.
         """
-        worldpop_gdf = self.parameters["worldpop_gdf"]
+        import secrets
+        import time
+        import hashlib
+
+        worldpop_gdf = self.parameters["worldpop_gdf"].copy()
         worldpop_gdf["Z_prop"] = pd.to_numeric(worldpop_gdf["Z_prop"], errors="coerce")
 
         df = self.sim.population.props.copy()
@@ -514,19 +517,46 @@ class Demography(Module):
             "level_4": ["Other Hospital", "Maternity"],
         }
 
+        # Maps TLO district names → worldpop ADM2_EN names where they differ
+        WORLDPOP_DISTRICT_MAP = {
+            "Blantyre City": "Blantyre",
+            "Lilongwe City": "Lilongwe",
+            "Zomba City": "Zomba",
+            "Mzuzu City": "Mzimba",
+        }
+
+        # Maps facility CSV district names → TLO district names where they differ
+        FACILITY_DISTRICT_MAP = {
+            "Blanytyre": "Blantyre",
+            "Mzimba North": "Mzimba",
+            "Mzimba South": "Mzimba",
+            "Nkhatabay": "Nkhata Bay",
+        }
+
         # ════════════════════════════════════════════════════════════════════════
         # Worldpop-weighted coordinate assignment
         # ════════════════════════════════════════════════════════════════════════
-        import secrets, time, hashlib
-
         run_seed = secrets.token_bytes(16) + int(time.time() * 1e9).to_bytes(8, "big")
         unique_districts = df["district_of_residence"].unique()
 
         district_to_coords = {}
         for district in unique_districts:
-            subset = worldpop_gdf[worldpop_gdf["ADM2_EN"] == district]
-            n_needed = (df["district_of_residence"] == district).sum()  # number needed in each district
-            weights = subset["Z_prop"].values  # within a district all weights sum to 1, so normalising is a check
+            worldpop_district = WORLDPOP_DISTRICT_MAP.get(district, district)
+            subset = worldpop_gdf[worldpop_gdf["ADM2_EN"] == worldpop_district].copy()
+
+            if subset.empty:
+                logger.warning(
+                    key="warning",
+                    data=f"No worldpop rows found for district '{district}' "
+                         f"(looked up as '{worldpop_district}'). Will use district centroid fallback."
+                )
+                district_to_coords[district] = []
+                continue
+
+            n_needed = (df["district_of_residence"] == district).sum()
+            weights = subset["Z_prop"].fillna(0).values
+            if weights.sum() == 0:
+                weights = np.ones(len(subset))
             cumsum = np.cumsum(weights / weights.sum())
 
             coords = []
@@ -535,74 +565,92 @@ class Demography(Module):
                     run_seed + district.encode() + i.to_bytes(4, "big")
                 ).digest()
                 r = int.from_bytes(h[:4], "big") / (2 ** 32)
-                idx = np.searchsorted(cumsum, r)
+                idx = int(np.searchsorted(cumsum, r))
+                idx = min(idx, len(subset) - 1)  # guard against floating point edge case at r=1.0
                 coords.append(subset.iloc[idx]["geometry"])
 
             district_to_coords[district] = coords
 
-        df["_seq_idx"] = df.groupby("district_of_residence",
-                                    dropna=False).cumcount()  # _seq_indx prevents caching issue
+        # Assign coordinates to each individual using a within-district sequential index
+        df["_seq_idx"] = df.groupby("district_of_residence", dropna=False).cumcount()
 
         def get_coord(row):
             district = row["district_of_residence"]
-            seq = row["_seq_idx"]
-            coords = district_to_coords.get(district)
-            return coords[seq] if coords and seq < len(coords) else None
+            seq = int(row["_seq_idx"])
+            coords = district_to_coords.get(district, [])
+            if coords and seq < len(coords):
+                return coords[seq]
+            return None
 
         df["coordinate_of_residence"] = df.apply(get_coord, axis=1)
         df.drop("_seq_idx", axis=1, inplace=True)
 
-        # ════════════════════════════════════════════════════════════════════════
-        # Map facility district names to TLO district names
-        # ════════════════════════════════════════════════════════════════════════
-        FACILITY_DISTRICT_MAP = {  # mismatches from dataframe
-            "Blanytyre": "Blantyre",
-            "Mzimba North": "Mzimba",
-            "Mzimba South": "Mzimba",
-        }
+        n_missing = df["coordinate_of_residence"].isna().sum()
+        if n_missing > 0:
+            logger.warning(
+                key="warning",
+                data=f"{n_missing} individuals have no worldpop coordinate assigned."
+            )
 
+        # ════════════════════════════════════════════════════════════════════════
+        # Build facility info with corrected district names
+        # ════════════════════════════════════════════════════════════════════════
         facility_info = self.parameters["facilities_info"].copy()
         facility_info["district"] = facility_info["Dist"].replace(FACILITY_DISTRICT_MAP)
 
         # ════════════════════════════════════════════════════════════════════════
         # Facility assignment via district-restricted KD-tree nearest-neighbor
         # ════════════════════════════════════════════════════════════════════════
-        individual_coords = np.array([  # converts geometry to array for KDTree
+        individual_coords = np.array([
             (p.x, p.y) if p is not None else (np.nan, np.nan)
             for p in df["coordinate_of_residence"]
         ])
 
+        # City districts map to their parent district for facility lookup
+        CITY_TO_DISTRICT_DICT = {
+            "Blantyre City": "Blantyre",
+            "Lilongwe City": "Lilongwe",
+            "Zomba City": "Zomba",
+            "Mzuzu City": "Mzimba",
+        }
+
         for level, facility_types in facility_levels_types.items():
-            relevant_all = facility_info[facility_info["Ftype"].isin(facility_types)]  # by facility level
+            relevant_all = facility_info[facility_info["Ftype"].isin(facility_types)]
             assigned = pd.Series(index=df.index, dtype=object)
 
             for district in unique_districts:
                 person_mask = (df["district_of_residence"] == district).values
-                person_idx = df.index[person_mask]  # only individuals in that district
+                person_idx = df.index[person_mask]
                 p_coords = individual_coords[person_mask]
 
-                CITY_TO_DISTRICT_DICT = {
-                    "Blantyre City": "Blantyre",
-                    "Lilongwe City": "Lilongwe",
-                    "Zomba City": "Zomba",
-                    "Mzuzu City": "Mzimba",  # Mzuzu falls within Mzimba
-                }
-                # First look up district
                 lookup_district = CITY_TO_DISTRICT_DICT.get(district, district)
                 relevant = relevant_all[relevant_all["district"] == lookup_district]
 
-                if relevant.empty:  # if none in district, go to region
+                if relevant.empty:
                     region = df.loc[person_idx[0], "region_of_residence"]
                     districts_in_region = self.parameters["districts_in_region"].get(region, [])
                     relevant = relevant_all[relevant_all["district"].isin(districts_in_region)]
 
                 if relevant.empty:
                     relevant = relevant_all
-                # build KDTree with relevant facilities
-                fac_coords = relevant[["A109__Longitude", "A109__Latitude"]].values
+
+                relevant_clean = relevant.dropna(subset=["A109__Longitude", "A109__Latitude"]).reset_index(drop=True)
+
+                if relevant_clean.empty:
+                    assigned.loc[person_idx] = relevant.iloc[0]["Fname"]
+                    continue
+
+                fac_coords = relevant_clean[["A109__Longitude", "A109__Latitude"]].values
                 tree = cKDTree(fac_coords)
-                _, indices = tree.query(p_coords, k=1, workers=-1)
-                assigned.loc[person_idx] = relevant.iloc[indices]["Fname"].values
+
+                valid_mask = ~np.isnan(p_coords).any(axis=1)
+
+                if valid_mask.any():
+                    _, valid_indices = tree.query(p_coords[valid_mask], k=1, workers=-1)
+                    assigned.loc[person_idx[valid_mask]] = relevant_clean.iloc[valid_indices]["Fname"].values
+
+                if (~valid_mask).any():
+                    assigned.loc[person_idx[~valid_mask]] = relevant_clean.iloc[0]["Fname"]
 
             df[level] = assigned.astype("category")
 
@@ -612,18 +660,10 @@ class Demography(Module):
         for level in ["0", "1a", "1b", "2", "3", "4"]:
             col = f"level_{level}"
             if col in df.columns:
-                counts = (
-                    df[df["is_alive"]]
-                    [col]
-                    .value_counts()
-                    .to_dict()
-                )
+                counts = df[df["is_alive"]][col].value_counts().to_dict()
                 logger.info(
                     key="facility_assignment_counts",
-                    data={
-                        "facility_level": level,
-                        "counts_by_facility_id": counts,
-                    },
+                    data={"facility_level": level, "counts_by_facility_id": counts},
                     description=f"Number of people assigned to each facility at level {level}",
                 )
 

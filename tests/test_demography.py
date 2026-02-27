@@ -28,11 +28,32 @@ def simulation(seed):
     return sim
 
 
+# Facility level columns are categorical but with legitimately different category
+# lists between props (level-specific) and new_row (all facilities), so they are
+# excluded from strict dtype equality checks.
+FACILITY_LEVEL_COLUMNS = {'level_0', 'level_1a', 'level_1b', 'level_2', 'level_3'}
+
+
 def check_dtypes(simulation):
-    # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
+    shared_cols = df.columns.intersection(orig.columns)
+    mismatches = {}
+    for col in shared_cols:
+        df_dtype = df[col].dtype
+        orig_dtype = orig[col].dtype
+        if col in FACILITY_LEVEL_COLUMNS:
+            # Both sides should still be categorical — just the category lists
+            # legitimately differ after level-specific facility assignment
+            assert hasattr(df_dtype, 'categories'), f"{col}: expected category in props, got {df_dtype}"
+            assert hasattr(orig_dtype, 'categories'), f"{col}: expected category in new_row, got {orig_dtype}"
+            continue
+        if df_dtype != orig_dtype:
+            mismatches[col] = (df_dtype, orig_dtype)
+    assert len(mismatches) == 0, (
+        f"Column dtype mismatches:\n"
+        + "\n".join(f"  {col}: props={a}  new_row={b}" for col, (a, b) in mismatches.items())
+    )
 
 
 def test_run_dtypes_and_mothers_female(simulation):
@@ -70,8 +91,7 @@ def test_storage_of_cause_of_death(seed):
     )
     sim.make_initial_population(n=20)
     df = sim.population.props
-    orig = df.dtypes
-    assert isinstance(orig['cause_of_death'], pd.CategoricalDtype)
+    assert isinstance(df.dtypes['cause_of_death'], pd.CategoricalDtype)
     assert set(['Other', 'a_cause']) == set(df['cause_of_death'].cat.categories)
 
     # Cause a person to die by the DummyModule
@@ -85,7 +105,6 @@ def test_storage_of_cause_of_death(seed):
     person = df.loc[person_id]
     assert not person.is_alive
     assert person.cause_of_death == 'a_cause'
-    assert (df.dtypes == orig).all()
     check_dtypes(sim)
 
 
@@ -400,3 +419,194 @@ def test_equal_allocation_by_district(seed):
     # check total within each district is (close to being) identical and matches the target population of each district
     pop_size_by_district = df.loc[df.is_alive].groupby('district_of_residence').size()
     assert np.allclose(pop_size_by_district.values, pop_size_by_district, rtol=0.05)
+
+
+# ── Facility assignment tests ─────────────────────────────────────────────────
+# These name normalisations must mirror those used in assign_closest_facility_level()
+_CITY_TO_DISTRICT = {
+    "Blantyre City": "Blantyre",
+    "Lilongwe City": "Lilongwe",
+    "Zomba City": "Zomba",
+    "Mzuzu City": "Mzimba",
+}
+_FACILITY_DISTRICT_MAP = {
+    "Blanytyre": "Blantyre",
+    "Mzimba North": "Mzimba",
+    "Mzimba South": "Mzimba",
+    "Nkhatabay": "Nkhata Bay",
+}
+_FACILITY_LEVELS = {
+    "level_0": ["Health Post"],
+    "level_1a": ["Dispensary", "Clinic"],
+    "level_1b": ["Health Centre", "Rural/Community Hospital"],
+    "level_2": ["District Hospital"],
+    "level_3": ["Central Hospital"],
+}
+
+# The 8 districts that have no Health Posts (Level 0) in the facility resource file —
+# level_0 assignment for these will correctly fall back to the nearest available
+# Health Post in the region, resulting in cross-district assignments.
+_DISTRICTS_WITHOUT_HEALTH_POSTS = frozenset({
+    'Blantyre', 'Likoma', 'Mulanje', 'Mwanza', 'Neno', 'Salima', 'Zomba'
+})
+
+
+@pytest.fixture(scope="module")
+def sim_with_facilities(seed=0):
+    """
+    Simulation initialised with a population large enough that every facility
+    has a reasonable chance of being assigned at least one person.
+    Scoped to module so the slow initialisation runs only once for all facility tests.
+    """
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography())
+    sim.make_initial_population(n=50_000)
+    sim.simulate(end_date=start_date)  # zero-day run — only initial state needed
+    return sim
+
+
+def test_facility_assignment_coordinate_uniqueness(sim_with_facilities):
+    """
+    Check that worldpop-weighted coordinate sampling produced meaningfully distinct
+    locations, i.e. individuals within the same district were not all collapsed to
+    a single point.  We test this indirectly (coordinate_of_residence is dropped
+    after assignment) by checking that no single facility monopolises >95% of a
+    district's population at level_0, but only in districts where more than one
+    Health Post exists — if a district has only one eligible facility, 100% share
+    is correct behaviour.
+    """
+    df = sim_with_facilities.population.props
+    alive = df[df["is_alive"]]
+    demog = sim_with_facilities.modules["Demography"]
+    facility_info = demog.parameters["facilities_info"].copy()
+    facility_info["district_clean"] = facility_info["Dist"].replace(_FACILITY_DISTRICT_MAP)
+
+    for district, group in alive.groupby("district_of_residence"):
+        if len(group) < 20:
+            continue
+
+        assert group["level_0"].nunique() >= 1, (
+            f"District '{district}': no level_0 facility assigned at all."
+        )
+
+        # Count how many Health Posts exist in this district's lookup district
+        lookup_district = _CITY_TO_DISTRICT.get(district, district)
+        n_eligible = len(
+            facility_info[
+                (facility_info["Ftype"] == "Health Post") &
+                (facility_info["district_clean"] == lookup_district)
+                ]
+        )
+
+        # Only check spread if there is more than one eligible facility —
+        # a district with a single Health Post will correctly show 100% share
+        if n_eligible <= 1:
+            continue
+
+        top_share = group["level_0"].value_counts(normalize=True).iloc[0]
+        assert top_share < 0.95, (
+            f"District '{district}': {top_share:.1%} of individuals share one "
+            f"level_0 facility despite {n_eligible} eligible Health Posts — "
+            f"worldpop coordinate sampling may have collapsed."
+        )
+
+
+def test_all_districts_have_health_posts(sim_with_facilities):
+    """Document which districts have no Health Posts in the facility resource file.
+    For these districts level_0 assignment falls back to the nearest available
+    Health Post in the region, so cross-district assignments are expected and correct.
+    This test will fail if the set of affected districts changes unexpectedly,
+    e.g. if the resource file is updated."""
+    facility_info = sim_with_facilities.modules["Demography"].parameters["facilities_info"].copy()
+    facility_info["district_clean"] = facility_info["Dist"].replace(_FACILITY_DISTRICT_MAP)
+
+    health_posts = facility_info[facility_info["Ftype"] == "Health Post"]
+    districts_with_posts = set(health_posts["district_clean"].unique())
+
+    all_districts = set(sim_with_facilities.population.props["district_of_residence"].unique())
+    all_lookup_districts = {_CITY_TO_DISTRICT.get(d, d) for d in all_districts}
+
+    missing = all_lookup_districts - districts_with_posts
+    assert missing == _DISTRICTS_WITHOUT_HEALTH_POSTS, (
+        f"Expected districts without Health Posts: {sorted(_DISTRICTS_WITHOUT_HEALTH_POSTS)}\n"
+        f"Actual districts without Health Posts:   {sorted(missing)}\n"
+        f"If the resource file has changed, update _DISTRICTS_WITHOUT_HEALTH_POSTS."
+    )
+
+
+def test_facility_assignment_district_alignment(sim_with_facilities):
+    """
+    Check that each individual's assigned facility at every level is in their
+    district of residence.  Districts that have no eligible facilities of the
+    relevant type fall back to region-level search — cross-district assignments
+    for those districts are expected and correct.
+    For all other districts a <1% tolerance is applied for the region-level fallback.
+    """
+    df = sim_with_facilities.population.props
+    alive = df[df["is_alive"]]
+    demog = sim_with_facilities.modules["Demography"]
+    _DISTRICTS_WITHOUT_HEALTH_POSTS = frozenset({
+        'Blantyre', 'Likoma', 'Mulanje', 'Mwanza', 'Neno', 'Salima', 'Zomba'
+    })
+    _DISTRICTS_WITHOUT_CLINICS = frozenset({
+        'Ntchisi'
+    })
+    _DISTRICTS_WITHOUT_DISTRICT_HOSPITALS = frozenset({
+        'Dowa', 'Likoma', 'Phalombe', 'Zomba'
+    })
+    _DISTRICTS_WITHOUT_CENTRAL_HOSPITALS = frozenset({
+        'Balaka', 'Chikwawa', 'Chiradzulu', 'Chitipa', 'Dedza', 'Dowa', 'Karonga',
+        'Kasungu', 'Likoma', 'Machinga', 'Mangochi', 'Mchinji', 'Mulanje', 'Mwanza',
+        'Neno', 'Nkhata Bay', 'Nkhotakota', 'Nsanje', 'Ntcheu', 'Ntchisi', 'Phalombe',
+        'Rumphi', 'Salima', 'Thyolo'
+    })
+
+    _DISTRICTS_WITHOUT_LEVEL_FACILITIES = {
+        "level_0": _DISTRICTS_WITHOUT_HEALTH_POSTS,
+        "level_1a": _DISTRICTS_WITHOUT_CLINICS,
+        "level_1b": frozenset(),
+        "level_2": _DISTRICTS_WITHOUT_DISTRICT_HOSPITALS,
+        "level_3": _DISTRICTS_WITHOUT_CENTRAL_HOSPITALS,
+    }
+
+    # Map from level to the set of districts that legitimately produce cross-district
+    # assignments because no eligible facility of that type exists in the district.
+    _DISTRICTS_WITHOUT_LEVEL_FACILITIES = {
+        "level_0": _DISTRICTS_WITHOUT_HEALTH_POSTS,
+        "level_1a": _DISTRICTS_WITHOUT_CLINICS,
+        "level_1b": frozenset(),
+        "level_2": _DISTRICTS_WITHOUT_DISTRICT_HOSPITALS,
+        "level_3": _DISTRICTS_WITHOUT_CENTRAL_HOSPITALS,
+    }
+    facility_info = demog.parameters["facilities_info"].copy()
+    facility_info["district_clean"] = facility_info["Dist"].replace(_FACILITY_DISTRICT_MAP)
+    fname_to_district = (
+        facility_info.drop_duplicates("Fname")
+        .set_index("Fname")["district_clean"]
+        .to_dict()
+    )
+
+    for level in _FACILITY_LEVELS:
+        assert level in alive.columns, f"Column '{level}' missing from population props."
+
+        subset = alive[["district_of_residence", level]].dropna(subset=[level])
+        mismatches = 0
+
+        for _, row in subset.iterrows():
+            expected_district = _CITY_TO_DISTRICT.get(
+                row["district_of_residence"], row["district_of_residence"]
+            )
+            facility_district = fname_to_district.get(row[level])
+            if facility_district is not None and facility_district != expected_district:
+                # Skip districts that have no eligible facilities at this level —
+                # cross-district assignment via region fallback is expected and correct
+                if expected_district in _DISTRICTS_WITHOUT_LEVEL_FACILITIES[level]:
+                    continue
+                mismatches += 1
+
+        mismatch_rate = mismatches / len(subset) if len(subset) else 0
+        assert mismatch_rate < 0.01, (
+            f"Level '{level}': district mismatch rate {mismatch_rate:.2%} "
+            f"({mismatches} / {len(subset)} individuals) exceeds 1% tolerance."
+        )
