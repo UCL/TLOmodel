@@ -708,7 +708,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
         #  we store different potential treatments for postpartum haemorrhage via bistet
         self.pph_treatment = BitsetHandler(self.sim.population, 'la_postpartum_haem_treatment',
-                                           ['manual_removal_placenta', 'surgery', 'hysterectomy'])
+                                           ['surgery', 'hysterectomy'])
 
         #  ----------------------------ASSIGNING PARITY AT BASELINE --------------------------------------------------
         # This equation predicts the parity of each woman at baseline (who is of reproductive age)
@@ -764,13 +764,11 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
         # -------------------------------------------- DELIVERY ------------------------------------------------------
         # assuming CDK has blade, soap, cord tie
-        self.item_codes_lab_consumables['delivery_core'] = \
-            {ic('Clean delivery kit'): 1,
-             ic('Chlorhexidine 1.5% solution_5_CMST'): 20,
-             }
+        self.item_codes_lab_consumables['delivery_core'] = {ic('Clean delivery kit'): 1}
 
         self.item_codes_lab_consumables['delivery_optional'] = \
-            {ic('Gauze, absorbent 90cm x 40m_each_CMST'): 30,
+            {ic('Chlorhexidine 1.5% solution_5_CMST'): 20,
+             ic('Gauze, absorbent 90cm x 40m_each_CMST'): 30,
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Disposables gloves, powder free, 100 pieces per box'): 1,
              ic('Paracetamol, tablet, 500 mg'): 8000
@@ -778,10 +776,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
         # -------------------------------------------- CAESAREAN DELIVERY ------------------------------------------
         self.item_codes_lab_consumables['caesarean_delivery_core'] = \
-            {ic('Halothane (fluothane)_250ml_CMST'): 100,
-             ic('Ceftriaxone 1g, PFR_each_CMST'): 2,
-             ic('Metronidazole 200mg_1000_CMST'): 1,  # todo: replace
-             }
+            {ic('Halothane (fluothane)_250ml_CMST'): 100,}
 
         self.item_codes_lab_consumables['caesarean_delivery_optional'] = \
             {ic('Scalpel blade size 22 (individually wrapped)_100_CMST'): 1,
@@ -794,14 +789,12 @@ class Labour(Module, GenericFirstAppointmentsMixin):
              ic('Paracetamol, tablet, 500 mg'): 8000,
              ic('Declofenac injection_each_CMST'): 2,
              ic("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
-             }
-
-        # -------------------------------------------- OBSTETRIC SURGERY ----------------------------------------------
-        self.item_codes_lab_consumables['obstetric_surgery_core'] = \
-            {ic('Halothane (fluothane)_250ml_CMST'): 100,
              ic('Ceftriaxone 1g, PFR_each_CMST'): 2,
              ic('Metronidazole 200mg_1000_CMST'): 1,  # todo: replace
              }
+
+        # -------------------------------------------- OBSTETRIC SURGERY ----------------------------------------------
+        self.item_codes_lab_consumables['obstetric_surgery_core'] =  {ic('Halothane (fluothane)_250ml_CMST'): 100 }
 
         self.item_codes_lab_consumables['obstetric_surgery_optional'] = \
             {ic('Scalpel blade size 22 (individually wrapped)_100_CMST'): 1,
@@ -814,6 +807,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
              ic('Paracetamol, tablet, 500 mg'): 8000,
              ic('Declofenac injection_each_CMST'): 2,
              ic("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 2000,
+             ic('Ceftriaxone 1g, PFR_each_CMST'): 2,
+             ic('Metronidazole 200mg_1000_CMST'): 1,
              }
 
         # -------------------------------------------- ABX FOR PROM -------------------------------------------------
@@ -828,6 +823,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # -------------------------------------  INTRAVENOUS ANTIHYPERTENSIVES ---------------------------------------
         self.item_codes_lab_consumables['iv_antihypertensives'] = \
             {ic('Hydralazine, powder for injection, 20 mg ampoule'): 1}
+
+        self.item_codes_lab_consumables['iv_antihypertensives_other'] = \
+            {ic('Nifedipine 10mg_100_CMST'): 1}
 
         # --------------------------------------- ORAL ANTIHYPERTENSIVES ---------------------------------------------
         self.item_codes_lab_consumables['oral_antihypertensives'] = \
@@ -1597,7 +1595,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             mni[individual_id]['retained_placenta'] = False
             mni[individual_id]['uterine_atony'] = False
             self.pph_treatment.unset(
-                [individual_id], 'manual_removal_placenta', 'surgery', 'hysterectomy')
+                [individual_id], 'surgery', 'hysterectomy')
 
             # ================================ SCHEDULE POSTNATAL WEEK ONE EVENT =================================
             # For women who have survived first 24 hours after birth we reset all the key labour variables and
@@ -1789,7 +1787,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'spe')
 
             mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self, int_name='mgso4', hsi_event=hsi_event,
+                self, int_name='anti_htn_mgso4', hsi_event=hsi_event,
                 q_param=[params['prob_hcw_avail_anticonvulsant'], params[f'mean_hcw_competence_{deliv_location}']],
                 cons=self.item_codes_lab_consumables['magnesium_sulfate'],
                 opt_cons=self.item_codes_lab_consumables['eclampsia_management_optional'])
@@ -1812,8 +1810,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         if (df.at[person_id, 'ps_htn_disorders'] != 'none') or (df.at[person_id, 'pn_htn_disorders'] != 'none'):
 
             iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self, int_name='iv_antihypertensives', hsi_event=hsi_event,
+                self, int_name='anti_htn_mgso4', hsi_event=hsi_event,
                 cons=self.item_codes_lab_consumables['iv_antihypertensives'],
+                alt_con=self.item_codes_lab_consumables['iv_antihypertensives_other'],
                 opt_cons=self.item_codes_lab_consumables['iv_drug_equipment'])
 
             if iv_anti_htns_delivered:
@@ -1828,7 +1827,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 cons = {_i: dose for _i in self.item_codes_lab_consumables['oral_antihypertensives']}
 
                 oral_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-                    self, int_name='oral_antihypertensives', hsi_event=hsi_event, cons=cons)
+                    self, int_name='anti_htn_mgso4', hsi_event=hsi_event, cons=cons)
 
                 if oral_anti_htns_delivered:
                     df.at[person_id, 'la_gest_htn_on_treatment'] = True
@@ -1852,7 +1851,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
            (df.at[person_id, 'pn_htn_disorders'] == 'eclampsia'):
 
             mag_sulph_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self, int_name='mgso4', hsi_event=hsi_event,
+                self, int_name='anti_htn_mgso4', hsi_event=hsi_event,
                 q_param=[params['prob_hcw_avail_anticonvulsant'], params[f'mean_hcw_competence_{deliv_location}']],
                 cons=self.item_codes_lab_consumables['magnesium_sulfate'],
                 opt_cons=self.item_codes_lab_consumables['eclampsia_management_optional'])
@@ -2108,7 +2107,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         deliv_location = 'hc' if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
         pph_surg_delivered = pregnancy_helper_functions.check_int_deliverable(
-            self, int_name='pph_treatment_surg', hsi_event=hsi_event,
+            self, int_name='caesarean_section_oth_surg', hsi_event=hsi_event,
             q_param=[params['prob_hcw_avail_surg'], params[f'mean_hcw_competence_{deliv_location}']],
             cons=self.item_codes_lab_consumables['obstetric_surgery_core'],
             opt_cons=self.item_codes_lab_consumables['obstetric_surgery_optional'],
@@ -3112,8 +3111,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         elif (mother.la_sepsis_treatment or
               mother.la_eclampsia_treatment or
               mother.la_severe_pre_eclampsia_treatment or
-              mother.la_maternal_hypertension_treatment or
-              self.module.pph_treatment.has_all(person_id, 'manual_removal_placenta')):
+              mother.la_maternal_hypertension_treatment):
 
             postnatal_inpatient = HSI_Labour_PostnatalWardInpatientCare(
                 self.module, person_id=person_id, facility_level_of_this_hsi=cemonc_fl)
@@ -3174,7 +3172,6 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.current_parameters
-        deliv_location = 'hc' if self.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
         # We use the variable self.timing to differentiate between women sent to this event during labour and women
         # sent after labour
@@ -3185,8 +3182,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         if mni[person_id]['referred_for_cs'] and self.timing == 'intrapartum':
 
             cs_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self.module, int_name='caesarean_section', hsi_event=self,
-                q_param=[params['prob_hcw_avail_surg'], params[f'mean_hcw_competence_{deliv_location}']],
+                self.module, int_name='caesarean_section_oth_surg', hsi_event=self,
+                q_param=[params['prob_hcw_avail_surg'], params['mean_hcw_competence_hp']],
                 cons=self.module.item_codes_lab_consumables['caesarean_delivery_core'],
                 opt_cons=self.module.item_codes_lab_consumables['caesarean_delivery_optional'])
 
@@ -3238,9 +3235,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # Women referred for surgery immediately following labour will need surgical management of postpartum bleeding
         # Treatment is varied accordingly to underlying cause of bleeding
 
-        if (mni[person_id]['referred_for_surgery'] and
-            (self.timing == 'postpartum') and
-           (df.at[person_id, 'la_postpartum_haem'] or df.at[person_id, 'pn_postpartum_haem_secondary'])):
+        if (mni[person_id]['referred_for_surgery'] and (self.timing == 'postpartum') and
+            (df.at[person_id, 'la_postpartum_haem'] or df.at[person_id, 'pn_postpartum_haem_secondary'])):
             self.module.surgical_management_of_pph(self)
 
         # =========================================== BLOOD TRANSFUSION ===============================================
