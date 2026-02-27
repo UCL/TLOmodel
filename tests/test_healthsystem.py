@@ -2777,10 +2777,10 @@ def test_HR_expansion_by_officer_type(seed, tmpdir):
     for healthcare workers."""
 
     def get_initial_capabilities() -> pd.DataFrame:
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
         sim.register(
-            demography.Demography(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
+            demography.Demography(),
+            healthsystem.HealthSystem()
         )
         popsize=100
         sim.make_initial_population(n=popsize)
