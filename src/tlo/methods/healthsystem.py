@@ -1315,7 +1315,7 @@ class HealthSystem(Module):
 
         for clinic, clinic_cl in self._daily_capabilities.items():
             for facID_and_officer in clinic_cl.keys():
-    # extract facility ID and officer type from the key
+                # extract facility ID and officer type from the key
                 matches = re.match(pattern, facID_and_officer)
                 facility_id = int(matches.group(1))
                 officer_type = matches.group(2)
@@ -1333,9 +1333,9 @@ class HealthSystem(Module):
                     self._daily_capabilities_per_staff[clinic][facID_and_officer] *= rescaling_factor
 
                     if clinic == "GenericClinic":
-                                            minute_salary.loc[(minute_salary.Facility_ID == facility_id)
+                        minute_salary.loc[(minute_salary.Facility_ID == facility_id)
                                           & (minute_salary.Officer_Type_Code == officer_type),
-                                            'Minute_Salary_USD'] /= rescaling_factor
+                                          'Minute_Salary_USD'] /= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
