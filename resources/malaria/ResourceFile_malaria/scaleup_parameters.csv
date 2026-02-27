@@ -1,3 +1,7 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:9840f4599167b9d80991ee1e2b6581c9603ae41eeb58022f65595f7855427eb8
-size 359
+parameter_name,value,param_label,prior_min,prior_max,prior_note,reference
+prob_malaria_case_tests,1,scenario,0,1,vague prior,
+rdt_testing_rates,0.8,scenario,0,1,vague prior,
+prob_of_treatment_success,1,scenario,0,1,vague prior,
+irs_district,0.8,scenario,0,0.8,vague prior,
+itn_district,0.7,scenario,0,0.7,vague prior,
+itn,0.7,scenario,0,0.7,vague prior,

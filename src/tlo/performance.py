@@ -24,6 +24,7 @@ class MagpieOptions:
     save_sim: bool = False
     save_sim_freq: int = 6
     save_sim_on_end: bool = False
+    wall_time_limit_minutes: float | None = None
 
 
 class Magpie(Module):
@@ -37,6 +38,7 @@ class Magpie(Module):
             save_sim=True,           # save the simulation to a pickle file...
             save_sim_freq=3,         # ...every n months
             save_sim_on_end=True     # save the simulation to a pickle file at the end of the simulation
+            wall_time_limit_minutes=60  # stop the simulation if it runs for more than n minutes (checked every month)
         )
     ```
 
@@ -62,6 +64,9 @@ class Magpie(Module):
 
         if self.options.save_sim:
             sim.schedule_event(SaveSimulation(self, self.options.save_sim_freq), sim.start_date)
+
+        if self.options.wall_time_limit_minutes is not None:
+            sim.schedule_event(WallTimeLimit(self, self.options.wall_time_limit_minutes), sim.start_date)
 
     def on_birth(self, mother_id, child_id):
         pass
@@ -92,6 +97,23 @@ class LogPerfProfile(RegularEvent, PopulationScopeEventMixin):
         self.time = now
         data["duration_minutes"] = duration
         logger.info(key="stats", data=data)
+
+
+class WallTimeLimit(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module, wall_time_limit_minutes):
+        super().__init__(module, frequency=DateOffset(months=1))
+        self.wall_time_limit_minutes = wall_time_limit_minutes
+        self.start_time = time.time()
+
+    def apply(self, population):
+        now = time.time()
+        elapsed_minutes = (now - self.start_time) / 60
+        if elapsed_minutes >= self.wall_time_limit_minutes:
+            logger.info(
+                key="msg",
+                data=f"Terminating simulation after {self.wall_time_limit_minutes} minutes of runtime"
+            )
+            self.sim.terminate()
 
 
 def make_pickle_filename(sim_date):

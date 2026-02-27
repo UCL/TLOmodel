@@ -72,6 +72,9 @@ def test_core_functionality_of_equipment_class(seed):
     assert {1} == eq_default.parse_items('ItemOne')
     # - using list of strings for item descriptors
     assert {1, 2} == eq_default.parse_items(['ItemOne', 'ItemTwo'])
+    # - using mixed integers and strings (item codes and descriptors)
+    assert {0, 1, 2} == eq_default.parse_items([0, 'ItemOne', 2])
+    assert {1, 2, 3} == eq_default.parse_items({1, 'ItemTwo', 'ItemThree'})
     # - an empty iterable of equipment should always be work whether expressed as list/tuple/set
     assert set() == eq_default.parse_items(list())
     assert set() == eq_default.parse_items(tuple())
@@ -82,6 +85,9 @@ def test_core_functionality_of_equipment_class(seed):
         eq_default.parse_items(10001)
     with pytest.warns():
         eq_default.parse_items('ItemThatIsNotDefined')
+    # - Mixed inputs with unrecognised items (should raise warnings)
+    with pytest.warns():
+        eq_default.parse_items([0, 'ItemOne', 10001, 'ItemThatIsNotDefined'])
 
     # Lookup the item_codes that belong in a particular package.
     # - When package is recognised

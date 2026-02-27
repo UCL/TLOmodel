@@ -1,3 +1,4 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4a9e39a2b8f081e24eb180386275d90262b15ceaa1114e77eb1616d970b105f5
-size 398
+Year,No. of LLINs sold or delivered,Modelled percentage of population with access to an ITN,No. of people protected by IRS,IRS coverage (%),No of RDTs distributed,Any first-line treatment courses delivered (including ACT),ACT treatment courses delivered
+2015,1100000,43.0,-,-,8462325,6240060,6240060
+2016,9093657,60.3,-,-,8746750,6799354,6440490
+2017,994136,53.6,-,-,15060625,10177530,10177530

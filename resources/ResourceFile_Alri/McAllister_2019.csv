@@ -1,3 +1,5 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:eb68ea76fc2aa1c045b035c5d0e6b8a54fc139c8dc5ec67b5e061522ac3a651b
-size 177
+Year,Incidence_per100_children,Incidence_per100_lower,Incidence_per100_upper,Death_per1000_livebirths
+2000,39.6,23.5,66.9,28.2
+2005,,,,15.6
+2010,,,,11.7
+2015,22.1,13.2,37.5,8.6
