@@ -73,8 +73,6 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # Finally define a dictionary which will hold the required consumables for each intervention
         self.item_codes_lab_consumables = dict()
 
-        # Stores the list of fields used in linear models equations
-        self._linear_model_fields = []
 
     INIT_DEPENDENCIES = {'Demography'}
 
@@ -1069,53 +1067,21 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             pregnancy_helper_functions.scale_linear_model_at_initialisation(
                 self, model=model[0], parameter_key=model[1])
 
-        # Set the person properties required for the models
-        self._linear_model_fields = [
-            # demography
-            'age_years',
-            'is_alive',
-            # lifestyle
-            'li_bmi',
-            'li_ed_lev',
-            'li_mar_stat',
-            'li_urban',
-            'li_wealth',
-            # care of women
-            'ac_iv_anti_htn_treatment',
-            'ac_mag_sulph_treatment',
-            'ac_received_abx_for_prom',
-            'ac_total_anc_visits_current_pregnancy',
-            # labour
-            'la_antepartum_haem',
-            'la_eclampsia_treatment',
-            'la_has_had_hysterectomy',
-            'la_maternal_hypertension_treatment',
-            'la_obstructed_labour',
-            'la_parity',
-            'la_placental_abruption',
-            'la_postpartum_haem_treatment',
-            'la_previous_cs_delivery',
-            'la_sepsis',
-            'la_sepsis_treatment',
-            'la_uterine_rupture',
-            'la_uterine_rupture_treatment',
-            # postnatal supervisor
-            'pn_htn_disorders',
-            # pregnancy supervisor
-            'ps_antepartum_haemorrhage',
-            'ps_chorioamnionitis',
-            'ps_htn_disorders',
-            'ps_multiple_pregnancy',
-            'ps_placenta_praevia',
-            'ps_placental_abruption',
-            'ps_premature_rupture_of_membranes',
-        ]
+        def unregister_properties_from_models(module_name, property_name):
+            """If `module_name` is not registered in sim, then remove `property_name` from linear model's properties"""
+            # if module is not registered
+            if module_name not in self.sim.modules:
+                # iterate over each of the linear models
+                for name, lm_model in self.la_linear_models.items():
+                    # if the `person_properties` lists the `property_name`
+                    if property_name in lm_model.predict.person_properties:
+                        # remove it from the list of properties used by the linear model
+                        properties = list(lm_model.predict.person_properties)
+                        properties.remove(property_name)
+                        lm_model.predict.__func__.person_properties = tuple(properties)
 
-        if "CardioMetabolicDisorders" in self.sim.modules:
-            self._linear_model_fields += ['nc_hypertension']
-
-        if "Stunting" in self.sim.modules:
-            self._linear_model_fields += ['un_HAZ_category']
+        unregister_properties_from_models("CardioMetabolicDisorders", 'nc_hypertension')
+        unregister_properties_from_models("Stunting", 'un_HAZ_category')
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -1257,9 +1223,17 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         """
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+        # we only need those properties required to evaluate the function
+        person_properties = eq.predict.person_properties
+
+        if not person_properties:
+            # we do need to pass a valid dataframe, despite not actually needing any properties :(
+            person_properties = ['is_alive']
+
         person = df.loc[
             [person_id],
-            self._linear_model_fields
+            person_properties
         ]
 
         # We define specific external variables used as predictors in the equations defined below
