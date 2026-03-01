@@ -740,7 +740,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         _cons_codes['SFP'] = {get_item_code("Corn Soya Blend (or Supercereal - CSB++)"): 3000 * 3}
         _cons_codes['OTP'] = {get_item_code("Therapeutic spread, sachet 92g/CAR-150"): 20 * 7}
         _cons_codes['OTP_opt'] = {get_item_code("SAM medicines"): 1}
-        _cons_codes['ITC'] = {get_item_code("F-75 therapeutic milk, 102.5 g"): 102.5 * 24,
+        # a sachet of 102.5 g is used to prepare 500 ml of F-75 milk
+        _cons_codes['ITC'] = {get_item_code("F-75 therapeutic milk, 102.5 g"): 102.5/500*102.5 * 24, # ie 102.5 ml * 24
                               get_item_code("Therapeutic spread, sachet 92g/CAR-150"): 3 * 4}
         _cons_codes['ITC_opt'] = {get_item_code("SAM medicines"): 1}
         return _cons_codes
