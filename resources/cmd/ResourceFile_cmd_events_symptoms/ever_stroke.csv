@@ -1,3 +1,2 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:9b4deadfea79902ae4e7c3ab0c4cc1ec6cf7600d60482ae5cc56d7d56736cda4
-size 104
+parameter_name,value,prior_label,prior_min,prior_max,prior_note
+stroke_symptoms,1,local,0,1,vague prior

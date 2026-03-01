@@ -1,3 +1,400 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1e3d3624de86fffd3110bbeb906a21396f17f5a166be5f1c811e8f83f40f9c6e
-size 41099
+﻿Item_code,Equipment_tlo,Equipment_SEL,Department_name_SEL,Life_Span,Unit_Purchase_Cost,Health Post_Prioritised_Quantity,Community_Prioritised_Quantity,Health Center_Prioritised_Quantity,District_Prioritised_Quantity,Central_Prioritised_Quantity,Notes,Data_Source (Life_Span),Data_source (Unit_Purchase_Cost + Prioritised_Quantity)
+0,Height Pole (Stadiometer),Height Pole (Stadiometer),General,15,400,2,0,0,0,0,,Small item,HSSP-III
+1,Weighing scale,Salter weighing scale,General,15,3000,6,0,0,0,0,,"Scale, baby",HSSP-III
+2,Autoclave,Autoclave,Central Sterilization,10,15029.3,0,0,2,0,8,,Autoclave,HSSP-III
+3,Refrigerator,Fridge,Opd Under 5 Clinic,15,409.89,0,0,0,0,16,,"Refrigerator, Commercial",HSSP-III
+4,Cold box,Cold box,General,10,58.2,1,0,0,0,0,,"Cold-pack unit, floor",HSSP-III
+5,Vaccine Carriers,Vaccine refrigerator (solar),General,10,409.89,1,0,0,0,0,,"Cold-pack unit, floor",HSSP-III
+6,Blood pressure machine,Blood pressure machine,General,6,75,2,0,0,0,81,,"Blood pressure device, electronic",HSSP-III
+7,Thermometer,"Thermometers, digital",General,5,6,2,0,0,0,0,,"Thermometer, electric",HSSP-III
+8,Push bike for mobility,Push bike for mobility,General,15,350,1,0,0,0,0,,,HSSP-III
+9,Desk,"Desk, wood",General,20,434.7826087,0,0,0,0,2,,"Desk, metal or wood",HSSP-III
+10,Chair,"Chair, office",General,15,77.60869565,0,0,4,0,37,,,HSSP-III
+11,Bench,Benches for patients,Maternity,15,112.58,0,3,0,2,4,,"Benches, bins, cabinets, counters, and shelving, built-in",HSSP-III
+12,Drug box,Drug box,General,15,557.04,1,0,0,0,0,,,HSSP-III
+13,Stethoscope,Stethoscope,General,5,320.4,2,0,0,4,73,,Stethoscope,HSSP-III
+14,Urine dip Stick,urine dipstick,General,15,25,0,0,0,0,2,,,HSSP-III
+15,Glucometer,Glucometer,General,15,25.07,2,0,0,4,39,,,HSSP-III
+16,"Micro cuvettes (5,000 per haemacue) in packs of 1,000 pieces.","Micro cuvettes (5,000 per haemacue) in packs of 1,000 pieces.",General,15,,,,,,,This item is not costed in the SEL,,HSSP-III
+17,Haemoglobinometer,Haemacue (Haemoglobinometer),General,15,3000,1,0,0,0,0,,,HSSP-III
+18,Caliper for assessing skinfold thickness,Caliper for assessing skinfold thickness,General,15,926.71,2,0,0,0,0,,,HSSP-III
+19,Mucous Extractor for neonates,Mucous Extractor for neonates,General,15,30,3,0,0,0,0,,,HSSP-III
+20,Penlight,Penlight,General,15,12.99,2,0,0,0,0,,,HSSP-III
+21,"Water container, 20 litres with tap, on stand with soap","Water container, 20 litres with tap, on stand with soap",General,15,1502.93,2,0,0,0,0,,,HSSP-III
+22,Ear Syringe,Ear Syringe,General,15,652.17,1,0,0,0,0,,,HSSP-III
+23,Bucket without tap 20 LITRES,Bucket without tap 20 LITRES,General,15,44.97,4,0,0,0,0,,,HSSP-III
+24,MUAC tape,MUAC tape,General,15,5,100,0,0,0,0,,,HSSP-III
+25,Measuring Cup,Measuring Cup,General,15,6.15,2,0,0,0,0,,,HSSP-III
+26,Timer,Timer,General,15,43.91,1,0,0,0,1,,,HSSP-III
+27,"Trolley, drug",Medicine Trolley,General,15,375.9,1,0,0,0,6,,Medicine preparation station,HSSP-III
+28,Molar set,Molar set,General,15,250,0,0,0,0,5,,,HSSP-III
+29,Examination couch,Examination couch,Opd,10,652.17,0,0,0,1,0,,Examining,HSSP-III
+30,Sputum Collection box,Sputum Collection box,General,15,55,1,0,0,0,0,,,HSSP-III
+31,Ordinary Microscope,Ordinary Microscope,Laboratory,15,200,0,0,0,0,6,,,HSSP-III
+32,Basin,Basin,General,15,25,2,0,0,0,0,,Basin,HSSP-III
+33,"Cabinet, filing","Cabinet, filling",General,15,733.51,0,0,0,0,2,,"Cabinet, biological safety",HSSP-III
+34,Waste Bin,Waste Bin,General,15,21.74,0,0,0,0,2,,Small item,HSSP-III
+35,"Bed, adult","Bed, adult",Maternity,15,40.32,0,0,10,0,0,,,HSSP-III
+36,"Mattress for hospital bed, child","Mattress for hospital bed, child",Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,15,4104,0,0,0,0,30,,,HSSP-III
+37,Linen,Linen,General,10,31.52,6,0,0,200,0,,Linen,HSSP-III
+38,"Laryngoscope, Macintosh","Laryngoscope, Macintosh",General,3,10000,1,0,0,0,0,,Laryngoscope,HSSP-III
+39,"Clock, wall type","Clock, wall type",General,15,43.64,2,2,2,4,31,,,HSSP-III
+41,"Lamp, Anglepoise",Angle poised lamp,General,15,170,2,0,2,1,39,,,HSSP-III
+42,Motorcycle ambulance,Motorcycle ambulance,General,15,,,,,,,This item is not costed in the SEL,,HSSP-III
+43,"Light, emergency, solar, with battery backup",Emergency tray,General,15,327.91,2,1,0,2,24,,,HSSP-III
+44,Incinerator,Incenerator,Waste Management,15,26260,1,0,0,0,0,,,HSSP-III
+45,Stirring Rods,Stirring Rods,Waste Management,15,15,2,0,0,0,0,,,HSSP-III
+46,Wheelbarrows,Wheelbarrows,Waste Management,15,,0,0,0,0,0,This item is not costed in the SEL,,HSSP-III
+47,Otto Bins,Waste Bin,Waste Management,15,21.74,0,0,0,0,2,,Small item,HSSP-III
+48,Shovels,Shovels,Waste Management,15,0,0,0,0,0,0,,,HSSP-III
+49,Heavy duty apron,Lead apron,Waste Management,15,150,0,0,0,2,0,,,HSSP-III
+50,Safety Goggles,Safety Goggles,Waste Management,15,,0,0,0,0,0,This item is not costed in the SEL,,HSSP-III
+51,Heavy duty Leather gloves,Heavy duty Leather gloves,Waste Management,15,,0,0,0,0,0,This item is not costed in the SEL,,HSSP-III
+52,Face Shield,Face Shield,Waste Management,15,,0,0,0,0,0,This item is not costed in the SEL,,HSSP-III
+53,Head Helmet,Head Helmet,Waste Management,15,,0,0,0,0,0,This item is not costed in the SEL,,HSSP-III
+54,"Instrument set, insertion/removal, IUCD",Instrument set,Opd,15,7500,0,0,21,48,76,This item has been verified (Clearer description is available in the 'SEL Costing' sheet),Instrument,HSSP-III
+55,"Cupboard, for medicine, lockable","Cupboard, low, metal",Medical Engineering And Maintenance,15,300,0,0,1,1,4,,,HSSP-III
+56,"Container, for sharps, for approx. 250 needles","Container, for sharps, for approx. 250 needles",Maternity,15,1.12,0,0,2,0,0,,,HSSP-III
+58,"Cleaning utensils, set","Cleaning utensils, set",Maternity,10,5,0,0,1,0,0,,Cleaning,HSSP-III
+59,Laundry/linen bag,Laundry/linen bag,Maternity,15,32,0,0,1,0,0,,,HSSP-III
+60,"Light, emergency, solar, with battery backup","Light, emergency, solar, with battery backup",Maternity,15,1200,0,0,1,0,0,,,HSSP-III
+61,"Light, gas","Light, gas",Maternity,15,601.84,0,0,1,0,0,,,HSSP-III
+62,Suction machine,Suction machine,Maternity,10,200,0,0,1,2,19,,Suction,HSSP-III
+63,Vacuum extractor,Vacuum extractor,Maternity,15,550,0,0,1,0,5,,,HSSP-III
+64,"Ambu bag, adult with mask","Ambu bag, adult with mask",Maternity,15,65.22,0,0,1,0,0,,,HSSP-III
+65,"Ambu bag, infant with mask","Ambu bag, infant with mask",Maternity,15,65.22,0,0,1,0,0,,,HSSP-III
+66,Manual Vacuum aspiration Set,Manual Vacuum aspiration Set,Maternity,15,45,0,0,1,0,0,,Manual,HSSP-III
+67,"Cot, baby (bassinet), hospital-type","Cot, baby (bassinette), hospital-type",Maternity,15,2000,0,0,1,5,64,,,HSSP-III
+68,Drip stand,Drip stand,Maternity,15,27.76,0,1,7,19,120,,,HSSP-III
+69,"Stool, adjustable height","Stool, surgeon's, adjustable height",Maternity,15,57.62,0,0,2,3,4,,,HSSP-III
+70,Sponge Holding Forceps,Sponge Holding Forceps,Maternity,15,25,0,0,2,0,79,,,HSSP-III
+71,Tenaculums,Tenacullums,Maternity,15,150,0,0,2,0,0,,,HSSP-III
+72,"Foot step, one step","Foot step, one step",Maternity,15,52,0,0,1,0,0,,,HSSP-III
+73,"Foot step, two step","Foot step, two step",Maternity,15,68.23,0,0,11,0,0,,,HSSP-III
+74,"Containers for Decontamination, Cleaning, Instruments and Linen",Examination couch (community nurses for antenatal and postnatal including family planning),General,10,652.17,1,0,0,0,0,,Examining,HSSP-III
+75,"Bed net, mosquito, single bed","Bed net, mosquito, single bed",Maternity,15,12,0,0,10,0,0,,,HSSP-III
+76,"Lamp, paraffin, hurricane type","Lamp, paraffin, hurricane type",Maternity,15,284,0,0,2,0,0,,,HSSP-III
+77,Bedside locker,Bedside locker,Maternity,15,77.16750164,0,0,8,42,0,,Bedside,HSSP-III
+78,Stool basic metal,Stool basic metal,Central Sterilization,15,22.52,0,0,1,0,20,,,HSSP-III
+79,Anatomical marker L-R,Anatomical marker L-R,Medical Imaging,10,0.05,0,5,5,10,50,,Anatomical model,HSSP-III
+80,Apron protective x-ray lead,Apron protective x-ray lead,Medical Imaging,15,50,0,3,2,0,16,,,HSSP-III
+82,Ultrasound quality control,Ultrasound machine,Medical Imaging,15,48913.04348,0,1,0,9,16,,,HSSP-III
+83,Patellar reflex hammer,Patellar reflex hammer,Obstetrics And Gynaecology,15,942.35,0,0,0,5,16,,,HSSP-III
+84,"Weighing scale, baby",Digital baby scale,Obstetrics And Gynaecology,15,1083.92,0,0,0,0,25,,"Scale, baby",HSSP-III
+85,Diagnostic Set,Diagnostic Set,General,10,25.975,0,0,0,0,9,,Diagnostic set,HSSP-III
+86,Screen Curtains,Screen / curtains,Obstetrics And Gynaecology,10,150,0,0,0,0,34,,"Screen, projector",HSSP-III
+87,"Trolley, drug",Food Trolley,Obstetrics And Gynaecology,15,125,0,0,0,0,6,,,HSSP-III
+88,Fridge Freezer,Fridge Freezer,Laboratory,15,546.52,0,0,0,0,15,,,HSSP-III
+89,Fridge Guard,Fridge Guard,Laboratory,15,25,0,0,0,0,22,,,HSSP-III
+90,Air conditioner/fan,Air conditioner/fan,Laboratory,5,4500,0,0,0,3,27,,"Air conditioner, window",HSSP-III
+91,Fridge Freezer Thermometer,Frige Freezer Thermometer,Laboratory,15,25,0,0,0,0,20,,,HSSP-III
+92,Lockable Cabinet,Lockable Cabinet,Laboratory,15,1043,0,0,0,0,13,,,HSSP-III
+93,Kettle,Kettle,Medical Imaging,15,25,0,0,0,2,6,,"Kettle, steam-jacketed",HSSP-III
+94,Standing Blocks,Standing Blocks,Occupational Therapy,15,0,0,0,0,0,3,,,HSSP-III
+95,Suspension Slings,Suspension Slings,Ocupational Therapy,15,450,0,0,0,0,1,,,HSSP-III
+96,Pulley System,Pulley System,Occupational Therapy,15,150,0,0,0,0,5,,,HSSP-III
+97,Board for Cord Knotting,Board for Cord Knotting,Occupational Therapy,15,30,0,0,0,0,1,,,HSSP-III
+98,Wheelchair,Wheel chair,Ocupational Therapy,15,147.8082353,0,1,1,2,38,,,HSSP-III
+99,Built Up (adapted) Utensils,Built Up (adapted) Utensils,Ocupational Therapy,15,75,0,0,0,0,2,,,HSSP-III
+100,Universal Cuffs,Universal Cuffs,Ocupational Therapy,15,10,0,0,0,0,10,,,HSSP-III
+101,Grasp Dynamometer,Crasp Dynamometer,Ocupational Therapy,15,30,0,0,0,0,2,,,HSSP-III
+102,Goniometer,Goniometer,Rehabilitation,15,2500,0,0,0,10,20,,,HSSP-III
+103,Pinch Meter,Pinch Meter,Ocupational Therapy,15,300,0,0,0,0,2,,,HSSP-III
+104,"Medicinal Balls (Sets of 0.5kgs, 1kg, 2kgs, 3kgs, 4kgs, 5kgs)","Medicine Balls ( set of ½ kg, 1kg, 2kgs, 3kgs, 4kgs and 5kgs)",Ocupational Therapy,15,75,0,0,0,0,4,,Small item,HSSP-III
+105,Box and Block Test,Box and Block Test,Ocupational Therapy,15,200,0,0,0,0,1,,,HSSP-III
+106,Foot Sewing Machine,Foot Sewing Machine,Ocupational Therapy,15,154.58,0,0,0,0,5,,,HSSP-III
+107,Automatic Cell washer,Automatic Cell washer,Rehabilitation,15,800,0,0,0,0,2,,,HSSP-III
+108,"Light, mobile, Lift-ultra 1500 hydraulic",Mobile Lift-ultra light 1500 hydraulic,Ocupational Therapy,15,800,0,0,0,0,4,,,HSSP-III
+109,Cognitive kits,Cognitive kits,Occupational Therapy,15,470,0,0,0,0,2,,,HSSP-III
+110,Hand function kits,Hand Function Kit,Occupational Therapy,15,2500,0,0,0,0,10,,,HSSP-III
+111,Patient monitor,Patient monitor,Maternity,15,2000,0,0,0,2,27,,,HSSP-III
+112,Flip chart stand,Flip chart stand,Obstetrics And Gynaecology,15,25,0,0,0,0,2,,,HSSP-III
+113,Patient monitor,Patient trolleys,Obstetrics And Gynaecology,15,1200,0,0,0,0,14,,,HSSP-III
+114,Stretcher,Stretcher,Opd,10,63.98,0,0,0,0,4,,Stretcher,HSSP-III
+115,Casting chairs,Casting chairs,Prosthetics And Orthotics,15,6716.32,0,0,0,0,3,,,HSSP-III
+116,"Ruler, steel (1 meter long)",Steel Rulers (1 meter long),Prosthetics And Orthotics,15,250,0,0,0,0,10,,,HSSP-III
+117,Tilt table,Tilt table,Laundry,15,4000,0,0,0,1,0,,,HSSP-III
+118,Measuring gauges,Measuring gauges,Prosthetics And Orthotics,15,35,0,0,0,0,5,,,HSSP-III
+119,X-ray viewer,X-RAY Viewer,Obstetrics And Gynaecology,15,869.57,0,0,0,0,10,,,HSSP-III
+120,Safety Goggles,Square rulers,Prosthetics And Orthotics,15,1,0,0,0,0,5,,,HSSP-III
+121,Vernier calliper,Venier calliper,Prosthetics And Orthotics,15,926.71,0,0,0,0,5,,,HSSP-III
+122,Casting apparatus for prosthetics,Casting apparatus for prosthetics,Prosthetics And Orthotics,15,5000,0,0,0,0,4,,,HSSP-III
+123,Casting platform,Casting platform,Prosthetics And Orthotics,15,300,0,0,0,0,2,,,HSSP-III
+124,Spinal casting aid,Spinal casting aid,Prosthetics And Orthotics,15,25,0,0,0,0,2,,,HSSP-III
+125,"Analyser, Combined Chemistry and Electrolytes",Combined Chemistry and Electolytes analyser,Laboratory,15,26987.23,0,0,0,0,1,,,HSSP-III
+126,"Analyser, Chemistry","Chemistry Analyser,",Laboratory,15,26987.23,0,0,0,0,1,,,HSSP-III
+127,Blood Bank Centrifuge,Blood Gas Analyser,Laboratory,15,58965.93,0,0,0,0,1,,,HSSP-III
+128,"Analyser, Electrolyte (Human HumaLyte Plus) 5, for Na, K, Cl","Analyser, Electrolyte (Human HumaLyte Plus) 5, for Na, K, Cl",Laboratory,15,58965.93,0,0,0,0,1,,,HSSP-III
+129,"Weighing balance, electronic","Weighing balance, electronic",Laboratory,15,3669,0,0,0,0,2,,,HSSP-III
+130,Water bath,Water bath,Laboratory,15,1502.93,0,0,0,0,4,,,HSSP-III
+131,Centrifuge,Centrifuge,Laboratory,15,8880.95,0,0,0,0,5,,Centrifugal chiller,HSSP-III
+132,"Analyzer, Clinical immunoassay","Analyzer, Clinical immunoassay",Laboratory,7,26987.23,0,0,0,0,1,,"Analyzer, haematology",HSSP-III
+133,"Micropipettes, 5 - 50ul","Micropipettes, 5 - 50ul",Laboratory,15,820,0,0,0,0,5,,Small item,HSSP-III
+134,"Micropipettes, 5 - 50ul","Micropipettes, 5 - 50ul",Laboratory,15,820,0,0,0,0,5,,Small item,HSSP-III
+135,Micropipettes 10 - 100ul,Micropipettes 10 - 100ul,Laboratory,15,50,0,0,0,0,5,,Small item,HSSP-III
+136,"Micropipettes, 20 - 200ul","Micropipettes, 20 - 200ul",Laboratory,15,820,0,0,0,0,5,,Small item,HSSP-III
+137,"Micropipettes, 50 - 250ul","Micropipettes, 50 - 250ul",Laboratory,15,820,0,0,0,0,5,,Small item,HSSP-III
+138,"Micropipettes, 100 - 1000ul","Micropipettes, 100 - 1000ul",Laboratory,15,50,0,0,0,0,5,,Small item,HSSP-III
+139,Corner seat,Hormones Analyser,Laboratory,15,107948.92,0,0,0,0,1,,,HSSP-III
+140,Blood Bank Fridge (2-8 oC),Blood Bank Fridge,Laboratory,15,31447.44,0,0,0,0,4,,"Refrigerator, Commercial",HSSP-III
+141,Automatic Cell washer,Automatic Cell washer,Laboratory,15,800,0,0,0,0,2,,,HSSP-III
+142,Blood Bank Centrifuge,Blood Bank Centrifuge,Laboratory,15,7378.02,0,0,0,0,2,,"Refrigerator, Commercial",HSSP-III
+143,ABO Blood grouping Tiles,ABO Blood grouping Tiles,Laboratory,15,0.07,0,0,0,0,3,,,HSSP-III
+144,Viewing box,Viewing box,Laboratory,15,63.59,0,0,0,0,1,,,HSSP-III
+145,Donor Bleeding Couch,Donor Bleeding Couch,Laboratory,15,6716.32,0,0,0,0,6,,,HSSP-III
+146,Vortex mixer,Vortex mixer,Laboratory,15,143.2,0,0,0,0,2,,,HSSP-III
+147,Platelet Agitator,Platelet Agitator,Laboratory,20,3230,0,0,0,0,1,,Platelet rotator,HSSP-III
+148,Printer,Printer,Laboratory,5,176.78,0,0,0,0,8,,Printer,HSSP-III
+149,Exercise Mats,Exercise Mats,Rehabilitation,15,200,0,0,0,0,20,,Exercise apparatus,HSSP-III
+150,Cast cutters (Electrical),Cast cutters (Electrical),Rehabilitation,15,5000,0,0,0,0,0,,,HSSP-III
+151,Cast cutters (Mechanical),Cast cutters (Mechanical),Rehabilitation,15,5000,0,0,0,0,2,,,HSSP-III
+152,Parallel Bars,Paediatrics parallel bars,Rehabilitation,15,1200,0,0,0,2,6,,,HSSP-III
+153,"Abduction splints (Small, medium, large)","Abduction splints (Small, medium, large)",Rehabilitation,15,25,0,0,0,0,15,,,HSSP-III
+154,Digital scales,Digital scales,Rehabilitation,15,232.35,0,0,0,0,5,,"Baby, scale",HSSP-III
+155,Pedal bin,Pedal Bin,Obstetrics And Gynaecology,15,51.57,0,0,0,6,32,,,HSSP-III
+157,Incentive spirometers,Incentive spirometers,Physiotherapy,15,5,0,0,0,5,25,,,HSSP-III
+158,Postural Drainage Couch,Postural Drainage Couch,Physiotherapy,15,2000,0,0,0,0,4,,,HSSP-III
+159,Table,Table,Central Sterilization,15,272.93,0,0,0,0,9,,,HSSP-III
+160,Gestation Wheels R(Chart),Gestation Wheels R(Chart),Obstetrics And Gynaecology,15,5,0,0,0,0,8,,,HSSP-III
+161,Ultrasound scanning machine,Mobile Ultrasound scanning general with printer,Medical Imaging,8,10000,0,1,1,0,0,,Mobile (van),HSSP-III
+162,"Stethoscope, foetal, monaural, Pinard, plastic",Fetoscope,Maternity,15,200,0,0,0,0,47,,,HSSP-III
+163,Receiver,Receiver,Obstetrics And Gynaecology,15,200,0,0,0,0,76,,,HSSP-III
+164,Computed Tomography (CT machine),Computed Tomography (CT machine),Medical Imaging,15,760789,0,0,0,0,2,,,HSSP-III
+165,CT scanner accessories,CT scanner accessories,Oncology,15,48653.79,0,0,0,0,0,,,HSSP-III
+166,Automatic injection,Automatic injection,Medical Imaging,15,250,0,0,0,0,0,,,HSSP-III
+167,"Trolley, Trauma Patient CT",Trauma Patient CT Trolley,Medical Imaging,15,870,0,0,0,0,2,,,HSSP-III
+168,Patient transfer roller board,"25"" Patient transfer roller board",Medical Imaging,15,25,0,0,0,0,8,,,HSSP-III
+169,"Image view station, for conferences",image view station,Medical Imaging,5,12058.34,0,0,0,1,2,,Image analyzer,HSSP-III
+170,Infusion pump,Infusion pump,Obstetrics And Gynaecology,10,609.5,0,0,0,0,10,,Infusion,HSSP-III
+171,Delivery Trolley,Emergency trolley,Obstetrics And Gynaecology,15,327.91,0,0,0,0,5,,,HSSP-III
+172,"Cuscoâs/ bivalved Speculum (small, medium, large)","Cuscos/ bivalve Speculum (small, medium, large)",Obstetrics And Gynaecology,15,200,0,0,0,0,30,,,HSSP-III
+173,Cardiotocography,Cardiotocography,Obstetrics And Gynaecology,8,48653.79,0,0,0,0,18,,Cardioscope,HSSP-III
+174,Delivery Beds with Stirrups,Delivery Beds with Stirrups,Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,15,503.23,0,0,0,0,24,,Delivery,HSSP-III
+175,"Light, operating, mobile","Light, operating, mobile",Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,15,2761.5,0,0,0,1,2,,,HSSP-III
+176,Delivery Trolley,Delivery Trolley,Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,15,503.23,0,0,0,0,20,,Delivery,HSSP-III
+177,Wheelchair,Wheel chair,Medical Imaging,15,147.8082353,0,1,1,2,38,,,HSSP-III
+178,Bucket Stand,Bucket Stand,Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,15,44.97,0,0,0,0,20,,,HSSP-III
+179,Oxygen concentrator,Oxygen Concentrator,Maternity,15,900,0,0,0,2,32,,,HSSP-III
+180,Oxygen ports,Oxygen ports,Obstetrics And Gynaecology,20,250,0,0,0,0,31,,"Oxygen, gas, and air piping",HSSP-III
+181,Amnio hook,Amnio hook,Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,15,0.05,0,0,0,0,20,,,HSSP-III
+182,Delivery Forceps,Delivery Forceps,Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,15,20,0,0,0,0,5,,Delivery,HSSP-III
+183,Bed pans,Beds,Obstetrics And Gynaecology,15,150,0,0,0,0,307,,,HSSP-III
+184,Delivery set,Delivery set,Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,15,550,0,0,0,0,100,,Delivery,HSSP-III
+185,Incubator (O2),Incubator (O2),Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,10,1500,0,0,0,0,2,,"Incubator, laboratory",HSSP-III
+186,"Sterilizing unit, steam, non vacuum, vertical, electric, medium, 240 litre","Sterilizing unit, steam, non vacuum, vertical, electric, medium, 39 ltr",Central Sterilisation,15,737.12,0,0,0,1,0,,"Sterilizer, built-in",HSSP-III
+187,"Tray, instrument, set of 3 sizes, covered, s/s, 305x254x51mm","Tray, instrument, set of 3 sizes, covered, s/s, 305x254x51mm",Central Sterilization,15,30,0,0,0,2,12,,,HSSP-III
+188,"Stethoscope, foetal, monaural, Pinard, plastic","Stethoscope, foetal, monaural, Pinard, plastic",Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,5,64.12,0,0,0,2,4,,Stethoscope,HSSP-III
+189,"Cupboard, for medicine, lockable",Lockable Cabinet,Obstetrics And Gynaecology,15,1043,0,0,0,0,13,,,HSSP-III
+190,Rack for apron and glove x-ray,Rack for apron and glove x-ray,Medical Imaging,15,673.64,0,1,0,2,10,,,HSSP-III
+191,Pillows of various shapes,Pillows,Physiotherapy,15,25,0,0,0,9,21,,,HSSP-III
+192,Pillow cases,Pillow cases,Obstetrics And Gynaecology,15,10,0,0,0,200,64,,,HSSP-III
+193,"Light, examination, floor standing, articulated","Light, operating, mobile",Opd,15,2761.5,0,0,0,1,2,,,HSSP-III
+194,Tubal Ligation and Vasectomy Sets,Tubal Ligation and Vasectomy Sets,Opd,15,550,0,0,0,0,5,,,HSSP-III
+195,Static Digital Fluoroscopy,Static Digital floroscopy,Cardiology,15,325000,0,0,0,1,2,,,HSSP-III
+196,Static Digital Fluoroscopy accessories,Static Digital Floroscopy accessories,Medical Imaging,15,3500,0,0,0,1,2,,,HSSP-III
+197,Ordinary Microscope,Microscopy,Rehabilitation,7,200,1,0,0,0,0,,Microscope,HSSP-III
+198,Pillow cases,Elbow crutches,Rehabilitation,15,17.5,0,0,0,12,15,,,HSSP-III
+199,"Incubator, transit",Transit Incubator,Pharmacy,15,17025.27,0,0,0,0,4,,,HSSP-III
+200,Picture Archiving and Communication System (PACS),Picture Archiving and Communication System (PACS),Medical Imaging,15,1500000,0,1,0,1,1,,,HSSP-III
+201,Digitiser,Digitiser,Medical Imaging,15,70000,0,1,0,1,1,,,HSSP-III
+202,X-ray machine,X ray machine,Icu/Trauma,15,206404.07,0,0,0,1,4,,,HSSP-III
+203,"Cabinet, filing","Water kettle, boiling, 2ltr",Central Sterilization,25,25,0,0,0,1,0,,Water lines,HSSP-III
+204,"Cradle, burns","Cradle, burns",Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,15,250,0,0,0,2,8,,,HSSP-III
+205,"Mattress for hospital bed, adult","Mattress for hospital bed, adult",Maternity,15,1026.13,0,0,0,34,30,,,HSSP-III
+206,"Tray, instrument, set of 12 sizes, covered, s/s, 305x254x51mm","Tray, instrument, set of 12 sizes, covered, s/s, 305x254x51mm",Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,15,30,0,0,0,4,8,,,HSSP-III
+207,Dumbbells (Sets of 0.5kgs to 15kgs),Dumbells (Sets of 0.5kgs to 15kgs),Physiotherapy,15,250,0,0,0,2,5,,,HSSP-III
+208,Hydraulic hand rower machine,Hydraulic hand rower machine,Physiotherapy,15,250,0,0,0,1,1,,Hydraulic,HSSP-III
+209,Electro Surgical unit,Electro Surgical unit,Obstetrics And Gynaecology,15,1460.5,0,0,0,0,2,,Electric rotary,HSSP-III
+210,LLETZ Machine,LLETZ Machine,Obstetrics And Gynaecology Sub-Specialty : Gynecological Ward,15,4500,0,0,0,0,4,,,HSSP-III
+211,Colposcopes,Colposcopes,Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,8,39548.65,0,0,0,0,6,,"Colposcope, with floor stand",HSSP-III
+212,Laparotomy Set,Laparatomy Set,Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,15,550,0,0,0,0,7,,,HSSP-III
+213,Hysterectomy set,Total Abdominal Hysterectomy set,Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,15,550,0,0,0,0,8,,,HSSP-III
+214,Bipolar Diathermy Machine,Bipolar Diathermy Machine,Obstetrics And Gynaecology Sub-Specialty : Gynecological Ward,7,10000,0,0,0,0,2,,Bipolar coagulator,HSSP-III
+215,VVF and RVF set,VVF and RVF set,Obstetrics And Gynaecology Sub-Specialty : Gynecological Ward,15,550,0,0,0,0,10,,,HSSP-III
+216,D&C set,D&C set,Obstetrics And Gynaecology Sub-Specialty : Gynecological Ward,15,550,0,0,0,0,5,,,HSSP-III
+217,Evacuation set,Evacuation sets with various sized metal currettes,Obstetrics And Gynaecology Sub-Specialty : Gynecological Ward,10,550,0,0,0,0,20,,Evacuator,HSSP-III
+218,Suction Curettage machine,Suction Curettage machine,Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,10,62.63,0,0,0,0,2,,Suction,HSSP-III
+219,Molar set,Molar set,Obstetrics And Gynaecology Sub-Specialty : Gynecological Ward,15,250,0,0,0,0,5,,,HSSP-III
+220,Hysterectomy set,Total Abdominal Hysterectomy set,Maternity,15,550,0,0,0,0,8,,,HSSP-III
+221,"Analyser, Chemistry",Haematology analyser Semi,Laboratory,15,18744,0,0,0,0,1,,,HSSP-III
+222,Westergreen ESR set,Westergreen ESR set,Laboratory,15,2500,0,0,0,0,2,,,HSSP-III
+223,Neubauer Chamber,Neuber Chamber,Laboratory,15,150,0,0,0,0,4,,,HSSP-III
+224,Shaker,Shaker,Laboratory,15,3293.56,0,0,0,0,4,,,HSSP-III
+225,Differential Mechanical Counter(8 keys),Differential Mechanical Counter(8 keys),Laboratory,15,26.85,0,0,0,0,2,,,HSSP-III
+226,Tally Counter,Tally Ccounter,Laboratory,15,5,0,0,0,0,7,,,HSSP-III
+227,Coagulation machine,Coagulation Machine,Laboratory,5,3000,0,0,0,0,5,,Coagulation analyzer,HSSP-III
+228,"Tray, instrument, set of 3 sizes, covered, s/s, 305x254x51mm","Trolley, dressing, with shelves, s/s, 600L x 450W x 800H mm.",Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,15,142.16,0,0,0,4,6,,,HSSP-III
+229,Paraffin Dispense,Paraffin Dispense,Laboratory,7,150,0,0,0,0,2,,Paraffin,HSSP-III
+230,Manual Rotary Microtome,Manual Rotary Microtome,Laboratory,15,4500,0,0,0,0,2,,Manual,HSSP-III
+231,LED Tissue floatation water bath and slide dryer Combo,LED Tissue floatation water bath and slide dryer Combo,Laboratory,15,2500,0,0,0,0,2,,,HSSP-III
+232,Tissue Floatation Water Bath,Tissue Floatation Water Bath,Laboratory,8,600,0,0,0,0,4,,Tissue-embedding center,HSSP-III
+234,IHL Slide Manager $ Slide dryer Combo,IHL Slide Manager $ Slide dryer Combo,Laboratory,15,325,0,0,0,0,2,,,HSSP-III
+235,Paraffin Block Trimmer,Paraffin Block Trmmer,Laboratory,7,25000,0,0,0,0,2,,Paraffin,HSSP-III
+236,PELCO BioWave Plot,PELCO BioWave Plot,Laboratory,15,35000,0,0,0,0,2,,,HSSP-III
+237,Stereo Microscopes,Stereo Microscopes,Laboratory,5,2500,0,0,0,0,2,,Stereo equipment,HSSP-III
+238,Biological Microscopes,Biological Microscopes,Laboratory,15,200,0,0,0,0,2,,,HSSP-III
+239,"Centrifuge, Mini",MagFuge Centrifuge and Stirer,Laboratory,15,8880.95,0,0,0,0,2,,,HSSP-III
+240,Cell Tec Activation Filters,Cell Tec Activation Filters,Laboratory,15,300,0,0,0,0,2,,,HSSP-III
+241,UV pipette Carousel,UV pippette Carousal,Laboratory,15,350,0,0,0,0,2,,,HSSP-III
+242,Anti-shock garment,anti-shock garmet,Obstetrics And Gynaecology Sub-Specialty : Gynecological Ward,15,75,0,0,0,0,2,,,HSSP-III
+243,Pulse oximeter,Pulse oximeter,Opd,7,453.1,0,0,0,5,36,,Pulse oxymeter,HSSP-III
+244,Lamination suction system,Lamination sunction system,Prosthetics And Orthotics,15,14000,0,0,0,0,1,,Laminar flow system,HSSP-III
+245,Drilling machine,Drilling machine,Prosthetics And Orthotics,15,5000,0,0,0,0,2,,,HSSP-III
+246,Router machine,Router machine,Prosthetics And Orthotics,15,65,0,0,0,0,3,,,HSSP-III
+247,Band saws,Band saws,Prosthetics And Orthotics,15,249.85,0,0,0,0,1,,,HSSP-III
+248,Fume extractor,Fume extractor,Prosthetics And Orthotics,15,7500,0,0,0,0,2,,,HSSP-III
+249,Magnetic resonance imaging (MRI),Magnetic resonance imaging (MRI),Medical Imaging,10,1340282.18,0,0,0,0,1,,Magnetic/MRI shielding,HSSP-III
+250,Quality control kit (radiology),Quality control kit,Medical Imaging,15,,0,1,0,1,0,This item is not costed in the SEL,,HSSP-III
+251,"Racks, storage, set","Racks, storage, set",Central Sterilization,15,45,0,0,0,0,6,,,HSSP-III
+252,Office software,Office software,Speech And Language Therapy,15,150,0,0,0,0,1,,,HSSP-III
+253,Biosafety Cabinet (Class II),Biosafety Cabinet (Class II),Laboratory,15,17761.9,0,0,0,0,3,,,HSSP-III
+254,Incubator (O2),Incubator (O2),Laboratory,10,1500,0,0,0,0,2,,"Incubator, laboratory",HSSP-III
+255,Incubator (CO2),Incubator (CO2),Laboratory,10,2000,0,0,0,0,1,,"Incubator, laboratory",HSSP-III
+256,Blood culture incubator,Blood culture incubator,Laboratory,15,200,0,0,0,0,1,,,HSSP-III
+257,Anaerobic Jars (AnO2),Anaerobic Jars (AnO2),Laboratory,15,0.07,0,0,0,0,4,,Anaerobe chamber,HSSP-III
+258,Pipette filler,Pipette filler,Laboratory,10,4,0,0,0,0,5,,"Pipette, automatic",HSSP-III
+259,Diagnostic Set,Diagnostic Set,Laboratory,10,25.975,0,0,0,0,9,,Diagnostic set,HSSP-III
+260,Slide storage box,Slide storage boxes,Laboratory,7,0,0,0,0,0,30,,"Slide stainer, laboratory",HSSP-III
+261,Sample roller mixer,Sample roller mixer,Laboratory,15,500,0,0,0,0,2,,,HSSP-III
+262,Automatic staining machine,Automatic staining machine,Laboratory,15,800,0,0,0,0,1,,,HSSP-III
+263,Dispensing pumps for culture media preparation,Dispensing pumps for culture media preparation,Laboratory,10,2995,0,0,0,0,2,,"Dispenser, alcohol",HSSP-III
+264,Automated blood culture systems,Automated blood culture systems,Laboratory,15,8164.8,0,0,0,0,1,,,HSSP-III
+265,Magnetic Stirrer,Magnetic Stirer,Laboratory,10,580.68,0,0,0,0,4,,Magnetic/MRI shielding,HSSP-III
+266,Sensitivity disc dispenser,Sensitivity disc dispenser,Laboratory,10,50,0,0,0,0,2,,Sensitometer,HSSP-III
+267,Oven (dryer),Oven (dryer),Laboratory,15,25000,0,0,0,0,2,,,HSSP-III
+268,Hot plate,Hot plate,Central Sterilization,15,35,0,0,0,0,2,,,HSSP-III
+269,Gene Expert (16 Module),Gene Expert (16 Module),Laboratory,15,75000,0,0,0,0,2,,,HSSP-III
+270,Burnsen Burner,Burnsen Burner,Laboratory,15,38.78,0,0,0,0,2,,,HSSP-III
+271,Blood culture rack,Blood culture rack,Laboratory,15,35,0,0,0,0,20,,,HSSP-III
+272,Distiller,Distiller,Laboratory,15,1776.19,0,0,0,0,1,,Distilling apparatus,HSSP-III
+273,Led Microscope,Led Microscope,General,15,500,0,0,0,0,1,,,HSSP-III
+274,Electron Microscope,Electron Microscope,Laboratory,15,200,0,0,0,0,1,,,HSSP-III
+275,Skin snips equipment set,Diagnostic equipment set for ward/nurse,Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,10,30.27,0,0,0,5,4,,Diagnostic set,HSSP-III
+276,Thermal Mixer,Thermal Mixer,Laboratory,15,1500,0,0,0,0,2,,,HSSP-III
+277,Heat Blocks,Heat Blocks,Laboratory,15,450,0,0,0,0,2,,,HSSP-III
+278,DNA Sequencer,DNA Sequencer,Laboratory,15,1000000,0,0,0,0,1,,,HSSP-III
+279,"Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ",Combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ ultrasound,Physiotherapy,15,300,0,0,0,0,4,,,HSSP-III
+280,Combined Wax Sterizer & Wax bath 15 litres,Combined Wax Sterizer & Wax bath 15 litres,Physiotherapy,15,81000,0,0,0,0,2,,,HSSP-III
+281,Tunturi E420 Ergometer,Tunturi E420 Ergometer,Physiotherapy,15,2500,0,0,0,0,4,,,HSSP-III
+282,Solitude 11 Platinum Treadmill,Solitude 11 Platinum Treadmill,Physiotherapy,15,3000,0,0,0,0,3,,,HSSP-III
+283,Mega Pulse Senior 265,Mega Pulse Senior 265,Physiotherapy,15,250,0,0,0,0,2,,,HSSP-III
+284,Hot Pack Therapy Units,Hot Pack Therapy Units,Physiotherapy,15,300,0,0,0,0,4,,,HSSP-III
+285,Voltage Regulators,Voltage Regulators,Physiotherapy,15,35,0,0,0,0,6,,,HSSP-III
+286,Ordinary balls,Ordinary balls,Opd,15,25,0,0,0,0,10,,,HSSP-III
+287,Drilling machine,Sterilizing unit,Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,15,8393.39,0,0,0,0,1,,"Sterilizer, built-in",HSSP-III
+288,Muscle stimulator,Muscle stimulator,Physiotherapy,10,250,0,0,0,0,4,,Muscle stimulator,HSSP-III
+289,Lumber & Cervical Traction Units,Lumber & Cervical Traction Units,Physiotherapy,15,550,0,0,0,0,4,,,HSSP-III
+290,3D Thumb,3D Thumb,Physiotherapy,15,5,0,0,0,0,10,,,HSSP-III
+291,MVA Set,MVA Set,Obstetrics And Gynaecology Sub-Specialty : Gynecological Ward,15,25,0,0,0,0,20,,,HSSP-III
+292,"Lamp, examination",Examination lamp,Dialysis,10,173.91,0,0,0,0,2,,Examining,HSSP-III
+293,Resuscitaire,Rescucitaire,Pediatrics,15,422.2,0,0,0,1,5,,,HSSP-III
+294,Nasal Prongs,Nasal Prongs,Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,15,3,0,0,0,0,8,,,HSSP-III
+295,Dual ergometer,Dual Egormeter,Physiotherapy,15,2500,0,0,0,2,2,,,HSSP-III
+296,Rehabilitation wall bars,Rehabilitation wall bars,Rehabilitation,15,25,0,0,0,1,4,,,HSSP-III
+297,Tenaculums,Tenacullums,Obstetrics And Gynaecology,15,150,0,0,2,0,0,,,HSSP-III
+298,Stethoscope,Stethoscope,Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,5,320.4,2,0,0,4,73,,Stethoscope,HSSP-III
+299,Cryotherapy unit,Cryotherapy machine,Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,15,23691.15,0,0,0,0,4,,,HSSP-III
+300,LLETZ Machines,LLETZ Machine,Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,15,4500,0,0,0,0,4,,,HSSP-III
+301,Rehabilitation wall bars,Wall Bars,Obstetrics And Gynaecology,15,25,0,0,0,0,4,,,HSSP-III
+302,Treadmill,Treadmill,Physiotherapy,8,3000,0,0,0,2,2,,"Treadmill, electric",HSSP-III
+303,Wobble mat,Wobble mat,Rehabilitation,15,35,0,0,0,2,0,,,HSSP-III
+304,Sets of sand bags,Sets of sand bags,Rehabilitation,15,692.5,0,0,0,2,2,,,HSSP-III
+305,Knee continuous range of motion machine,Knee continuous range of motion machine,Physiotherapy,15,8805.89,0,0,0,0,3,,,HSSP-III
+306,Vacuum system,Vacuum system,Prosthetics And Orthotics,15,550,0,0,0,0,1,,Vacuum cleaning system,HSSP-III
+307,Slide drying rack,Slide Drier Rack,Laboratory,7,0,0,0,0,0,2,,"Slide stainer, laboratory",HSSP-III
+308,Air Extractor,Air Extractor,Laboratory,15,390,0,0,0,0,1,,,HSSP-III
+309,Applicator sticks jar,Applicator sticks jar,Laboratory,15,10,0,0,0,0,10,,,HSSP-III
+310,Skin snips equipment set,Skin snips equipment set,Laboratory,15,0,0,0,0,0,1,,,HSSP-III
+311,Staining Jars,Couplin Staining Jars,Laboratory,15,5,0,0,0,0,10,,,HSSP-III
+312,Developmental milestone chats,Development milestone charts,Physiotherapy,15,25,0,0,0,5,5,,,HSSP-III
+313,Wedges of various shapes,Wedges of various shapes,Physiotherapy,15,50,0,0,0,0,15,,,HSSP-III
+314,Rolls of various sizes and shapes,Rolls of various sizes and shapes,Obstetrics And Gynaecology Sub-Specialty : Mch Department Ward,15,57.38,0,0,0,0,15,,,HSSP-III
+315,"Cupboard, for medicine, lockable","Cupboard, dangerous drugs",Maternity,15,300,0,0,1,1,8,,,HSSP-III
+316,Cerebral Palsy (CP) chair,Cerebral Palsy (CP) chair,Physiotherapy,7,2000,0,0,0,0,10,,Cerebral function monitor,HSSP-III
+317,Corner seat,Corner seat,Rehabilitation,10,160,0,0,0,0,10,,Corner guards,HSSP-III
+318,Shovels,Shovels,Speech And Language Therapy,15,0,0,0,0,0,0,,,HSSP-III
+319,Tally Counter,Wall mirrors (2m x 0.5m),Medical Imaging,15,30,0,0,0,0,3,,,HSSP-III
+320,"Incubator, infant","Incubator, infant",Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,10,37475.18,0,0,0,2,8,,"Incubator, laboratory",HSSP-III
+321,"Phototherapy unit, infant, with accessories","Phototherapy unit, infant, with accessories",Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,10,6465.94,0,0,0,1,8,,Phototherapy unit,HSSP-III
+322,"Resuscitator, manual, infant","Resuscitator, manual, infant several sizes",Obstetrics And Gynaecology Sub-Specialty: Delivery Suite/Labour Ward,10,65.22,0,0,0,0,4,,Resuscitator,HSSP-III
+323,HSG set,HSG set,Medical Imaging,15,1500,0,0,0,1,5,,,HSSP-III
+324,Urethrogram set,Urethrogram set,Medical Imaging,15,250,0,0,0,1,5,,,HSSP-III
+325,Intravenous Pyrography set,Intravenous Pyelography set,Medical Imaging,15,200,0,0,0,1,5,,Intravenous,HSSP-III
+326,Bone Densitometry,Bone Densitometry,Medical Imaging,15,28000,0,0,0,0,1,,,HSSP-III
+327,Pulley System,Pulley System,Medical Imaging,15,150,0,0,0,0,5,,,HSSP-III
+328,Vices,Vices,Prosthetics And Orthotics,15,25,0,0,0,0,18,,,HSSP-III
+329,Steel rods,Steel rodes,Prosthetics And Orthotics,15,250,0,0,0,0,20,,,HSSP-III
+330,Mixing bowls,Mixing bowls,Prosthetics And Orthotics,15,5.42,0,0,0,0,10,,,HSSP-III
+331,Spatula,Spatular,Prosthetics And Orthotics,15,10,0,0,0,0,15,,,HSSP-III
+332,Blades,Blades,Prosthetics And Orthotics,15,0.02,0,0,0,0,15,,,HSSP-III
+333,Walking Frame,Walking Frame,Ocupational Therapy,15,300,0,0,0,4,28,,,HSSP-III
+334,Sample Rack,Sample Rack,Laboratory,15,6.67,0,0,0,0,20,,,HSSP-III
+335,Sample Rack,Sample Trays,Laboratory,15,25,0,0,0,0,30,,,HSSP-III
+336,ELISA (automated),ELISA (automated),Laboratory,15,30000,0,0,0,0,1,,,HSSP-III
+337,Motorcycle ambulance,,Plastic Surgery,15,,,,,,,This item is not costed in the SEL,,HSSP-III
+338,ELISA Plate washer,ELISA Plate washer,Laboratory,15,1736.19,0,0,0,0,1,,,HSSP-III
+339,ELISA Reader,ELISA Reader,Laboratory,15,6325,0,0,0,0,1,,,HSSP-III
+340,Flow Cytometer,Flow Cytometer,Laboratory,5,500000,0,0,0,0,1,,Flow cytometer,HSSP-III
+341,CD4 Point of Care,CD4 Point of Care,Laboratory,15,6095,0,0,0,0,1,,,HSSP-III
+342,Adaptive communication switches (Infrared switches),Adaptive communication switches (Infrared swiches),Speech And Language Therapy,15,65,0,0,0,0,5,,,HSSP-III
+343,Sound measuring apparatus/decibel meter,sound measuring apparatus/decibel meter,Speech And Language Therapy,15,48,0,0,0,0,5,,,HSSP-III
+344,Diagnostic stroboscopes,Diagnostic stroboscopes,Speech And Language Therapy,10,1300,0,0,0,0,3,,Diagnostic set,HSSP-III
+345,Computer set,"Computer, desktop with printer",Medical Imaging,15,2053.91,0,0,0,1,4,,,HSSP-III
+346,Voice synthesizer,Voice synthesizer,Speech And Language Therapy,15,350,0,0,0,0,4,,,HSSP-III
+347,Analytical software,Analytical software,Speech And Language Therapy,10,1000,0,0,0,0,1,,Analytical,HSSP-III
+348,Medical software,Medical software,Speech And Language Therapy,15,,0,0,0,0,1,This item is not costed in the SEL,,HSSP-III
+349,Office software,Office software,Opd,15,150,0,0,0,0,1,,,HSSP-III
+350,"Speech therapy kit (Kazoo, toobaloo head set, toobaloo, pustefix bubble bear)","Speech therapy kit ( Kazoo, Toobaloo headset, Toobaloo, pustefix bubble bear)",Speech And Language Therapy,15,200,0,0,0,0,3,,,HSSP-III
+351,Picture flash cards,Picture flash cards,Speech And Language Therapy,15,15,0,0,0,0,5,,,HSSP-III
+352,Bed sheets,Large Bed Sheets,Obstetrics And Gynaecology,15,30,0,0,0,0,8,,,HSSP-III
+353,Shelves,shelves,Central Sterilization,15,108,0,0,0,0,4,,,HSSP-III
+354,Wiper holder,Wiper holder,Medical Imaging,15,65,0,0,0,0,4,,,HSSP-III
+355,Static digital accessories,Static digital accessories,Medical Imaging,15,3500,0,1,0,1,0,,,HSSP-III
+356,Radiation Survey meter,Radiaton Survey meter,Medical Imaging,8,500,0,1,0,1,0,,Radiation meter,HSSP-III
+358,Static digital,Static digital,Medical Imaging,15,325000,0,0,0,1,0,,,HSSP-III
+359,Lead glove protective x-ray pair,Glove protective x-ray pair,Medical Imaging,15,50,0,0,0,0,2,,,HSSP-III
+360,Bed pans,Bed pans,Skin/ Dermatology,15,40.32,0,0,0,0,26,,,HSSP-III
+361,Lead thyroid shield,Lead thyroid shield,Medical Imaging,15,115.85,0,0,0,2,0,,,HSSP-III
+362,Lead google,Lead google,Medical Imaging,15,8.2,0,0,0,1,0,,,HSSP-III
+364,Intravenous Pyelography set,Intravenous Pyelography set,Medical Imaging,15,200,0,0,0,1,5,,Intravenous,HSSP-III
+365,Oxygen concentrator,Oxygen cylinder,Opd,15,250,0,0,0,0,14,,,HSSP-III
+366,"Sterilizing unit, steam, non vacuum, vertical, electric, medium, 39 ltr","Sterilizing unit, steam, non vacuum, vertical, electric, medium, 39 ltr",Central Sterilisation,15,737.12,0,0,0,1,0,,"Sterilizer, built-in",HSSP-III
+367,Resuscitaire,Rescucitaire,Dialysis,15,422.2,0,0,0,1,5,,,HSSP-III
+368,Computer set,"Computer set, desktop",Laboratory,15,5706.424444,0,0,0,0,12,,,HSSP-III
+369,Laptop,Laptop,Medical Imaging,3,1500,0,0,0,1,0,,Laptop,HSSP-III
+370,Backsplit cotton gown,Backsplit cotton gown,Medical Imaging,15,15,0,0,0,200,0,,,HSSP-III
+372,Sphygmomanometer,Sphygmomamometer,Rehabilitation,10,66.1,0,0,0,0,1,,Sphygmomanometer,HSSP-III
+373,Exercise ball,Exercise ball,Physiotherapy,15,2500,0,0,0,8,15,,Small item,HSSP-III
+374,Wobble board,wobble board,Rehabilitation,15,35,0,0,0,4,0,,,HSSP-III
+375,Stationary bike,Stationery bicycles,Rehabilitation,15,440,0,0,0,3,5,,,HSSP-III
+376,Paediatric mat,Paeditric mat,Occupational Therapy,15,25,0,0,0,10,0,,,HSSP-III
+377,Mirror,Mirror,Prosthetics And Orthotics,10,30,0,0,0,4,4,,"Mirrors, traffic and/or wall mounted",HSSP-III
+378,Tilt table,Tilt table,Rehabilitation,15,4000,0,0,0,1,0,,,HSSP-III
+379,Overhead pulley,Overhead pulley,Rehabilitation,10,35,0,0,0,1,1,,Overhead doors,HSSP-III
+380,Dumb bells (Sets of 0.5kg - 15kgs),Dumbells (Sets of 0.5kgs to 15kgs),Rehabilitation,15,250,0,0,0,2,5,,,HSSP-III
+381,Training stairs,Training stairs,Rehabilitation,15,1300,0,0,0,1,0,,,HSSP-III
+382,Interferential therapy machine,Interferential therapy machine,Rehabilitation,15,800,0,0,0,6,0,,,HSSP-III
+383,Transcutaneous electrical neuromuscular stimulation,Transcutaneous electrical neuromascular stimulation,Rehabilitation,15,50,0,0,0,6,0,,,HSSP-III
+384,Walking Frame,Walking Frame,Rehabilitation,15,300,0,0,0,4,28,,,HSSP-III
+385,Lumber/Cervical Traction,Lumber/Cervical Traction,Rehabilitation,15,550,0,0,0,2,0,,,HSSP-III
+386,Preacher's Table,Preacher's Table,Ocupational Therapy,15,25,0,0,0,5,12,,,HSSP-III
+387,Exercise ball,Exercise ball,Rehabilitation,15,2500,0,0,0,8,15,,Exercise apparatus,HSSP-III
+388,Patient Transfer Aid,Sara stedy Patient Transfer Aid,Rehabilitation,15,25,0,0,0,2,2,,,HSSP-III
+389,Gym mat,Gym mat,Physiotherapy,15,200,0,0,0,10,20,,,HSSP-III
+390,Development milestone charts,Development milestone charts,Rehabilitation,10,25,0,0,0,5,5,,Developing tank,HSSP-III
+391,Wheelbarrows,Wedge pillow,Rehabilitation,15,50,0,0,0,15,0,,,HSSP-III
+392,Pillow cases,Pillows,Obstetrics And Gynaecology,15,25,0,0,0,9,21,,,HSSP-III
+393,Paediatric Standing frame,Paediatric Standing frame,Rehabilitation,15,1200,0,0,0,5,0,,,HSSP-III
+394,Paediatric CP Chair,Paediatric CP Chair,Rehabilitation,15,250,0,0,0,5,0,,,HSSP-III
+395,Paediatric Corner sit,Paediatric Corner sit,Nutritional Rehabilitation Unit,15,200,0,0,0,5,0,,,HSSP-III
+396,Goniometer,Goniometer,Pediatrics,15,2500,0,0,0,10,20,,,HSSP-III
+397,Bobath bed,Bobath beds,Physiotherapy,15,13000,0,0,0,5,9,,,HSSP-III
+399,Walking Cane,Walking cane,Physiotherapy,15,25,0,0,0,8,5,,,HSSP-III
+400,Knee continuous passive motion machine,Knee continous passive motion machine,Rehabilitation,15,8805.89,0,0,0,2,0,,,HSSP-III
+401,Shoulder wheel,shoulder wheel,Rehabilitation,20,0,0,0,0,1,0,,Shoulder wheel,HSSP-III
+40,"Bucket,10L",10 L buckets,,15,150.29,4,0,0,0,0,,,HSSP-III
+57,"Trolley, laundry/instrument",Instrument Trolley,,15,195.65,0,0,0,0,4,,Instrument,HSSP-III
+81,UPS (uninterruptible power supply),UPS,,15,1639.56,0,1,1,2,0,,,HSSP-III
+233,Slide Dryer/Warmer,Large Slide Warmers,,15,200,0,0,0,0,2,,,HSSP-III
+357,Quality control kit (radiology),Quality control kit,,15,,0,1,0,1,0,This item is not costed in the SEL,,HSSP-III
+363,exer,,,15,,,,,,,This item is not costed in the SEL,,HSSP-III
