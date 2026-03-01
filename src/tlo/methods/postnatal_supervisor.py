@@ -739,31 +739,34 @@ class PostnatalSupervisor(Module):
         :return:
         """
         df = self.sim.population.props
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        nci = self.sim.modules['NewbornOutcomes'].newborn_care_info
-        mni_df = pd.DataFrame.from_dict(mni, orient='index')
-        nci_df = pd.DataFrame.from_dict(nci, orient='index')
+        pregnancy_supervisor = self.sim.modules['PregnancySupervisor']
+        mother_and_newborn_info = pregnancy_supervisor.mother_and_newborn_info
+        newborn_care_info = self.sim.modules['NewbornOutcomes'].newborn_care_info
 
-        # Set external variables used in the linear model equation
-        maternal_prom = pd.Series(df.at[mother_id, 'ps_premature_rupture_of_membranes'], index=df.loc[[child_id]].index)
-        received_abx_for_prom = pd.Series(nci_df.at[child_id, 'abx_for_prom_given'],  index=df.loc[[child_id]].index)
+        maternal_prom = df.at[mother_id, 'ps_premature_rupture_of_membranes']
+        received_abx_for_prom = newborn_care_info[child_id]['abx_for_prom_given']
 
-        if mother_id in mni_df.index:
-            chorio_in_preg = pd.Series(mni_df.at[mother_id, 'chorio_in_preg'], index=df.loc[[child_id]].index)
+        if mother_id in mother_and_newborn_info:
+            chorio_in_preg = mother_and_newborn_info[mother_id]['chorio_in_preg']
         else:
-            chorio_in_preg = pd.Series(False, index=df.loc[[child_id]].index)
+            chorio_in_preg = False
 
         # We then apply a risk that this womans newborn will develop sepsis during week one
         risk_eons = self.pn_linear_models['early_onset_neonatal_sepsis_week_1'].predict(
-            df.loc[[child_id]], received_abx_for_prom=received_abx_for_prom,
+            df.loc[
+                [child_id],
+                ['nb_early_preterm', 'nb_late_preterm', 'nb_clean_birth', 'nb_early_init_breastfeeding']
+            ],
+            received_abx_for_prom=received_abx_for_prom,
             maternal_chorioamnionitis=chorio_in_preg,
-            maternal_prom=maternal_prom)[child_id]
+            maternal_prom=maternal_prom
+        )[child_id]
 
-        # Update the df, mni and log the case
+        # Update the df, mother_and_newborn_info and log the case
         if self.rng.random_sample() < risk_eons:
             df.at[child_id, 'pn_sepsis_early_neonatal'] = True
-            self.sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['sepsis_postnatal'] = True
-            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['early_onset_sepsis'] += 1
+            newborn_care_info[child_id]['sepsis_postnatal'] = True
+            pregnancy_supervisor.mnh_outcome_counter['early_onset_sepsis'] += 1
 
     def set_postnatal_complications_neonates(self, upper_and_lower_day_limits):
         """
