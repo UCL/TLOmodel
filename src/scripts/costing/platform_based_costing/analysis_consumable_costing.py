@@ -259,16 +259,63 @@ for scenario in ['actual', 'perfect']:
 
 # Add the quantity of consumable and the count of treatments
 
-
 full_output.reset_index().to_csv(outputfilepath / 'cost_by_treatment_level_consumable.csv')
 
 count_by_appointment = get_hsi_summary(results_folder, key = 'HSI_Event_non_blank_appt_footprint',
                                         var = "Number_By_Appt_Type_Code_And_Level", do_scaling = True)
 
-count_by_treatment_id.to_csv(figurespath / 'sample_hsi_count_by_treatment_v2.csv')
+#count_by_treatment_id.to_csv(figurespath / 'sample_hsi_count_by_treatment_v2.csv')
 count_by_appointment.to_csv(figurespath / 'sample_hsi_count_by_appointment_v2.csv')
 
 # Disease specific information
+def get_disease_specific_summary(results_folder, module, key, var ,do_scaling):
+    def get_col_summary(_df: pd.Series, var = var):
+        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
+        _df = drop_outside_period(_df).copy()
+        _df["year"] = pd.to_datetime(_df["date"]).dt.year
+        _df = _df.set_axis(_df['year']).drop(columns=['date'])
+        _df = _df[var]
+        return _df
+
+
+    count  = compute_summary_statistics(extract_results(
+        Path(results_folder),
+        module= module,
+        key= key,
+        custom_generate_series=get_col_summary,
+        do_scaling=do_scaling,
+    ), central_measure='median')
+
+    return count
+
+total_plhiv = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'summary_inc_and_prev_for_adults_and_children_and_fsw',
+                                     var = 'total_plhiv',
+                                     do_scaling = True)
+
+pop_total = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'summary_inc_and_prev_for_adults_and_children_and_fsw',
+                                     var = 'pop_total',
+                                     do_scaling = True)
+art_coverage_adult = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'art_coverage_adult',
+                                     do_scaling = False)
+art_coverage_child = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'art_coverage_child',
+                                     do_scaling = False)
+prop_tested_adult = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'prop_tested_adult',
+                                     do_scaling = False)
+
+
 # TODO update code to extract relevant results alongside prevalance
 log['tlo.methods.tb'].keys()
 # tb_incidence - num_new_active_tb, prop_active_tb_in_plhiv; tb_prevalence -> tbPrevActive, tbPrevActiveAdult, tbPrevActiveChild; tb_mdr - tbPropActiveCasesMdr; tb_treatment - tbPropDiagnosed, tbTreatmentCoverage, tbIptCoverage
