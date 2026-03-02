@@ -1,3 +1,13 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e7003d947ee06b6a28e3a4eafd783ea96488383a1bcf0d9e1ad4e9d4bbec3152
-size 352
+symptom,age_group,prop_lower,prop_upper
+jaundice,0_5,0.1,0.5
+acidosis,0_5,0.4,0.45
+coma_convulsions,0_5,0.3,0.4
+renal_failure,0_5,0.05,0.15
+severe_anaemia,0_5,0.4,0.5
+shock,0_5,0.05,0.15
+jaundice,5_60,0.1,0.6
+acidosis,5_60,0.45,0.6
+coma_convulsions,5_60,0.38,0.45
+renal_failure,5_60,0.1,0.5
+severe_anaemia,5_60,0.1,0.45
+shock,5_60,0.1,0.2

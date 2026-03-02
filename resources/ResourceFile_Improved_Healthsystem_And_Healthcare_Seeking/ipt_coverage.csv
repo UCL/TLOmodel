@@ -1,3 +1,42 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:6025461ab8d0de7ab63632672cde3ba5d8cdb606e756abd0b1848f888f06055c
-size 1203
+year,coverage_plhiv,source,coverage_paediatric,source2
+2010,0.9999,not_implemented,100,
+2011,0.9999,not_implemented,100,
+2012,0.9999,not_implemented,100,
+2013,0.9999,not_implemented,100,
+2014,0.9999,not_implemented,100,NTP2019
+2015,0.9999,not_implemented,100,NTP2019
+2016,0.9999,not_implemented,100,NTP2019
+2017,0.9999,not_implemented,100,NTP2019
+2018,0.9999,MoH_quart_repQ1,100,NTP2019
+2019,0.9999,MoH_quart_repQ2,100,
+2020,0.9999,MoH_quart_repQ3,100,
+2021,0.9999,no_data,100,
+2022,0.9999,no_data,100,
+2023,0.9999,no_data,100,
+2024,0.9999,no_data,100,
+2025,0.9999,no_data,100,
+2026,0.9999,no_data,100,
+2027,0.9999,no_data,100,
+2028,0.9999,no_data,100,
+2029,0.9999,no_data,100,
+2030,0.9999,no_data,100,
+2031,0.9999,no_data,100,
+2032,0.9999,no_data,100,
+2033,0.9999,no_data,100,
+2034,0.9999,no_data,100,
+2035,0.9999,no_data,100,
+2036,0.9999,no_data,100,
+2037,0.9999,no_data,100,
+2038,0.9999,no_data,100,
+2039,0.9999,no_data,100,
+2040,0.9999,no_data,100,
+2041,0.9999,no_data,100,
+2042,0.9999,no_data,100,
+2043,0.9999,no_data,100,
+2044,0.9999,no_data,100,
+2045,0.9999,no_data,100,
+2046,0.9999,no_data,100,
+2047,0.9999,no_data,100,
+2048,0.9999,no_data,100,
+2049,0.9999,no_data,100,
+2050,0.9999,no_data,100,

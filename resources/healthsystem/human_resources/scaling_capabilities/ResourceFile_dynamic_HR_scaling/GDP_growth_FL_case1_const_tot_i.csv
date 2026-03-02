@@ -1,3 +1,6 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:630253eee6932881d5c969be9a653c1caad34ce659775e76f6d0b50984bd4047
-size 135
+year,dynamic_HR_scaling_factor,scale_HR_by_popsize
+2010,1.0,False
+2018,1.1,False
+2019,1.042,False
+2032,0.861157,False
+2033,1.042,False

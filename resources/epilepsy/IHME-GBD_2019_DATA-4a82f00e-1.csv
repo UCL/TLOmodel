@@ -1,3 +1,21 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1c0de2932a3a9b7afb25d883cba27254c978829a862d05dbe011eb6ea71e2737
-size 2366
+measure,location,sex,age,cause,metric,year,val,upper,lower
+Deaths,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2010,1.9940476978217578,2.4491127979198106,1.5668800561933816
+Deaths,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2011,2.005536074896591,2.4771855679063335,1.5948165765840268
+Deaths,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2013,1.914736879382522,2.378391715849512,1.5403660923984612
+Deaths,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2012,1.9626546161018787,2.4318921353941154,1.580287903646738
+Deaths,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2014,1.8787998850823553,2.3424811775749848,1.5081157147518016
+Deaths,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2016,1.826166888328662,2.2895418781724266,1.4437535343132468
+Deaths,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2017,1.791125878551454,2.2510187746330432,1.4023919451127131
+Deaths,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2015,1.854095193378323,2.3180251132413736,1.472634036672927
+Deaths,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2018,1.7910547877714194,2.2662493394834207,1.3825372119007158
+Deaths,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2019,1.779159736770787,2.261105428571641,1.3697701025062983
+Incidence,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2010,47.00421127534184,91.90151307124793,8.89622004465069
+Incidence,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2011,47.02699903718327,85.88558050314,13.715266605083162
+Incidence,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2012,47.0965758852356,81.8475969397138,14.96058779361419
+Incidence,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2013,47.17837465980105,82.38931584141676,14.679183456077082
+Incidence,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2014,47.23955192678378,85.2464204451811,13.313741861581754
+Incidence,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2015,47.24412836869607,92.22207837103849,7.503281676574528
+Incidence,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2016,47.582065818444036,83.15479146715212,16.99482741163173
+Incidence,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2017,47.8207084888539,92.03275179434777,9.981902763567145
+Incidence,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2018,47.5032010101755,85.08137119509546,17.38962775909642
+Incidence,Malawi,Both,All Ages,Idiopathic epilepsy,Rate,2019,46.92166677534463,92.44794035468601,10.038340475817668

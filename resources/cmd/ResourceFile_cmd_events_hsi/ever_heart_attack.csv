@@ -1,3 +1,6 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:bae016a735a14ed6acdf4466288a14bd828322f51a9b6e19726c880299557f93
-size 583
+parameter_name,value,param_label,prior_min,prior_max,prior_note,
+sensitivity_of_assessment,1,universal,0,1,vague prior,
+medication_item_code,226,undetermined,,,definition,Aspirin 300mg_1000_CMST
+pr_assessed_other_symptoms,0,local,0,1,vague prior,
+emergency_medication_item_code,225,undetermined,,,definition,Frusemide 40mg_1000_CMST
+pr_treatment_works,0.481,local,0,1,vague prior,"Tager et al., Comparative effectiveness of loop diuretics on mortality in the treatment of patients with chronic heart failure - A multicenter propensity score matched analysis, Int J Cardiol 2019"

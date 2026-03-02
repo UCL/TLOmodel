@@ -1,3 +1,405 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:eba56688a2bd31802340feffdacf337522c494fa0e7e5b6fbc7f3ee171a79a2c
-size 38006
+Item_Description,Item_Code,Pkg_Name,Source_Equip_Item,Alternative item names
+Height Pole (Stadiometer),0,,Malawi HSSPIII Equipment Costing 2023,"'Length Boards with ruler, headpiece and foot piece', 'Hieght boards sets'"
+Weighing scale,1,ANC,Malawi HSSPIII Equipment Costing 2023,"'Salter weighing scale', 'Waeighing Scale'"
+Autoclave,2,,Malawi HSSPIII Equipment Costing 2023,"'High pressure cooker sterilizer, complete with stove', 'Sterilization drums, medium', 'Sterilization drum', 'Sterilization buckets', 'Sterilization buckets (decontamination buckets)', 'Sterilization Buckets', 'Decontamination drums', 'Dressing drum medium', 'Dressing drum large', 'Dressing drum  small'"
+Refrigerator,3,,Malawi HSSPIII Equipment Costing 2023,"'Vaccine refrigerator (solar)', 'Vaccine Refrigerator'"
+Cold box,4,,Malawi HSSPIII Equipment Costing 2023,"'Cold Chain Box-large', 'Cold Chain Box-medium'"
+Vaccine Carriers,5,,Malawi HSSPIII Equipment Costing 2023,
+Blood pressure machine,6,"Minor Surgery, Major Surgery, ICU, Blood Transfusion",Malawi HSSPIII Equipment Costing 2023,
+Thermometer,7,Blood Transfusion,Malawi HSSPIII Equipment Costing 2023,"'Thermometers, digital'"
+Push bike for mobility,8,,Malawi HSSPIII Equipment Costing 2023,
+Desk,9,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,'Office desk'
+Chair,10,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,'Chairs'
+Bench,11,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,"'Wooden benches', 'Bench, wood', 'Working benches'"
+Drug box,12,"Emergency, General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Stethoscope,13,ICU,Malawi HSSPIII Equipment Costing 2023,'Stethoscopes'
+Urine dip Stick,14,,Malawi HSSPIII Equipment Costing 2023,'urine dipstick'
+Glucometer,15,,Malawi HSSPIII Equipment Costing 2023,
+"Micro cuvettes (5,000 per haemacue) in packs of 1,000 pieces.",16,,Malawi HSSPIII Equipment Costing 2023,
+Haemoglobinometer,17,,Malawi HSSPIII Equipment Costing 2023,"'Haemacue (Haemoglobinometer)', 'Hemoglobinometer'"
+Caliper for assessing skinfold thickness,18,,Malawi HSSPIII Equipment Costing 2023,
+Mucous Extractor for neonates,19,,Malawi HSSPIII Equipment Costing 2023,
+Penlight,20,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+"Water container, 20 litres with tap, on stand with soap",21,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Water Tank', 'Water container with tap, on stand, Capacity of container 20 Litre, inclusive basin'"
+Ear Syringe,22,,Malawi HSSPIII Equipment Costing 2023,
+Bucket without tap 20 LITRES,23,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+MUAC tape,24,,Malawi HSSPIII Equipment Costing 2023,
+Measuring Cup,25,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Timer,26,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,'Timer (Stopwatch)'
+"Trolley, drug",27,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,'Medicine Trolley'
+"Light, solar",28,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Solar Light', 'Solar lamps'"
+Examination couch,29,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Examination couch (community nurses for antenatal and postnatal including family planning)', 'Examination couch with stirrups', 'Treatment Couch', 'Couch, treatment'"
+Sputum Collection box,30,,Malawi HSSPIII Equipment Costing 2023,'Sputum container'
+Ordinary Microscope,31,,Malawi HSSPIII Equipment Costing 2023,'Microscopy'
+Basin,32,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Basin, wash, p/p, 400 mm diam.', 'Metallic Basins'"
+"Cabinet, filing",33,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,"'Cabinet, filling'"
+Waste Bin,34,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Dustbin', 'Dustbin with lid'"
+"Bed, adult",35,In-patients,Malawi HSSPIII Equipment Costing 2023,"'Bed labour', 'Bed, postnatal', 'Beds', 'Beds, low'"
+"Mattress for hospital bed, child",36,"In-patients, General_FacilityLevel_2",Malawi HSSPIII Equipment Costing 2023,'Mattresses'
+Linen,37,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+"Laryngoscope, Macintosh ",38,,Malawi HSSPIII Equipment Costing 2023,
+"Clock, wall type",39,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Clock, wall type, with second hand, battery'"
+"Bucket, 10L",40,Casting,Malawi HSSPIII Equipment Costing 2023,'10 L buckets'
+"Lamp, Anglepoise",41,,Malawi HSSPIII Equipment Costing 2023,"'Angle poised lamp', 'Angle poise lamp'"
+Motorcycle ambulance,42,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+"Tray, emergency",43,"Emergency, General_FacilityLevel_2",Malawi HSSPIII Equipment Costing 2023,"'Emergency tray packs', 'Emergency tray'"
+Incinerator,44,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,'Incenerator'
+Stirring Rods,45,,Malawi HSSPIII Equipment Costing 2023,
+Wheelbarrows,46,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Otto Bins,47,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Shovels,48,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Heavy duty apron,49,,Malawi HSSPIII Equipment Costing 2023,
+Safety Goggles,50,,Malawi HSSPIII Equipment Costing 2023,
+Heavy duty Leather gloves,51,,Malawi HSSPIII Equipment Costing 2023,
+Face Shield,52,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Head Helmet,53,,Malawi HSSPIII Equipment Costing 2023,
+"Instrument set, insertion/removal, IUCD",54,,Malawi HSSPIII Equipment Costing 2023,
+Cupboard,55,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Cupboard, dangerous drugs', 'Cupboard, low, metal', 'Cupboard, instruments, metal, glass door, 750x380x1700mm'"
+"Container, for sharps, for approx. 250 needles",56,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+"Trolley, laundry/instrument",57,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,"'Trolley', 'Trolley, instrument, with s/s shelves, anti-static castors, 600L x 450W x 800H mm', 'Trolley, dressing, with shelves, s/s, 600L x 450W x 800H mm.'"
+"Cleaning utensils, set",58,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Laundry/linen bag ,59,,Malawi HSSPIII Equipment Costing 2023,
+"Light, emergency, solar, with battery backup",60,,Malawi HSSPIII Equipment Costing 2023,
+"Light, gas",61,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Suction machine,62,,Malawi HSSPIII Equipment Costing 2023,
+Vacuum extractor ,63,,Malawi HSSPIII Equipment Costing 2023,"'Vacuum extractor, manual, Bird's modification of Maelstrom'"
+"Ambu bag, adult with mask",64,,Malawi HSSPIII Equipment Costing 2023,"'Ambu bag, adult'"
+"Ambu bag, infant with mask",65,,Malawi HSSPIII Equipment Costing 2023,"'Ambu bag, infant', 'Neonatal Ambu Bag and Mask'"
+Manual Vacuum aspiration Set,66,,Malawi HSSPIII Equipment Costing 2023,
+"Cot, baby (bassinet), hospital-type",67,,Malawi HSSPIII Equipment Costing 2023,"'Cot, baby (bassinette), hospital-type', 'Baby Bassinet'"
+Drip stand,68,"Minor Surgery, Major Surgery, ICU, Blood Transfusion",Malawi HSSPIII Equipment Costing 2023,'Intravenous drip stands'
+"Stool, adjustable height",69,,Malawi HSSPIII Equipment Costing 2023,"'Stool, surgeon's, adjustable height', 'Height stool, adjustable'"
+Sponge Holding Forceps,70,,Malawi HSSPIII Equipment Costing 2023,
+Tenaculums,71,,Malawi HSSPIII Equipment Costing 2023,'Tenacullums'
+"Foot step, one step",72,,Malawi HSSPIII Equipment Costing 2023,"'Stepping stools', 'Steping boards', 'Patient step'"
+"Foot step, two step",73,,Malawi HSSPIII Equipment Costing 2023,
+"Containers for Decontamination, Cleaning, Instruments and Linen",74,"In-patient, General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Containers for Decomtamination, Cleaning, Instruments and Linen'"
+"Bed net, mosquito, single bed",75,In-patients,Malawi HSSPIII Equipment Costing 2023,
+"Lamp, paraffin, hurricane type",76,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Lamp, pressure, paraffin, 400mm, 1.1 litres'"
+Bedside locker,77,"In-patients, General_FacilityLevel_2",Malawi HSSPIII Equipment Costing 2023,'Side bed stools'
+Stool basic metal,78,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Anatomical marker L-R,79,,Malawi HSSPIII Equipment Costing 2023,
+Apron protective x-ray lead,80,X-ray,Malawi HSSPIII Equipment Costing 2023,'Lead Apron'
+UPS (uninterruptible power supply),81,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+Ultrasound quality control ,82,,Malawi HSSPIII Equipment Costing 2023,'Ultrasound quality control equipment'
+Patellar reflex hammer,83,,Malawi HSSPIII Equipment Costing 2023,'Patella hammer'
+"Weighing scale, baby ",84,,Malawi HSSPIII Equipment Costing 2023,"'Weighing scale, infant, metric, 15.5kgx5g', 'Weighing scale, baby, basin type, 16 kg'"
+Diagnostic Set,85,,Malawi HSSPIII Equipment Costing 2023,"'Diagnostic Set (needs further detail)', 'Diagnostic equipment set for HC', 'Diagnostic equipment set for MCH', 'Diagnostic equipment set for ward/nurse'"
+Screen Curtains ,86,,Malawi HSSPIII Equipment Costing 2023,"'Screen, four fold, on castors', 'patient screen', 'Ward Screen', 'Patients privacy screens'"
+"Trolley, food",87,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,'Food Trolley'
+Fridge Freezer,88,,Malawi HSSPIII Equipment Costing 2023,"'Deep Freezer', 'Compact Chilling/Freezer Unit'"
+Fridge Guard,89,,Malawi HSSPIII Equipment Costing 2023,
+Air conditioner/fan,90,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+Fridge Freezer Thermometer,91,,Malawi HSSPIII Equipment Costing 2023,"'Frige Freezer Thermometer', 'Fridge Thermometer', 'Freezer Thermometer'"
+Lockable Cabinet,92,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Kettle,93,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Kettle (For splinting purposes)', 'Electrick Kettle (2 litre)', 'Water kettle, boiling, 2ltr', 'Water Boiler'"
+Standing Blocks,94,,Malawi HSSPIII Equipment Costing 2023,
+Suspension Slings,95,,Malawi HSSPIII Equipment Costing 2023,
+Pulley System,96,,Malawi HSSPIII Equipment Costing 2023,
+Board for Cord Knotting,97,,Malawi HSSPIII Equipment Costing 2023,
+Wheelchair,98,,Malawi HSSPIII Equipment Costing 2023,'Wheel chair'
+Built Up (adapted) Utensils,99,,Malawi HSSPIII Equipment Costing 2023,
+Universal Cuffs,100,,Malawi HSSPIII Equipment Costing 2023,
+Grasp Dynamometer,101,,Malawi HSSPIII Equipment Costing 2023,'Crasp Dynamometer'
+Goniometer,102,,Malawi HSSPIII Equipment Costing 2023,
+Pinch Meter,103,,Malawi HSSPIII Equipment Costing 2023,
+"Medicinal Balls (Sets of 0.5kgs, 1kg, 2kgs, 3kgs, 4kgs, 5kgs)",104,,Malawi HSSPIII Equipment Costing 2023,"'Medicine Balls ( set of ½ kg, 1kg, 2kgs, 3kgs, 4kgs and 5kgs)', 'Medicne Ball 3 kgs', 'Medicine Ball 5 kgs'"
+Box and Block Test,105,,Malawi HSSPIII Equipment Costing 2023,
+Foot Sewing Machine,106,,Malawi HSSPIII Equipment Costing 2023,
+Ordinary balls,107,,Malawi HSSPIII Equipment Costing 2023,
+"Light, mobile, Lift-ultra 1500 hydraulic",108,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,'Mobile Lift-ultra light 1500 hydraulic'
+Cognitive kits,109,,Malawi HSSPIII Equipment Costing 2023,
+Hand function kits,110,,Malawi HSSPIII Equipment Costing 2023,'Putty for Hand ExS'
+Patient monitor,111,ICU,Malawi HSSPIII Equipment Costing 2023,'Patient monitors'
+Flip chart stand,112,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+"Trolley, patient",113,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,"'Patient trolley', 'Recovery trolley'"
+Stretcher ,114,,Malawi HSSPIII Equipment Costing 2023,
+Casting chairs,115,Casting,Malawi HSSPIII Equipment Costing 2023,
+"Ruler, steel (1 meter long)",116,,Malawi HSSPIII Equipment Costing 2023,'Steel Rulers (1 meter long)'
+Measuring tapes,117,ANC,Malawi HSSPIII Equipment Costing 2023,"'Height Measuring Tape', 'Tape measure'"
+Measuring gauges,118,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+X-ray viewer,119,X-ray,Malawi HSSPIII Equipment Costing 2023,'Xray field viewer'
+"Ruler, square",120,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,'Square rulers'
+Vernier calliper,121,,Malawi HSSPIII Equipment Costing 2023,'Venier calliper'
+Casting apparatus for prosthetics,122,Casting,Malawi HSSPIII Equipment Costing 2023,
+Casting platform,123,Casting,Malawi HSSPIII Equipment Costing 2023,
+Spinal casting aid,124,Casting,Malawi HSSPIII Equipment Costing 2023,
+"Analyser, Combined Chemistry and Electrolytes",125,ICU,Malawi HSSPIII Equipment Costing 2023,"'Combined Chemistry and Electolytes analyser',"
+"Analyser, Chemistry ",126,ICU,Malawi HSSPIII Equipment Costing 2023,"'Chemistry Analyser,'"
+"Analyser, Blood Gas",127,ICU,Malawi HSSPIII Equipment Costing 2023,'Blood Gas Analyser'
+"Analyser, Electrolyte (Human HumaLyte Plus) 5, for Na, K, Cl",128,,Malawi HSSPIII Equipment Costing 2023,
+"Weighing balance, electronic",129,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Water bath,130,,Malawi HSSPIII Equipment Costing 2023,
+Centrifuge,131,"",Malawi HSSPIII Equipment Costing 2023,'MagFuge Centrifuge and Stirer'
+"Analyzer, Clinical immunoassay",132,,Malawi HSSPIII Equipment Costing 2023,
+"Micropipettes, 2 – 20ul",133,,Malawi HSSPIII Equipment Costing 2023,
+"Micropipettes, 5 - 50ul",134,,Malawi HSSPIII Equipment Costing 2023,
+Micropipettes 10 - 100ul,135,,Malawi HSSPIII Equipment Costing 2023,
+"Micropipettes, 20 - 200ul",136,,Malawi HSSPIII Equipment Costing 2023,
+"Micropipettes, 50 - 250ul",137,,Malawi HSSPIII Equipment Costing 2023,
+"Micropipettes, 100 - 1000ul",138,,Malawi HSSPIII Equipment Costing 2023,
+"Analyser, Hormones",139,,Malawi HSSPIII Equipment Costing 2023,'Hormones Analyser'
+Blood Bank Fridge (2-8 oC),140,Blood Transfusion,Malawi HSSPIII Equipment Costing 2023,
+Automatic Cell washer,141,,Malawi HSSPIII Equipment Costing 2023,
+Blood Bank Centrifuge,142,Blood Transfusion,Malawi HSSPIII Equipment Costing 2023,
+ABO Blood grouping Tiles,143,Blood Transfusion,Malawi HSSPIII Equipment Costing 2023,
+Viewing box,144,,Malawi HSSPIII Equipment Costing 2023,
+Donor Bleeding Couch,145,Blood Transfusion,Malawi HSSPIII Equipment Costing 2023,
+Vortex mixer,146,,Malawi HSSPIII Equipment Costing 2023,
+Platelet Agitator,147,Blood Transfusion,Malawi HSSPIII Equipment Costing 2023,
+Printer,148,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Exercise Mats,149,,Malawi HSSPIII Equipment Costing 2023,"'Gym matts', 'Adult mats'"
+Cast cutters (Electrical),150,Casting,Malawi HSSPIII Equipment Costing 2023,'Electric Cast Remover'
+Cast cutters (Mechanical),151,Casting,Malawi HSSPIII Equipment Costing 2023,"'Cast cutters  (Mechanical)', 'Manual Cast Remover'"
+Parallel Bars,152,,Malawi HSSPIII Equipment Costing 2023,"'Remedial Parallel Bars', 'Paediatrics parallel bars', 'Paediatric parallel bar'"
+"Abduction splints (Small, medium, large)",153,Casting,Malawi HSSPIII Equipment Costing 2023,
+Digital scales,154,,Malawi HSSPIII Equipment Costing 2023,
+Pedal bin,155,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Pedal Bins', 'Dustbin pedal'"
+"Mirror, rehabilitation/physiotherapy",156,,Malawi HSSPIII Equipment Costing 2023,"'Mobile Mirrows', 'Mobile Posture Mirrow', 'Static  Mirrows'"
+Incentive spirometers,157,,Malawi HSSPIII Equipment Costing 2023,'Incentive Spirometry'
+Postural Drainage Couch,158,,Malawi HSSPIII Equipment Costing 2023,'Postural drainage couches'
+Table,159,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,'Tables'
+Gestation Wheels R(Chart),160,ANC,Malawi HSSPIII Equipment Costing 2023,
+Ultrasound scanning machine,161,,Malawi HSSPIII Equipment Costing 2023,"'Mobile Ultrasound scanning general with printer', 'Obstetric Ultrasound scan with doppler', 'Ultrasound scanning portable', 'Detector, foetal heart, ultrasonic, portable, Doppler'"
+Fetoscope,162,,Malawi HSSPIII Equipment Costing 2023,
+Receiver,163,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,'Receivers'
+Computed Tomography (CT machine),164,,Malawi HSSPIII Equipment Costing 2023,
+CT scanner accessories,165,,Malawi HSSPIII Equipment Costing 2023,
+Automatic injection ,166,,Malawi HSSPIII Equipment Costing 2023,
+"Trolley, Trauma Patient CT",167,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,'Trauma Patient CT Trolley'
+Patient transfer roller board,168,"In-patient, General_FacilityLevel_2",Malawi HSSPIII Equipment Costing 2023,"'25"" Patient transfer roller board','Patient transfer roll board'"
+"Image view station, for conferences",169,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+Infusion pump,170,"Minor Surgery, Major Surgery, ICU, Blood Transfusion",Malawi HSSPIII Equipment Costing 2023,
+"Trolley, emergency",171,"ICU, General_FacilityLevel_2",Malawi HSSPIII Equipment Costing 2023,'Emergency trolley'
+"Cusco’s/ bivalved Speculum (small, medium, large)",172,,Malawi HSSPIII Equipment Costing 2023,"'Speculums', 'Speculum', 'Cuscos/ bivalve Speculum (small, medium, large)'"
+Cardiotocography,173,,Malawi HSSPIII Equipment Costing 2023,
+Delivery Beds with Stirrups,174,,Malawi HSSPIII Equipment Costing 2023,"'Bed, delivery', 'Bed, for delivery'"
+"Light, operating, mobile",175,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Delivery Trolley,176,,Malawi HSSPIII Equipment Costing 2023,
+Step Chairs,177,,Malawi HSSPIII Equipment Costing 2023,
+Bucket Stand,178,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,"'Stand, bowl, kick about'"
+Oxygen concentrator,179,,Malawi HSSPIII Equipment Costing 2023,
+Oxygen ports,180,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+Amnio hook,181,,Malawi HSSPIII Equipment Costing 2023,
+Delivery Forceps ,182,,Malawi HSSPIII Equipment Costing 2023,
+Bed pans,183,In-patients,Malawi HSSPIII Equipment Costing 2023,
+Delivery set,184,,Malawi HSSPIII Equipment Costing 2023,"'Hollow ware', 'Hollow ware, set, delivery room', 'Hollow ware set, ward, duty station', 'Instrument set', 'Episiotomy set'"
+"Incubator, transit ",185,,Malawi HSSPIII Equipment Costing 2023,'Transit Incubator'
+"Sterilizing unit, steam, non vacuum, vertical, electric, medium, 240 litre",186,,Malawi HSSPIII Equipment Costing 2023,
+"Tray, instrument, set of 3 sizes, covered, s/s, 305x254x51mm",187,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+"Stethoscope, foetal, monaural, Pinard, plastic",188,ANC,Malawi HSSPIII Equipment Costing 2023,
+"Cupboard, for medicine, lockable ",189,,Malawi HSSPIII Equipment Costing 2023,'Lockable Cupboards for medicine'
+Rack for apron and glove x-ray,190,X-ray,Malawi HSSPIII Equipment Costing 2023,'Lead apron rack'
+Pillows of various shapes,191,In-patient,Malawi HSSPIII Equipment Costing 2023,'Square pillow'
+Pillow cases,192,"In-patient, General_FacilityLevel_2",Malawi HSSPIII Equipment Costing 2023,
+"Light, examination, floor standing, articulated",193,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Tubal Ligation and Vasectomy Sets,194,,Malawi HSSPIII Equipment Costing 2023,'Tubal Ligation Set'
+Static Digital Fluoroscopy,195,,Malawi HSSPIII Equipment Costing 2023,"'Static Digital Floroscopy', 'Floroscopy'"
+Static Digital Fluoroscopy accessories,196,,Malawi HSSPIII Equipment Costing 2023,'Static Digital Floroscopy accessories'
+"Crutches, Axillary",197,,Malawi HSSPIII Equipment Costing 2023,'Axillary crutches'
+"Crutches, Elbow",198,,Malawi HSSPIII Equipment Costing 2023,"'Metallic Crutches', 'Crutches', 'Elbow crutches', 'Crutches'"
+Rollators,199,,Malawi HSSPIII Equipment Costing 2023,
+Picture Archiving and Communication System (PACS),200,,Malawi HSSPIII Equipment Costing 2023,
+Digitiser,201,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+X-ray machine,202,X-ray,Malawi HSSPIII Equipment Costing 2023,"'X ray machine', 'Static digital x-ray machine'"
+"Disinfector, boiling water type, electric, s/s",203,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Disinfector, boiling water type, electric, s/s, int. dim. 510x310x140mm', 'Disinfector, boiling water type, electric, large, s/s, int. dim. 685x508x432mm'"
+"Cradle, burns",204,,Malawi HSSPIII Equipment Costing 2023,
+"Mattress for hospital bed, adult",205,"In-patients, General_FacilityLevel_2",Malawi HSSPIII Equipment Costing 2023,
+"Tray, instrument, set of 12 sizes, covered, s/s, 305x254x51mm",206,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+Dumbbells (Sets of 0.5kgs to 15kgs),207,,Malawi HSSPIII Equipment Costing 2023,'Dumbells (Sets of 0.5kgs to 15kgs)'
+Hydraulic hand rower machine,208,,Malawi HSSPIII Equipment Costing 2023,
+Electro Surgical unit ,209,"Minor Surgery, Major Surgery",Malawi HSSPIII Equipment Costing 2023,
+LLETZ Machine,210,,Malawi HSSPIII Equipment Costing 2023,
+Colposcopes,211,,Malawi HSSPIII Equipment Costing 2023,
+Laparotomy Set,212,Major Surgery,Malawi HSSPIII Equipment Costing 2023,'Laparatomy Set'
+Hysterectomy set,213,,Malawi HSSPIII Equipment Costing 2023,"'Total Abdominal Hysterectomy set', 'Vaginal Hysterectomy Set', 'Radical Hysterectomy set'"
+Bipolar Diathermy Machine,214,,Malawi HSSPIII Equipment Costing 2023,
+VVF and RVF set,215,,Malawi HSSPIII Equipment Costing 2023,
+D&C set ,216,,Malawi HSSPIII Equipment Costing 2023,
+Evacuation set,217,,Malawi HSSPIII Equipment Costing 2023,
+Suction Curettage machine,218,,Malawi HSSPIII Equipment Costing 2023,'Suction Curettage  machine'
+Molar set,219,,Malawi HSSPIII Equipment Costing 2023,
+"Trolley, Mayo Instrument",220,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,'Mayo Instrument trolley'
+"Analyser, Haematology",221,ICU,Malawi HSSPIII Equipment Costing 2023,"'Haematology analyser Auto', 'Haematology analyser Semi'"
+Westergreen ESR set,222,,Malawi HSSPIII Equipment Costing 2023,
+Neubauer Chamber,223,,Malawi HSSPIII Equipment Costing 2023,'Neuber Chamber'
+Shaker,224,,Malawi HSSPIII Equipment Costing 2023,
+Differential Mechanical Counter(8 keys),225,,Malawi HSSPIII Equipment Costing 2023,
+Tally Counter,226,,Malawi HSSPIII Equipment Costing 2023,'Tally Ccounter'
+Coagulation machine,227,,Malawi HSSPIII Equipment Costing 2023,
+Slice Master sample processing Unit,228,,Malawi HSSPIII Equipment Costing 2023,
+Paraffin Dispense,229,,Malawi HSSPIII Equipment Costing 2023,
+Manual Rotary Microtome,230,,Malawi HSSPIII Equipment Costing 2023,
+LED Tissue floatation water bath and slide dryer Combo,231,,Malawi HSSPIII Equipment Costing 2023,
+Tissue Floatation Water Bath,232,,Malawi HSSPIII Equipment Costing 2023,"'Tissue Floatation  Water Bath', 'Tissue Floatation Bath'"
+Slide Dryer/Warmer,233,,Malawi HSSPIII Equipment Costing 2023,"'Large Slide Warmers', 'Step up slide warmer for 40 slides', 'Small Slide Warmers', 'Mini Section/Slide Dryers', 'Glassware Drier', 'Drier'"
+IHL Slide Manager $ Slide dryer Combo,234,,Malawi HSSPIII Equipment Costing 2023,
+Paraffin Block Trimmer,235,,Malawi HSSPIII Equipment Costing 2023,'Paraffin Block Trmmer'
+PELCO BioWave Plot,236,,Malawi HSSPIII Equipment Costing 2023,
+Stereo Microscopes,237,,Malawi HSSPIII Equipment Costing 2023,
+Biological Microscopes,238,,Malawi HSSPIII Equipment Costing 2023,
+"Centrifuge, Mini",239,,Malawi HSSPIII Equipment Costing 2023,"'Mini Centrifuges', 'Microfuge'"
+Cell Tec Activation Filters,240,,Malawi HSSPIII Equipment Costing 2023,
+UV pipette Carousel,241,,Malawi HSSPIII Equipment Costing 2023,'UV pippette Carousal'
+Anti-shock garment,242,,Malawi HSSPIII Equipment Costing 2023,'anti-shock garmet'
+Pulse oximeter,243,"Minor Surgery, Major Surgery, ICU",Malawi HSSPIII Equipment Costing 2023,
+Lamination suction system,244,,Malawi HSSPIII Equipment Costing 2023,'Lamination sunction system'
+Drilling machine,245,Major Surgery,Malawi HSSPIII Equipment Costing 2023,
+Router machine,246,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Band saws,247,Major Surgery,Malawi HSSPIII Equipment Costing 2023,
+Fume extractor,248,,Malawi HSSPIII Equipment Costing 2023,
+Magnetic resonance imaging (MRI) ,249,,Malawi HSSPIII Equipment Costing 2023,
+MRI quality control test kits,250,,Malawi HSSPIII Equipment Costing 2023,
+"Racks, storage, set",251,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+"Chair, office",252,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,'Office chairs'
+Biosafety Cabinet (Class II),253,,Malawi HSSPIII Equipment Costing 2023,
+Incubator (O2),254,,Malawi HSSPIII Equipment Costing 2023,
+Incubator (CO2),255,,Malawi HSSPIII Equipment Costing 2023,
+Blood culture incubator,256,,Malawi HSSPIII Equipment Costing 2023,
+Anaerobic Jars (AnO2) ,257,,Malawi HSSPIII Equipment Costing 2023,
+Pipette filler,258,,Malawi HSSPIII Equipment Costing 2023,
+"Fridge, Domestic",259,,Malawi HSSPIII Equipment Costing 2023,'Domestic Fridge'
+Slide storage box,260,,Malawi HSSPIII Equipment Costing 2023,'Slide storage boxes'
+Sample roller mixer ,261,,Malawi HSSPIII Equipment Costing 2023,
+Automatic staining machine,262,,Malawi HSSPIII Equipment Costing 2023,
+Dispensing pumps for culture media preparation,263,,Malawi HSSPIII Equipment Costing 2023,
+Automated blood culture systems,264,,Malawi HSSPIII Equipment Costing 2023,
+Magnetic Stirrer ,265,,Malawi HSSPIII Equipment Costing 2023,"'Magnetic Stirer', 'Magnetic Induction Stirrers'"
+Sensitivity disc dispenser,266,,Malawi HSSPIII Equipment Costing 2023,
+Oven (dryer),267,,Malawi HSSPIII Equipment Costing 2023,
+Hot plate,268,,Malawi HSSPIII Equipment Costing 2023,
+Gene Expert (16 Module),269,,Malawi HSSPIII Equipment Costing 2023,
+Burnsen Burner,270,,Malawi HSSPIII Equipment Costing 2023,
+Blood culture rack,271,,Malawi HSSPIII Equipment Costing 2023,
+Distiller,272,,Malawi HSSPIII Equipment Costing 2023,"'Distiller, Water, 4L/Hr'"
+Led Microscope,273,,Malawi HSSPIII Equipment Costing 2023,
+Electron Microscope,274,,Malawi HSSPIII Equipment Costing 2023,
+Conventional PCR Equipment set,275,,Malawi HSSPIII Equipment Costing 2023,
+Thermal Mixer,276,,Malawi HSSPIII Equipment Costing 2023,
+Heat Blocks,277,,Malawi HSSPIII Equipment Costing 2023,
+DNA Sequencer,278,,Malawi HSSPIII Equipment Costing 2023,
+"Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ",279,,Malawi HSSPIII Equipment Costing 2023,'Combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ ultrasound'
+Combined Wax Sterizer & Wax bath 15 litres,280,,Malawi HSSPIII Equipment Costing 2023,
+Tunturi E420 Ergometer,281,,Malawi HSSPIII Equipment Costing 2023,
+Solitude 11 Platinum Treadmill,282,,Malawi HSSPIII Equipment Costing 2023,
+Mega Pulse Senior 265,283,,Malawi HSSPIII Equipment Costing 2023,
+Hot Pack Therapy Units,284,,Malawi HSSPIII Equipment Costing 2023,
+Voltage Regulators,285,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+Infrared stand,286,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+TENs Unit,287,,Malawi HSSPIII Equipment Costing 2023,
+Muscle stimulator,288,,Malawi HSSPIII Equipment Costing 2023,
+Lumber & Cervical Traction Units,289,,Malawi HSSPIII Equipment Costing 2023,
+3D Thumb,290,Casting,Malawi HSSPIII Equipment Costing 2023,
+MVA Set,291,,Malawi HSSPIII Equipment Costing 2023,
+"Lamp, examination",292,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,'Examination lamp'
+Resuscitaire,293,,Malawi HSSPIII Equipment Costing 2023,
+Nasal Prongs,294,,Malawi HSSPIII Equipment Costing 2023,
+Dual ergometer,295,,Malawi HSSPIII Equipment Costing 2023,'Dual Egormeter'
+Rehabilitation wall bars,296,,Malawi HSSPIII Equipment Costing 2023,
+Sims’ Speculum,297,,Malawi HSSPIII Equipment Costing 2023,"'Simms Speculum', 'Vaginal retractors'"
+Cystoscope,298,,Malawi HSSPIII Equipment Costing 2023,
+Cryotherapy unit,299,,Malawi HSSPIII Equipment Costing 2023,
+LLETZ Machines ,300,,Malawi HSSPIII Equipment Costing 2023,
+Stationery bicycles,301,,Malawi HSSPIII Equipment Costing 2023,
+Treadmill,302,,Malawi HSSPIII Equipment Costing 2023,
+Wobble mat,303,,Malawi HSSPIII Equipment Costing 2023,'Wable mat'
+Sets of sand bags,304,,Malawi HSSPIII Equipment Costing 2023,'sand bags (Sets of 0.5kg -15kgs)'
+Knee continuous range of motion machine,305,,Malawi HSSPIII Equipment Costing 2023,
+Vacuum system,306,,Malawi HSSPIII Equipment Costing 2023,
+Slide drying rack,307,,Malawi HSSPIII Equipment Costing 2023,'Slide Drier Rack'
+Air Extractor,308,,Malawi HSSPIII Equipment Costing 2023,
+Applicator sticks jar,309,,Malawi HSSPIII Equipment Costing 2023,
+Skin snips equipment set,310,,Malawi HSSPIII Equipment Costing 2023,
+Staining Jars,311,,Malawi HSSPIII Equipment Costing 2023,'Couplin Staining Jars'
+Developmental milestone chats,312,,Malawi HSSPIII Equipment Costing 2023,
+Wedges of various shapes,313,,Malawi HSSPIII Equipment Costing 2023,
+Rolls of various sizes and shapes,314,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Standing board,315,,Malawi HSSPIII Equipment Costing 2023,'Standing Boards'
+Cerebral Palsy (CP) chair,316,,Malawi HSSPIII Equipment Costing 2023,
+Corner seat,317,,Malawi HSSPIII Equipment Costing 2023,
+Bulk stores ,318,,Malawi HSSPIII Equipment Costing 2023,
+"Room heater, electric, wall mounted",319,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,'Wall mounted Heaters'
+"Incubator, infant",320,,Malawi HSSPIII Equipment Costing 2023,
+"Phototherapy unit, infant, with accessories",321,,Malawi HSSPIII Equipment Costing 2023,
+"Resuscitator, manual, infant",322,,Malawi HSSPIII Equipment Costing 2023,
+HSG set,323,,Malawi HSSPIII Equipment Costing 2023,
+Urethrogram set,324,,Malawi HSSPIII Equipment Costing 2023,
+Intravenous Pyrography set,325,,Malawi HSSPIII Equipment Costing 2023,
+Bone Densitometry,326,,Malawi HSSPIII Equipment Costing 2023,
+Posters,327,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+Vices,328,,Malawi HSSPIII Equipment Costing 2023,
+Steel rods,329,,Malawi HSSPIII Equipment Costing 2023,'Steel rodes'
+Mixing bowls,330,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Spatula,331,,Malawi HSSPIII Equipment Costing 2023,'Spatular'
+Blades,332,"Minor Surgery, Major Surgery",Malawi HSSPIII Equipment Costing 2023,
+Surforms,333,,Malawi HSSPIII Equipment Costing 2023,'Surfoms'
+Sample Rack,334,,Malawi HSSPIII Equipment Costing 2023,
+"Tray, Sample",335,,Malawi HSSPIII Equipment Costing 2023,'Sample Trays'
+ELISA (automated),336,,Malawi HSSPIII Equipment Costing 2023,'ELISA  (automated)'
+ELISA (Semi Automated),337,,Malawi HSSPIII Equipment Costing 2023,'ELISA  (Semi Automated)'
+ELISA Plate washer,338,,Malawi HSSPIII Equipment Costing 2023,
+ELISA Reader,339,,Malawi HSSPIII Equipment Costing 2023,
+Flow Cytometer,340,,Malawi HSSPIII Equipment Costing 2023,Flowcytometry
+CD4 Point of Care ,341,,Malawi HSSPIII Equipment Costing 2023,
+Adaptive communication switches (Infrared switches),342,,Malawi HSSPIII Equipment Costing 2023,'Adaptive communication switches (Infrared swiches)'
+Sound measuring apparatus/decibel meter,343,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Diagnostic stroboscopes,344,,Malawi HSSPIII Equipment Costing 2023,
+Tablet computer,345,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Voice synthesizer,346,,Malawi HSSPIII Equipment Costing 2023,
+Analytical software,347,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+Medical software,348,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Office software,349,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+"Speech therapy kit (Kazoo, toobaloo head set, toobaloo, pustefix bubble bear)",350,,Malawi HSSPIII Equipment Costing 2023,
+Picture flash cards,351,,Malawi HSSPIII Equipment Costing 2023,'Verbs flash cards'
+Bed sheets,352,"In-patients, General_FacilityLevel_2",Malawi HSSPIII Equipment Costing 2023,'Large Bed Sheets'
+Shelves,353,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Wiper holder,354,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Static digital accessories,355,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Radiation Survey meter,356,,Malawi HSSPIII Equipment Costing 2023,'Radiaton Survey meter'
+Quality control kit (radiology),357,,Malawi HSSPIII Equipment Costing 2023,
+Static digital,358,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Lead glove protective x-ray pair,359,X-ray,Malawi HSSPIII Equipment Costing 2023,'Glove protective x-ray pair'
+Lead gonad shields,360,,Malawi HSSPIII Equipment Costing 2023,
+Lead thyroid shield,361,,Malawi HSSPIII Equipment Costing 2023,
+Lead google,362,,Malawi HSSPIII Equipment Costing 2023,
+exer,363,,Malawi HSSPIII Equipment Costing 2023,'Thin mattress'
+Intravenous Pyelography set,364,,Malawi HSSPIII Equipment Costing 2023,
+"Oxygen cylinder, with regulator",365,ICU,Malawi HSSPIII Equipment Costing 2023,'Oxygen cylinder'
+"Sterilizing unit, steam, non vacuum, vertical, electric, medium, 39 ltr",366,,Malawi HSSPIII Equipment Costing 2023,
+Resuscitator,367,,Malawi HSSPIII Equipment Costing 2023,
+Computer set,368,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,"'Computer set, desktop, 'Computer, printer', 'Computer with printer'"
+Laptop,369,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,
+Backsplit cotton gown,370,"In-patient, General_FacilityLevel_2",Malawi HSSPIII Equipment Costing 2023,
+Bulk stores,371,General_FacilityLevel_2,Malawi HSSPIII Equipment Costing 2023,
+Sphygmomanometer,372,,Malawi HSSPIII Equipment Costing 2023,"'Syphygmomanometer', 'Sphygmomamometer'"
+Exercise ball,373,,Malawi HSSPIII Equipment Costing 2023,'Exercise balls'
+Wobble board,374,,Malawi HSSPIII Equipment Costing 2023,'Wable board'
+Stationary bike,375,,Malawi HSSPIII Equipment Costing 2023,
+Paediatric mat,376,,Malawi HSSPIII Equipment Costing 2023,'Paeditric mat'
+Mirror,377,"General_FacilityLevel_2, General_FacilityLevel_1a_and_1b",Malawi HSSPIII Equipment Costing 2023,"'Wall mirrors (2m x 0.5m)', 'Mirrors', 'wall mounted mirror'"
+Tilt table,378,,Malawi HSSPIII Equipment Costing 2023,"'Paediatric Tilt table', 'Paediatrics tilt table', 'Variable Height Tilt Kit'"
+Overhead pulley,379,,Malawi HSSPIII Equipment Costing 2023,'Overhead pulleys'
+Dumb bells (Sets of 0.5kg - 15kgs),380,,Malawi HSSPIII Equipment Costing 2023,'Dumb bells (Sets of 0.5kg  - 15kgs)'
+Training stairs,381,,Malawi HSSPIII Equipment Costing 2023,
+Interferential therapy machine,382,,Malawi HSSPIII Equipment Costing 2023,
+Transcutaneous electrical neuromuscular stimulation,383,,Malawi HSSPIII Equipment Costing 2023,'Transcutaneous electrical neuromascular stimulation'
+Walking Frame,384,,Malawi HSSPIII Equipment Costing 2023,'Walking frames'
+Lumber/Cervical Traction,385,,Malawi HSSPIII Equipment Costing 2023,
+Preacher's Table,386,,Malawi HSSPIII Equipment Costing 2023,'Preachers table'
+Stress Ball,387,,Malawi HSSPIII Equipment Costing 2023,'Squeezing Balls'
+Patient Transfer Aid,388,"In-patient, General_FacilityLevel_2",Malawi HSSPIII Equipment Costing 2023,"'Sara stedy Patient Transfer Aid', 'Sara stady patient transifer aid', 'Etac Turner PRO sit-to-Stand Patient Transfer turning point', 'Etac turner Pro sit to stand patient transifer turning aid'"
+Gym mat,389,,Malawi HSSPIII Equipment Costing 2023,
+Development milestone charts,390,,Malawi HSSPIII Equipment Costing 2023,
+"Pillow, wedge",391,In-patient,Malawi HSSPIII Equipment Costing 2023,'Wedge pillow'
+"Pillow, roll",392,In-patient,Malawi HSSPIII Equipment Costing 2023,'Roll pillow'
+Paediatric Standing frame,393,,Malawi HSSPIII Equipment Costing 2023,
+Paediatric CP Chair,394,,Malawi HSSPIII Equipment Costing 2023,
+Paediatric Corner sit,395,,Malawi HSSPIII Equipment Costing 2023,
+Paediatric rollator,396,,Malawi HSSPIII Equipment Costing 2023,'Padiatric rollator'
+Bobath bed,397,In-patients,Malawi HSSPIII Equipment Costing 2023,'Bobath beds'
+Wobble mat ,398,,Malawi HSSPIII Equipment Costing 2023,
+Walking Cane,399,,Malawi HSSPIII Equipment Costing 2023,'Walking canes'
+Knee continuous passive motion machine,400,,Malawi HSSPIII Equipment Costing 2023,'Knee continous passive motion machine'
+Shoulder wheel,401,,Malawi HSSPIII Equipment Costing 2023,
+Endoscope,402,,Malawi standard treatment guidelines 2023 (final draft),
+Electrocardiogram,403,,Malawi standard treatment guidelines 2023 (final draft),

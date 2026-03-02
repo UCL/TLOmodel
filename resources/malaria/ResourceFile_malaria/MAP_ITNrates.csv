@@ -1,3 +1,289 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0a04131f4b26ba52738f97598380f778bff3844c35fc808f509ea705a93c3e4a
-size 15431
+District,Year,value,prior_label,prior_min,prior_max,prior_note,reference
+Balaka,2010,0.521244357,local,0,1,vague prior,MAP 
+Balaka,2011,0.274477063,local,0,1,vague prior,MAP 
+Balaka,2012,0.511938511,local,0,1,vague prior,MAP 
+Balaka,2013,0.76769445,local,0,1,vague prior,MAP 
+Balaka,2014,0.616507994,local,0,1,vague prior,MAP 
+Balaka,2015,0.43172035,local,0,1,vague prior,MAP 
+Balaka,2016,0.631228228,local,0,1,vague prior,MAP 
+Balaka,2017,0.579129094,local,0,1,vague prior,MAP 
+Balaka,2018,0.63985747,local,0,1,vague prior,MAP 
+Blantyre,2010,0.497626428,local,0,1,vague prior,MAP 
+Blantyre,2011,0.242973623,local,0,1,vague prior,MAP 
+Blantyre,2012,0.390966175,local,0,1,vague prior,MAP 
+Blantyre,2013,0.582557193,local,0,1,vague prior,MAP 
+Blantyre,2014,0.471653904,local,0,1,vague prior,MAP 
+Blantyre,2015,0.393022989,local,0,1,vague prior,MAP 
+Blantyre,2016,0.623982331,local,0,1,vague prior,MAP 
+Blantyre,2017,0.566047397,local,0,1,vague prior,MAP 
+Blantyre,2018,0.625568525,local,0,1,vague prior,MAP 
+Blantyre City,2010,0.497626428,local,0,1,vague prior,MAP 
+Blantyre City,2011,0.242973623,local,0,1,vague prior,MAP 
+Blantyre City,2012,0.390966175,local,0,1,vague prior,MAP 
+Blantyre City,2013,0.582557193,local,0,1,vague prior,MAP 
+Blantyre City,2014,0.471653904,local,0,1,vague prior,MAP 
+Blantyre City,2015,0.393022989,local,0,1,vague prior,MAP 
+Blantyre City,2016,0.623982331,local,0,1,vague prior,MAP 
+Blantyre City,2017,0.566047397,local,0,1,vague prior,MAP 
+Blantyre City,2018,0.625568525,local,0,1,vague prior,MAP 
+Chikwawa,2010,0.544137662,local,0,1,vague prior,MAP 
+Chikwawa,2011,0.28005034,local,0,1,vague prior,MAP 
+Chikwawa,2012,0.394040129,local,0,1,vague prior,MAP 
+Chikwawa,2013,0.561042549,local,0,1,vague prior,MAP 
+Chikwawa,2014,0.411775097,local,0,1,vague prior,MAP 
+Chikwawa,2015,0.315652177,local,0,1,vague prior,MAP 
+Chikwawa,2016,0.553992866,local,0,1,vague prior,MAP 
+Chikwawa,2017,0.524376532,local,0,1,vague prior,MAP 
+Chikwawa,2018,0.59469904,local,0,1,vague prior,MAP 
+Chiradzulu,2010,0.471551773,local,0,1,vague prior,MAP 
+Chiradzulu,2011,0.231960517,local,0,1,vague prior,MAP 
+Chiradzulu,2012,0.400058709,local,0,1,vague prior,MAP 
+Chiradzulu,2013,0.610585195,local,0,1,vague prior,MAP 
+Chiradzulu,2014,0.477679028,local,0,1,vague prior,MAP 
+Chiradzulu,2015,0.375404555,local,0,1,vague prior,MAP 
+Chiradzulu,2016,0.616408436,local,0,1,vague prior,MAP 
+Chiradzulu,2017,0.576602989,local,0,1,vague prior,MAP 
+Chiradzulu,2018,0.641855275,local,0,1,vague prior,MAP 
+Chitipa,2010,0.244568388,local,0,1,vague prior,MAP 
+Chitipa,2011,0.263095889,local,0,1,vague prior,MAP 
+Chitipa,2012,0.44660124,local,0,1,vague prior,MAP 
+Chitipa,2013,0.591468414,local,0,1,vague prior,MAP 
+Chitipa,2014,0.473329624,local,0,1,vague prior,MAP 
+Chitipa,2015,0.354737098,local,0,1,vague prior,MAP 
+Chitipa,2016,0.532003629,local,0,1,vague prior,MAP 
+Chitipa,2017,0.368413197,local,0,1,vague prior,MAP 
+Chitipa,2018,0.362132546,local,0,1,vague prior,MAP 
+Dedza,2010,0.348830589,local,0,1,vague prior,MAP 
+Dedza,2011,0.199701612,local,0,1,vague prior,MAP 
+Dedza,2012,0.410085891,local,0,1,vague prior,MAP 
+Dedza,2013,0.67052424,local,0,1,vague prior,MAP 
+Dedza,2014,0.541420196,local,0,1,vague prior,MAP 
+Dedza,2015,0.385613022,local,0,1,vague prior,MAP 
+Dedza,2016,0.536496008,local,0,1,vague prior,MAP 
+Dedza,2017,0.423663483,local,0,1,vague prior,MAP 
+Dedza,2018,0.466716175,local,0,1,vague prior,MAP 
+Dowa,2010,0.310249259,local,0,1,vague prior,MAP 
+Dowa,2011,0.247670471,local,0,1,vague prior,MAP 
+Dowa,2012,0.406621005,local,0,1,vague prior,MAP 
+Dowa,2013,0.585187436,local,0,1,vague prior,MAP 
+Dowa,2014,0.516896193,local,0,1,vague prior,MAP 
+Dowa,2015,0.456087928,local,0,1,vague prior,MAP 
+Dowa,2016,0.623974756,local,0,1,vague prior,MAP 
+Dowa,2017,0.484461248,local,0,1,vague prior,MAP 
+Dowa,2018,0.519160574,local,0,1,vague prior,MAP 
+Karonga,2010,0.345913347,local,0,1,vague prior,MAP 
+Karonga,2011,0.328334747,local,0,1,vague prior,MAP 
+Karonga,2012,0.612484415,local,0,1,vague prior,MAP 
+Karonga,2013,0.816123538,local,0,1,vague prior,MAP 
+Karonga,2014,0.671557593,local,0,1,vague prior,MAP 
+Karonga,2015,0.491945278,local,0,1,vague prior,MAP 
+Karonga,2016,0.69692641,local,0,1,vague prior,MAP 
+Karonga,2017,0.636761788,local,0,1,vague prior,MAP 
+Karonga,2018,0.683413684,local,0,1,vague prior,MAP 
+Kasungu,2010,0.308033028,local,0,1,vague prior,MAP 
+Kasungu,2011,0.266251951,local,0,1,vague prior,MAP 
+Kasungu,2012,0.429144417,local,0,1,vague prior,MAP 
+Kasungu,2013,0.584826536,local,0,1,vague prior,MAP 
+Kasungu,2014,0.482641185,local,0,1,vague prior,MAP 
+Kasungu,2015,0.407742016,local,0,1,vague prior,MAP 
+Kasungu,2016,0.609375636,local,0,1,vague prior,MAP 
+Kasungu,2017,0.515557802,local,0,1,vague prior,MAP 
+Kasungu,2018,0.564448161,local,0,1,vague prior,MAP 
+Likoma,2010,0.343523137,local,0,1,vague prior,MAP 
+Likoma,2011,0.358920468,local,0,1,vague prior,MAP 
+Likoma,2012,0.538743669,local,0,1,vague prior,MAP 
+Likoma,2013,0.673362162,local,0,1,vague prior,MAP 
+Likoma,2014,0.551109297,local,0,1,vague prior,MAP 
+Likoma,2015,0.421899905,local,0,1,vague prior,MAP 
+Likoma,2016,0.551460426,local,0,1,vague prior,MAP 
+Likoma,2017,0.430004609,local,0,1,vague prior,MAP 
+Likoma,2018,0.463334685,local,0,1,vague prior,MAP 
+Lilongwe,2010,0.318562577,local,0,1,vague prior,MAP 
+Lilongwe,2011,0.225922019,local,0,1,vague prior,MAP 
+Lilongwe,2012,0.40445433,local,0,1,vague prior,MAP 
+Lilongwe,2013,0.61178055,local,0,1,vague prior,MAP 
+Lilongwe,2014,0.509485649,local,0,1,vague prior,MAP 
+Lilongwe,2015,0.411051228,local,0,1,vague prior,MAP 
+Lilongwe,2016,0.586702665,local,0,1,vague prior,MAP 
+Lilongwe,2017,0.477190076,local,0,1,vague prior,MAP 
+Lilongwe,2018,0.522010911,local,0,1,vague prior,MAP 
+Lilongwe City,2010,0.318562577,local,0,1,vague prior,MAP 
+Lilongwe City,2011,0.225922019,local,0,1,vague prior,MAP 
+Lilongwe City,2012,0.40445433,local,0,1,vague prior,MAP 
+Lilongwe City,2013,0.61178055,local,0,1,vague prior,MAP 
+Lilongwe City,2014,0.509485649,local,0,1,vague prior,MAP 
+Lilongwe City,2015,0.411051228,local,0,1,vague prior,MAP 
+Lilongwe City,2016,0.586702665,local,0,1,vague prior,MAP 
+Lilongwe City,2017,0.477190076,local,0,1,vague prior,MAP 
+Lilongwe City,2018,0.522010911,local,0,1,vague prior,MAP 
+Machinga,2010,0.474908027,local,0,1,vague prior,MAP 
+Machinga,2011,0.238977934,local,0,1,vague prior,MAP 
+Machinga,2012,0.461241679,local,0,1,vague prior,MAP 
+Machinga,2013,0.731416057,local,0,1,vague prior,MAP 
+Machinga,2014,0.565238406,local,0,1,vague prior,MAP 
+Machinga,2015,0.384903902,local,0,1,vague prior,MAP 
+Machinga,2016,0.603192341,local,0,1,vague prior,MAP 
+Machinga,2017,0.570361038,local,0,1,vague prior,MAP 
+Machinga,2018,0.637598954,local,0,1,vague prior,MAP 
+Mangochi,2010,0.441229348,local,0,1,vague prior,MAP 
+Mangochi,2011,0.242069882,local,0,1,vague prior,MAP 
+Mangochi,2012,0.518338546,local,0,1,vague prior,MAP 
+Mangochi,2013,0.786640115,local,0,1,vague prior,MAP 
+Mangochi,2014,0.586769481,local,0,1,vague prior,MAP 
+Mangochi,2015,0.338442609,local,0,1,vague prior,MAP 
+Mangochi,2016,0.527198048,local,0,1,vague prior,MAP 
+Mangochi,2017,0.495119337,local,0,1,vague prior,MAP 
+Mangochi,2018,0.5634168,local,0,1,vague prior,MAP 
+Mchinji,2010,0.354378937,local,0,1,vague prior,MAP 
+Mchinji,2011,0.295646129,local,0,1,vague prior,MAP 
+Mchinji,2012,0.386611621,local,0,1,vague prior,MAP 
+Mchinji,2013,0.494746812,local,0,1,vague prior,MAP 
+Mchinji,2014,0.491412579,local,0,1,vague prior,MAP 
+Mchinji,2015,0.519165753,local,0,1,vague prior,MAP 
+Mchinji,2016,0.686686329,local,0,1,vague prior,MAP 
+Mchinji,2017,0.53758319,local,0,1,vague prior,MAP 
+Mchinji,2018,0.566874031,local,0,1,vague prior,MAP 
+Mulanje,2010,0.424577485,local,0,1,vague prior,MAP 
+Mulanje,2011,0.207422482,local,0,1,vague prior,MAP 
+Mulanje,2012,0.376601792,local,0,1,vague prior,MAP 
+Mulanje,2013,0.599515304,local,0,1,vague prior,MAP 
+Mulanje,2014,0.435491889,local,0,1,vague prior,MAP 
+Mulanje,2015,0.313186146,local,0,1,vague prior,MAP 
+Mulanje,2016,0.570446801,local,0,1,vague prior,MAP 
+Mulanje,2017,0.566460854,local,0,1,vague prior,MAP 
+Mulanje,2018,0.641328306,local,0,1,vague prior,MAP 
+Mwanza,2010,0.510063517,local,0,1,vague prior,MAP 
+Mwanza,2011,0.242335765,local,0,1,vague prior,MAP 
+Mwanza,2012,0.322211696,local,0,1,vague prior,MAP 
+Mwanza,2013,0.51158995,local,0,1,vague prior,MAP 
+Mwanza,2014,0.505846525,local,0,1,vague prior,MAP 
+Mwanza,2015,0.52230185,local,0,1,vague prior,MAP 
+Mwanza,2016,0.718755508,local,0,1,vague prior,MAP 
+Mwanza,2017,0.615649109,local,0,1,vague prior,MAP 
+Mwanza,2018,0.656704821,local,0,1,vague prior,MAP 
+Mzimba,2010,0.25303633,local,0,1,vague prior,MAP 
+Mzimba,2011,0.248646038,local,0,1,vague prior,MAP 
+Mzimba,2012,0.463345917,local,0,1,vague prior,MAP 
+Mzimba,2013,0.650647089,local,0,1,vague prior,MAP 
+Mzimba,2014,0.495089867,local,0,1,vague prior,MAP 
+Mzimba,2015,0.352556468,local,0,1,vague prior,MAP 
+Mzimba,2016,0.56307411,local,0,1,vague prior,MAP 
+Mzimba,2017,0.495704816,local,0,1,vague prior,MAP 
+Mzimba,2018,0.554878613,local,0,1,vague prior,MAP 
+Mzuzu City,2010,0.25303633,local,0,1,vague prior,MAP 
+Mzuzu City,2011,0.248646038,local,0,1,vague prior,MAP 
+Mzuzu City,2012,0.463345917,local,0,1,vague prior,MAP 
+Mzuzu City,2013,0.650647089,local,0,1,vague prior,MAP 
+Mzuzu City,2014,0.495089867,local,0,1,vague prior,MAP 
+Mzuzu City,2015,0.352556468,local,0,1,vague prior,MAP 
+Mzuzu City,2016,0.56307411,local,0,1,vague prior,MAP 
+Mzuzu City,2017,0.495704816,local,0,1,vague prior,MAP 
+Mzuzu City,2018,0.554878613,local,0,1,vague prior,MAP 
+Neno,2010,0.514209984,local,0,1,vague prior,MAP 
+Neno,2011,0.251517041,local,0,1,vague prior,MAP 
+Neno,2012,0.385390557,local,0,1,vague prior,MAP 
+Neno,2013,0.611444234,local,0,1,vague prior,MAP 
+Neno,2014,0.554045819,local,0,1,vague prior,MAP 
+Neno,2015,0.507169866,local,0,1,vague prior,MAP 
+Neno,2016,0.697608421,local,0,1,vague prior,MAP 
+Neno,2017,0.604436063,local,0,1,vague prior,MAP 
+Neno,2018,0.649193915,local,0,1,vague prior,MAP 
+Nkhata Bay,2010,0.371623949,local,0,1,vague prior,MAP 
+Nkhata Bay,2011,0.376911357,local,0,1,vague prior,MAP 
+Nkhata Bay,2012,0.595821586,local,0,1,vague prior,MAP 
+Nkhata Bay,2013,0.738536725,local,0,1,vague prior,MAP 
+Nkhata Bay,2014,0.544700092,local,0,1,vague prior,MAP 
+Nkhata Bay,2015,0.376116102,local,0,1,vague prior,MAP 
+Nkhata Bay,2016,0.612325135,local,0,1,vague prior,MAP 
+Nkhata Bay,2017,0.588712974,local,0,1,vague prior,MAP 
+Nkhata Bay,2018,0.65595052,local,0,1,vague prior,MAP 
+Nkhotakota,2010,0.398525633,local,0,1,vague prior,MAP 
+Nkhotakota,2011,0.367991132,local,0,1,vague prior,MAP 
+Nkhotakota,2012,0.572883275,local,0,1,vague prior,MAP 
+Nkhotakota,2013,0.744573123,local,0,1,vague prior,MAP 
+Nkhotakota,2014,0.666086472,local,0,1,vague prior,MAP 
+Nkhotakota,2015,0.585192667,local,0,1,vague prior,MAP 
+Nkhotakota,2016,0.73105255,local,0,1,vague prior,MAP 
+Nkhotakota,2017,0.615616106,local,0,1,vague prior,MAP 
+Nkhotakota,2018,0.650145794,local,0,1,vague prior,MAP 
+Nsanje,2010,0.434864765,local,0,1,vague prior,MAP 
+Nsanje,2011,0.207987197,local,0,1,vague prior,MAP 
+Nsanje,2012,0.341706921,local,0,1,vague prior,MAP 
+Nsanje,2013,0.551004463,local,0,1,vague prior,MAP 
+Nsanje,2014,0.403663495,local,0,1,vague prior,MAP 
+Nsanje,2015,0.30422703,local,0,1,vague prior,MAP 
+Nsanje,2016,0.550599015,local,0,1,vague prior,MAP 
+Nsanje,2017,0.534342688,local,0,1,vague prior,MAP 
+Nsanje,2018,0.607801295,local,0,1,vague prior,MAP 
+Ntcheu,2010,0.472703029,local,0,1,vague prior,MAP 
+Ntcheu,2011,0.259354141,local,0,1,vague prior,MAP 
+Ntcheu,2012,0.498451184,local,0,1,vague prior,MAP 
+Ntcheu,2013,0.746156226,local,0,1,vague prior,MAP 
+Ntcheu,2014,0.593413657,local,0,1,vague prior,MAP 
+Ntcheu,2015,0.411738799,local,0,1,vague prior,MAP 
+Ntcheu,2016,0.606280877,local,0,1,vague prior,MAP 
+Ntcheu,2017,0.546452289,local,0,1,vague prior,MAP 
+Ntcheu,2018,0.605480779,local,0,1,vague prior,MAP 
+Ntchisi,2010,0.290157201,local,0,1,vague prior,MAP 
+Ntchisi,2011,0.246190415,local,0,1,vague prior,MAP 
+Ntchisi,2012,0.417183935,local,0,1,vague prior,MAP 
+Ntchisi,2013,0.587580081,local,0,1,vague prior,MAP 
+Ntchisi,2014,0.488724118,local,0,1,vague prior,MAP 
+Ntchisi,2015,0.403571944,local,0,1,vague prior,MAP 
+Ntchisi,2016,0.579688136,local,0,1,vague prior,MAP 
+Ntchisi,2017,0.454174604,local,0,1,vague prior,MAP 
+Ntchisi,2018,0.493145221,local,0,1,vague prior,MAP 
+Phalombe,2010,0.464213015,local,0,1,vague prior,MAP 
+Phalombe,2011,0.257945615,local,0,1,vague prior,MAP 
+Phalombe,2012,0.44251701,local,0,1,vague prior,MAP 
+Phalombe,2013,0.655911833,local,0,1,vague prior,MAP 
+Phalombe,2014,0.490563535,local,0,1,vague prior,MAP 
+Phalombe,2015,0.373927385,local,0,1,vague prior,MAP 
+Phalombe,2016,0.660633951,local,0,1,vague prior,MAP 
+Phalombe,2017,0.688238071,local,0,1,vague prior,MAP 
+Phalombe,2018,0.761216446,local,0,1,vague prior,MAP 
+Rumphi,2010,0.23350826,local,0,1,vague prior,MAP 
+Rumphi,2011,0.221173795,local,0,1,vague prior,MAP 
+Rumphi,2012,0.442382072,local,0,1,vague prior,MAP 
+Rumphi,2013,0.647515482,local,0,1,vague prior,MAP 
+Rumphi,2014,0.497680454,local,0,1,vague prior,MAP 
+Rumphi,2015,0.354453484,local,0,1,vague prior,MAP 
+Rumphi,2016,0.56318207,local,0,1,vague prior,MAP 
+Rumphi,2017,0.476390023,local,0,1,vague prior,MAP 
+Rumphi,2018,0.52330207,local,0,1,vague prior,MAP 
+Salima,2010,0.431516854,local,0,1,vague prior,MAP 
+Salima,2011,0.341393753,local,0,1,vague prior,MAP 
+Salima,2012,0.61172064,local,0,1,vague prior,MAP 
+Salima,2013,0.812768012,local,0,1,vague prior,MAP 
+Salima,2014,0.648068286,local,0,1,vague prior,MAP 
+Salima,2015,0.424670177,local,0,1,vague prior,MAP 
+Salima,2016,0.586592366,local,0,1,vague prior,MAP 
+Salima,2017,0.500394323,local,0,1,vague prior,MAP 
+Salima,2018,0.553258753,local,0,1,vague prior,MAP 
+Thyolo,2010,0.44820314,local,0,1,vague prior,MAP 
+Thyolo,2011,0.211595626,local,0,1,vague prior,MAP 
+Thyolo,2012,0.350933045,local,0,1,vague prior,MAP 
+Thyolo,2013,0.539435827,local,0,1,vague prior,MAP 
+Thyolo,2014,0.385144823,local,0,1,vague prior,MAP 
+Thyolo,2015,0.279377813,local,0,1,vague prior,MAP 
+Thyolo,2016,0.51612418,local,0,1,vague prior,MAP 
+Thyolo,2017,0.485511027,local,0,1,vague prior,MAP 
+Thyolo,2018,0.556589952,local,0,1,vague prior,MAP 
+Zomba,2010,0.492925578,local,0,1,vague prior,MAP 
+Zomba,2011,0.249781677,local,0,1,vague prior,MAP 
+Zomba,2012,0.442017773,local,0,1,vague prior,MAP 
+Zomba,2013,0.685267736,local,0,1,vague prior,MAP 
+Zomba,2014,0.549356008,local,0,1,vague prior,MAP 
+Zomba,2015,0.423388713,local,0,1,vague prior,MAP 
+Zomba,2016,0.657868142,local,0,1,vague prior,MAP 
+Zomba,2017,0.624095695,local,0,1,vague prior,MAP 
+Zomba,2018,0.686783304,local,0,1,vague prior,MAP 
+Zomba City,2010,0.492925578,local,0,1,vague prior,MAP 
+Zomba City,2011,0.249781677,local,0,1,vague prior,MAP 
+Zomba City,2012,0.442017773,local,0,1,vague prior,MAP 
+Zomba City,2013,0.685267736,local,0,1,vague prior,MAP 
+Zomba City,2014,0.549356008,local,0,1,vague prior,MAP 
+Zomba City,2015,0.423388713,local,0,1,vague prior,MAP 
+Zomba City,2016,0.657868142,local,0,1,vague prior,MAP 
+Zomba City,2017,0.624095695,local,0,1,vague prior,MAP 
+Zomba City,2018,0.686783304,local,0,1,vague prior,MAP 

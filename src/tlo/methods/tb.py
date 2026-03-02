@@ -1058,7 +1058,7 @@ class Tb(Module):
 
         # 5) send some baseline population for screening
         self.send_for_screening_general(
-            sim.population.props
+            sim.population
         )
 
     def update_parameters_for_program_scaleup(self):

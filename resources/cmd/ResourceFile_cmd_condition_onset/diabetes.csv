@@ -1,3 +1,68 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:7cf5954f9f23b3341696796b826a539ac3a050e88078ef8571e91029b7c62eaf
-size 4913
+parameter_name,value,param_label,prior_min,prior_max,prior_note,
+baseline_annual_probability,0.00028,local,0,1,vague prior,
+rr_male,1.15,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_0_4,0,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_5_9,0,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_10_14,0,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_15_19,0,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_20_24,1,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_25_29,1,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_30_34,1.6,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_35_39,2.215384615,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_40_44,3,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_45_49,4,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_50_54,4.5,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_55_59,6,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_60_64,6.5,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_65_69,7,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_70_74,4,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_75_79,3,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_80_84,2,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_85_89,2,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_90_94,1,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_95_99,1,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_100,1,universal,0,100,vague prior,"Holden et al., 2013, UK Pop (CPRD)"
+rr_urban,,local,0,100,vague prior,
+rr_wealth_1,1,local,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_wealth_2,0.833333333,local,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_wealth_3,0.791666667,local,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_wealth_4,0.75,local,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_wealth_5,0.708333333,local,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_bmi_1,1.1,universal,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_bmi_2,1,universal,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_bmi_3,2.9,universal,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_bmi_4,6,universal,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_bmi_5,10,universal,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_low_exercise,1.33,universal,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_high_salt,1,universal,0,100,vague prior,
+rr_high_sugar,1.2,universal,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_tobacco,1.3,universal,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_alcohol,,universal,0,100,vague prior,
+rr_marital_status_1,,local,0,100,vague prior,
+rr_marital_status_2,,local,0,100,vague prior,
+rr_marital_status_3,,local,0,100,vague prior,
+rr_in_education,1.2,local,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_current_education_level_1,1.2,local,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_current_education_level_2,1,local,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_current_education_level_3,0.85,local,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_unimproved_sanitation,1,local,0,100,vague prior,
+rr_no_access_handwashing,1,local,0,100,vague prior,
+rr_no_clean_drinking_water,1.05,local,0,100,vague prior,Estimates from Ed Gregg
+rr_wood_burning_stove,1.05,local,0,100,vague prior,Estimates from Ed Gregg
+rr_diabetes,1,universal,0,100,vague prior,
+rr_hypertension,1.75,universal,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_depression,1.48,local,0,100,vague prior,"Bellou et al., Systematic Reviews, 2018"
+rr_chronic_kidney_disease,1,universal,0,100,vague prior,
+rr_chronic_lower_back_pain,1,universal,0,100,vague prior,
+rr_chronic_ischemic_heart_disease,1,universal,0,100,vague prior,
+rr_cancers,1,universal,0,100,vague prior,
+rr_hiv,1,universal,0,100,vague prior,
+rr_ever_stroke,1,universal,0,100,vague prior,
+rr_ever_heart_attack,1,universal,0,100,vague prior,
+rr_diabetes_on_medication,1,universal,0,100,vague prior,
+rr_hypertension_on_medication,1,universal,0,100,vague prior,
+rr_chronic_kidney_disease_on_medication,1,universal,0,100,vague prior,
+rr_chronic_lower_back_pain_on_medication,1,universal,0,100,vague prior,
+rr_chronic_ischemic_heart_disease_on_medication,1,universal,0,100,vague prior,
+rr_stroke_on_medication,1,universal,0,100,vague prior,
+rr_heart_attack_on_medication,1,universal,0,100,vague prior,

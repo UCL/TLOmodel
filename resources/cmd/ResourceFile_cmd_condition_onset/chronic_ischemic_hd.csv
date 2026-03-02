@@ -1,3 +1,68 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:9e8d9bf0a01f6b594ffaa0a81a31c698e3060a9796245879afabd89696259376
-size 5191
+parameter_name,value,param_label,prior_min,prior_max,prior_note,
+baseline_annual_probability,8.60E-05,local,0,1,vague prior,
+rr_male,2.3,universal,0,100,vague prior,
+rr_0_4,0,universal,0,100,vague prior,
+rr_5_9,0,universal,0,100,vague prior,
+rr_10_14,0,universal,0,100,vague prior,
+rr_15_19,0,universal,0,100,vague prior,
+rr_20_24,0.140136054,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_25_29,1,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_30_34,1,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_35_39,1,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_40_44,1,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_45_49,1,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_50_54,7,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_55_59,7,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_60_64,7,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_65_69,7,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_70_74,12,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_75_79,12,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_80_84,12,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_85_89,12,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_90_94,12,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_95_99,12,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_100,12,universal,0,100,vague prior,IHME https://vizhub.healthdata.org/gbd-compare/
+rr_urban,,local,0,100,vague prior,
+rr_wealth_1,1,local,0,100,vague prior,"Witte et al., 2017, Deprivation Chronic Heart Failure, UK"
+rr_wealth_2,1.12,local,0,100,vague prior,"Witte et al., 2017, Deprivation Chronic Heart Failure, UK"
+rr_wealth_3,1.24,local,0,100,vague prior,"Witte et al., 2017, Deprivation Chronic Heart Failure, UK"
+rr_wealth_4,1.36,local,0,100,vague prior,"Witte et al., 2017, Deprivation Chronic Heart Failure, UK"
+rr_wealth_5,1.48,local,0,100,vague prior,"Witte et al., 2017, Deprivation Chronic Heart Failure, UK"
+rr_bmi_1,1,universal,0,100,vague prior,"Jousilahti et al, 1996, BMI CVD Finland"
+rr_bmi_2,1,universal,0,100,vague prior,"Jousilahti et al, 1996, BMI CVD Finland"
+rr_bmi_3,2.08,universal,0,100,vague prior,"Jousilahti et al, 1996, BMI CVD Finland"
+rr_bmi_4,7.28,universal,0,100,vague prior,"Jousilahti et al, 1996, BMI CVD Finland"
+rr_bmi_5,12.48,universal,0,100,vague prior,"Jousilahti et al, 1996, BMI CVD Finland"
+rr_low_exercise,2.4,universal,0,100,vague prior,"Strazzullo et al, 2009, Meta-analysis"
+rr_high_salt,1.17,universal,0,100,vague prior,"Strazzullo et al, 2009, Meta-analysis"
+rr_high_sugar,,universal,0,100,vague prior,
+rr_tobacco,1.4,universal,0,100,vague prior,"Strazzullo et al, 2009, Meta-analysis"
+rr_alcohol,1.44,universal,0,100,vague prior,"Emberson et al., 2005 Alcohol CHD"
+rr_marital_status_1,,local,0,100,vague prior,
+rr_marital_status_2,,local,0,100,vague prior,
+rr_marital_status_3,,local,0,100,vague prior,
+rr_in_education,1.67,local,0,100,vague prior,"Kilander et al, 2001, Swedish Cohort Men"
+rr_current_education_level_1,1.67,local,0,100,vague prior,"Kilander et al, 2001, Swedish Cohort Men"
+rr_current_education_level_2,1,local,0,100,vague prior,
+rr_current_education_level_3,1,local,0,100,vague prior,
+rr_unimproved_sanitation,,local,0,100,vague prior,
+rr_no_access_handwashing,,local,0,100,vague prior,
+rr_no_clean_drinking_water,,local,0,100,vague prior,
+rr_wood_burning_stove,,local,0,100,vague prior,
+rr_diabetes,2.19,universal,0,100,vague prior,"Asia Pacific Cohort Studies Collaboration, 2003"
+rr_hypertension,3.8,universal,0,100,vague prior,"Alderman et al, 1997, MI HTN"
+rr_depression,,local,0,100,vague prior,
+rr_chronic_kidney_disease,1.55,universal,0,100,vague prior,"Angelantonio et al., 2010, Prospective Study Iceland"
+rr_chronic_lower_back_pain,,universal,0,100,vague prior,
+rr_chronic_ischemic_heart_disease,,universal,0,100,vague prior,
+rr_cancers,,universal,0,100,vague prior,
+rr_hiv,1.61,universal,0,100,vague prior,
+rr_ever_stroke,1,universal,0,100,vague prior,
+rr_ever_heart_attack,1,universal,0,100,vague prior,
+rr_diabetes_on_medication,1,universal,0,100,vague prior,
+rr_hypertension_on_medication,0.72,universal,0,100,vague prior,"Neal et al., Effects of ACE inhibitors, calcium antagonists, and other blood- pressure-lowering drugs: results of prospectively designed overviews of randomised trials. Blood Pressure Lowering Treatment Trialists' Collaboration, The Lancet 2000"
+rr_chronic_kidney_disease_on_medication,1,universal,0,100,vague prior,
+rr_chronic_lower_back_pain_on_medication,1,universal,0,100,vague prior,
+rr_chronic_ischemic_heart_disease_on_medication,1,universal,0,100,vague prior,
+rr_stroke_on_medication,1,universal,0,100,vague prior,
+rr_heart_attack_on_medication,1,universal,0,100,vague prior,

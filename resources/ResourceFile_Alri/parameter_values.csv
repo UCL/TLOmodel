@@ -1,3 +1,125 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e2b417a870b56a1301f13c0fa9e0624a395e4e5e598b506052db7b741d42ea16
-size 13358
+parameter_name,value,param_label,prior_min,prior_max,prior_note,resource,notes
+base_inc_rate_ALRI_by_RSV,"[0.165623001012122,0.0368943809605977,0.011883807410198]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_Rhinovirus,"[0.0243368081563306,0.0564272209432261,0.0181754025659935]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_HMPV,"[0.0316242920447732,0.01106932885584,0.00356546901880363]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_Parainfluenza,"[0.0400689053941642,0.0125990679490263,0.00405820325903094]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_Strep_pneumoniae_PCV13,"[0.00839805492638728,0.0086009815601405,0.00277040583791159]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_Strep_pneumoniae_non_PCV13,"[0.00971808948465436,0.0056295094957977,0.00181328443302487]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_Hib,"[0.00456369209787862,0.00223809928508262,0.000720899502209533]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_H.influenzae_non_type_b,"[0.0178046628079453,0.00771804577106646,0.00248600917371134]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_Staph_aureus,"[0.0230583713892271,0.00164959730828988,0.000531340984878809]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_Enterobacteriaceae,"[0.00577447898013911,0.00776959582619209,0.002502613624339]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_other_Strepto_Enterococci,"[0.00739221008020393,0.000441075977443103,0.000142072094251877]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_Influenza,"[0.0156895896609387,0.00577122651203705,0.00185893197294524]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_P.jirovecii,"[0.00532021183938121,0.00406616141018573,0.00130972462037058]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_other_viral_pathogens,"[0.0289052989892286,0.0340001707821008,0.0109515723253317]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_other_bacterial_pathogens,"[0.0340967151177136,0.0275272316777052,0.00886661630515269]",local,"[0,0,0]","[1,1,1]",vague prior,,
+base_inc_rate_ALRI_by_other_pathogens_NoS,"[0.012096954443426,0.0244908799021158,0.00788859692140824]",local,"[0,0,0]","[1,1,1]",vague prior,,
+proportion_pneumonia_in_RSV_ALRI,"[0.469523118748083,0.493147834326293]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_Rhinovirus_ALRI,"[0.233411098940226,0.300943850285401]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_HMPV_ALRI,"[0.514096212711081,0.607661832402657]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_Parainfluenza_ALRI,"[0.381306534835401,0.586394378700289]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_Strep_pneumoniae_PCV13_ALRI,"[0.419837201436785,1]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_Strep_pneumoniae_non_PCV13_ALRI,"[0.584526531211357,0.47010416567094]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_Hib_ALRI,"[0.643816417750475,0.591228432603006]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_H.influenzae_non_type_b_ALRI,"[0.484067635967411,0.685783925920651]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_Staph_aureus_ALRI,"[0.314311461687961,0.668460076932899]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_Enterobacteriaceae_ALRI,"[0.542743088827561,0.397386416381317]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_other_Strepto_Enterococci_ALRI,"[0.794939501527616,1]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_Influenza_ALRI,"[0.274661773216931,0.477667070122735]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_P.jirovecii_ALRI,"[0.773174448993322,0.650848699225084]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_other_viral_pathogens_ALRI,"[0.264286065267648,0.301616616612727]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_other_bacterial_pathogens_ALRI,"[0.321708555070697,0.424616377668989]",local,"[0,0]","[1,1]",vague prior,,
+proportion_pneumonia_in_other_pathogens_NoS_ALRI,"[0.323847892119005,0.256639724815326]",local,"[0,0]","[1,1]",vague prior,,
+rr_ALRI_HIV/AIDS,6.51,universal,0.01,100,vague prior,Jackson et al. 2013,
+rr_ALRI_incomplete_measles_immunisation,1.8,universal,0.01,100,vague prior,Jackson et al. 2013,
+rr_ALRI_low_birth_weight,3.6,universal,0.01,100,vague prior,Jackson et al. 2013,
+rr_ALRI_non_exclusive_breastfeeding,2.7,universal,0.01,100,vague prior,Jackson et al. 2013,
+rr_ALRI_indoor_air_pollution,1.57,universal,0.01,100,vague prior,Jackson et al. 2013,
+rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y,0.18,universal,0.01,1,vague prior,Mackenzie et al. 2016 Lancet,
+rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y,0.32,universal,0.01,1,vague prior,Mackenzie et al. 2016 Lancet,
+rr_all_strains_Strep_pneum_ALRI_with_PCV13,0.45,undetermined,0.01,1,calibration,Mackenzie et al. 2016 Lancet,for calibration
+effectiveness_Hib_vaccine_on_Hib_strains,0.86,universal,0,1,vague prior,Obonyo and Lau 2006,
+rr_Hib_ALRI_with_Hib_vaccine,0.14,universal,0.01,1,vague prior,,
+prob_viral_pneumonia_bacterial_coinfection,0.3,universal,0,1,vague prior,,
+proportion_bacterial_coinfection_pathogen,"[0.107,0.072,0.038,0.141,0.134,0.117,0.052,0.338]",local,"[0,0,0,0,0,0,0,0]","[1,1,1,1,1,1,1,1]",vague prior,,
+overall_progression_to_severe_ALRI,0.12,undetermined,0,1,calibration,Walker et al. 2013,for calibration
+prob_pulmonary_complications_in_pneumonia,0.215,universal,0,1,vague prior,Resti et al. 2010,
+prob_pleural_effusion_in_pulmonary_complicated_pneumonia,0.938,universal,0,1,vague prior,Resti et al. 2010,
+prob_empyema_in_pulmonary_complicated_pneumonia,0.315,universal,0,1,vague prior,Resti et al. 2010,
+prob_lung_abscess_in_pulmonary_complicated_pneumonia,0.049,universal,0,1,vague prior,"Resti et al. 2010, assumed from necrotising pneumonia",
+prob_pneumothorax_in_pulmonary_complicated_pneumonia,0.049,universal,0,1,vague prior,"Resti et al. 2010, assumed from atelectasia",
+prob_hypoxaemia_in_pneumonia,0.479,universal,0,1,vague prior,Fancourt et al 2017,
+prob_hypoxaemia_in_other_alri,0.273,universal,0,1,vague prior,Fancourt et al 2017,
+prob_bacteraemia_in_pneumonia,0.039,universal,0,1,vague prior,Sebavonge et al. 2016,
+prob_progression_to_sepsis_with_bacteraemia,0.3,universal,0,1,vague prior,Fritz et al. 2019,
+prob_cough_in_pneumonia,1,universal,0,1,vague prior,Rees et al 2020,0.77
+prob_difficult_breathing_in_pneumonia,1,universal,0,1,vague prior,Rees et al 2020,0.7
+prob_fever_in_pneumonia,0.82,universal,0,1,vague prior,Rees et al 2020,
+prob_chest_indrawing_in_pneumonia,0.74,universal,0,1,vague prior,Rees et al 2020,
+prob_tachypnoea_in_pneumonia,0.834,universal,0,1,vague prior,Fancourt et al 2017,
+prob_danger_signs_in_pneumonia,0.28,universal,0,1,vague prior,Rees et al 2020,
+prob_cyanosis_in_pneumonia,0.06,universal,0,1,vague prior,Rees et al 2020,
+prob_cough_in_other_alri,1,universal,0,1,vague prior,,assumed
+prob_difficult_breathing_in_other_alri,1,universal,0,1,vague prior,,assumed
+prob_fever_in_other_alri,0.76,universal,0,1,vague prior,,calculated using OR=1.41 temp>38C from Fancourt and the prob_fever_in_pneumonia
+prob_chest_indrawing_in_other_alri,0.33,universal,0,1,vague prior,,assumed (based on Eric' Bangladesh trial - outpatient pneumonia)
+prob_tachypnoea_in_other_alri,0.758,universal,0,1,vague prior,Fancourt et al 2017,
+prob_danger_signs_in_other_alri,0.3,universal,0,1,vague prior,Rees et al 2020 (or or 0.03 assumed (based on Eric' Bangladesh trial - outpatient pneumonia)),1-specificity
+prob_cyanosis_in_other_alri,0.04,universal,0,1,vague prior,Rees et al 2020,1-specificity
+prob_danger_signs_in_sepsis,1,universal,0,1,vague prior,,assumed
+prob_danger_signs_in_SpO2<90%,0.313,universal,0,1,vague prior,McCollum et al. 2016,HC only
+prob_danger_signs_in_SpO2_90-92%,0.133,universal,0,1,vague prior,McCollum et al. 2016,HC only
+prob_chest_indrawing_in_SpO2<90%,0.701,universal,0,1,vague prior,McCollum et al. 2016,HC & CHW combined
+prob_chest_indrawing_in_SpO2_90-92%,0.445,universal,0,1,vague prior,McCollum et al. 2016,HC & CHW combined
+proportion_hypoxaemia_with_SpO2<90%,0.3576,local,0,1,vague prior,McCollum et al. 2016,prevalence of SpO2 <90% over total prevalence of hypoxaemia
+prob_cyanosis_in_SpO2<90%,0.078,universal,0,1,vague prior,Bassat et al 2016,cyanosis in Hypoxaemic children < 90% in Mozambique study. Non-hypoxaemic children had 1.5%
+max_alri_duration_in_days_without_treatment,14,universal,7,28,vague prior,,
+days_between_treatment_and_cure,28,universal,14,42,vague prior,,7 inpatient days + 3 weeks oral antibiotics course
+tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%,0.101,universal,0,1,vague prior,Ginsburg et al. 2019,treatment failure or relapse by day 14
+tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%,0.108,universal,0,1,vague prior,Ginsburg et al. 2020,treatment failure or relapse by day 14
+tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%,0.125,universal,0,1,vague prior,Ginsburg et al. 2020,treatment failure or relapse by day 15
+tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants,0.054,universal,0,1,vague prior,,"EMPIC study 2021, 6.3% TF by standard 1st dose antibiotic and referral"
+tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2>=90%,0.6,universal,0,1,vague prior,,
+tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2<90%,0.2826,universal,0,1,vague prior,,calculated using 0.17 and pOR=0.52
+tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2<90%,0.8,universal,0,1,vague prior,,
+sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0,0.7,universal,0,1,vague prior,HHFA 2018,Boyce et al 2019
+sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0,0.7,universal,0,1,vague prior,HHFA 2018,Boyce et al 2019
+sensitivity_of_classification_of_non_severe_pneumonia_facility_level1,0.7,universal,0,1,vague prior,HHFA 2018,Bjornstad et al 2014
+sensitivity_of_classification_of_severe_pneumonia_facility_level1,0.7,universal,0,1,vague prior,HHFA 2018,Bjornstad et al 2014
+sensitivity_of_classification_of_non_severe_pneumonia_facility_level2,0.7,universal,0,1,vague prior,HHFA 2018,Uwemedimo et al. 2018
+sensitivity_of_classification_of_severe_pneumonia_facility_level2,0.7,universal,0,1,vague prior,HHFA 2018,
+prob_iCCM_severe_pneumonia_treated_as_fast_breathing_pneumonia,0.7,universal,0,1,vague prior,,dummy
+prob_IMCI_severe_pneumonia_treated_as_non_severe_pneumonia,0.7,universal,0,1,vague prior,,dummy
+scaler_on_risk_of_death,0.75,undetermined,0.1,2,calibration,,For Calibration
+base_odds_death_ALRI_age<2mo,0.041965,local,0.01,0.2,vague prior,Lazzerini et al 2016,
+or_death_ALRI_age<2mo_very_severe_pneumonia,3.994783,universal,1,10,vague prior,Lazzerini et al 2016,
+or_death_ALRI_age<2mo_P.jirovecii,5.460986,universal,1,10,vague prior,Lazzerini et al 2016,
+or_death_ALRI_age<2mo_by_month_increase_in_age,0.6033254,universal,0.1,1,vague prior,Lazzerini et al 2016,
+base_odds_death_ALRI_age2_59mo,0.0244725,local,0.01,0.2,vague prior,Lazzerini et al 2016,calculated
+or_death_ALRI_age2_59mo_very_severe_pneumonia,8.382832,universal,1,20,vague prior,Lazzerini et al 2016,
+or_death_ALRI_age2_59mo_P.jirovecii,13.74696,universal,1,20,vague prior,Lazzerini et al 2016,
+or_death_ALRI_age2_59mo_SAM,7.216448,universal,1,20,vague prior,Lazzerini et al 2016,
+or_death_ALRI_age2_59mo_by_month_increase_in_age,0.9661072,universal,0.5,1,vague prior,Lazzerini et al 2016,
+or_death_ALRI_age2_59mo_female,1.327285,universal,0.5,2,vague prior,Lazzerini et al 2016,
+or_death_ALRI_SpO2<90%,5.04,universal,1,10,vague prior,Hooli et al. 2016,
+or_death_ALRI_SpO2_90_92%,1.54,universal,1,5,vague prior,Hooli et al. 2016,
+or_death_ALRI_sepsis,151.9,universal,50,300,vague prior,,
+or_death_ALRI_pneumothorax,77.4,universal,20,150,vague prior,,
+tf_1st_line_antibiotic_for_severe_pneumonia,0.11,universal,0,1,vague prior,Lassi et al 2013,0.171 overall value in source
+rr_tf_1st_line_antibiotics_if_cyanosis,1.55,universal,1,5,vague prior,Muro et al 2020,
+rr_tf_1st_line_antibiotics_if_SpO2<90%,1.28,universal,1,5,vague prior,Muro et al 2020,
+rr_tf_1st_line_antibiotics_if_abnormal_CXR,1.71,universal,1,5,vague prior,Muro et al 2020,
+rr_tf_1st_line_antibiotics_if_HIV/AIDS,1.8,universal,1,5,vague prior,Muro et al 2020,
+rr_tf_1st_line_antibiotics_if_MAM,1.48,universal,1,5,vague prior,Muro et al 2020,
+rr_tf_1st_line_antibiotics_if_SAM,2.02,universal,1,5,vague prior,Muro et al 2020,
+or_mortality_improved_oxygen_systems,0.52,universal,0.1,1,vague prior,Lam et al 2021,
+pulse_oximeter_and_oxygen_is_available,Default,scenario,NA,NA,vague prior,,
+or_care_seeking_perceived_severe_illness,2.4,local,1,5,vague prior,Lungu et al 2020,"perceived severe illness, OR used for seeking care for chest-indrawing"
+tf_2nd_line_antibiotic_for_severe_pneumonia,0.235,universal,0,1,vague prior,,
+prob_for_followup_if_treatment_failure,0.3,local,0,1,vague prior,,
+child_age_threshold,5,local,2,18,vague prior,,
+main_polling_frequency,2,undetermined,1,12,design decision,,
+inpatient_bed_days,7,local,3,14,vague prior,,
+treatment_window_days,1,local,0,3,vague prior,,
+follow_up_appointment_days,5,local,3,7,vague prior,,

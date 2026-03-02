@@ -1,3 +1,4 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c56ab1e989bf1133f8e52f81552cb55945d6bf14e1758ae1baa62b6e12b37ce2
-size 365
+parameter_name,value,param_label,prior_min,prior_max,prior_note
+modules_of_interest,"[""*""]",scenario,"N/A","N/A","N/A"
+events_to_ignore,"[""AgeUpdateEvent"",""HealthSystemScheduler"",""SimplifiedBirthsPoll"",""DirectBirth"",""LifestyleEvent"",""TbActiveCasePollGenerateData"",""HivPollingEventForDataGeneration"",""RTIPollingEvent""]",scenario,"N/A","N/A","N/A"
+

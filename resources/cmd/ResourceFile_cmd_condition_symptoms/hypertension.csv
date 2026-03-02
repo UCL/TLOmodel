@@ -1,3 +1,1 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:2c4b873ab07e947879a6be497fbbf7f1141e2db312e0e243d719c98a3374faff
-size 63
+parameter_name,value,param_label,prior_min,prior_max,prior_note

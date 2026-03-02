@@ -1,3 +1,34 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c29a8b647800559dd4e9e8aca93b6dd7a55b643fa5215a06fd5e7c51075a4814
-size 5375
+﻿R0,gamma_alpha,District,SCH_spp,SurveyYear,mean_prevalence2010,mean_worm_burden2010,mean_prevalence2019,min_prevalence,max_prevalence,Endemicity2022,classification2019,mean_prevalence2022,prop_susceptible,mean_worm_burden2022,equilibrium,param_label
+1.6,0.24,Balaka,S.haematobium,2018,16.23168271,0.262009702,2.033982983,0,10,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,61.7,calibration data
+1.6,0.24,Blantyre,S.haematobium,2018,17.76153078,0.302082434,2.291666638,0,20,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Blantyre City,S.haematobium,2018,17.76153078,0.302082434,2.291666638,0,20,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Chikwawa,S.haematobium,2017,10.08304197,0.133712723,15.26819917,0,33.333332,High prevalence (50% and above),moderate,50,0.810372771,4.070254266,,calibration data
+1.6,0.24,Chiradzulu,S.haematobium,2018,33.29512791,1.056845062,8.571428543,0,36.666668,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Chitipa,S.haematobium,2017,29.411764,0.78445575,4.444444362,0,16.666666,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Dedza,S.haematobium,2017,0,0,8.000000005,0,23.333334,High prevalence (50% and above),low,50,0.810372771,4.070254266,,calibration data
+1.6,0.24,Dowa,S.haematobium,2019,4.597701,0.051999925,0,0,0,Moderate prevalence (10%-49%),zero,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Karonga,S.haematobium,2017,0,0,2.960392043,0,17.241379,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Kasungu,S.haematobium,2017,0,0,9.75562835,0,36.666668,High prevalence (50% and above),low,50,0.810372771,4.070254266,,calibration data
+1.6,0.24,Likoma,S.haematobium,2015,28.609972,0.737360479,7.750623757,0,27.586206,High prevalence (50% and above),low,50,0.810372771,4.070254266,,calibration data
+1.6,0.24,Lilongwe,S.haematobium,2018,11.21989552,0.154060308,3.076923031,0,40,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Lilongwe City,S.haematobium,2018,11.21989552,0.154060308,3.076923031,0,40,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Machinga,S.haematobium,2017,2,0.021077388,12.26053624,3.3333333,26.666666,High prevalence (50% and above),moderate,50,0.810372771,4.070254266,,calibration data
+1.6,0.24,Mangochi,S.haematobium,2019,20.67923721,0.390133497,6.6666665,6.6666665,6.6666665,High prevalence (50% and above),low,50,0.810372771,4.070254266,,calibration data
+1.6,0.24,Mchinji,S.haematobium,2017,1.9607843,0.020642535,2.874779514,0,10,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Mulanje,S.haematobium,2017,11.666667,0.162431532,11.74238258,0,26.666666,High prevalence (50% and above),moderate,50,0.810372771,4.070254266,,calibration data
+1.6,0.24,Mwanza,S.haematobium,2019,18.75457126,0.330228623,8.66666666,0,20,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Mzimba,S.haematobium,2018,8.27148,0.103908544,2.537313382,0,16.666666,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Mzuzu City,S.haematobium,0,0,0,0,0,0,0,zero,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Neno,S.haematobium,2018,16.51238549,0.269079987,1.052631563,0,6.6666665,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Nkhata Bay,S.haematobium,2019,3.11111106,0.033780813,2.222222173,0,13.333333,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Nkhotakota,S.haematobium,2019,16.83985,0.277484852,16.90476144,0,53.333332,Moderate prevalence (10%-49%),moderate,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Nsanje,S.haematobium,2017,11.666667,0.162431532,25.87916336,0,73.333336,High prevalence (50% and above),moderate,50,0.810372771,4.070254266,,calibration data
+1.6,0.24,Ntcheu,S.haematobium,2018,13.78378874,0.205236421,1.515151482,0,13.333333,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Ntchisi,S.haematobium,2018,17.15496395,0.285735772,3.333333295,0,13.333333,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Phalombe,S.haematobium,2017,23,0.473126464,8.90804575,0,26.666666,High prevalence (50% and above),low,50,0.810372771,4.070254266,,calibration data
+1.6,0.24,Rumphi,S.haematobium,2017,0,0,1.107690219,0,10.344828,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Salima,S.haematobium,2019,5.996514144,0.070535614,7.499999975,0,23.333334,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Thyolo,S.haematobium,2017,0,0,6.518518425,0,20,Moderate prevalence (10%-49%),low,34.5,0.559157212,1.159176466,,calibration data
+1.6,0.24,Zomba,S.haematobium,2019,10.12862596,0.134503158,15.92592564,0,33.333332,High prevalence (50% and above),moderate,50,0.810372771,4.070254266,,calibration data
+1.6,0.24,Zomba City,S.haematobium,2019,10.12862596,0.134503158,15.92592564,0,33.333332,High prevalence (50% and above),moderate,50,0.810372771,4.070254266,,calibration data
+,,,,,,0.269750347,,,,,,,,,,
