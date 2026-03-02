@@ -2071,6 +2071,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         return due_today
 
+    TIME_SENSITIVE_MODULES = {'Labour', 'PostnatalCare', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy'}
+
     def _check_climate_disruption(self, item: HSIEventQueueItem, hold_over: List[HSIEventQueueItem]) -> bool:
         year = self.sim.date.year
         month = self.sim.date.month
@@ -2104,38 +2106,40 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 )
                 if np.random.binomial(1, prob_disruption) == 1:
                     climate_disrupted = True
-                    if np.random.binomial(1, self.module.parameters["prop_supply_side_disruptions"]) and self.module.parameters["mode_appt_constraints"] == 2:
+
+                    # Compute net delay: disruption delay minus the remaining scheduling window,
+                    # floored at 0 to avoid pulling appointments earlier than they'd otherwise occur.
+                    delay_days = max(
+                        0,
+                        int(
+                            max(self.module.parameters["scale_factor_appointment_urgency"] * item.priority, 1)
+                            * prob_disruption
+                            * self.module.parameters["scale_factor_severity_disruption_and_delay"]
+                            * self.module.parameters["delay_in_seeking_care_weather"]
+                        )
+                        + (item.topen - item.tclose).days  # negative: subtracts the window
+                    )
+
+                    # For time-sensitive modules (pregnancy/labour), cap the delay so the
+                    # rescheduled date never exceeds the original tclose — beyond that point
+                    # the event is clinically meaningless or dangerous.
+                    if item.hsi_event.module.__class__.__name__ in TIME_SENSITIVE_MODULES:
+                        max_allowable_days = max(0, (item.tclose - self.sim.date).days)
+                        delay_days = min(delay_days, max_allowable_days)
+
+                    if np.random.binomial(1, self.module.parameters["prop_supply_side_disruptions"]) and \
+                        self.module.parameters["mode_appt_constraints"] == 2:
                         footprint = item.hsi_event.expected_time_requests
                         self.module.running_total_footprint.update(footprint)
+
                     if self.sim.modules[
                         "HealthSeekingBehaviour"
                     ].force_any_symptom_to_lead_to_healthcareseeking:
                         self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
                             priority=item.priority,
                             clinic_eligibility=item.clinic_eligibility,
-                            topen=self.sim.date
-                                  + DateOffset(
-                                days=(
-                                    int(
-                                        max( self.module.parameters["scale_factor_appointment_urgency"] * item.priority, 1)
-                                        * prob_disruption
-                                        * self.module.parameters["scale_factor_severity_disruption_and_delay"]
-                                        * self.module.parameters["delay_in_seeking_care_weather"]
-                                    )
-                                )
-                            ),
-                            tclose=self.sim.date
-                                   + DateOffset(
-                                days=(
-                                    int(
-                                        max( self.module.parameters["scale_factor_appointment_urgency"] * item.priority, 1)
-                                        * prob_disruption
-                                        * self.module.parameters["scale_factor_severity_disruption_and_delay"]
-                                        * self.module.parameters["delay_in_seeking_care_weather"]
-                                    )
-                                )
-                            )
-                                   + DateOffset((item.topen - item.tclose).days),
+                            topen=self.sim.date + DateOffset(days=delay_days),
+                            tclose=self.sim.date + DateOffset(days=delay_days),
                             hsi_event=item.hsi_event
                         )
                         self.module.call_and_record_weather_delayed_hsi_event(
@@ -2173,31 +2177,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
                                 priority=item.priority,
                                 clinic_eligibility=item.clinic_eligibility,
-                                topen=self.sim.date
-                                      + DateOffset(
-                                    days=(
-                                        int(
-                                            max(self.module.parameters[
-                                                    "scale_factor_appointment_urgency"] * item.priority, 1)
-                                            * prob_disruption
-                                            * self.module.parameters["scale_factor_severity_disruption_and_delay"]
-                                            * self.module.parameters["delay_in_seeking_care_weather"]
-                                        )
-                                    )
-                                ),
-                                tclose=self.sim.date
-                                       + DateOffset(
-                                    days=(
-                                        int(
-                                            max(self.module.parameters[
-                                                    "scale_factor_appointment_urgency"] * item.priority, 1)
-                                            * prob_disruption
-                                            * self.module.parameters["scale_factor_severity_disruption_and_delay"]
-                                            * self.module.parameters["delay_in_seeking_care_weather"]
-                                        )
-                                    )
-                                )
-                                       + DateOffset((item.topen - item.tclose).days),
+                                topen=self.sim.date + DateOffset(days=delay_days),
+                                tclose=self.sim.date + DateOffset(days=delay_days),
                                 hsi_event=item.hsi_event,
                             )
                             self.module.call_and_record_weather_delayed_hsi_event(
