@@ -2071,13 +2071,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         return due_today
 
-    TIME_SENSITIVE_MODULES = {'Labour', 'PostnatalCare', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy'}
 
     def _check_climate_disruption(self, item: HSIEventQueueItem, hold_over: List[HSIEventQueueItem]) -> bool:
         year = self.sim.date.year
         month = self.sim.date.month
 
         climate_disrupted = False
+        TIME_SENSITIVE_MODULES = {'Labour', 'PostnatalCare', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy'}
 
         if (
             year >= self.module.parameters["year_effective_climate_disruptions"]
@@ -2107,8 +2107,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 if np.random.binomial(1, prob_disruption) == 1:
                     climate_disrupted = True
 
-                    # Compute net delay: disruption delay minus the remaining scheduling window,
-                    # floored at 0 to avoid pulling appointments earlier than they'd otherwise occur.
                     delay_days = max(
                         0,
                         int(
@@ -2117,12 +2115,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             * self.module.parameters["scale_factor_severity_disruption_and_delay"]
                             * self.module.parameters["delay_in_seeking_care_weather"]
                         )
-                        + (item.topen - item.tclose).days  # negative: subtracts the window
+                        + (item.tclose - item.topen).days  # positive, adds window width to delay
                     )
 
-                    # For time-sensitive modules (pregnancy/labour), cap the delay so the
-                    # rescheduled date never exceeds the original tclose — beyond that point
-                    # the event is clinically meaningless or dangerous.
+                    # for time-sensitive modules, cap delay so rescheduled date never exceeds tclose
                     if item.hsi_event.module.__class__.__name__ in TIME_SENSITIVE_MODULES:
                         max_allowable_days = max(0, (item.tclose - self.sim.date).days)
                         delay_days = min(delay_days, max_allowable_days)
