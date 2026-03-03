@@ -35,7 +35,6 @@ dependencies = [
     "azure-storage-file-share",
     # For saving and loading simulation state
     "dill",
-    "sdv",
 ]
 description = "Thanzi la Onse Epidemiology Model"
 dynamic = ["version"]
@@ -51,6 +50,7 @@ dev = [
     "pytest-xdist",
     "virtualenv",
     "tox",
+    "pytest_resource_usage",
     # Linting
     "isort",
     "pylint",

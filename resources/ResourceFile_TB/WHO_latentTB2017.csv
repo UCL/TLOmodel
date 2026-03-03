@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:fada3235151a7d9d5ac3c89ad1a46e792d283a64677601cd941c6ccee8caf527
-size 1871
+variable,definition,value
+year,,2017
+source_hh,Source of estimate of average household size,DHS 2015
+e_hh_size,Estimated average household size,4.508918
+prevtx_data_available,Are data available on the number of children aged under 5 who are household contacts of TB cases and started on TB preventive therapy?,60
+newinc_con04_prevtx,Number of children aged under 5 started on TB preventive therapy who are household contacts of bacteriologically-confirmed new and relapse TB cases notified,3068
+ptsurvey_newinc,Number of bacteriologically-confirmed TB new and relapse cases notified in the reporting year whose medical records or treatment cards were included in a survey,
+ptsurvey_newinc_con04_prevtx,Number of children aged under 5 started on TB preventive therapy who are household contacts of the TB cases in ptsurvey_newinc,
+e_prevtx_eligible,Estimated number of children aged under 5 who are household contacts of TB cases who are eligible for TB preventive therapy,4400
+e_prevtx_eligible_hi,Estimated number of children aged under 5 who are household contacts of TB cases who are eligible for TB preventive therapy: high bound,4000
+e_prevtx_eligible_lo,Estimated number of children aged under 5 who are household contacts of TB cases who are eligible for TB preventive therapy: low bound,4800
+ e_prevtx_kids_pct,Estimated % of children received TB preventive therapy aged under 5 who are household contacts of TB cases and who are eligible for TB preventive therapy,69
+ e_prevtx_kids_pct_hi,Estimated % of children received TB preventive therapy aged under 5 who are household contacts of TB cases and who are eligible for TB preventive therapy: High bound,64
+ e_prevtx_kids_pct_lo,Estimated % of children received TB preventive therapy aged under 5 who are household contacts of TB cases and who are eligible for TB preventive therapy: Low bound,76

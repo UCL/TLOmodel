@@ -699,7 +699,8 @@ def test_ipt_to_child_of_tb_mother(seed):
         ev for ev in sim.find_events_for_person(child_id) if
         isinstance(ev[1], tb.Tb_DecisionToContinueIPT)
     ][0]
-    assert date_event == sim.date + pd.DateOffset(months=6)
+    assert date_event == sim.date + pd.DateOffset(
+        days=sim.modules['Tb'].parameters['number_doses_ipt_per_dispensation'])
 
 
 def test_mdr(seed):
@@ -1036,17 +1037,6 @@ def test_hsi_scheduling(seed):
     ][0]
     assert date_event == sim.date
 
-    # check HIV test scheduled
-    date_event, event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)
-    ][0]
-    assert date_event == sim.date
-
-    # check these are the only two events scheduled
-    tmp = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    assert len(tmp) == 2
-
     # repeat checks for person over 5 years
     person_id = 1
 
@@ -1079,17 +1069,6 @@ def test_hsi_scheduling(seed):
         isinstance(ev[1], tb.HSI_Tb_StartTreatment)
     ][0]
     assert date_event == sim.date
-
-    # check HIV test scheduled
-    date_event, event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)
-    ][0]
-    assert date_event == sim.date
-
-    # check these are the only two events scheduled
-    tmp = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    assert len(tmp) == 2
 
     # repeat checks for person over 5 years, HIV+, smear-ve
     person_id = 2

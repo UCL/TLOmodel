@@ -26,7 +26,7 @@ class IndividualProperties:
     ):
         self._finalized = False
         self._read_only = read_only
-        self._property_cache: Dict[str, Any] = {}
+        self._property_cache: Dict[str, Any] = {'person_id': person_id}
         # Avoid storing a reference to population_dataframe internally by mediating
         # access via closures to guard against direct access
         self._get_value_at = lambda key: population_dataframe.at[person_id, key]

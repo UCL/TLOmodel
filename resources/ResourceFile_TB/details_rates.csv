@@ -1,3 +1,23 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:2918bf8b9c4d62601a9e9dde52cf60de3cc8caac9b2a68965f5f470914ce57fd
-size 1422
+parameter,value1,value2,value3,value4,monthly_rate,monthly_probability,Unnamed: 7,source,Unnamed: 9
+prop_fast_progressor,0.14,,,,,,,vynnycky,
+transmission_rate,4.9,,,,,,,juan,
+annual_progression_to_active_rate,0.05,,,,0.004166666666666667,0.004157998154890041,,horsburgh,
+rr_tb_with_hiv_stages,3.44,6.76,13.28,26.06,,,,williams_pnas2010,
+rr_tb_art,0.35,,,,,,,suthar_juan,
+rr_tb_ipt,0.63,,,,,,,rangaka_juan,
+rr_tb_malnourished,2.1,,,,,,,lonroth2010_dcp3,
+rr_tb_diabetes1,3.0,,,,,,,joen2008_dcp3,
+rr_tb_alcohol,2.9,,,,,,,lonroth2008_dcp3,
+rr_tb_smoking,2.6,,,,,,,lin2007_dcp3,
+rr_tb_pollution,1.5,,,,,,,lin2007_dcp3,
+rel_infectiousness_hiv,0.68,,,,,,,juan,
+annual_rate_self_cure_old_value,0.2,,,,0.016666666666666666,0.01652854617838251,,dye_1998_lancet,
+annual_rate_self_cure,0.33,,,,,,,Tiemersma,https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3070694/
+tb_mortality_rate,0.15,,,,0.012499999999999999,0.012422199506118559,,juan,
+tb_mortality_hiv_rate,0.84,,,,0.06999999999999999,0.06760618009405173,,juan,
+prop_mdr2010,0.0186,,,,,,,abouyannis,
+prop_mdr_new,0.075,,,,,,,who2017reports,
+prop_mdr_retreated,0.064,,,,,,,who2017reports,
+rate_relapse_tx_complete,0.032,,,,0.0026666666666666666,0.002663114269499056,,juan_tableparams,
+rate_relapse_tx_incomplete,0.14,,,,0.011666666666666667,0.011598875001476161,,juan_tableparams,
+rate_relapse_2yrs,0.0015,,,,0.000125,0.00012499218782546784,,juan_tableparams,
