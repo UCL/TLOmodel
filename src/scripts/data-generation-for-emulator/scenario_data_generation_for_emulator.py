@@ -212,7 +212,7 @@ class TrackIndividualHistories(BaseScenario):
             get_parameters_for_status_quo(),
             {
                 "HealthSystem": {
-                    "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
+                    "mode_appt_constraints": 1,                 
                 },
                 "IndividualHistoryTracker": {
                     "generate_emulator_data": True,

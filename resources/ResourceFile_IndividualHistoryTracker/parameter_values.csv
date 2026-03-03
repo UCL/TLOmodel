@@ -1,3 +1,4 @@
 parameter_name,value,param_label,prior_min,prior_max,prior_note
 modules_of_interest,"[""*""]",scenario,"N/A","N/A","N/A"
 events_to_ignore,"[""AgeUpdateEvent"",""HealthSystemScheduler"",""SimplifiedBirthsPoll"",""DirectBirth"",""LifestyleEvent"",""TbActiveCasePollGenerateData"",""HivPollingEventForDataGeneration"",""RTIPollingEvent""]",scenario,"N/A","N/A","N/A"
+generate_emulator_data,True,scenario,"N/A","N/A","N/A"

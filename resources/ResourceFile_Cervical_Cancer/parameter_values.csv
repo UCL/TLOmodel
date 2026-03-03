@@ -53,3 +53,4 @@ months_to_next_appt_treated_12_to_36_mo_ago,6,local,1,36,vague prior,Missing
 months_to_next_appt_treated_36_to_60_mo_ago,12,local,1,36,vague prior,Missing
 palliative_care_interval_months,1,local,0.5,12,vague prior,Missing
 main_polling_frequency_months,1,undetermined,1,12,design decision,N/A
+generate_emulator_data,False,scenario,'N/A','N/A','N/A'
