@@ -2449,6 +2449,8 @@ fig, axes = plot_funding_and_program_by_program(
     ncols=5,
     stat_central="central",
 )
+plt.savefig(results_folder / "programme_costs_vs_funding_contractions.png")
+
 plt.show()
 
 

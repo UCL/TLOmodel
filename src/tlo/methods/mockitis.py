@@ -315,6 +315,7 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
             )
             schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
+
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This event is occurring regularly at one monthly intervals and controls the infection process
