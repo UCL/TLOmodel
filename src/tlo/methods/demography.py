@@ -233,9 +233,8 @@ class Demography(Module):
         )["Fname"]
 
         # density by district
-        gpd.read_file(resourcefilepath / "mapping" / "ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
-
-        self.parameters["worldpop_gdf"] = gpd.read_file(resourcefilepath / "demography" / "worldpop_density_with_districts.shp")
+        self.parameters["worldpop_gdf"] = (
+            gpd.read_file(resourcefilepath / "demography" / "worldpop_density_with_districts.shp"))
 
 
 

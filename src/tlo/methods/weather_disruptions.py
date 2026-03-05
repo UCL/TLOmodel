@@ -4,10 +4,8 @@ from typing import Dict, Optional
 import numpy as np
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Types, logging
 from tlo.events import (
-    Event,
-    IndividualScopeEventMixin,
     PopulationScopeEventMixin,
     Priority,
     RegularEvent,
@@ -15,12 +13,7 @@ from tlo.events import (
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import (
-    LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2,
-    FacilityInfo,
-    HSI_Event,
-    HSIEventDetails,
     HSIEventQueueItem,
-    HSIEventWrapper,
 )
 from tlo.util import read_csv_files
 
