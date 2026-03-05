@@ -1528,6 +1528,7 @@ class HealthSystem(Module):
                 hsi_event_name=event_details.event_name,
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
+                real_facility_id=facility_id,
             )
 
     def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None, clinic=None):
@@ -1584,6 +1585,7 @@ class HealthSystem(Module):
             hsi_event_name=event_details.event_name,
             appt_footprint=event_details.appt_footprint,
             level=event_details.facility_level,
+            real_facility_id=facility_id,
         )
 
     def log_current_capabilities_and_usage(self, clinic_name):
@@ -2182,6 +2184,7 @@ class HealthSystemSummaryCounter:
         self._treatment_ids = defaultdict(int)
         self._appts = defaultdict(int)
         self._appts_by_level = {_level: defaultdict(int) for _level in ("0", "1a", "1b", "2", "3", "4")}
+        self._hsi_by_real_facility = defaultdict(int)
 
         self._no_blank_appt_treatment_ids = defaultdict(int)
         self._no_blank_appt_appts = defaultdict(int)
@@ -2190,15 +2193,20 @@ class HealthSystemSummaryCounter:
         self._never_ran_treatment_ids = defaultdict(int)
         self._never_ran_appts = defaultdict(int)
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ("0", "1a", "1b", "2", "3", "4")}
+        self._never_ran_by_real_facility = defaultdict(int)
 
         self._frac_time_used_overall = defaultdict(list)
         self._sum_of_daily_frac_time_used_by_facID_and_officer = defaultdict(Counter)
 
     def record_hsi_event(
-        self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str
+        self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str,
+        real_facility_id: Optional[int] = None,
     ) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
         self._treatment_ids[treatment_id] += 1
+
+        if real_facility_id is not None and real_facility_id != -99:
+            self._hsi_by_real_facility[real_facility_id] += 1
 
         for appt_type, number in appt_footprint:
             self._appts[appt_type] += number
@@ -2211,10 +2219,13 @@ class HealthSystemSummaryCounter:
                 self._no_blank_appt_by_level[level][appt_type] += number
 
     def record_never_ran_hsi_event(
-        self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str
+        self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str,
+        real_facility_id: Optional[int] = None,
     ) -> None:
         """Add information about a never-ran `HSI_Event` to the running summaries."""
         self._never_ran_treatment_ids[treatment_id] += 1
+        if real_facility_id is not None and real_facility_id != -99:
+            self._never_ran_by_real_facility[real_facility_id] += 1
 
         for appt_type, number in appt_footprint:
             self._never_ran_appts[appt_type] += number
@@ -2244,6 +2255,7 @@ class HealthSystemSummaryCounter:
                 "Number_By_Appt_Type_Code": self._appts,
                 "Number_By_Appt_Type_Code_And_Level": self._appts_by_level,
                 "squeeze_factor": {t_id: 0.0 for t_id, v in self._treatment_ids.items()},
+                "Number_By_RealFacility_ID": dict(self._hsi_by_real_facility),
             },
         )
         logger_summary.info(
@@ -2264,6 +2276,7 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._never_ran_treatment_ids,
                 "Number_By_Appt_Type_Code": self._never_ran_appts,
                 "Number_By_Appt_Type_Code_And_Level": self._never_ran_appts_by_level,
+                "Number_By_RealFacility_ID": dict(self._never_ran_by_real_facility),
             },
         )
 
