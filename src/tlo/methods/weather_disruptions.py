@@ -30,6 +30,9 @@ logger.setLevel(logging.INFO)
 logger_summary = logging.getLogger(f"{__name__}.summary")
 logger_summary.setLevel(logging.INFO)
 
+# HSI modules with hard clinical deadlines — delay must never push topen past tclose
+TIME_SENSITIVE_MODULES = {'Labour', 'PostnatalCare', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy'}
+
 
 class WeatherDisruptions(Module):
     """
@@ -38,22 +41,20 @@ class WeatherDisruptions(Module):
     healthcare seeking behavior and appointment scheduling.
     """
 
-    # Declare dependencies
     INIT_DEPENDENCIES = {"Demography", "HealthSeekingBehaviour"}
     OPTIONAL_INIT_DEPENDENCIES = {"HealthSystem"}
     METADATA = {Metadata.USES_HEALTHSYSTEM}
 
     PARAMETERS = {
-        # Disruption-related parameters
         "projected_precip_disruptions": Parameter(
             Types.REAL, "Probabilities of precipitation-mediated disruptions to services by month, year, and clinic."
         ),
         "scale_factor_prob_disruption": Parameter(
             Types.REAL,
-            "Due to unknown behaviours (from patient and health practitioner), broken chains of events, etc, which cause discrepancies "
-            "between the estimated disruptions and those modelled in TLO, rescale the original probability of disruption.",
+            "Due to unknown behaviours (from patient and health practitioner), broken chains of events, etc, which "
+            "cause discrepancies between the estimated disruptions and those modelled in TLO, rescale the original "
+            "probability of disruption.",
         ),
-        # Scenario-related parameters
         "climate_ssp": Parameter(
             Types.STRING,
             "Which future shared socioeconomic pathway (determines degree of warming) is under consideration. "
@@ -70,7 +71,6 @@ class WeatherDisruptions(Module):
         "services_affected_precip": Parameter(
             Types.STRING, "Which modelled services can be affected by weather. Options are all, none"
         ),
-        # Rescheduling parameters
         "delay_in_seeking_care_weather": Parameter(
             Types.REAL,
             "If faced with a climate disruption, and it is determined the individual will "
@@ -148,7 +148,7 @@ class WeatherDisruptions(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # Store parameters
+        # Constructor arguments are parked here so they can override CSV defaults in read_parameters
         self.arg_climate_ssp = climate_ssp
         self.arg_climate_model_ensemble_model = climate_model_ensemble_model
         self.arg_year_effective = year_effective_climate_disruptions
@@ -160,21 +160,42 @@ class WeatherDisruptions(Module):
         self.arg_scale_factor_severity = scale_factor_severity_disruption_and_delay
         self.arg_prop_supply_side = prop_supply_side_disruptions
 
-        # Counters for logging
+        self._reset_monthly_counters_internal()
+
+    def _reset_monthly_counters_internal(self):
+        """Initialise or reset all monthly counters (overall, per-district, per-facility×treatment)."""
+        # Overall scalars
         self._disruptions_cancelled_count = 0
         self._disruptions_delayed_count = 0
-        self._disruptions_checked_count = 0
+        self._disruptions_hsi_total_count = 0
         self._supply_side_disruptions_count = 0
         self._demand_side_disruptions_count = 0
 
-        self._disruptions_by_district = {}
-        self._cancelled_by_district = {}
-        self._delayed_by_district = {}
-        self._supply_side_by_district = {}
-        self._demand_side_by_district = {}
+        # Per-district counters (district_name -> int)
+        self._hsi_total_by_district: Dict[str, int] = {}
+        self._cancelled_by_district: Dict[str, int] = {}
+        self._delayed_by_district: Dict[str, int] = {}
+        self._supply_side_by_district: Dict[str, int] = {}
+        self._demand_side_by_district: Dict[str, int] = {}
 
-    def read_parameters(self, resourcefilepath: str | Path) -> None:
-        # Override with values from scenario files
+        # Per-facility × per-treatment counters ("facility_id|TREATMENT_ID" -> int)
+        self._hsi_total_by_facility_treatment: Dict[str, int] = {}
+        self._cancelled_by_facility_treatment: Dict[str, int] = {}
+        self._delayed_by_facility_treatment: Dict[str, int] = {}
+        self._supply_side_by_facility_treatment: Dict[str, int] = {}
+        self._demand_side_by_facility_treatment: Dict[str, int] = {}
+
+    def _increment_district_counter(self, counter_dict: Dict, district: str, n: int = 1):
+        counter_dict[district] = counter_dict.get(district, 0) + n
+
+    def _increment_facility_treatment_counter(
+        self, counter_dict: Dict, facility_id: str, treatment_id: str, n: int = 1
+    ):
+        key = f"{facility_id}|{treatment_id}"
+        counter_dict[key] = counter_dict.get(key, 0) + n
+
+    def read_parameters(self, resourcefilepath) -> None:
+        # Constructor arguments override CSV defaults where provided
         if self.arg_climate_ssp is not None:
             self.parameters["climate_ssp"] = self.arg_climate_ssp
         if self.arg_climate_model_ensemble_model is not None:
@@ -196,24 +217,21 @@ class WeatherDisruptions(Module):
         if self.arg_prop_supply_side is not None:
             self.parameters["prop_supply_side_disruptions"] = self.arg_prop_supply_side
 
-        # Read in parameters
         self.load_parameters_from_dataframe(
             read_csv_files(resourcefilepath / 'ResourceFile_WeatherDisruption', files='parameter_values')
         )
 
-        # Validate year
         if self.parameters["year_effective_climate_disruptions"] < 2025:
             logger.warning(
                 key="message",
-                data=f"year_effective set to {self.parameters['year_effective_climate_disruptions']}, minimum is 2025. Setting to 2025."
+                data=f"year_effective set to {self.parameters['year_effective_climate_disruptions']}, "
+                     f"minimum is 2025. Setting to 2025."
             )
             self.parameters["year_effective_climate_disruptions"] = 2025
 
-        # Load precipitation data
         ssp = self.parameters["climate_ssp"]
         model = self.parameters["climate_model_ensemble_model"]
 
-        # Load five-day and monthly precipitation
         precip_5day = read_csv_files(
             resourcefilepath / 'ResourceFile_WeatherDisruption',
             files=f"ResourceFile_Precipitation_Disruptions_{ssp}_{model}_window_prediction_weather_by_facility.csv"
@@ -226,17 +244,12 @@ class WeatherDisruptions(Module):
         precip_5day = precip_5day.iloc[:, 1:]
         precip_monthly = monthly_file.iloc[:, 1:]
 
-        # Remove zero-sum columns
-        zero_cols_monthly = precip_monthly.columns[precip_monthly.sum() == 0]
-        zero_cols_5day = precip_5day.columns[precip_5day.sum() == 0]
-
-        precip_monthly = precip_monthly.drop(columns=zero_cols_monthly)
-        precip_5day = precip_5day.drop(columns=zero_cols_5day)
+        precip_monthly = precip_monthly.drop(columns=precip_monthly.columns[precip_monthly.sum() == 0])
+        precip_5day = precip_5day.drop(columns=precip_5day.columns[precip_5day.sum() == 0])
 
         self.parameters["precipitation_data_monthly"] = precip_monthly
         self.parameters["precipitation_data_five_day"] = precip_5day
 
-        # Load facility characteristics
         self.parameters["facility_characteristics"] = read_csv_files(
             resourcefilepath / 'ResourceFile_WeatherDisruption',
             files="ResourceFile_Facility_Characteristics.csv"
@@ -249,62 +262,61 @@ class WeatherDisruptions(Module):
         super().initialise_population(population=population)
 
     def initialise_simulation(self, sim):
-        # Calculate disruptions
         self.build_disruption_probabilities()
-
-        # Schedule monthly logger
-        first_log_date = (sim.date + DateOffset(months=1)).replace(day=1) - DateOffset(days=1)
-        sim.schedule_event(WeatherDisruptionsMonthlyLogger(self), first_log_date)
+        # Use sim.start_date — RegularEvent handles all subsequent monthly firings automatically
+        sim.schedule_event(WeatherDisruptionsMonthlyLogger(self), sim.start_date)
 
     def on_birth(self, mother_id, child_id):
         pass
 
     def on_simulation_end(self):
-        # Overall statistics
         logger_summary.info(
             key="weather_disruptions_final",
             data={
                 "year": self.sim.date.year,
                 "month": self.sim.date.month,
-                "checked": self._disruptions_checked_count,
+                "hsi_total": self._disruptions_hsi_total_count,
                 "cancelled": self._disruptions_cancelled_count,
                 "delayed": self._disruptions_delayed_count,
                 "supply_side": self._supply_side_disruptions_count,
                 "demand_side": self._demand_side_disruptions_count,
             }
         )
-
-        # District-level statistics
         logger_summary.info(
             key="weather_disruptions_final_by_district",
             data={
                 "year": self.sim.date.year,
                 "month": self.sim.date.month,
-                "checked_by_district": dict(self._disruptions_by_district),
+                "hsi_total_by_district": dict(self._hsi_total_by_district),
                 "cancelled_by_district": dict(self._cancelled_by_district),
                 "delayed_by_district": dict(self._delayed_by_district),
                 "supply_side_by_district": dict(self._supply_side_by_district),
                 "demand_side_by_district": dict(self._demand_side_by_district),
             }
         )
+        logger_summary.info(
+            key="weather_disruptions_final_by_facility_treatment",
+            data={
+                "year": self.sim.date.year,
+                "month": self.sim.date.month,
+                "hsi_total_by_facility_treatment": dict(self._hsi_total_by_facility_treatment),
+                "cancelled_by_facility_treatment": dict(self._cancelled_by_facility_treatment),
+                "delayed_by_facility_treatment": dict(self._delayed_by_facility_treatment),
+                "supply_side_by_facility_treatment": dict(self._supply_side_by_facility_treatment),
+                "demand_side_by_facility_treatment": dict(self._demand_side_by_facility_treatment),
+            }
+        )
 
     def reset_monthly_counters(self):
-        self._disruptions_cancelled_count = 0
-        self._disruptions_delayed_count = 0
-        self._disruptions_checked_count = 0
-        self._supply_side_disruptions_count = 0
-        self._demand_side_disruptions_count = 0
+        self._reset_monthly_counters_internal()
 
-        self._disruptions_by_district = {}
-        self._cancelled_by_district = {}
-        self._delayed_by_district = {}
-        self._supply_side_by_district = {}
-        self._demand_side_by_district = {}
+    # -------------------------------------------------------------------------
+    # Linear model construction
+    # -------------------------------------------------------------------------
 
     def build_linear_models(self):
         p = self.parameters
 
-        # ===== BASELINE MODEL (no weather) =====
         self.lm_baseline = LinearModel(
             LinearModelType.ADDITIVE,
             0,
@@ -325,7 +337,6 @@ class WeatherDisruptions(Module):
             .otherwise(0.0),
         )
 
-        # ===== PRECIPITATION MODEL (with weather) =====
         self.lm_precipitation = LinearModel(
             LinearModelType.ADDITIVE,
             0,
@@ -344,7 +355,6 @@ class WeatherDisruptions(Module):
             .when('Government', p['precipitation_coef_government'])
             .when('Private', p['precipitation_coef_private'])
             .otherwise(0.0),
-            # Precip variables
             Predictor('precip_monthly', external=True).apply(lambda x: p['precipitation_coef_precip_monthly'] * x),
             Predictor('precip_5day', external=True).apply(lambda x: p['precipitation_coef_precip_5day'] * x),
             Predictor('lag_4month', external=True).apply(lambda x: p['precipitation_coef_lag_4month'] * x),
@@ -354,21 +364,16 @@ class WeatherDisruptions(Module):
 
     def build_disruption_probabilities(self):
         p = self.parameters
-
-        # Build the linear models
         self.build_linear_models()
 
-        # Get data (includes 2024 for lag calculation)
         precip_monthly_full = p["precipitation_data_monthly"]
         precip_5day_full = p["precipitation_data_five_day"]
 
-        # Calculate lag variables on FULL data (including 2024)
         lag_4month_monthly = precip_monthly_full.shift(4)
         lag_9month_monthly = precip_monthly_full.shift(9)
         lag_1_5day = precip_5day_full.shift(1)
 
-        # Skip 2024 (first 12 rows) for predictions - keep only 2025 onwards
-        start_idx = 12  # Skip 2024
+        start_idx = 12  # Skip 2024 rows; predictions run from 2025 onwards
         precip_monthly = precip_monthly_full.iloc[start_idx:].reset_index(drop=True)
         precip_5day = precip_5day_full.iloc[start_idx:].reset_index(drop=True)
         lag_4month_monthly = lag_4month_monthly.iloc[start_idx:].reset_index(drop=True)
@@ -377,14 +382,12 @@ class WeatherDisruptions(Module):
 
         facility_chars = p["facility_characteristics"]
         facility_chars = facility_chars.set_index(facility_chars.columns[0])
-        facility_chars = facility_chars.T  # First column is facility ID
+        facility_chars = facility_chars.T
 
         facilities = precip_monthly.columns.tolist()
         n_time = len(precip_monthly)
 
-        # Create time index starting from 2025
-        year = 2025
-        month = 1
+        year, month = 2025, 1
         time_index = []
         for _ in range(n_time):
             time_index.append((year, month))
@@ -392,55 +395,39 @@ class WeatherDisruptions(Module):
             if month > 12:
                 month, year = 1, year + 1
 
-        # Build list to store all facility-month combinations
         rows = []
-
         for t_idx, (year, month) in enumerate(time_index):
             for fac_idx, fac in enumerate(facilities):
                 if fac not in facility_chars.index:
                     continue
 
-                # Get precipitation values
                 precip_m = precip_monthly.iloc[t_idx, fac_idx]
                 precip_5d = precip_5day.iloc[t_idx, fac_idx]
-
-                # Get lag values
-                lag_4m = lag_4month_monthly.iloc[t_idx, fac_idx] if not pd.isna(
-                    lag_4month_monthly.iloc[t_idx, fac_idx]) else 0.0
-                lag_9m = lag_9month_monthly.iloc[t_idx, fac_idx] if not pd.isna(
-                    lag_9month_monthly.iloc[t_idx, fac_idx]) else 0.0
-                lag_1_5d = lag_1_5day.iloc[t_idx, fac_idx] if not pd.isna(lag_1_5day.iloc[t_idx, fac_idx]) else 0.0
-
-                # Get facility characteristics
-                dist = facility_chars.at[fac, "min_distance_to_clinic"]
-                altitude = facility_chars.at[fac, "altitude"]
-                urban = facility_chars.at[fac, "urban_rural"]
-                zone = facility_chars.at[fac, "zone"]
-                owner = facility_chars.at[fac, "ownership"]
+                lag_4m = lag_4month_monthly.iloc[t_idx, fac_idx]
+                lag_9m = lag_9month_monthly.iloc[t_idx, fac_idx]
+                lag_1_5d = lag_1_5day.iloc[t_idx, fac_idx]
 
                 rows.append({
                     'RealFacility_ID': fac,
                     'year': year,
                     'month': month,
-                    'min_distance_to_clinic': dist,
-                    'altitude': altitude,
-                    'urban_rural': urban,
-                    'zone': zone,
-                    'ownership': owner,
+                    'min_distance_to_clinic': facility_chars.at[fac, "min_distance_to_clinic"],
+                    'altitude': facility_chars.at[fac, "altitude"],
+                    'urban_rural': facility_chars.at[fac, "urban_rural"],
+                    'zone': facility_chars.at[fac, "zone"],
+                    'ownership': facility_chars.at[fac, "ownership"],
                     'precip_monthly': precip_m,
                     'precip_5day': precip_5d,
-                    'lag_4month': lag_4m,
-                    'lag_9month': lag_9m,
-                    'lag_1_5day': lag_1_5d,
+                    'lag_4month': 0.0 if pd.isna(lag_4m) else lag_4m,
+                    'lag_9month': 0.0 if pd.isna(lag_9m) else lag_9m,
+                    'lag_1_5day': 0.0 if pd.isna(lag_1_5d) else lag_1_5d,
                 })
 
-        # Create dataframe with all facility-month-year combinations
         facility_month_df = pd.DataFrame(rows)
-        facility_month_df['min_distance_to_clinic'] = pd.to_numeric(facility_month_df['min_distance_to_clinic'],
-                                                                    errors='coerce')
+        facility_month_df['min_distance_to_clinic'] = pd.to_numeric(
+            facility_month_df['min_distance_to_clinic'], errors='coerce')
         facility_month_df['altitude'] = pd.to_numeric(facility_month_df['altitude'], errors='coerce')
 
-        # Baseline predictions (no weather)
         log_pred_baseline = self.lm_baseline.predict(
             facility_month_df,
             rng=None,
@@ -450,10 +437,9 @@ class WeatherDisruptions(Module):
             altitude=facility_month_df['altitude'].values,
             urban=facility_month_df['urban_rural'].values,
             zone=facility_month_df['zone'].values,
-            ownership=facility_month_df['ownership'].values
+            ownership=facility_month_df['ownership'].values,
         )
 
-        # Precipitation predictions (with all weather variables)
         log_pred_precip = self.lm_precipitation.predict(
             facility_month_df,
             rng=None,
@@ -468,146 +454,153 @@ class WeatherDisruptions(Module):
             lag_1_5day=facility_month_df['lag_1_5day'].values,
             urban=facility_month_df['urban_rural'].values,
             zone=facility_month_df['zone'].values,
-            ownership=facility_month_df['ownership'].values
+            ownership=facility_month_df['ownership'].values,
         )
 
-        # Convert from log scale
         pred_baseline = np.exp(log_pred_baseline)
         pred_precip = np.exp(log_pred_precip)
 
-        # Calculate deficit (positive = appointments lost)
         deficit = pred_baseline - pred_precip
         prob_disruption = np.where(
             pred_baseline > 0,
             np.clip(deficit / pred_baseline, 0, 1),
-            0
+            0,
         )
 
-        # Add predictions to dataframe
         facility_month_df['service'] = p["services_affected_precip"]
         facility_month_df['disruption'] = prob_disruption
         facility_month_df['pred_baseline'] = pred_baseline
         facility_month_df['pred_precip'] = pred_precip
 
-        # Keep only the columns needed for lookup
         self.parameters["projected_precip_disruptions"] = facility_month_df[[
             'RealFacility_ID', 'year', 'month', 'service', 'disruption',
             'pred_baseline', 'pred_precip'
         ]].copy()
 
+    # -------------------------------------------------------------------------
+    # Core disruption logic
+    # -------------------------------------------------------------------------
+
     def check_hsi_for_disruption(self, hsi_event_item: HSIEventQueueItem, current_date: Date) -> bool:
         """
         Check if an HSI event should be disrupted due to climate/weather conditions.
-        Returns True if event was disrupted (and should not proceed), False otherwise.
+        Returns True if the event was disrupted (and should not proceed), False otherwise.
         """
         year = current_date.year
         month = current_date.month
-        year = 2025
-        # Check if climate disruptions are active
+
         if year < self.parameters["year_effective_climate_disruptions"]:
             return False
 
         if self.parameters["services_affected_precip"] in ("none", None):
             return False
 
-        # Get facility information
         fac_level = hsi_event_item.hsi_event.facility_info.level
         person_id = hsi_event_item.hsi_event.target
         facility_used = self.sim.population.props.at[person_id, f"level_{fac_level}"]
 
-        # Check if this facility has disruption data
         if facility_used not in self.parameters["projected_precip_disruptions"]["RealFacility_ID"].values:
             return False
 
-        # Look up disruption probability
         prob_disruption = self._get_disruption_probability(
             facility_id=facility_used,
             year=year,
             month=month,
-            service=self.parameters["services_affected_precip"]
+            service=self.parameters["services_affected_precip"],
         )
 
-        # Determine if disruption occurs
-        if self.rng.binomial(1, prob_disruption) == 0:
+        if prob_disruption == 0.0 or self.rng.binomial(1, prob_disruption) == 0:
             return False
 
-        # Disruption occurred - handle it
+        district = self.sim.population.props.at[person_id, "district_of_residence"]
+        treatment_id = getattr(hsi_event_item.hsi_event, "TREATMENT_ID", "unknown")
+
         self._handle_disruption(
             hsi_event_item=hsi_event_item,
             prob_disruption=prob_disruption,
-            current_date=current_date
+            current_date=current_date,
+            facility_id=str(facility_used),
+            district=str(district),
+            treatment_id=str(treatment_id),
         )
-        print("DISRUPTION")
         return True
 
-    def _get_disruption_probability(self, facility_id: int, year: int, month: int, service: str) -> float:
-        """Get the disruption probability for a given facility/year/month/service."""
+    def _get_disruption_probability(self, facility_id, year: int, month: int, service: str) -> float:
+        """Look up and scale the disruption probability for a given facility/year/month/service."""
         disruption_probs = self.parameters["projected_precip_disruptions"]
-
-        prob_disruption = disruption_probs.loc[
+        mask = (
             (disruption_probs["RealFacility_ID"] == facility_id)
             & (disruption_probs["year"] == year)
             & (disruption_probs["month"] == month)
-            & (disruption_probs["service"] == service),
-            "disruption",
-        ]
-        if prob_disruption.empty:
-            return 0.0
-
-        # Scale by parameter and cap at 1.0
-        return min(
-            float(prob_disruption.iloc[0]) * self.parameters["scale_factor_prob_disruption"],
-            1.0
+            & (disruption_probs["service"] == service)
         )
+        prob = disruption_probs.loc[mask, "disruption"]
+        if prob.empty:
+            return 0.0
+        return min(float(prob.iloc[0]) * self.parameters["scale_factor_prob_disruption"], 1.0)
 
-    def _handle_disruption(self, hsi_event_item: HSIEventQueueItem, prob_disruption: float, current_date: Date):
-        """Handle a disruption event - determine supply/demand side, reschedule or cancel, and log."""
-        # Determine if supply-side (affects capabilities in mode 2)
-        is_supply_side = self.rng.binomial(1, self.parameters["prop_supply_side_disruptions"])
+    def _handle_disruption(
+        self,
+        hsi_event_item: HSIEventQueueItem,
+        prob_disruption: float,
+        current_date: Date,
+        facility_id: str,
+        district: str,
+        treatment_id: str,
+    ):
+        """
+        Handle a confirmed disruption: determine supply/demand side, reschedule or cancel,
+        and update all counters (overall, district, facility×treatment).
+        """
+        is_supply_side = bool(self.rng.binomial(1, self.parameters["prop_supply_side_disruptions"]))
 
         if is_supply_side and self.sim.modules["HealthSystem"].mode_appt_constraints == 2:
-            # Supply-side disruption - add footprint to running total
+            clinic = hsi_event_item.clinic_eligibility
             footprint = hsi_event_item.hsi_event.expected_time_requests
-            self.sim.modules["HealthSystem"].running_total_footprint.update(footprint)
+            self.sim.modules["HealthSystem"].running_total_footprint[clinic].update(footprint)
             self._supply_side_disruptions_count += 1
+            self._increment_district_counter(self._supply_side_by_district, district)
+            self._increment_facility_treatment_counter(self._supply_side_by_facility_treatment, facility_id,
+                                                       treatment_id)
         else:
             self._demand_side_disruptions_count += 1
+            self._increment_district_counter(self._demand_side_by_district, district)
+            self._increment_facility_treatment_counter(self._demand_side_by_facility_treatment, facility_id,
+                                                       treatment_id)
 
-        # Determine if patient will reschedule
-        will_reschedule = self._determine_rescheduling(hsi_event_item, prob_disruption)
+        will_reschedule = self._determine_rescheduling(hsi_event_item)
 
         if will_reschedule:
-            # Calculate delay
-            delay_days = self._calculate_delay(hsi_event_item, prob_disruption)
+            delay_days = self._calculate_delay(hsi_event_item, prob_disruption, current_date)
+            new_topen = current_date + DateOffset(days=delay_days)
 
-            # Reschedule the HSI
             self.sim.modules["HealthSystem"]._add_hsi_event_queue_item_to_hsi_event_queue(
                 priority=hsi_event_item.priority,
                 clinic_eligibility=hsi_event_item.clinic_eligibility,
-                topen=current_date + DateOffset(days=delay_days),
-                tclose=current_date + DateOffset(days=delay_days) + DateOffset(
-                    days=(hsi_event_item.tclose - hsi_event_item.topen).days),
-                hsi_event=hsi_event_item.hsi_event
+                topen=new_topen,
+                tclose=new_topen,  # point-in-time reschedule, matching healthsystem.py convention
+                hsi_event=hsi_event_item.hsi_event,
             )
-
-            # Log as delayed
-            self._log_delayed_hsi(hsi_event_item)
+            self._log_delayed_hsi(hsi_event_item, facility_id=facility_id)
             self._disruptions_delayed_count += 1
+            self._increment_district_counter(self._delayed_by_district, district)
+            self._increment_facility_treatment_counter(self._delayed_by_facility_treatment, facility_id, treatment_id)
         else:
-            # Log as cancelled
-            self._log_cancelled_hsi(hsi_event_item)
+            self._log_cancelled_hsi(hsi_event_item, facility_id=facility_id)
             self._disruptions_cancelled_count += 1
+            self._increment_district_counter(self._cancelled_by_district, district)
+            self._increment_facility_treatment_counter(self._cancelled_by_facility_treatment, facility_id, treatment_id)
 
-        # Track total disruptions
-        self._disruptions_checked_count += 1
+        # Overall hsi_total counter — incremented once per disruption regardless of outcome
+        self._disruptions_hsi_total_count += 1
+        self._increment_district_counter(self._hsi_total_by_district, district)
+        self._increment_facility_treatment_counter(self._hsi_total_by_facility_treatment, facility_id, treatment_id)
 
-    def _determine_rescheduling(self, hsi_event_item: HSIEventQueueItem, prob_disruption: float) -> bool:
+    def _determine_rescheduling(self, hsi_event_item: HSIEventQueueItem) -> bool:
         """Determine if a person will reschedule their appointment after a disruption."""
-        # If health seeking is forced, always reschedule
         if self.sim.modules["HealthSeekingBehaviour"].force_any_symptom_to_lead_to_healthcareseeking:
             return True
 
-        # Otherwise, use health seeking behavior model
         person_id = hsi_event_item.hsi_event.target
         patient = self.sim.population.props.loc[[person_id]]
 
@@ -629,72 +622,124 @@ class WeatherDisruptions(Module):
             ).iloc[0],
             1.0,
         )
-
         return self.rng.random() < will_seek_care_prob
 
-    def _calculate_delay(self, hsi_event_item: HSIEventQueueItem, prob_disruption: float) -> int:
-        """Calculate the delay in days for rescheduling."""
-        return int(
+    def _calculate_delay(
+        self,
+        hsi_event_item: HSIEventQueueItem,
+        prob_disruption: float,
+        current_date: Date,
+    ) -> int:
+        """
+        Calculate the delay in days for rescheduling after a disruption.
+
+        Two adjustments are made relative to the basic urgency×severity calculation:
+
+        1. Window width is added — the rescheduled topen is pushed past the end of the
+           original appointment window, avoiding overlap with the disrupted slot.
+
+        2. For time-sensitive modules (Labour, PostnatalCare, PregnancySupervisor,
+           CareOfWomenDuringPregnancy), the delay is capped so that the new topen
+           never exceeds the original tclose. Rescheduling beyond a clinical deadline
+           would be meaningless and could cause simulation errors.
+        """
+        base_delay = int(
             max(self.parameters["scale_factor_appointment_urgency"] * hsi_event_item.priority, 1)
             * prob_disruption
             * self.parameters["scale_factor_severity_disruption_and_delay"]
             * self.parameters["delay_in_seeking_care_weather"]
         )
 
-    def _log_delayed_hsi(self, hsi_event_item: HSIEventQueueItem):
-        """Log an HSI that was delayed due to weather."""
-        if hasattr(self.sim.modules["HealthSystem"], 'call_and_record_weather_delayed_hsi_event'):
-            self.sim.modules["HealthSystem"].call_and_record_weather_delayed_hsi_event(
+        # Add the original appointment window width so the reschedule opens after the
+        # disrupted window closes rather than potentially overlapping with it
+        window_days = (hsi_event_item.tclose - hsi_event_item.topen).days
+        delay_days = max(0, base_delay + window_days)
+
+        # For time-sensitive clinical events, cap delay so topen never exceeds tclose
+        module_name = hsi_event_item.hsi_event.module.__class__.__name__
+        if module_name in TIME_SENSITIVE_MODULES:
+            max_allowable_days = max(0, (hsi_event_item.tclose - current_date).days)
+            delay_days = min(delay_days, max_allowable_days)
+
+        return delay_days
+
+    def _log_delayed_hsi(self, hsi_event_item: HSIEventQueueItem, facility_id: Optional[str] = None):
+        """Log an HSI that was delayed due to weather, including RealFacility_ID."""
+        hs = self.sim.modules.get("HealthSystem")
+        if hs is not None and hasattr(hs, 'call_and_record_weather_delayed_hsi_event'):
+            hs.call_and_record_weather_delayed_hsi_event(
                 hsi_event=hsi_event_item.hsi_event,
-                priority=hsi_event_item.priority
+                priority=hsi_event_item.priority,
+                real_facility_id=facility_id,
             )
 
-    def _log_cancelled_hsi(self, hsi_event_item: HSIEventQueueItem):
-        """Log an HSI that was cancelled due to weather."""
-        hsi_event_item.hsi_event.never_ran()
-
-        if hasattr(self.sim.modules["HealthSystem"], 'call_and_record_weather_cancelled_hsi_event'):
-            self.sim.modules["HealthSystem"].call_and_record_weather_cancelled_hsi_event(
+    def _log_cancelled_hsi(self, hsi_event_item: HSIEventQueueItem, facility_id: Optional[str] = None):
+        """
+        Log an HSI that was cancelled due to weather, including RealFacility_ID.
+        never_ran() is called exactly once inside call_and_record_weather_cancelled_hsi_event;
+        do NOT call it here to avoid double invocation.
+        """
+        hs = self.sim.modules.get("HealthSystem")
+        if hs is not None and hasattr(hs, 'call_and_record_weather_cancelled_hsi_event'):
+            hs.call_and_record_weather_cancelled_hsi_event(
                 hsi_event=hsi_event_item.hsi_event,
-                priority=hsi_event_item.priority
+                priority=hsi_event_item.priority,
+                real_facility_id=facility_id,
             )
+        else:
+            # Fallback if HealthSystem doesn't have the weather-specific method
+            hsi_event_item.hsi_event.never_ran()
 
 
 class WeatherDisruptionsMonthlyLogger(RegularEvent, PopulationScopeEventMixin):
-    """Monthly logger for weather disruptions."""
+    """Monthly logger for weather disruptions — overall, by district, and by facility×treatment."""
 
     def __init__(self, module: WeatherDisruptions):
         super().__init__(module, frequency=DateOffset(months=1), priority=Priority.END_OF_DAY)
 
     def apply(self, population):
-        """Log monthly statistics overall and by district."""
+        m = self.module
 
-        # Overall statistics
+        # Overall counts
         logger_summary.info(
             key="weather_disruptions_monthly",
             data={
                 "year": self.sim.date.year,
                 "month": self.sim.date.month,
-                "checked": self.module._disruptions_checked_count,
-                "cancelled": self.module._disruptions_cancelled_count,
-                "delayed": self.module._disruptions_delayed_count,
-                "supply_side": self.module._supply_side_disruptions_count,
-                "demand_side": self.module._demand_side_disruptions_count,
+                "hsi_total": m._disruptions_hsi_total_count,
+                "cancelled": m._disruptions_cancelled_count,
+                "delayed": m._disruptions_delayed_count,
+                "supply_side": m._supply_side_disruptions_count,
+                "demand_side": m._demand_side_disruptions_count,
             }
         )
 
-        # District-level statistics
+        # By district
         logger_summary.info(
             key="weather_disruptions_monthly_by_district",
             data={
                 "year": self.sim.date.year,
                 "month": self.sim.date.month,
-                "checked_by_district": dict(self.module._disruptions_by_district),
-                "cancelled_by_district": dict(self.module._cancelled_by_district),
-                "delayed_by_district": dict(self.module._delayed_by_district),
-                "supply_side_by_district": dict(self.module._supply_side_by_district),
-                "demand_side_by_district": dict(self.module._demand_side_by_district),
+                "hsi_total_by_district": dict(m._hsi_total_by_district),
+                "cancelled_by_district": dict(m._cancelled_by_district),
+                "delayed_by_district": dict(m._delayed_by_district),
+                "supply_side_by_district": dict(m._supply_side_by_district),
+                "demand_side_by_district": dict(m._demand_side_by_district),
             }
         )
 
-        self.module.reset_monthly_counters()
+        # By facility × treatment (keys: "facility_id|TREATMENT_ID")
+        logger_summary.info(
+            key="weather_disruptions_monthly_by_facility_treatment",
+            data={
+                "year": self.sim.date.year,
+                "month": self.sim.date.month,
+                "hsi_total_by_facility_treatment": dict(m._hsi_total_by_facility_treatment),
+                "cancelled_by_facility_treatment": dict(m._cancelled_by_facility_treatment),
+                "delayed_by_facility_treatment": dict(m._delayed_by_facility_treatment),
+                "supply_side_by_facility_treatment": dict(m._supply_side_by_facility_treatment),
+                "demand_side_by_facility_treatment": dict(m._demand_side_by_facility_treatment),
+            }
+        )
+
+        m.reset_monthly_counters()
