@@ -1530,6 +1530,7 @@ class HealthSystem(Module):
                     facility_key = f"{real_facility_id}:{event_details.treatment_id}"
                     self._hsi_event_counts_by_facility_monthly[facility_key] += 1
 
+            # *** CHANGE: pass real_facility_id to summary counter ***
             self._summary_counter.record_hsi_event(
                 treatment_id=event_details.treatment_id,
                 hsi_event_name=event_details.event_name,
@@ -1661,6 +1662,7 @@ class HealthSystem(Module):
                 event_details, len(self._weather_cancelled_hsi_event_details)
             )
             self._weather_cancelled_hsi_event_counts_log_period[event_details_key] += 1
+        # *** CHANGE: pass real_facility_id to summary counter ***
         self._summary_counter.record_weather_cancelled_hsi_event(
             treatment_id=event_details.treatment_id,
             hsi_event_name=event_details.event_name,
@@ -1696,6 +1698,7 @@ class HealthSystem(Module):
                 event_details, len(self._weather_delayed_hsi_event_details)
             )
             self._weather_delayed_hsi_event_counts_log_period[event_details_key] += 1
+        # *** CHANGE: pass real_facility_id to summary counter ***
         self._summary_counter.record_weather_delayed_hsi_event(
             treatment_id=event_details.treatment_id,
             hsi_event_name=event_details.event_name,
@@ -1869,8 +1872,6 @@ class HealthSystem(Module):
             self._write_weather_delayed_hsi_event_counts_to_log_and_reset()
 
     def on_end_of_month(self) -> None:
-        # Write monthly per-RealFacility_ID counts for HSI, cancelled, and delayed events
-        self._summary_counter.write_monthly_facility_counts_to_log_and_reset(self.sim.date)
         self._write_hsi_event_counts_by_facility_to_log_and_reset()
 
         if self._hsi_event_count_log_period == "month":
@@ -2462,15 +2463,10 @@ class HealthSystemSummaryCounter:
 
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)
 
-        # per-facility counts (annual, reset at end of year)
+        # *** NEW: per-facility counts ***
         self._hsi_by_real_facility = defaultdict(int)
         self._weather_cancelled_by_real_facility = defaultdict(int)
         self._weather_delayed_by_real_facility = defaultdict(int)
-
-        # per-facility counts (monthly, reset at end of month)
-        self._hsi_by_real_facility_monthly = defaultdict(int)
-        self._weather_cancelled_by_real_facility_monthly = defaultdict(int)
-        self._weather_delayed_by_real_facility_monthly = defaultdict(int)
 
     def record_hsi_event(
         self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str,
@@ -2486,9 +2482,9 @@ class HealthSystemSummaryCounter:
             for appt_type, number in appt_footprint:
                 self._no_blank_appt_appts[appt_type] += number
                 self._no_blank_appt_by_level[level][appt_type] += number
+        # *** NEW ***
         if real_facility_id and real_facility_id != 'unknown':
             self._hsi_by_real_facility[real_facility_id] += 1
-            self._hsi_by_real_facility_monthly[real_facility_id] += 1
 
     def record_never_ran_hsi_event(
         self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str
@@ -2508,9 +2504,9 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._weather_cancelled_appts[appt_type] += number
             self._weather_cancelled_appts_by_level[level][appt_type] += number
+        # *** NEW ***
         if real_facility_id and real_facility_id != 'unknown':
             self._weather_cancelled_by_real_facility[real_facility_id] += 1
-            self._weather_cancelled_by_real_facility_monthly[real_facility_id] += 1
 
     def record_weather_delayed_hsi_event(
         self, treatment_id: str, hsi_event_name: str, appt_footprint: Counter, level: str,
@@ -2521,9 +2517,9 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._weather_delayed_appts[appt_type] += number
             self._weather_delayed_appts_by_level[level][appt_type] += number
+        # *** NEW ***
         if real_facility_id and real_facility_id != 'unknown':
             self._weather_delayed_by_real_facility[real_facility_id] += 1
-            self._weather_delayed_by_real_facility_monthly[real_facility_id] += 1
 
     def record_hs_status(
         self,
@@ -2537,39 +2533,6 @@ class HealthSystemSummaryCounter:
         for facID_and_officer, fraction_time in fraction_time_used_by_facID_and_officer_in_this_clinic.items():
             self._sum_of_daily_frac_time_used_by_facID_and_officer[clinic][facID_and_officer] += fraction_time
 
-    def write_monthly_facility_counts_to_log_and_reset(self, date) -> None:
-        """Log per-RealFacility_ID HSI counts for the current month and reset the monthly counters."""
-        logger_summary.info(
-            key="HSI_Event_by_RealFacility_monthly",
-            description="Monthly counts of HSI events that ran, by RealFacility_ID.",
-            data={
-                "year": date.year,
-                "month": date.month,
-                "Number_By_RealFacility_ID": dict(self._hsi_by_real_facility_monthly),
-            },
-        )
-        logger_summary.info(
-            key="Weather_cancelled_HSI_Event_by_RealFacility_monthly",
-            description="Monthly counts of HSI events cancelled due to weather, by RealFacility_ID.",
-            data={
-                "year": date.year,
-                "month": date.month,
-                "Number_By_RealFacility_ID": dict(self._weather_cancelled_by_real_facility_monthly),
-            },
-        )
-        logger_summary.info(
-            key="Weather_delayed_HSI_Event_by_RealFacility_monthly",
-            description="Monthly counts of HSI events delayed due to weather, by RealFacility_ID.",
-            data={
-                "year": date.year,
-                "month": date.month,
-                "Number_By_RealFacility_ID": dict(self._weather_delayed_by_real_facility_monthly),
-            },
-        )
-        self._hsi_by_real_facility_monthly.clear()
-        self._weather_cancelled_by_real_facility_monthly.clear()
-        self._weather_delayed_by_real_facility_monthly.clear()
-
     def write_to_log_and_reset_counters(self):
         """Log summary statistics reset the data structures. This usually occurs at the end of the year."""
         logger_summary.info(
@@ -2582,7 +2545,7 @@ class HealthSystemSummaryCounter:
                 "Number_By_Appt_Type_Code": self._appts,
                 "Number_By_Appt_Type_Code_And_Level": self._appts_by_level,
                 "squeeze_factor": {t_id: 0.0 for t_id, v in self._treatment_ids.items()},
-                "Number_By_RealFacility_ID": self._hsi_by_real_facility,
+                "Number_By_RealFacility_ID": self._hsi_by_real_facility,  # *** NEW ***
             },
         )
         logger_summary.info(
@@ -2613,7 +2576,7 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._weather_cancelled_treatment_ids,
                 "Number_By_Appt_Type_Code": self._weather_cancelled_appts,
                 "Number_By_Appt_Type_Code_And_Level": self._weather_cancelled_appts_by_level,
-                "Number_By_RealFacility_ID": self._weather_cancelled_by_real_facility,
+                "Number_By_RealFacility_ID": self._weather_cancelled_by_real_facility,  # *** NEW ***
             },
         ),
         logger_summary.info(
@@ -2624,7 +2587,7 @@ class HealthSystemSummaryCounter:
                 "TREATMENT_ID": self._weather_delayed_treatment_ids,
                 "Number_By_Appt_Type_Code": self._weather_delayed_appts,
                 "Number_By_Appt_Type_Code_And_Level": self._weather_delayed_appts_by_level,
-                "Number_By_RealFacility_ID": self._weather_delayed_by_real_facility,
+                "Number_By_RealFacility_ID": self._weather_delayed_by_real_facility,  # *** NEW ***
             },
         ),
 
