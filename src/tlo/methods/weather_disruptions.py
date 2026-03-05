@@ -518,15 +518,14 @@ class WeatherDisruptions(Module):
         # Check if this facility has disruption data
         if facility_used not in self.parameters["projected_precip_disruptions"]["RealFacility_ID"].values:
             return False
-        #
-        # # Look up disruption probability
-        # prob_disruption = self._get_disruption_probability(
-        #     facility_id=facility_used,
-        #     year=year,
-        #     month=month,
-        #     service=self.parameters["services_affected_precip"]
-        # )
-        prob_disruption = 1
+
+        # Look up disruption probability
+        prob_disruption = self._get_disruption_probability(
+            facility_id=facility_used,
+            year=year,
+            month=month,
+            service=self.parameters["services_affected_precip"]
+        )
 
         # Determine if disruption occurs
         if self.rng.binomial(1, prob_disruption) == 0:
