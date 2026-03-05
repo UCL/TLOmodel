@@ -499,9 +499,9 @@ class Demography(Module):
         Uses worldpop-weighted coordinate sampling and real facility locations via KD-tree
         nearest-neighbor matching, restricted to facilities within each individual's district.
         """
+        import hashlib
         import secrets
         import time
-        import hashlib
 
         worldpop_gdf = self.parameters["worldpop_gdf"].copy()
         worldpop_gdf["Z_prop"] = pd.to_numeric(worldpop_gdf["Z_prop"], errors="coerce")
