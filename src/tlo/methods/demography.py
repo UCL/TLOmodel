@@ -222,9 +222,12 @@ class Demography(Module):
         ).set_index(['Sex', 'Age_Grp'])
 
         # Facility info: used for assigning individuals to their nearest facility at each level
-        self.parameters["facilities_info"] = pd.read_csv(
-            resourcefilepath / "demography" / "ResourceFile_Facilities_with_lat_long_region.csv"
-        )
+        _fac = pd.read_csv(
+            resourcefilepath / "demography" / "ResourceFile_Facility_Characteristics.csv",
+            index_col=0
+        ).T
+        _fac.index.name = "Fname"
+        self.parameters["facilities_info"] = _fac.reset_index()
 
         # Worldpop population density grid with district labels, used for coordinate sampling
         self.parameters["worldpop_gdf"] = (
@@ -590,7 +593,7 @@ class Demography(Module):
         }
 
         for level, facility_types in facility_levels_types.items():
-            relevant_all = facility_info[facility_info["Ftype"].isin(facility_types)]
+            relevant_all = facility_info[facility_info["facility_type"].isin(facility_types)]
             assigned = pd.Series(index=df.index, dtype=object)
 
             for district in unique_districts:
