@@ -438,27 +438,21 @@ class PostnatalSupervisor(Module):
         :return: Series with same index containing outcomes (bool)
         """
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        mni_df = pd.DataFrame.from_dict(mni, orient='index')
 
-        # Here we define the external variables as series to pass to the linear model
-        mode_of_delivery = pd.Series(False, index=df.index)
-        received_abx_for_prom = pd.Series(False, index=df.index)
-        endometritis = pd.Series(False, index=df.index)
-        chorio_in_preg = pd.Series(False, index=df.index)
+        keys = ['mode_of_delivery', 'abx_for_prom_given', 'endo_pp', 'chorio_in_preg']
+        data = {key: [] for key in keys}
 
-        if 'mode_of_delivery' in mni_df.columns:
-            mode_of_delivery = pd.Series(mni_df['mode_of_delivery'], index=df.index)
+        for person in df.index:
+            person_data = mni.get(person, {})
+            for key in keys:
+                data[key].append(person_data.get(key, False))
 
-        if 'abx_for_prom_given' in mni_df.columns:
-            received_abx_for_prom = pd.Series(mni_df['abx_for_prom_given'], index=df.index)
+        mode_of_delivery = pd.Series(data['mode_of_delivery'], index=df.index)
+        received_abx_for_prom = pd.Series(data['abx_for_prom_given'], index=df.index)
+        endometritis = pd.Series(data['endo_pp'], index=df.index)
+        chorio_in_preg = pd.Series(data['chorio_in_preg'], index=df.index)
 
-        if 'chorio_in_preg' in mni_df.columns:
-            chorio_in_preg = pd.Series(mni_df['chorio_in_preg'], index=df.index)
-
-        if 'endo_pp' in mni_df.columns:
-            endometritis = pd.Series(mni_df['endo_pp'], index=df.index)
-
-        maternal_prom = pd.Series(df['ps_premature_rupture_of_membranes'], index=df.index)
+        maternal_prom = df.ps_premature_rupture_of_membranes
 
         return self.rng.random_sample(len(df)) < lm.predict(df,
                                                             mode_of_delivery=mode_of_delivery,
