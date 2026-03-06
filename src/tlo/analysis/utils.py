@@ -308,7 +308,8 @@ def extract_results(results_folder: Path,
      `custom_generate_series`.
 
     Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
-    If the suspend-and-resume functionality is used, scaling factor may be avaialble in the folder where the log of the suspended run are stored.
+    If the suspend-and-resume functionality is used, scaling factor may be avaialble in the folder where the log
+    of the suspended run are stored.
 
     Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
     """
