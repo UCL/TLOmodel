@@ -282,7 +282,7 @@ class Demography(Module):
         for level, facility_types in facility_levels_types.items():
             # Get sorted list of real facility names for this level
             facility_names = sorted(
-                facility_info.loc[facility_info["Ftype"].isin(facility_types), "Fname"]
+                facility_info.loc[facility_info["facility_type"].isin(facility_types), "Fname"]
                 .dropna().unique().tolist()
             )
             # Replace SET_AT_RUNTIME placeholder with correct categories before new_row is built
@@ -514,9 +514,7 @@ class Demography(Module):
             "Nkhatabay": "Nkhata Bay",
         }
 
-        # ════════════════════════════════════════════════════════════════════════
         # Worldpop-weighted coordinate assignment
-        # ════════════════════════════════════════════════════════════════════════
         run_seed = secrets.token_bytes(16) + int(time.time() * 1e9).to_bytes(8, "big")
         unique_districts = df["district_of_residence"].unique()
 
@@ -573,15 +571,11 @@ class Demography(Module):
                 data=f"{n_missing} individuals have no worldpop coordinate assigned."
             )
 
-        # ════════════════════════════════════════════════════════════════════════
         # Build facility info with corrected district names
-        # ════════════════════════════════════════════════════════════════════════
         facility_info = self.parameters["facilities_info"].copy()
-        facility_info["district"] = facility_info["Dist"].replace(FACILITY_DISTRICT_MAP)
+        facility_info["district"] = facility_info["district"].replace(FACILITY_DISTRICT_MAP)
 
-        # ════════════════════════════════════════════════════════════════════════
         # Facility assignment via district-restricted KD-tree nearest-neighbor
-        # ════════════════════════════════════════════════════════════════════════
         individual_coords = np.array([
             (p.x, p.y) if p is not None else (np.nan, np.nan)
             for p in df["coordinate_of_residence"]
@@ -615,13 +609,13 @@ class Demography(Module):
                 if relevant.empty:
                     relevant = relevant_all
 
-                relevant_clean = relevant.dropna(subset=["A109__Longitude", "A109__Latitude"]).reset_index(drop=True)
+                relevant_clean = relevant.dropna(subset=["Longitude", "Latitude"]).reset_index(drop=True)
 
                 if relevant_clean.empty:
                     assigned.loc[person_idx] = relevant.iloc[0]["Fname"]
                     continue
 
-                fac_coords = relevant_clean[["A109__Longitude", "A109__Latitude"]].values
+                fac_coords = relevant_clean[["Longitude", "Latitude"]].values
                 tree = cKDTree(fac_coords)
 
                 valid_mask = ~np.isnan(p_coords).any(axis=1)
