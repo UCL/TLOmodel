@@ -256,9 +256,10 @@ class WeatherDisruptions(Module):
 
     def initialise_simulation(self, sim):
         self.build_disruption_probabilities()
-        # Use sim.start_date — RegularEvent handles all subsequent monthly firings automatically
-        sim.schedule_event(WeatherDisruptionsMonthlyLogger(self), sim.start_date)
-
+        sim.schedule_event(
+            WeatherDisruptionsMonthlyLogger(self),
+            Date(sim.date.year, 1, 1) + DateOffset(months=1)
+        )
     def on_birth(self, mother_id, child_id):
         pass
 
@@ -373,10 +374,12 @@ class WeatherDisruptions(Module):
         lag_9month_monthly = lag_9month_monthly.iloc[start_idx:].reset_index(drop=True)
         lag_1_5day = lag_1_5day.iloc[start_idx:].reset_index(drop=True)
 
-        facility_chars = p["facility_characteristics"]
-        facility_chars = facility_chars.set_index(facility_chars.columns[0])
+        facility_chars = p["facility_characteristics"].copy()
+        facility_chars.index = [
+            'zone', 'urban_rural', 'district', 'ownership', 'altitude',
+            'facility_type', 'Latitude', 'Longitude', 'min_distance_to_clinic'
+        ]
         facility_chars = facility_chars.T
-
         facilities = precip_monthly.columns.tolist()
         n_time = len(precip_monthly)
 
