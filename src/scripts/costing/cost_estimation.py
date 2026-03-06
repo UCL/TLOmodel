@@ -282,6 +282,7 @@ def clean_equipment_name(name: str, equipment_drop_list = None) -> str:
 
 def estimate_input_cost_of_scenarios(results_folder: Path,
                                      resourcefilepath: Path,
+                                     suspended_results_folder: Path = None,
                                      _draws: Optional[list[int]] = None,
                                      _runs: Optional[list[int]] = None,
                                      summarize: bool = False,
@@ -298,6 +299,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         Path to the directory containing simulation output files.
     resourcefilepath : Path, optional
         Path to the resource files
+    suspended_results_folder: Path, optional
+        Path to the directory containing suspended simulation output files (using the suspend and resume functionality),
+        This is used to extract the scaling_factor to scale result to actual population size. If None, then the
+        'scaling_factor' is obtained from the results_folder.
     _draws : list, optional
         Specific draws to include in the cost estimation. Defaults to all available draws.
     _runs : list, optional
@@ -477,25 +482,68 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         return merged_df
 
     # Get available staff count for each year and draw
-    def get_staff_count_by_facid_and_officer_type(_df: pd.Series) -> pd.Series:
-        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
-        _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
-        _df.index.name = 'year'
+    def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
+        """
+        Convert logged staff dictionary output into tidy format,
+        summing staff counts across all clinic columns.
 
-        def change_to_standard_flattened_index_format(col):
-            parts = col.split("_", 3)  # Split by "_" only up to 3 parts
-            if len(parts) > 2:
-                return parts[0] + "=" + parts[1] + "|" + parts[2] + "=" + parts[
-                    3]  # Rejoin with "I" at the second occurrence
-            return col  # If there's no second underscore, return the string as it is
+        Returns pd.Series indexed by:
+        (year, FacilityID, Officer)
+        """
 
-        _df.columns = [change_to_standard_flattened_index_format(col) for col in _df.columns]
+        df = _df.copy()
+        df["year"] = df["date"].dt.year
+        df = df.drop(columns=["date"])
 
-        return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # expanded flattened axis
+        clinic_cols = df.columns.difference(["year"])
+
+        long_frames = []
+
+        for clinic in clinic_cols:
+            expanded = df[[clinic, "year"]].copy()
+            expanded = expanded[expanded[clinic].notna()]
+
+            expanded_dict = expanded[clinic].apply(pd.Series)
+            expanded_dict["year"] = expanded["year"].values
+
+            long_frames.append(expanded_dict)
+
+        # Combine all clinics
+        combined = pd.concat(long_frames, ignore_index=True)
+
+        # Melt to long format
+        long_df = (
+            combined
+            .melt(id_vars=["year"],
+                  var_name="facility_officer",
+                  value_name="count")
+            .dropna(subset=["count"])
+        )
+
+        # Split FacilityID and Officer
+        parts = long_df["facility_officer"].str.split("_Officer_", expand=True)
+
+        long_df["FacilityID"] = (
+            parts[0]
+            .str.replace("FacilityID_", "", regex=False)
+            .astype(int)
+        )
+        long_df["Officer"] = parts[1]
+
+        # SUM ACROSS CLINICS HERE
+        result = (
+            long_df
+            .groupby(["year", "FacilityID", "Officer"])["count"]
+            .sum()
+            .sort_index()
+        )
+
+        return result
 
     # Staff count by Facility ID
     available_staff_count_by_facid_and_officertype = extract_results(
         Path(results_folder),
+        suspended_results_folder=suspended_results_folder,
         module='tlo.methods.healthsystem.summary',
         key='number_of_hcw_staff',
         custom_generate_series=get_staff_count_by_facid_and_officer_type,
@@ -525,16 +573,64 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     # Get list of cadres which were utilised in each run to get the count of staff used in the simulation
     # Note that we still cost the full staff count for any cadre-Facility_Level combination that was ever used in a run, and
     # not the amount of time which was used
-    def get_capacity_used_by_officer_type_and_facility_level(_df: pd.Series) -> pd.Series:
-        """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
-        _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
-        _df.index.name = 'year'
-        return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # expanded flattened axis
+    def get_capacity_used_by_officer_type_and_facility_level(
+        _df: pd.DataFrame
+    ) -> pd.Series:
+        """
+        Parse logging output and return a Series indexed by:
+            (year, OfficerType, FacilityLevel)
+
+        Collapses (sums) across clinics.
+        Uses facility_id_levels_dict to map FacilityID → FacilityLevel.
+        """
+
+        # ---- 1. Set year index ----
+        _df = _df.set_axis(_df["date"].dt.year).drop(columns=["date"])
+        _df.index.name = "year"
+
+        # ---- 2. Unflatten logging columns ----
+        _df = unflatten_flattened_multi_index_in_logging(_df)
+
+        # Expect columns like:
+        # ('Clinic', 'facID_and_officer')
+
+        col_df = _df.columns.to_frame(index=False)
+
+        # ---- 3. Extract OfficerType ----
+        col_df["OfficerType"] = (
+            col_df["facID_and_officer"]
+            .str.split("_Officer_")
+            .str[-1]
+        )
+
+        # ---- 4. Extract FacilityID ----
+        col_df["FacilityID"] = (
+            col_df["facID_and_officer"]
+            .str.split("_Officer_")
+            .str[0]
+            .str.replace("FacilityID_", "", regex=False)
+            .astype(int)
+        )
+
+        # ---- 5. Map to FacilityLevel ----
+        col_df["FacilityLevel"] = col_df["FacilityID"].map(facility_id_levels_dict)
+
+        # ---- 6. Rebuild MultiIndex (drop clinic level) ----
+        _df.columns = pd.MultiIndex.from_frame(
+            col_df[["OfficerType", "FacilityLevel"]]
+        )
+
+        # ---- 7. Collapse across clinics ----
+        _df = _df.groupby(level=["OfficerType", "FacilityLevel"], axis=1).sum()
+
+        # ---- 8. Return stacked format ----
+        return _df.stack(["OfficerType", "FacilityLevel"])
 
     annual_capacity_used_by_cadre_and_level = extract_results(
         Path(results_folder),
+        suspended_results_folder=suspended_results_folder,
         module='tlo.methods.healthsystem.summary',
-        key='Capacity_By_OfficerType_And_FacilityLevel',
+        key='Capacity_By_FacID_and_Officer',
         custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
         do_scaling=False,
     )
@@ -741,6 +837,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
         cons_req = extract_results(
             results_folder,
+            suspended_results_folder=suspended_results_folder,
             module='tlo.methods.healthsystem.summary',
             key='Consumables',
             custom_generate_series=get_counts_of_items_requested,
