@@ -73,6 +73,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # Finally define a dictionary which will hold the required consumables for each intervention
         self.item_codes_lab_consumables = dict()
 
+
     INIT_DEPENDENCIES = {'Demography'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'Stunting'}
@@ -1175,7 +1176,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         # we determine if she will go into labour post term (42+ weeks)
 
         if self.rng.random_sample() < self.la_linear_models['post_term_labour'].predict(
-           df.loc[[individual_id]])[individual_id]:
+            df.loc[[individual_id], ['li_bmi']])[individual_id]:
 
             df.at[individual_id, 'la_due_date_current_pregnancy'] = \
                 (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(
@@ -1206,7 +1207,28 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         """
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        person = df.loc[[person_id]]
+
+        # we only need those properties required to evaluate the function
+        person_properties = eq.predict.person_properties
+
+        # if the simulation is running without stunting or cardio metabolic disorders modules
+        # then we need to remove the properties
+        if "Stunting" not in self.sim.modules and "un_HAZ_category" in person_properties:
+            person_properties = list(person_properties)
+            person_properties.remove("un_HAZ_category")
+
+        if "CardioMetabolicDisorders" not in self.sim.modules and "nc_hypertension" in person_properties:
+            person_properties = list(person_properties)
+            person_properties.remove("nc_hypertension")
+
+        if not person_properties:
+            # we do need to pass a valid dataframe, despite not actually needing any properties :(
+            person_properties = ['is_alive']
+
+        person = df.loc[
+            [person_id],
+            person_properties
+        ]
 
         # We define specific external variables used as predictors in the equations defined below
         has_rbt = mni[person_id]['received_blood_transfusion']
@@ -1249,7 +1271,11 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         :returns True/False if labour can proceed
         """
         df = self.sim.population.props
-        person = df.loc[individual_id]
+        person = df.loc[
+            individual_id,
+            ['is_alive', 'is_pregnant', 'la_currently_in_labour', 'la_due_date_current_pregnancy',
+             'ac_admitted_for_immediate_delivery', 'ps_gestational_age_in_weeks']
+        ]
 
         # If the mother has died OR has lost her pregnancy OR is already in labour then the labour events wont run
         if not person.is_alive or not person.is_pregnant or person.la_currently_in_labour:
@@ -1259,8 +1285,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             return False
 
         # If she is alive, pregnant, not in labour AND her due date is today then the event will run
-        if person.is_alive and person.is_pregnant and (person.la_due_date_current_pregnancy == self.sim.date) \
-           and not person.la_currently_in_labour:
+        if person.la_due_date_current_pregnancy == self.sim.date:
 
             # If the woman in not currently an inpatient then we assume this is her normal labour
             if person.ac_admitted_for_immediate_delivery == 'none':
@@ -1278,11 +1303,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                                                  f'at gestation {person.ps_gestational_age_in_weeks}')
             return True
 
-        # If she is alive, pregnant, not in labour BUT her due date is not today, however shes been admitted then we
+        # If she is alive, pregnant, not in labour BUT her due date is not today, however she's been admitted then we
         # labour can progress as she requires early delivery
-        if person.is_alive and person.is_pregnant and not person.la_currently_in_labour and \
-            (person.la_due_date_current_pregnancy != self.sim.date) and (person.ac_admitted_for_immediate_delivery !=
-                                                                         'none'):
+        if person.ac_admitted_for_immediate_delivery != 'none':
             logger.debug(key='message', data=f'person {individual_id} has just reached LabourOnsetEvent on '
                                              f'{self.sim.date}- they have been admitted for delivery due to '
                                              f'complications in the antenatal period and will now progress into the '
@@ -2454,12 +2477,16 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # been admitted antenatally for delivery will be delivering in hospital and that is scheduled accordingly
 
             if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] == 'none':
+                individual = df.loc[
+                    [individual_id],
+                    ['age_years', 'li_urban', 'la_parity', 'li_ed_lev', 'li_wealth', 'li_mar_stat']
+                ]
 
                 # Here we calculate this womans predicted risk of home birth and health centre birth
                 pred_hb_delivery = self.module.la_linear_models['probability_delivery_at_home'].predict(
-                    df.loc[[individual_id]])[individual_id]
+                    individual)[individual_id]
                 pred_hc_delivery = self.module.la_linear_models['probability_delivery_health_centre'].predict(
-                    df.loc[[individual_id]])[individual_id]
+                    individual)[individual_id]
                 pred_hp_delivery = params['probability_delivery_hospital']
 
                 # The denominator is calculated
@@ -2707,7 +2734,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, mother_id):
         df = self.sim.population.props
-        person = df.loc[mother_id]
+        person = df.loc[mother_id, ['is_alive', 'la_intrapartum_still_birth', 'ps_multiple_pregnancy', 'is_pregnant']]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.current_parameters
 
@@ -2747,6 +2774,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
             else:
                 self.sim.do_birth(mother_id)
 
+        # refresh the reference to the dataframe as the do_birth function might have changed the underlying object
         df = self.sim.population.props
 
         # If the mother survived labour but experienced a stillbirth we reset all the relevant pregnancy variables now
@@ -2786,10 +2814,14 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
 
             else:
                 # We use a linear model to determine if women without complications will receive any postnatal care
+                mother = df.loc[
+                    [mother_id],
+                    ['age_years', 'li_urban', 'li_wealth', 'la_parity', 'ac_total_anc_visits_current_pregnancy']
+                ]
                 prob_pnc = self.module.la_linear_models['postnatal_check'].predict(
-                    df.loc[[mother_id]],
-                    mode_of_delivery=pd.Series(mni[mother_id]['mode_of_delivery'], index=df.loc[[mother_id]].index),
-                    delivery_setting=pd.Series(mni[mother_id]['delivery_setting'], index=df.loc[[mother_id]].index)
+                    mother,
+                    mode_of_delivery=pd.Series(mni[mother_id]['mode_of_delivery'], index=mother.index),
+                    delivery_setting=pd.Series(mni[mother_id]['delivery_setting'], index=mother.index)
                 )[mother_id]
                 has_comps = False
 
