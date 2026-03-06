@@ -79,8 +79,7 @@ def test_interventions_are_delivered_as_expected_not_during_analysis(seed):
     hsi_event = get_dummy_hsi(sim, mother_id, id=0, fl=0)
 
     def override_dummy_cons(value):
-        updated_cons = {k: value for (k, v) in
-                        sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
+        updated_cons = {k: value for (k, v) in sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
         sim.modules['HealthSystem'].override_availability_of_consumables(updated_cons)
         sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
         return sim.modules['Labour'].item_codes_lab_consumables['delivery_core']
@@ -142,8 +141,7 @@ def test_interventions_are_delivered_as_expected_during_analysis(seed):
     hsi_event = get_dummy_hsi(sim, mother_id, id=0, fl=0)
 
     def override_dummy_cons(value):
-        updated_cons = {k: value for (k, v) in
-                        sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
+        updated_cons = {k: value for (k, v) in sim.modules['Labour'].item_codes_lab_consumables['delivery_core'].items()}
         sim.modules['HealthSystem'].override_availability_of_consumables(updated_cons)
         sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
         return sim.modules['Labour'].item_codes_lab_consumables['delivery_core']
@@ -202,8 +200,8 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     unchanged_odds_anc = pparams['odds_early_init_anc4'][0]
     unchanged_odds_pnc = lparams['odds_will_attend_pnc'][0]
 
-    # run the model for 1 day
     sim.make_initial_population(n=100)
+    # run the model for 1 day
     sim.simulate(end_date=Date(2010, 1, 2))
 
     p_current_params = sim.modules['PregnancySupervisor'].current_parameters
@@ -614,8 +612,9 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(*fullmodel())
     sim.make_initial_population(n=100)
-
+    sim.simulate(end_date=Date(2010, 1, 2))
     # Set the analysis event to run at simulation start
+
     lparams = sim.modules['Labour'].parameters
     lparams['analysis_date'] = Date(2010, 1, 1)
     lparams['alternative_bemonc_availability'] = True
@@ -625,8 +624,6 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     # Set availability
     lparams['pnc_availability_probability'] = 1.0
     lparams['bemonc_availability'] = 1.0
-
-    sim.simulate(end_date=Date(2010, 1, 2))
 
     df = sim.population.props
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
