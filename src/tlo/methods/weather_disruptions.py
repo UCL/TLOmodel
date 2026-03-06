@@ -244,7 +244,7 @@ class WeatherDisruptions(Module):
         self.parameters["precipitation_data_five_day"] = precip_5day
 
         self.parameters["facility_characteristics"] = read_csv_files(
-            resourcefilepath / 'ResourceFile_WeatherDisruption',
+            resourcefilepath / 'demography',
             files="ResourceFile_Facility_Characteristics.csv"
         )
 
@@ -473,9 +473,8 @@ class WeatherDisruptions(Module):
             'pred_baseline', 'pred_precip'
         ]].copy()
 
-    # -------------------------------------------------------------------------
-    # Core disruption logic
-    # -------------------------------------------------------------------------
+        print(self.parameters["projected_precip_disruptions"])
+
 
     def check_hsi_for_disruption(self, hsi_event_item: HSIEventQueueItem, current_date: Date) -> bool:
         """
