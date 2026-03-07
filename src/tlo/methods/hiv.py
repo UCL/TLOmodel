@@ -3161,117 +3161,16 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         if df.at[person_id, "hv_last_test_date"] >= (self.sim.date - DateOffset(days=p['hv_min_test_interval_days'])):
             return healthsystem.get_blank_appt_footprint()
 
-        # dataframe for calling linear model predict()
-        # only retrieve those properties used in this method and linear models
-        person_df = df.loc[
-            [person_id],
-            [
-                'age_years', 'sex',
-                'hv_art', 'hv_diagnosed', 'hv_inf', 'hv_is_on_prep_inj', 'hv_is_on_prep_oral', 'hv_last_test_date',
-                'li_is_circ', 'li_is_sexworker',
-            ]
-        ]
-
-        # series for easy access
-        person = person_df.iloc[0]
+        age_years = df.at[person_id, "age_years"]
 
         # Run test
-        if person["age_years"] < p['age_max_hiv_early_infant_test_years']:
-            test_result = healthsystem.dx_manager.run_dx_test(
-                dx_tests_to_run="hiv_early_infant_test", hsi_event=self
-            )
+        if age_years < p['age_max_hiv_early_infant_test_years']:
+            test_result = healthsystem.dx_manager.run_dx_test(dx_tests_to_run="hiv_early_infant_test", hsi_event=self)
         else:
-            test_result = healthsystem.dx_manager.run_dx_test(
-                dx_tests_to_run="hiv_rapid_test", hsi_event=self
-            )
+            test_result = healthsystem.dx_manager.run_dx_test(dx_tests_to_run="hiv_rapid_test", hsi_event=self)
 
-        if test_result is not None:
-
-            # Update number of tests:
-            df.at[person_id, "hv_number_tests"] += 1
-            df.at[person_id, "hv_last_test_date"] = self.sim.date
-
-            # Log the test: line-list of summary information about each test
-            person_details_for_test = {
-                'age': person['age_years'],
-                'hiv_status': person['hv_inf'],
-                'hiv_diagnosed': person['hv_diagnosed'],
-                'referred_from': self.referred_from,
-                'person_id': person_id
-            }
-            logger.info(key='hiv_test', data=person_details_for_test)
-
-            # Offer services as needed:
-            if test_result:
-                # The test_result is HIV positive
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTPositive": 1})
-
-                # Update diagnosis if the person is indeed HIV positive;
-                if person["hv_inf"]:
-                    df.at[person_id, "hv_diagnosed"] = True
-                    self.module.do_when_hiv_diagnosed(person_id=person_id)
-
-            else:
-                # The test_result is HIV negative
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
-
-                if not self.do_not_refer_if_neg:
-                    # The test was negative: make referrals to other services:
-
-                    # Consider if the person's risk will be reduced by behaviour change counselling
-                    if self.module.lm["lm_behavchg"].predict(person_df, self.module.rng):
-                        df.at[person_id, "hv_behaviour_change"] = True
-
-                    # If person is a man, and not circumcised, then consider referring to VMMC
-                    if (person["sex"] == "M") and (not person["li_is_circ"]):
-                        x = self.module.lm["lm_circ"].predict(
-                            person_df, self.module.rng,
-                            year=self.sim.date.year,
-                        )
-                        if x:
-                            healthsystem.schedule_hsi_event(
-                                HSI_Hiv_Circ(person_id=person_id, module=self.module),
-                                topen=self.sim.date,
-                                tclose=None,
-                                priority=0,
-                            )
-
-                    # If person is a woman and FSW, and not currently on PrEP then consider referring to PrEP
-                    # numbers available 2018 onwards
-                    if (
-                        (person["sex"] == "F")
-                        and person["li_is_sexworker"]
-                        and not (person["hv_is_on_prep_oral"] or person["hv_is_on_prep_inj"])
-                        and (self.sim.date.year >= p["prep_start_year"])
-                    ):
-                        if self.module.lm["lm_prep"].predict(person_df, self.module.rng):
-                            if (
-                                p["injectable_prep_allowed"]
-                                and (self.sim.date.year >= 2025)
-                            ):
-                                prob_injectable = p["prob_injectable_prep_vs_oral"]
-
-                                type_of_prep = self.module.rng.choice(
-                                    ["injectable", "oral"],
-                                    p=[prob_injectable, 1 - prob_injectable],
-                                )
-                            else:
-                                type_of_prep = "oral"
-
-                            healthsystem.schedule_hsi_event(
-                                HSI_Hiv_StartOrContinueOnPrep(
-                                    person_id=person_id,
-                                    module=self.module,
-                                    type_of_prep=type_of_prep,
-                                ),
-                                topen=self.sim.date,
-                                tclose=None,
-                                priority=0,
-                            )
-
-        else:
+        if test_result is None:
             # Test was not possible, set blank footprint and schedule another test
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             # set cap for number of repeat tests
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.
@@ -3284,6 +3183,102 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
+
+            return self.make_appt_footprint({})
+
+        # Update number of tests:
+        df.at[person_id, "hv_number_tests"] += 1
+        df.at[person_id, "hv_last_test_date"] = self.sim.date
+
+        hv_inf = df.at[person_id, "hv_inf"]
+
+        # Log the test: line-list of summary information about each test
+        person_details_for_test = {
+            'age': age_years,
+            'hiv_status': hv_inf,
+            'hiv_diagnosed': df.at[person_id, 'hv_diagnosed'],
+            'referred_from': self.referred_from,
+            'person_id': person_id
+        }
+        logger.info(key='hiv_test', data=person_details_for_test)
+
+        # Offer services as needed:
+        if test_result:
+            # The test_result is HIV positive
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTPositive": 1})
+
+            # Update diagnosis if the person is indeed HIV positive;
+            if hv_inf:
+                df.at[person_id, "hv_diagnosed"] = True
+                self.module.do_when_hiv_diagnosed(person_id=person_id)
+
+        else:
+            # The test_result is HIV negative
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
+
+            if not self.do_not_refer_if_neg:
+                # dataframe for calling linear model predict()
+                # only retrieve those properties used in this method and linear models
+                person_df = df.loc[[person_id], [
+                    'age_years', 'sex',
+                    'hv_art', 'hv_diagnosed', 'hv_inf', 'hv_is_on_prep_inj', 'hv_is_on_prep_oral', 'hv_last_test_date',
+                    'li_is_circ', 'li_is_sexworker',
+                ]]
+
+                person = person_df.loc[person_id]
+
+                # The test was negative: make referrals to other services:
+
+                # Consider if the person's risk will be reduced by behaviour change counselling
+                if self.module.lm["lm_behavchg"].predict(person_df, self.module.rng):
+                    df.at[person_id, "hv_behaviour_change"] = True
+
+                # If person is a man, and not circumcised, then consider referring to VMMC
+                if (person["sex"] == "M") and (not person["li_is_circ"]):
+                    x = self.module.lm["lm_circ"].predict(
+                        person_df, self.module.rng,
+                        year=self.sim.date.year,
+                    )
+                    if x:
+                        healthsystem.schedule_hsi_event(
+                            HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                            topen=self.sim.date,
+                            tclose=None,
+                            priority=0,
+                        )
+
+                # If person is a woman and FSW, and not currently on PrEP then consider referring to PrEP
+                # numbers available 2018 onwards
+                if (
+                    (person["sex"] == "F")
+                    and person["li_is_sexworker"]
+                    and not (person["hv_is_on_prep_oral"] or person["hv_is_on_prep_inj"])
+                    and (self.sim.date.year >= p["prep_start_year"])
+                ):
+                    if self.module.lm["lm_prep"].predict(person_df, self.module.rng):
+                        if (
+                            p["injectable_prep_allowed"]
+                            and (self.sim.date.year >= 2025)
+                        ):
+                            prob_injectable = p["prob_injectable_prep_vs_oral"]
+
+                            type_of_prep = self.module.rng.choice(
+                                ["injectable", "oral"],
+                                p=[prob_injectable, 1 - prob_injectable],
+                            )
+                        else:
+                            type_of_prep = "oral"
+
+                        healthsystem.schedule_hsi_event(
+                            HSI_Hiv_StartOrContinueOnPrep(
+                                person_id=person_id,
+                                module=self.module,
+                                type_of_prep=type_of_prep,
+                            ),
+                            topen=self.sim.date,
+                            tclose=None,
+                            priority=0,
+                        )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
