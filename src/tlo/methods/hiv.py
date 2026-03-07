@@ -3220,9 +3220,11 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                 # dataframe for calling linear model predict()
                 # only retrieve those properties used in this method and linear models
                 person_df = df.loc[[person_id], [
-                    'age_years', 'sex',
-                    'hv_art', 'hv_diagnosed', 'hv_inf', 'hv_is_on_prep_inj', 'hv_is_on_prep_oral', 'hv_last_test_date',
-                    'li_is_circ', 'li_is_sexworker',
+                    'hv_inf',  # lm_behavchg, lm_circ, lm_prep
+                    'sex'      # lm_circ, lm_prep
+                    'li_is_circ',  # lm_circ
+                    'li_is_sexworker',  # lm_prep
+                    'hv_is_on_prep_oral', 'hv_is_on_prep_inj'  # lm_prep
                 ]]
 
                 person = person_df.loc[person_id]
