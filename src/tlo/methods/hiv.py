@@ -3237,11 +3237,11 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
                 # If person is a man, and not circumcised, then consider referring to VMMC
                 if (person["sex"] == "M") and (not person["li_is_circ"]):
-                    x = self.module.lm["lm_circ"].predict(
+                    should_refer_vmmc = self.module.lm["lm_circ"].predict(
                         person_df, self.module.rng,
                         year=self.sim.date.year,
                     )
-                    if x:
+                    if should_refer_vmmc:
                         healthsystem.schedule_hsi_event(
                             HSI_Hiv_Circ(person_id=person_id, module=self.module),
                             topen=self.sim.date,
@@ -3279,10 +3279,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
-        if self.suppress_footprint:
-            return self.make_appt_footprint({})
-        else:
-            return actual_appt_footprint
+        return self.make_appt_footprint({}) if self.suppress_footprint else actual_appt_footprint
 
 
 class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
