@@ -3150,7 +3150,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
         healthsystem = self.sim.modules["HealthSystem"]
 
-        if not person["is_alive"]:
+        if not df.at[person_id, "is_alive"]:
             return
 
         # If person is diagnosed and on treatment do nothing do not occupy any resources
