@@ -3221,7 +3221,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                 # only retrieve those properties used in this method and linear models
                 person_df = df.loc[[person_id], [
                     'hv_inf',  # lm_behavchg, lm_circ, lm_prep
-                    'sex'      # lm_circ, lm_prep
+                    'sex',      # lm_circ, lm_prep
                     'li_is_circ',  # lm_circ
                     'li_is_sexworker',  # lm_prep
                     'hv_is_on_prep_oral', 'hv_is_on_prep_inj'  # lm_prep
