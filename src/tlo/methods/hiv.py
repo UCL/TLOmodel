@@ -3153,6 +3153,14 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
+        # If person is diagnosed and on treatment do nothing do not occupy any resources
+        if df.at[person_id, "hv_diagnosed"] and (df.at[person_id, "hv_art"] != "not"):
+            return healthsystem.get_blank_appt_footprint()
+
+        # if person has had test in last week, do not repeat test
+        if df.at[person_id, "hv_last_test_date"] >= (self.sim.date - DateOffset(days=p['hv_min_test_interval_days'])):
+            return healthsystem.get_blank_appt_footprint()
+
         # dataframe for calling linear model predict()
         # only retrieve those properties used in this method and linear models
         person_df = df.loc[
@@ -3166,14 +3174,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # series for easy access
         person = person_df.iloc[0]
-
-        # If person is diagnosed and on treatment do nothing do not occupy any resources
-        if person["hv_diagnosed"] and (person["hv_art"] != "not"):
-            return healthsystem.get_blank_appt_footprint()
-
-        # if person has had test in last week, do not repeat test
-        if person["hv_last_test_date"] >= (self.sim.date - DateOffset(days=p['hv_min_test_interval_days'])):
-            return healthsystem.get_blank_appt_footprint()
 
         # Run test
         if person["age_years"] < p['age_max_hiv_early_infant_test_years']:
