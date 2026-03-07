@@ -351,6 +351,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         _draws = range(0, info['number_of_draws'])
     if _runs is None:
         _runs = range(0, info['runs_per_draw'])
+    if suspended_results_folder is None:
+        suspended_results_folder = results_folder
 
     # Load cost input files
     # ------------------------
