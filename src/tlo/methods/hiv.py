@@ -3230,14 +3230,14 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                         (person["sex"] == "F")
                         and person["li_is_sexworker"]
                         and not (person["hv_is_on_prep_oral"] or person["hv_is_on_prep_inj"])
-                        and (self.sim.date.year >= self.module.parameters["prep_start_year"])
+                        and (self.sim.date.year >= p["prep_start_year"])
                     ):
                         if self.module.lm["lm_prep"].predict(df.loc[[person_id]], self.module.rng):
                             if (
-                                self.module.parameters["injectable_prep_allowed"]
+                                p["injectable_prep_allowed"]
                                 and (self.sim.date.year >= 2025)
                             ):
-                                prob_injectable = self.module.parameters["prob_injectable_prep_vs_oral"]
+                                prob_injectable = p["prob_injectable_prep_vs_oral"]
 
                                 type_of_prep = self.module.rng.choice(
                                     ["injectable", "oral"],
@@ -3264,10 +3264,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             # set cap for number of repeat tests
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.
 
-            if (
-                self.counter_for_test_not_available
-                <= self.module.parameters["hiv_healthseekingbehaviour_cap"]
-            ):
+            if self.counter_for_test_not_available <= p["hiv_healthseekingbehaviour_cap"]:
                 # repeat appt for HIV test
                 healthsystem.schedule_hsi_event(
                     self,
