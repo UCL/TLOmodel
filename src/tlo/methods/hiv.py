@@ -3147,27 +3147,28 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         """Do the testing and referring to other services"""
 
         df = self.sim.population.props
-        p = self.module.parameters
-        healthsystem = self.sim.modules["HealthSystem"]
+        hiv_module: Hiv = self.module
+        p = hiv_module.parameters
+        health_system = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, "is_alive"]:
-            return
+            return None
 
         # If person is diagnosed and on treatment do nothing do not occupy any resources
         if df.at[person_id, "hv_diagnosed"] and (df.at[person_id, "hv_art"] != "not"):
-            return healthsystem.get_blank_appt_footprint()
+            return health_system.get_blank_appt_footprint()
 
         # if person has had test in last week, do not repeat test
         if df.at[person_id, "hv_last_test_date"] >= (self.sim.date - DateOffset(days=p['hv_min_test_interval_days'])):
-            return healthsystem.get_blank_appt_footprint()
+            return health_system.get_blank_appt_footprint()
 
         age_years = df.at[person_id, "age_years"]
 
         # Run test
         if age_years < p['age_max_hiv_early_infant_test_years']:
-            test_result = healthsystem.dx_manager.run_dx_test(dx_tests_to_run="hiv_early_infant_test", hsi_event=self)
+            test_result = health_system.dx_manager.run_dx_test(dx_tests_to_run="hiv_early_infant_test", hsi_event=self)
         else:
-            test_result = healthsystem.dx_manager.run_dx_test(dx_tests_to_run="hiv_rapid_test", hsi_event=self)
+            test_result = health_system.dx_manager.run_dx_test(dx_tests_to_run="hiv_rapid_test", hsi_event=self)
 
         if test_result is None:
             # Test was not possible, set blank footprint and schedule another test
@@ -3177,7 +3178,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             if self.counter_for_test_not_available <= p["hiv_healthseekingbehaviour_cap"]:
                 # repeat appt for HIV test
-                healthsystem.schedule_hsi_event(
+                health_system.schedule_hsi_event(
                     self,
                     topen=self.sim.date + pd.DateOffset(days=p['hv_min_test_interval_days']),
                     tclose=None,
@@ -3210,7 +3211,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             # Update diagnosis if the person is indeed HIV positive;
             if hv_inf:
                 df.at[person_id, "hv_diagnosed"] = True
-                self.module.do_when_hiv_diagnosed(person_id=person_id)
+                hiv_module.do_when_hiv_diagnosed(person_id=person_id)
 
         else:
             # The test_result is HIV negative
@@ -3232,18 +3233,18 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                 # The test was negative: make referrals to other services:
 
                 # Consider if the person's risk will be reduced by behaviour change counselling
-                if self.module.lm["lm_behavchg"].predict(person_df, self.module.rng):
+                if hiv_module.lm["lm_behavchg"].predict(person_df, hiv_module.rng):
                     df.at[person_id, "hv_behaviour_change"] = True
 
                 # If person is a man, and not circumcised, then consider referring to VMMC
                 if (person["sex"] == "M") and (not person["li_is_circ"]):
-                    should_refer_vmmc = self.module.lm["lm_circ"].predict(
-                        person_df, self.module.rng,
+                    should_refer_vmmc = hiv_module.lm["lm_circ"].predict(
+                        person_df, hiv_module.rng,
                         year=self.sim.date.year,
                     )
                     if should_refer_vmmc:
-                        healthsystem.schedule_hsi_event(
-                            HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                        health_system.schedule_hsi_event(
+                            HSI_Hiv_Circ(person_id=person_id, module=hiv_module),
                             topen=self.sim.date,
                             tclose=None,
                             priority=0,
@@ -3255,22 +3256,22 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     and person["li_is_sexworker"]
                     and not (person["hv_is_on_prep_oral"] or person["hv_is_on_prep_inj"])
                     and (self.sim.date.year >= p["prep_start_year"])
-                    and self.module.lm["lm_prep"].predict(person_df, self.module.rng)
+                    and hiv_module.lm["lm_prep"].predict(person_df, hiv_module.rng)
                 ):
                     if p["injectable_prep_allowed"] and (self.sim.date.year >= 2025):
                         prob_injectable = p["prob_injectable_prep_vs_oral"]
 
-                        type_of_prep = self.module.rng.choice(
+                        type_of_prep = hiv_module.rng.choice(
                             ["injectable", "oral"],
                             p=[prob_injectable, 1 - prob_injectable],
                         )
                     else:
                         type_of_prep = "oral"
 
-                    healthsystem.schedule_hsi_event(
+                    health_system.schedule_hsi_event(
                         HSI_Hiv_StartOrContinueOnPrep(
                             person_id=person_id,
-                            module=self.module,
+                            module=hiv_module,
                             type_of_prep=type_of_prep,
                         ),
                         topen=self.sim.date,
