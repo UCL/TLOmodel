@@ -3153,6 +3153,20 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
+        # dataframe for calling linear model predict()
+        # only retrieve those properties used in this method and linear models
+        person_df = df.loc[
+            [person_id],
+            [
+                'age_years', 'sex',
+                'hv_art', 'hv_diagnosed', 'hv_inf', 'hv_is_on_prep_inj', 'hv_is_on_prep_oral', 'hv_last_test_date',
+                'li_is_circ', 'li_is_sexworker',
+            ]
+        ]
+
+        # series for easy access
+        person = person_df.iloc[0]
+
         # If person is diagnosed and on treatment do nothing do not occupy any resources
         if person["hv_diagnosed"] and (person["hv_art"] != "not"):
             return healthsystem.get_blank_appt_footprint()
@@ -3205,15 +3219,13 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # The test was negative: make referrals to other services:
 
                     # Consider if the person's risk will be reduced by behaviour change counselling
-                    if self.module.lm["lm_behavchg"].predict(
-                        df.loc[[person_id]], self.module.rng
-                    ):
+                    if self.module.lm["lm_behavchg"].predict(person_df, self.module.rng):
                         df.at[person_id, "hv_behaviour_change"] = True
 
                     # If person is a man, and not circumcised, then consider referring to VMMC
                     if (person["sex"] == "M") and (not person["li_is_circ"]):
                         x = self.module.lm["lm_circ"].predict(
-                            df.loc[[person_id]], self.module.rng,
+                            person_df, self.module.rng,
                             year=self.sim.date.year,
                         )
                         if x:
@@ -3232,7 +3244,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                         and not (person["hv_is_on_prep_oral"] or person["hv_is_on_prep_inj"])
                         and (self.sim.date.year >= p["prep_start_year"])
                     ):
-                        if self.module.lm["lm_prep"].predict(df.loc[[person_id]], self.module.rng):
+                        if self.module.lm["lm_prep"].predict(person_df, self.module.rng):
                             if (
                                 p["injectable_prep_allowed"]
                                 and (self.sim.date.year >= 2025)
