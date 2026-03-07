@@ -3251,36 +3251,32 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
                 # If person is a woman and FSW, and not currently on PrEP then consider referring to PrEP
                 # numbers available 2018 onwards
-                if (
-                    (person["sex"] == "F")
+                if (person["sex"] == "F"
                     and person["li_is_sexworker"]
                     and not (person["hv_is_on_prep_oral"] or person["hv_is_on_prep_inj"])
                     and (self.sim.date.year >= p["prep_start_year"])
+                    and self.module.lm["lm_prep"].predict(person_df, self.module.rng)
                 ):
-                    if self.module.lm["lm_prep"].predict(person_df, self.module.rng):
-                        if (
-                            p["injectable_prep_allowed"]
-                            and (self.sim.date.year >= 2025)
-                        ):
-                            prob_injectable = p["prob_injectable_prep_vs_oral"]
+                    if p["injectable_prep_allowed"] and (self.sim.date.year >= 2025):
+                        prob_injectable = p["prob_injectable_prep_vs_oral"]
 
-                            type_of_prep = self.module.rng.choice(
-                                ["injectable", "oral"],
-                                p=[prob_injectable, 1 - prob_injectable],
-                            )
-                        else:
-                            type_of_prep = "oral"
-
-                        healthsystem.schedule_hsi_event(
-                            HSI_Hiv_StartOrContinueOnPrep(
-                                person_id=person_id,
-                                module=self.module,
-                                type_of_prep=type_of_prep,
-                            ),
-                            topen=self.sim.date,
-                            tclose=None,
-                            priority=0,
+                        type_of_prep = self.module.rng.choice(
+                            ["injectable", "oral"],
+                            p=[prob_injectable, 1 - prob_injectable],
                         )
+                    else:
+                        type_of_prep = "oral"
+
+                    healthsystem.schedule_hsi_event(
+                        HSI_Hiv_StartOrContinueOnPrep(
+                            person_id=person_id,
+                            module=self.module,
+                            type_of_prep=type_of_prep,
+                        ),
+                        topen=self.sim.date,
+                        tclose=None,
+                        priority=0,
+                    )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
