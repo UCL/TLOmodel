@@ -3205,7 +3205,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         # Offer services as needed:
         if test_result:
             # The test_result is HIV positive
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTPositive": 1})
+            actual_appt_footprint = self.make_appt_footprint({"VCTPositive": 1})
 
             # Update diagnosis if the person is indeed HIV positive;
             if hv_inf:
@@ -3214,7 +3214,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         else:
             # The test_result is HIV negative
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
+            actual_appt_footprint = self.make_appt_footprint({"VCTNegative": 1})
 
             if not self.do_not_refer_if_neg:
                 # dataframe for calling linear model predict()
@@ -3282,7 +3282,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         if self.suppress_footprint:
             return self.make_appt_footprint({})
         else:
-            return ACTUAL_APPT_FOOTPRINT
+            return actual_appt_footprint
 
 
 class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
