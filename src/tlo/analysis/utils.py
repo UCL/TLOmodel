@@ -311,6 +311,7 @@ def extract_results(results_folder: Path,
                     index: str = None,
                     custom_generate_series=None,
                     do_scaling: bool = False,
+                    scaling_factor = None,
                     draw_runs: Optional[List[Tuple[int, int]]] = None,
                     autodiscover: bool = False,
                     ) -> pd.DataFrame:
@@ -335,9 +336,13 @@ def extract_results(results_folder: Path,
     def get_multiplier(_draw, _run):
         """Helper function to get the multiplier from the simulation.
         Note that if the scaling factor cannot be found a `KeyError` is thrown."""
-        return load_pickled_dataframes(
-            results_folder, _draw, _run, 'tlo.methods.population'
-        )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+        if scaling_factor is not None:
+            return scaling_factor
+        else:
+            return (
+                load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population')
+                ['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+            )
 
     if custom_generate_series is None:
         # If there is no `custom_generate_series` provided, it implies that function required selects the specified
