@@ -312,6 +312,8 @@ def extract_results(results_folder: Path,
                     custom_generate_series=None,
                     do_scaling: bool = False,
                     suspended_results_folder: Path = None,
+                    draw_runs: Optional[List[Tuple[int, int]]] = None,
+                    autodiscover: bool = False,
                     ) -> pd.DataFrame:
     """Utility function to unpack results.
 
@@ -355,33 +357,46 @@ def extract_results(results_folder: Path,
         else:
             return custom_generate_series(dataframe)
 
-    # get number of draws and numbers of runs
-    info = get_scenario_info(results_folder)
+    if draw_runs is not None:
+        selected_draw_runs = draw_runs
+    elif autodiscover:
+        # get number of draws and numbers of runs
+        info = get_scenario_info(results_folder, autodiscover)
+        selected_draw_runs = [
+            (draw, run)
+            for draw in info['draws']
+            for run in info['runs_by_draw'][draw]
+        ]
+    else:
+        # Legacy default behaviour: infer ranges from scenario info.
+        info = get_scenario_info(results_folder)
+        selected_draw_runs = [
+            (draw, run)
+            for draw in range(info['number_of_draws'])
+            for run in range(info['runs_per_draw'])
+        ]
 
     # Collect results from each draw/run
     res = dict()
-    for draw in range(info['number_of_draws']):
-        for run in range(info['runs_per_draw']):
-
-            draw_run = (draw, run)
-
-            try:
-                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                output_from_eval: pd.Series = generate_series(df)
-                assert isinstance(output_from_eval, pd.Series), (
-                    'Custom command does not generate a pd.Series'
-                )
-                if do_scaling:
-                    if suspended_results_folder is not None:
-                        res[draw_run] = output_from_eval * get_multiplier(suspended_results_folder, 0, 0)
-                    else:
-                        res[draw_run] = output_from_eval * get_multiplier(results_folder, draw, run)
+    for draw, run in selected_draw_runs:
+        draw_run = (draw, run)
+        try:
+            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+            output_from_eval: pd.Series = generate_series(df)
+            assert isinstance(output_from_eval, pd.Series), (
+                'Custom command does not generate a pd.Series'
+            )
+            if do_scaling:
+                if suspended_results_folder is not None:
+                    res[draw_run] = output_from_eval * get_multiplier(suspended_results_folder, 0, 0)
                 else:
-                    res[draw_run] = output_from_eval
+                    res[draw_run] = output_from_eval * get_multiplier(results_folder, draw, run)
+            else:
+                res[draw_run] = output_from_eval
 
-            except KeyError:
-                # Some logs could not be found - probably because this run failed.
-                res[draw_run] = None
+        except KeyError:
+            # Some logs could not be found - probably because this run failed.
+            res[draw_run] = None
 
     # Use pd.concat to compile results (skips dict items where the values is None)
     _concat = pd.concat(res, axis=1)
