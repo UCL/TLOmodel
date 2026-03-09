@@ -4,11 +4,11 @@ import argparse
 import glob
 import os
 import zipfile
+import pickle
 from pathlib import Path
 
 import numpy as np
 from matplotlib import pyplot as plt
-import pandas as pd
 from tlo import Date
 from scripts.calibration_analyses.analysis_scripts import plot_legends
 from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
@@ -55,6 +55,7 @@ from tlo.analysis.utils import (
 
 TARGET_PERIOD = (Date(2026, 1, 1), Date(2041, 1, 1))
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 5
+suspended_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z")
 results_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z")
 # SCALING_FACTOR retrieved from the suspended run in
 # outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z
@@ -89,6 +90,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         input_costs = estimate_input_cost_of_scenarios(
                           results_folder,
                           resourcefilepath,
+                          suspended_results_folder=suspended_folder,
                           cost_only_used_staff=True,
                           _discount_rate=discount_rate_cost,
                           _metric="median",)
@@ -103,7 +105,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key='population',
         custom_generate_series=get_total_population_by_year,
         do_scaling=True,
-        scaling_factor=SCALING_FACTOR,
+        suspended_results_folder=suspended_folder,
         autodiscover=True
     )
     total_population_by_year = compute_summary_statistics(total_population_by_year, central_measure = 'median')
@@ -140,7 +142,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             key="death",
             custom_generate_series=extract_deaths_total,
             do_scaling=True,
-            scaling_factor=SCALING_FACTOR,
+            suspended_results_folder=suspended_folder,
             autodiscover=True,
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
@@ -155,7 +157,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 target_period_tuple=TARGET_PERIOD,
             ),
             do_scaling=True,
-            scaling_factor=SCALING_FACTOR,
+            suspended_results_folder=suspended_folder,
             autodiscover=True,
         ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
@@ -199,7 +201,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             key="death",
             custom_generate_series=lambda _df: get_num_deaths_by_cause_label(_df, TARGET_PERIOD),
             do_scaling=True,
-            scaling_factor=SCALING_FACTOR,
+            suspended_results_folder=suspended_folder,
             autodiscover=True,
         )
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
@@ -213,7 +215,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             key="dalys_stacked_by_age_and_time",
             custom_generate_series=lambda _df: get_num_dalys_by_cause_label(_df, TARGET_PERIOD),
             do_scaling=True,
-            scaling_factor=SCALING_FACTOR,
+            suspended_results_folder=suspended_folder,
             autodiscover=True,
         )
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
@@ -226,7 +228,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="death",
         custom_generate_series=lambda _df: get_total_num_death_by_agegrp_and_label(_df, TARGET_PERIOD),
         do_scaling=True,
-        scaling_factor=SCALING_FACTOR,
+        suspended_results_folder=suspended_folder,
         autodiscover=True,
     ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
 
@@ -236,7 +238,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="dalys_stacked_by_age_and_time",
         custom_generate_series=lambda _df: get_total_num_dalys_by_agegrp_and_label(_df, TARGET_PERIOD),
         do_scaling=True,
-        scaling_factor=SCALING_FACTOR,
+        suspended_results_folder=suspended_folder,
         autodiscover=True,
     ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
 
@@ -247,7 +249,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             key="HSI_Event",
             custom_generate_series=lambda _df: get_counts_of_hsi_by_short_treatment_id(_df, TARGET_PERIOD),
             do_scaling=True,
-            scaling_factor=SCALING_FACTOR,
+            suspended_results_folder=suspended_folder,
             autodiscover=True,
         )
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
@@ -284,7 +286,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             key="HSI_Event",
             custom_generate_series=lambda _df: get_counts_of_appts(_df, TARGET_PERIOD),
             do_scaling=True,
-            scaling_factor=SCALING_FACTOR,
+            suspended_results_folder=suspended_folder,
         )
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
         .fillna(0.0)

@@ -311,9 +311,7 @@ def extract_results(results_folder: Path,
                     index: str = None,
                     custom_generate_series=None,
                     do_scaling: bool = False,
-                    scaling_factor = None,
-                    draw_runs: Optional[List[Tuple[int, int]]] = None,
-                    autodiscover: bool = False,
+                    suspended_results_folder: Path = None,
                     ) -> pd.DataFrame:
     """Utility function to unpack results.
 
@@ -326,23 +324,19 @@ def extract_results(results_folder: Path,
      `custom_generate_series`.
 
     Optionally, with `do_scaling=True`, each element is multiplied by the scaling_factor recorded in the simulation.
-
-    If `draw_runs` is provided, only these draw/run pairs are extracted (in the order supplied). If `draw_runs` is
-    not provided and `autodiscover=True`, available draw/run folders are auto-discovered and extracted.
+    If the suspend-and-resume functionality is used, scaling factor may be avaialble in the folder where the log
+    of the suspended run are stored.
 
     Note that if runs in the batch have failed (such that logs have not been generated), these are dropped silently.
     """
 
-    def get_multiplier(_draw, _run):
+
+    def get_multiplier(results_folder, _draw, _run):
         """Helper function to get the multiplier from the simulation.
         Note that if the scaling factor cannot be found a `KeyError` is thrown."""
-        if scaling_factor is not None:
-            return scaling_factor
-        else:
-            return (
-                load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population')
-                ['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
-            )
+        return load_pickled_dataframes(
+            results_folder, _draw, _run, 'tlo.methods.demography'
+    )['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
 
     if custom_generate_series is None:
         # If there is no `custom_generate_series` provided, it implies that function required selects the specified
@@ -361,44 +355,33 @@ def extract_results(results_folder: Path,
         else:
             return custom_generate_series(dataframe)
 
-    if draw_runs is not None:
-        selected_draw_runs = draw_runs
-    elif autodiscover:
-        info = get_scenario_info(results_folder, autodiscover=True)
-        selected_draw_runs = [
-            (draw, run)
-            for draw in info['draws']
-            for run in info['runs_by_draw'][draw]
-        ]
-    else:
-        # Legacy default behaviour: infer ranges from scenario info.
-        info = get_scenario_info(results_folder)
-        selected_draw_runs = [
-            (draw, run)
-            for draw in range(info['number_of_draws'])
-            for run in range(info['runs_per_draw'])
-        ]
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
 
     # Collect results from each draw/run
     res = dict()
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
 
-    for draw, run in selected_draw_runs:
-        draw_run = (draw, run)
-        try:
-            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-            output_from_eval: pd.Series = generate_series(df)
+            draw_run = (draw, run)
 
-            assert isinstance(output_from_eval, pd.Series), (
-                'Custom command does not generate a pd.Series'
-            )
-            if do_scaling:
-                res[draw_run] = output_from_eval * get_multiplier(draw, run)
-            else:
-                res[draw_run] = output_from_eval
+            try:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                output_from_eval: pd.Series = generate_series(df)
+                assert isinstance(output_from_eval, pd.Series), (
+                    'Custom command does not generate a pd.Series'
+                )
+                if do_scaling:
+                    if suspended_results_folder is not None:
+                        res[draw_run] = output_from_eval * get_multiplier(suspended_results_folder, 0, 0)
+                    else:
+                        res[draw_run] = output_from_eval * get_multiplier(results_folder, draw, run)
+                else:
+                    res[draw_run] = output_from_eval
 
-        except KeyError:
-            # Some logs could not be found - probably because this run failed.
-            res[draw_run] = None
+            except KeyError:
+                # Some logs could not be found - probably because this run failed.
+                res[draw_run] = None
 
     # Use pd.concat to compile results (skips dict items where the values is None)
     _concat = pd.concat(res, axis=1)
