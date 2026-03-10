@@ -1,21 +1,12 @@
-from typing import Dict
 import json
-import os
-
-import numpy as np
-import pandas as pd
-from scipy.stats import qmc
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.scenario_switcher import (
-    ImprovedHealthSystemAndCareSeekingScenarioSwitcher,
-)
+
 from tlo.scenario import BaseScenario
 
 YEAR_OF_CHANGE = 2025
-n_samples_to_use = 200
+n_samples_to_use = 50
 LHS_file = "src/scripts/climate_disruptions/lhs_parameter_draws.json"
 start_index = 0
 # Latin Hypercube parameters and generation done in src/scripts/climate_disruptions/generate_LHS_params_mode_1.py
@@ -30,9 +21,9 @@ class ClimateDisruptionScenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2041, 1, 12)
+        self.end_date = Date(2041, 1, 1)
         self.pop_size = 100_000
-        self.runs_per_draw = 1
+        self.runs_per_draw = 5
         self.YEAR_OF_CHANGE = YEAR_OF_CHANGE
         self._parameter_grid = parameter_grid
         self.number_of_draws = len(self._parameter_grid)
