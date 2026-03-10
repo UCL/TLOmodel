@@ -315,6 +315,105 @@ prop_tested_adult = get_disease_specific_summary(results_folder,
                                      var = 'prop_tested_adult',
                                      do_scaling = False)
 
+number_adults_tested = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'number_adults_tested',
+                                     do_scaling = True)
+
+prop_men_circ = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'prop_men_circ',
+                                     do_scaling = False)
+prop_fsw_on_prep = get_disease_specific_summary(results_folder,
+                                     module = 'tlo.methods.hiv',
+                                     key = 'hiv_program_coverage',
+                                     var = 'prop_fsw_on_prep',
+                                     do_scaling = False)
+
+from functools import partial
+
+# Partial to fix the shared arguments
+get_epi_summary = partial(
+    get_disease_specific_summary,
+    results_folder,
+    module='tlo.methods.epi',
+)
+# (key, var, do_scaling)
+EPI_SUMMARY_VARS = [
+    ('ep_vaccine_coverage', 'epBcgCoverage',             False),
+    ('ep_vaccine_coverage',  'epDtp3Coverage',     False),
+    ('ep_vaccine_coverage', 'epHep3Coverage',     False),
+    ('ep_vaccine_coverage', 'epHib3Coverage',      False),
+    ('ep_vaccine_coverage','epHpvCoverage',   False),
+    ('ep_vaccine_coverage','epMeasles2Coverage',          False),
+    ('ep_vaccine_coverage', 'epMeaslesCoverage',       False),
+    ('ep_vaccine_coverage', 'epNumInfantsUnder1', True),
+    ('ep_vaccine_coverage', 'epHib3Coverage', False),
+    ('ep_vaccine_coverage', 'epOpv3Coverage', False),
+    ('ep_vaccine_coverage', 'epPneumo3Coverage', False),
+    ('ep_vaccine_coverage', 'epRota2Coverage', False),
+    ('ep_vaccine_coverage', 'epRubellaCoverage', False),
+]
+
+epi_results = {
+    var: get_epi_summary(key=key, var=var, do_scaling=do_scaling)
+    for key, var, do_scaling in EPI_SUMMARY_VARS
+}
+
+def extract_summary_table(results, years, draw_label, stat='central'):
+    """Extract a column per year for a given draw label and stat."""
+    rows = []
+    for indicator, df in results.items():
+        row = {'indicator': indicator}
+        for year in years:
+            val = df.loc[year, (draw_label, stat)]
+            row[f'{year}_{stat}'] = val
+        rows.append(row)
+    return pd.DataFrame(rows).set_index('indicator')
+
+# Extract draw 0 = 'current', draw 1 = 'perfect'
+years = [2025, 2026]
+
+epi_table  = extract_summary_table(epi_results, years, draw_label=1)
+INDICATOR_NAMES = {
+    'epNumInfantsUnder1':   'Number of infants under 1',
+    'epBcgCoverage':        'BCG coverage',
+    'epDtp3Coverage':       'DTP3 coverage',
+    'epHep3Coverage':       'Hepatitis B (Hep3) coverage',
+    'epHib3Coverage':       'Hib3 coverage',
+    'epHpvCoverage':        'HPV coverage',
+    'epMeasles2Coverage':   'Measles 2nd dose coverage',
+    'epMeaslesCoverage':    'Measles coverage',
+    'epOpv3Coverage':       'OPV3 coverage',
+    'epPneumo3Coverage':    'Pneumococcal (Pneumo3) coverage',
+    'epRota2Coverage':      'Rotavirus 2nd dose coverage',
+    'epRubellaCoverage':    'Rubella coverage',
+}
+
+# Apply to your summary table
+epi_table = epi_table.rename(index=INDICATOR_NAMES)
+
+# Partial to fix the shared arguments
+get_wasting_summary = partial(
+    get_disease_specific_summary,
+    results_folder,
+    module='tlo.methods.wasting',
+)
+# (key, var, do_scaling)
+WASTING_SUMMARY_VARS = [
+    ('wasting_prevalence_props', 'total_mod_under5_prop',             False),
+    ('wasting_prevalence_props',  'total_sev_under5_prop',     False),
+]
+
+wasting_results = {
+    var: get_wasting_summary(key=key, var=var, do_scaling=do_scaling)
+    for key, var, do_scaling in WASTING_SUMMARY_VARS
+}
+
+wasting_table = extract_summary_table(wasting_results, years, draw_label=1)
+
 
 # TODO update code to extract relevant results alongside prevalance
 log['tlo.methods.tb'].keys()
