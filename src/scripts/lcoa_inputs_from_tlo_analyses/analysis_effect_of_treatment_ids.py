@@ -17,7 +17,6 @@ from scripts.lcoa_inputs_from_tlo_analyses.fig_utils import (
     plot_multiindex_dot_with_interval,
 )
 from scripts.lcoa_inputs_from_tlo_analyses.results_processing_utils import (
-    extract_deaths_total,
     get_counts_of_appts,
     get_counts_of_hsi_by_short_treatment_id,
     get_num_dalys_by_cause_label,
@@ -53,7 +52,7 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-TARGET_PERIOD = (Date(2026, 1, 1), Date(2027, 1, 1))
+TARGET_PERIOD = (Date(2026, 1, 1), Date(2041, 1, 1))
 PERIOD_LENGTH_YEARS_FOR_BAR_PLOTS = 5
 suspended_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-12T120859Z")
 results_folder = Path("outputs/s.bhatia@imperial.ac.uk/effect_of_each_treatment_id-2026-02-16T154500Z")
@@ -115,20 +114,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             do_scaling=True,
             suspended_results_folder=suspended_folder,
             autodiscover=True,
-        )
-        .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-        .sum()
+        ).pipe(set_param_names_as_column_index_level_0, param_names=param_names)
     )
+
     num_deaths_averted = summarize(
         pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_deaths, comparison='Nothing')).T,
-        "median"
+            find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing')).T
     ).iloc[0].unstack().sort_values(by='mean', ascending=True)
+
 
     pc_deaths_averted = 100.0 * summarize(
         pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_deaths, comparison='Nothing', scaled=True)).T
+            find_difference_extra_relative_to_comparison(num_deaths.sum(), comparison='Nothing', scaled=True)).T
     ).iloc[0].unstack().sort_values(by='mean', ascending=True)
+
+    num_deaths = summarize(num_deaths)
 
     num_dalys = (
         extract_results(
@@ -141,18 +141,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             autodiscover=True,
         )
         .pipe(set_param_names_as_column_index_level_0, param_names=param_names)
-        .sum()
     )
 
     num_dalys_averted = summarize(
         pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_dalys, comparison='Nothing')).T
+            find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing')).T
     ).iloc[0].unstack().sort_values(by='mean', ascending=True)
 
     pc_dalys_averted = 100.0 * summarize(
         pd.DataFrame(
-            find_difference_extra_relative_to_comparison(num_dalys, comparison='Nothing', scaled=True)).T
+            find_difference_extra_relative_to_comparison(num_dalys.sum(), comparison='Nothing', scaled=True)).T
     ).iloc[0].unstack().sort_values(by='mean', ascending=True)
+
+    num_dalys = summarize(num_dalys)
 
     total_num_death_by_agegrp_and_label = extract_results(
         results_folder,
@@ -204,6 +205,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         .sort_index()
     )
 
+    # Computing ICERs
+    print("Computing ICERs...")
+    total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
+    incremental_scenario_cost = (pd.DataFrame(
+        find_difference_relative_to_comparison(
+            total_input_cost,
+            comparison='Nothing',)
+    ).T.iloc[0].unstack()).T
+
+    incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost, _metric='median')
+
     return {
         "total_population_by_year": total_population_by_year,
         "num_deaths": num_deaths,
@@ -228,7 +240,7 @@ if __name__ == "__main__":
 
     out = args.output_folder if args.output_folder is not None else args.results_folder
     results = apply(results_folder=args.results_folder, output_folder=out, resourcefilepath=Path("./resources"))
-    with open(args.output_folder / 'results.pkl', 'wb') as f:
+    with open(args.output_folder / 'fullresults.pkl', 'wb') as f:
         pickle.dump(results, f)
 
     print("Analysis complete! Results saved to results.pkl")
