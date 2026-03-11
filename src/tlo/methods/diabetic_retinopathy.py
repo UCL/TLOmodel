@@ -40,13 +40,13 @@ class DiabeticRetinopathy(Module):
             gbd_causes='Diabetes mellitus', label='Diabetes'), }
 
     PARAMETERS = {
-        "rate_onset_to_mild_or_moderate_dr": Parameter(Types.REAL,
+        "prob_onset_to_mild_or_moderate_dr": Parameter(Types.REAL,
                                                        "Probability of people who get diagnosed with non-proliferative "
                                                        "mild/moderate diabetic retinopathy"),
-        "rate_mild_or_moderate_to_severe": Parameter(Types.REAL,
+        "prob_mild_or_moderate_to_severe": Parameter(Types.REAL,
                                                      "Probability of people who get diagnosed with severe "
                                                      "diabetic retinopathy"),
-        "rate_severe_to_proliferative": Parameter(Types.REAL,
+        "prob_severe_to_proliferative": Parameter(Types.REAL,
                                                   "Probability of people who get diagnosed with "
                                                   "proliferative diabetic retinopathy"),
 
@@ -96,6 +96,10 @@ class DiabeticRetinopathy(Module):
         "prob_repeat_dmo_treatment": Parameter(
             Types.REAL,
             "Probability that clinically significant DMO requires repeat treatment at review"
+        ),
+        "prob_antivegf_for_clinically_significant_dmo": Parameter(
+            Types.REAL,
+            "Probability that Anti-VEGF is selected rather than focal laser for clinically significant DMO"
         ),
         "next_screening_if_mild_or_moderate": Parameter(
             Types.INT,
@@ -463,12 +467,12 @@ class DiabeticRetinopathy(Module):
 
         self.lm['onset_mild_or_moderate_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            intercept=p['rate_onset_to_mild_or_moderate_dr']
+            intercept=p['prob_onset_to_mild_or_moderate_dr']
         )
 
         self.lm['mildmoderate_severe_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['rate_mild_or_moderate_to_severe'],
+            p['prob_mild_or_moderate_to_severe'],
             Predictor('had_treatment_during_this_stage', external=True)
             .when(True, p['rr_progression_after_treatment']),
             Predictor('diabetes_duration_greater_than_15_years', external=True)
@@ -477,7 +481,7 @@ class DiabeticRetinopathy(Module):
 
         self.lm['severe_proliferative_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['rate_severe_to_proliferative'],
+            p['prob_severe_to_proliferative'],
             Predictor('had_treatment_during_this_stage', external=True)
             .when(True, p['rr_progression_after_treatment']),
             Predictor('diabetes_duration_greater_than_15_years', external=True)
@@ -706,27 +710,29 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
             df.is_alive & df.nc_diabetes & (df.dr_status == 'mild_or_moderate')]
         diabetes_and_alive_severedr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'severe')]
 
-        will_progress = self.module.lm['onset_mild_or_moderate_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
-        # will_progress_idx = will_progress[will_progress].index
-        will_progress_idx = df.index[np.where(will_progress)[0]]
+        will_progress = self.module.lm['onset_mild_or_moderate_dr'].predict(
+            diabetes_and_alive_nodr,
+            self.module.rng,
+            squeeze_single_row_output=False)
+        will_progress_idx = will_progress[will_progress].index
         df.loc[will_progress_idx, 'dr_status'] = 'mild_or_moderate'
 
         mildmoderate_to_severe = self.module.lm['mildmoderate_severe_dr'].predict(
             diabetes_and_alive_mild_moderate_dr,
             self.module.rng,
+            squeeze_single_row_output=False,
             had_treatment_during_this_stage=had_treatment_during_this_stage,
             diabetes_duration_greater_than_15_years=diabetes_duration_greater_than_15_years)
-        # moderate_to_severe_idx = moderate_to_severe[moderate_to_severe].index
-        mildmoderate_to_severe_idx = df.index[np.where(mildmoderate_to_severe)[0]]
+        mildmoderate_to_severe_idx = mildmoderate_to_severe[mildmoderate_to_severe].index
         df.loc[mildmoderate_to_severe_idx, 'dr_status'] = 'severe'
 
         severe_to_proliferative = self.module.lm['severe_proliferative_dr'].predict(
             diabetes_and_alive_severedr,
             self.module.rng,
+            squeeze_single_row_output=False,
             had_treatment_during_this_stage=had_treatment_during_this_stage,
             diabetes_duration_greater_than_15_years=diabetes_duration_greater_than_15_years)
-        # severe_to_proliferative_idx = mild_to_moderate[severe_to_proliferative].index
-        severe_to_proliferative_idx = df.index[np.where(severe_to_proliferative)[0]]
+        severe_to_proliferative_idx = severe_to_proliferative[severe_to_proliferative].index
         df.loc[severe_to_proliferative_idx, 'dr_status'] = 'proliferative'
 
         # Update DMO status
@@ -878,7 +884,8 @@ class HSI_Dr_Dmo_Screening(HSI_Event, IndividualScopeEventMixin):
             if person.dmo_status == 'clinically_significant':
                 # Randomise between AntiVEGF or Focal Laser
                 treatment_for_cs_dmo = HSI_Dr_Dmo_AntiVEGF \
-                    if self.module.rng.random_sample() < 0.5 else HSI_Dr_Dmo_Focal_Laser
+                    if self.module.rng.random_sample() < p[
+                    'prob_antivegf_for_clinically_significant_dmo'] else HSI_Dr_Dmo_Focal_Laser
                 hs.schedule_hsi_event(
                     hsi_event=treatment_for_cs_dmo(module=self.module, person_id=person_id),
                     topen=self.sim.date,
@@ -1106,7 +1113,8 @@ class HSI_Dr_Dmo_Review(HSI_Event, IndividualScopeEventMixin):
         if df.at[person_id, 'dmo_status'] == 'clinically_significant':
             if self.module.rng.random_sample() < p['prob_repeat_dmo_treatment']:
                 treatment_for_cs_dmo = HSI_Dr_Dmo_AntiVEGF \
-                    if self.module.rng.random_sample() < 0.5 else HSI_Dr_Dmo_Focal_Laser
+                    if self.module.rng.random_sample() < p[
+                    'prob_antivegf_for_clinically_significant_dmo'] else HSI_Dr_Dmo_Focal_Laser
                 hs.schedule_hsi_event(
                     hsi_event=treatment_for_cs_dmo(module=self.module, person_id=person_id),
                     topen=self.sim.date,
@@ -1120,8 +1128,8 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 1 month
         """
-        self.repeat = 30
-        super().__init__(module, frequency=DateOffset(days=self.repeat))
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
         """Compute statistics regarding the current status of persons and output to the logger

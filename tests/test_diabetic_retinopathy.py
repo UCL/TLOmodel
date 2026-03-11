@@ -120,23 +120,23 @@ def make_high_init_prev(sim):
     return sim
 
 
-def incr_rate_of_onset_mild_or_moderate(sim):
+def incr_prob_of_onset_mild_or_moderate(sim):
     # Rate of cancer onset per # months:
-    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_or_moderate_dr'] = 0.05
+    sim.modules['DiabeticRetinopathy'].parameters['prob_onset_to_mild_or_moderate_dr'] = 0.05
     return sim
 
 
-def zero_rate_of_onset_mild_or_moderate(sim):
+def zero_prob_of_onset_mild_or_moderate(sim):
     # Rate of cancer onset per # months:
-    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_or_moderate_dr'] = 0.00
+    sim.modules['DiabeticRetinopathy'].parameters['prob_onset_to_mild_or_moderate_dr'] = 0.00
     return sim
 
 
-def incr_rates_of_progression(sim):
+def incr_probs_of_progression(sim):
     # Rates of DR progression:
-    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_or_moderate_dr'] *= 4
-    sim.modules['DiabeticRetinopathy'].parameters['rate_mild_or_moderate_to_severe'] *= 4
-    sim.modules['DiabeticRetinopathy'].parameters['rate_severe_to_proliferative'] *= 4
+    sim.modules['DiabeticRetinopathy'].parameters['prob_onset_to_mild_or_moderate_dr'] *= 4
+    sim.modules['DiabeticRetinopathy'].parameters['prob_mild_or_moderate_to_severe'] *= 4
+    sim.modules['DiabeticRetinopathy'].parameters['prob_severe_to_proliferative'] *= 4
     return sim
 
 
@@ -202,7 +202,7 @@ def test_run_sim_from_high_prevalence(seed):
     properties at the end"""
     sim = get_simulation_healthsystemdisabled(seed=seed)
     sim = make_high_init_prev(sim)
-    sim = incr_rates_of_progression(sim)
+    sim = incr_probs_of_progression(sim)
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
