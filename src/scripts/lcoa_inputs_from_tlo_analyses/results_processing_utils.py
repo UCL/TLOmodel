@@ -14,6 +14,20 @@ from tlo.analysis.utils import make_age_grp_types, summarize, to_age_group
 
 TARGET_PERIOD = (Date(2026, 1, 1), Date(2041, 1, 1))
 
+def find_difference_relative_to_comparison(_ser: pd.Series,
+                                           comparison: str,
+                                           scaled: bool = False,
+                                           drop_comparison: bool = True,
+                                           ):
+    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+    within the runs (level 1), relative to where draw = `comparison`.
+    The comparison is `X - COMPARISON`."""
+    return _ser \
+        .unstack(level=0) \
+        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+        .drop(columns=([comparison] if drop_comparison else [])) \
+        .stack()
+
 def get_total_population_by_year(_df):
     years_needed = [i.year for i in TARGET_PERIOD]
     _df["year"] = pd.to_datetime(_df["date"]).dt.year
@@ -82,6 +96,7 @@ def find_difference_extra_relative_to_comparison(
         .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=0)
         .drop(index=([comparison] if drop_comparison else []))
         .stack()
+
     )
 
 
@@ -261,3 +276,38 @@ def get_counts_of_appts(_df: pd.DataFrame, target_period_tuple: tuple[Date, Date
         .sum()
         .astype(int)
     )
+
+
+def make_get_counts_of_appts_by_period(
+    period_length_years: int,
+    target_period_tuple: tuple[Date, Date] = TARGET_PERIOD,
+):
+    """Create helper that summarizes appointment counts by period chunks + overall."""
+    periods = get_periods_within_target_period(
+        period_length_years=period_length_years,
+        target_period_tuple=target_period_tuple,
+    )
+    period_lookup = {
+        year: period_label
+        for period_label, (start_year, end_year) in periods
+        for year in range(start_year, end_year + 1)
+    }
+    target_period_label = target_period(target_period_tuple)
+
+    def _get_counts_of_appts_by_period(_df: pd.DataFrame) -> pd.Series:
+        _df_in_target = _df.loc[pd.to_datetime(_df["date"]).between(*target_period_tuple)].copy()
+        _df_in_target["year"] = pd.to_datetime(_df_in_target["date"]).dt.year
+        _df_in_target["period"] = _df_in_target["year"].map(period_lookup)
+
+        appts = _df_in_target["Number_By_Appt_Type_Code"].apply(pd.Series)
+        chunked = appts.groupby(_df_in_target["period"]).sum().T.stack()
+        chunked.index = chunked.index.set_names(["appt_type", "period"])
+
+        overall = appts.sum()
+        overall.index = pd.MultiIndex.from_arrays(
+            [overall.index, np.repeat(target_period_label, len(overall.index))],
+            names=["appt_type", "period"],
+        )
+        return pd.concat([chunked, overall]).astype(int).sort_index()
+
+    return _get_counts_of_appts_by_period

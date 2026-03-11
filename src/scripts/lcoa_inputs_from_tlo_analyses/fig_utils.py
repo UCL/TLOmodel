@@ -5,6 +5,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
@@ -14,6 +15,25 @@ from tlo.analysis.utils import (
     get_color_short_treatment_id,
     order_of_cause_of_death_or_daly_label,
 )
+
+
+APPOINTMENT_TYPE_PALETTE = list(plt.get_cmap("tab20").colors) + list(plt.get_cmap("Set2").colors)
+APPOINTMENT_TYPE_FIXED_COLORS = {"AccidentsandEmerg": "black"}
+
+
+def get_color_by_appointment_type(appointment_types) -> dict:
+    """Return a deterministic color map for appointment types."""
+    non_fixed_appointment_types = sorted(
+        appt for appt in appointment_types if appt not in APPOINTMENT_TYPE_FIXED_COLORS
+    )
+    color_by_appointment_type = {
+        appt: APPOINTMENT_TYPE_PALETTE[i % len(APPOINTMENT_TYPE_PALETTE)]
+        for i, appt in enumerate(non_fixed_appointment_types)
+    }
+    color_by_appointment_type.update(
+        {appt: color for appt, color in APPOINTMENT_TYPE_FIXED_COLORS.items() if appt in appointment_types}
+    )
+    return color_by_appointment_type
 
 
 def do_bar_plot_with_ci(
@@ -155,3 +175,186 @@ def do_label_barh_plot(_df: pd.DataFrame, _ax):
                 verticalalignment="center",
                 size=7,
             )
+
+
+def plot_appointment_counts_heatmap(_df: pd.DataFrame, plot_stat: str = "central", cmap: str = "viridis", colorbar_label: str = "central value"):
+    """Plot a heatmap of central values for each draw across the dataframe index."""
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
+
+    stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
+    stat_level_values = _df.columns.get_level_values(stat_level_name)
+    if "central" not in stat_level_values:
+        raise ValueError("The column MultiIndex does not contain a 'central' entry in the stat level.")
+
+    _plot = _df.xs(plot_stat, axis=1, level=stat_level_name)
+    if _plot.empty:
+        raise ValueError("No plottable data remain after selecting the 'central' columns.")
+
+    _plot = _plot.sort_index(axis=1)
+
+    fig_width = max(12, min(0.3 * len(_plot.columns), 36))
+    fig_height = max(6, min(0.35 * len(_plot.index), 18))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    image = ax.imshow(_plot.to_numpy(), aspect="auto", cmap=cmap)
+
+    ax.set_xticks(np.arange(len(_plot.columns)))
+    ax.set_xticklabels(_plot.columns, rotation=90, ha="right", fontsize=8)
+    ax.set_yticks(np.arange(len(_plot.index)))
+    ax.set_yticklabels([str(label) for label in _plot.index], fontsize=8)
+    ax.set_xlabel(_df.columns.names[0] if _df.columns.names[0] is not None else "draw")
+    ax.set_ylabel(_df.index.name if _df.index.name is not None else "category")
+
+    colorbar = fig.colorbar(image, ax=ax)
+    colorbar.set_label(colorbar_label)
+
+    fig.tight_layout()
+    return fig, ax
+
+
+def plot_appointment_counts_stacked_bar(_df: pd.DataFrame, plot_stat: str = "central"):
+    """Plot horizontal stacked bars of appointment counts by draw for a selected summary statistic."""
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
+
+    stat_level_name = "stat" if "stat" in _df.columns.names else _df.columns.names[1]
+    stat_level_values = _df.columns.get_level_values(stat_level_name)
+    if plot_stat not in stat_level_values:
+        raise ValueError(f"The column MultiIndex does not contain '{plot_stat}' in the stat level.")
+
+    _plot = _df.xs(plot_stat, axis=1, level=stat_level_name).T
+    if _plot.empty:
+        raise ValueError(f"No plottable data remain after selecting the '{plot_stat}' columns.")
+
+    if _plot.isna().any().any():
+        warnings.warn(
+            f"Missing values detected after selecting '{plot_stat}'. Bars will omit missing segments.",
+            stacklevel=2,
+        )
+
+    totals = _plot.sum(axis=1, skipna=True)
+    _plot = _plot.loc[totals.sort_values(ascending=False).index]
+    if not (_plot.gt(0).any(axis=1)).any():
+        raise ValueError(f"No positive values remain after selecting the '{plot_stat}' columns.")
+
+    fig_width = max(12, min(0.22 * len(_plot.columns) + 12, 30))
+    fig_height = max(6, min(0.35 * len(_plot.index), 24))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    color_by_appointment_type = get_color_by_appointment_type(_plot.columns)
+    left = np.zeros(len(_plot.index), dtype=float)
+    y = np.arange(len(_plot.index))
+
+    for idx, appointment_type in enumerate(_plot.columns):
+        values = _plot[appointment_type]
+        mask = values.gt(0) & values.notna()
+        if not mask.any():
+            continue
+        ax.barh(
+            y[mask.to_numpy()],
+            values.loc[mask].to_numpy(),
+            left=left[mask.to_numpy()],
+            color=color_by_appointment_type[appointment_type],
+            label=str(appointment_type),
+        )
+        left[mask.to_numpy()] += values.loc[mask].to_numpy()
+
+    ax.set_yticks(y)
+    ax.set_yticklabels([str(label) for label in _plot.index], fontsize=12)
+    #ax.set_xlabel("count")
+    #ax.set_ylabel(_df.columns.names[0] if _df.columns.names[0] is not None else "draw")
+    ax.invert_yaxis()
+    ax.legend(
+        title="Appointment type",
+        loc="lower right",
+        fontsize=19,
+        title_fontsize=20,
+        frameon=True,
+    )
+
+    fig.tight_layout()
+    return fig, ax
+
+
+def plot_appointment_counts_by_period_for_draw(
+    _df: pd.DataFrame,
+    draw: str,
+    period_labels: list[str],
+):
+    """Plot central values with lower/upper intervals across period chunks for one draw."""
+    if not isinstance(_df.index, pd.MultiIndex) or _df.index.nlevels != 2:
+        raise ValueError("_df index must be a 2-level MultiIndex with levels for appt_type and period.")
+    if not isinstance(_df.columns, pd.MultiIndex) or _df.columns.nlevels != 2:
+        raise ValueError("_df columns must be a 2-level MultiIndex with levels for draw and stat.")
+    if draw not in _df.columns.get_level_values(0):
+        available_draws = sorted(set(_df.columns.get_level_values(0)))
+        raise ValueError(f"Draw '{draw}' not found. Available draws: {available_draws}")
+
+    _plot = _df[draw].reindex(
+        pd.MultiIndex.from_product(
+            [
+                _df.index.get_level_values("appt_type").unique(),
+                period_labels,
+            ],
+            names=["appt_type", "period"],
+        ),
+        fill_value=0.0,
+    )
+    _plot = _plot.loc[:, ["lower", "central", "upper"]]
+    _plot = _plot.unstack("period")
+
+    central = _plot["central"]
+    lower = _plot["lower"]
+    upper = _plot["upper"]
+    non_zero_mask = central.gt(0).any(axis=1)
+    central = central.loc[non_zero_mask, period_labels]
+    lower = lower.loc[non_zero_mask, period_labels]
+    upper = upper.loc[non_zero_mask, period_labels]
+
+    if central.empty:
+        raise ValueError(f"No non-zero appointment types remain for draw '{draw}'.")
+
+    color_by_appointment_type = get_color_by_appointment_type(central.index)
+    x = np.arange(len(period_labels))
+    fig_width = max(10, min(1.2 * len(period_labels) + 4, 20))
+    fig_height = max(6, min(0.28 * len(central.index) + 6, 18))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    for appointment_type in central.index:
+        central_values = central.loc[appointment_type].to_numpy()
+        lower_values = lower.loc[appointment_type].to_numpy()
+        upper_values = upper.loc[appointment_type].to_numpy()
+        yerr = np.vstack([central_values - lower_values, upper_values - central_values])
+        ax.errorbar(
+            x,
+            central_values,
+            yerr=yerr,
+            fmt="o",
+            color=color_by_appointment_type[appointment_type],
+            ecolor=color_by_appointment_type[appointment_type],
+            elinewidth=1.2,
+            capsize=2,
+            markersize=4,
+            label=str(appointment_type),
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(period_labels, rotation=45, ha="right")
+    ax.set_xlabel("period")
+    ax.set_ylabel("appointment count")
+    ax.set_title(f"Appointment counts by period: {draw}")
+    ax.grid(axis="y")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.legend(
+        title="Appointment type",
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        fontsize=8,
+        title_fontsize=9,
+        frameon=True,
+    )
+
+    fig.tight_layout()
+    return fig, ax
