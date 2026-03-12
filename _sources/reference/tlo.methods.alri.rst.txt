@@ -436,13 +436,13 @@ tlo.methods.alri module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x139231890>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x139232110>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x139232190>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x139232210>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x139232290>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x1392322d0>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x139232310>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x139232390>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x139232410>, 'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x139232450>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x139232490>, 'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x1392324d0>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x139232510>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x139232550>, 'ALRI_other_pathogens_NoS': <tlo.methods.causes.Cause object at 0x139232590>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x1392325d0>}
+     CAUSES_OF_DEATH : {'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x12e970510>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x13e2ef410>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x13e495cd0>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x13e496590>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x13e496610>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x13e496650>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x13e496690>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x13e496710>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x13e496790>, 'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x13e4967d0>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x13e496810>, 'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x13e496850>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x13e496890>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x13e4968d0>, 'ALRI_other_pathogens_NoS': <tlo.methods.causes.Cause object at 0x13e496910>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x13e496950>}
 
-     CAUSES_OF_DISABILITY : {'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x139232650>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x139232690>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x139232710>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x139232790>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x139232810>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x139232850>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x139232890>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x139232910>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x1392329d0>, 'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x139232a10>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x139232a50>, 'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x139232a90>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x139232ad0>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x139232b10>, 'ALRI_other_pathogens_NoS': <tlo.methods.causes.Cause object at 0x139232b50>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x139232b90>}
+     CAUSES_OF_DISABILITY : {'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x13e4969d0>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x13e496a10>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x13e496a90>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x13e496b10>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x13e496b90>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x13e496bd0>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x13e496c10>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x13e496c90>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x13e496d50>, 'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x13e496d90>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x13e496dd0>, 'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x13e496e10>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x13e496e50>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x13e496e90>, 'ALRI_other_pathogens_NoS': <tlo.methods.causes.Cause object at 0x13e496ed0>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x13e496f10>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Hiv', 'Epi', 'Demography', 'NewbornOutcomes', 'Wasting', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'Wasting', 'SymptomManager', 'Hiv', 'Demography', 'NewbornOutcomes', 'Epi', 'Lifestyle'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.REPORTS_DISEASE_NUMBERS: 5>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -523,7 +523,7 @@ tlo.methods.alri module
 
      __annotations__ : {}
 
-     fraction_of_year_between_polling_event : <property object at 0x13922ff10>
+     fraction_of_year_between_polling_event : <property object at 0x13e4ac090>
 
      **Functions (defined or overridden in class AlriPollingEvent):**
 
@@ -628,7 +628,7 @@ tlo.methods.alri module
 
      __annotations__ : {}
 
-     _is_as_in_patient : <property object at 0x1392481d0>
+     _is_as_in_patient : <property object at 0x13e4ac310>
 
      **Functions (defined or overridden in class HSI_Alri_Treatment):**
 
@@ -809,7 +809,7 @@ tlo.methods.alri module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Epi', 'Wasting', 'Hiv'}
+     ALTERNATIVE_TO : {'Wasting', 'Hiv', 'Epi'}
 
      INIT_DEPENDENCIES : {'Demography'}
 
